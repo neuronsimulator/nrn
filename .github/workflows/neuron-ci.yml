@@ -74,6 +74,7 @@ jobs:
             config:
               build_mode: cmake
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DCORENRN_SANITIZERS=thread
+                -DNRN_ENABLE_MPI=OFF
               sanitizer: thread
           - os: macOS-12
             config:

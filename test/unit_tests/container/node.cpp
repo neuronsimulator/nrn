@@ -413,9 +413,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 AND_THEN("Check the underlying storage no longer matches") {
                     REQUIRE_FALSE(storage_match());
                 }
-                AND_THEN("Check the container is not flagged as sorted") {
-                    REQUIRE_FALSE(node_data.is_sorted());
-                }
             }
         };
         WHEN("Values are read back immediately") {
@@ -426,7 +423,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("The underlying storage is rotated") {
             auto rotated = perm_vector;
             std::rotate(rotated.begin(), std::next(rotated.begin()), rotated.end());
-            node_data.apply_reverse_permutation(std::move(rotated));
+            auto const sorted_token = node_data.apply_reverse_permutation(std::move(rotated));
             require_logical_match_and_storage_different();
         }
         WHEN("A unit reverse permutation is applied to the underlying storage") {
@@ -439,13 +436,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("A random permutation is applied to the underlying storage") {
             std::mt19937 g{42};
             std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-            node_data.apply_reverse_permutation(std::move(perm_vector));
+            auto const sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector));
             // the permutation is random, so we don't know if voltage_storage
             // will match reference_voltages or not
             require_logical_match();
-            THEN("Check the storage is no longer flagged as sorted") {
-                REQUIRE_FALSE(node_data.is_sorted());
-            }
         }
         auto const require_exception = [&](auto perm) {
             THEN("An exception is thrown") {
@@ -501,7 +495,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 // Label the current order as sorted and acquire a token that
                 // freezes it that way. The data should be sorted until the
                 // token goes out of scope.
-                auto const sorted_token = node_data.get_sorted_token();
+                auto sorted_token = node_data.get_sorted_token();
                 REQUIRE(node_data.is_sorted());
                 THEN("New nodes cannot be created") {
                     // Underlying node data is read-only, cannot allocate new Nodes.
@@ -520,7 +514,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                         REQUIRE(node_data.is_sorted());
                     }
                 }
-                THEN("The storage cannot be permuted") {
+                THEN("The storage *can* be permuted if the sorted token is transferred back to the container") {
+                    sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector), std::move(sorted_token));
+                }
+                THEN("The storage cannot be permuted when a 2nd sorted token is used") {
                     // Checking one of the permuting operations should be enough
                     REQUIRE_THROWS(node_data.apply_reverse_permutation(std::move(perm_vector)));
                 }
@@ -628,7 +625,8 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
             AND_WHEN("A random permutation is applied") {
                 std::mt19937 g{42};
                 std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-                neuron::model().node_data().apply_reverse_permutation(std::move(perm_vector));
+                auto& node_data = neuron::model().node_data();
+                node_data.apply_reverse_permutation(std::move(perm_vector));
                 THEN("The logical values should still match") {
                     for (auto i = 0; i < num_nodes; ++i) {
                         REQUIRE(nodes[i].sav_d() == i * i);

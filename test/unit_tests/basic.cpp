@@ -61,7 +61,7 @@ TEST_CASE("Test Oc::run(cmd)", "[NEURON]") {
 
 // AddressSanitizer seems to intercept the mallinfo[2]() system calls and return
 // null values from them. ThreadSanitizer seems to do the same.
-#if !defined(NRN_ASAN_ENABLE) && !defined(NRN_TSAN_ENABLED)
+#if !defined(NRN_ASAN_ENABLED) && !defined(NRN_TSAN_ENABLED)
 TEST_CASE("Test nrn_mallinfo returns non-zero", "[NEURON][nrn_mallinfo]") {
     SECTION("HOC") {
         REQUIRE(

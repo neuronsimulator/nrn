@@ -4,10 +4,10 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
-#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -549,16 +549,18 @@ struct storage_info_impl: utils::storage_info {
 };
 }  // namespace detail
 
-/** @brief Token whose lifetime manages frozen/sorted state of a container.
+/**
+ * @brief Token whose lifetime manages frozen/sorted state of a container.
  */
 template <typename Container>
 struct state_token {
     constexpr state_token() = default;
     constexpr state_token(state_token&& other)
-        : m_container{std::exchange(other.m_container, nullptr)} {}
+        : m_container{std::exchange(other.m_container, nullptr)}, m_already_sorted{other.m_already_sorted} {}
     constexpr state_token(state_token const&) = delete;
     constexpr state_token& operator=(state_token&& other) {
         m_container = std::exchange(other.m_container, nullptr);
+        m_already_sorted = other.m_already_sorted;
         return *this;
     }
     constexpr state_token& operator=(state_token const&) = delete;
@@ -567,13 +569,29 @@ struct state_token {
             m_container->decrease_frozen_count();
         }
     }
+    /**
+     * @brief Did creating this token *cause* the token to be marked sorted?
+    */
+    [[nodiscard]] bool was_already_sorted() const {
+        assert(m_container);
+        return m_already_sorted;
+    }
+    /**
+     * @brief Is this token valid?
+     * 
+     * Default-constructed and moved-from tokens are not valid.
+     */
+    [[nodiscard]] explicit operator bool() const {
+        return m_container;
+    }
 
   private:
     template <typename, typename...>
     friend struct soa;
-    constexpr state_token(Container& container)
-        : m_container{&container} {}
+    constexpr state_token(Container& container, bool already_sorted)
+        : m_container{&container}, m_already_sorted{already_sorted} {}
     Container* m_container{};
+    bool m_already_sorted{false};
 };
 
 /**
@@ -681,6 +699,8 @@ struct soa {
      * invalidated.
      */
     void erase(std::size_t i) {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         if (m_frozen_count) {
             throw_error("erase() called on a frozen structure");
         }
@@ -748,6 +768,7 @@ struct soa {
      * This is called from the destructor of state_token.
      */
     void decrease_frozen_count() {
+        std::lock_guard _{m_mut};
         assert(m_frozen_count);
         --m_frozen_count;
     }
@@ -785,12 +806,18 @@ struct soa {
      *       pointers are actually, not potentially, invalidated.
      */
     [[nodiscard]] sorted_token_type get_sorted_token() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         // Increment the reference count, marking the container as frozen.
-        ++m_frozen_count;
-        // Mark the container as sorted
-        m_sorted = true;
+        bool const was_already_frozen{++m_frozen_count > 1};
+        bool const was_already_sorted{m_sorted};
+        if (was_already_frozen) {
+            assert(m_sorted);
+        } else {
+            m_sorted = true;
+        }
         // Return a token that calls decrease_frozen_count() at the end of its lifetime
-        return sorted_token_type{static_cast<Storage&>(*this)};
+        return sorted_token_type{static_cast<Storage&>(*this), was_already_sorted};
     }
 
     /**
@@ -802,6 +829,8 @@ struct soa {
      * sorted, even if nothing has actually changed inside this container.
      */
     void mark_as_unsorted() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         mark_as_unsorted_impl<false>();
     }
 
@@ -826,19 +855,48 @@ struct soa {
         return m_sorted;
     }
 
-    /** @brief Permute the SOA-format data using an arbitrary vector.
+    /**
+     * @brief Permute the SoA-format data using an arbitrary range of integers.
+     * @param permutation The reverse permutation vector to apply.
+     * @return A token guaranteeing the sorted state of the container after the
+     *         permutation was applied.
+     */
+    template <typename Arg>
+    sorted_token_type apply_reverse_permutation(Arg&& permutation) {
+        return apply_reverse_permutation(std::forward<Arg>(permutation), get_sorted_token());
+    }
+
+    /**
+     * @brief Permute the SoA-format data using an arbitrary range of integers.
+     * @param permutation The reverse permutation vector to apply.
+     * @param token A token demonstrating that the caller is the only party
+     *        that is forcing the container to be frozen, and that they are
+     *        transferring that status into this function.
+     * @return The same token that was passed in; apply_reverse_permutation
+     *         only needs to borrow ownership of the token.
      */
     template <typename Range>
-    void apply_reverse_permutation(Range permutation) {
+    sorted_token_type apply_reverse_permutation(Range permutation, sorted_token_type sorted_token) {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
+        if (!sorted_token) {
+            throw_error("apply_reverse_permutation() given an invalid token");
+        }
+        // Applying a permutation in general invalidates indices, so it is
+        // forbidden if the structure is frozen, and it leaves the structure
+        // unsorted. We therefore require that the frozen count is 1, which
+        // corresponds to the `sorted_token` argument to this function.
+        if (m_frozen_count != 1) {
+            throw_error("apply_reverse_permutation() given a token that was not the only valid one");
+        }
         // Check that the given vector is a valid permutation of length size().
         std::size_t const my_size{size()};
         detail::check_permutation_vector(permutation, my_size);
-        // Applying a permutation in general invalidates indices, so it is forbidden if the
-        // structure is frozen, and it leaves the structure unsorted.
-        if (m_frozen_count) {
-            throw_error("apply_reverse_permutation() called on a frozen structure");
+        // Execute the callback if this permutation is causing us to transition
+        // from being sorted to being unsorted.
+        if (m_unsorted_callback && sorted_token.was_already_sorted()) {
+            m_unsorted_callback();
         }
-        mark_as_unsorted_impl<true>();
         // Now we apply the reverse permutation in `permutation` to all of the columns in the
         // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
         for (std::size_t i = 0; i < my_size; ++i) {
@@ -859,10 +917,15 @@ struct soa {
         for (auto i = 0ul; i < my_size; ++i) {
             m_indices[i].set_current_row(i);
         }
+        return sorted_token;
     }
 
 
   private:
+    /**
+     * @brief Set m_sorted = false and execute the callback.
+     * @note The *caller* is expected to hold m_mut when this is called.
+     */
     template <bool internal>
     void mark_as_unsorted_impl() {
         if (m_frozen_count) {
@@ -900,6 +963,8 @@ struct soa {
      * methods (e.g. v(), v_handle() for a Node).
      */
     [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         if (m_frozen_count) {
             throw_error("acquire_owning_identifier() called on a frozen structure");
         }
@@ -977,6 +1042,7 @@ struct soa {
         auto& field_data = std::get<tag_index_v<Tag>>(m_data);
         if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
             if (!field_data.active()) {
+                std::lock_guard _{m_mut};
                 throw_error("get(offset) called for a disabled optional field");
             }
         }
@@ -993,6 +1059,7 @@ struct soa {
         auto const& field_data = std::get<tag_index_v<Tag>>(m_data);
         if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
             if (!field_data.active()) {
+                std::lock_guard _{m_mut};
                 throw_error("get(offset) const called for a disabled optional field");
             }
         }
@@ -1225,12 +1292,27 @@ struct soa {
     }
 
   private:
+    /**
+     * @brief Throw an exception with a pretty prefix.
+     * @note The *caller* is expected to hold m_mut when this is called.
+    */
     [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
         oss << cxx_demangle(typeid(Storage).name()) << "[frozen_count=" << m_frozen_count
             << ",sorted=" << std::boolalpha << m_sorted << "]: " << message;
         throw std::runtime_error(std::move(oss).str());
     }
+
+    /**
+     * @brief Mutex to protect m_frozen_count and m_sorted.
+     * 
+     * Ideally the methods that touch these would only be called before
+     * multiple worker threads have been spun up, but in practice methods such
+     * as nrn_ensure_model_data_are_sorted() are called from within
+     * multithreaded regions because neuron::model_sorted_token const& is not
+     * explicitly passed everywhere.
+     */
+    mutable std::mutex m_mut{};
 
     /**
      * @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
@@ -1244,7 +1326,7 @@ struct soa {
      * but in practice as a transition measure then handles are acquired inside
      * worker threads.
      */
-    std::atomic<std::size_t> m_frozen_count{};
+    std::size_t m_frozen_count{};
 
     /**
      * @brief Pointers to identifiers that record the current physical row.
