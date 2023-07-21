@@ -55,11 +55,15 @@ void Model::set_unsorted_callback(container::Mechanism::storage& mech_data) {
     // handle this more efficiently.
     invalidate_cache();
 }
-}  // namespace neuron
-namespace neuron::detail {
+
 // See neuron/model_data.hpp
-Model model_data;
-}  // namespace neuron::detail
+Model& model() {
+    static Model model{};
+    return model;
+}
+
+}  // namespace neuron
+
 namespace neuron::cache {
 std::optional<Model> model{};
 }

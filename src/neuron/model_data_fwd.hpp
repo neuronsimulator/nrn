@@ -4,7 +4,7 @@
 
 namespace neuron {
 struct Model;
-inline Model& model();
+Model& model();
 namespace container {
 template <typename>
 struct data_handle;

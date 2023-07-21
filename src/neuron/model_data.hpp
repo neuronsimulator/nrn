@@ -155,20 +155,14 @@ struct model_sorted_token {
     std::reference_wrapper<cache::Model> m_cache;
 };
 
-namespace detail {
 // Defining this inline seems to lead to duplicate copies when we dlopen
 // libnrnmech.so , so we define it explicitly in container.cpp as part of
 // libnrniv.so
-extern Model model_data;
-}  // namespace detail
-
 /** @brief Access the global Model instance.
  *
  *  Just to be going on with. Needs more thought about who actually holds/owns
  *  the structures that own the SOA data. Could use a static local if we need to
  *  control/defer when this is constructed.
  */
-inline Model& model() {
-    return detail::model_data;
-}
+Model& model();
 }  // namespace neuron
