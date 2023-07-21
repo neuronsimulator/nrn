@@ -44,7 +44,7 @@ else()
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   install(FILES ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX}
-          DESTINATION ${CMAKE_INSTALL_LIBDIR})
+          DESTINATION lib)
 
   add_custom_command(
     TARGET morphio-external
