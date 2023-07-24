@@ -70,6 +70,13 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     PROCESSORS 16
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
 endif()
+if(TARGET nrn-morphio)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME nrn-morphio
+    SCRIPT_PATTERNS "test/morphology/soma_single_point.h5"
+    COMMAND $<TARGET_FILE:nrn-morphio>)
+endif()
 
 # =============================================================================
 # Add ringtest

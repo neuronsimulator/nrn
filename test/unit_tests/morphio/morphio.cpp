@@ -22,10 +22,10 @@ TEST_CASE("MorphIO Single Point SOMA", "[NEURON][MorphIO][SinglePointSoma]") {
                        "cell0 = new HocBasicCell()") == 0);
         REQUIRE(hoc_oc("morphio_load(cell0, \"nonexistent_file.h5\")") == 1);
         REQUIRE(hoc_oc("morphio_load(cell0, "
-                       "\"test/morphology_tests/morphology_tests/test/morphology/"
+                       "\"test/morphology/"
                        "soma_single_point.h5\")") == 0);
         REQUIRE(hoc_oc("morphio_load(nullcell, "
-                       "\"test/morphology_tests/morphology_tests/test/morphology/"
+                       "\"test/morphology/"
                        "soma_single_point.h5\")") == 1);
         REQUIRE(hoc_oc("topology()") == 0);
     }
@@ -38,8 +38,7 @@ TEST_CASE("MorphIOWrapper", "[NEURON][MorphIO][MorphIOWrapper][SinglePointSoma]"
     }
 
     WHEN("We create a MorphIOWrapper") {
-        neuron::morphology::MorphIOWrapper morph{
-            "test/morphology_tests/morphology_tests/test/morphology/soma_single_point.h5"};
+        neuron::morphology::MorphIOWrapper morph{"test/morphology/soma_single_point.h5"};
 
         THEN("We check the HOC commands match the expected output") {
             REQUIRE(morph.morph_as_hoc() == nrn::test::soma_single_point_h5_hoc);
