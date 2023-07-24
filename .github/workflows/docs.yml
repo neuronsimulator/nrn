@@ -23,7 +23,7 @@ jobs:
 
     name: Documentation
 
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
 
