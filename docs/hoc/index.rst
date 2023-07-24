@@ -65,6 +65,7 @@ Model Specification
     
     modelspec/guitools.rst
     modelspec/programmatic.rst
+    modelspec/morphology.rst
 
 Simulation Control
 ------------------
