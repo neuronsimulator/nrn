@@ -556,7 +556,8 @@ template <typename Container>
 struct state_token {
     constexpr state_token() = default;
     constexpr state_token(state_token&& other)
-        : m_container{std::exchange(other.m_container, nullptr)}, m_already_sorted{other.m_already_sorted} {}
+        : m_container{std::exchange(other.m_container, nullptr)}
+        , m_already_sorted{other.m_already_sorted} {}
     constexpr state_token(state_token const&) = delete;
     constexpr state_token& operator=(state_token&& other) {
         m_container = std::exchange(other.m_container, nullptr);
@@ -571,14 +572,14 @@ struct state_token {
     }
     /**
      * @brief Did creating this token *cause* the token to be marked sorted?
-    */
+     */
     [[nodiscard]] bool was_already_sorted() const {
         assert(m_container);
         return m_already_sorted;
     }
     /**
      * @brief Is this token valid?
-     * 
+     *
      * Default-constructed and moved-from tokens are not valid.
      */
     [[nodiscard]] explicit operator bool() const {
@@ -589,7 +590,8 @@ struct state_token {
     template <typename, typename...>
     friend struct soa;
     constexpr state_token(Container& container, bool already_sorted)
-        : m_container{&container}, m_already_sorted{already_sorted} {}
+        : m_container{&container}
+        , m_already_sorted{already_sorted} {}
     Container* m_container{};
     bool m_already_sorted{false};
 };
@@ -887,7 +889,8 @@ struct soa {
         // unsorted. We therefore require that the frozen count is 1, which
         // corresponds to the `sorted_token` argument to this function.
         if (m_frozen_count != 1) {
-            throw_error("apply_reverse_permutation() given a token that was not the only valid one");
+            throw_error(
+                "apply_reverse_permutation() given a token that was not the only valid one");
         }
         // Check that the given vector is a valid permutation of length size().
         std::size_t const my_size{size()};
@@ -1295,7 +1298,7 @@ struct soa {
     /**
      * @brief Throw an exception with a pretty prefix.
      * @note The *caller* is expected to hold m_mut when this is called.
-    */
+     */
     [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
         oss << cxx_demangle(typeid(Storage).name()) << "[frozen_count=" << m_frozen_count
@@ -1305,7 +1308,7 @@ struct soa {
 
     /**
      * @brief Mutex to protect m_frozen_count and m_sorted.
-     * 
+     *
      * Ideally the methods that touch these would only be called before
      * multiple worker threads have been spun up, but in practice methods such
      * as nrn_ensure_model_data_are_sorted() are called from within

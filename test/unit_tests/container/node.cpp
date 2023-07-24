@@ -514,8 +514,11 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                         REQUIRE(node_data.is_sorted());
                     }
                 }
-                THEN("The storage *can* be permuted if the sorted token is transferred back to the container") {
-                    sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector), std::move(sorted_token));
+                THEN(
+                    "The storage *can* be permuted if the sorted token is transferred back to the "
+                    "container") {
+                    sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector),
+                                                                       std::move(sorted_token));
                 }
                 THEN("The storage cannot be permuted when a 2nd sorted token is used") {
                     // Checking one of the permuting operations should be enough

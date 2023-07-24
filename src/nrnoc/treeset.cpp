@@ -2166,7 +2166,8 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
         if (trivial_counter < mech_data_size) {
             // The `mech_data_permutation` vector is not a unit transformation
             // Should this and other permuting operations return a "sorted token"?
-            return mech_data.apply_reverse_permutation(std::move(mech_data_permutation), std::move(sorted_token));
+            return mech_data.apply_reverse_permutation(std::move(mech_data_permutation),
+                                                       std::move(sorted_token));
         }
     }
     return sorted_token;
@@ -2277,7 +2278,8 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
     }
     // Apply the permutation and return a sorted token. The token passed as the
     // first argument *must* be the only active token for the container.
-    return node_data.apply_reverse_permutation(std::move(node_data_permutation), std::move(sorted_token));
+    return node_data.apply_reverse_permutation(std::move(node_data_permutation),
+                                               std::move(sorted_token));
 }
 
 /**
@@ -2340,7 +2342,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // tokens back to the relevant containers, so they can check that the
         // only active token is the one that has been provided back to them.
         node_token = nrn_sort_node_data(std::move(node_token), cache);
-        std::size_t n{}; // eww
+        std::size_t n{};  // eww
         model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
             // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
             mech_tokens[n] = nrn_sort_mech_data(std::move(mech_tokens[n]), cache, mech_data);
