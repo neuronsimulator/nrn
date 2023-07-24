@@ -258,7 +258,7 @@ jobs:
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
                 if [ "$RUNNER_OS" == "Linux" ]; then
-                  if [[ "${{matrix.config.sanitizer}}" == thread" ]]; then
+                  if [[ "${{matrix.config.sanitizer}}" == "thread" ]]; then
                     # GitHub/ubuntu-22.04 + clang-14 seems to have problems with TSan.
                     # Vanilla 22.04 + clang-16 from apt.llvm.org seemed to work.
                     # Use gcc-12 instead, as GitHub/ubuntu-22.04 already has it.
