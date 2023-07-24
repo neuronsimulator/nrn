@@ -26,8 +26,8 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
   # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
-  # from OSX can be skipped
-  if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
+  # from OSX can be skipped. Same goes for HDF5 and MorphIO
+  if("${link_lib}" MATCHES "(libreadline.a|/*.tbd|libmorphio.*|libhdf5.*)")
     continue()
   endif()
 
