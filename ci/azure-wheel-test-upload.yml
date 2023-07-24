@@ -6,7 +6,7 @@ steps:
     displayName: 'Publish wheel as build artifact'
 
   - script: |
-      brew install python
+      brew install python hdf5
       export SKIP_EMBEDED_PYTHON_TEST=true
       packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
     condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.version'], '3.8'))

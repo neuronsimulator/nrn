@@ -43,8 +43,7 @@ else()
                -DCMAKE_INSTALL_LIBDIR=${MorphIO_LIB_DIR} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-  install(FILES ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX}
-          DESTINATION lib)
+  install(FILES ${MorphIO_PREFIX}/lib/libmorphio${CMAKE_SHARED_LIBRARY_SUFFIX} DESTINATION lib)
 
   add_custom_command(
     TARGET morphio-external
