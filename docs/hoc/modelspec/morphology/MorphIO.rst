@@ -12,6 +12,7 @@ This will allow us to read neuron morphology files in a variety of formats, with
 There will also be a backward compatible layer that will allow us to use the HOC stack together with MorphIO.
 Finally we will be able to update the Import3D_GUI HOC stack to use MorphIO so that CellBuilder/Import3d can use it. 
 
+Morphio is not available for Windows, because further support is required in MorphIO for the MinGW toolchain.
 
 .. _morphio_hoc_api:
 
