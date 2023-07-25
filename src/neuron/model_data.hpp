@@ -24,6 +24,12 @@ struct Model {
         return m_node_data;
     }
 
+    /** @brief Access the structure containing the data of all Nodes.
+     */
+    container::Node::storage const& node_data() const {
+        return m_node_data;
+    }
+
     /** @brief Apply a function to each non-null Mechanism.
      */
     template <typename Callable>
@@ -74,20 +80,21 @@ struct Model {
     /** @brief Get the structure holding the data of a particular Mechanism.
      */
     container::Mechanism::storage& mechanism_data(int type) {
-        if (type >= m_mech_data.size()) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
-                                     "): type out of range");
-        }
-        const auto& data_ptr = m_mech_data[type];
-        if (!data_ptr) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
-                                     "): data for type was null");
-        }
-        return *data_ptr;
+        return mechanism_data_impl(type);
+    }
+
+    /** @brief Get the structure holding the data of a particular Mechanism.
+     */
+    container::Mechanism::storage const& mechanism_data(int type) const {
+        return mechanism_data_impl(type);
     }
 
     [[nodiscard]] std::size_t mechanism_storage_size() const {
         return m_mech_data.size();
+    }
+
+    [[nodiscard]] bool is_valid_mechanism(int type) const {
+        return 0 <= type && type < mechanism_storage_size() && m_mech_data[type];
     }
 
     /**
@@ -100,6 +107,21 @@ struct Model {
         void const* cont) const;
 
   private:
+    container::Mechanism::storage& mechanism_data_impl(int type) const {
+        if (type >= m_mech_data.size()) {
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): type out of range");
+        }
+        const auto& data_ptr = m_mech_data[type];
+        if (!data_ptr) {
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): data for type was null");
+        }
+
+        return *data_ptr;
+    }
+
+
     void set_unsorted_callback(container::Mechanism::storage& mech_data);
 
     /** @brief One structure for all Nodes.
