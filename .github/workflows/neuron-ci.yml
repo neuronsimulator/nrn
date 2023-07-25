@@ -55,33 +55,33 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DNMODL_SANITIZERS=address,leak
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DCORENRN_SANITIZERS=thread
-                -DNRN_ENABLE_MPI=OFF
+              # Cannot use a non-instrumented OpenMP with TSan, and we don't
+              # have a TSan-instrumented OpenMP runtime available.
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
+                -DCORENRN_ENABLE_OPENMP=OFF
               sanitizer: thread
           - os: macOS-12
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
       fail-fast: false
 
