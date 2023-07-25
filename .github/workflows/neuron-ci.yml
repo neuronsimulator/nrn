@@ -73,8 +73,9 @@ jobs:
               build_mode: cmake
               # Cannot use a non-instrumented OpenMP with TSan, and we don't
               # have a TSan-instrumented OpenMP runtime available.
+              # TODO: debug RX3D + TSan
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
-                -DCORENRN_ENABLE_OPENMP=OFF
+                -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
           - os: macOS-12
             config:
