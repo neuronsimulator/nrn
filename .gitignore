@@ -8,6 +8,7 @@ test/ringtest/*.dat
 build
 .DS_Store
 .eggs/
+*.egg-info
 .idea/
 CMakeFiles/
 Makefile
@@ -23,3 +24,15 @@ virtualenv
 docs/_build
 docs/_generated
 .vscode
+
+# Files generated as part of the build process:
+share/lib/python/neuron/hoc.cpython-*.so
+share/lib/python/neuron/rxd/geometry3d/ctng.cpp
+share/lib/python/neuron/rxd/geometry3d/ctng.cpython-*.so
+share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.cpp
+share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.cpython-*.so
+share/lib/python/neuron/rxd/geometry3d/surfaces.cpp
+share/lib/python/neuron/rxd/geometry3d/surfaces.cpython-*.so
+src/nrnmpi/nrnmpi_dynam.h
+src/nrnmpi/nrnmpi_dynam_cinc
+src/nrnmpi/nrnmpi_dynam_wrappers.inc
