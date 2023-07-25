@@ -83,6 +83,16 @@ struct has_num_variables<T, std::void_t<decltype(std::declval<T>().num_variables
 template <typename T>
 inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
 
+template <class T>
+auto get_num_variables(T const& t) -> std::enable_if_t<has_num_variables_v<T>, size_t> {
+    return t.num_variables();
+}
+
+template <class T>
+auto get_num_variables(T const& t) -> std::enable_if_t<!has_num_variables_v<T>, size_t> {
+    return 1ul;
+}
+
 // Get the value of a static member variable called optional, or false if it doesn't exist.
 template <typename T, typename = void>
 struct optional: std::false_type {};
@@ -1405,6 +1415,17 @@ struct soa {
     template <typename Tag>
     [[nodiscard]] int const* get_array_dims() const {
         return std::get<tag_index_v<Tag>>(m_data).array_dims();
+    }
+
+    template <typename Tag>
+    [[nodiscard]] int get_array_dims(int field_index) const {
+        assert(field_index < get_num_variables<Tag>());
+        return get_array_dims<Tag>()[field_index];
+    }
+
+    template <typename Tag>
+    [[nodiscard]] size_t get_num_variables() const {
+        return detail::get_num_variables(get_tag<Tag>());
     }
 
     /**

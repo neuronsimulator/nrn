@@ -117,3 +117,35 @@ TEST_CASE("Multi-threaded calls to nrn_ensure_model_data_are_sorted()",
         REQUIRE(neuron::model().node_data().size() == 0);
     }
 }
+
+TEST_CASE("soa::get_array_dims", "[Neuron][data_structures]") {
+    storage data;
+
+    data.set_field_status<field::DOn>(true);
+    data.set_field_status<field::DOff>(false);
+
+    auto c = field::C{};
+
+    for (size_t field_index = 0; field_index < c.num_variables(); ++field_index) {
+        CHECK(data.template get_array_dims<field::C>()[field_index] ==
+              c.array_dimension(field_index));
+        CHECK(data.template get_array_dims<field::C>(field_index) ==
+              c.array_dimension(field_index));
+    }
+
+    CHECK(data.template get_array_dims<field::DOff>(0) == 1ul);
+    CHECK(data.template get_array_dims<field::DOn>(0) == 1ul);
+}
+
+TEST_CASE("soa::get_num_variables", "[Neuron][data_structures]") {
+    storage data;
+
+    data.set_field_status<field::DOn>(true);
+    data.set_field_status<field::DOff>(false);
+
+    auto c = field::C{};
+
+    CHECK(data.get_num_variables<field::C>() == c.num_variables());
+    CHECK(data.get_num_variables<field::DOff>() == 1ul);
+    CHECK(data.get_num_variables<field::DOn>() == 1ul);
+}
