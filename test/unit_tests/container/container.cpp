@@ -23,6 +23,41 @@ struct A {
         return 42;
     }
 };
+
+/** @brief Tag type for just one double per row.
+ */
+struct B {
+    using type = double;
+};
+
+/** @brief Tag type with multiple fields of differing array_dimension.
+ */
+struct C {
+    using type = double;
+
+    size_t num_variables() const {
+        return 3;
+    }
+
+    int array_dimension(int field_index) const {
+        return field_index + 1;
+    }
+};
+
+/** @brief Tag type for an optional field, intended to be Off.
+ */
+struct DOff {
+    static constexpr bool optional = true;
+    using type = double;
+};
+
+/** @brief Tag type for an optional field, intended to be On.
+ */
+struct DOn {
+    static constexpr bool optional = true;
+    using type = double;
+};
+
 }  // namespace field
 template <typename Identifier>
 struct handle_interface: handle_base<Identifier> {
@@ -35,7 +70,7 @@ struct handle_interface: handle_base<Identifier> {
         return this->template get<field::A>();
     }
 };
-struct storage: soa<storage, field::A> {};
+struct storage: soa<storage, field::A, field::B, field::C, field::DOff, field::DOn> {};
 using owning_handle = handle_interface<owning_identifier<storage>>;
 }  // namespace
 
