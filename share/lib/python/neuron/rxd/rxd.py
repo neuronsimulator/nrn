@@ -1884,7 +1884,6 @@ def _compile_reactions():
 def _init():
     if not species._all_species:
         return None
-    _setup_units()
     initializer._do_init()
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
