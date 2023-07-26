@@ -116,9 +116,6 @@ void GLineRecord::fill_pd1() {
 }
 
 void GLineRecord::fill_pd() {
-    // Call only if cache_efficient will not change pointers before useing
-    // the results of his computation.
-
     // Get rid of old pd_and_vec_ info.
     for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
         if ((*it).second) {
@@ -143,7 +140,7 @@ void GLineRecord::fill_pd() {
 }
 
 GLineRecord::GLineRecord(GraphLine* gl)
-    : PlayRecord(NULL) {
+    : PlayRecord({}) {
     // shouldnt be necessary but just in case
     //	printf("GLineRecord %p name=%s\n", this, gl->name());
     gl_ = gl;
@@ -153,23 +150,16 @@ GLineRecord::GLineRecord(GraphLine* gl)
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv)
-    : PlayRecord(NULL) {
-    // printf("GVectorRecord %p\n", this);
-    gv_ = gv;
-}
+    : PlayRecord({})
+    , gv_{gv} {}
 
 void GraphVector::record_install() {
-    // printf("GraphVector::record_install()\n");
-    GVectorRecord* gvr = new GVectorRecord(this);
+    new GVectorRecord(this);
 }
 
-void GraphVector::record_uninstall() {
-    // printf("GraphVector::record_uninstall()\n");
-}
+void GraphVector::record_uninstall() {}
 
 GLineRecord::~GLineRecord() {
-    //	printf("~GLineRecord %p\n", this);
-    int i;
     if (v_) {
         delete v_;
         v_ = NULL;
@@ -181,7 +171,7 @@ GLineRecord::~GLineRecord() {
         }
     }
 
-    for (i = grl->count() - 1; i >= 0; --i) {
+    for (int i = grl->count() - 1; i >= 0; --i) {
         if (grl->item(i) == this) {
             gl_->simgraph_activate(false);
             grl->remove(i);
@@ -190,16 +180,7 @@ GLineRecord::~GLineRecord() {
     }
 }
 
-GVectorRecord::~GVectorRecord() {
-    printf("~GVectorRecord %p\n", this);
-#if 0  // for now not allowing vector buffering
-  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-    if ((*it).second) {
-      delete (*it).second;
-    }
-  }
-#endif
-}
+GVectorRecord::~GVectorRecord() {}
 
 void GLineRecord::record_init() {
     gl_->simgraph_init();
@@ -216,7 +197,7 @@ void GVectorRecord::continuous(double t) {}
 int GVectorRecord::count() {
     return gv_->py_data()->count();
 }
-double* GVectorRecord::pdata(int i) {
+neuron::container::data_handle<double> GVectorRecord::pdata(int i) {
     return gv_->py_data()->p(i);
 }
 

@@ -18,7 +18,6 @@ def test_units():
 
     from neuron import coreneuron
 
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     pc.set_maxstep(10)

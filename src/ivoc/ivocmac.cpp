@@ -246,10 +246,6 @@ void Rubberband::rubber_on(Canvas* c) {
 void Rubberband::rubber_off(Canvas* c) {
     //	c->back_buffer();
     SetGWorld(cg_, gd_);
-#ifdef MAC
-    // this prevents failure for all future paints ... I am not sure this is what we want
-    c->damage_all();
-#endif
     //	printf("Rubberband::rubber_off\n");
 }
 

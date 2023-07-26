@@ -13,7 +13,6 @@ set(UNQUOTED_PACKAGE_VERSION "${PROJECT_VERSION}")
 # ~~~
 nrn_set_string(PACKAGE "nrn")
 nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
-nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
 nrn_set_string(PACKAGE_STRING "nrn ${PROJECT_VERSION}")
 nrn_set_string(PACKAGE_VERSION "${PROJECT_VERSION}")
 nrn_set_string(VERSION "${PROJECT_VERSION}")
@@ -129,8 +128,7 @@ else()
 endif()
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  # the value needs to be made not to matter
-  set(NRNPYTHON_DYNAMICLOAD 3)
+  list(APPEND NRN_COMPILE_DEFS NRNPYTHON_DYNAMICLOAD)
 endif()
 
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
@@ -263,11 +261,14 @@ endif()
 # =============================================================================
 # Generate file from file.in template
 # =============================================================================
+set(version_strs ${NRN_PYTHON_VERSIONS})
+list(TRANSFORM version_strs APPEND "\"")
+list(TRANSFORM version_strs PREPEND "\"")
+string(JOIN ", " NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS ${version_strs})
 nrn_configure_dest_src(nrnconf.h . cmake_nrnconf.h .)
 nrn_configure_dest_src(nmodlconf.h . cmake_nrnconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
 nrn_configure_file(nrnconfigargs.h src/nrnoc)
-nrn_configure_file(nrnpython_config.h src/nrnpython)
 nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
 nrn_configure_file(sundials_config.h src/sundials)

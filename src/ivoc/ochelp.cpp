@@ -15,10 +15,6 @@
 
 static FILE* help_pipe;
 
-#if MAC
-#define WIN32 1
-#endif
-
 #if defined(WIN32) && !defined(MINGW)
 #include "nrnbbs.h"
 #endif
@@ -78,7 +74,7 @@ void ivoc_help(const char* s) {
 }
 
 static void readmore() {
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
     char buf[1024];
     char* cmd = "ls $NEURONHOME/doc/help/*.help";
     FILE* p = popen(cmd, "r");
@@ -92,7 +88,7 @@ static void readmore() {
 #endif
 }
 
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
 void Oc::help(const char* s) {
 #if 1
     printf("online help not currently working\n");
@@ -135,7 +131,7 @@ but will be missing this sessions hoc help text\n");
 }
 #endif
 
-#if defined(WIN32) || defined(MAC)
+#if defined(WIN32)
 
 void Oc::help(const char* s) {
 #if 0
@@ -174,7 +170,7 @@ Sprintf(buf,"%s\n", filequeue->item_ref(i).string());
 #endif  // MINGW
 #endif
 }
-#endif  // WIN32 or MAC
+#endif  // WIN32
 
 void Oc::helpmode(bool b) {
     helpmode_ = b;
@@ -213,7 +209,7 @@ static const CursorPattern question_pat = {0x0000,
 static const CursorPattern question_mask = {
 //    0x0000, 0x0000, 0x7c00, 0xfe00, 0xff00, 0xcf00, 0x0f00, 0x3e00,
 //    0x7c00, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000
-#if !defined(UNIX) && (defined(WIN32) || defined(MAC))
+#if !defined(UNIX) && defined(WIN32)
     0xffff,
     0xffff,
     0xffff,

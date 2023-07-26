@@ -107,7 +107,6 @@ spikerecord()
 // Simulation control
 /////////////////////
 nthread = 2
-{cvode.cache_efficient(1)} // required for nrncore
 {pc.nthread(nthread, 0)} // lowest_level_load stores nthread groups of cells
 
 tstop = 100

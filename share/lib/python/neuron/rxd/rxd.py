@@ -393,7 +393,6 @@ def _setup_memb_currents():
         num = len(curr_ptrs)
         if num:
             curr_ptr_vector = _h_ptrvector(num)
-            curr_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(curr_ptrs):
                 curr_ptr_vector.pset(i, ptr)
                 curr_ptr_storage_nrn = _h_vector(num)
@@ -568,10 +567,6 @@ _h_vector = h.Vector
 
 _structure_change_count = nrn_dll_sym("structure_change_cnt", _ctypes_c_int)
 _diam_change_count = nrn_dll_sym("diam_change_cnt", _ctypes_c_int)
-
-
-def _donothing():
-    pass
 
 
 def _setup_units(force=False):

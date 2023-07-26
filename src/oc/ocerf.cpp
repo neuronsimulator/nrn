@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <errno.h>
 #ifndef MINGW
-#if DOS || defined(WIN32) /*|| defined(MAC)*/
+#if DOS || defined(WIN32)
 /******************************************************************************
  *
  * File: erf.cpp

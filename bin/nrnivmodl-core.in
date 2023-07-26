@@ -36,7 +36,7 @@ params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
 params_NRN_PRCELLSTATE="@CORENRN_NRN_PRCELLSTATE@"
 
 # prefix for common options : make sure to rename these if options are changed.
-MAKE_OPTIONS="MECHLIB_SUFFIX MOD2CPP_BINARY MOD2CPP_RUNTIME_FLAGS DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE NRN_PRCELLSTATE"
+MAKE_OPTIONS="MECHLIB_SUFFIX NMODL_BINARY NMODL_RUNTIME_FLAGS DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE NRN_PRCELLSTATE"
 
 # parse CLI args
 while getopts "n:m:a:d:i:l:Vp:r:b:h" OPT; do
@@ -45,11 +45,11 @@ while getopts "n:m:a:d:i:l:Vp:r:b:h" OPT; do
         # suffix for mechanism library
         params_MECHLIB_SUFFIX="$OPTARG";;
     m)
-        # nmodl or mod2c binary to use
-        params_MOD2CPP_BINARY="$OPTARG";;
+        # nmodl binary to use
+        params_NMODL_BINARY="$OPTARG";;
     a)
         # additional nmodl flags to be used
-        params_MOD2CPP_RUNTIME_FLAGS="$OPTARG";;
+        params_NMODL_RUNTIME_FLAGS="$OPTARG";;
     d)
         # destination install directory
         params_DESTDIR="$OPTARG";;

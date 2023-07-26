@@ -37,12 +37,15 @@ class ShapePlotData: public ShapePlotInterface {
     virtual float high();
     virtual Object* neuron_section_list();
     virtual bool has_iv_view();
+    int get_mode();
+    void set_mode(int mode);
 
   private:
     Symbol* sym_;
     float lo, hi;
     Object* sl_;
     void* py_var_;
+    int show_mode;
 };
 
 #if HAVE_IV
@@ -72,7 +75,6 @@ class ShapePlot: public ShapeScene, public ShapePlotInterface {
     virtual float high();
     virtual bool has_iv_view();
     virtual Object* neuron_section_list();
-    void update_ptrs();
     void has_iv_view(bool);
 
   private:
@@ -107,7 +109,7 @@ class ColorValue: public Resource, public Observable {
 
 class Hinton: public Observer, public FastShape {
   public:
-    Hinton(double*, Coord xsize, Coord ysize, ShapeScene*);
+    Hinton(neuron::container::data_handle<double>, Coord xsize, Coord ysize, ShapeScene*);
     virtual ~Hinton();
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
@@ -116,7 +118,7 @@ class Hinton: public Observer, public FastShape {
     virtual void update(Observable*);
 
   private:
-    double* pd_;
+    neuron::container::data_handle<double> pd_{};
     const Color* old_;
     Coord xsize_, ysize_;
     ShapeScene* ss_;

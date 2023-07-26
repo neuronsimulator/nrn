@@ -83,7 +83,6 @@ def test_fornetcon():
     weight_std = get_weights()
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 

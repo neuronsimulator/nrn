@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if MAC || defined(HAVE_UNISTD_H)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -36,9 +36,6 @@ extern int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();

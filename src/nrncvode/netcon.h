@@ -2,11 +2,9 @@
 #define netcon_h
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
 
 #include "htlist.h"
+#include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.h"
@@ -261,7 +259,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nil);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -281,12 +279,12 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
+        assert(thvar_);
         return *thvar_ - threshold_;
     }
 
     void update(Observable*);
     void disconnect(Observable*);
-    void update_ptr(double*);
     void record_stmt(const char*);
     void record_stmt(Object*);
     void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
@@ -298,7 +296,7 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    double* thvar_;
+    neuron::container::data_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;

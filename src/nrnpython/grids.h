@@ -51,16 +51,17 @@ typedef struct Flux_pair {
     int grid_index;  // Location in grid
 } Flux;
 
-typedef struct {
-    double* destination; /* memory loc to transfer concentration to */
-    long source;         /* index in grid for source */
-} Concentration_Pair;
+struct Concentration_Pair {
+    neuron::container::data_handle<double> destination; /* memory loc to transfer concentration to
+                                                         */
+    long source;                                        /* index in grid for source */
+};
 
-typedef struct {
-    long destination; /* index in grid */
-    double* source;   /* memory loc of e.g. ica */
+struct Current_Triple {
+    long destination;                              /* index in grid */
+    neuron::container::data_handle<double> source; /* memory loc of e.g. ica */
     double scale_factor;
-} Current_Triple;
+};
 
 typedef void (*ReactionRate)(double**,
                              double**,
@@ -146,10 +147,9 @@ class Grid_node {
 
     int64_t* ics_surface_nodes_per_seg;
     int64_t* ics_surface_nodes_per_seg_start_indices;
-    double** ics_concentration_seg_ptrs;
+    std::vector<neuron::container::data_handle<double>> ics_concentration_seg_handles;
     double** ics_current_seg_ptrs;
     double* ics_scale_factors;
-    int ics_num_segs;
 
     int insert(int grid_list_index);
     int node_flux_count;
@@ -158,7 +158,7 @@ class Grid_node {
     PyObject** node_flux_src;
 
 
-    virtual ~Grid_node(){};
+    virtual ~Grid_node() {}
     virtual void set_diffusion(double*, int) = 0;
     virtual void set_num_threads(const int n) = 0;
     virtual void do_grid_currents(double*, double, int) = 0;

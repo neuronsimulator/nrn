@@ -11,10 +11,11 @@ from pkg_resources import working_set
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
+from find_libpython import find_libpython
 
 
 def _customize_compiler(compiler):
-    """Do platform-sepcific customizations of compilers on unix platforms."""
+    """Do platform-specific customizations of compilers on unix platforms."""
     if compiler.compiler_type == "unix":
         (cc, cxx, cflags) = get_config_vars("CC", "CXX", "CFLAGS")
         if "CC" in os.environ:
@@ -66,13 +67,7 @@ def _config_exe(exe_name):
     package_name = "neuron"
 
     # determine package to find the install location
-    if "neuron-gpu-nightly" in working_set.by_key:
-        print("INFO : Using neuron-gpu-nightly Package (Alpha Developer Version)")
-        package_name = "neuron-gpu-nightly"
-    elif "neuron-gpu" in working_set.by_key:
-        print("INFO : Using neuron-gpu Package (Alpha Version)")
-        package_name = "neuron-gpu"
-    elif "neuron-nightly" in working_set.by_key:
+    if "neuron-nightly" in working_set.by_key:
         print("INFO : Using neuron-nightly Package (Developer Version)")
         package_name = "neuron-nightly"
     elif "neuron" in working_set.by_key:
@@ -90,6 +85,11 @@ def _config_exe(exe_name):
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
+
+    if "NMODLHOME" not in os.environ:
+        os.environ["NMODLHOME"] = NRN_PREFIX
+    if "NMODL_PYLIB" not in os.environ:
+        os.environ["NMODL_PYLIB"] = find_libpython()
 
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)

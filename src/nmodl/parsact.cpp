@@ -228,9 +228,9 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt");
+                        vectorize_substitute(q->next, "(_threadargs_");
                     } else if (b == 1) { /* real args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt,");
+                        vectorize_substitute(q->next, "(_threadargscomma_");
                     } /* else no _p.._nt already there */
                 }
             }
@@ -243,7 +243,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
     Item *q3, *q;
 
     if (q1->next == q2) {
-        vectorize_substitute(insertstr(q2, ""), "_threadargsproto_");
+        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_");
         return;
     }
     for (q = q1->next; q != q2; q = q->next) {
@@ -251,7 +251,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
             insertstr(q, "double");
         }
     }
-    vectorize_substitute(insertstr(q1->next, ""), "_threadargsprotocomma_");
+    vectorize_substitute(insertstr(q1->next, ""), "_internalthreadargsprotocomma_");
 }
 
 void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
@@ -373,17 +373,23 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, NrnThread*);", STR(q));
+            Sprintf(buf, "\nstatic void %s(_internalthreadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
         lappendstr(p,
-                   "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, "
-                   "NrnThread* _nt, int _type) {\n");
+                   "\n"
+                   "static void _check_table_thread(_threadargsprotocomma_ int _type, "
+                   "_nrn_model_sorted_token const& _sorted_token) {\n"
+                   "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml, _type};\n"
+                   "  {\n"
+                   "    auto* const _ml = &_lmr;\n");
         ITERATE(q, check_table_thread_list) {
-            Sprintf(buf, "  %s(_p, _ppvar, _thread, _nt);\n", STR(q));
+            Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p, "}\n");
+        lappendstr(p,
+                   "  }\n"
+                   "}\n");
         return 1;
     }
     return 0;
@@ -415,7 +421,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(check_table_statements, buf);
-    Sprintf(buf, "_check_%s(_p, _ppvar, _thread, _nt);\n", fname);
+    Sprintf(buf, "_check_%s(_threadargs_);\n", fname);
     vectorize_substitute(q, buf);
     /*checking*/
     if (type == FUNCTION1) {
@@ -448,13 +454,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         fsym->subtype |= FUNCT;
         Sprintf(buf, "static double _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf, "static double _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "static double _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     } else {
         fsym->subtype |= PROCED;
         Sprintf(buf, "static void _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-        Sprintf(buf, "static void _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "static void _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
     }
     fsym->usage |= FUNCT;
@@ -474,9 +480,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n",
-            fname);
+    Sprintf(buf, "static void _check_%s(_internalthreadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -523,13 +527,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             s = SYM(q);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
             Lappendstr(procfunc, buf);
-            Sprintf(buf, "   _t_%s[_i] = _f_%s(_p, _ppvar, _thread, _nt, _x);\n", s->name, fname);
+            Sprintf(buf, "   _t_%s[_i] = _f_%s(_threadargscomma_ _x);\n", s->name, fname);
             vectorize_substitute(procfunc->prev, buf);
         }
     } else {
         Sprintf(buf, "   _f_%s(_x);\n", fname);
         Lappendstr(procfunc, buf);
-        Sprintf(buf, "   _f_%s(_p, _ppvar, _thread, _nt, _x);\n", fname);
+        Sprintf(buf, "   _f_%s(_threadargscomma_ _x);\n", fname);
         vectorize_substitute(procfunc->prev, buf);
         ITERATE(q, table) {
             s = SYM(q);
@@ -560,31 +564,25 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /*declaration*/
     if (type == FUNCTION1) {
 #define GLOBFUNC 1
-#if !GLOBFUNC
-        Lappendstr(procfunc, "static int");
-#endif
         Lappendstr(procfunc, "double");
     } else {
         Lappendstr(procfunc, "static int");
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
-            fname,
-            arg->name);
+    Sprintf(buf, "%s(_internalthreadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf, "\n#if 0\n_check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", fname);
+    Sprintf(buf, "\n#if 0\n_check_%s(_threadargs_);\n#endif\n", fname);
     vectorize_substitute(q, buf);
     if (type == FUNCTION1) {
         Lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "_n_%s(_p, _ppvar, _thread, _nt, %s);\n", fname, arg->name);
+    Sprintf(buf, "_n_%s(_threadargscomma_ %s);\n", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return 0;\n");
@@ -599,10 +597,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
-            fname,
-            arg->name);
+    Sprintf(buf, "_n_%s(_internalthreadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
@@ -614,7 +609,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_f_%s(%s);", fname, arg->name);
     Lappendstr(procfunc, buf);
-    Sprintf(buf, "_f_%s(_p, _ppvar, _thread, _nt, %s);", fname, arg->name);
+    Sprintf(buf, "_f_%s(_threadargscomma_ %s);", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return;");
@@ -624,7 +619,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /* table lookup */
     Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n", fname, arg->name, fname);
     Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "if (isnan(_xi)) {\n");
+    Lappendstr(procfunc, "if (std::isnan(_xi)) {\n");
     if (type == FUNCTION1) {
         Lappendstr(procfunc, " return _xi; }\n");
     } else {
@@ -751,28 +746,30 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     }
     Lappendstr(procfunc, buf);
     vectorize_substitute(lappendstr(procfunc, ""),
-                         "\
-  double* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\
-");
+                         "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
         vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
-                             "\
-  _p = ((Point_process*)_vptr)->_prop->param;\n\
-  _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
-  _thread = _extcall_thread;\n\
-  _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
-");
+                             "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
+                             "  auto* const _p = _pnt->_prop;\n"
+                             "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
+                             "  auto* const _ml = &_ml_real;\n"
+                             "  size_t const _iml{};\n"
+                             "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
+                             "  _thread = _extcall_thread.data();\n"
+                             "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else {
-        vectorize_substitute(lappendstr(procfunc, ""),
-                             "\
-  if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }\n\
-  _thread = _extcall_thread;\n\
-  _nt = nrn_threads;\n\
-");
+        vectorize_substitute(
+            lappendstr(procfunc, ""),
+            "_nrn_mechanism_cache_instance _ml_real{_extcall_prop};\n"
+            "auto* const _ml = &_ml_real;\n"
+            "size_t const _iml{};\n"
+            "_ppvar = _extcall_prop ? _nrn_mechanism_access_dparam(_extcall_prop) : nullptr;\n"
+            "_thread = _extcall_thread.data();\n"
+            "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
-        Sprintf(buf, "\n#if 1\n _check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", n->name);
+        Sprintf(buf, "\n#if 1\n _check_%s(_threadargs_);\n#endif\n", n->name);
         vectorize_substitute(qp, buf);
     }
     if (n->subtype & FUNCT) {
@@ -795,9 +792,9 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     } else
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
     if (i) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
+        vectorize_substitute(qp, "_threadargscomma_");
     } else if (!hack) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
+        vectorize_substitute(qp, "_threadargs_");
     }
 }
 
@@ -814,6 +811,13 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
     Item* q;
     if (SYM(qname)->subtype & EXTDEF) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
+            // TODO: this relies on undefined behaviour in C++. &*foo is not
+            // guaranteed to be equivalent to foo if foo is null. See
+            // https://stackoverflow.com/questions/51691273/is-null-well-defined-in-c,
+            // https://en.cppreference.com/w/cpp/language/operator_member_access#Built-in_address-of_operator
+            // also confirms that the special case here in C does not apply to
+            // C++. All of that said, neither GCC nor Clang even produces a
+            // warning and it seems to work.
             Insertstr(qpar1->next, "&");
         } else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
             if (blocktype == NETRECEIVE) {
@@ -877,20 +881,11 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
         }
         return;
     }
-#if 1
     if (qexpr) {
         q = insertstr(qpar1->next, "_threadargscomma_");
     } else {
         q = insertstr(qpar1->next, "_threadargs_");
     }
-#else
-    q = insertstr(qpar1->next, "");
-    if (qexpr) {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt,");
-    } else {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt");
-    }
-#endif
 }
 
 
@@ -945,10 +940,17 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     }
     Sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
     lappendstr(procfunc, buf);
-    vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");
+    vectorize_substitute(lappendstr(procfunc, ""),
+                         "  Datum* _ppvar; Datum* _thread{};\n"
+                         "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
     Sprintf(buf,
-            "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = "
-            "NODEV(_pnt->node);\n	return ");
+            "  auto* const _prop = _pnt->_prop;\n"
+            "  _nrn_mechanism_cache_instance _ml_real{_prop};\n"
+            "  auto* const _ml = &_ml_real;\n"
+            "  size_t _iml{};\n"
+            "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n"
+            "  v = NODEV(_pnt->node);\n"
+            "	return ");
     lappendstr(procfunc, buf);
     movelist(par1, par2, procfunc);
     movelist(dir->next, par2, procfunc);

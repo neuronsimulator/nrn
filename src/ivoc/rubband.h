@@ -123,7 +123,7 @@ inline Coord Rubberband::y_begin() const {
  * Used the FieldEditorAction as a template
  */
 
-#if defined(__STDC__) || defined(__ANSI_CPP__) || defined(WIN32) || MAC
+#if defined(__STDC__) || defined(__ANSI_CPP__) || defined(WIN32)
 #define __RubberCallback(T)       T##_RubberCallback
 #define RubberCallback(T)         __RubberCallback(T)
 #define __RubberMemberFunction(T) T##_RubberMemberFunction

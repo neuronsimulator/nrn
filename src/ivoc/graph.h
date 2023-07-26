@@ -1,6 +1,7 @@
 #ifndef graph_h
 #define graph_h
 
+#include "neuron/container/data_handle.hpp"
 #include <OS/list.h>
 #include <OS/string.h>
 #include <InterViews/observe.h>
@@ -71,7 +72,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
                        const Brush*,
                        bool usepointer,
                        int fixtype = 1,
-                       double* p = NULL,
+                       neuron::container::data_handle<double> p = {},
                        const char* lab = NULL,
                        Object* obj = NULL);
     void x_expr(const char*, bool usepointer);
@@ -145,7 +146,6 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
     void name(char*);
     void change_label_color(GLabel*);
     void change_line_color(GPolyLine*);
-    void update_ptrs();
 
     virtual void save_phase1(std::ostream&);
     virtual void save_phase2(std::ostream&);
@@ -190,7 +190,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
     bool vector_copy_;
 
     Symbol* x_expr_;
-    double* x_pval_;
+    neuron::container::data_handle<double> x_pval_;
 
     GraphVector* rvp_;
     static std::ostream* ascii_;
@@ -232,26 +232,26 @@ class DataVec: public Resource {  // info for single dimension
 
 class DataPointers: public Resource {  // vector of pointers
   public:
-    DataPointers(int size = 50);
-    virtual ~DataPointers();
-    void add(double*);
+    virtual ~DataPointers() {}
+    void add(neuron::container::data_handle<double> dh) {
+        px_.push_back(std::move(dh));
+    }
     void erase() {
-        count_ = 0;
+        px_.clear();
     }
-    int size() {
-        return size_;
+    [[nodiscard]] std::size_t size() {
+        return px_.capacity();
     }
-    int count() {
-        return count_;
+    [[nodiscard]] std::size_t count() {
+        return px_.size();
     }
-    double* p(int i) {
+    [[nodiscard]] neuron::container::data_handle<double> p(std::size_t i) {
+        assert(i < px_.size());
         return px_[i];
     }
-    void update_ptrs();
 
   private:
-    int count_, size_;
-    double** px_;
+    std::vector<neuron::container::data_handle<double>> px_;
 };
 
 class GPolyLine: public Glyph {
@@ -332,7 +332,7 @@ class GraphLine: public GPolyLine, public Observer {  // An oc variable to plot
               const Color* = NULL,
               const Brush* = NULL,
               bool usepointer = 0,
-              double* pd = NULL,
+              neuron::container::data_handle<double> pd = {},
               Object* obj = NULL);
     virtual ~GraphLine();
 
@@ -364,10 +364,9 @@ class GraphLine: public GPolyLine, public Observer {  // An oc variable to plot
     void simgraph_activate(bool);
     void simgraph_init();
     void simgraph_continuous(double);
-    void update_ptrs();
 
     Symbol* expr_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* obj_;
 
   private:
@@ -384,7 +383,7 @@ class GraphVector: public GPolyLine, public Observer {  // fixed x and vector of
     virtual ~GraphVector();
     virtual void request(Requisition&) const;
     void begin();
-    void add(float, double*);
+    void add(float, neuron::container::data_handle<double>);
     virtual void save(std::ostream&);
     const char* name() const;
     bool trivial() const;
@@ -394,7 +393,6 @@ class GraphVector: public GPolyLine, public Observer {  // fixed x and vector of
     DataPointers* py_data() {
         return dp_;
     }
-    void update_ptrs();
     void record_install();
     void record_uninstall();
 

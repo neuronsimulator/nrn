@@ -36,6 +36,7 @@ def run(cmd, input):
 # HOC: select demo, run, and print all lines on all Graphs
 input = r"""
 proc dodemo() {
+  usetable_hh = 0 // Compatible with -DNRN_ENABLE_CORENEURON=ON
   demo(%d)
   run()
   printf("\nZZZbegin\n")
@@ -126,6 +127,48 @@ for i in range(1, 8):
     # we should have munched everything
     assert len(data) == 0
     key = "demo%d" % i
-    chk(key, rich_data)
+
+    if os.uname().sysname == "Darwin":
+        # Sometimes a Graph y value str differs in last digit by 1
+        # Perhaps a locale issue? But float32->float64->str can differ
+        # between machines. For this reason, if a number str is not
+        # identical, demand the relative difference < 1e-5 (float32 accuracy)
+        err = 0
+        try:
+            err = 0
+            chk(key, rich_data)
+        except AssertionError:
+            err = 1
+        if err:
+            from math import isclose
+
+            reltol = 1e-5
+            std = chk.d[key]
+
+            for ig, gstd in enumerate(std):
+                gname = gstd[0]
+                for iline, line in enumerate(gstd[1]):
+                    for coord in line:
+                        vstd = [float(a) for a in line[coord]]
+                        vd = [float(a) for a in rich_data[ig][1][iline][coord]]
+                        if vstd != vd:
+                            for i, sval in enumerate(vstd):
+                                if not isclose(sval, vd[i], rel_tol=reltol):
+                                    print(
+                                        gname,
+                                        iline,
+                                        coord,
+                                        i,
+                                        ": %g %g" % (sval, vd[i]),
+                                    )
+                                    assert isclose(sval, vd[i], rel_tol=reltol)
+                            print(
+                                gname,
+                                iline,
+                                coord,
+                                " float32 not identical but within rel_tol=%g" % reltol,
+                            )
+    else:
+        chk(key, rich_data)
 
 chk.save()

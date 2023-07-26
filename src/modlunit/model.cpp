@@ -49,9 +49,6 @@ extern const char* RCS_version;
 extern const char* RCS_date;
 static void openfiles(int, char**);
 static void debug_item(Item* q, int indent, FILE* file);
-#if MAC
-#include <sioux.h>
-#endif
 
 int main(int argc, char* argv[]) {
     /*
@@ -59,9 +56,6 @@ int main(int argc, char* argv[]) {
      * files
      * We first look for a .mrg file and then a .mod file
      */
-#if MAC
-    SIOUXSettings.asktosaveonclose = false;
-#endif
     Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
 
 
@@ -69,9 +63,6 @@ int main(int argc, char* argv[]) {
              * lists, etc. */
     unit_init();
     nrn_unit_init();
-#if MAC
-    mac_cmdline(&argc, &argv);
-#endif
     openfiles(argc, argv); /* .mrg else .mod,  .var, .c */
     Fprintf(stderr, "Checking units of %s\n", finname);
 
@@ -99,10 +90,6 @@ int main(int argc, char* argv[]) {
     /* check unit consistency */
     parsepass(3);
     yyparse();
-#if MAC
-    printf("Units consistent in %s\n", finname);
-    SIOUXSettings.autocloseonquit = true;
-#endif
 #if 0
 	parout();		/* print .var file.
 				 * Also #defines which used to be in defs.h
@@ -263,7 +250,7 @@ static void debug_item(Item* q, int indent, FILE* file) {
  * more changes for port to mac of modlunit
  *
  * Revision 1.3  1997/11/24  16:19:12  hines
- * modlunit port to MAC (not complete)
+ * modlunit port to mac (not complete)
  *
  * Revision 1.2  1997/10/20  14:58:07  hines
  * modlunit file.mod accepted (ie suffix allowed)

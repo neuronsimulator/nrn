@@ -25,9 +25,6 @@
 
 extern int hoc_return_type_code;
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 #if HAVE_IV
 
 class NrnFixedLayout: public Layout {
@@ -777,13 +774,8 @@ void OcBox::save(std::ostream& o) {
 #endif
                 window()->save_left(),
                 window()->save_bottom(),
-#if MAC
-                window()->canvas()->width(),
-                window()->canvas()->height());
-#else
                 window()->width(),
                 window()->height());
-#endif
         o << buf << std::endl;
     } else {
         o << "ocbox_.map()\n}" << std::endl;

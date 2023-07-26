@@ -23,14 +23,14 @@ jobs:
 
     name: Documentation
 
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
 
       - name: Install apt packages
         run: |
           sudo apt-get update --fix-missing
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin
           sudo apt-get install ffmpeg doxygen pandoc
         shell: bash
 

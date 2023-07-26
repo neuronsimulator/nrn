@@ -25,7 +25,7 @@ CORENRN_BIN_DIR := $(ROOT)/bin
 CORENRN_LIB_DIR := $(ROOT)/lib
 CORENRN_INC_DIR := $(ROOT)/include
 CORENRN_SHARE_CORENRN_DIR:= $(ROOT)/share/coreneuron
-CORENRN_SHARE_MOD2CPP_DIR := $(ROOT)/share/mod2c
+CORENRN_SHARE_NMODL_DIR := $(ROOT)/share/nmodl
 
 # name of the CoreNEURON binary
 SPECIAL_EXE  = $(OUTPUT_DIR)/special-core
@@ -43,7 +43,7 @@ LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
 # coreneuron/utils/randoms goes first because it needs to override the NEURON
 # directory in INCFLAGS
 INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR)
-ifeq (@CORENRN_ENABLE_MPI_DYNAMIC@, OFF)
+ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
   INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
 endif
 
@@ -52,21 +52,11 @@ ifeq ($(origin CXX), default)
     CXX = @CMAKE_CXX_COMPILER@
 endif
 
-ifeq (@CORENRN_ENABLE_GPU@, ON)
-  ifneq ($(shell $(CXX) --version | grep -o nvc++), nvc++)
-    $(error GPU wheels are only compatible with the NVIDIA C++ compiler nvc++, but CXX=$(CXX) and --version gives $(shell $(CXX) --version))
-  endif
-  # nvc++ -dumpversion is simpler, but only available from 22.2
-  ifeq ($(findstring nvc++ @CORENRN_NVHPC_MAJOR_MINOR_VERSION@, $(shell $(CXX) --version)),)
-    $(error GPU wheels are currently not compatible across NVIDIA HPC SDK versions. You have $(shell $(CXX) -V | grep nvc++) but this wheel was built with @CORENRN_NVHPC_MAJOR_MINOR_VERSION@.)
-  endif
-endif
-
 # In case of wheel, python and perl exe paths are from the build machine.
 # First prefer env variables set by neuron's nrnivmodl wrapper then check
 # binary used during build. If they don't exist then simply use python and
 # perl as the name of binaries.
-CORENRN_PYTHONEXE ?= @PYTHON_EXECUTABLE@
+CORENRN_PYTHONEXE ?= @NRN_DEFAULT_PYTHON_EXECUTABLE@
 CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
 ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
   CORENRN_PYTHONEXE=python
@@ -81,15 +71,12 @@ CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
 # env variables required for mod2c or nmodl
-MOD2CPP_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2CPP_DIR)/nrnunits.lib
+NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_NMODL_DIR)/nrnunits.lib
 
-# nmodl options
-ifeq (@CORENRN_ENABLE_NMODL@, ON)
-    ifeq (@CORENRN_ENABLE_GPU@, ON)
-        nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
-    else
-        nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
-    endif
+ifeq (@CORENRN_ENABLE_GPU@, ON)
+    nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+else
+    nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
 endif
 
 # name of the mechanism library with suffix if provided
@@ -110,12 +97,12 @@ else
     corenrnmech_lib_target = coremech_lib_shared
 endif
 
-# Binary of MOD2C/NMODL depending on CMake option activated
+# Binary of NMODL depending on CMake option activated
 ifeq (@nmodl_FOUND@, TRUE)
-    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), @CORENRN_MOD2CPP_BINARY@)
-    INCLUDES += -I@CORENRN_MOD2CPP_INCLUDE@
+    NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), @CORENRN_NMODL_BINARY@)
+    INCLUDES += -I@CORENRN_NMODL_INCLUDE@
 else
-    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
+    NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
 endif
 
 # MOD files with full path, without path and names without .mod extension
@@ -145,15 +132,13 @@ ALL_OBJS = $(MOD_FUNC_OBJ) $(mod_cpp_objs)
 C_RESET := \033[0m
 C_GREEN := \033[32m
 
-# Default nmodl flags. Override if MOD2CPP_RUNTIME_FLAGS is not empty
-ifeq (@CORENRN_ENABLE_NMODL@, ON)
-    MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_c))
-endif
+# Default nmodl flags. Override if NMODL_RUNTIME_FLAGS is not empty
+NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),$(nmodl_arguments_c))
 
 $(info Default NMODL flags: @nmodl_arguments_c@)
 
-ifneq ($(MOD2CPP_RUNTIME_FLAGS),)
-    $(warning Runtime nmodl flags (they replace the default ones): $(MOD2CPP_RUNTIME_FLAGS))
+ifneq ($(NMODL_RUNTIME_FLAGS),)
+    $(warning Runtime nmodl flags (they replace the default ones): $(NMODL_RUNTIME_FLAGS))
 endif
 
 # ======== MAIN BUILD RULES ============
@@ -200,7 +185,7 @@ $(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
 
 # translate MOD files to CPP using mod2c/NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_C)
+	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_C)
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
@@ -209,7 +194,7 @@ $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
 	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
 
 # symlink to cpp files provided by coreneuron
-$(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2CPP_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
+$(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_NMODL_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
 	ln -s $< $@
 
 # create directories needed

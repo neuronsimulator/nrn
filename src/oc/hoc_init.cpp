@@ -19,23 +19,11 @@ extern int numprocs(), myproc(), psync();
 #if 0
 extern int	hoc_co();
 #endif
-#if DOS || defined(WIN32)    /*|| defined(MAC)*/
+#if DOS || defined(WIN32)
 extern double erf(), erfc(); /* supplied by unix */
 #endif
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
-#endif
-
-#if MAC
-static double Fabs(double x) {
-    return (x > 0.) ? x : -x;
-}
-static double Erf(double x) {
-    return erf(x);
-}
-static double Erfc(double x) {
-    return erfc(x);
-}
 #endif
 
 static struct { /* Keywords */
@@ -116,15 +104,9 @@ static struct { /* Built-ins */
                 {"exp", hoc1_Exp}, /* checks argument */
                 {"sqrt", Sqrt},    /* checks argument */
                 {"int", integer},
-#if MAC
-                {"abs", Fabs},
-                {"erf", Erf},
-                {"erfc", Erfc},
-#else
                 {"abs", fabs},
                 {"erf", erf},
                 {"erfc", erfc},
-#endif
                 {0, 0}};
 static struct { /* Builtin functions with multiple or variable args */
     const char* name;
@@ -250,9 +232,7 @@ static struct { /* functions that return an object */
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
 double hoc_epsilon = 1.e-11;
-double hoc_ac_;         /*known to the interpreter to evaluate expressions with hoc_oc() */
-double* hoc_varpointer; /* executing hoc_pointer(&var) will put the address of
-            the variable in this location */
+double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
 
 double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;
@@ -355,23 +335,16 @@ void hoc_unix_mac_pc(void) {
 #if defined(DARWIN)
     hoc_pushx(4.);
 #else
-#if MAC
-    hoc_pushx(2.);
-#else
 #if defined(WIN32)
     hoc_pushx(3.);
 #else
     hoc_pushx(1.);
 #endif
 #endif
-#endif
 }
 void hoc_show_winio(void) {
     int b;
     b = (int) chkarg(1, 0., 1.);
-#if MAC
-    hoc_sioux_show(b);
-#endif
 #if defined(WIN32)
     hoc_winio_show(b);
 #endif
