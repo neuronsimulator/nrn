@@ -2284,6 +2284,16 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
  * is destroyed. This method can be called from multi-threaded regions.
  */
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
+    // Rather than a more complicated lower-level solution, just serialise all
+    // calls to this method. The more complicated lower-level solution would
+    // presumably involve a more fully-fledged std::shared_mutex-type model,
+    // where the soa containers can be locked by many readers (clients that do
+    // not do anything that invalidates pointers/caches) or a single writer
+    // (who *is* authorised to perform those operations), with a deadlock
+    // avoiding algorithm used to acquire those two types of lock for all the
+    // different soa containers at once.
+    static std::mutex s_mut{};
+    std::unique_lock _{s_mut};
     // Two scenarii:
     // - model is already sorted, in which case we just assemble the return
     //   value but don't mutate anything or do any real work
@@ -2292,7 +2302,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
     // In both cases, we want to start by acquiring tokens from all of the
     // data containers in the model. Once we have locked the whole model in
     // this way, we can trigger permuting the model (by loaning out the tokens
-    // one by one) so mark it as sorted.
+    // one by one) to mark it as sorted.
     auto& model = neuron::model();
     auto& node_data = model.node_data();
     // Get tokens for the whole model
