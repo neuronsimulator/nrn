@@ -559,18 +559,13 @@ struct storage_info_impl: utils::storage_info {
 }  // namespace detail
 
 /**
- * @brief Token whose lifetime manages frozen/sorted state of a container.
+ * @brief Token whose lifetime manages the frozen state of a container.
+ *
+ * Because this cannot be defaulted constructed or moved, it cannot reach an
+ * empty/invalid state.
  */
 template <typename Container>
 struct state_token {
-    /**
-     * @brief Deleted default constructor.
-     *
-     * Because state_token cannot be default constructed and cannot be moved,
-     * it cannot reach an empty/invalid state.
-     */
-    constexpr state_token() = delete;
-
     /**
      * @brief Copy a token, incrementing the frozen count of the underlying container.
      */
@@ -583,12 +578,9 @@ struct state_token {
     /**
      * @brief Copy assignment.
      *
-     * Implemented using copy-and-swap.
+     * Explicitly deleted to avoid an implicit version with the wrong semantics.
      */
-    constexpr state_token& operator=(state_token other) {
-        swap(other, *this);
-        return *this;
-    }
+    constexpr state_token& operator=(state_token const&) = delete;
 
     /**
      * @brief Destroy a token, decrementing the frozen count of the underlying container.
@@ -596,14 +588,6 @@ struct state_token {
     ~state_token() {
         assert(m_container);
         m_container->decrease_frozen_count();
-    }
-
-    /**
-     * @brief Swap two tokens.
-     */
-    friend constexpr void swap(state_token& lhs, state_token& rhs) noexcept {
-        using std::swap;
-        swap(lhs.m_container, rhs.m_container);
     }
 
   private:
