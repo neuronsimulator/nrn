@@ -1,6 +1,7 @@
 /*
-This file is processed by mkdynam.sh and so it is important that
-the prototypes be of the form "type foo(type arg, ...)"
+This file is processed by mkdynam.sh and so it is important that the prototypes
+be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
+to the type, e.g. `T*` is valid, but `T *` isn't.
 */
 
 #ifndef nrnmpidec_h
@@ -65,6 +66,9 @@ extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);
 
+/* from memory_usage.cpp */
+extern void nrnmpi_memory_stats(void* out, void* in);
+extern void nrnmpi_print_memory_stats(void* in);
 
 /* from mpispike.cpp */
 extern void nrnmpi_spike_initialize();
