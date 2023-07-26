@@ -505,6 +505,13 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
                 ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_version_macros.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME inputpresyn_py
+    REQUIRES coreneuron mpi ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/coreneuron/test_inputpresyn.py
+    PROCESSORS 2
+    COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_inputpresyn.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
@@ -529,7 +536,7 @@ if(NRN_ENABLE_PYTHON)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES coreneuron ${processor}
       SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
       ENVIRONMENT ${processor_env}
       COMMAND ${modtests_launch_hoc} test/coreneuron/test_direct.hoc)
@@ -658,15 +665,6 @@ if(NRN_ENABLE_PYTHON)
         PROCESSORS 2
         ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
         COMMAND ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
-      nrn_add_test(
-        GROUP coreneuron_modtests
-        NAME inputpresyn_py_${processor}
-        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-        PROCESSORS 2
-        COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-          special ${MPIEXEC_POSTFLAGS} -mpi -python
-          ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME test_subworlds_py_${processor}
