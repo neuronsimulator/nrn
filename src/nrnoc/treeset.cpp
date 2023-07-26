@@ -2165,10 +2165,13 @@ static void nrn_sort_mech_data(
         assert(trivial_counter <= mech_data_size);
         if (trivial_counter < mech_data_size) {
             // The `mech_data_permutation` vector is not a unit transformation
-            // Should this and other permuting operations return a "sorted token"?
             mech_data.apply_reverse_permutation(std::move(mech_data_permutation), sorted_token);
         }
     }
+    // Make sure that everything ends up flagged as sorted, even morphologies,
+    // mechanism types with no instances, and cases where the permutation
+    // vector calculated was found to be trivial.
+    mech_data.mark_as_sorted(sorted_token);
 }
 
 void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
@@ -2335,11 +2338,13 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // refers to a container with token reference count of exactly one has
         // an elevated "write lock" status.
         nrn_sort_node_data(node_token, cache);
+        assert(node_data.is_sorted());
         // TODO: maybe we should separate out cache population from sorting.
         std::size_t n{};  // eww
         model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
             // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
             nrn_sort_mech_data(mech_tokens[n], cache, mech_data);
+            assert(mech_data.is_sorted());
             ++n;
         });
         // Now that all the mechanism data is sorted we can fill in pdata caches

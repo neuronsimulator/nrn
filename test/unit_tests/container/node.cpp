@@ -384,13 +384,8 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         auto& reference_voltages = std::get<1>(nodes_and_voltages);
         auto& node_data = neuron::model().node_data();
         // Flag this original order as "sorted" so that the tests that it is no
-        // longer sorted after permutation are meaningful. Do this by applying
-        // a trivial permutation.
-        {
-            std::vector<std::size_t> perm_vector(nodes.size());
-            std::iota(perm_vector.begin(), perm_vector.end(), 0);
-            node_data.apply_reverse_permutation(std::move(perm_vector));
-        }
+        // longer sorted after permutation are meaningful.
+        node_data.mark_as_sorted();
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
@@ -501,11 +496,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 // freezes it that way. The data should be sorted until the
                 // token goes out of scope.
                 auto frozen_token = node_data.issue_frozen_token();
-                {
-                    std::vector<std::size_t> perm_vector(nodes.size());
-                    std::iota(perm_vector.begin(), perm_vector.end(), 0);
-                    node_data.apply_reverse_permutation(std::move(perm_vector), frozen_token);
-                }
+                node_data.mark_as_sorted(frozen_token);
                 REQUIRE(node_data.is_sorted());
                 THEN("New nodes cannot be created") {
                     // Underlying node data is read-only, cannot allocate new Nodes.

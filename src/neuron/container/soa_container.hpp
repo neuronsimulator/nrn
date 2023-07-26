@@ -857,6 +857,34 @@ struct soa {
     }
 
     /**
+     * @brief Tell the container it is sorted.
+     * @param write_token Non-const token demonstrating the caller is the only
+     *                    token owner.
+     *
+     * The meaning of being sorted is externally defined, so we should give
+     * external code the opportunity to say that the current order is OK. This
+     * probably only makes sense if the external code simply doesn't care about
+     * the ordering at all for some reason. This avoids having to construct a
+     * trivial permutation vector to achieve the same thing.
+     */
+    void mark_as_sorted(frozen_token_type& write_token) {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
+        if (m_frozen_count != 1) {
+            throw_error("mark_as_sorted() given a token that was not the only valid one");
+        }
+        m_sorted = true;
+    }
+
+    /**
+     * @brief Tell the container it is sorted.
+     */
+    void mark_as_sorted() {
+        auto write_lock = issue_frozen_token();
+        mark_as_sorted(write_lock);
+    }
+
+    /**
      * @brief Tell the container it is no longer sorted.
      *
      * The meaning of being sorted is externally defined, and it is possible
@@ -925,8 +953,8 @@ struct soa {
         }
         // Check that the given vector is a valid permutation of length size().
         std::size_t const my_size{size()};
-        auto const permutation_is_trivial = detail::check_permutation_vector(permutation, my_size);
-        if (!permutation_is_trivial) {
+        bool const is_trivial{detail::check_permutation_vector(permutation, my_size)};
+        if (!is_trivial) {
             // Now we apply the reverse permutation in `permutation` to all of the columns in the
             // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
             for (std::size_t i = 0; i < my_size; ++i) {

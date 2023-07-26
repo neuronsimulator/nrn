@@ -55,7 +55,7 @@ string(
   JOIN " "
   regex "neuron::container::owning_identifier<neuron::container::Node::storage> destructor could"
         "not delete from the underlying storage:"
-        "neuron::container::Node::storage\\[frozen_count=1,sorted=true\\]: erase\\(\\) called on a"
+        "neuron::container::Node::storage\\[frozen_count=1,sorted=false\\]: erase\\(\\) called on a"
         "frozen structure \\[std::runtime_error\\]\\. This is not recoverable, aborting\\.")
 set_tests_properties(unit_tests::testneuron_soa_erase_calls_terminate
                      PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
