@@ -1,6 +1,7 @@
 #pragma once
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/mechanism_data.hpp"
+#include "neuron/container/memory_usage.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data_fwd.hpp"
 
@@ -195,4 +196,9 @@ extern Model model_data;
 inline Model& model() {
     return detail::model_data;
 }
+
+namespace container {
+neuron::container::ModelMemoryUsage memory_usage(const Model& model);
+}
+
 }  // namespace neuron

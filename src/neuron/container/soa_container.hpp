@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
@@ -198,6 +199,7 @@ enum struct may_cause_reallocation { Yes, No };
  *  vector.
  */
 extern std::vector<void*>* defer_delete_storage;
+VectorMemoryUsage compute_defer_delete_storage_size();
 
 /**
  * @brief Storage for safe deletion of soa<...> containers.
@@ -578,6 +580,37 @@ struct storage_info_impl: utils::storage_info {
     std::string m_container{}, m_field{};
     std::size_t m_size{};
 };
+
+class AccumulateMemoryUsage {
+  public:
+    void operator()(detail::index_column_tag const& indices,
+                    std::vector<detail::index_column_tag::type> const& vec,
+                    int field_index,
+                    int array_dim) const {
+        auto element_size = sizeof(detail::index_column_tag::type);
+
+        m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
+        m_usage.stable_identifiers.capacity = m_usage.stable_identifiers.size +
+                                              (vec.capacity() - vec.size()) * sizeof(vec[0]);
+    }
+
+    template <class Tag>
+    void operator()(Tag const& tag,
+                    std::vector<typename Tag::type> const& vec,
+                    int field_index,
+                    int array_dim) const {
+        m_usage.heavy_data += VectorMemoryUsage(vec);
+    }
+
+    StorageMemoryUsage usage() {
+        return m_usage;
+    }
+
+  private:
+    mutable StorageMemoryUsage m_usage;
+};
+
+
 }  // namespace detail
 
 /**
@@ -1462,6 +1495,13 @@ struct soa {
         (std::get<tag_index_v<TagsToChange>>(m_data).set_active(enabled, size), ...);
     }
 
+    StorageMemoryUsage memory_usage() const {
+        detail::AccumulateMemoryUsage accumulator;
+        for_all_vectors(accumulator);
+
+        return accumulator.usage();
+    }
+
   private:
     /**
      * @brief Throw an exception with a pretty prefix.
@@ -1529,4 +1569,11 @@ struct soa {
      */
     std::function<void()> m_unsorted_callback{};
 };
+
+
+template <class Storage, class... Tags>
+StorageMemoryUsage memory_usage(const soa<Storage, Tags...>& data) {
+    return data.memory_usage();
+}
+
 }  // namespace neuron::container

@@ -231,6 +231,7 @@ set(NRNIV_FILE_LIST
     linmod.cpp
     linmod1.cpp
     matrixmap.cpp
+    memory_usage.cpp
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp

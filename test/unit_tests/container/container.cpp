@@ -149,3 +149,143 @@ TEST_CASE("soa::get_num_variables", "[Neuron][data_structures]") {
     CHECK(data.get_num_variables<field::DOff>() == 1ul);
     CHECK(data.get_num_variables<field::DOn>() == 1ul);
 }
+
+TEST_CASE("Identifier defer delete ", "[Neuron][internal][data_structures]") {
+    storage data;
+
+    REQUIRE(detail::identifier_defer_delete_storage != nullptr);
+    auto usage_before = detail::compute_identifier_defer_delete_storage_size();
+    { owning_handle instance{data}; }
+    auto usage_after = detail::compute_identifier_defer_delete_storage_size();
+
+    CHECK(usage_after.size - usage_before.size > 0);
+    CHECK(usage_after.capacity > 0);
+    CHECK(usage_before.size <= usage_before.capacity);
+    CHECK(usage_after.size <= usage_after.capacity);
+}
+
+TEST_CASE("defer delete storage pointer", "[Neuron][internal][data_structures]") {
+    REQUIRE(detail::defer_delete_storage != nullptr);
+
+    auto usage_before = detail::compute_defer_delete_storage_size();
+    { storage data; }
+    auto usage_after = detail::compute_defer_delete_storage_size();
+
+    CHECK(usage_after.size - usage_before.size > 0);
+    CHECK(usage_after.capacity > 0);
+    CHECK(usage_before.size <= usage_before.capacity);
+    CHECK(usage_after.size <= usage_after.capacity);
+}
+
+template <class Tag, class Storage>
+std::size_t compute_row_size(const Storage& data) {
+    std::size_t local_size = 0ul;
+    auto tag = data.template get_tag<Tag>();
+    for (int field_index = 0; field_index < detail::get_num_variables(tag); ++field_index) {
+        local_size += data.template get_array_dims<Tag>()[field_index] * sizeof(typename Tag::type);
+    }
+
+    return local_size;
+}
+
+TEST_CASE("container memory usage", "[Neuron][internal][data_structures]") {
+    storage data;
+    data.set_field_status<field::DOn>(true);
+    data.set_field_status<field::DOff>(false);
+
+    std::size_t row_size = compute_row_size<field::A>(data) + compute_row_size<field::B>(data) +
+                           compute_row_size<field::C>(data) + compute_row_size<field::DOn>(data);
+
+    auto r1 = owning_handle{data};
+    auto r2 = owning_handle{data};
+    auto r3 = owning_handle{data};
+
+    auto n_rows = data.size();
+
+    auto usage = memory_usage(data);
+
+    CHECK(usage.heavy_data.size == row_size * n_rows);
+    CHECK(usage.heavy_data.size <= usage.heavy_data.capacity);
+
+    CHECK(usage.stable_identifiers.size % n_rows == 0);
+    CHECK(usage.stable_identifiers.size >= n_rows * sizeof(std::size_t*));
+    CHECK(usage.stable_identifiers.size < n_rows * 4 * sizeof(std::size_t*));
+    CHECK(usage.stable_identifiers.size <= usage.stable_identifiers.capacity);
+}
+
+TEST_CASE("model memory usage", "[Neuron][internal][data_structures]") {
+    auto& model = neuron::model();
+
+    auto& nodes = model.node_data();
+    auto node1 = neuron::container::Node::owning_handle{nodes};
+
+    auto& foo = model.add_mechanism(0,
+                                    "foo",
+                                    std::vector<neuron::container::Mechanism::Variable>{{"a", 1},
+                                                                                        {"b", 2},
+                                                                                        {"c", 1}});
+    auto foo1 = neuron::container::Mechanism::owning_handle{foo};
+    auto foo2 = neuron::container::Mechanism::owning_handle{foo};
+
+    auto& bar = model.add_mechanism(1,
+                                    "bar",
+                                    std::vector<neuron::container::Mechanism::Variable>{{"a", 1}});
+    auto bar1 = neuron::container::Mechanism::owning_handle{bar};
+    auto bar2 = neuron::container::Mechanism::owning_handle{bar};
+
+    auto usage = neuron::container::memory_usage(model);
+    CHECK(usage.nodes.heavy_data.size > 0);
+    CHECK(usage.nodes.heavy_data.size <= usage.nodes.heavy_data.capacity);
+    CHECK(usage.nodes.stable_identifiers.size > 0);
+    CHECK(usage.nodes.stable_identifiers.size <= usage.nodes.stable_identifiers.capacity);
+
+    CHECK(usage.mechanisms.heavy_data.size > 0);
+    CHECK(usage.mechanisms.heavy_data.size <= usage.mechanisms.heavy_data.capacity);
+    CHECK(usage.mechanisms.stable_identifiers.size > 0);
+    CHECK(usage.mechanisms.stable_identifiers.size <= usage.mechanisms.stable_identifiers.capacity);
+}
+
+TEST_CASE("cache::model memory_usage", "[Neuron][internal][data_structures]") {
+    auto& model = neuron::cache::model;
+
+    // We can't manipulate `cache::Model`, hence there nothing to check other
+    // than the fact that it compiles and runs without throwing.
+    auto usage = neuron::container::memory_usage(model);
+}
+
+TEST_CASE("format_memory", "[Neuron][internal]") {
+    size_t kb = 1e3;
+    size_t mb = 1e6;
+    size_t gb = 1e9;
+    size_t tb = 1e12;
+
+    CHECK(neuron::container::format_memory(0) == "     0   ");
+    CHECK(neuron::container::format_memory(1) == "     1   ");
+    CHECK(neuron::container::format_memory(999) == "   999   ");
+    CHECK(neuron::container::format_memory(kb) == "  1.00 kB");
+    CHECK(neuron::container::format_memory(999 * kb) == "999.00 kB");
+    CHECK(neuron::container::format_memory(mb) == "  1.00 MB");
+    CHECK(neuron::container::format_memory(gb) == "  1.00 GB");
+    CHECK(neuron::container::format_memory(tb) == "  1.00 TB");
+}
+
+
+TEST_CASE("memory usage report", "[Neuron][internal][data_structures]") {
+    size_t kb = 1e3;
+    size_t mb = 1e6;
+    size_t gb = 1e9;
+    size_t tb = 1e12;
+
+    auto model =
+        neuron::container::ModelMemoryUsage{neuron::container::StorageMemoryUsage{{0, 0}, {0, 0}},
+                                            neuron::container::StorageMemoryUsage{{1, 2}, {3, 4}}};
+    auto cache_model = neuron::container::cache::ModelMemoryUsage{{1, 2}, {999, 1023}};
+
+    auto stable_pointers = neuron::container::VectorMemoryUsage(12 * tb, 999 * tb);
+    auto stable_identifiers = neuron::container::VectorMemoryUsage(1 * mb, 99 * tb);
+
+    auto report = format_memory_usage(
+        MemoryUsage{model, cache_model, stable_pointers, stable_identifiers});
+
+    std::cout << report << "\n";
+}
