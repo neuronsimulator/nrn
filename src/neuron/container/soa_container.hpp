@@ -149,15 +149,23 @@ struct index_column_tag {
     using type = non_owning_identifier_without_container;
 };
 
-/** Check if the given range is a permutation of the first N integers.
+/**
+ * @brief Check if the given range is a permutation of the first N integers.
+ * @return true if the permutation is trivial, false otherwise.
+ *
+ * A trivial permutation is one where i == range[i] for all i. An empty range
+ * is classed as trivial.
  */
 template <typename Rng>
-void check_permutation_vector(Rng const& range, std::size_t size) {
+bool check_permutation_vector(Rng const& range, std::size_t size) {
     if (range.size() != size) {
         throw std::runtime_error("invalid permutation vector: wrong size");
     }
+    bool trivial{true};
     std::vector<bool> seen(size, false);
-    for (auto val: range) {
+    for (auto i = 0ul; i < size; ++i) {
+        auto const val = range[i];
+        trivial = trivial && (i == val);
         if (!(val >= 0 && val < size)) {
             throw std::runtime_error("invalid permutation vector: value out of range");
         }
@@ -167,6 +175,7 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
         }
         seen[val] = true;
     }
+    return trivial;
 }
 
 enum struct may_cause_reallocation { Yes, No };
@@ -554,46 +563,55 @@ struct storage_info_impl: utils::storage_info {
  */
 template <typename Container>
 struct state_token {
-    constexpr state_token() = default;
-    constexpr state_token(state_token&& other)
-        : m_container{std::exchange(other.m_container, nullptr)}
-        , m_already_sorted{other.m_already_sorted} {}
-    constexpr state_token(state_token const&) = delete;
-    constexpr state_token& operator=(state_token&& other) {
-        m_container = std::exchange(other.m_container, nullptr);
-        m_already_sorted = other.m_already_sorted;
+    /**
+     * @brief Deleted default constructor.
+     *
+     * Because state_token cannot be default constructed and cannot be moved,
+     * it cannot reach an empty/invalid state.
+     */
+    constexpr state_token() = delete;
+
+    /**
+     * @brief Copy a token, incrementing the frozen count of the underlying container.
+     */
+    constexpr state_token(state_token const& other)
+        : m_container{other.m_container} {
+        assert(m_container);
+        m_container->increase_frozen_count();
+    }
+
+    /**
+     * @brief Copy assignment.
+     *
+     * Implemented using copy-and-swap.
+     */
+    constexpr state_token& operator=(state_token other) {
+        swap(other, *this);
         return *this;
     }
-    constexpr state_token& operator=(state_token const&) = delete;
+
+    /**
+     * @brief Destroy a token, decrementing the frozen count of the underlying container.
+     */
     ~state_token() {
-        if (m_container) {
-            m_container->decrease_frozen_count();
-        }
-    }
-    /**
-     * @brief Did creating this token *cause* the token to be marked sorted?
-     */
-    [[nodiscard]] bool was_already_sorted() const {
         assert(m_container);
-        return m_already_sorted;
+        m_container->decrease_frozen_count();
     }
+
     /**
-     * @brief Is this token valid?
-     *
-     * Default-constructed and moved-from tokens are not valid.
+     * @brief Swap two tokens.
      */
-    [[nodiscard]] explicit operator bool() const {
-        return m_container;
+    friend constexpr void swap(state_token& lhs, state_token& rhs) noexcept {
+        using std::swap;
+        swap(lhs.m_container, rhs.m_container);
     }
 
   private:
     template <typename, typename...>
     friend struct soa;
-    constexpr state_token(Container& container, bool already_sorted)
-        : m_container{&container}
-        , m_already_sorted{already_sorted} {}
+    constexpr state_token(Container& container)
+        : m_container{&container} {}
     Container* m_container{};
-    bool m_already_sorted{false};
 };
 
 /**
@@ -765,6 +783,18 @@ struct soa {
     }
 
     /**
+     * @brief Record that a state_token was copied.
+     *
+     * This should only be called from the copy constructor of a state_token,
+     * so m_frozen_count should already be non-zero.
+     */
+    void increase_frozen_count() {
+        std::lock_guard _{m_mut};
+        assert(m_frozen_count);
+        ++m_frozen_count;
+    }
+
+    /**
      * @brief Flag that the storage is no longer frozen.
      *
      * This is called from the destructor of state_token.
@@ -777,28 +807,38 @@ struct soa {
 
   public:
     /**
-     * @brief Return type of get_sorted_token()
+     * @brief Return type of issue_frozen_token()
      */
-    using sorted_token_type = state_token<Storage>;
+    using frozen_token_type = state_token<Storage>;
 
     /**
-     * @brief Mark the container as sorted and return a token guaranteeing that.
+     * @brief Create a token guaranteeing the container is in "frozen" state.
+     *
+     * This does *not* modify the "sorted" flag on the container.
+     *
+     * The token type is copiable but not default constructible. There is no
+     * need to check if a given instance of the token type is "valid"; if a
+     * token is held then the container is guaranteed to be frozen.
+     *
+     * The tokens returned by this function are reference counted; the
+     * container will be frozen for as long as any token is alive.
+     *
+     * Methods such as apply_reverse_permutation() take a non-const reference
+     * to one of these tokens. This is because a non-const token to a container
+     * with a token reference count of exactly one has an elevated status: the
+     * holder can lend it out to methods such as apply_reverse_permutation() to
+     * authorize specific pointer-invaliding operations. This is useful for
+     * implementing methods such as nrn_ensure_model_data_are_sorted() in a
+     * thread-safe way.
      *
      * Is is user-defined precisely what "sorted" means, but the soa<...> class
      * makes some guarantees:
      * - if the container is frozen, no pointers to elements in the underlying
      *   storage will be invalidated -- attempts to do so will throw or abort.
      * - if the container is not frozen, it will remain flagged as sorted until
-     *   a potentially-pointer-invalidating operation (insertion, deletion,
-     *   permutation) occurs, or mark_as_unsorted() is called.
-     *
-     * The container will be frozen for the lifetime of the token returned from
-     * this function, and therefore also sorted for at least that time. This
-     * token has the semantics of a unique_ptr, i.e. it cannot be copied but
-     * can be moved, and destroying a moved-from token has no effect.
-     *
-     * The tokens returned by this function are reference counted; the
-     * container will be frozen for as long as any token is alive.
+     *   a potentially-pointer-invalidating operation (insertion, deletion)
+     *   occurs, or mark_as_unsorted() is called.
+     * To mark a container as "sorted", apply an explicit permutation to it.
      *
      * Note that "frozen" refers to the storage layout, not to the stored value,
      * meaning that values inside a frozen container can still be modified --
@@ -807,19 +847,13 @@ struct soa {
      * @todo A future extension could be to preserve the sorted flag until
      *       pointers are actually, not potentially, invalidated.
      */
-    [[nodiscard]] sorted_token_type get_sorted_token() {
+    [[nodiscard]] frozen_token_type issue_frozen_token() {
         // Lock access to m_frozen_count and m_sorted.
         std::lock_guard _{m_mut};
         // Increment the reference count, marking the container as frozen.
-        bool const was_already_frozen{++m_frozen_count > 1};
-        bool const was_already_sorted{m_sorted};
-        if (was_already_frozen) {
-            assert(m_sorted);
-        } else {
-            m_sorted = true;
-        }
+        ++m_frozen_count;
         // Return a token that calls decrease_frozen_count() at the end of its lifetime
-        return sorted_token_type{static_cast<Storage&>(*this), was_already_sorted};
+        return frozen_token_type{static_cast<Storage&>(*this)};
     }
 
     /**
@@ -850,7 +884,7 @@ struct soa {
     /**
      * @brief Query if the underlying vectors are still "sorted".
      *
-     * See the documentation of get_sorted_token() for an explanation of what
+     * See the documentation of issue_frozen_token() for an explanation of what
      * this means.
      */
     [[nodiscard]] bool is_sorted() const {
@@ -860,30 +894,27 @@ struct soa {
     /**
      * @brief Permute the SoA-format data using an arbitrary range of integers.
      * @param permutation The reverse permutation vector to apply.
-     * @return A token guaranteeing the sorted state of the container after the
-     *         permutation was applied.
+     * @return A token guaranteeing the frozen + sorted state of the container
+     *         after the permutation was applied.
      */
     template <typename Arg>
-    sorted_token_type apply_reverse_permutation(Arg&& permutation) {
-        return apply_reverse_permutation(std::forward<Arg>(permutation), get_sorted_token());
+    frozen_token_type apply_reverse_permutation(Arg&& permutation) {
+        auto token = issue_frozen_token();
+        apply_reverse_permutation(std::forward<Arg>(permutation), token);
+        return token;
     }
 
     /**
      * @brief Permute the SoA-format data using an arbitrary range of integers.
      * @param permutation The reverse permutation vector to apply.
-     * @param token A token demonstrating that the caller is the only party
-     *        that is forcing the container to be frozen, and that they are
-     *        transferring that status into this function.
-     * @return The same token that was passed in; apply_reverse_permutation
-     *         only needs to borrow ownership of the token.
+     * @param token A non-const token demonstrating that the caller is the only
+     *        party that is forcing the container to be frozen, and (non-const)
+     *        that they are authorised to transfer that status into this method
      */
     template <typename Range>
-    sorted_token_type apply_reverse_permutation(Range permutation, sorted_token_type sorted_token) {
+    void apply_reverse_permutation(Range permutation, frozen_token_type& sorted_token) {
         // Lock access to m_frozen_count and m_sorted.
         std::lock_guard _{m_mut};
-        if (!sorted_token) {
-            throw_error("apply_reverse_permutation() given an invalid token");
-        }
         // Applying a permutation in general invalidates indices, so it is
         // forbidden if the structure is frozen, and it leaves the structure
         // unsorted. We therefore require that the frozen count is 1, which
@@ -894,33 +925,40 @@ struct soa {
         }
         // Check that the given vector is a valid permutation of length size().
         std::size_t const my_size{size()};
-        detail::check_permutation_vector(permutation, my_size);
-        // Execute the callback if this permutation is causing us to transition
-        // from being sorted to being unsorted.
-        if (m_unsorted_callback && sorted_token.was_already_sorted()) {
-            m_unsorted_callback();
-        }
-        // Now we apply the reverse permutation in `permutation` to all of the columns in the
-        // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
-        for (std::size_t i = 0; i < my_size; ++i) {
-            while (i != permutation[i]) {
-                using ::std::swap;
-                auto const next = permutation[i];
-                for_all_vectors<detail::may_cause_reallocation::No>(
-                    [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
-                        // swap the i-th and next-th array_dim-sized sub-ranges of vec
-                        ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
-                                           ::std::next(vec.begin(), (i + 1) * array_dim),
-                                           ::std::next(vec.begin(), next * array_dim));
-                    });
-                swap(permutation[i], permutation[next]);
+        auto const permutation_is_trivial = detail::check_permutation_vector(permutation, my_size);
+        if (!permutation_is_trivial) {
+            // Now we apply the reverse permutation in `permutation` to all of the columns in the
+            // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
+            for (std::size_t i = 0; i < my_size; ++i) {
+                while (i != permutation[i]) {
+                    using ::std::swap;
+                    auto const next = permutation[i];
+                    for_all_vectors<detail::may_cause_reallocation::No>(
+                        [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
+                            // swap the i-th and next-th array_dim-sized sub-ranges of vec
+                            ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
+                                               ::std::next(vec.begin(), (i + 1) * array_dim),
+                                               ::std::next(vec.begin(), next * array_dim));
+                        });
+                    swap(permutation[i], permutation[next]);
+                }
+            }
+            // update the indices in the container
+            for (auto i = 0ul; i < my_size; ++i) {
+                m_indices[i].set_current_row(i);
+            }
+            // If the container was previously marked sorted, and we have just
+            // applied a non-trivial permutation to it, then we need to call the
+            // callback if it exists (to invalidate any caches based on the old
+            // sort order).
+            if (m_sorted && m_unsorted_callback) {
+                m_unsorted_callback();
             }
         }
-        // update the indices in the container
-        for (auto i = 0ul; i < my_size; ++i) {
-            m_indices[i].set_current_row(i);
-        }
-        return sorted_token;
+        // In any case, applying a permutation leaves the container in sorted
+        // state. The caller made an explicit choice about which element should
+        // live where, which is as much as we can hope for.
+        m_sorted = true;
     }
 
 
@@ -933,7 +971,7 @@ struct soa {
     void mark_as_unsorted_impl() {
         if (m_frozen_count) {
             // Currently you can only obtain a frozen container by calling
-            // get_sorted_token(), which explicitly guarantees that the
+            // issue_frozen_token(), which explicitly guarantees that the
             // container will remain sorted for the lifetime of the returned
             // token.
             throw_error("mark_as_unsorted() called on a frozen structure");
@@ -1318,7 +1356,7 @@ struct soa {
     mutable std::mutex m_mut{};
 
     /**
-     * @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
+     * @brief Flag for issue_frozen_token(), mark_as_unsorted() and is_sorted().
      */
     bool m_sorted{false};
 

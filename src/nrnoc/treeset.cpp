@@ -2044,8 +2044,8 @@ static void nrn_matrix_node_alloc(void) {
  *  This method ensures that the Mechanism data is ready for this compute phase.
  *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
  */
-static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
-    neuron::container::Mechanism::storage::sorted_token_type sorted_token,
+static void nrn_sort_mech_data(
+    neuron::container::Mechanism::storage::frozen_token_type& sorted_token,
     neuron::cache::Model& cache,
     neuron::container::Mechanism::storage& mech_data) {
     // Do the actual sorting here. For now the algorithm is just to ensure that
@@ -2166,11 +2166,9 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
         if (trivial_counter < mech_data_size) {
             // The `mech_data_permutation` vector is not a unit transformation
             // Should this and other permuting operations return a "sorted token"?
-            return mech_data.apply_reverse_permutation(std::move(mech_data_permutation),
-                                                       std::move(sorted_token));
+            mech_data.apply_reverse_permutation(std::move(mech_data_permutation), sorted_token);
         }
     }
-    return sorted_token;
 }
 
 void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
@@ -2220,14 +2218,9 @@ void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
  *  computations performed while time-stepping.
  *
  *  This method ensures that the Node data is ready for this compute phase.
- *
- *  @todo Is it worth "freezing" the data before any of the current_row() calls,
- *  and making it possible to "atomically" do (freeze, calculate permutation,
- *  apply-permutation-iff-the-frozen-count-was-1, return token)?
  */
-static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data(
-    neuron::container::Node::storage::sorted_token_type sorted_token,
-    neuron::cache::Model& cache) {
+static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_type& sorted_token,
+                               neuron::cache::Model& cache) {
     // Make sure the voltage storage follows the order encoded in _v_node.
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
@@ -2276,10 +2269,9 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
             throw std::runtime_error(oss.str());
         }
     }
-    // Apply the permutation and return a sorted token. The token passed as the
-    // first argument *must* be the only active token for the container.
-    return node_data.apply_reverse_permutation(std::move(node_data_permutation),
-                                               std::move(sorted_token));
+    // Apply the permutation, using `sorted_token` to authorise this operation
+    // despite the container being frozen.
+    node_data.apply_reverse_permutation(std::move(node_data_permutation), sorted_token);
 }
 
 /**
@@ -2295,35 +2287,33 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
     // - something is not already sorted, and by extension the cache is not
     //   valid.
     // In both cases, we want to start by acquiring tokens from all of the
-    // data containers in the model. Once we hold tokens for everythng, we know
-    // that the sorted-ness of the model will not change. In the second case,
-    // we will need to trigger the sorting of the model, so we will have to
-    // lend out our tokens to allow the data to be sorted.
+    // data containers in the model. Once we have locked the whole model in
+    // this way, we can trigger permuting the model (by loaning out the tokens
+    // one by one) so mark it as sorted.
     auto& model = neuron::model();
     auto& node_data = model.node_data();
-    // Get tokens for the whole model, and check if everything was already sorted.
-    auto node_token = node_data.get_sorted_token();
-    auto was_already_sorted = node_token.was_already_sorted();
+    // Get tokens for the whole model
+    auto node_token = node_data.issue_frozen_token();
+    auto already_sorted = node_data.is_sorted();
     // How big does an array have to be to be indexed by mechanism type?
     auto const mech_storage_size = model.mechanism_storage_size();
-    std::vector<neuron::container::Mechanism::storage::sorted_token_type> mech_tokens{};
+    std::vector<neuron::container::Mechanism::storage::frozen_token_type> mech_tokens{};
     mech_tokens.reserve(mech_storage_size);
-    model.apply_to_mechanisms([&mech_tokens, &was_already_sorted](auto& mech_data) {
-        mech_tokens.push_back(mech_data.get_sorted_token());
-        was_already_sorted = was_already_sorted && mech_tokens.back().was_already_sorted();
+    model.apply_to_mechanisms([&already_sorted, &mech_tokens](auto& mech_data) {
+        mech_tokens.push_back(mech_data.issue_frozen_token());
+        already_sorted = already_sorted && mech_data.is_sorted();
     });
-    // Now we know that the model is marked read-only and sorted, and
-    // `was_already_sorted` tells us if it was *already* sorted before we
-    // requested all of these tokens.
-    if (was_already_sorted) {
+    // Now the whole model is marked frozen/read-only, but it may or may not be
+    // marked sorted (if it is, the cache should be valid, otherwise it should
+    // not be).
+    if (already_sorted) {
         // If everything was already sorted, the cache should already be valid.
         assert(neuron::cache::model);
         // There isn't any more work to be done, really.
     } else {
-        // If we get this far, acquiring our tokens caused something to be
-        // marked sorted - i.e. not everything was already sorted. In that
-        // case, we expect that the cache was *not* valid, because whatever
-        // caused something to not be sorted would also have invalidated the
+        // Some part of the model data is not already marked sorted. In this
+        // case we expect that the cache is *not* valid, because whatever
+        // caused something to not be sorted should also have invalidated the
         // cache.
         assert(!neuron::cache::model);
         // Build a new cache (*not* in situ, so it doesn't get invalidated
@@ -2340,12 +2330,16 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // model data structures are already marked as frozen via the tokens
         // that we acquired above. The way around this is to transfer those
         // tokens back to the relevant containers, so they can check that the
-        // only active token is the one that has been provided back to them.
-        node_token = nrn_sort_node_data(std::move(node_token), cache);
+        // only active token is the one that has been provided back to them. In
+        // other words, any token is a "read lock" but a non-const token that
+        // refers to a container with token reference count of exactly one has
+        // an elevated "write lock" status.
+        nrn_sort_node_data(node_token, cache);
+        // TODO: maybe we should separate out cache population from sorting.
         std::size_t n{};  // eww
         model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
             // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
-            mech_tokens[n] = nrn_sort_mech_data(std::move(mech_tokens[n]), cache, mech_data);
+            nrn_sort_mech_data(mech_tokens[n], cache, mech_data);
             ++n;
         });
         // Now that all the mechanism data is sorted we can fill in pdata caches
@@ -2355,8 +2349,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         neuron::cache::model = std::move(cache);
     }
     // Move our tokens into the return value and be done with it.
-    neuron::model_sorted_token ret{*neuron::cache::model};
-    ret.node_data_token = std::move(node_token);
+    neuron::model_sorted_token ret{*neuron::cache::model, std::move(node_token)};
     ret.mech_data_tokens = std::move(mech_tokens);
     return ret;
 }

@@ -384,8 +384,13 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         auto& reference_voltages = std::get<1>(nodes_and_voltages);
         auto& node_data = neuron::model().node_data();
         // Flag this original order as "sorted" so that the tests that it is no
-        // longer sorted after permutation are meaningful
-        { auto token = node_data.get_sorted_token(); }
+        // longer sorted after permutation are meaningful. Do this by applying
+        // a trivial permutation.
+        {
+            std::vector<std::size_t> perm_vector(nodes.size());
+            std::iota(perm_vector.begin(), perm_vector.end(), 0);
+            node_data.apply_reverse_permutation(std::move(perm_vector));
+        }
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
@@ -495,7 +500,12 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 // Label the current order as sorted and acquire a token that
                 // freezes it that way. The data should be sorted until the
                 // token goes out of scope.
-                auto sorted_token = node_data.get_sorted_token();
+                auto frozen_token = node_data.issue_frozen_token();
+                {
+                    std::vector<std::size_t> perm_vector(nodes.size());
+                    std::iota(perm_vector.begin(), perm_vector.end(), 0);
+                    node_data.apply_reverse_permutation(std::move(perm_vector), frozen_token);
+                }
                 REQUIRE(node_data.is_sorted());
                 THEN("New nodes cannot be created") {
                     // Underlying node data is read-only, cannot allocate new Nodes.
@@ -517,8 +527,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 THEN(
                     "The storage *can* be permuted if the sorted token is transferred back to the "
                     "container") {
-                    sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector),
-                                                                       std::move(sorted_token));
+                    node_data.apply_reverse_permutation(std::move(perm_vector), frozen_token);
                 }
                 THEN("The storage cannot be permuted when a 2nd sorted token is used") {
                     // Checking one of the permuting operations should be enough
@@ -645,9 +654,9 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
 // [tests_that_abort] means we have a tag to run them with.
 TEST_CASE("Deleting a row from a frozen SoA container causes a fatal error",
           "[.][tests_that_abort]") {
-    auto& node_data = neuron::model().node_data();           // SoA data store
-    std::optional<::Node> node{std::in_place};               // take ownership of a row in node_data
-    REQUIRE(node_data.size() == 1);                          // quick sanity check
-    auto const sorted_token = node_data.get_sorted_token();  // mark node_data frozen
+    auto& node_data = neuron::model().node_data();  // SoA data store
+    std::optional<::Node> node{std::in_place};      // take ownership of a row in node_data
+    REQUIRE(node_data.size() == 1);                 // quick sanity check
+    auto const frozen_token = node_data.issue_frozen_token();  // mark node_data frozen
     node.reset();  // Node destructor will trigger a call to std::terminate.
 }

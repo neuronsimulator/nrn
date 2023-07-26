@@ -487,9 +487,8 @@ This is done using a token type:
 
     void whatever(my_soa_container& data) { // assume `data` was not already "frozen"
         owning_handle foo{data}; // adding an element is OK
-        // in reality you would probably apply a permutation here before marking data sorted
-        auto token = data.get_sorted_token(); // mark container "frozen" so it remains sorted
-        owning_handle disappointing_foo{data}; // this will throw
+        auto token = data.issue_frozen_token(); // mark container "frozen"
+        owning_handle disappointing_foo{data};  // this will throw
     } // `token`` is destroyed here; `data` ceases to be "frozen"
 
 The container maintains a count of how many tokens are controlling it and is "frozen" whenever that
