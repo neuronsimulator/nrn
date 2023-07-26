@@ -894,7 +894,7 @@ extern "C" void register_rate(int nspecies,
     } else {
         react->vptrs = NULL;
     }
-    react->state_idx = (int***) malloc(nseg * sizeof(double**));
+    react->state_idx = (int***) malloc(nseg * sizeof(int**));
     for (i = 0, idx = 0; i < nseg; i++) {
         react->state_idx[i] = (int**) malloc((nspecies + nparam) * sizeof(int*));
         for (j = 0; j < nspecies + nparam; j++) {

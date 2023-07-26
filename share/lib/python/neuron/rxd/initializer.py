@@ -22,7 +22,6 @@ def _do_init():
     with _init_lock:
         if not has_initialized and not is_initializing:
             from . import species, region, rxd
-
             if len(species._all_species) > 0:
                 is_initializing = True
                 # TODO: clean this up so not repetitive; can't do it super cleanly because of the multiple phases of species
@@ -56,7 +55,7 @@ def _do_init():
                     if obj is not None:
                         obj._do_init()
                 rxd._init()
-            has_initialized = True
+                has_initialized = True
             is_initializing = False
 
 
