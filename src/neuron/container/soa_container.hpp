@@ -668,6 +668,11 @@ struct soa {
 
     /**
      * @brief Get the size of the container.
+     *
+     * Note that this is not thread-safe if the container is not frozen, i.e.
+     * you should either hold a token showing the container is frozen, or you
+     * should ensure that no non-const operations on this container are being
+     * executed concurrently.
      */
     [[nodiscard]] std::size_t size() const {
         // Check our various std::vector members are still the same size as each
@@ -684,6 +689,11 @@ struct soa {
 
     /**
      * @brief Test if the container is empty.
+     *
+     * Note that this is not thread-safe if the container is not frozen, i.e.
+     * you should either hold a token showing the container is frozen, or you
+     * should ensure that no non-const operations on this container are being
+     * executed concurrently.
      */
     [[nodiscard]] bool empty() const {
         auto const result = m_indices.empty();
@@ -800,20 +810,25 @@ struct soa {
      *
      * This does *not* modify the "sorted" flag on the container.
      *
-     * The token type is copy constructible but not default constructible. There is no
-     * need to check if a given instance of the token type is "valid"; if a
-     * token is held then the container is guaranteed to be frozen.
+     * The token type is copy constructible but not default constructible.
+     * There is no need to check if a given instance of the token type is
+     * "valid"; if a token is held then the container is guaranteed to be
+     * frozen.
      *
      * The tokens returned by this function are reference counted; the
      * container will be frozen for as long as any token is alive.
      *
      * Methods such as apply_reverse_permutation() take a non-const reference
-     * to one of these tokens. This is because a non-const token to a container
-     * with a token reference count of exactly one has an elevated status: the
-     * holder can lend it out to methods such as apply_reverse_permutation() to
-     * authorize specific pointer-invaliding operations. This is useful for
-     * implementing methods such as nrn_ensure_model_data_are_sorted() in a
-     * thread-safe way.
+     * to one of these tokens. This is because a non-const token referring to a
+     * container with a token reference count of exactly one has an elevated
+     * status: the holder can lend it out to methods such as
+     * apply_reverse_permutation() to authorize specific pointer-invaliding
+     * operations. This is useful for implementing methods such as
+     * nrn_ensure_model_data_are_sorted() in a thread-safe way.
+     *
+     * This method can be called from multiple threads, but note that doing so
+     * can have surprising effects w.r.t. the elevated status mentioned in the
+     * previous paragraph.
      *
      * It is user-defined precisely what "sorted" means, but the soa<...> class
      * makes some guarantees:
@@ -861,20 +876,14 @@ struct soa {
     }
 
     /**
-     * @brief Tell the container it is sorted.
-     */
-    void mark_as_sorted() {
-        auto write_lock = issue_frozen_token();
-        mark_as_sorted(write_lock);
-    }
-
-    /**
      * @brief Tell the container it is no longer sorted.
      *
      * The meaning of being sorted is externally defined, and it is possible
      * that some external change to an input of the (external) algorithm
      * defining the sort order can mean that the data are no longer considered
      * sorted, even if nothing has actually changed inside this container.
+     *
+     * This method can only be called if the container is not frozen.
      */
     void mark_as_unsorted() {
         // Lock access to m_frozen_count and m_sorted.
@@ -888,6 +897,8 @@ struct soa {
      * This is invoked by mark_as_unsorted() and when a container operation
      * (insertion, permutation, deletion) causes the container to transition
      * from being sorted to being unsorted.
+     *
+     * This method is not thread-safe.
      */
     void set_unsorted_callback(std::function<void()> unsorted_callback) {
         m_unsorted_callback = std::move(unsorted_callback);
@@ -897,7 +908,9 @@ struct soa {
      * @brief Query if the underlying vectors are still "sorted".
      *
      * See the documentation of issue_frozen_token() for an explanation of what
-     * this means.
+     * this means. You most likely only want to call this method while holding
+     * a token guaranteeing that the container is frozen, and therefore that
+     * the sorted-status is fixed.
      */
     [[nodiscard]] bool is_sorted() const {
         return m_sorted;
@@ -908,6 +921,8 @@ struct soa {
      * @param permutation The reverse permutation vector to apply.
      * @return A token guaranteeing the frozen + sorted state of the container
      *         after the permutation was applied.
+     *
+     * This will fail if the container is frozen.
      */
     template <typename Arg>
     frozen_token_type apply_reverse_permutation(Arg&& permutation) {
@@ -1053,6 +1068,9 @@ struct soa {
   public:
     /**
      * @brief Get a non-owning identifier to the offset-th entry.
+     *
+     * This method should only be called if either: there is only one thread,
+     * or if a frozen token is held.
      */
     [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) const {
         return {const_cast<Storage*>(static_cast<Storage const*>(this)), m_indices[offset]};
@@ -1083,10 +1101,13 @@ struct soa {
     /**
      * @brief Get the offset-th element of the column named by Tag.
      *
-     * Because this is returning a single value, it is permitted even in
-     * read-only mode. The container being in read only mode means that
-     * operations that would invalidate iterators/pointers are forbidden, not
-     * that actual data values cannot change.
+     * Because this is returning a single value, it is permitted even when the
+     * container is frozen. The container being frozen means that operations
+     * that would invalidate iterators/pointers are forbidden, not that actual
+     * data values cannot change. Note that if the container is not frozen then
+     * care should be taken in a multi-threaded environment, as `offset` could
+     * be invalidated by operations performed by other threads (that would fail
+     * if the container were frozen).
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
@@ -1104,6 +1125,11 @@ struct soa {
 
     /**
      * @brief Get the offset-th element of the column named by Tag.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
@@ -1121,6 +1147,10 @@ struct soa {
 
     /**
      * @brief Get a handle to the given element of the column named by Tag.
+     *
+     * This is not intended to be called from multi-threaded code, and might
+     * suffer from race conditions if the status of optional fields was being
+     * modified concurrently.
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_handle(
@@ -1144,6 +1174,8 @@ struct soa {
 
     /**
      * @brief Get a handle to the given element of the field_index-th column named by Tag.
+     *
+     * This is not intended to be called from multi-threaded code.
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_field_instance_handle(
@@ -1167,6 +1199,14 @@ struct soa {
      *  - offset: index of a mechanism instance
      *  - field_index: index of a RANGE variable inside a mechanism
      *  - array_index: offset inside an array RANGE variable
+     *
+     * Because this is returning a single value, it is permitted even when the
+     * container is frozen. The container being frozen means that operations
+     * that would invalidate iterators/pointers are forbidden, not that actual
+     * data values cannot change. Note that if the container is not frozen then
+     * care should be taken in a multi-threaded environment, as `offset` could
+     * be invalidated by operations performed by other threads (that would fail
+     * if the container were frozen).
      */
     template <typename Tag>
     typename Tag::type& get_field_instance(std::size_t offset,
@@ -1180,6 +1220,11 @@ struct soa {
 
     /**
      * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
      */
     template <typename Tag>
     typename Tag::type const& get_field_instance(std::size_t offset,
@@ -1191,6 +1236,14 @@ struct soa {
             .data_ptrs()[field_index][offset * array_dim + array_index];
     }
 
+    /**
+     * @brief Get the offset-th identifier.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
+     */
     [[nodiscard]] non_owning_identifier_without_container get_identifier(std::size_t offset) const {
         return m_indices.at(offset);
     }
@@ -1200,6 +1253,9 @@ struct soa {
      * @todo Check const-correctness. Presumably a const version would return
      *       data_handle<T const>, which would hold a pointer-to-const for the
      *       container?
+     *
+     * This is not intended to be called from multi-threaded code if the
+     * container is not frozen.
      */
     [[nodiscard]] neuron::container::generic_data_handle find_data_handle(
         neuron::container::generic_data_handle input_handle) const {
@@ -1245,9 +1301,11 @@ struct soa {
 
     /**
      * @brief Query whether the given pointer-to-vector is the one associated to Tag.
+     * @todo Fix this for tag types with num_variables()?
      *
-     * This is used so that one can ask a data_handle<T> if it refers to a particular field in a
-     * particular container.
+     * This is used so that one can ask a data_handle<T> if it refers to a
+     * particular field in a particular container. It is not intended to be
+     * called from multi-threaded code if the container is not frozen.
      */
     template <typename Tag>
     [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
@@ -1263,6 +1321,12 @@ struct soa {
         return ptr == data_ptrs[0];
     }
 
+    /**
+     * @brief Check if `cont` refers to a field in this container.
+     *
+     * This is not intended to be called from multi-threaded code if the
+     * container is not frozen.
+     */
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
         if (!cont) {
@@ -1359,11 +1423,24 @@ struct soa {
     /**
      * @brief Mutex to protect m_frozen_count and m_sorted.
      *
-     * Ideally the methods that touch these would only be called before
-     * multiple worker threads have been spun up, but in practice methods such
-     * as nrn_ensure_model_data_are_sorted() are called from within
-     * multithreaded regions because neuron::model_sorted_token const& is not
-     * explicitly passed everywhere.
+     * The frozen tokens are used to detect, possibly concurrent, use of
+     * incompatible operations, such as sorting while erasing rows. All
+     * operations that modify the structure of the container must happen
+     * sequentially.
+     *
+     * To prevent a different thread from obtaining a frozen token while this
+     * thread is modifying structure of the container, this thread should lock
+     * `m_mut`. Likewise, any thread obtaining a frozen token, should acquire a
+     * lock on `m_mut` to ensure that there are no concurrent operations that
+     * require sequential access to the container.
+     *
+     * By following this pattern the thread knows that the conditions related
+     * to sorted-ness and froze-ness of the container are valid for the entire
+     * duration of the operation (== member function of this class).
+     *
+     * Note, enforcing proper sequencing of operations is left to the calling
+     * code. However, this mutex enforces the required thread-safety to be able
+     * to detect invalid concurrent access patterns.
      */
     mutable std::mutex m_mut{};
 
@@ -1373,11 +1450,7 @@ struct soa {
     bool m_sorted{false};
 
     /**
-     * @brief Reference count for tokens guaranteeing the container is in frozen mode.
-     *
-     * In principle this would be called before multiple worker threads spin up,
-     * but in practice as a transition measure then handles are acquired inside
-     * worker threads.
+     * @brief Reference count for tokens guaranteeing the container is frozen.
      */
     std::size_t m_frozen_count{};
 

@@ -385,7 +385,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         auto& node_data = neuron::model().node_data();
         // Flag this original order as "sorted" so that the tests that it is no
         // longer sorted after permutation are meaningful.
-        node_data.mark_as_sorted();
+        {
+            auto write_token = node_data.issue_frozen_token();
+            node_data.mark_as_sorted(write_token);
+        }
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
