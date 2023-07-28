@@ -800,7 +800,7 @@ struct soa {
      *
      * This does *not* modify the "sorted" flag on the container.
      *
-     * The token type is copiable but not default constructible. There is no
+     * The token type is copy constructible but not default constructible. There is no
      * need to check if a given instance of the token type is "valid"; if a
      * token is held then the container is guaranteed to be frozen.
      *
@@ -815,7 +815,7 @@ struct soa {
      * implementing methods such as nrn_ensure_model_data_are_sorted() in a
      * thread-safe way.
      *
-     * Is is user-defined precisely what "sorted" means, but the soa<...> class
+     * It is user-defined precisely what "sorted" means, but the soa<...> class
      * makes some guarantees:
      * - if the container is frozen, no pointers to elements in the underlying
      *   storage will be invalidated -- attempts to do so will throw or abort.
