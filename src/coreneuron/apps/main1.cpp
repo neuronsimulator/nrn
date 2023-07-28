@@ -45,10 +45,6 @@
 #include "coreneuron/io/core2nrn_data_return.hpp"
 #include "coreneuron/utils/utils.hpp"
 
-// name of coreneuron mpi library (determined on neuron side)
-// that should be loaded in case of dynamic MPI
-extern std::string corenrn_mpi_library;
-
 extern "C" {
 const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
@@ -94,8 +90,12 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, co
     std::string corenrn_mpi_lib_to_load{mpi_lib};
 
     // if no mpi library specified then try to use what neuron might have detected
+    // and set via `NRN_CORENRN_MPI_LIB`
     if (corenrn_mpi_lib_to_load.empty()) {
-        corenrn_mpi_lib_to_load = corenrn_mpi_library;
+        char* lib = getenv("NRN_CORENRN_MPI_LIB");
+        if (lib != nullptr) {
+            corenrn_mpi_lib_to_load = std::string(lib);
+        }
     }
 
     if (!corenrn_mpi_lib_to_load.empty()) {

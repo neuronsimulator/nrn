@@ -232,8 +232,13 @@ std::string nrnmpi_load(int is_python) {
         return name;
     };
     auto const nrn_mpi_library = mpi_path("nrnmpi_");
-    // TODO this will be wrong if CoreNEURON is installed externally
     corenrn_mpi_library = mpi_path("corenrnmpi_");
+
+    // This env variable is only needed in usage like neurodamus where
+    // `solve_core()` is directly called by MOD file and it doesn't have
+    // an easy way to know which MPI library to load.
+    // TODO: remove when BlueBrain/neurodamus/issues/XX is fixed.
+    setenv("NRN_CORENRN_MPI_LIB", corenrn_mpi_library.c_str(), 0);
 
     if (!load_nrnmpi(nrn_mpi_library.c_str(), pmes)) {
         return pmes;
