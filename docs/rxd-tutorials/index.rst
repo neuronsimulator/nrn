@@ -23,5 +23,5 @@ Python RXD tutorials
    circadian
    calcium waves
    combining currents from mod files with rxd
+   mGLUR
    ip3-demo
-
