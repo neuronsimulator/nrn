@@ -7,6 +7,11 @@
 
 #include <nrnmpi.h>
 
+#if NRNMPI
+#include <mpi.h>
+#include <nrnmpidec.h>
+#include "nrnmpi_impl.h"
+
 #include <iostream>
 
 #include "neuron/container/memory_usage.hpp"
@@ -64,3 +69,4 @@ void nrnmpi_print_memory_stats(void* in) {
         std::cout << format_memory_usage(memory_stats.total) << std::endl;
     }
 }
+#endif
