@@ -25,6 +25,11 @@ typedef struct bbsmpibuf {
 
 struct NRNMPI_Spike;
 
+namespace neuron::container {
+struct MemoryStats;
+struct MemoryUsage;
+}  // namespace neuron::container
+
 // olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
 // redefined) symbol names, so keep C linkage for simplicity
 extern "C" {
@@ -67,8 +72,8 @@ extern void nrnmpi_subworld_size(int n);
 extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);
 
 /* from memory_usage.cpp */
-extern void nrnmpi_memory_stats(void* out, void* in);
-extern void nrnmpi_print_memory_stats(void* in);
+extern neuron::container::MemoryStats nrnmpi_memory_stats(neuron::container::MemoryUsage const& stats);
+extern void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& stats);
 
 /* from mpispike.cpp */
 extern void nrnmpi_spike_initialize();

@@ -998,12 +998,11 @@ static double nrncorewrite_argvec(void*) {
 }
 
 static double print_memory_stats(void*) {
-    neuron::container::MemoryStats memory_stats;
     neuron::container::MemoryUsage local_memory_usage = neuron::container::local_memory_usage();
 
 #if NRNMPI
-    nrnmpi_memory_stats((void*) &memory_stats, (void*) &local_memory_usage);
-    nrnmpi_print_memory_stats((void*) &memory_stats);
+    auto memory_stats = nrnmpi_memory_stats(local_memory_usage);
+    nrnmpi_print_memory_stats(memory_stats);
 #else
     print_memory_usage(local_memory_usage);
 #endif

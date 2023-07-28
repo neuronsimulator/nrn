@@ -27,19 +27,15 @@ static void sum_reduce_memory_usage(void* invec, void* inoutvec, int* len_, MPI_
     }
 }
 
-neuron::container::MemoryStats allreduce_memory_stats(
-    neuron::container::MemoryUsage const& local_memory_usage) {
+neuron::container::MemoryStats nrnmpi_memory_stats(
+    neuron::container::MemoryStats const& local_memory_usage) {
     auto stats = neuron::container::MemoryStats{};
 
-    int errcode;
-
     MPI_Op op;
-    errcode = MPI_Op_create(sum_reduce_memory_usage, /* commute = */ 1, &op);
+    MPI_Op_create(sum_reduce_memory_usage, /* commute = */ 1, &op);
 
     MPI_Datatype memory_usage_mpitype;
-    errcode = MPI_Type_contiguous(sizeof(neuron::container::MemoryUsage),
-                                  MPI_BYTE,
-                                  &memory_usage_mpitype);
+    MPI_Type_contiguous(sizeof(neuron::container::MemoryUsage), MPI_BYTE, &memory_usage_mpitype);
     MPI_Type_commit(&memory_usage_mpitype);
 
     std::vector<neuron::container::MemoryUsage> gathered(3);
@@ -52,19 +48,7 @@ neuron::container::MemoryStats allreduce_memory_stats(
     return stats;
 }
 
-
-void nrnmpi_memory_stats(void* out, void* in) {
-    if (out == nullptr || in == nullptr) {
-        throw std::runtime_error("Dereferencing `nullptr`.");
-    }
-
-    *static_cast<neuron::container::MemoryStats*>(out) = allreduce_memory_stats(
-        *static_cast<neuron::container::MemoryUsage const*>(in));
-}
-
-void nrnmpi_print_memory_stats(void* in) {
-    const auto& memory_stats = *static_cast<neuron::container::MemoryStats*>(in);
-
+void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& memory_stats) {
     if (nrnmpi_myid_world == 0) {
         std::cout << format_memory_usage(memory_stats.total) << std::endl;
     }
