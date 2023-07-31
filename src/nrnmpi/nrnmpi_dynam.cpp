@@ -238,7 +238,9 @@ std::string nrnmpi_load(int is_python) {
     // `solve_core()` is directly called by MOD file and it doesn't have
     // an easy way to know which MPI library to load.
     // TODO: remove when BlueBrain/neurodamus/issues/XX is fixed.
+#if defined(HAVE_SETENV)
     setenv("NRN_CORENRN_MPI_LIB", corenrn_mpi_library.c_str(), 0);
+#endif
 
     if (!load_nrnmpi(nrn_mpi_library.c_str(), pmes)) {
         return pmes;

@@ -77,33 +77,7 @@ void set_openmp_threads(int nthread) {
  * Convert char* containing arguments from neuron to char* argv[] for
  * coreneuron command line argument parser.
  */
-char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, const char* arg) {
-    // first construct all arguments as string
-    std::string args(arg);
-    args.insert(0, " coreneuron ");
-    args.append(" --skip-mpi-finalize ");
-    if (use_mpi) {
-        args.append(" --mpi ");
-    }
-
-    // if neuron has passed name of MPI library then add it to CLI
-    std::string corenrn_mpi_lib_to_load{mpi_lib};
-
-    // if no mpi library specified then try to use what neuron might have detected
-    // and set via `NRN_CORENRN_MPI_LIB`
-    if (corenrn_mpi_lib_to_load.empty()) {
-        char* lib = getenv("NRN_CORENRN_MPI_LIB");
-        if (lib != nullptr) {
-            corenrn_mpi_lib_to_load = std::string(lib);
-        }
-    }
-
-    if (!corenrn_mpi_lib_to_load.empty()) {
-        args.append(" --mpi-lib ");
-        corenrn_mpi_lib_to_load += " ";
-        args.append(corenrn_mpi_lib_to_load);
-    }
-
+char* prepare_args(int& argc, char**& argv, std::string& args) {
     // we can't modify string with strtok, make copy
     char* first = strdup(args.c_str());
     const char* sep = " ";
