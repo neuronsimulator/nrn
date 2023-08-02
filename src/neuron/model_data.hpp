@@ -43,6 +43,16 @@ struct Model {
         }
     }
 
+    template <typename Callable>
+    void apply_to_mechanisms(Callable const& callable) const {
+        for (auto type = 0; type < m_mech_data.size(); ++type) {
+            if (!m_mech_data[type]) {
+                continue;
+            }
+            callable(*m_mech_data[type]);
+        }
+    }
+
     /**
      * @brief Create a structure to hold the data of a new Mechanism.
      */
@@ -109,7 +119,7 @@ struct Model {
 
   private:
     container::Mechanism::storage& mechanism_data_impl(int type) const {
-        if (type >= m_mech_data.size()) {
+        if (0 <= type && type >= m_mech_data.size()) {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): type out of range");
         }

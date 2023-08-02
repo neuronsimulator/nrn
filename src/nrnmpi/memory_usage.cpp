@@ -27,10 +27,8 @@ static void sum_reduce_memory_usage(void* invec, void* inoutvec, int* len_, MPI_
     }
 }
 
-neuron::container::MemoryStats nrnmpi_memory_stats(
-    neuron::container::MemoryStats const& local_memory_usage) {
-    auto stats = neuron::container::MemoryStats{};
-
+void nrnmpi_memory_stats(neuron::container::MemoryStats& stats,
+                         neuron::container::MemoryUsage const& local_memory_usage) {
     MPI_Op op;
     MPI_Op_create(sum_reduce_memory_usage, /* commute = */ 1, &op);
 
@@ -44,8 +42,6 @@ neuron::container::MemoryStats nrnmpi_memory_stats(
 
     MPI_Op_free(&op);
     MPI_Type_free(&memory_usage_mpitype);
-
-    return stats;
 }
 
 void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& memory_stats) {

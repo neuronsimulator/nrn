@@ -36,7 +36,7 @@ struct VectorMemoryUsage {
     /// @brief Number of bytes allocated.
     size_t capacity{};
 
-    inline const VectorMemoryUsage& operator+=(const VectorMemoryUsage& other) {
+    const VectorMemoryUsage& operator+=(const VectorMemoryUsage& other) {
         size += other.size;
         capacity += other.capacity;
 
@@ -53,15 +53,11 @@ struct StorageMemoryUsage {
     /// @brief The memory usage for the stable identifiers in a soa.
     VectorMemoryUsage stable_identifiers{};
 
-    inline const StorageMemoryUsage& operator+=(const StorageMemoryUsage& other) {
+    const StorageMemoryUsage& operator+=(const StorageMemoryUsage& other) {
         heavy_data += other.heavy_data;
         stable_identifiers += other.stable_identifiers;
 
         return *this;
-    }
-
-    inline size_t max_capacity() const {
-        return std::max(heavy_data.capacity, stable_identifiers.capacity);
     }
 };
 
@@ -73,15 +69,11 @@ struct ModelMemoryUsage {
     /// @brief The memory usage of all mechanisms.
     StorageMemoryUsage mechanisms{};
 
-    inline const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
+    const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
         nodes += other.nodes;
         mechanisms += other.mechanisms;
 
         return *this;
-    }
-
-    inline size_t max_capacity() const {
-        return std::max(nodes.max_capacity(), mechanisms.max_capacity());
     }
 };
 
@@ -94,15 +86,11 @@ struct ModelMemoryUsage {
     /** @brief Memory usage related to caching mechanisms. */
     VectorMemoryUsage mechanisms{};
 
-    inline const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
+    const ModelMemoryUsage& operator+=(const ModelMemoryUsage& other) {
         threads += other.threads;
         mechanisms += other.mechanisms;
 
         return *this;
-    }
-
-    inline size_t max_capacity() const {
-        return std::max(threads.capacity, mechanisms.capacity);
     }
 };
 }  // namespace cache
@@ -114,7 +102,7 @@ struct MemoryUsage {
     VectorMemoryUsage stable_pointers{};
     VectorMemoryUsage stable_identifiers{};
 
-    inline const MemoryUsage& operator+=(const MemoryUsage& other) {
+    const MemoryUsage& operator+=(const MemoryUsage& other) {
         model += other.model;
         cache_model += other.cache_model;
         stable_pointers += other.stable_pointers;

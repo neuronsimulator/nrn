@@ -72,7 +72,7 @@ extern void nrnmpi_subworld_size(int n);
 extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);
 
 /* from memory_usage.cpp */
-extern neuron::container::MemoryStats nrnmpi_memory_stats(neuron::container::MemoryUsage const& stats);
+extern void nrnmpi_memory_stats(neuron::container::MemoryStats& stats, neuron::container::MemoryUsage const& usage);
 extern void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& stats);
 
 /* from mpispike.cpp */

@@ -6,15 +6,9 @@
 namespace neuron::container {
 ModelMemoryUsage memory_usage(const Model& model) {
     auto nodes = memory_usage(model.node_data());
-    auto mechanisms = StorageMemoryUsage();
-    auto n_mechanisms = model.mechanism_storage_size();
 
-    for (size_t i = 0; i < n_mechanisms; ++i) {
-        if (model.is_valid_mechanism(i)) {
-            const auto& md = model.mechanism_data(i);
-            mechanisms += memory_usage(md);
-        }
-    }
+    auto mechanisms = StorageMemoryUsage();
+    model.apply_to_mechanisms([&mechanisms](const auto& md) { mechanisms += memory_usage(md); });
 
     return {nodes, mechanisms};
 }

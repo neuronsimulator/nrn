@@ -85,13 +85,12 @@ template <typename T>
 inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
 
 template <class T>
-auto get_num_variables(T const& t) -> std::enable_if_t<has_num_variables_v<T>, size_t> {
-    return t.num_variables();
-}
-
-template <class T>
-auto get_num_variables(T const& t) -> std::enable_if_t<!has_num_variables_v<T>, size_t> {
-    return 1ul;
+size_t get_num_variables(T const& t) {
+    if constexpr (has_num_variables_v<T>) {
+        return t.num_variables();
+    } else {
+        return 1;
+    }
 }
 
 // Get the value of a static member variable called optional, or false if it doesn't exist.
@@ -246,28 +245,32 @@ struct field_data {
     }
 
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             m_data_ptr[0] = m_storage.data();
         }
+
+        return callable;
     }
 
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
+
+        return callable;
     }
 
     [[nodiscard]] bool active() const {
@@ -458,13 +461,15 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      * @param callable A callable to invoke.
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             update_data_ptr_storage();
         }
+
+        return callable;
     }
 
     /**
@@ -473,10 +478,12 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      * @param callable A callable to invoke.
      */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
+
+        return callable;
     }
 
     // TODO actually use this
@@ -586,7 +593,7 @@ class AccumulateMemoryUsage {
     void operator()(detail::index_column_tag const& indices,
                     std::vector<detail::index_column_tag::type> const& vec,
                     int field_index,
-                    int array_dim) const {
+                    int array_dim) {
         auto element_size = sizeof(detail::index_column_tag::type);
 
         m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
@@ -598,7 +605,7 @@ class AccumulateMemoryUsage {
     void operator()(Tag const& tag,
                     std::vector<typename Tag::type> const& vec,
                     int field_index,
-                    int array_dim) const {
+                    int array_dim) {
         m_usage.heavy_data += VectorMemoryUsage(vec);
     }
 
@@ -607,7 +614,7 @@ class AccumulateMemoryUsage {
     }
 
   private:
-    mutable StorageMemoryUsage m_usage;
+    StorageMemoryUsage m_usage;
 };
 
 
@@ -733,7 +740,7 @@ struct soa {
         // Check our various std::vector members are still the same size as each
         // other. This check could be omitted in release builds...
         auto const check_size = m_indices.size();
-        for_all_vectors(
+        for_each_vector(
             [check_size](auto const& tag, auto const& vec, int field_index, int array_dim) {
                 auto const size = vec.size();
                 assert(size % array_dim == 0);
@@ -752,7 +759,7 @@ struct soa {
      */
     [[nodiscard]] bool empty() const {
         auto const result = m_indices.empty();
-        for_all_vectors([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
+        for_each_vector([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
             assert(vec.empty() == result);
         });
         return result;
@@ -779,7 +786,7 @@ struct soa {
         if (i != old_size - 1) {
             // Swap ranges of size array_dim at logical positions `i` and `old_size - 1` in each
             // vector
-            for_all_vectors<detail::may_cause_reallocation::No>(
+            for_each_vector<detail::may_cause_reallocation::No>(
                 [i](auto const& tag, auto& vec, int field_index, int array_dim) {
                     ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
                                        ::std::next(vec.begin(), (i + 1) * array_dim),
@@ -788,7 +795,7 @@ struct soa {
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        for_all_vectors<detail::may_cause_reallocation::No>(
+        for_each_vector<detail::may_cause_reallocation::No>(
             [new_size = old_size - 1](auto const& tag, auto& vec, int field_index, int array_dim) {
                 vec.resize(new_size * array_dim);
             });
@@ -820,12 +827,27 @@ struct soa {
      * updated.
      */
     template <detail::may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         // might_reallocate is not relevant for m_indices because we do not expose the location of
         // its storage, so it doesn't matter whether or not this triggers reallocation
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<might_reallocate>(callable),
-         ...);
+
+        return for_each_tag_vector_impl<might_reallocate, Callable, Tags...>(callable);
+    }
+
+    template <detail::may_cause_reallocation might_reallocate,
+              typename Callable,
+              typename Tag,
+              typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        auto tmp_callable =
+            std::get<tag_index_v<Tag>>(m_data).template for_each_vector<might_reallocate>(callable);
+        return for_each_tag_vector_impl<might_reallocate, Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <detail::may_cause_reallocation, typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        return callable;
     }
 
     /**
@@ -844,10 +866,23 @@ struct soa {
      * pointers inside m_data, so no might_reallocate parameter is needed.
      */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).for_all_vectors(callable), ...);
+        return for_each_tag_vector_impl<Callable, Tags...>(callable);
     }
+
+    template <typename Callable, typename Tag, typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector(
+            callable);
+        return for_each_tag_vector_impl<Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        return callable;
+    }
+
 
     /**
      * @brief Record that a state_token was copied.
@@ -1036,7 +1071,7 @@ struct soa {
                 while (i != permutation[i]) {
                     using ::std::swap;
                     auto const next = permutation[i];
-                    for_all_vectors<detail::may_cause_reallocation::No>(
+                    for_each_vector<detail::may_cause_reallocation::No>(
                         [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                             // swap the i-th and next-th array_dim-sized sub-ranges of vec
                             ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
@@ -1124,7 +1159,7 @@ struct soa {
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
         auto const old_size = size();
-        for_all_vectors<detail::may_cause_reallocation::Yes>(
+        for_each_vector<detail::may_cause_reallocation::Yes>(
             [](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                 using Tag = ::std::decay_t<decltype(tag)>;
                 if constexpr (detail::has_default_value_v<Tag>) {
@@ -1337,7 +1372,7 @@ struct soa {
         neuron::container::generic_data_handle input_handle) const {
         bool done{false};
         neuron::container::generic_data_handle handle{};
-        for_all_vectors([this, &done, &handle, &input_handle](
+        for_each_vector([this, &done, &handle, &input_handle](
                             auto const& tag, auto const& vec, int field_index, int array_dim) {
             using Tag = ::std::decay_t<decltype(tag)>;
             if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
@@ -1408,7 +1443,7 @@ struct soa {
         if (!cont) {
             return opt_info;
         }
-        for_all_vectors([cont,
+        for_each_vector([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
             if (opt_info) {
@@ -1497,9 +1532,9 @@ struct soa {
 
     StorageMemoryUsage memory_usage() const {
         detail::AccumulateMemoryUsage accumulator;
-        for_all_vectors(accumulator);
+        auto accumulated = for_each_vector(accumulator);
 
-        return accumulator.usage();
+        return accumulated.usage();
     }
 
   private:
