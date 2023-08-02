@@ -46,7 +46,7 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
-#if 1 || PARANEURON
+#if 1 || NRNMPI
 void (*nrn_multisplit_setup_)();
 #endif
 
