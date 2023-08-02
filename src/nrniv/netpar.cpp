@@ -24,8 +24,10 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <netcon.h>
 #include <cvodeobj.h>
 #include <netcvode.h>
-#include <vector>
 #include "ivocvect.h"
+
+#include <atomic>
+#include <vector>
 
 static int n_multisend_interval;
 
@@ -226,7 +228,8 @@ Gid2PreSyn& nrn_gid2out() {
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    static int seqcnt_;
+    static std::atomic<int>
+        seqcnt_;
 static NrnThread* last_nt_;
 #endif
 
@@ -253,9 +256,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     nt->_t = tt;
 #if NRNMPI
     if (nrnmpi_numprocs > 0) {
-        MUTLOCK
         seq = ++seqcnt_;
-        MUTUNLOCK
         if (seq == nrn_nthread) {
             last_nt_ = nt;
 #if NRNMPI
@@ -269,10 +270,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 #endif
             wx_ += wt_;
             ws_ += wt1_;
-            // ThreadSanitizer claimed a data race without the mutex here
-            MUTLOCK
             seqcnt_ = 0;
-            MUTUNLOCK
         }
     }
 #endif
