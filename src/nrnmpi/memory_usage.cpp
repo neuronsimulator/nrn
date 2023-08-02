@@ -36,7 +36,6 @@ void nrnmpi_memory_stats(neuron::container::MemoryStats& stats,
     MPI_Type_contiguous(sizeof(neuron::container::MemoryUsage), MPI_BYTE, &memory_usage_mpitype);
     MPI_Type_commit(&memory_usage_mpitype);
 
-    std::vector<neuron::container::MemoryUsage> gathered(3);
     MPI_Allreduce(
         &local_memory_usage, &stats.total, 1, memory_usage_mpitype, op, nrnmpi_world_comm);
 
