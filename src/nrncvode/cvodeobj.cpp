@@ -31,11 +31,10 @@ extern int hoc_return_type_code;
 static MUTDEC
 #endif
 
-    // Use of the above static mutex was broken by changeset 7ffd95c in 2014
-    // when a MUTDEC was added explicitly to the NetCvode class namespace to
-    // handle interthread send events.
-    static void
-    static_mutex_for_at_time(bool b) {
+// Use of the above static mutex was broken by changeset 7ffd95c in 2014
+// when a MUTDEC was added explicitly to the NetCvode class namespace to
+// handle interthread send events.
+static void static_mutex_for_at_time(bool b) {
     if (b) {
         MUTCONSTRUCT(1)
     } else {

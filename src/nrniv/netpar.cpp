@@ -228,8 +228,7 @@ Gid2PreSyn& nrn_gid2out() {
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    static std::atomic<int>
-        seqcnt_;
+static std::atomic<int> seqcnt_;
 static NrnThread* last_nt_;
 #endif
 
