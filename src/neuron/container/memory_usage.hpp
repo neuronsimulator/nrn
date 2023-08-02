@@ -59,6 +59,13 @@ struct StorageMemoryUsage {
 
         return *this;
     }
+
+    VectorMemoryUsage compute_total() const {
+        auto total = heavy_data;
+        total += stable_identifiers;
+
+        return total;
+    }
 };
 
 /** @brief Memory usage of a `neuron::Model`. */
@@ -74,6 +81,13 @@ struct ModelMemoryUsage {
         mechanisms += other.mechanisms;
 
         return *this;
+    }
+
+    VectorMemoryUsage compute_total() const {
+        auto total = nodes.compute_total();
+        total += mechanisms.compute_total();
+
+        return total;
     }
 };
 
@@ -92,6 +106,13 @@ struct ModelMemoryUsage {
 
         return *this;
     }
+
+    VectorMemoryUsage compute_total() const {
+        auto total = threads;
+        total += mechanisms;
+
+        return total;
+    }
 };
 }  // namespace cache
 
@@ -109,6 +130,15 @@ struct MemoryUsage {
         stable_identifiers += other.stable_identifiers;
 
         return *this;
+    }
+
+    VectorMemoryUsage compute_total() const {
+        auto total = model.compute_total();
+        total += cache_model.compute_total();
+        total += stable_pointers;
+        total += stable_identifiers;
+
+        return total;
     }
 };
 

@@ -288,4 +288,23 @@ TEST_CASE("memory usage report", "[Neuron][internal][data_structures]") {
         MemoryUsage{model, cache_model, stable_pointers, stable_identifiers});
 
     std::cout << report << "\n";
+
+    // The point of the test is to allow sanitizers to run.
+}
+
+TEST_CASE("total memory usage", "[Neuron][internal][data_structures]") {
+    auto model =
+        neuron::container::ModelMemoryUsage{neuron::container::StorageMemoryUsage{{1, 11}, {2, 12}},
+                                            neuron::container::StorageMemoryUsage{{3, 13},
+                                                                                  {4, 14}}};
+    auto cache_model = neuron::container::cache::ModelMemoryUsage{{5, 15}, {6, 16}};
+
+    auto stable_pointers = neuron::container::VectorMemoryUsage(7, 17);
+    auto stable_identifiers = neuron::container::VectorMemoryUsage(8, 18);
+
+    auto memory_usage = MemoryUsage{model, cache_model, stable_pointers, stable_identifiers};
+
+    auto total = memory_usage.compute_total();
+    CHECK(total.size == (8 * 9) / 2);
+    CHECK(total.capacity == total.size + 8 * 10);
 }

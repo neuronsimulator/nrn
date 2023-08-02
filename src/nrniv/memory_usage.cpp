@@ -106,6 +106,7 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     const auto& cache_model = usage.cache_model;
     const auto& stable_pointers = usage.stable_pointers;
     const auto& stable_identifiers = usage.stable_identifiers;
+    const auto& total = usage.compute_total();
 
     std::stringstream os;
 
@@ -124,6 +125,8 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     os << "deferred deletion \n";
     os << "  stable_identifiers    " << format_memory_usage(stable_identifiers) << "\n";
     os << "  stable_pointers       " << format_memory_usage(stable_pointers) << "\n";
+    os << "\n";
+    os << "total                   " << format_memory_usage(total) << "\n";
 
     return os.str();
 }

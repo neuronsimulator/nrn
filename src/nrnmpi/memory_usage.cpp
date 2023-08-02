@@ -46,7 +46,7 @@ void nrnmpi_memory_stats(neuron::container::MemoryStats& stats,
 
 void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& memory_stats) {
     if (nrnmpi_myid_world == 0) {
-        std::cout << format_memory_usage(memory_stats.total) << std::endl;
+        std::cout << format_memory_usage(memory_stats.total) << "\n";
     }
 }
 #endif
