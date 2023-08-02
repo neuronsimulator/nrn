@@ -237,7 +237,7 @@ std::string nrnmpi_load(int is_python) {
     // This env variable is only needed in usage like neurodamus where
     // `solve_core()` is directly called by MOD file and it doesn't have
     // an easy way to know which MPI library to load.
-    // TODO: remove when BlueBrain/neurodamus/issues/XX is fixed.
+    // TODO: remove when BlueBrain/neurodamus/issues/17 is fixed.
 #if defined(HAVE_SETENV)
     setenv("NRN_CORENRN_MPI_LIB", corenrn_mpi_library.c_str(), 0);
 #endif
