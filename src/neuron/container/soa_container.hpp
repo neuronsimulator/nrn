@@ -940,19 +940,22 @@ struct soa {
      */
     template <typename Range>
     void apply_reverse_permutation(Range permutation, frozen_token_type& sorted_token) {
+        // Check that the given vector is a valid permutation of length size().
+        // The existence of `sorted_token` means that my_size cannot become
+        // invalid, even though we don't hold `m_mut` yet.
+        std::size_t const my_size{size()};
+        bool const is_trivial{detail::check_permutation_vector(permutation, my_size)};
         // Lock access to m_frozen_count and m_sorted.
         std::lock_guard _{m_mut};
         // Applying a permutation in general invalidates indices, so it is
         // forbidden if the structure is frozen, and it leaves the structure
         // unsorted. We therefore require that the frozen count is 1, which
-        // corresponds to the `sorted_token` argument to this function.
+        // corresponds to the `sorted_token` argument to this function being
+        // the only active token.
         if (m_frozen_count != 1) {
             throw_error(
                 "apply_reverse_permutation() given a token that was not the only valid one");
         }
-        // Check that the given vector is a valid permutation of length size().
-        std::size_t const my_size{size()};
-        bool const is_trivial{detail::check_permutation_vector(permutation, my_size)};
         if (!is_trivial) {
             // Now we apply the reverse permutation in `permutation` to all of the columns in the
             // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
