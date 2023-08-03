@@ -18,7 +18,7 @@ setting up and transfer of matrix information. Note that gid information about
 the subtrees is no longer required by this implementation.
 */
 
-#if PARANEURON
+#if NRNMPI
 void nrnmpi_split_clear();
 extern void (*nrnmpi_splitcell_compute_)();
 extern void nrnmpi_send_doubles(double*, int cnt, int dest, int tag);
@@ -46,7 +46,7 @@ static double* transfer_p_[4];
 
 // that_host must be adjacent to nrnmpi_myid
 void nrnmpi_splitcell_connect(int that_host) {
-#if PARANEURON
+#if NRNMPI
     Section* rootsec = chk_access();
     if (std::abs(nrnmpi_myid - that_host) != 1) {
         hoc_execerror("cells may be split only on adjacent hosts", 0);
@@ -76,7 +76,7 @@ void nrnmpi_splitcell_connect(int that_host) {
 #endif
 }
 
-#if PARANEURON
+#if NRNMPI
 
 void nrnmpi_split_clear() {
     if (nrnmpi_splitcell_compute_ == splitcell_compute) {

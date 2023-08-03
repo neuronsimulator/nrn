@@ -133,7 +133,7 @@ is only done by thread 0. Fixed step and global variable step
 logic is limited to the case where an nrnmpi_v_transfer requires
 existence of nrnthread_v_transfer (even if one thread).
 */
-#if 1 || PARANEURON
+#if 1 || NRNMPI
 void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
 void (*nrnthread_v_transfer_)(NrnThread* nt);
 /* if at least one gap junction has a source voltage with extracellular inserted */
@@ -839,7 +839,7 @@ void nrn_finitialize(int setv, double v) {
             std::fill_n(vec_v, _nt->end, v);
         }
     }
-#if 1 || PARANEURON
+#if 1 || NRNMPI
     if (nrnthread_vi_compute_)
         FOR_THREADS(_nt) {
             (*nrnthread_vi_compute_)(_nt);
