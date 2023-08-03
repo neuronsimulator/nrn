@@ -107,6 +107,7 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     const auto& stable_pointers = usage.stable_pointers;
     const auto& stable_identifiers = usage.stable_identifiers;
     const auto& total = usage.compute_total();
+    const auto& summary = MemoryUsageSummary(usage);
 
     std::stringstream os;
 
@@ -127,6 +128,13 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     os << "  stable_pointers       " << format_memory_usage(stable_pointers) << "\n";
     os << "\n";
     os << "total                   " << format_memory_usage(total) << "\n";
+    os << "\n";
+    os << "Summary\n";
+    os << "  required              " << format_memory(summary.required) << "\n";
+    os << "  convenient            " << format_memory(summary.convenient) << "\n";
+    os << "  oversized             " << format_memory(summary.oversized) << "\n";
+    os << "  leaked                " << format_memory(summary.leaked) << "\n";
+
 
     return os.str();
 }

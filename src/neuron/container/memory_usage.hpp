@@ -142,6 +142,59 @@ struct MemoryUsage {
     }
 };
 
+struct MemoryUsageSummary {
+    /** @brief Data that are part of the algorithm. */
+    size_t required{};
+
+    /** @brief Any memory that's (currently) required to run NEURON.
+     *
+     *  This includes things like the live stable identifiers in each `soa`, the
+     *  `cache::Model` and similar things that are needed to implement NEURON
+     *  correctly, but are not required by the simulation. Hence, this category
+     *  could potentially be optimized.
+     */
+    size_t convenient{};
+
+    /** @brief Wasted memory due to the difference of `size` and `capacity`. */
+    size_t oversized{};
+
+    /** @brief Essentially leaked memory.
+     *
+     *  The current implementation doesn't know when it's safe to delete stable
+     *  identifiers. Hence, when the owning identifier is deallocated the stable
+     *  identifier is kept alive and leaked into a global collector.
+     */
+    size_t leaked{};
+
+    MemoryUsageSummary(const MemoryUsage& memory_usage) {
+        add(memory_usage.model);
+        add(memory_usage.cache_model);
+        add(leaked, memory_usage.stable_pointers);
+        add(leaked, memory_usage.stable_identifiers);
+    }
+
+  private:
+    void add(size_t& accumulator, const VectorMemoryUsage& increment) {
+        oversized += increment.capacity - increment.size;
+        accumulator += increment.size;
+    }
+
+    void add(const StorageMemoryUsage& increment) {
+        add(required, increment.heavy_data);
+        add(convenient, increment.stable_identifiers);
+    }
+
+    void add(const ModelMemoryUsage& model) {
+        add(model.nodes);
+        add(model.mechanisms);
+    }
+
+    void add(const cache::ModelMemoryUsage& model) {
+        add(convenient, model.mechanisms);
+        add(convenient, model.threads);
+    }
+};
+
 /** @brief */
 struct MemoryStats {
     MemoryUsage total;
