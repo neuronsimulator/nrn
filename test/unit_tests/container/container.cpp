@@ -269,30 +269,7 @@ TEST_CASE("format_memory", "[Neuron][internal]") {
     CHECK(neuron::container::format_memory(tb) == "  1.00 TB");
 }
 
-
-TEST_CASE("memory usage report", "[Neuron][internal][data_structures]") {
-    size_t kb = 1e3;
-    size_t mb = 1e6;
-    size_t gb = 1e9;
-    size_t tb = 1e12;
-
-    auto model =
-        neuron::container::ModelMemoryUsage{neuron::container::StorageMemoryUsage{{0, 0}, {0, 0}},
-                                            neuron::container::StorageMemoryUsage{{1, 2}, {3, 4}}};
-    auto cache_model = neuron::container::cache::ModelMemoryUsage{{1, 2}, {999, 1023}};
-
-    auto stable_pointers = neuron::container::VectorMemoryUsage(12 * tb, 999 * tb);
-    auto stable_identifiers = neuron::container::VectorMemoryUsage(1 * mb, 99 * tb);
-
-    auto report = format_memory_usage(
-        MemoryUsage{model, cache_model, stable_pointers, stable_identifiers});
-
-    std::cout << report << "\n";
-
-    // The point of the test is to allow sanitizers to run.
-}
-
-TEST_CASE("total memory usage", "[Neuron][internal][data_structures]") {
+neuron::container::MemoryUsage dummy_memory_usage() {
     auto model =
         neuron::container::ModelMemoryUsage{neuron::container::StorageMemoryUsage{{1, 11}, {2, 12}},
                                             neuron::container::StorageMemoryUsage{{3, 13},
@@ -304,7 +281,27 @@ TEST_CASE("total memory usage", "[Neuron][internal][data_structures]") {
 
     auto memory_usage = MemoryUsage{model, cache_model, stable_pointers, stable_identifiers};
 
+    return memory_usage;
+}
+
+
+TEST_CASE("total memory usage", "[Neuron][internal][data_structures]") {
+    auto memory_usage = dummy_memory_usage();
     auto total = memory_usage.compute_total();
     CHECK(total.size == (8 * 9) / 2);
     CHECK(total.capacity == total.size + 8 * 10);
+}
+
+TEST_CASE("memory usage summary", "[Neuron][data_structures]") {
+    auto usage = dummy_memory_usage();
+    auto summary = neuron::container::MemoryUsageSummary(usage);
+    auto total = usage.compute_total();
+
+    size_t summary_total = summary.required + summary.convenient + summary.oversized +
+                           summary.leaked;
+    CHECK(summary.required <= total.size);
+    CHECK(summary.convenient <= total.size);
+    CHECK(summary.leaked <= total.size);
+    CHECK(summary.oversized == total.capacity - total.size);
+    CHECK(summary_total == total.capacity);
 }

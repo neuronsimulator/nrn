@@ -150,8 +150,12 @@ struct MemoryUsageSummary {
      *
      *  This includes things like the live stable identifiers in each `soa`, the
      *  `cache::Model` and similar things that are needed to implement NEURON
-     *  correctly, but are not required by the simulation. Hence, this category
-     *  could potentially be optimized.
+     *  correctly, but are not required by the simulation.
+     *
+     *  This category covers memory that needed to solve a computer science
+     *  problem rather than a neuroscience problem. Hence, this category
+     *  could potentially be optimized. It's not obvious how much this category
+     *  can be optimized.
      */
     size_t convenient{};
 
