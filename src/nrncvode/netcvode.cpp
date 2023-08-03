@@ -3625,7 +3625,7 @@ int NetCvode::pgvts_event(double& tt) {
 
 DiscreteEvent* NetCvode::pgvts_least(double& tt, int& op, int& init) {
     DiscreteEvent* de = nil;
-#if PARANEURON
+#if NRNMPI
     TQItem* q = nil;
     if (gcv_->initialize_ && p[0].tqe_->least_t() > gcv_->t_) {
         tt = gcv_->t_;
@@ -3709,7 +3709,7 @@ int NetCvode::pgvts_cvode(double tt, int op) {
 }
 
 bool NetCvode::use_partrans() {
-#if PARANEURON
+#if NRNMPI
     if (gcv_) {
         return gcv_->use_partrans_;
     } else {
@@ -3724,7 +3724,7 @@ void ncs2nrn_integrate(double tstop) {
     nrn_use_busywait(1);  // just a possibility
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     if (cvode_active_) {
-#if PARANEURON
+#if NRNMPI
         if (net_cvode_instance->use_partrans()) {
             net_cvode_instance->pgvts(tstop);
             t = nt_t;

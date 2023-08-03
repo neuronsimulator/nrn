@@ -69,7 +69,7 @@ node.v + extnode.v[0]
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
-#if PARANEURON
+#if NRNMPI
 void (*nrnmpi_splitcell_compute_)();
 #endif
 
@@ -345,7 +345,7 @@ void nrn_solve(NrnThread* _nt) {
 	printf("\nnrn_solve enter %lx\n", (long)_nt);
 	nrn_print_matrix(_nt);
 #endif
-#if PARANEURON
+#if NRNMPI
     if (nrn_multisplit_solve_) {
         nrn_thread_error("nrn_multisplit_solve");
         (*nrn_multisplit_solve_)();
@@ -384,7 +384,7 @@ void nrn_solve(NrnThread* _nt) {
         update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {
         triang(_nt);
-#if PARANEURON
+#if NRNMPI
         if (nrnmpi_splitcell_compute_) {
             nrn_thread_error("nrnmpi_splitcell_compute");
             (*nrnmpi_splitcell_compute_)();

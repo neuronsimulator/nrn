@@ -73,7 +73,7 @@ extern short* nrn_is_artificial_;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif  // USENCS
-#if PARANEURON
+#if NRNMPI
 extern "C" {
 extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
 extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
@@ -492,7 +492,7 @@ static double ncs_netcons(void* v) {
 // for testing when there is actually no pc.transfer or pc.multisplit present
 // forces the global step to be truly global across processors.
 static double use_parallel(void* v) {
-#if PARANEURON
+#if NRNMPI
     // assume single thread and global step
     NetCvode* d = (NetCvode*) v;
     assert(d->gcv_);
@@ -736,7 +736,7 @@ void Cvode::cvode_constructor() {
     maxacor_ = nil;
     neq_ = 0;
     structure_change_ = true;
-#if PARANEURON
+#if NRNMPI
     use_partrans_ = false;
     global_neq_ = 0;
     opmode_ = 0;
@@ -803,7 +803,7 @@ void Cvode::set_init_flag() {
 }
 
 N_Vector Cvode::nvnew(long int n) {
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         if (net_cvode_instance->use_long_double_) {
             return N_VNew_NrnParallelLD(0, n, global_neq_);
@@ -1170,7 +1170,7 @@ int Cvode::advance_tn(neuron::model_sorted_token const& sorted_token) {
             nt_t = t_;
         }
         do_nonode(sorted_token, nth_);
-#if PARANEURON
+#if NRNMPI
         opmode_ = 1;
 #endif
         if (use_daspk_) {
@@ -1218,7 +1218,7 @@ int Cvode::init(double tout) {
     next_at_time_ = t_ + 1e5;
     init_prepare();
     if (neq_) {
-#if PARANEURON
+#if NRNMPI
         opmode_ = 3;
 #endif
         if (use_daspk_) {
@@ -1228,7 +1228,7 @@ int Cvode::init(double tout) {
         }
     }
     tstop_ = next_at_time_ - NetCvode::eps(next_at_time_);
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         tstop_ = nrnmpi_dbl_allmin(tstop_);
     }
@@ -1308,7 +1308,7 @@ int Cvode::interpolate(double tout) {
     assert(tout >= t0() && tout <= tn());
 
     ++interpolate_calls_;
-#if PARANEURON
+#if NRNMPI
     opmode_ = 2;
 #endif
     if (use_daspk_) {
