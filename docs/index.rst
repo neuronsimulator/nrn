@@ -8,7 +8,8 @@ NEURON is a simulator for neurons and networks of neurons that runs efficiently 
 Build and simulate models using Python, HOC, and/or NEURON's graphical interface. From this page you can watch :ref:`recorded NEURON classes <training_videos>`, 
 read the :ref:`Python <python_prog_ref>` or :ref:`HOC <hoc_prog_ref>` programmer's references,
 `browse the NEURON forum <https://www.neuron.yale.edu/phpBB/>`_,
-explore the `source code for over 750 NEURON models on ModelDB <https://senselab.med.yale.edu/ModelDB/ModelList?id=1882&allsimu=true>`_, and more (use the links on the side or search).
+explore the `source code for over 800 NEURON models on ModelDB <https://modeldb.science/modellist/1882?all_simu=true>`_, 
+and more (use the links on the side or search).
 
 .. toctree::
    :maxdepth: 1
