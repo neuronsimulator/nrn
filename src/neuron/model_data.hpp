@@ -125,8 +125,10 @@ struct Model {
 };
 
 struct model_sorted_token {
-    model_sorted_token(cache::Model& cache)
-        : m_cache{cache} {}
+    model_sorted_token(cache::Model& cache,
+                       container::Node::storage::frozen_token_type node_data_token_)
+        : node_data_token{std::move(node_data_token_)}
+        , m_cache{cache} {}
     [[nodiscard]] cache::Model& cache() {
         return m_cache;
     }
@@ -148,8 +150,8 @@ struct model_sorted_token {
     [[nodiscard]] cache::Thread const& thread_cache(std::size_t i) const {
         return cache().thread.at(i);
     }
-    container::Node::storage::sorted_token_type node_data_token{};
-    std::vector<container::Mechanism::storage::sorted_token_type> mech_data_tokens{};
+    container::Node::storage::frozen_token_type node_data_token;
+    std::vector<container::Mechanism::storage::frozen_token_type> mech_data_tokens{};
 
   private:
     std::reference_wrapper<cache::Model> m_cache;

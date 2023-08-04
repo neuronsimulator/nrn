@@ -5560,7 +5560,7 @@ static void* eval_cond(NrnThread* nt) {
 }
 void Cvode::evaluate_conditions(NrnThread* nt) {
     if (!nt) {
-        if (nrn_nthread > 1) {
+        if (nrn_nthread > 1 && nctd_ > 1) {
             eval_cv = this;
             nrn_multithread_job(eval_cond);
             return;
