@@ -11,7 +11,7 @@ extern void hoc_System(void), hoc_Prmat(void), hoc_solve(void), hoc_eqinit(void)
 extern void hoc_symbols(void), hoc_PRintf(void), hoc_Xred(void), hoc_Sred(void);
 extern void hoc_ropen(void), hoc_wopen(void), hoc_xopen(void), hoc_Fscan(void), hoc_Fprint(void);
 extern void hoc_Graph(void), hoc_Graphmode(void), hoc_Plot(void), hoc_axis(void), hoc_Sprint(void);
-extern void hoc_fmenu(void), hoc_Getstr(void), hoc_Strcmp(void);
+extern void hoc_Getstr(void), hoc_Strcmp(void);
 extern void hoc_Lw(void), hoc_machine_name(void), hoc_Saveaudit(void), hoc_Retrieveaudit(void);
 extern void hoc_plotx(void), hoc_ploty(void), hoc_regraph(void);
 extern void hoc_startsw(void), hoc_stopsw(void), hoc_object_id(void);

@@ -252,7 +252,6 @@ flush Graph classes general neuron.exe Reference 46 neuron/general/classes/graph
 flush PlotShape classes neuron neuron.exe Reference 301 neuron/neuron/classes/pltshape.html#flush
 flush Shape classes neuron neuron.exe Reference 323 neuron/neuron/classes/shape.html#flush
 fmatrix functions neuron neuron.exe Reference 369 neuron/neuron/nrnoc.html#fmatrix
-fmenu obsolete functions general neuron.exe Reference 190 neuron/general/function/obsolete/lw.html#fmenu
 for keywords general neuron.exe Reference 227 neuron/general/keywords/ockeywor.html#for
 forall CurrentlyAccessedSection Section neuron neuron.exe Reference 381 neuron/neuron/secspec.html#forall
 forsec CurrentlyAccessedSection Section neuron neuron.exe Reference 383 neuron/neuron/secspec.html#forsec
