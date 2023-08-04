@@ -521,10 +521,10 @@ NRN_COVERAGE_FILES:STRING=
 
 NRN_SANITIZERS:STRING=
 ----------------------
-  Enable some combination of AddressSanitizer, LeakSanitizer and
-  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
-  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
-  information.
+  Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
+  and UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak``, ``thread`` and ``undefined``.
+  See the "Diagnosis and Debugging" section for more information.
   Note that on macOS it can be a little intricate to combine
   ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
   you attempt this then the CMake code should recommend a solution.
