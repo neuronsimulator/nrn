@@ -51,16 +51,12 @@ static double l_head(void*) {
     std::smatch sm;
     bool found = std::regex_search(text, sm, r);
     int i = sm.position();
-    //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
-    if (found && i > 0) {
-        auto buf = sm.prefix().str();
-        hoc_assign_str(head, buf.c_str());
+    if (found) {
+        hoc_assign_str(head, sm.prefix().str().c_str());
     } else {
-        hoc_assign_str(head, "");
-        if (i > 0) {
-            i = -1;
-        }
+        i = -1;
+        hoc_assign_str(head, text.c_str());
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
@@ -76,14 +72,11 @@ static double l_tail(void*) {
     bool found = std::regex_search(text, sm, r);
     int i = sm.position() + sm.length();
     char** tail = hoc_pgargstr(3);
-    if (found && i > 0) {
-        auto buf = sm.suffix().str();
-        hoc_assign_str(tail, buf.c_str());
+    if (found) {
+        hoc_assign_str(tail, sm.suffix().str().c_str());
     } else {
-        hoc_assign_str(tail, "");
-        if (i > 0) {
-            i = -1;
-        }
+        hoc_assign_str(tail, text.c_str());
+        i = -1;
     }
     hoc_return_type_code = 1;  // integer
     return double(i);
