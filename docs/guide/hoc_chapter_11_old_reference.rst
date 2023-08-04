@@ -303,7 +303,7 @@ Keywords
     sin	cos	atan	log	log10	exp	sqrt	int	abs	erf
 	erfc	system	prmat	solve	wqinit	plt	axis	plot	plotx	ploty
 	regraph	symbols	printf	xred	sred	ropen	wopen	xopen	fprint	fscan
-	graph	graphmode	fmenu	lw	getstr	strcmp	setcolor startsw
+	graph	graphmode	lw	getstr	strcmp	setcolor startsw
 	stopsw	object_id	allobjectvars	allobjexts	xpanel	xbutton
 	xcheckbox	xstatebutton	xlabel	xmenu	xvalue	xpvalue	xradiobutton
 	xfixedvalue	xvarlabel	xslider	boolean_dialog	continue_dialog

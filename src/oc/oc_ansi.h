@@ -373,7 +373,6 @@ int hoc_arayinfo_install(Symbol*, int);
 void hoc_free_arrayinfo(Arrayinfo*);
 void hoc_free_val_array(double*, std::size_t);
 std::size_t hoc_total_array(Symbol*);
-void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
 void hoc_init();

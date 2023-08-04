@@ -137,7 +137,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"sprint", hoc_Sprint},
                  {"graph", hoc_Graph},
                  {"graphmode", hoc_Graphmode},
-                 {"fmenu", hoc_fmenu},
                  {"lw", hoc_Lw},
                  {"getstr", hoc_Getstr},
                  {"strcmp", hoc_Strcmp},
