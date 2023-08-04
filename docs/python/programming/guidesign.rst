@@ -13,7 +13,6 @@ GUI Design
     gui/vfe.rst
     gui/pwman.rst
     gui/nfunc.rst
-    gui/textmenus.rst
     gui/dialog.rst
     gui/misc.rst
     

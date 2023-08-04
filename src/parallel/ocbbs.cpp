@@ -36,7 +36,7 @@ double nrnmpi_rtcomp_time_;
 extern double nrn_multisend_receive_time(int);
 extern void nrn_prcellstate(int gid, const char* suffix);
 double nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
 double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
@@ -471,7 +471,7 @@ static double vtransfer_time(void* v) {
     int mode = ifarg(1) ? int(chkarg(1, 0., 2.)) : 0;
     if (mode == 2) {
         return nrnmpi_rtcomp_time_;
-#if PARANEURON
+#if NRNMPI
     } else if (mode == 1) {
         return nrnmpi_splitcell_wait_;
     } else {
@@ -512,7 +512,7 @@ static double wait_time(void* v) {
 
 static double step_time(void* v) {
     double w = ((OcBBS*) v)->integ_time();
-#if PARANEURON
+#if NRNMPI
     w -= nrnmpi_transfer_wait_ + nrnmpi_splitcell_wait_;
 #endif
     return w;
@@ -523,7 +523,7 @@ static double step_wait(void* v) {
         nrnmpi_step_wait_ = chkarg(1, -1.0, 0.0);
     }
     double w = nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
     // sadly, no calculation of transfer and multisplit barrier times.
 #endif
     if (w < 0.) {

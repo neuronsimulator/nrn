@@ -42,6 +42,10 @@ MPI_Comm nrn_bbs_comm;
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
 
+static int nrnmpi_numprocs_subworld = 1;
+static int nrnmpi_subworld_id = -1;
+static int nrnmpi_subworld_change_cnt = 0;
+
 extern void nrnmpi_spike_initialize();
 
 #define nrnmpidebugleak 0
@@ -328,6 +332,14 @@ void nrnmpi_subworld_size(int n) {
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
 int nrnmpi_wrap_mpi_init(int* flag) {
     return MPI_Initialized(flag);
+}
+
+void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world) {
+    *cnt = nrnmpi_subworld_change_cnt;
+    *index = nrnmpi_subworld_id;
+    *rank = nrnmpi_myid;
+    *numprocs = nrnmpi_numprocs_subworld;
+    *numprocs_world = nrnmpi_numprocs_world;
 }
 
 #endif
