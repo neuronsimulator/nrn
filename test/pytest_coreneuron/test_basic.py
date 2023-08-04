@@ -384,8 +384,9 @@ def test_nosection():
 
 
 def test_nrn_mallinfo():
-    # figure out if ASan was enabled, see comment in unit_test.cpp
-    if "address" in config.arguments["NRN_SANITIZERS"]:
+    # figure out if ASan or TSan was enabled, see comment in unit_test.cpp
+    sanitizers = config.arguments["NRN_SANITIZERS"]
+    if "address" in sanitizers or "thread" in sanitizers:
         print("Skipping nrn_mallinfo checks because ASan was enabled")
         return
     assert h.nrn_mallinfo(0) > 0
@@ -395,7 +396,7 @@ def test_errorcode():
     import os, sys, subprocess
 
     process = subprocess.run('nrniv -c "1/0"', shell=True)
-    assert process.returncode > 0
+    assert process.returncode != 0
 
     exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
     env = os.environ.copy()
@@ -408,7 +409,7 @@ def test_errorcode():
     process = subprocess.run(
         [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
     )
-    assert process.returncode > 0
+    assert process.returncode != 0
 
 
 def test_hocObj_error_in_construction():

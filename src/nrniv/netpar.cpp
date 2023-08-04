@@ -24,8 +24,10 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <netcon.h>
 #include <cvodeobj.h>
 #include <netcvode.h>
-#include <vector>
 #include "ivocvect.h"
+
+#include <atomic>
+#include <vector>
 
 static int n_multisend_interval;
 
@@ -92,7 +94,7 @@ double nrn_multisend_receive_time(int) {
 }
 #endif
 
-#if PARANEURON
+#if NRNMPI
 extern void nrnmpi_split_clear();
 #endif
 extern void nrnmpi_multisplit_clear();
@@ -226,7 +228,7 @@ Gid2PreSyn& nrn_gid2out() {
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    static int seqcnt_;
+static std::atomic<int> seqcnt_;
 static NrnThread* last_nt_;
 #endif
 
@@ -253,9 +255,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     nt->_t = tt;
 #if NRNMPI
     if (nrnmpi_numprocs > 0) {
-        MUTLOCK
         seq = ++seqcnt_;
-        MUTUNLOCK
         if (seq == nrn_nthread) {
             last_nt_ = nt;
 #if NRNMPI
@@ -709,7 +709,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-        t_exchange_ = nrn_threads->_t;
+        t_exchange_ = nt->_t;
         TBUF
         return;
     }
@@ -806,7 +806,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
     }
-    t_exchange_ = nrn_threads->_t;
+    t_exchange_ = nt->_t;
     wt1_ = nrnmpi_wtime() - wt;
     TBUF
 }
@@ -990,7 +990,7 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 void nrnmpi_gid_clear(int arg) {
     if (arg == 0 || arg == 3 || arg == 4) {
         nrn_partrans_clear();
-#if PARANEURON
+#if NRNMPI
         nrnmpi_split_clear();
 #endif
     }
