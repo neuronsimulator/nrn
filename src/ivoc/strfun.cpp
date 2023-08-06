@@ -47,17 +47,21 @@ static double l_head(void*) {
     while (!text.empty() && text.back() == '\n') {
         text.pop_back();
     }
-    std::regex r(gargstr(2));
-    std::smatch sm;
-    bool found = std::regex_search(text, sm, r);
-    int i = sm.position();
-    char** head = hoc_pgargstr(3);
-    if (found) {
-        hoc_assign_str(head, sm.prefix().str().c_str());
-    } else {
-        i = -1;
-        hoc_assign_str(head, text.c_str());
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2));
+        std::smatch sm;
+        bool found = std::regex_search(text, sm, r);
+        if (found) {
+            i = sm.position();
+            result = sm.prefix().str();
+        }
+    } catch (const std::regex_error& e) {
+        std::cout << e.what() << std::endl;
     }
+    char** head = hoc_pgargstr(3);
+    hoc_assign_str(head, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
@@ -67,17 +71,21 @@ static double l_tail(void*) {
     while (!text.empty() && text.back() == '\n') {
         text.pop_back();
     }
-    std::regex r(gargstr(2));
-    std::smatch sm;
-    bool found = std::regex_search(text, sm, r);
-    int i = sm.position() + sm.length();
-    char** tail = hoc_pgargstr(3);
-    if (found) {
-        hoc_assign_str(tail, sm.suffix().str().c_str());
-    } else {
-        hoc_assign_str(tail, text.c_str());
-        i = -1;
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2));
+        std::smatch sm;
+        bool found = std::regex_search(text, sm, r);
+        if (found) {
+            i = sm.position() + sm.length();
+            result = sm.suffix().str();
+        }
+    } catch (const std::regex_error& e) {
+        std::cout << e.what() << std::endl;
     }
+    char** tail = hoc_pgargstr(3);
+    hoc_assign_str(tail, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
