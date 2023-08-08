@@ -46,7 +46,7 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
-#if 1 || PARANEURON
+#if 1 || NRNMPI
 void (*nrn_multisplit_setup_)();
 #endif
 
@@ -2044,7 +2044,8 @@ static void nrn_matrix_node_alloc(void) {
  *  This method ensures that the Mechanism data is ready for this compute phase.
  *  It is guaranteed to remain "ready" until the returned tokens are destroyed.
  */
-static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_data(
+static void nrn_sort_mech_data(
+    neuron::container::Mechanism::storage::frozen_token_type& sorted_token,
     neuron::cache::Model& cache,
     neuron::container::Mechanism::storage& mech_data) {
     // Do the actual sorting here. For now the algorithm is just to ensure that
@@ -2164,11 +2165,13 @@ static neuron::container::Mechanism::storage::sorted_token_type nrn_sort_mech_da
         assert(trivial_counter <= mech_data_size);
         if (trivial_counter < mech_data_size) {
             // The `mech_data_permutation` vector is not a unit transformation
-            // Should this and other permuting operations return a "sorted token"?
-            mech_data.apply_reverse_permutation(std::move(mech_data_permutation));
+            mech_data.apply_reverse_permutation(std::move(mech_data_permutation), sorted_token);
         }
     }
-    return mech_data.get_sorted_token();
+    // Make sure that everything ends up flagged as sorted, even morphologies,
+    // mechanism types with no instances, and cases where the permutation
+    // vector calculated was found to be trivial.
+    mech_data.mark_as_sorted(sorted_token);
 }
 
 void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
@@ -2218,13 +2221,9 @@ void nrn_fill_mech_data_caches(neuron::cache::Model& cache,
  *  computations performed while time-stepping.
  *
  *  This method ensures that the Node data is ready for this compute phase.
- *
- *  @todo Is it worth "freezing" the data before any of the current_row() calls,
- *  and making it possible to "atomically" do (freeze, calculate permutation,
- *  apply-permutation-iff-the-frozen-count-was-1, return token)?
  */
-static neuron::container::state_token<neuron::container::Node::storage> nrn_sort_node_data(
-    neuron::cache::Model& cache) {
+static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_type& sorted_token,
+                               neuron::cache::Model& cache) {
     // Make sure the voltage storage follows the order encoded in _v_node.
     // Generate the permutation vector to update the underlying storage for
     // Nodes. This must come after nrn_multisplit_setup_, which can change the
@@ -2273,64 +2272,99 @@ static neuron::container::state_token<neuron::container::Node::storage> nrn_sort
             throw std::runtime_error(oss.str());
         }
     }
-    // Should this and other permuting operations return a "sorted token"?
-    node_data.apply_reverse_permutation(std::move(node_data_permutation));
-    return node_data.get_sorted_token();
+    // Apply the permutation, using `sorted_token` to authorise this operation
+    // despite the container being frozen.
+    node_data.apply_reverse_permutation(std::move(node_data_permutation), sorted_token);
 }
 
-/** @brief Ensure neuron::container::* data are sorted.
+/**
+ * @brief Ensure neuron::container::* data are sorted.
  *
- *  Set the containers to be in read-only mode, until the returned token is
- *  destroyed.
+ * Set all of the containers to be in read-only mode, until the returned token
+ * is destroyed. This method can be called from multi-threaded regions.
  */
 neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
-    bool cache_was_valid = bool{neuron::cache::model};
-    if (!cache_was_valid) {
-        neuron::cache::model.emplace();
-    }
-    neuron::model_sorted_token ret{*neuron::cache::model};
-    auto& node_data = neuron::model().node_data();
-    auto& tokens = ret.mech_data_tokens;
-    tokens.reserve(neuron::model().mechanism_storage_size());
-    if (cache_was_valid) {
-        // cache is valid
-        assert(node_data.is_sorted());
-        ret.node_data_token = node_data.get_sorted_token();
-        neuron::model().apply_to_mechanisms([&tokens](auto& mech_data) {
-            if (!mech_data.is_sorted()) {
-                std::ostringstream oss;
-                oss << "nrn_ensure_model_data_are_sorted: " << mech_data
-                    << " was not sorted despite the cache being valid";
-                throw std::runtime_error(std::move(oss).str());
-            }
-            tokens.emplace_back(mech_data.get_sorted_token());
-        });
+    // Rather than a more complicated lower-level solution, just serialise all
+    // calls to this method. The more complicated lower-level solution would
+    // presumably involve a more fully-fledged std::shared_mutex-type model,
+    // where the soa containers can be locked by many readers (clients that do
+    // not do anything that invalidates pointers/caches) or a single writer
+    // (who *is* authorised to perform those operations), with a deadlock
+    // avoiding algorithm used to acquire those two types of lock for all the
+    // different soa containers at once.
+    static std::mutex s_mut{};
+    std::unique_lock _{s_mut};
+    // Two scenarii:
+    // - model is already sorted, in which case we just assemble the return
+    //   value but don't mutate anything or do any real work
+    // - something is not already sorted, and by extension the cache is not
+    //   valid.
+    // In both cases, we want to start by acquiring tokens from all of the
+    // data containers in the model. Once we have locked the whole model in
+    // this way, we can trigger permuting the model (by loaning out the tokens
+    // one by one) to mark it as sorted.
+    auto& model = neuron::model();
+    auto& node_data = model.node_data();
+    // Get tokens for the whole model
+    auto node_token = node_data.issue_frozen_token();
+    auto already_sorted = node_data.is_sorted();
+    // How big does an array have to be to be indexed by mechanism type?
+    auto const mech_storage_size = model.mechanism_storage_size();
+    std::vector<neuron::container::Mechanism::storage::frozen_token_type> mech_tokens{};
+    mech_tokens.reserve(mech_storage_size);
+    model.apply_to_mechanisms([&already_sorted, &mech_tokens](auto& mech_data) {
+        mech_tokens.push_back(mech_data.issue_frozen_token());
+        already_sorted = already_sorted && mech_data.is_sorted();
+    });
+    // Now the whole model is marked frozen/read-only, but it may or may not be
+    // marked sorted (if it is, the cache should be valid, otherwise it should
+    // not be).
+    if (already_sorted) {
+        // If everything was already sorted, the cache should already be valid.
+        assert(neuron::cache::model);
+        // There isn't any more work to be done, really.
     } else {
-        // cache not valid, presumably because something is not sorted
-        // populate a different cache, because neuron::cache::model gets
-        // invalidated by permutations via the callback
-        auto cache = std::move(*neuron::cache::model);
-        bool all_sorted = node_data.is_sorted();
-        neuron::model().apply_to_mechanisms(
-            [&all_sorted](auto& mech_data) { all_sorted = all_sorted && mech_data.is_sorted(); });
-        assert(!all_sorted);
+        // Some part of the model data is not already marked sorted. In this
+        // case we expect that the cache is *not* valid, because whatever
+        // caused something to not be sorted should also have invalidated the
+        // cache.
+        assert(!neuron::cache::model);
+        // Build a new cache (*not* in situ, so it doesn't get invalidated
+        // under our feet while we're in the middle of the job) and populate it
+        // by calling the various methods that sort the model data.
+        neuron::cache::Model cache{};
         cache.thread.resize(nrn_nthread);
-        // How big an array needs to be to be indexed by mechanism type
-        auto const mech_storage_size = neuron::model().mechanism_storage_size();
-        cache.mechanism.resize(mech_storage_size);
         for (auto& thread_cache: cache.thread) {
             thread_cache.mechanism_offset.resize(mech_storage_size);
         }
-        ret.node_data_token = nrn_sort_node_data(cache);
-        // TODO should we pass a token saying the node data are sorted to
-        // nrn_sort_mech_data?
-        neuron::model().apply_to_mechanisms([&cache, &tokens](auto& mech_data) {
-            tokens.emplace_back(nrn_sort_mech_data(cache, mech_data));
+        cache.mechanism.resize(mech_storage_size);
+        // The cache is initialised enough to be populated by the various data
+        // sorting algorithms. The small "problem" here is that all of the
+        // model data structures are already marked as frozen via the tokens
+        // that we acquired above. The way around this is to transfer those
+        // tokens back to the relevant containers, so they can check that the
+        // only active token is the one that has been provided back to them. In
+        // other words, any token is a "read lock" but a non-const token that
+        // refers to a container with token reference count of exactly one has
+        // an elevated "write lock" status.
+        nrn_sort_node_data(node_token, cache);
+        assert(node_data.is_sorted());
+        // TODO: maybe we should separate out cache population from sorting.
+        std::size_t n{};  // eww
+        model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
+            // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
+            nrn_sort_mech_data(mech_tokens[n], cache, mech_data);
+            assert(mech_data.is_sorted());
+            ++n;
         });
         // Now that all the mechanism data is sorted we can fill in pdata caches
-        neuron::model().apply_to_mechanisms(
+        model.apply_to_mechanisms(
             [&cache](auto& mech_data) { nrn_fill_mech_data_caches(cache, mech_data); });
+        // Move our working cache into the global storage.
         neuron::cache::model = std::move(cache);
     }
+    // Move our tokens into the return value and be done with it.
+    neuron::model_sorted_token ret{*neuron::cache::model, std::move(node_token)};
+    ret.mech_data_tokens = std::move(mech_tokens);
     return ret;
 }

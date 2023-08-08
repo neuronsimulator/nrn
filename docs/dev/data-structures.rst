@@ -210,8 +210,17 @@ In the example above, we used a simple tag type:
 to define a scalar field.
 There are several additional features in ``neuron::container::soa<...>`` that are not enabled in
 the example above.
-Additional features are generally enabled by using tag types that have additional member functions
-and variables; these will be summarised now.
+Additional features are generally enabled by using tag types that have
+additional member functions and variables. There are three advanced tag types:
+optional fields; array-valued fields, i.e. fields for which each row has
+multiple values; and tags which contain multiple, possibly array-valued,
+fields. All three are shown schematically in the figure below; and described in
+detail in the following subsections. In the figure fields with the same color
+must have the same scalar type. The zigzag line represents the memory layout
+for array-valued fields.
+
+.. image:: soa-advanced-tag-types.svg
+
 
 Runtime-variable field counts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -487,9 +496,8 @@ This is done using a token type:
 
     void whatever(my_soa_container& data) { // assume `data` was not already "frozen"
         owning_handle foo{data}; // adding an element is OK
-        // in reality you would probably apply a permutation here before marking data sorted
-        auto token = data.get_sorted_token(); // mark container "frozen" so it remains sorted
-        owning_handle disappointing_foo{data}; // this will throw
+        auto token = data.issue_frozen_token(); // mark container "frozen"
+        owning_handle disappointing_foo{data};  // this will throw
     } // `token`` is destroyed here; `data` ceases to be "frozen"
 
 The container maintains a count of how many tokens are controlling it and is "frozen" whenever that

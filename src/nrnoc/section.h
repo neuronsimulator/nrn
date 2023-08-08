@@ -189,7 +189,7 @@ struct Node {
     Section* child;                 /* section connected to this node */
                                     /* 0 means no other section connected */
     Section* sec;                   /* section this node is in */
-                                    /* #if PARANEURON */
+                                    /* #if NRNMPI */
     struct Node* _classical_parent; /* needed for multisplit */
     struct NrnThread* _nt;
 /* #endif */
