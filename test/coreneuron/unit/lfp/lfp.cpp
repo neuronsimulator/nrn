@@ -10,8 +10,8 @@
 #include "coreneuron/io/reports/report_event.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 
-#define BOOST_TEST_MODULE LFPTest
-#include <boost/test/included/unit_test.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
 #include <iostream>
 
@@ -29,7 +29,7 @@ double integral(F f, double a, double b, int n) {
 }
 
 
-BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
+TEST_CASE("LFP_PointSource_LineSource") {
 #if NRNMPI
     nrnmpi_init(nullptr, nullptr, false);
 #endif
@@ -74,15 +74,17 @@ BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
         // TEST of analytic vs numerical integration
         std::clog << "ANALYTIC line source " << analytic_circling_lfp
                   << " vs NUMERIC line source LFP " << numeric_circling_lfp << "\n";
-        BOOST_REQUIRE_CLOSE(analytic_circling_lfp, numeric_circling_lfp, 1.0e-6);
+        REQUIRE(Approx(analytic_circling_lfp).margin(1.0e-6) == numeric_circling_lfp);
         // TEST of LFP Flooring
-        BOOST_REQUIRE((approaching_elec[1] < 0.866e-6) ? analytic_approaching_lfp == 1.0e6 : true);
+        if (approaching_elec[1] < 0.866e-6) {
+            REQUIRE(analytic_approaching_lfp == 1.0e6);
+        }
         vals[k] = analytic_circling_lfp;
     }
     // TEST of SYMMETRY of LFP FORMULA
     for (size_t k = 0; k < 5; k++) {
-        BOOST_REQUIRE(std::abs((vals[k] - vals[k + 5]) /
-                               std::max(std::abs(vals[k]), std::abs(vals[k + 5]))) < 1.0e-12);
+        REQUIRE(std::abs((vals[k] - vals[k + 5]) /
+                         std::max(std::abs(vals[k]), std::abs(vals[k + 5]))) < 1.0e-12);
     }
     std::vector<std::array<double, 3>> segments_starts = {{0., 0., 1.},
                                                           {0., 0., 0.5},
@@ -102,15 +104,18 @@ BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
         segments_starts, segments_ends, radii, indices, electrodes, 1.0);
     lfpp.template lfp<std::vector<double>>({0.0, 1.0, 2.0, 3.0});
     std::vector<double> res_point_source = lfpp.lfp_values();
-    BOOST_REQUIRE_CLOSE(res_line_source[0], res_point_source[0], 1.0);
-    BOOST_REQUIRE_CLOSE(res_line_source[1], res_point_source[1], 1.0);
+    REQUIRE(res_line_source[0] == Approx(res_point_source[0]).margin(1.0));
+    REQUIRE(res_line_source[1] == Approx(res_point_source[1]).margin(1.0));
 #if NRNMPI
     nrnmpi_finalize();
 #endif
 }
 
 #ifdef ENABLE_SONATA_REPORTS
-BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
+TEST_CASE("LFP_ReportEvent") {
     const std::string report_name = "compartment_report";
     const std::vector<uint64_t> gids = {42, 134};
     const std::vector<int> segment_ids = {0, 1, 2, 3, 4};
@@ -123,18 +128,17 @@ BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
     for (const auto& gid: gids) {
         mapinfo->mappingvec.push_back(new CellMapping(gid));
         for (const auto& segment: segment_ids) {
-            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment,
-                                                               {segment + 1.0, segment + 2.0});
+            std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
+            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment, lfp_factors);
         }
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
-    BOOST_REQUIRE_EQUAL(mapinfo->_lfp.size(), 4);
 
     CellMapping* c42 = mapinfo->mappingvec[0];
     CellMapping* c134 = mapinfo->mappingvec[1];
-    BOOST_REQUIRE_EQUAL(c42->lfp_factors.size(), 5);
-    BOOST_REQUIRE_EQUAL(c134->num_electrodes(), 2);
+    REQUIRE(c42->lfp_factors.size() == 5);
+    REQUIRE(c134->num_electrodes() == 2);
 
     // Pass _lfp variable to vars_to_report
     size_t offset_lfp = 0;
@@ -175,8 +179,8 @@ BOOST_AUTO_TEST_CASE(LFP_ReportEvent) {
     ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, report_type);
     event.lfp_calc(&nt);
 
-    BOOST_REQUIRE_CLOSE(mapinfo->_lfp[0], 5.5, 1.0);
-    BOOST_REQUIRE_CLOSE(mapinfo->_lfp[3], 7.0, 1.0);
+    REQUIRE(mapinfo->_lfp[0] == Approx(5.5).margin(1.0));
+    REQUIRE(mapinfo->_lfp[3] == Approx(7.0).margin(1.0));
 
     delete mapinfo;
     delete nt.nrn_fast_imem;

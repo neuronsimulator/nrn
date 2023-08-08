@@ -62,7 +62,7 @@ void nrnmpi_spike_initialize_impl_impl() {
 
 static MPI_Datatype spikebuf_type;
 
-static void make_spikebuf_type() {
+static void make_spikebuf_type(int* nout_) {
     NRNMPI_Spikebuf s;
     int block_lengths[3];
     MPI_Aint displacements[3];
@@ -91,11 +91,12 @@ static void make_spikebuf_type() {
 }
 #endif
 
-int nrnmpi_spike_exchange_impl(int* nin,
-                               int* nout,
-                               int* icapacity,
-                               NRNMPI_Spike** spikein,
-                               NRNMPI_Spike** spikeout) {
+int nrnmpi_spike_exchange(int* ovfl,
+                          int* nout_,
+                          int* nin_,
+                          NRNMPI_Spike* spikeout_,
+                          NRNMPI_Spike** spikein_,
+                          int* icapacity_) {
     int i, n, novfl, n1;
     if (!displs) {
         np = nrnmpi_numprocs;
@@ -103,26 +104,26 @@ int nrnmpi_spike_exchange_impl(int* nin,
         hoc_malchk();
         displs[0] = 0;
 #if nrn_spikebuf_size > 0
-        make_spikebuf_type();
+        make_spikebuf_type(nout_);
 #endif
     }
     nrnbbs_context_wait();
 #if nrn_spikebuf_size == 0
-    MPI_Allgather(nout, 1, MPI_INT, nin, 1, MPI_INT, nrnmpi_comm);
-    n = nin[0];
+    MPI_Allgather(nout_, 1, MPI_INT, nin_, 1, MPI_INT, nrnmpi_comm);
+    n = nin_[0];
     for (i = 1; i < np; ++i) {
         displs[i] = n;
         n += nin[i];
     }
     if (n) {
-        if (*icapacity < n) {
-            *icapacity = n + 10;
-            free(*spikein);
-            *spikein = (NRNMPI_Spike*) hoc_Emalloc(*icapacity * sizeof(NRNMPI_Spike));
+        if (*icapacity_ < n) {
+            *icapacity_ = n + 10;
+            free(*spikein_);
+            *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
         MPI_Allgatherv(
-            *spikeout, *nout, spike_type, *spikein, nin, displs, spike_type, nrnmpi_comm);
+            spikeout_, *nout_, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
 #else
     MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
@@ -146,16 +147,16 @@ int nrnmpi_spike_exchange_impl(int* nin,
         }
     }
     if (novfl) {
-        if (*icapacity < novfl) {
-            *icapacity = novfl + 10;
-            free(*spikein);
-            *spikein = (NRNMPI_Spike*) hoc_Emalloc(*icapacity * sizeof(NRNMPI_Spike));
+        if (*icapacity_ < novfl) {
+            *icapacity_ = novfl + 10;
+            free(*spikein_);
+            *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
-        n1 = (*nout > nrn_spikebuf_size) ? *nout - nrn_spikebuf_size : 0;
-        MPI_Allgatherv(*spikeout, n1, spike_type, *spikein, nin, displs, spike_type, nrnmpi_comm);
+        n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
+        MPI_Allgatherv(spikeout_, n1, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
-    ovfl_ = novfl;
+    *ovfl = novfl;
 #endif
     return n;
 }
@@ -178,15 +179,15 @@ a sequence of spiketime, localgid pairs. There are nspike of them.
 The allgather sends the first part of the buf and the allgatherv buffer
 sends any overflow.
 */
-int nrnmpi_spike_exchange_compressed_impl(int* nin,
-                                          unsigned char*& spfixin_ovfl,
-                                          unsigned char* spikeout_fixed,
-                                          unsigned char* spikein_fixed,
-                                          int ag_send_size,
-                                          int ag_send_nspike,
-                                          int localgid_size,
-                                          int* ovfl_capacity,
-                                          int* ovfl) {
+int nrnmpi_spike_exchange_compressed(int localgid_size,
+                                     int ag_send_size,
+                                     int ag_send_nspike,
+                                     int* ovfl_capacity,
+                                     int* ovfl,
+                                     unsigned char* spfixout,
+                                     unsigned char* spfixin,
+                                     unsigned char** spfixin_ovfl,
+                                     int* nin_) {
     int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
     if (!displs) {
         np = nrnmpi_numprocs;
@@ -200,18 +201,17 @@ int nrnmpi_spike_exchange_compressed_impl(int* nin,
     }
     nrnbbs_context_wait();
 
-    MPI_Allgather(
-        spikeout_fixed, ag_send_size, MPI_BYTE, spikein_fixed, ag_send_size, MPI_BYTE, nrnmpi_comm);
+    MPI_Allgather(spfixout, ag_send_size, MPI_BYTE, spfixin, ag_send_size, MPI_BYTE, nrnmpi_comm);
     novfl = 0;
     ntot = 0;
     bstot = 0;
     for (i = 0; i < np; ++i) {
         displs[i] = bstot;
         idx = i * ag_send_size;
-        n = spikein_fixed[idx++] * 256;
-        n += spikein_fixed[idx++];
+        n = spfixin[idx++] * 256;
+        n += spfixin[idx++];
         ntot += n;
-        nin[i] = n;
+        nin_[i] = n;
         if (n > ag_send_nspike) {
             bs = 2 + n * (1 + localgid_size) - ag_send_size;
             byteovfl[i] = bs;
@@ -224,22 +224,22 @@ int nrnmpi_spike_exchange_compressed_impl(int* nin,
     if (novfl) {
         if (*ovfl_capacity < novfl) {
             *ovfl_capacity = novfl + 10;
-            free(spfixin_ovfl);
-            spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
-                                                        sizeof(unsigned char));
+            free(*spfixin_ovfl);
+            *spfixin_ovfl = (unsigned char*) hoc_Emalloc(*ovfl_capacity * (1 + localgid_size) *
+                                                         sizeof(unsigned char));
             hoc_malchk();
         }
         bs = byteovfl[nrnmpi_myid];
         /*
-        note that the spikeout_fixed buffer is one since the overflow
+        note that the spfixout buffer is one since the overflow
         is contiguous to the first part. But the spfixin_ovfl is
-        completely separate from the spikein_fixed since the latter
+        completely separate from the spfixin since the latter
         dynamically changes its size during a run.
         */
-        MPI_Allgatherv(spikeout_fixed + ag_send_size,
+        MPI_Allgatherv(spfixout + ag_send_size,
                        bs,
                        MPI_BYTE,
-                       spfixin_ovfl,
+                       *spfixin_ovfl,
                        byteovfl,
                        displs,
                        MPI_BYTE,

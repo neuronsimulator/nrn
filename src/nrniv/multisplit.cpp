@@ -36,7 +36,7 @@ static void multisplit_v_setup();
 static void multisplit_solve();
 
 extern double nrnmpi_rtcomp_time_;
-#if PARANEURON
+#if NRNMPI
 extern double nrnmpi_splitcell_wait_;
 #else
 static double nrnmpi_splitcell_wait_;
@@ -2301,7 +2301,7 @@ nrnmpi_myid, mt.host_, 2*j, tbuf[2*j], 2*j+1, tbuf[2*j+1], mt.nodeindex_[j]);
     }
 #endif  // EXCHANGE_ON
 
-#if PARANEURON
+#if NRNMPI
     nrnmpi_splitcell_wait_ += nrnmpi_wtime() - wt;
 #endif
     errno = 0;
@@ -2500,7 +2500,7 @@ nrnmpi_myid, mt.host_, 2*j, tbuf[2*j], 2*j+1, tbuf[2*j+1], mt.nodeindex_[j]);
     }
 #endif  // EXCHANGE_ON
 
-#if PARANEURON
+#if NRNMPI
     nrnmpi_splitcell_wait_ += nrnmpi_wtime() - wt;
 #endif
     errno = 0;

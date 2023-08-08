@@ -94,7 +94,6 @@ set(OC_FILE_LIST
     code2.cpp
     debug.cpp
     fileio.cpp
-    fmenu.cpp
     ftime.cpp
     functabl.cpp
     getsym.cpp
