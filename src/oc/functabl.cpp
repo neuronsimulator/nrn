@@ -3,7 +3,7 @@
 
 struct TableArg {
     int nsize;
-    double* argvec; /* if nil use min,max */
+    double* argvec; /* if nullptr use min,max */
     double min;
     double max;
     double frac; /* temporary storage */

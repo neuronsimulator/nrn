@@ -652,7 +652,7 @@ Prop* need_memb(Symbol* sym) {
         or if the ion mechanism itself is inserted. Any earlier
         insertions of the latter or locating this kind of POINT_PROCESS
         in this section will mean that we no longer get to this arm
-        of the if statement because m above is not nil.
+        of the if statement because m above is not nullptr.
         */
         Section* sec = nrn_pnt_sec_for_need_;
         Prop** cpl = current_prop_list;
