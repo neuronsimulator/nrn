@@ -75,9 +75,8 @@ static void local_spikevec_sort(std::vector<double>& isvect,
     std::iota(perm.begin(), perm.end(), 0);
     // sort by gid then sort by time
     std::stable_sort(perm.begin(), perm.end(), [&](std::size_t i, std::size_t j) {
-                     return isvecg[i] < isvecg[j] ||
-                         (isvecg[i] == isvecg[j] && isvect[i] < isvect[j]);
-                     });
+        return isvect[i] < isvect[j] || (isvect[i] == isvect[j] && isvecg[i] < isvecg[j]);
+    });
 
     // now apply permutation to time and gid output vectors
     std::transform(perm.begin(), perm.end(), osvect.begin(), [&](std::size_t i) {
