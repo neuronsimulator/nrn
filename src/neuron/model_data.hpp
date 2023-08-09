@@ -117,6 +117,13 @@ struct Model {
     [[nodiscard]] std::unique_ptr<container::utils::storage_info> find_container_info(
         void const* cont) const;
 
+    void shrink_to_fit() {
+        m_node_data.shrink_to_fit();
+        apply_to_mechanisms([](auto& mech_data) { mech_data.shrink_to_fit(); });
+
+        m_identifier_ptrs_for_deferred_deletion.shrink_to_fit();
+    }
+
   private:
     container::Mechanism::storage& mechanism_data_impl(int type) const {
         if (0 <= type && type >= m_mech_data.size()) {

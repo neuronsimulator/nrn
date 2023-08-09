@@ -765,6 +765,16 @@ struct soa {
         return result;
     }
 
+    void shrink_to_fit() {
+        if (m_frozen_count) {
+            throw_error("shrink() called on a frozen structure");
+        }
+        for_each_vector<detail::may_cause_reallocation::Yes>(
+            [](auto const& tag, auto& vec, int field_index, int array_dim) {
+                vec.shrink_to_fit();
+            });
+    }
+
   private:
     /**
      * @brief Remove the @f$i^{\text{th}}@f$ row from the container.
