@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
@@ -12,7 +12,6 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
-extern void nrnmpi_int_broadcast(int*, int, int);
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM)  // the standard ...

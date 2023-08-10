@@ -7,16 +7,12 @@
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
 
-#if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h>
-#endif
-
 #include <nrnmpi.h>
 #include <hocdec.h>
 
 #if NRNMPI
 #include "nrnmpidec.h"
-#include "nrnmpi_impl.h"
+#include "nrnmpi.hpp"
 #include "mpispike.h"
 #include <mpi.h>
 
@@ -58,7 +54,7 @@ static void make_spike_type() {
     MPI_Op_create((MPI_User_function*) pgvts_op, 1, &mpi_pgvts_op);
 }
 
-void nrnmpi_spike_initialize() {
+void nrnmpi_spike_initialize_impl_impl() {
     make_spike_type();
 }
 
@@ -117,7 +113,7 @@ int nrnmpi_spike_exchange(int* ovfl,
     n = nin_[0];
     for (i = 1; i < np; ++i) {
         displs[i] = n;
-        n += nin_[i];
+        n += nin[i];
     }
     if (n) {
         if (*icapacity_ < n) {
@@ -134,20 +130,20 @@ int nrnmpi_spike_exchange(int* ovfl,
     novfl = 0;
     n = spbufin_[0].nspike;
     if (n > nrn_spikebuf_size) {
-        nin_[0] = n - nrn_spikebuf_size;
-        novfl += nin_[0];
+        nin[0] = n - nrn_spikebuf_size;
+        novfl += nin[0];
     } else {
-        nin_[0] = 0;
+        nin[0] = 0;
     }
     for (i = 1; i < np; ++i) {
         displs[i] = novfl;
         n1 = spbufin_[i].nspike;
         n += n1;
         if (n1 > nrn_spikebuf_size) {
-            nin_[i] = n1 - nrn_spikebuf_size;
-            novfl += nin_[i];
+            nin[i] = n1 - nrn_spikebuf_size;
+            novfl += nin[i];
         } else {
-            nin_[i] = 0;
+            nin[i] = 0;
         }
     }
     if (novfl) {
@@ -253,7 +249,7 @@ int nrnmpi_spike_exchange_compressed(int localgid_size,
     return ntot;
 }
 
-double nrnmpi_mindelay(double m) {
+double nrnmpi_mindelay_impl(double m) {
     double result;
     if (!nrnmpi_use) {
         return m;
@@ -263,7 +259,7 @@ double nrnmpi_mindelay(double m) {
     return result;
 }
 
-int nrnmpi_int_allmax(int x) {
+int nrnmpi_int_allmax_impl(int x) {
     int result;
     if (nrnmpi_numprocs < 2) {
         return x;
@@ -361,139 +357,149 @@ static int MPI_Alltoallv_sparse(void* sendbuf,
 }
 
 
-extern void nrnmpi_dbl_alltoallv_sparse(double* s,
-                                        int* scnt,
-                                        int* sdispl,
-                                        double* r,
-                                        int* rcnt,
-                                        int* rdispl) {
+extern void nrnmpi_dbl_alltoallv_sparse_impl(double* s,
+                                             int* scnt,
+                                             int* sdispl,
+                                             double* r,
+                                             int* rcnt,
+                                             int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
-extern void nrnmpi_int_alltoallv_sparse(int* s,
-                                        int* scnt,
-                                        int* sdispl,
-                                        int* r,
-                                        int* rcnt,
-                                        int* rdispl) {
+extern void nrnmpi_int_alltoallv_sparse_impl(int* s,
+                                             int* scnt,
+                                             int* sdispl,
+                                             int* r,
+                                             int* rcnt,
+                                             int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
 }
 
-extern void nrnmpi_long_alltoallv_sparse(int64_t* s,
-                                         int* scnt,
-                                         int* sdispl,
-                                         int64_t* r,
-                                         int* rcnt,
-                                         int* rdispl) {
+extern void nrnmpi_long_alltoallv_sparse_impl(int64_t* s,
+                                              int* scnt,
+                                              int* sdispl,
+                                              int64_t* r,
+                                              int* rcnt,
+                                              int* rdispl) {
     MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
 
-extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root) {
+extern void nrnmpi_int_gather_impl(int* s, int* r, int cnt, int root) {
     MPI_Gather(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root) {
+extern void nrnmpi_int_gatherv_impl(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root) {
     MPI_Gatherv(s, scnt, MPI_INT, r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_char_gatherv(char* s, int scnt, char* r, int* rcnt, int* rdispl, int root) {
+extern void nrnmpi_char_gatherv_impl(char* s, int scnt, char* r, int* rcnt, int* rdispl, int root) {
     MPI_Gatherv(s, scnt, MPI_CHAR, r, rcnt, rdispl, MPI_CHAR, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root) {
+extern void nrnmpi_int_scatter_impl(int* s, int* r, int cnt, int root) {
     MPI_Scatter(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root) {
+extern void nrnmpi_char_scatterv_impl(char* s,
+                                      int* scnt,
+                                      int* sdispl,
+                                      char* r,
+                                      int rcnt,
+                                      int root) {
     MPI_Scatterv(s, scnt, sdispl, MPI_CHAR, r, rcnt, MPI_CHAR, root, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
+extern void nrnmpi_int_alltoall_impl(int* s, int* r, int n) {
     MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+extern void nrnmpi_int_alltoallv_impl(int* s,
+                                      int* scnt,
+                                      int* sdispl,
+                                      int* r,
+                                      int* rcnt,
+                                      int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
 }
 
-extern void nrnmpi_long_alltoallv(int64_t* s,
-                                  int* scnt,
-                                  int* sdispl,
-                                  int64_t* r,
-                                  int* rcnt,
-                                  int* rdispl) {
+extern void nrnmpi_long_alltoallv_impl(int64_t* s,
+                                       int* scnt,
+                                       int* sdispl,
+                                       int64_t* r,
+                                       int* rcnt,
+                                       int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
-extern void nrnmpi_dbl_alltoallv(double* s,
-                                 int* scnt,
-                                 int* sdispl,
-                                 double* r,
-                                 int* rcnt,
-                                 int* rdispl) {
+extern void nrnmpi_dbl_alltoallv_impl(double* s,
+                                      int* scnt,
+                                      int* sdispl,
+                                      double* r,
+                                      int* rcnt,
+                                      int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
 
-extern void nrnmpi_char_alltoallv(char* s,
-                                  int* scnt,
-                                  int* sdispl,
-                                  char* r,
-                                  int* rcnt,
-                                  int* rdispl) {
+extern void nrnmpi_char_alltoallv_impl(char* s,
+                                       int* scnt,
+                                       int* sdispl,
+                                       char* r,
+                                       int* rcnt,
+                                       int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_CHAR, r, rcnt, rdispl, MPI_CHAR, nrnmpi_comm);
 }
 
 /* following are for the partrans */
 
-void nrnmpi_int_allgather(int* s, int* r, int n) {
+void nrnmpi_int_allgather_impl(int* s, int* r, int n) {
     MPI_Allgather(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
-void nrnmpi_int_allgather_inplace(int* srcdest, int n) {
+void nrnmpi_int_allgather_inplace_impl(int* srcdest, int n) {
     MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n, MPI_INT, nrnmpi_comm);
 }
 
-void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
+void nrnmpi_int_allgatherv_impl(int* s, int* r, int* n, int* dspl) {
     MPI_Allgatherv(s, n[nrnmpi_myid], MPI_INT, r, n, dspl, MPI_INT, nrnmpi_comm);
 }
 
-void nrnmpi_int_allgatherv_inplace(int* srcdest, int* n, int* dspl) {
+void nrnmpi_int_allgatherv_inplace_impl(int* srcdest, int* n, int* dspl) {
     MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n, dspl, MPI_INT, nrnmpi_comm);
 }
 
-void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl) {
+void nrnmpi_char_allgatherv_impl(char* s, char* r, int* n, int* dspl) {
     MPI_Allgatherv(s, n[nrnmpi_myid], MPI_CHAR, r, n, dspl, MPI_CHAR, nrnmpi_comm);
 }
 
-void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {
+void nrnmpi_long_allgatherv_impl(int64_t* s, int64_t* r, int* n, int* dspl) {
     MPI_Allgatherv(s, n[nrnmpi_myid], MPI_INT64_T, r, n, dspl, MPI_INT64_T, nrnmpi_comm);
 }
 
-void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl) {
+void nrnmpi_long_allgatherv_inplace_impl(long* srcdest, int* n, int* dspl) {
     MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n, dspl, MPI_LONG, nrnmpi_comm);
 }
 
-void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
+void nrnmpi_dbl_allgatherv_impl(double* s, double* r, int* n, int* dspl) {
     MPI_Allgatherv(s, n[nrnmpi_myid], MPI_DOUBLE, r, n, dspl, MPI_DOUBLE, nrnmpi_comm);
 }
 
-void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl) {
+void nrnmpi_dbl_allgatherv_inplace_impl(double* srcdest, int* n, int* dspl) {
     MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n, dspl, MPI_DOUBLE, nrnmpi_comm);
 }
 
-void nrnmpi_dbl_broadcast(double* buf, int cnt, int root) {
+void nrnmpi_dbl_broadcast_impl(double* buf, int cnt, int root) {
     MPI_Bcast(buf, cnt, MPI_DOUBLE, root, nrnmpi_comm);
 }
 
-void nrnmpi_int_broadcast(int* buf, int cnt, int root) {
+void nrnmpi_int_broadcast_impl(int* buf, int cnt, int root) {
     MPI_Bcast(buf, cnt, MPI_INT, root, nrnmpi_comm);
 }
 
-void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
+void nrnmpi_char_broadcast_impl(char* buf, int cnt, int root) {
     MPI_Bcast(buf, cnt, MPI_CHAR, root, nrnmpi_comm);
 }
 
-void nrnmpi_str_broadcast_world(std::string& str, int root) {
+void nrnmpi_str_broadcast_world_impl(std::string& str, int root) {
     assert(str.size() <= std::numeric_limits<int>::max());
     // broadcast the size from `root` to everyone
     int sz = str.size();
@@ -505,13 +511,13 @@ void nrnmpi_str_broadcast_world(std::string& str, int root) {
     }
 }
 
-int nrnmpi_int_sum_reduce(int in) {
+int nrnmpi_int_sum_reduce_impl(int in) {
     int result;
     MPI_Allreduce(&in, &result, 1, MPI_INT, MPI_SUM, nrnmpi_comm);
     return result;
 }
 
-void nrnmpi_assert_opstep(int opstep, double t) {
+void nrnmpi_assert_opstep_impl(int opstep, double t) {
     /* all machines in comm should have same opstep and same t. */
     double buf[2];
     if (nrnmpi_numprocs < 2) {
@@ -527,7 +533,7 @@ void nrnmpi_assert_opstep(int opstep, double t) {
     }
 }
 
-double nrnmpi_dbl_allmin(double x) {
+double nrnmpi_dbl_allmin_impl(double x) {
     double result;
     if (nrnmpi_numprocs < 2) {
         return x;
@@ -569,7 +575,7 @@ static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr) {
     }
 }
 
-int nrnmpi_pgvts_least(double* t, int* op, int* init) {
+int nrnmpi_pgvts_least_impl(double* t, int* op, int* init) {
     int i;
     double ibuf[4], obuf[4];
     ibuf[0] = *t;
@@ -600,32 +606,32 @@ int nrnmpi_pgvts_least(double* t, int* op, int* init) {
 }
 
 /* following for splitcell.cpp transfer */
-void nrnmpi_send_doubles(double* pd, int cnt, int dest, int tag) {
+void nrnmpi_send_doubles_impl(double* pd, int cnt, int dest, int tag) {
     MPI_Send(pd, cnt, MPI_DOUBLE, dest, tag, nrnmpi_comm);
 }
 
-void nrnmpi_recv_doubles(double* pd, int cnt, int src, int tag) {
+void nrnmpi_recv_doubles_impl(double* pd, int cnt, int src, int tag) {
     MPI_Status status;
     MPI_Recv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, &status);
 }
 
-void nrnmpi_postrecv_doubles(double* pd, int cnt, int src, int tag, void** request) {
+void nrnmpi_postrecv_doubles_impl(double* pd, int cnt, int src, int tag, void** request) {
     MPI_Irecv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, (MPI_Request*) request);
 }
 
-void nrnmpi_wait(void** request) {
+void nrnmpi_wait_impl(void** request) {
     MPI_Status status;
     MPI_Wait((MPI_Request*) request, &status);
 }
 
-void nrnmpi_barrier() {
+void nrnmpi_barrier_impl() {
     if (nrnmpi_numprocs < 2) {
         return;
     }
     MPI_Barrier(nrnmpi_comm);
 }
 
-double nrnmpi_dbl_allreduce(double x, int type) {
+double nrnmpi_dbl_allreduce_impl(double x, int type) {
     double result;
     MPI_Op t;
     if (nrnmpi_numprocs < 2) {
@@ -642,7 +648,7 @@ double nrnmpi_dbl_allreduce(double x, int type) {
     return result;
 }
 
-extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
+extern "C" void nrnmpi_dbl_allreduce_vec_impl(double* src, double* dest, int cnt, int type) {
     int i;
     MPI_Op t;
     assert(src != dest);
@@ -663,7 +669,7 @@ extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int
     return;
 }
 
-void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type) {
+void nrnmpi_longdbl_allreduce_vec_impl(long double* src, long double* dest, int cnt, int type) {
     int i;
     MPI_Op t;
     assert(src != dest);
@@ -684,7 +690,7 @@ void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type
     return;
 }
 
-void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
+void nrnmpi_long_allreduce_vec_impl(long* src, long* dest, int cnt, int type) {
     int i;
     MPI_Op t;
     assert(src != dest);
@@ -705,19 +711,19 @@ void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
     return;
 }
 
-void nrnmpi_dbl_allgather(double* s, double* r, int n) {
+void nrnmpi_dbl_allgather_impl(double* s, double* r, int n) {
     MPI_Allgather(s, n, MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
 }
 
 static MPI_Comm bgp_comm;
 
-void nrnmpi_multisend_comm() {
+void nrnmpi_multisend_comm_impl() {
     if (!bgp_comm) {
         MPI_Comm_dup(nrnmpi_comm, &bgp_comm);
     }
 }
 
-void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
+void nrnmpi_multisend_multisend_impl(NRNMPI_Spike* spk, int n, int* hosts) {
     int i;
     MPI_Request r;
     MPI_Status status;
@@ -727,7 +733,7 @@ void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     }
 }
 
-int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
+int nrnmpi_multisend_single_advance_impl(NRNMPI_Spike* spk) {
     int flag = 0;
     MPI_Status status;
     MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
@@ -738,7 +744,7 @@ int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
 }
 
 static int iii;
-int nrnmpi_multisend_conserve(int nsend, int nrecv) {
+int nrnmpi_multisend_conserve_impl(int nsend, int nrecv) {
     int tcnts[2];
     tcnts[0] = nsend - nrecv;
     MPI_Allreduce(tcnts, tcnts + 1, 1, MPI_INT, MPI_SUM, bgp_comm);

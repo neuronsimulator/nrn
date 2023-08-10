@@ -34,7 +34,7 @@ void iv_display_scale(float);
 #include <OS/string.h>
 #include "string.h"
 #include "oc2iv.h"
-#include "nrnmpi.h"
+#include "../nrnmpi/nrnmpi.h"
 #include "nrnpy.h"
 
 #if defined(IVX11_DYNAM)

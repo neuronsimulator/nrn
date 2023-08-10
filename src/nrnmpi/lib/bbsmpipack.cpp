@@ -5,10 +5,6 @@
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
 
-#if NRNMPI_DYNAMICLOAD
-#include <nrnmpi_dynam.h>
-#endif
-
 #include <nrnmpi.h>
 
 #if NRNMPI
@@ -19,7 +15,7 @@
 #include <errno.h>
 #include <mpi.h>
 #include <nrnmpidec.h>
-#include <nrnmpi_impl.h>
+#include "nrnmpi.hpp"
 #include <hocdec.h>
 
 #if 0
@@ -98,7 +94,7 @@ static void unpack(void* buf, int count, int my_datatype, bbsmpibuf* r, const ch
     guard(MPI_Unpack(r->buf, r->size, &r->upkpos, buf, count, mytypes[my_datatype], nrn_bbs_comm));
 }
 
-void nrnmpi_upkbegin(bbsmpibuf* r) {
+void nrnmpi_upkbegin_impl(bbsmpibuf* r) {
     int type;
     int p;
 #if debug
@@ -126,7 +122,7 @@ void nrnmpi_upkbegin(bbsmpibuf* r) {
     r->keypos = p;
 }
 
-char* nrnmpi_getkey(bbsmpibuf* r) {
+char* nrnmpi_getkey_impl(bbsmpibuf* r) {
     char* s;
     int type;
     type = r->upkpos;
@@ -144,7 +140,7 @@ char* nrnmpi_getkey(bbsmpibuf* r) {
     return s;
 }
 
-int nrnmpi_getid(bbsmpibuf* r) {
+int nrnmpi_getid_impl(bbsmpibuf* r) {
     int i, type;
     type = r->upkpos;
     r->upkpos = r->keypos;
@@ -159,19 +155,19 @@ int nrnmpi_getid(bbsmpibuf* r) {
     return i;
 }
 
-int nrnmpi_upkint(bbsmpibuf* r) {
+int nrnmpi_upkint_impl(bbsmpibuf* r) {
     int i;
     unpack(&i, 1, my_MPI_INT, r, "upkint");
     return i;
 }
 
-double nrnmpi_upkdouble(bbsmpibuf* r) {
+double nrnmpi_upkdouble_impl(bbsmpibuf* r) {
     double x;
     unpack(&x, 1, my_MPI_DOUBLE, r, "upkdouble");
     return x;
 }
 
-void nrnmpi_upkvec(int n, double* x, bbsmpibuf* r) {
+void nrnmpi_upkvec_impl(int n, double* x, bbsmpibuf* r) {
     unpack(x, n, my_MPI_DOUBLE, r, "upkvec");
 }
 
@@ -183,7 +179,7 @@ So fill this in explicitly in nrnmpi_dynam.cpp
 char* (*p_cxx_char_alloc)(int len);
 #endif
 
-char* nrnmpi_upkstr(bbsmpibuf* r) {
+char* nrnmpi_upkstr_impl(bbsmpibuf* r) {
     int len;
     char* s;
     unpack(&len, 1, my_MPI_INT, r, "upkstr length");
@@ -197,7 +193,7 @@ char* nrnmpi_upkstr(bbsmpibuf* r) {
     return s;
 }
 
-char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* r) {
+char* nrnmpi_upkpickle_impl(size_t* size, bbsmpibuf* r) {
     int len;
     char* s;
     unpack(&len, 1, my_MPI_INT, r, "upkpickle length");
@@ -221,7 +217,7 @@ static void resize(bbsmpibuf* r, int size) {
     }
 }
 
-void nrnmpi_pkbegin(bbsmpibuf* r) {
+void nrnmpi_pkbegin_impl(bbsmpibuf* r) {
     int type;
     if (nrnmpi_myid_bbs == -1) {
         hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
@@ -235,7 +231,7 @@ void nrnmpi_pkbegin(bbsmpibuf* r) {
     guard(MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm));
 }
 
-void nrnmpi_enddata(bbsmpibuf* r) {
+void nrnmpi_enddata_impl(bbsmpibuf* r) {
     int p, type, isize, oldsize;
     p = r->pkposition;
     type = 0;
@@ -303,36 +299,36 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
 #endif
 }
 
-void nrnmpi_pkint(int i, bbsmpibuf* r) {
+void nrnmpi_pkint_impl(int i, bbsmpibuf* r) {
     int ii;
     ii = i;
     pack(&ii, 1, my_MPI_INT, r, "pkint");
 }
 
-void nrnmpi_pkdouble(double x, bbsmpibuf* r) {
+void nrnmpi_pkdouble_impl(double x, bbsmpibuf* r) {
     double xx;
     xx = x;
     pack(&xx, 1, my_MPI_DOUBLE, r, "pkdouble");
 }
 
-void nrnmpi_pkvec(int n, double* x, bbsmpibuf* r) {
+void nrnmpi_pkvec_impl(int n, double* x, bbsmpibuf* r) {
     pack(x, n, my_MPI_DOUBLE, r, "pkvec");
 }
 
-void nrnmpi_pkstr(const char* s, bbsmpibuf* r) {
+void nrnmpi_pkstr_impl(const char* s, bbsmpibuf* r) {
     int len;
     len = strlen(s);
     pack(&len, 1, my_MPI_INT, r, "pkstr length");
     pack((char*) s, len, my_MPI_CHAR, r, "pkstr string");
 }
 
-void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
+void nrnmpi_pkpickle_impl(const char* s, size_t size, bbsmpibuf* r) {
     int len = size;
     pack(&len, 1, my_MPI_INT, r, "pkpickle length");
     pack((char*) s, len, my_MPI_PICKLE, r, "pkpickle data");
 }
 
-void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
+void nrnmpi_bbssend_impl(int dest, int tag, bbsmpibuf* r) {
 #if debug
     printf("%d nrnmpi_bbssend %p dest=%d tag=%d size=%d\n",
            nrnmpi_myid_bbs,
@@ -369,7 +365,7 @@ void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
 #endif
 }
 
-int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
+int nrnmpi_bbsrecv_impl(int source, bbsmpibuf* r) {
     MPI_Status status;
     int size;
     if (source == -1) {
@@ -408,7 +404,7 @@ int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
     return status.MPI_TAG;
 }
 
-int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r) {
+int nrnmpi_bbssendrecv_impl(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r) {
     int size, itag, source;
     int msgtag;
     MPI_Status status;
@@ -424,7 +420,7 @@ int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r) {
     return nrnmpi_bbsrecv(dest, r);
 }
 
-int nrnmpi_iprobe(int* size, int* tag, int* source) {
+int nrnmpi_iprobe_impl(int* size, int* tag, int* source) {
     int flag = 0;
     MPI_Status status;
     guard(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &flag, &status));
@@ -439,7 +435,7 @@ int nrnmpi_iprobe(int* size, int* tag, int* source) {
     return flag;
 }
 
-void nrnmpi_probe(int* size, int* tag, int* source) {
+void nrnmpi_probe_impl(int* size, int* tag, int* source) {
     int flag = 0;
     MPI_Status status;
     guard(MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &status));
@@ -451,7 +447,7 @@ void nrnmpi_probe(int* size, int* tag, int* source) {
         guard(MPI_Get_count(&status, MPI_PACKED, size));
 }
 
-bbsmpibuf* nrnmpi_newbuf(int size) {
+bbsmpibuf* nrnmpi_newbuf_impl(int size) {
     bbsmpibuf* buf;
     buf = (bbsmpibuf*) hoc_Emalloc(sizeof(bbsmpibuf));
     hoc_malchk();
@@ -474,7 +470,7 @@ bbsmpibuf* nrnmpi_newbuf(int size) {
     return buf;
 }
 
-void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src) {
+void nrnmpi_copy_impl(bbsmpibuf* dest, bbsmpibuf* src) {
     int i;
     resize(dest, src->size);
     for (i = 0; i < src->size; ++i) {
@@ -498,12 +494,12 @@ static void nrnmpi_free(bbsmpibuf* buf) {
 #endif
 }
 
-void nrnmpi_ref(bbsmpibuf* buf) {
+void nrnmpi_ref_impl(bbsmpibuf* buf) {
     assert(buf);
     buf->refcount += 1;
 }
 
-void nrnmpi_unref(bbsmpibuf* buf) {
+void nrnmpi_unref_impl(bbsmpibuf* buf) {
     if (buf) {
         --buf->refcount;
         if (buf->refcount <= 0) {
@@ -513,7 +509,7 @@ void nrnmpi_unref(bbsmpibuf* buf) {
 }
 
 #if nrnmpidebugleak
-void nrnmpi_checkbufleak() {
+void nrnmpi_checkbufleak_impl() {
     if (nrnmpi_bufcnt_ > 0) {
         printf("%d nrnmpi_bufcnt=%d\n", nrnmpi_myid_bbs, nrnmpi_bufcnt_);
     }

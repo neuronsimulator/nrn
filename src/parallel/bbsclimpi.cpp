@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <errno.h>
@@ -12,8 +12,6 @@
 #include "bbs.h"
 #include "bbsrcli.h"
 #include "bbssrv.h"
-
-extern void nrnmpi_int_broadcast(int*, int, int);
 
 #define debug 0
 

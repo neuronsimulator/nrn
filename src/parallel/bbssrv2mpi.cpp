@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include "bbsconf.h"
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #if NRNMPI  // to end of file
 #include <stdio.h>
 #include <string.h>

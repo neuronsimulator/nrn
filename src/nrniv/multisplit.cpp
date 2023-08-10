@@ -9,7 +9,7 @@
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #include <multisplit.h>
 #include <unordered_map>
 #include <memory>

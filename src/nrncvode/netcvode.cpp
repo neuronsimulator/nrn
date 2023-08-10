@@ -4,7 +4,7 @@
 #define USE_MIN_DELAY 1
 
 #include <stdlib.h>
-#include <nrnmpi.h>
+#include "../nrnmpi/nrnmpi.h"
 #include <errno.h>
 #include <time.h>
 #include <InterViews/regexp.h>

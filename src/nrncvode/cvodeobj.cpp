@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
 
-#include "nrnmpi.h"
+#include "../nrnmpi/nrnmpi.h"
 
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
