@@ -215,7 +215,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             writeint(nodeindices, n);
         }
         writedbl(data, n * sz);
-        if (nrn_is_artificial_[type]) {
+        if (data) {
             delete[] data;
         }
         sz = bbcore_dparam_size[type];
