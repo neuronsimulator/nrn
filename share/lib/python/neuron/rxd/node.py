@@ -625,17 +625,20 @@ class Node3D(Node):
                 and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
+        checked_for_normalized_position = False
         try:
             if 0 <= condition <= 1:
                 # TODO: the trouble here is that you can't do this super-directly based on x
                 #       the way to do this is to find the minimum and maximum x values contained in the grid
                 #       the extra difficulty with that is to handle boundary cases correctly
                 #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
-                raise RxDException(
-                    "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
-                )
+                checked_for_normalized_position = True
         except:
             pass
+        if checked_for_normalized_position:
+            raise RxDException(
+                "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
+            )
         raise RxDException("unrecognized node condition: %r" % condition)
 
     @property
