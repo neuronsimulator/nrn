@@ -758,6 +758,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                              "  _thread = _extcall_thread.data();\n"
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else {
+        hocfunc_setdata_item(n, lappendstr(procfunc, ""));
         vectorize_substitute(
             lappendstr(procfunc, ""),
             "_nrn_mechanism_cache_instance _ml_real{_extcall_prop};\n"

@@ -3135,3 +3135,116 @@ Symbol* breakpoint_current(Symbol* s) {
     }
     return s;
 }
+
+// Determine if setdata is required to call FUNCTION or PROCEDURE
+// setdata is required if RANGE var used. For safety, also VERBATIM.
+// Deal with nested calls, via maintaining a list for each func.
+// Note that the nest can be recursive and called function may not
+// yet be defined til entire text is processed.
+
+#include <unordered_set>
+#include <unordered_map>
+
+typedef struct {
+    std::unordered_set<Symbol*> func_calls;
+    bool need_setdata{false};
+    bool is_being_looked_at{false};  // avoid recursion loops
+    Item* q{nullptr};                // To be modified if need_setdata.
+} Info;
+
+static std::unordered_map<Symbol*, Info> funcs;
+static Symbol* in_func_;
+
+void check_range_in_func(Symbol* s) {
+    if (in_func_) {
+        // If s is a RANGE variable or nullptr (VERBATIM)
+        // then mark the current function as needing setdata
+        // If s is FUNCTION or PROCEDURE, then add to list
+        Info& i = funcs[in_func_];
+        if (!s) {  // VERBATIM
+            i.need_setdata = true;
+        } else if (s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            i.need_setdata = true;
+        } else if (s->usage & FUNCT) {
+            i.func_calls.insert(s);
+        }
+    }
+}
+
+void set_inside_func(Symbol* s) {
+    in_func_ = s;
+    if (s) {
+        assert(funcs.count(s) == 0);
+        Info i{};
+        funcs[s] = i;
+    }
+}
+
+// Make sure need_setdata is properly marked for all funcs.
+// I.e on entry, only ones marked are those that use RANGE or VERBATIM.
+// Need to recursively look through func_calls but watch out for loops.
+
+static bool check_func(Symbol* s);  // recursive
+
+void func_needs_setdata() {
+    if (strcmp(mechname, "nothing") == 0) {
+        return;
+    }
+    // No _extcall_prop for non vectorized density mechanisms.
+    if (!vectorize) {
+        return;
+    }
+    for (auto& f: funcs) {
+        f.second.is_being_looked_at = false;
+    }
+    for (auto& f: funcs) {
+        check_func(f.first);
+    }
+    for (auto& f: funcs) {  // update the hocfunc item if need_setdata
+        auto& q = f.second.q;
+        if (f.second.q && f.second.need_setdata) {
+            Symbol* s = f.first;
+            sprintf(buf,
+                    "\n  if(!_extcall_prop) { hoc_execerror(\""
+                    "No data for %s_%s. Requires prior call to setdata_%s\","
+                    " NULL); }\n",
+                    s->name,
+                    mechname,
+                    mechname);
+            insertstr(f.second.q, buf);
+        }
+    }
+    printf("func_needs_setdata()\n");
+    for (auto& f: funcs) {
+        printf("%s %d\n", f.first->name, f.second.need_setdata);
+    }
+}
+
+static bool check_func(Symbol* s) {  // recursive
+    if (funcs.count(s) == 0) {
+        return false;
+    }
+    Info& i = funcs[s];
+    if (i.need_setdata) {
+        return true;
+    }
+    if (i.is_being_looked_at) {
+        return false;
+    }
+    i.is_being_looked_at = true;
+    for (auto& s1: i.func_calls) {
+        if (check_func(s1)) {
+            i.need_setdata = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+// If the function needs setdata, then q can be changed to
+// perform the check on _extcall_prop
+// Not called for POINT_PROCESS functions.
+void hocfunc_setdata_item(Symbol* s, Item* q) {
+    auto& i = funcs[s];
+    i.q = q;
+}

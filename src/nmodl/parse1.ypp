@@ -228,7 +228,9 @@ limits: /*nothing*/
 		}
 	;
 name:	Name
+		{check_range_in_func(SYM($1));}
 	| PRIME
+		{check_range_in_func(SYM($1));}
 	;
 number: NUMBER	{lastok = $1;}
 	| '-' NUMBER
@@ -397,6 +399,7 @@ ostmt:	fromstmt
 	| conducthint
 	| VERBATIM 
 		{inblock(SYM($1)->name);
+                check_range_in_func(nullptr);
 		replacstr($1, "\n/*VERBATIM*/\n");
 		if (!assert_threadsafe && !saw_verbatim_) {
  		 fprintf(stderr, "Notice: VERBATIM blocks are not thread safe\n");
@@ -609,6 +612,7 @@ funccall: NAME '('
 		{ if (SYM($1)->subtype & EXTDEF2) { extdef2 = 1;}}
 	   exprlist ')'
 		{lastok = $5; SYM($1)->usage |= FUNCT;
+		 check_range_in_func(SYM($1));
 		 if (SYM($1)->subtype & EXTDEF2) { extdef2 = 0;}
 		 if (SYM($1)->subtype & EXTDEF3) { add_reset_args($2);}
 		 if (SYM($1)->subtype & EXTDEF4) { add_nrnthread_arg($2);}
@@ -707,7 +711,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		}
 	;
 funcblk: FUNCTION1 NAME '(' arglist ')' units
-		{IGNORE(copylocal(SYM($2)));}
+		{IGNORE(copylocal(SYM($2))); set_inside_func(SYM($2));}
 	stmtlist '}'
 		/* boilerplate added to form double function(){...}
 		   Note all arguments have prefix _l */
@@ -727,6 +731,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
 		hocfunc(s, $3, $5);
+		set_inside_func(nullptr);
 		poplocal(); freelist(&$4);}
 	;
 arglist: /*nothing*/ {pushlocal(); $$ = LIST0; argcnt_ = 0;}
@@ -741,20 +746,21 @@ arglist1: name units
 		 ++argcnt_;
 		}
 	;
-procedblk: PROCEDURE NAME '(' arglist ')' units stmtlist '}'
+procedblk: PROCEDURE NAME '(' arglist ')' units {set_inside_func(SYM($2));} stmtlist '}'
 		{Symbol *s = SYM($2);
 		s->u.i = 0; 	/* avoid objectcenter warning if solved */
 		s->varnum = argcnt_; /* allow proper number of "double" in prototype */
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
 		replacstr($1, "\nstatic int "); defarg($3, $5);
-		Insertstr($8, " return 0;");
-		movelist($1, $8, procfunc);
+		Insertstr($9, " return 0;");
+		movelist($1, $9, procfunc);
 		if (SYM($2)->subtype & PROCED) {
 			diag(SYM($2)->name, " declared as PROCEDURE twice");
 		}
 		SYM($2)->subtype |= PROCED;
 		SYM($2)->usage |= FUNCT;
 		hocfunc(s, $3, $5);
+                set_inside_func(nullptr);
 		poplocal(); freelist(&$4);}
 	;
 netrecblk: NETRECEIVE '(' arglist ')'

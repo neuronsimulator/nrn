@@ -136,6 +136,7 @@ int main(int argc, char** argv) {
 
     openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
+    func_needs_setdata();  // Do FUNCTION/PROCEDURE need prior call to setdata.
     /*
      * At this point all blocks are fully processed except the kinetic
      * block and the solve statements. Even in these cases the
