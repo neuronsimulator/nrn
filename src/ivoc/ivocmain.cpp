@@ -238,7 +238,7 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -329,7 +329,7 @@ void hoc_nrnmpi_init() {
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        auto const pmes = nrnmpi_load(1);
+        auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
             std::cout << pmes << std::endl;
         }
