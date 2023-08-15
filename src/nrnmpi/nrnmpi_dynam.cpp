@@ -93,7 +93,7 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
     return handle;
 }
 
-std::string nrnmpi_load(int is_python) {
+std::string nrnmpi_load() {
     std::string pmes;
     void* handle = nullptr;
     // If libmpi already in memory, find name and dlopen that.
@@ -255,8 +255,8 @@ std::string nrnmpi_load(int is_python) {
 // nrnmpi_load cannot safely be called from nrnmpi.cpp because of pre/post-C++11
 // ABI compatibility issues with std::string. See
 // https://github.com/neuronsimulator/nrn/issues/1963 for more information.
-void nrnmpi_load_or_exit(bool is_python) {
-    auto const err = nrnmpi_load(is_python);
+void nrnmpi_load_or_exit() {
+    auto const err = nrnmpi_load();
     if (!err.empty()) {
         std::cout << err << std::endl;
         std::exit(1);

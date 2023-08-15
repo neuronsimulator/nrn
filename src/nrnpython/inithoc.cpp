@@ -26,7 +26,7 @@ extern PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 #if NRN_ENABLE_THREADS
@@ -255,7 +255,7 @@ extern "C" PyObject* PyInit_hoc() {
         libnrnmpi_is_loaded = 0;
     }
     if (libnrnmpi_is_loaded) {
-        pmes = nrnmpi_load(1);
+        pmes = nrnmpi_load();
         if (!pmes.empty() && env_mpi == NULL) {
             // common case on MAC distribution is no NEURON_INIT_MPI and
             // no MPI installed (so nrnmpi_load fails)
