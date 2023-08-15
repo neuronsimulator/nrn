@@ -11,7 +11,7 @@ extern int nrn_main_launch;
 extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 void nrnmpi_stubs();
-void nrnmpi_load_or_exit(bool is_python);
+void nrnmpi_load_or_exit();
 #if NRN_MUSIC
 void nrnmusic_load();
 #endif  // NRN_MUSIC
@@ -33,7 +33,7 @@ int main(int argc, char** argv, char** env) {
     bool mpi_loaded = false;
     for (int i = 0; i < argc; ++i) {
         if (strcmp("-mpi", argv[i]) == 0) {
-            nrnmpi_load_or_exit(false);
+            nrnmpi_load_or_exit();
             mpi_loaded = true;
             break;
         }
@@ -59,7 +59,7 @@ int main(int argc, char** argv, char** env) {
     }
     if (load_music) {
         if (!mpi_loaded) {
-            nrnmpi_load_or_exit(false);
+            nrnmpi_load_or_exit();
         }
         nrnmusic_load();
     }
