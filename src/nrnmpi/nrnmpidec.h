@@ -7,7 +7,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
 #include <cstdint>
-typedef long double longdbl;
+using longdbl = long double;
 #if NRNMPI
 #include <stdlib.h>
 #include <string>
@@ -21,6 +21,8 @@ typedef struct bbsmpibuf {
     int keypos;
     int refcount;
 } bbsmpibuf;
+
+struct NRNMPI_Spike;
 
 // olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
 // redefined) symbol names, so keep C linkage for simplicity
