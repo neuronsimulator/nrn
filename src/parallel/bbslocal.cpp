@@ -6,15 +6,9 @@
 #include "bbslsrv.h"
 #include <nrnmpi.h>
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
 #include <set>
 #include <string>
-#else
-#include <pair.h>
-#include <map.h>
-#endif
 
 struct ltint {
     bool operator()(int i, int j) const {
@@ -23,8 +17,6 @@ struct ltint {
 };
 
 class KeepArgs: public std::map<int, const MessageValue*, ltint> {};
-
-#endif
 
 static MessageValue* posting_;
 static MessageValue* taking_;
@@ -37,16 +29,12 @@ BBSLocal::BBSLocal() {
         taking_ = nullptr;
     }
     start();
-#if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
-#endif
 }
 
 BBSLocal::~BBSLocal() {
     // need to unref anything in keepargs_;
-#if defined(HAVE_STL)
     delete keepargs_;
-#endif
 }
 
 void BBSLocal::context() {}
@@ -218,14 +206,11 @@ int BBSLocal::take_todo() {
 
 void BBSLocal::save_args(int userid) {
     server_->post_todo(working_id_, posting_);
-#if defined(HAVE_STL)
     keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
-#endif
     posting_ = nullptr;
 }
 
 void BBSLocal::return_args(int userid) {
-#if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     assert(i != keepargs_->end());
     Resource::unref(taking_);
@@ -233,7 +218,6 @@ void BBSLocal::return_args(int userid) {
     keepargs_->erase(i);
     taking_->init_unpack();
     BBSImpl::return_args(userid);
-#endif
 }
 
 void BBSLocal::done() {

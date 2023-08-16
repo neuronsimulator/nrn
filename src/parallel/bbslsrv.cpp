@@ -11,18 +11,9 @@
 #define VECTOR 4
 #define PICKLE 5
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
 #include <set>
 #include <string>
-#else
-#include <pair.h>
-#include <multimap.h>
-#include <map.h>
-#include <set.h>
-#include <string.h>
-#endif
 
 // debug is 0 1 or 2
 #define debug 0
@@ -99,15 +90,6 @@ class MessageList: public std::multimap<const char*, const MessageValue*, ltstr>
 class WorkList: public std::map<int, const WorkItem*, ltint> {};
 class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
-#else
-class MessageList {};
-class WorkList {};
-class ReadyList {};
-class ResultList {};
-static void nostl() {
-    hoc_execerror("BBSLocalServer not working", "Compiled without STL");
-}
-#endif
 
 MessageItem::MessageItem() {
     next_ = nullptr;
@@ -250,17 +232,14 @@ int MessageValue::upkpickle(char* s, size_t* n) {
 }
 
 BBSLocalServer::BBSLocalServer() {
-#if defined(HAVE_STL)
     messages_ = new MessageList();
     work_ = new WorkList();
     todo_ = new ReadyList();
     results_ = new ResultList();
     next_id_ = 1;
-#endif
 }
 
 BBSLocalServer::~BBSLocalServer() {
-#if defined(HAVE_STL)
     delete todo_;
     delete results_;
 
@@ -268,11 +247,9 @@ BBSLocalServer::~BBSLocalServer() {
     // need to unref MessageValue in messages_ and delete WorkItem in work_
     delete messages_;
     delete work_;
-#endif
 }
 
 bool BBSLocalServer::look_take(const char* key, MessageValue** val) {
-#if defined(HAVE_STL)
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
         *val = (MessageValue*) ((*m).second);
@@ -287,14 +264,10 @@ bool BBSLocalServer::look_take(const char* key, MessageValue** val) {
 #if debug
     printf("fail srvr_look_take |%s|\n", key);
 #endif
-#else
-    nostl();
-#endif
     return false;
 }
 
 bool BBSLocalServer::look(const char* key, MessageValue** val) {
-#if defined(HAVE_STL)
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
         *val = (MessageValue*) ((*m).second);
@@ -309,27 +282,19 @@ bool BBSLocalServer::look(const char* key, MessageValue** val) {
 #if debug
     printf("srvr_look false |%s|\n", key);
 #endif
-#else
-    nostl();
-#endif
     return false;
 }
 
 void BBSLocalServer::post(const char* key, MessageValue* val) {
-#if defined(HAVE_STL)
     MessageList::iterator m = messages_->insert(
         std::pair<const char* const, const MessageValue*>(newstr(key), val));
     Resource::ref(val);
 #if debug
     printf("srvr_post |%s|\n", key);
 #endif
-#else
-    nostl();
-#endif
 }
 
 void BBSLocalServer::post_todo(int parentid, MessageValue* val) {
-#if defined(HAVE_STL)
     WorkItem* w = new WorkItem(next_id_++, val);
     WorkList::iterator p = work_->find(parentid);
     if (p != work_->end()) {
@@ -340,13 +305,9 @@ void BBSLocalServer::post_todo(int parentid, MessageValue* val) {
 #if debug
     printf("srvr_post_todo id=%d pid=%d\n", w->id_, parentid);
 #endif
-#else
-    nostl();
-#endif
 }
 
 void BBSLocalServer::post_result(int id, MessageValue* val) {
-#if defined(HAVE_STL)
     WorkList::iterator i = work_->find(id);
     WorkItem* w = (WorkItem*) ((*i).second);
     val->ref();
@@ -356,11 +317,9 @@ void BBSLocalServer::post_result(int id, MessageValue* val) {
 #if debug
     printf("srvr_post_done id=%d pid=%d\n", id, w->parent_ ? w->parent_->id_ : 0);
 #endif
-#endif
 }
 
 int BBSLocalServer::look_take_todo(MessageValue** m) {
-#if defined(HAVE_STL)
     ReadyList::iterator i = todo_->begin();
     if (i != todo_->end()) {
         WorkItem* w = (*i);
@@ -377,14 +336,9 @@ int BBSLocalServer::look_take_todo(MessageValue** m) {
 #endif
         return 0;
     }
-#else
-    nostl();
-    return 0;
-#endif
 }
 
 int BBSLocalServer::look_take_result(int pid, MessageValue** m) {
-#if defined(HAVE_STL)
     ResultList::iterator i = results_->find(pid);
     if (i != results_->end()) {
         WorkItem* w = (WorkItem*) ((*i).second);
@@ -405,8 +359,4 @@ int BBSLocalServer::look_take_result(int pid, MessageValue** m) {
 #endif
         return 0;
     }
-#else
-    nostl();
-    return 0;
-#endif
 }

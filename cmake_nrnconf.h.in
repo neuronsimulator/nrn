@@ -153,9 +153,6 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGSEGV
 
-/* define if the compiler has stringstream */
-#undef HAVE_SSTREAM
-
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
 
