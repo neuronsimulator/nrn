@@ -182,15 +182,6 @@ extern void setneuronhome(const char*) {
 }
 #endif
 
-#if 0
-void penv() {
-	int i;
-	for (i=0; environ[i]; ++i) {
-		printf("%p %s\n", environ[i], environ[i]);
-	}
-}
-#endif
-
 #if DARWIN || defined(__linux__)
 #include "nrnwrap_dlfcn.h"
 #include <string>
@@ -238,7 +229,7 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -314,22 +305,12 @@ static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dfl
 void nrn_InitializeJavaVM();
 #endif
 
-#if 0  // for debugging
-void prargs(const char* s, int argc, const char** argv) {
-	int i;
-	printf("%s argc=%d\n", s, argc);
-	for (i=0; i < argc; ++i) {
-		printf(" %d |%s|\n", i, argv[i]);
-	}
-}
-#endif
-
 void hoc_nrnmpi_init() {
 #if NRNMPI
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        auto const pmes = nrnmpi_load(1);
+        auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
             std::cout << pmes << std::endl;
         }
@@ -529,14 +510,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
         // putenv and setenv may invalidate env but we no longer
         // use it so following should not be needed
-#if 0
-#if HAVE_UNISTD_H && !defined(__APPLE__)
-	env = environ;
-#endif
-#if defined(__APPLE__)
-	env = (*_NSGetEnviron());
-#endif
-#endif
     }
 
 #else  // Not unix:
