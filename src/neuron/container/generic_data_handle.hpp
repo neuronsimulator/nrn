@@ -9,38 +9,52 @@
 
 namespace neuron::container {
 /**
- * @brief Non-template stable handle to a generic value.
+ * @brief A variant type of small trivial types and a type-erased data_handle.
  *
- * This is a type-erased version of data_handle<T>, with the additional feature
- * that it can store values of POD types no larger than a pointer (typically int
- * and float). It stores (at runtime) the type of the value it contains, and is
- * therefore type-safe, but this increases sizeof(generic_data_handle) by 50% so
- * it may be prudent to view this as useful for validation/debugging but not
- * something to become too dependent on.
+ * This is a variant type for
+ *   * type-erased data_handle<T>,
+ *   * small (`sizeof(T) <= sizeof(void*)`), trivial types such as `int` or `float`,
+ *   * and raw pointers.
+ *
+ * In this context raw pointer is a regular C pointer, i.e. just and address.
+ * In contrast a `data_handle` refers to an entry in a `soa` container and is
+ * stable w.r.t. sorting rows within the `soa` container.
+ *
+ * The type of the value stored in the `generic_data_handle` at runtime. This
+ * enables type-checking and therefore type-safety at runtime. However, this
+ * increases sizeof(generic_data_handle) by 50 percent. Hence, type-checking
+ * should be considered useful for validation and debugging only; and may be
+ * removed in the future in optimized builds.
  *
  * There are several states that instances of this class can be in:
  * - null, no value is contained, any type can be assigned without any type
  *   mismatch error (m_type=null, m_container=null, m_offset=null)
  * - wrapping an instance of a small, trivial type T (m_type=&typeid(T),
- *   m_container=the_value, m_offset=null)
+ *   m_container=the_value, m_offset=null), this includes raw pointers.
  * - wrapping a data handle<T> (m_type=&typeid(T*), m_container=the_container,
  *   m_offset=ptr_to_row)
  *
- * @todo Consider whether this should be made more like std::any (with a maximum
- *       2*sizeof(void*) and a promise never to allocate memory dynamically) so
- *       it actually has a data_handle<T> subobject. Presumably that would mean
- *       data_handle<T> would need to have a trivial destructor. This might make
- *       it harder in future to have some vector_of_generic_data_handle type
- *       that hoists out the pointer-to-container and typeid parts that should
- *       be the same for all rows.
+ * Note, the term "literal" doesn't refer to the common notion of literals in
+ * C/C++, e.g. `1` or the string literal `"foo"`. Rather, it means a copy of
+ * the value is stored bitwise inside the `generic_data_handle`.
  */
+// TODO Consider whether this should be made more like std::any (with a maximum
+//      2*sizeof(void*) and a promise never to allocate memory dynamically) so
+//      it actually has a data_handle<T> subobject. Presumably that would mean
+//      data_handle<T> would need to have a trivial destructor. This might make
+//      it harder in future to have some vector_of_generic_data_handle type
+//      that hoists out the pointer-to-container and typeid parts that should
+//      be the same for all rows.
+//
 struct generic_data_handle {
   private:
-    // The exact criteria could be refined, it is definitely not possible to
-    // store types with non-trivial destructors.
+    // Sufficiently small (<= sizeof(void*)) trivial types and pointers can
+    // be stored literally. Note, that pointers can be stored as raw pointers,
+    // in which case they're considered to be literal, or as data_handle in
+    // which case they're not literal.
     template <typename T>
     static constexpr bool can_be_stored_literally_v =
-        std::is_trivial_v<T> && !std::is_pointer_v<T> && sizeof(T) <= sizeof(void*);
+        (std::is_trivial_v<T> && sizeof(T) <= sizeof(void*)) || std::is_pointer_v<T>;
 
   public:
     /** @brief Construct a null data handle.
@@ -57,10 +71,10 @@ struct generic_data_handle {
      * This is explicit to avoid things like operator<<(ostream&, generic_data_handle const&) being
      * considered when printing values like size_t.
      */
-    template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
-    explicit generic_data_handle(T value)
-        : m_type{&typeid(T)} {
-        std::memcpy(&m_container, &value, sizeof(T));
+    template <typename T,
+              std::enable_if_t<!std::is_pointer_v<T> && can_be_stored_literally_v<T>, int> = 0>
+    explicit generic_data_handle(T value) {
+        literal_value<T>() = value;
     }
 
     /**
@@ -69,8 +83,10 @@ struct generic_data_handle {
      * This is important when generic_data_handle is used as the Datum type for "pointer" variables
      * in MOD files.
      */
-    template <typename T, std::enable_if_t<can_be_stored_literally_v<T>, int> = 0>
+    template <typename T,
+              std::enable_if_t<!std::is_pointer_v<T> && can_be_stored_literally_v<T>, int> = 0>
     generic_data_handle& operator=(T value) {
+        // assert_types_match<T>();
         return *this = generic_data_handle{value};
     }
 
@@ -83,6 +99,7 @@ struct generic_data_handle {
      */
     template <typename T, std::enable_if_t<std::is_pointer_v<T>, int> = 0>
     generic_data_handle& operator=(T value) {
+        // assert_types_match<T>();
         return *this = generic_data_handle{data_handle<std::remove_pointer_t<T>>{value}};
     }
 
@@ -116,6 +133,12 @@ struct generic_data_handle {
         static_assert(!std::is_same_v<T, void>);
     }
 
+    template <class T>
+    generic_data_handle const& operator=(const data_handle<T>& handle) {
+        // assert_types_match<T>();
+        return *this = generic_data_handle(handle);
+    }
+
     /**
      * @brief Create data_handle<T> from a generic data handle.
      *
@@ -135,13 +158,11 @@ struct generic_data_handle {
         if (!m_type) {
             // A (typeless / default-constructed) null generic_data_handle can
             // be converted to any (null) data_handle<T>.
+            assert(!m_container);
             return {};
         }
-        if (typeid(T*) != *m_type) {
-            throw_error(" cannot be converted to data_handle<" + cxx_demangle(typeid(T).name()) +
-                        ">");
-        }
-        if (m_offset.has_always_been_null()) {
+        assert_types_match<T*>();
+        if (!refers_to_a_modern_data_structure()) {
             // This is a data handle in backwards-compatibility mode, wrapping a
             // raw pointer of type T*, or a null handle that has always been null (as opposed to a
             // handle that became null). Passing do_not_search prevents the data_handle<T>
@@ -167,38 +188,33 @@ struct generic_data_handle {
 
     /** @brief Explicit conversion to any T.
      *
+     *  If the instance holds a value literally, that value is returned.
+     *
+     *  If the instance holds a `data_handle` then `generic_handle.get<T*>()`
+     *  will return `static_cast<double*>(handle)`, i.e. the current address of
+     *  the element the `data_handle` points to.
+     *
+     *  Note that the `generic_data_handle` remains valid if the rows of the
+     *  `soa` are shuffled. In contrast to the pointer returned by `get` which
+     *  is invalidated by operations that change the layout of rows in memory,
+     *  such as shuffling or growing the underlying `soa`.
+     *
      *  It might be interesting in future to explore dropping m_type in
      *  optimised builds, in which case we should aim to avoid predicating
      *  important logic on exceptions thrown by this function.
-     *
-     *  Something like static_cast<double*>(generic_handle) will work both if
-     *  the Datum holds a literal double* and if it holds a data_handle<double>.
-     *
-     *  @todo Consider conversion to bool and whether this means not-null or to
-     *  obtain a literal, wrapped bool value
      */
     template <typename T>
     T get() const {
-        if constexpr (std::is_pointer_v<T>) {
-            // If T=U* (i.e. T is a pointer type) then we might be in modern
-            // mode, go via data_handle<U>
-            return static_cast<T>(static_cast<data_handle<std::remove_pointer_t<T>>>(*this));
+        if (refers_to_a_modern_data_structure()) {
+            if constexpr (std::is_pointer_v<T>) {
+                // If T=U* (i.e. T is a pointer type) then we might be in modern
+                // mode, go via data_handle<U>
+                return static_cast<T>(static_cast<data_handle<std::remove_pointer_t<T>>>(*this));
+            }
+            throw_error("For non-literal `generic_data_handle`s T must be a pointer, got " +
+                        cxx_demangle(typeid(T).name()));
         } else {
-            // Getting a literal value saved in m_container
-            static_assert(can_be_stored_literally_v<T>,
-                          "generic_data_handle can only hold non-pointer types that are trivial "
-                          "and smaller than a pointer");
-            if (!m_offset.has_always_been_null()) {
-                throw_error(" conversion to " + cxx_demangle(typeid(T).name()) +
-                            " not possible for a handle [that was] in modern mode");
-            }
-            if (typeid(T) != *m_type) {
-                throw_error(" does not hold a literal value of type " +
-                            cxx_demangle(typeid(T).name()));
-            }
-            T ret{};
-            std::memcpy(&ret, &m_container, sizeof(T));
-            return ret;
+            return literal_value<T>();
         }
     }
 
@@ -231,20 +247,6 @@ struct generic_data_handle {
         return !m_offset.has_always_been_null();
     }
 
-    /** @brief Return the demangled name of the type this handle refers to.
-     *
-     *  If the handle contains data_handle<T>, this will be T*. If a literal
-     *  value or raw pointer is being wrapped, that possibly-pointer type will
-     *  be returned.
-     *
-     *  It might be interesting in future to explore dropping m_type in
-     *  optimised builds, in which case we should aim to avoid predicating
-     *  important logic on this function.
-     */
-    [[nodiscard]] std::string type_name() const {
-        return m_type ? cxx_demangle(m_type->name()) : "typeless_null";
-    }
-
     /** @brief Obtain a reference to the literal value held by this handle.
      *
      *  Storing literal values is incompatible with storing data_handle<T>. If
@@ -253,9 +255,9 @@ struct generic_data_handle {
      *  returns a reference to it. If the handle already holds a literal value
      *  of type T then a reference to it is returned.
      *
-     *  Note that, unlike converting to double*, literal_value<double*>() will
-     *  fail if the handle contains data_handle<double>, as in that case there
-     *  is no persistent double* that could be referred to.
+     *  Note that, literal_value<double*>() will fail if the handle contains
+     *  data_handle<double>, as in that case there is no persistent double*
+     *  that could be referred to.
      *
      *  It might be interesting in future to explore dropping m_type in
      *  optimised builds, in which case we should aim to avoid predicating
@@ -263,24 +265,65 @@ struct generic_data_handle {
      */
     template <typename T>
     [[nodiscard]] T& literal_value() {
-        if (!m_offset.has_always_been_null()) {
-            throw_error("::literal_value<" + cxx_demangle(typeid(T).name()) +
-                        "> cannot be called on a handle [that was] in modern mode");
+        assert_is_literal_value<T>();
+
+        // This is a data handle in backwards-compatibility mode, wrapping a
+        // raw pointer, or a null data handle. Using raw_ptr() on a typeless_null
+        // (default-constructed) handle turns it into a legacy handle-to-T.
+        if (!m_type) {
+            m_type = &typeid(T);
         } else {
-            // This is a data handle in backwards-compatibility mode, wrapping a
-            // raw pointer, or a null data handle. Using raw_ptr() on a typeless_null
-            // (default-constructed) handle turns it into a legacy handle-to-T.
-            if (!m_type) {
-                m_type = &typeid(T);
-            } else if (typeid(T) != *m_type) {
-                throw_error(" does not hold a literal value of type " +
-                            cxx_demangle(typeid(T).name()));
-            }
-            return *reinterpret_cast<T*>(&m_container);  // Eww
+            assert_types_match<T>();
         }
+        return *reinterpret_cast<T*>(&m_container);
+    }
+
+    template <typename T>
+    [[nodiscard]] T const& literal_value() const {
+        assert_is_literal_value<T>();
+        assert_types_match<T>();
+
+        return *reinterpret_cast<T const*>(&m_container);
     }
 
   private:
+    /** @brief The demangled name of the value's type stored in this handle.
+     *
+     *  If the handle contains data_handle<T>, this will be T*. For a literal
+     *  value of type `T` or raw pointer of type `T*` this returns the
+     *  demangled type name if `T` and `T*`, respectively.
+     */
+    // It might be interesting in future to explore dropping m_type in
+    // optimised builds. Hence, keep this method private.
+    [[nodiscard]] std::string type_name() const {
+        return m_type ? cxx_demangle(m_type->name()) : "typeless_null";
+    }
+
+    // Types match, if they're the same, or if the `generic_data_handle`
+    // is a `nullptr`.
+    template <class T>
+    void assert_types_match() const {
+        if (std::is_pointer_v<T> && !m_type && m_container == nullptr) {
+            // `nullptr` doesn't need to be typed.
+            return;
+        }
+
+        if (!holds<T>()) {
+            throw_error(" incompatible type T = " + cxx_demangle(typeid(T).name()));
+        }
+    }
+
+    template <class T>
+    void assert_is_literal_value() const {
+        static_assert(can_be_stored_literally_v<T>,
+                      "generic_data_handle can only hold non-pointer types that are trivial "
+                      "and no larger than a pointer");
+
+        if (refers_to_a_modern_data_structure()) {
+            throw_error("can't be used to store literal value, because it stores 'data_handle's.");
+        }
+    }
+
     [[noreturn]] void throw_error(std::string message) const {
         std::ostringstream oss{};
         oss << *this << std::move(message);

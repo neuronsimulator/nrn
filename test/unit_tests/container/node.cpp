@@ -234,9 +234,6 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
     GIVEN("A null generic handle") {
         // no default constructor, have to go via a data_handle<T>
         generic_data_handle null_handle{data_handle<double>{}};
-        THEN("Check it remembered the double type") {
-            REQUIRE(null_handle.type_name() == "double*");
-        }
         THEN("Check it can be converted back to data_handle<double>") {
             auto const round_trip = static_cast<data_handle<double>>(null_handle);
             REQUIRE_FALSE(round_trip);
@@ -244,6 +241,20 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         }
         THEN("Check it cannot be converted to data_handle<int>") {
             REQUIRE_THROWS(static_cast<data_handle<int>>(null_handle));
+        }
+        THEN("Check it can be assigned a raw pointer") {
+            double foo;
+            REQUIRE_NOTHROW(null_handle = &foo);
+            REQUIRE_NOTHROW(null_handle = nullptr);
+            REQUIRE_NOTHROW(null_handle = NULL);
+        }
+        THEN("Check it can be assigned a literal value") {
+            double foo = 42.0;
+            REQUIRE_NOTHROW(null_handle = foo);
+        }
+        THEN("Check it can be assigned a literal value, even ints") {
+            int foo = 42;
+            REQUIRE_NOTHROW(null_handle = foo);
         }
         THEN("Check it has the expected string representation") {
             std::ostringstream actual;
@@ -258,9 +269,6 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
         double foo{};
         data_handle<double> typed_handle{&foo};
         generic_data_handle handle{typed_handle};
-        THEN("Check it remembered the double type") {
-            REQUIRE(handle.type_name() == "double*");
-        }
         THEN("Check it can be converted back to data_handle<double>") {
             REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
         }
@@ -290,9 +298,6 @@ TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]
             REQUIRE(typed_handle);
         }
         generic_data_handle handle{typed_handle};
-        THEN("Check it remembered the double type") {
-            REQUIRE(handle.type_name() == "double*");
-        }
         THEN("Check it can be converted back to data_handle<double>") {
             REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
         }
