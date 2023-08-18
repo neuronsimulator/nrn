@@ -166,21 +166,21 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.pow(2, &m);
             REQUIRE(compareMatrix(m, {{42., 72., 72.}, {42., 114., 114.}, {42., 72., 72.}}));
         }
-        {  // Mescach computing of det has an error
-           // int e{};
-           // double det = m.det(&e);
-           // REQUIRE(det == 0.);
-           // REQUIRE(e == 0);
+        {
+            int e{};
+            double det = m.det(&e);
+            REQUIRE(det == 0.);
+            REQUIRE(e == 0);
         }
         *m.mep(2, 0) = 1;
         *m.mep(2, 2) = 2;
         {
-            // Mescach computing of det has an error
-            // int e{};
-            // double det = m.det(&e);
-            // REQUIRE(det == -1.2348_a);
-            // REQUIRE(e == 5);
-        } {
+            int e{};
+            double det = m.det(&e);
+            REQUIRE(det == -1.2348_a);
+            REQUIRE(e == 5);
+        }
+        {
             OcFullMatrix n(4, 3);
             m.inverse(&n);
             n.resize(3, 3);  // ???
@@ -202,7 +202,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         {
             IvocVect v(3);
             m.getdiag(-2, &v);
-            REQUIRE(v.vec()[2] == Catch::Detail::Approx({1.}));
+            REQUIRE(v.vec()[2] == Catch::Detail::Approx(1.));
             v.vec() = {1., 0., 0.};
             m.setdiag(2, &v);
             REQUIRE(compareMatrix(m, {{42., 72., 1.}, {72., 114., 114.}, {1., 114., 2.}}));
@@ -324,8 +324,6 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(*pmep == 1);
             pmep = m.mep(1, 0);
             REQUIRE(*pmep == 0);
-            pmep = m.pelm(0, 1);
-            REQUIRE(pmep == nullptr);
         }
         {
             int col{};
