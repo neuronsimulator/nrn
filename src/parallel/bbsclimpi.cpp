@@ -17,13 +17,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 
 #define debug 0
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
-#else
-#include <pair.h>
-#include <map.h>
-#endif
 
 struct ltint {
     bool operator()(int i, int j) const {
@@ -33,8 +27,6 @@ struct ltint {
 
 class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
 
-#endif
-
 int BBSClient::sid_;
 
 BBSClient::BBSClient() {
@@ -42,9 +34,7 @@ BBSClient::BBSClient() {
     recvbuf_ = nil;
     request_ = nrnmpi_newbuf(100);
     nrnmpi_ref(request_);
-#if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
-#endif
     BBSClient::start();
 }
 
@@ -52,9 +42,7 @@ BBSClient::~BBSClient() {
     nrnmpi_unref(sendbuf_);
     nrnmpi_unref(recvbuf_);
     nrnmpi_unref(request_);
-#if defined(HAVE_STL)
     delete keepargs_;
-#endif
 }
 
 void BBSClient::perror(const char* s) {
@@ -267,16 +255,12 @@ int BBSClient::look_take_result(int pid) {
 }
 
 void BBSClient::save_args(int userid) {
-#if defined(HAVE_STL)
     nrnmpi_ref(sendbuf_);
     keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
-
-#endif
     post_todo(working_id_);
 }
 
 void BBSClient::return_args(int userid) {
-#if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
     recvbuf_ = nil;
@@ -287,7 +271,6 @@ void BBSClient::return_args(int userid) {
         upkbegin();
         BBSImpl::return_args(userid);
     }
-#endif
 }
 
 void BBSClient::done() {

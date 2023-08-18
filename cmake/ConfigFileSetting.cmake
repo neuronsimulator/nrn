@@ -30,7 +30,6 @@ set(HAVE_NAMESPACES "/**/")
 set(HAVE_STTY 0)
 # below two are universal nowadays
 set(IVOS_FABS "::fabs")
-set(HAVE_STL "/**/")
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set(exec_prefix ${prefix})
@@ -223,8 +222,6 @@ nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
 nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
-# not necessary to check as it should be always there
-set(HAVE_SSTREAM /**/)
 
 # =============================================================================
 # Check data types
