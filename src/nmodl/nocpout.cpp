@@ -226,6 +226,9 @@ void parout() {
     } else {
         Sprintf(suffix, "_%s", mechname);
     }
+
+    func_needs_setdata();  // Do FUNCTION/PROCEDURE need prior call to setdata.
+
     if (artificial_cell && vectorize && (thread_data_index || toplocal_)) {
         fprintf(stderr,
                 "Notice: ARTIFICIAL_CELL models that would require thread specific data are not "
@@ -3145,12 +3148,12 @@ Symbol* breakpoint_current(Symbol* s) {
 #include <unordered_set>
 #include <unordered_map>
 
-typedef struct {
+struct Info {
     std::unordered_set<Symbol*> func_calls;
     bool need_setdata{false};
     bool is_being_looked_at{false};  // avoid recursion loops
     Item* q{nullptr};                // To be modified if need_setdata.
-} Info;
+};
 
 static std::unordered_map<Symbol*, Info> funcs;
 static Symbol* in_func_;
@@ -3175,8 +3178,7 @@ void set_inside_func(Symbol* s) {
     in_func_ = s;
     if (s) {
         assert(funcs.count(s) == 0);
-        Info i{};
-        funcs[s] = i;
+        funcs[s] = {};
     }
 }
 
@@ -3187,7 +3189,7 @@ void set_inside_func(Symbol* s) {
 static bool check_func(Symbol* s);  // recursive
 
 void func_needs_setdata() {
-    if (strcmp(mechname, "nothing") == 0) {
+    if (!mechname | strcmp(mechname, "nothing") == 0) {
         return;
     }
     // No _extcall_prop for non vectorized density mechanisms.
@@ -3213,10 +3215,6 @@ void func_needs_setdata() {
                     mechname);
             insertstr(f.second.q, buf);
         }
-    }
-    printf("func_needs_setdata()\n");
-    for (auto& f: funcs) {
-        printf("%s %d\n", f.first->name, f.second.need_setdata);
     }
 }
 
