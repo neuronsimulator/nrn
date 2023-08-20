@@ -47,7 +47,7 @@ bool FileHandler::eof() {
         return true;
     }
     int a = F.get();
-    if (F.eof()) {
+    if (F.eof() || (char)a == '\0') {
         return true;
     }
     F.putback(a);
