@@ -10,6 +10,7 @@ We use MorphIO to provide a C++ implementation that will match Import3D_GUI HOC 
 This will allow us to read neuron morphology files in a variety of formats, with an increased performance.
 
 There will also be a backward compatible layer that will allow us to use the HOC stack together with MorphIO.
+The implementation is located in the ``MorhphIO.hoc`` file from the HOC library.
 Finally we will be able to update the Import3D_GUI HOC stack to use MorphIO so that CellBuilder/Import3d can use it. 
 
 Morphio is not available for Windows, because further support is required in MorphIO for the MinGW toolchain.

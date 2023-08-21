@@ -56,3 +56,25 @@ def test_morphio_load_hoc():
         """
     )
     h.topology()
+
+
+def test_morphio_hoc_api():
+    assert h(
+        """
+        load_file("MorphIO.hoc")
+        """
+    )
+    assert h(
+        """
+        objref cell1 
+        cell1 = new HocBasicCell()
+        morphio_read(cell1, "test/morphology/test.h5")
+        """
+    )
+    assert not h(
+        """
+        objref empty
+        morphio_read(empty, "test/morphology/test.h5")
+        """
+    )
+    h.topology()
