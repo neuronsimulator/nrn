@@ -45,7 +45,8 @@ TEST_CASE("MorphIOWrapper", "[NEURON][MorphIO][MorphIOWrapper][SinglePointSoma]"
         }
 
         THEN("We check the section index to names match expected ones") {
-            REQUIRE(morph.section_index_to_name() == nrn::test::soma_single_point_h5_section_index_to_name);
+            REQUIRE(morph.section_index_to_name() ==
+                    nrn::test::soma_single_point_h5_section_index_to_name);
         }
 
         THEN("We check the section distribution matches expected one") {

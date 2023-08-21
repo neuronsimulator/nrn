@@ -66,12 +66,12 @@ const std::vector<std::string> soma_single_point_h5_hoc{
     "dend[2] { pt3dadd(6, 5, 0, 3) }"};
 
 const std::vector<std::string> soma_single_point_h5_section_index_to_name{"soma",
-                                                                  "axon[0]",
-                                                                  "axon[1]",
-                                                                  "axon[2]",
-                                                                  "dend[0]",
-                                                                  "dend[1]",
-                                                                  "dend[2]"};
+                                                                          "axon[0]",
+                                                                          "axon[1]",
+                                                                          "axon[2]",
+                                                                          "dend[0]",
+                                                                          "dend[1]",
+                                                                          "dend[2]"};
 
 const std::vector<std::tuple<int, int, int>> soma_single_point_h5_section_type_distribution{
     {1, -1, 1},
