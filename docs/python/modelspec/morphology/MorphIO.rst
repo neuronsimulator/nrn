@@ -55,7 +55,7 @@ Classes
 
         Get the HOC morphology as HOC commands.
 
-    .. py:function:: sec_idx2names(self)
+    .. py:function:: section_index_to_name(self)
 
         Get a reference to a vector of strings that represents the names of the sections in the morphology data ordered by section ids.
 
@@ -73,7 +73,7 @@ Classes
 
         :return: A reference to a vector of strings.
 
-    .. py:function:: sec_typeid_distrib(self)
+    .. py:function:: section_type_distribution(self)
 
         Get a reference to a vector of tuples that represent the distribution of section type IDs in the morphology data.
         

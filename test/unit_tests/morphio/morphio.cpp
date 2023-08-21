@@ -45,12 +45,12 @@ TEST_CASE("MorphIOWrapper", "[NEURON][MorphIO][MorphIOWrapper][SinglePointSoma]"
         }
 
         THEN("We check the section index to names match expected ones") {
-            REQUIRE(morph.sec_idx2names() == nrn::test::soma_single_point_h5_sec_idx2names);
+            REQUIRE(morph.section_index_to_name() == nrn::test::soma_single_point_h5_section_index_to_name);
         }
 
         THEN("We check the section distribution matches expected one") {
-            REQUIRE(morph.sec_typeid_distrib() ==
-                    nrn::test::soma_single_point_h5_sec_typeid_distrib);
+            REQUIRE(morph.section_type_distribution() ==
+                    nrn::test::soma_single_point_h5_section_type_distribution);
         }
     }
 }

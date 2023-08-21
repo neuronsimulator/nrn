@@ -337,8 +337,8 @@ MorphIOWrapper::MorphIOWrapper(const std::string& filename)
     int id = 1;
     int count = 0;
     int prev_type = _pimpl->_sections[0].type();
-    _sec_idx2names.emplace_back("soma");
-    _sec_typeid_distrib.push_back({1, -1, 1});
+    _section_index_to_name.emplace_back("soma");
+    _section_type_distribution.push_back({1, -1, 1});
     int idx_adjust = 0;
     int current_type = -1;
     int i = 0;
@@ -346,7 +346,7 @@ MorphIOWrapper::MorphIOWrapper(const std::string& filename)
         if (sec.type() == prev_type) {
             ++count;
         } else {
-            _sec_typeid_distrib.push_back({prev_type, id, count});
+            _section_type_distribution.push_back({prev_type, id, count});
             ++id;
             count = 1;
             prev_type = sec.type();
@@ -355,18 +355,18 @@ MorphIOWrapper::MorphIOWrapper(const std::string& filename)
             current_type = sec.type();
             idx_adjust = i;
         }
-        _sec_idx2names.emplace_back(neuron::morphology::name(current_type, i - idx_adjust));
+        _section_index_to_name.emplace_back(neuron::morphology::name(current_type, i - idx_adjust));
         ++i;
     }
-    _sec_typeid_distrib.push_back({prev_type, id, count});
-    // print _sec_typeid_distrib
-    // for (const auto& [type_id, start_id, count] : _sec_typeid_distrib) {
+    _section_type_distribution.push_back({prev_type, id, count});
+    // print _section_type_distribution
+    // for (const auto& [type_id, start_id, count] : _section_type_distribution) {
     //     std::cout << "type_id: " << type_id << " start_id: " << start_id << " count: " << count
     //     << std::endl;
     // }
 
-    // print _sec_idx2names
-    // for (const auto& name : _sec_idx2names) {
+    // print _section_index_to_name
+    // for (const auto& name : _section_index_to_name) {
     //     std::cout << name << std::endl;
     // }
 }
@@ -376,7 +376,7 @@ std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
     std::vector<std::string> cmds;
 
     // generate create commands
-    for (const auto& [type_id, start_id, count]: _sec_typeid_distrib) {
+    for (const auto& [type_id, start_id, count]: _section_type_distribution) {
         std::string tstr = type2name(type_id);
         std::string tstr1 = "create " + tstr + "[" + std::to_string(count) + "]";
         cmds.push_back(tstr1);
@@ -439,12 +439,12 @@ std::vector<std::string> MorphIOWrapper::morph_as_hoc() const {
              _pimpl->_sections.end(),
              [&cmds, &i, this](const morphio::Section& sec) {
                  const size_t index = i + 1;
-                 std::string tstr = _sec_idx2names[index];
+                 std::string tstr = _section_index_to_name[index];
 
                  if (!sec.isRoot()) {
                      const auto& parent = sec.parent();
                      const size_t parent_index = parent.id() + 1;
-                     std::string tstr1 = _sec_idx2names[parent_index] + " connect " + tstr +
+                     std::string tstr1 = _section_index_to_name[parent_index] + " connect " + tstr +
                                          "(0), 1";
                      cmds.emplace_back(tstr1);
 
