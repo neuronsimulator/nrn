@@ -10,4 +10,5 @@ NEURON Development topics
    gpu-testing.rst
    workflow-code-paths.rst
    ./setuptools/setuptools.md
+   ./morphology/morphology.md
 
