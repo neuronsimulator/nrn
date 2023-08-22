@@ -11,4 +11,5 @@ NEURON Development topics
    workflow-code-paths.rst
    ./setuptools/setuptools.md
    ./morphology/morphology.md
+   hocdomain-sphinx.md
 
