@@ -91,7 +91,7 @@ bool Cvode::init_global() {
         if (!structure_change_) {
         return false;
     }
-    if (ctd_[0].cv_memb_list_ == nil) {
+    if (ctd_[0].cv_memb_list_ == nullptr) {
         neq_ = 0;
         if (use_daspk_) {
             return true;
@@ -119,8 +119,8 @@ void Cvode::init_eqn() {
     neq_ = 0;
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
-        z.cmlcap_ = nil;
-        z.cmlext_ = nil;
+        z.cmlcap_ = nullptr;
+        z.cmlext_ = nullptr;
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             if (cml->index == CAP) {
                 z.cmlcap_ = cml;
@@ -310,7 +310,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
             ncm->next = new CvMembList{cml->index};
             ncm = ncm->next;
         }
-        ncm->next = nil;
+        ncm->next = nullptr;
         ncm->index = cml->index;
         // ncm is in non-contiguous mode
         ncm->ml.reserve(n);
@@ -1027,11 +1027,11 @@ void Cvode::delete_prl() {
         if (z.play_) {
             delete z.play_;
         }
-        z.play_ = nil;
+        z.play_ = nullptr;
         if (z.record_) {
             delete z.record_;
         }
-        z.record_ = nil;
+        z.record_ = nullptr;
     }
 }
 

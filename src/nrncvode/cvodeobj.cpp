@@ -421,7 +421,7 @@ static double tstop_event(void* v) {
         }
     }
     if (ifarg(2)) {
-        Object* ppobj = nil;
+        Object* ppobj = nullptr;
         int reinit = 0;
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
@@ -432,7 +432,7 @@ static double tstop_event(void* v) {
             reinit = int(chkarg(4, 0, 1));
         }
         if (hoc_is_object_arg(2)) {
-            d->hoc_event(x, nil, ppobj, reinit, *hoc_objgetarg(2));
+            d->hoc_event(x, nullptr, ppobj, reinit, *hoc_objgetarg(2));
         } else {
             d->hoc_event(x, gargstr(2), ppobj, reinit);
         }
@@ -650,7 +650,7 @@ static void* cons(Object*) {
 		d = new NetCvode(1);
 		net_cvode_instance = d;
 	}
-	active(nil);
+	active(nullptr);
 	return (void*) d;
 #else
     return (void*) net_cvode_instance;
@@ -712,27 +712,27 @@ Cvode::Cvode() {
     cvode_constructor();
 }
 void Cvode::cvode_constructor() {
-    nthsizes_ = nil;
-    nth_ = nil;
-    ncv_ = nil;
-    ctd_ = nil;
-    tqitem_ = nil;
-    mem_ = nil;
+    nthsizes_ = nullptr;
+    nth_ = nullptr;
+    ncv_ = nullptr;
+    ctd_ = nullptr;
+    tqitem_ = nullptr;
+    mem_ = nullptr;
 #if NEOSIMorNCS
-    neosim_self_events_ = nil;
+    neosim_self_events_ = nullptr;
 #endif
     initialize_ = false;
     can_retreat_ = false;
     tstop_begin_ = 0.;
     tstop_end_ = 0.;
     use_daspk_ = false;
-    daspk_ = nil;
+    daspk_ = nullptr;
 
-    mem_ = nil;
-    y_ = nil;
-    atolnvec_ = nil;
-    maxstate_ = nil;
-    maxacor_ = nil;
+    mem_ = nullptr;
+    y_ = nullptr;
+    atolnvec_ = nullptr;
+    maxstate_ = nullptr;
+    maxacor_ = nullptr;
     neq_ = 0;
     structure_change_ = true;
 #if NRNMPI
@@ -887,19 +887,19 @@ void Cvode::init_prepare() {
     if (init_global()) {
         if (y_) {
             N_VDestroy(y_);
-            y_ = nil;
+            y_ = nullptr;
         }
         if (mem_) {
             CVodeFree(mem_);
-            mem_ = nil;
+            mem_ = nullptr;
         }
         if (atolnvec_) {
             N_VDestroy(atolnvec_);
-            atolnvec_ = nil;
+            atolnvec_ = nullptr;
         }
         if (daspk_) {
             delete daspk_;
-            daspk_ = nil;
+            daspk_ = nullptr;
         }
         init_eqn();
         if (neq_ > 0) {
@@ -921,8 +921,8 @@ void Cvode::activate_maxstate(bool on) {
     if (maxstate_) {
         N_VDestroy(maxstate_);
         N_VDestroy(maxacor_);
-        maxstate_ = nil;
-        maxacor_ = nil;
+        maxstate_ = nullptr;
+        maxacor_ = nullptr;
     }
     if (on && neq_ > 0) {
         maxstate_ = nvnew(neq_);
@@ -1056,7 +1056,7 @@ void Cvode::maxstep(double x) {
 void Cvode::free_cvodemem() {
     if (mem_) {
         CVodeFree(mem_);
-        mem_ = nil;
+        mem_ = nullptr;
     }
 }
 
@@ -1112,7 +1112,7 @@ int Cvode::cvode_init(double) {
     ((CVodeMem) mem_)->cv_gamma = 0.;
     ((CVodeMem) mem_)->cv_h = 0.;  // fun called before cvode sets this (though fun does not need it
                                    // really)
-    // fun(t_, N_VGetArrayPointer(y_), nil);
+    // fun(t_, N_VGetArrayPointer(y_), nullptr);
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
     pf_(t_, y_, nullptr, &opaque);
