@@ -215,7 +215,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             writeint(nodeindices, n);
         }
         writedbl(data, n * sz);
-        if (nrn_is_artificial_[type]) {
+        if (data) {
             delete[] data;
         }
         sz = bbcore_dparam_size[type];
@@ -303,28 +303,6 @@ void writedbl_(double* p, size_t size, FILE* f) {
 
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
-
-void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f) {
-    fprintf(f, "chkpnt %d\n", chkpnt++);
-    // the assumption is that an fwrite of nitem groups of szitem doubles can be
-    // fread as a single group of nitem*szitem doubles.
-    for (int i = 0; i < nitem; ++i) {
-        size_t n = fwrite(data[i], sizeof(double), szitem, f);
-        assert(n == szitem);
-    }
-}
-
-double* contiguous_art_data(Memb_list* ml, int nitem, int szitem) {
-    double* d1 = new double[nitem * szitem];
-    int k = 0;
-    for (int i = 0; i < nitem; ++i) {
-        for (int j = 0; j < szitem; ++j) {
-            d1[k++] = ml->data(i, j);
-        }
-    }
-    return d1;
-}
-
 
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     // Get the indices in NetCvode.fixed_play_ for this thread

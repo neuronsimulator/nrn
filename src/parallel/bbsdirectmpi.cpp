@@ -14,13 +14,7 @@
 
 extern void nrnmpi_int_broadcast(int*, int, int);
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
-#else
-#include <pair.h>
-#include <map.h>
-#endif
 
 #define debug 0
 
@@ -32,9 +26,6 @@ struct ltint {
 
 class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
 
-#endif
-
-
 BBSDirect::BBSDirect() {
     if (!BBSDirectServer::server_) {
         BBSDirectServer::server_ = new BBSDirectServer();
@@ -42,17 +33,13 @@ BBSDirect::BBSDirect() {
     sendbuf_ = nil;
     recvbuf_ = nil;
     BBSDirect::start();
-#if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
-#endif
 }
 
 BBSDirect::~BBSDirect() {
     nrnmpi_unref(sendbuf_);
     nrnmpi_unref(recvbuf_);
-#if defined(HAVE_STL)
     delete keepargs_;
-#endif
 }
 
 void BBSDirect::perror(const char* s) {
@@ -263,16 +250,12 @@ int BBSDirect::master_take_result(int pid) {
 }
 
 void BBSDirect::save_args(int userid) {
-#if defined(HAVE_STL)
     nrnmpi_ref(sendbuf_);
     keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
-
-#endif
     post_todo(working_id_);
 }
 
 void BBSDirect::return_args(int userid) {
-#if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
     recvbuf_ = nil;
@@ -282,7 +265,6 @@ void BBSDirect::return_args(int userid) {
         nrnmpi_upkbegin(recvbuf_);
         BBSImpl::return_args(userid);
     }
-#endif
 }
 
 bool BBSDirect::look_take(const char* key) {

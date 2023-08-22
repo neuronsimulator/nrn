@@ -14,16 +14,17 @@ def _do_ion_register():
 
 _init_lock = RLock()
 has_initialized = False
+is_initializing = False
 
 
 def _do_init():
-    global has_initialized, _init_lock
+    global has_initialized, is_initializing, _init_lock
     with _init_lock:
-        if not has_initialized:
+        if not has_initialized and not is_initializing:
             from . import species, region, rxd
 
             if len(species._all_species) > 0:
-                has_initialized = True
+                is_initializing = True
                 # TODO: clean this up so not repetitive; can't do it super cleanly because of the multiple phases of species
                 for obj in region._all_regions:
                     obj = obj()
@@ -55,6 +56,8 @@ def _do_init():
                     if obj is not None:
                         obj._do_init()
                 rxd._init()
+                has_initialized = True
+            is_initializing = False
 
 
 def is_initialized():
