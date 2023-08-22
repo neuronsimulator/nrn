@@ -7,7 +7,7 @@ Traditionally reading morphologies with NEURON has been coupled to the ``Import3
 The ``Import3D GUI`` tool is a graphical tool that allows the user to load a morphology and then interactively modify it.
 :ref:`import3d_tutorial` provides a tutorial on how to use the ``Import3D GUI`` tool.
 
-The underlying implementation is in HOC and the GUI constructs can be disreagarded, since loading numerous morphologies for simulation does not make any use of them.
+The underlying implementation is in HOC and the GUI constructs can in principle be disregarded, since loading numerous morphologies for simulation does not make any use of them.
 
 
 Import3D_GUI Morphology Loading - Legacy
