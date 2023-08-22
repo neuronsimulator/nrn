@@ -3195,9 +3195,9 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
     if (src_) {
         Printf(" src=%s", src_->osrc_ ? hoc_object_name(src_->osrc_) : secname(src_->ssrc_));
     } else {
-        Printf(" src=nil");
+        Printf(" src=nullptr");
     }
-    Printf(" target=%s %.15g\n", (target_ ? hoc_object_name(target_->ob) : "nil"), tt);
+    Printf(" target=%s %.15g\n", (target_ ? hoc_object_name(target_->ob) : "nullptr"), tt);
 }
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
@@ -4994,7 +4994,7 @@ void NetCvode::p_construct(int n) {
 
 PreSyn::PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc)
     : thvar_{std::move(src)} {
-    //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
+    //	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nullptr");
     PreSynSave::invalid();
     hi_index_ = -1;
     hi_th_ = nullptr;

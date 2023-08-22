@@ -1782,7 +1782,7 @@ static FILE* fnd;
 void node_data_scaffolding(void) {
     int i;
     Pd(n_memb_func);
-    /*	P "Mechanism names (first two are nil) beginning with memb_func[2]\n");*/
+    /*	P "Mechanism names (first two are nullptr) beginning with memb_func[2]\n");*/
     for (i = 2; i < n_memb_func; ++i) {
         P "%s", memb_func[i].sym->name);
         Pn;
