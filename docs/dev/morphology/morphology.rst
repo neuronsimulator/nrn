@@ -7,11 +7,11 @@ Traditionally reading morphologies with NEURON has been coupled to the ``Import3
 The ``Import3D GUI`` tool is a graphical tool that allows the user to load a morphology and then interactively modify it.
 :ref:`import3d_tutorial` provides a tutorial on how to use the ``Import3D GUI`` tool.
 
-The underlying implementation is in HOC and the GUI constructs can in principle be disregarded, since loading numerous morphologies for simulation does not make any use of them.
+The underlying implementation is mostly HOC and the GUI constructs can in principle be disregarded, since loading numerous morphologies for simulation does not make any use of them.
+Note it is possible possible to load HOC-bound morphologies, but also Python-bound morphologies (refer to :ref:`bio_faq`).
 
-
-Import3D_GUI Morphology Loading - Legacy
-----------------------------------------
+HOC Morphology Loading - Legacy Import3D_GUI
+--------------------------------------------
 
 A HOC ``CellType`` needs to be instantiated and the Import3D stack will be used to load the morphology. 
 
@@ -119,8 +119,8 @@ that will be executed in the HOC interpreter, thus loading the morphology: ::
 
 
 
-Morphology Loading with MorphIO
--------------------------------
+HOC Morphology Loading with MorphIO
+-----------------------------------
 
 Given that legacy morphology loading is implemented in HOC, it does incur a performance penalty.
 To that end, we are implementing a new mechanism for loading morphologies in NEURON, using the `MorphIO <https://github.com/BlueBrain/MorphIO>`_ library.
