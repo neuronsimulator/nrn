@@ -60,12 +60,12 @@ TEST_CASE("POINTER data_handle") {
     auto& container = model.node_data();
 
     // These two object create a row each and keep it alive.
-    auto row1_owner = Node::owning_handle{container};
-    auto row2_owner = Node::owning_handle{container};
+    auto row1_owner = std::make_unique<Node::owning_handle>(container);
+    auto row2_owner = std::make_unique<Node::owning_handle>(container);
 
     // We'd like a data_handle to the both voltages.
-    auto v1 = container.get_handle<Node::field::Voltage>(row1_owner.id(), 0);
-    auto v2 = container.get_handle<Node::field::Voltage>(row2_owner.id(), 0);
+    auto v1 = container.get_handle<Node::field::Voltage>(row1_owner->id(), 0);
+    auto v2 = container.get_handle<Node::field::Voltage>(row2_owner->id(), 0);
 
     // Initialize with the wrong sign.
     *v1 = -1.0;
@@ -84,7 +84,7 @@ TEST_CASE("POINTER data_handle") {
     // We set up everything such that the `soa` containers have two voltages.
     // We'll now study what happens to a Datum that refers to one of these.  In
     // generated code this datum is called `_ppval[0]`. The
-    Datum* _ppval = (Datum*) malloc(sizeof(Datum));
+    auto _ppval = std::vector<Datum>(1);
 
     // Important: `v1_ptr` has type `double *`. Here, it's just
     // a pointer. The "promotion" to data_handle happens inside
@@ -115,5 +115,8 @@ TEST_CASE("POINTER data_handle") {
     // This is still a compiler error:
     // _ppval[0].get<double*>() = nullptr;
 
-    free(_ppval);
+    // What happens when the rows are freed?
+    row1_owner = nullptr;
+    row2_owner = nullptr;
+    REQUIRE(_ppval[0].get<double*>() == nullptr);
 }
