@@ -313,15 +313,6 @@ double OcFullMatrix::det(int* e) {
     PERM* piv = px_get(n);
     m_copy(m_, lu);
     LUfactor(lu, piv);
-#if 0
-printf("LU\n");
-for (int i = 0; i < n; ++i) {
-	for (int j = 0; j < n; ++j) {
-		printf(" %g", lu->me[i][j]);
-	}
-	printf("\t%d\n", piv->pe[i]);
-}
-#endif
     double m = 1.0;
     *e = 0;
     for (int i = 0; i < n; ++i) {

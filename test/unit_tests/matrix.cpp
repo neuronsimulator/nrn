@@ -56,6 +56,14 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.resize(4, 3);
             m.setrow(3, 2.0);
             REQUIRE(compareMatrix(m, {{3., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}, {2., 2., 2.}}));
+            {
+                std::vector<int> x, y;
+                m.nonzeros(x, y);
+                std::vector<int> res_x = {0, 1, 2, 3, 3, 3};
+                std::vector<int> res_y = {0, 1, 2, 0, 1, 2};
+                REQUIRE(x == res_x);
+                REQUIRE(y == res_y);
+            }
             m.setcol(1, 4.0);
             REQUIRE(compareMatrix(m, {{3., 4., 0.}, {0., 4., 0.}, {0., 4., 1.}, {2., 4., 2.}}));
             m.setdiag(0, 5.0);
@@ -86,6 +94,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.resize(3, 3);
             REQUIRE(compareMatrix(m, {{0., 6., 6.}, {7., 6., 6.}, {0., 6., 6.}}));
             m.exp(&n);
+            REQUIRE(n(0, 0) == Catch::Detail::Approx(442925.));
             REQUIRE(compareMatrix(n,
                                   {{442925., 938481., 938481.},
                                    {651970., 1381407., 1381407.},
@@ -133,6 +142,8 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.muls(2, &n);
             REQUIRE(compareMatrix(n, {{84., 144., 2.}, {144., 228., 228.}, {2., 228., 4.}}));
             m.solv(&v, &vout, false);
+            REQUIRE(compareVect(vout, {0.0088700, 0.0087927, -0.00562299}));
+            m.solv(&v, &vout, true);
             REQUIRE(compareVect(vout, {0.0088700, 0.0087927, -0.00562299}));
             v.vec() = {1, 2, 3};
             m.setrow(0, &v);
