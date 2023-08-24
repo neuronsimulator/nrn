@@ -15,7 +15,7 @@ include(NeuronTestHelper)
 # =============================================================================
 add_executable(
   testneuron
-  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/container.cpp
+  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/matrix.cpp unit_tests/container/container.cpp
   unit_tests/container/mechanism.cpp unit_tests/container/node.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
