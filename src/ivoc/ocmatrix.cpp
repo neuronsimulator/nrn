@@ -195,9 +195,9 @@ void OcFullMatrix::getdiag(int k, Vect* out) {
     } else {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
-            v_elem(out, i) = m_entry(m_, i, j);
+            v_elem(out, j) = m_entry(m_, i, j);
 #else
-            out->elem(i) = m_entry(m_, i, j);
+            out->elem(j) = m_entry(m_, i, j);
 #endif
         }
     }
@@ -230,9 +230,9 @@ void OcFullMatrix::setdiag(int k, Vect* in) {
     } else {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
-            m_set_val(m_, i, j, v_elem(in, i));
+            m_set_val(m_, i, j, v_elem(in, j));
 #else
-            m_set_val(m_, i, j, in->elem(i));
+            m_set_val(m_, i, j, in->elem(j));
 #endif
         }
     }
@@ -502,13 +502,13 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
             if ((p = pelm(i, j)) != nullptr) {
 #ifdef WIN32
-                *p = v_elem(in, i);
+                *p = v_elem(in, j);
             } else if (v_elem(in, i)) {
-                sp_set_val(m_, i, j, v_elem(in, i));
+                sp_set_val(m_, i, j, v_elem(in, j));
 #else
-                *p = in->elem(i);
+                *p = in->elem(j);
             } else if (in->elem(i)) {
-                sp_set_val(m_, i, j, in->elem(i));
+                sp_set_val(m_, i, j, in->elem(j));
 #endif
             }
         }
