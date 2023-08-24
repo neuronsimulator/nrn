@@ -86,7 +86,10 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.resize(3, 3);
             REQUIRE(compareMatrix(m, {{0., 6., 6.}, {7., 6., 6.}, {0., 6., 6.}}));
             m.exp(&n);
-            REQUIRE(compareMatrix(n, {{442925., 938481., 938481.}, {651970., 1381407., 1381407.}, {442926., 938481., 938482.}}));
+            REQUIRE(compareMatrix(n,
+                                  {{442925., 938481., 938481.},
+                                   {651970., 1381407., 1381407.},
+                                   {442926., 938481., 938482.}}));
             m.pow(2, &m);
             REQUIRE(compareMatrix(m, {{42., 72., 72.}, {42., 114., 114.}, {42., 72., 72.}}));
             int e{};
@@ -99,8 +102,11 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(det == -1.2348_a);
             REQUIRE(e == 5);
             m.inverse(&n);
-            n.resize(3, 3); // ???
-            REQUIRE(compareMatrix(n, {{0.064625850, -0.040816326, 0.}, {-0.00024295432, -0.0000971817, 0.01428571}, {-0.023566569, 0.0239067055, -0.014285714}}));
+            n.resize(3, 3);  // ???
+            REQUIRE(compareMatrix(n,
+                                  {{0.064625850, -0.040816326, 0.},
+                                   {-0.00024295432, -0.0000971817, 0.01428571},
+                                   {-0.023566569, 0.0239067055, -0.014285714}}));
             n.zero();
             REQUIRE(compareMatrix(n, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}));
             v.resize(2);
@@ -122,7 +128,8 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(compareVect(vout, {115., 300., 117.}));
             OcFullMatrix o(3, 3);
             m.mulm(&n, &o);
-            REQUIRE(compareMatrix(o, {{6949., 11346., 8252.}, {11346., 31176., 13296.}, {8252., 13296., 13001.}}));
+            REQUIRE(compareMatrix(
+                o, {{6949., 11346., 8252.}, {11346., 31176., 13296.}, {8252., 13296., 13001.}}));
             m.muls(2, &n);
             REQUIRE(compareMatrix(n, {{84., 144., 2.}, {144., 228., 228.}, {2., 228., 4.}}));
             m.solv(&v, &vout, false);
@@ -138,7 +145,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             n.getcol(0, &v);
             REQUIRE(compareEigenVect(v, {0.50578, 0.5843738, 0.634577}));
             n.getcol(1, &v);
-            REQUIRE(compareEigenVect(v, {-0.8240377,0.544925,0.154978}));
+            REQUIRE(compareEigenVect(v, {-0.8240377, 0.544925, 0.154978}));
             n.getcol(2, &v);
             REQUIRE(compareEigenVect(v, {-0.255231, -0.601301, 0.7571611}));
             m.resize(2, 2);
@@ -168,9 +175,9 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(*pmep == 0);
             pmep = m.pelm(0, 1);
             REQUIRE(pmep == nullptr);
-            //int col{};
-            //double value = m.spgetrowval(2, 1, &col);
-            //REQUIRE(col == 0);
+            // int col{};
+            // double value = m.spgetrowval(2, 1, &col);
+            // REQUIRE(col == 0);
             m.zero();
             REQUIRE(m.sprowlen(2) == 1);
             REQUIRE(compareMatrix(m, {{0., 0., 0.}, {0., 0., 0}, {0., 0., 0.}}));
@@ -208,10 +215,6 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
 
             m.mulv(&v, &out);
             REQUIRE(compareVect(out, {14., 11., 16.}));
-
-
-
-
         }
     }
 }
