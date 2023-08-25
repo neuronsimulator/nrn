@@ -19,6 +19,7 @@ add_executable(
   unit_tests/basic.cpp
   unit_tests/matrix.cpp
   unit_tests/container/container.cpp
+  unit_tests/container/generic_data_handle.cpp
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
   unit_tests/oc/hoc_interpreter.cpp)
