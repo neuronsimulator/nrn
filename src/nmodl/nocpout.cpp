@@ -466,6 +466,7 @@ extern Memb_func* memb_func;\n\
         Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
         Lappendstr(defs_list, buf);
     }
+
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
@@ -474,6 +475,30 @@ extern Memb_func* memb_func;\n\
         }
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
+
+    /* Direct Python call wrappers to density mechanism functions. */
+    if (!point_process) {
+        Lappendstr(defs_list,
+                   "\n/* Direct Python call wrappers to density mechanism functions.*/\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "static double _npy_%s(Node*, Prop*);\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list,
+                   "\n"
+                   "static NPyDirectMechFunc npy_direct_func_proc[] = {\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "{\"%s\", _npy_%s},\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list, "{0, 0}\n};\n");
+    }
 
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
@@ -1168,6 +1193,10 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             }
         }
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        if (!point_process) {
+            Lappendstr(defs_list,
+                       "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");
+        }
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
             lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 1, _thread_mem_init);\n");
@@ -1316,8 +1345,8 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
         }
     } /* end of not "nothing" */
     Lappendstr(defs_list,
-               "\
-	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
+               "\n"
+               "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
         char* pf{};

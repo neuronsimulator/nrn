@@ -1,7 +1,7 @@
 : Tests for exploring setdata
 NEURON {
     THREADSAFE
-    SUFFIX sdata
+    POINT_PROCESS SData
 }
 
 INCLUDE "sdata.inc"

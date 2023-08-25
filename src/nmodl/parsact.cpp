@@ -733,16 +733,23 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     freelist(&to);
 }
 
-void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
-    extern int point_process;
+extern int point_process;
+
+// Original hocfunchack modified to handle _npy_name definitions.
+static void funchack(Symbol* n, bool ishoc, int hack) {
     Item* q;
     int i;
     Item* qp = 0;
 
     if (point_process) {
         Sprintf(buf, "\nstatic double _hoc_%s(void* _vptr) {\n double _r;\n", n->name);
-    } else {
+    } else if (ishoc) {
         Sprintf(buf, "\nstatic void _hoc_%s(void) {\n  double _r;\n", n->name);
+    } else {  // _npy_...
+        Sprintf(buf,
+                "\nstatic double _npy_%s(Node* _nd, Prop* _prop) {\n"
+                "    double _r{0.0};\n",
+                n->name);
     }
     Lappendstr(procfunc, buf);
     vectorize_substitute(lappendstr(procfunc, ""),
@@ -757,7 +764,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
                              "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
                              "  _thread = _extcall_thread.data();\n"
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
-    } else {
+    } else if (ishoc) {
         hocfunc_setdata_item(n, lappendstr(procfunc, ""));
         vectorize_substitute(
             lappendstr(procfunc, ""),
@@ -767,6 +774,14 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
             "_ppvar = _extcall_prop ? _nrn_mechanism_access_dparam(_extcall_prop) : nullptr;\n"
             "_thread = _extcall_thread.data();\n"
             "_nt = nrn_threads;\n");
+    } else {  // _npy_...
+        vectorize_substitute(lappendstr(procfunc, ""),
+                             "_nrn_mechanism_cache_instance _ml_real{_prop};\n"
+                             "auto* const _ml = &_ml_real;\n"
+                             "size_t const _iml{};\n"
+                             "_ppvar = _nrn_mechanism_access_dparam(_prop);\n"
+                             "_thread = _extcall_thread.data();\n"
+                             "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
@@ -788,15 +803,27 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
             Lappendstr(procfunc, ",");
         }
     }
-    if (point_process) {
+    if (point_process || !ishoc) {
         Lappendstr(procfunc, ");\n return(_r);\n}\n");
-    } else
+    } else if (ishoc) {
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
+    }
     if (i) {
         vectorize_substitute(qp, "_threadargscomma_");
     } else if (!hack) {
         vectorize_substitute(qp, "_threadargs_");
     }
+}
+
+void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
+    funchack(n, true, hack);
+}
+
+static void npyfunc(Symbol* n, int hack) {  // supports seg.mech.n(...)
+    if (point_process) {
+        return;
+    }                          // direct calls from python from hocfunchack
+    funchack(n, false, hack);  // direct calls from python via _npy_.... wrapper.
 }
 
 void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and hoc for proc and func
@@ -805,6 +832,8 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
     /* Hack prevents FUNCTION_TABLE bug of 'double table_name()' extra args
        replacing the double in 'double name(...) */
     hocfunchack(n, qpar1, qpar2, 0);
+    // wrapper for direct call from python
+    npyfunc(n, 0);  // shares most of hocfunchack code (factored out).
 }
 
 /* ARGSUSED */
@@ -930,6 +959,7 @@ void function_table(Symbol* s, Item* qpar1, Item* qpar2, Item* qb1, Item* qb2) /
     Sprintf(buf, "\nstatic void* _ptable_%s = (void*)0;\n", s->name);
     linsertstr(procfunc, buf);
     hocfunchack(t, q1, q2, 1);
+    npyfunc(t, 1);
 }
 
 void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {

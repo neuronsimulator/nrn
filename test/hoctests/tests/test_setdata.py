@@ -19,3 +19,26 @@ for seg in s:
     assert seg.sdata.a == x
     assert seg.sdata.b == 10 * x
     assert seg.sdata.c[1] == 100 * x
+
+# this part tests POINT_PROCESS calls using pythonic syntax.
+# no need for explicit setdata call.
+sds = [h.SData(seg) for seg in s]
+for i, sd in enumerate(sds):
+    sd.A(i, 10 * i, 100 * i)
+
+for i, sd in enumerate(sds):
+    x = float(i)
+    assert sd.a == x
+    assert sd.b == 10 * x
+    assert sd.c[1] == 100 * x
+
+# this part tests SUFFIX calls using pythonic syntax.
+# no need for explicit setdata call.
+for seg in s:
+    x = seg.x
+    seg.sdata.A(x + 10, x + 20, x + 30)
+for seg in s:
+    x = seg.x
+    assert seg.sdata.a == x + 10
+    assert seg.sdata.b == x + 20
+    assert seg.sdata.c[1] == x + 30

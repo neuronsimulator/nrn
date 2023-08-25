@@ -29,6 +29,9 @@ extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
+// used to be static in nrnpy_hoc.cpp
+extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
+extern void hocobj_pushargs_free_strings(std::vector<char*>&);
 
 typedef struct {
     PyObject_HEAD
@@ -62,6 +65,12 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
+    NPyMechObj* pymech_{};
+    NPyDirectMechFunc* f_{};
+} NPyMechFunc;
+
+typedef struct {
+    PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* msym_;
     int i_;
@@ -87,6 +96,7 @@ static PyTypeObject* pseg_of_sec_iter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_of_seg_iter_generic_type;
 static PyTypeObject* pmech_generic_type;
+static PyTypeObject* pmechfunc_generic_type;
 static PyTypeObject* pvar_of_mech_iter_generic_type;
 static PyTypeObject* range_type;
 
@@ -242,6 +252,12 @@ static void NPyRangeVar_dealloc(NPyRangeVar* self) {
 static void NPyMechObj_dealloc(NPyMechObj* self) {
     // printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pyseg_);
+    ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static void NPyMechFunc_dealloc(NPyMechFunc* self) {
+    // printf("NPyMechFunc_dealloc %p %s\n", self, self->ob_type->tp_name);
+    Py_XDECREF(self->pymech_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
@@ -1074,6 +1090,44 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
     return result;
 }
 
+static PyObject* NPyMechFunc_name(NPyMechFunc* self) {
+    CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
+    PyObject* result = NULL;
+    if (self->pymech_) {
+        std::string s = memb_func[self->pymech_->prop_->_type].sym->name;
+        s += ".";
+        s += self->f_->name;
+        result = PyString_FromString(s.c_str());
+    }
+    return result;
+}
+
+static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
+    PyObject* result = NULL;
+    auto pyseg = self->pymech_->pyseg_;
+    CHECK_SEC_INVALID(pyseg->pysec_->sec_);
+    auto& f = self->f_->func;
+
+    // patterning after fcall
+    Symbol sym{};  // in case of error, need the name.
+    sym.name = (char*) self->f_->name;
+    std::vector<char*> strings_to_free;
+    int narg = hocobj_pushargs(args, strings_to_free);
+    hoc_push_frame(&sym, narg);  // get_argument uses the current frame
+    try {
+        double x = (f) (nullptr, self->pymech_->prop_);
+        result = Py_BuildValue("d", x);
+    } catch (std::exception const& e) {
+        std::ostringstream oss;
+        oss << "mechanism.function call error: " << e.what();
+        PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
+    }
+    hoc_pop_frame();
+    hocobj_pushargs_free_strings(strings_to_free);
+
+    return result;
+}
+
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
     CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
     if (self->prop_ && nrn_is_ion(self->prop_->_type)) {
@@ -1092,6 +1146,16 @@ static PyObject* NPyMechObj_segment(NPyMechObj* self) {
     return result;
 }
 
+static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
+    PyObject* result = NULL;
+    if (self->pymech_) {
+        CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
+        result = (PyObject*) (self->pymech_);
+        Py_INCREF(result);
+    }
+    return result;
+}
+
 static PyObject* pymech_repr(PyObject* p) {
     NPyMechObj* pymech = (NPyMechObj*) p;
     Section* sec = pymech->pyseg_->pysec_->sec_;
@@ -1099,6 +1163,15 @@ static PyObject* pymech_repr(PyObject* p) {
         return NPyMechObj_name(pymech);
     }
     return PyString_FromString("<mechanism of deleted section>");
+}
+
+static PyObject* pymechfunc_repr(PyObject* p) {
+    NPyMechFunc* pyfunc = (NPyMechFunc*) p;
+    Section* sec = pyfunc->pymech_->pyseg_->pysec_->sec_;
+    if (sec && sec->prop) {
+        return NPyMechFunc_name(pyfunc);
+    }
+    return PyString_FromString("<mechanism function of deleted section>");
 }
 
 static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
@@ -2072,7 +2145,22 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             assert(err == 0);
         }
     } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        bool found_func{false};
+        if (self->prop_) {
+            auto& funcs = nrn_mech2funcs_map[self->prop_->_type];
+            if (funcs.count(n)) {
+                found_func = true;
+                auto& f = funcs[n];
+                NPyMechFunc* pymf = PyObject_New(NPyMechFunc, pmechfunc_generic_type);
+                pymf->pymech_ = self;
+                Py_INCREF(self);
+                pymf->f_ = f;
+                result = (PyObject*) pymf;
+            }
+        }
+        if (!found_func) {
+            result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        }
     }
     Py_DECREF(pyname);
     delete[] buf;
@@ -2446,6 +2534,14 @@ static PyMethodDef NPyMechObj_methods[] = {
      "Returns the segment of the Mechanism instance"},
     {NULL}};
 
+static PyMethodDef NPyMechFunc_methods[] = {
+    {"name", (PyCFunction) NPyMechFunc_name, METH_NOARGS, "Mechanism function"},
+    {"mech",
+     (PyCFunction) NPyMechFunc_mech,
+     METH_NOARGS,
+     "Returns the Mechanism for this instance"},
+    {NULL}};
+
 static PyMethodDef NPyRangeVar_methods[] = {
     {"name", (PyCFunction) NPyRangeVar_name, METH_NOARGS, "Range variable name name"},
     {"mech",
@@ -2546,21 +2642,27 @@ PyObject* nrnpy_nrn(void) {
     PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
 
     pmech_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechanismType_spec);
+    pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);
     pmech_of_seg_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechOfSegIterType_spec);
     pvar_of_mech_iter_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_VarOfMechIterType_spec);
     pmech_generic_type->tp_new = PyType_GenericNew;
+    pmechfunc_generic_type->tp_new = PyType_GenericNew;
     pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
     pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pmech_generic_type) < 0)
+        goto fail;
+    if (PyType_Ready(pmechfunc_generic_type) < 0)
         goto fail;
     if (PyType_Ready(pmech_of_seg_iter_generic_type) < 0)
         goto fail;
     if (PyType_Ready(pvar_of_mech_iter_generic_type) < 0)
         goto fail;
     Py_INCREF(pmech_generic_type);
+    Py_INCREF(pmechfunc_generic_type);
     Py_INCREF(pmech_of_seg_iter_generic_type);
     Py_INCREF(pvar_of_mech_iter_generic_type);
     PyModule_AddObject(m, "Mechanism", (PyObject*) pmech_generic_type);
+    PyModule_AddObject(m, "MechFunc", (PyObject*) pmechfunc_generic_type);
     PyModule_AddObject(m, "MechOfSegIterator", (PyObject*) pmech_of_seg_iter_generic_type);
     PyModule_AddObject(m, "VarOfMechIterator", (PyObject*) pvar_of_mech_iter_generic_type);
     remake_pmech_types();

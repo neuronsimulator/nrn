@@ -277,7 +277,7 @@ if(NRN_ENABLE_PYTHON)
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
     NAME hoctests
-    MODFILE_PATTERNS *.mod
+    MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY test/hoctests)
   set(hoctest_utils expect_err.hoc)
   foreach(ext hoc py)
