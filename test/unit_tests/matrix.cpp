@@ -34,8 +34,13 @@ bool compareMatrix(OcMatrix& m, const std::vector<std::vector<double>>& ref) {
     for (int i = 0; i < m.nrow(); ++i) {
         REQUIRE(m.ncol() == ref[i].size());
         for (int j = 0; j < m.ncol(); ++j) {
-            // std::cout << i << ": " << j << ": " << m.getval(i, j) << std::endl;
-            REQUIRE(m.getval(i, j) == Catch::Detail::Approx(ref[i][j]));
+            double diff{};
+            if (ref[i][j] == 0.) {
+                // Avoid a bug with Catch::Approx if value is exactly 0.
+                // See https://github.com/catchorg/Catch2/issues/1444
+                diff = 1e-16;
+            }
+            REQUIRE(m.getval(i, j) + diff == Catch::Detail::Approx(ref[i][j] + diff));
         }
     }
     return true;
