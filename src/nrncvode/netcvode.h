@@ -98,9 +98,9 @@ class NetCvode {
     void tstop_event(double);
     void hoc_event(double,
                    const char* hoc_stmt,
-                   Object* ppobj = nil,
+                   Object* ppobj = nullptr,
                    int reinit = 0,
-                   Object* pyact = nil);
+                   Object* pyact = nullptr);
     NetCon* install_deliver(neuron::container::data_handle<double> psrc,
                             Section* ssrc,
                             Object* osrc,
