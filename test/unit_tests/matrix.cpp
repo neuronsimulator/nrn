@@ -6,15 +6,15 @@
 #include <catch2/catch.hpp>
 using namespace Catch::literals;
 
-template <typename T = std::vector<double>>
-class ApproxOrOpposite: public Catch::MatcherBase<T> {
-    T vec;
+template <typename T = double>
+class ApproxOrOpposite: public Catch::MatcherBase<std::vector<T>> {
+    std::vector<T> vec;
 
   public:
-    ApproxOrOpposite(T vec)
+    ApproxOrOpposite(std::vector<T> vec)
         : vec(vec) {}
 
-    bool match(T const& in) const override {
+    bool match(std::vector<T> const& in) const override {
         if (in.size() != vec.size()) {
             return false;
         }
@@ -43,6 +43,21 @@ class ApproxOrOpposite: public Catch::MatcherBase<T> {
         std::ostringstream ss;
         ss << "is not approx or opposite approx of " << Catch::Detail::stringify(vec);
         return ss.str();
+    }
+    template <typename = typename std::enable_if<std::is_constructible<double, T>::value>::type>
+    ApproxOrOpposite& epsilon(T const& newEpsilon) {
+        approx.epsilon(newEpsilon);
+        return *this;
+    }
+    template <typename = typename std::enable_if<std::is_constructible<double, T>::value>::type>
+    ApproxOrOpposite& margin(T const& newMargin) {
+        approx.margin(newMargin);
+        return *this;
+    }
+    template <typename = typename std::enable_if<std::is_constructible<double, T>::value>::type>
+    ApproxOrOpposite& scale(T const& newScale) {
+        approx.scale(newScale);
+        return *this;
     }
 
     mutable Catch::Detail::Approx approx = Catch::Detail::Approx::custom();
@@ -256,9 +271,35 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             // https://www.educative.io/blog/sign-ambiguity-in-singular-value-decomposition
             IvocVect c(4);
             c.vec() = {u(0, 0), u(0, 1), v(0, 0), v(0, 1)};
-            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, 0.70710, 0.70710, -0.70710}));
+            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, 0.70710, 0.70710, 0.70710}));
             c.vec() = {u(1, 0), u(1, 1), v(1, 0), v(1, 1)};
-            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, -0.70710, 0.70710, 0.70710}));
+            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, -0.70710, -0.70710, 0.70710}));
+        }
+        {
+            m.resize(2, 3);
+            {
+                IvocVect s(3);
+                s.vec() = {3., 2., 2.};
+                m.setrow(0, &s);
+                s.vec() = {2., 3., -2.};
+                m.setrow(1, &s);
+            }
+            OcFullMatrix u(2, 2);
+            OcFullMatrix v(3, 3);
+            IvocVect d(2);
+            m.svd1(&u, &v, &d);
+            REQUIRE_THAT(d.vec(), Catch::Matchers::Approx(std::vector<double>({5., 3.})));
+            // For comparison of u and v and problems with signs, see:
+            // https://www.educative.io/blog/sign-ambiguity-in-singular-value-decomposition
+            IvocVect c(5);
+            c.vec() = {u(0, 0), u(0, 1), v(0, 0), v(0, 1), v(0, 2)};
+            CHECK_THAT(c.vec(),
+                       ApproxOrOpposite({0.70710, 0.70710, 0.70710, 0.70710, 0.}).margin(1e-10));
+            c.vec() = {u(1, 0), u(1, 1), v(1, 0), v(1, 1), v(1, 2)};
+            CHECK_THAT(c.vec(),
+                       ApproxOrOpposite({0.70710, -0.70710, 0.235702, -0.235702, 0.942809}));
+            c.vec() = {0., 0., v(2, 0), v(2, 1), v(2, 2)};
+            CHECK_THAT(c.vec(), ApproxOrOpposite({0., 0., 0.66666, -0.66666, -0.3333333}));
         }
     }
     GIVEN("A 3x3 Sparse matrix") {
