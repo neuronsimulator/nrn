@@ -223,12 +223,18 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             }
             {
                 m.resize(2, 2);
-                OcFullMatrix n(2, 2);
-                OcFullMatrix o(2, 2);
-                IvocVect v(2);
-                m.svd1(&n, &o, &v);
-                REQUIRE(compareVect(v, {3., 1.}));
-                REQUIRE(compareMatrix(n, {{0.70710, 0.70710}, {0.70710, -0.70710}}));
+                OcFullMatrix u(2, 2);
+                OcFullMatrix v(2, 2);
+                IvocVect d(2);
+                m.svd1(&u, &v, &d);
+                REQUIRE(compareVect(d, {3., 1.}));
+                // For comparison of u and v and problems with signs, see:
+                // https://www.educative.io/blog/sign-ambiguity-in-singular-value-decomposition
+                IvocVect c(4);
+                c.vec() = {u(0, 0), u(1, 0), v(0, 0), v(1, 0)};
+                REQUIRE(compareEigenVect(c, {0.70710, 0.70710, 0.70710, -0.70710}));
+                c.vec() = {u(0, 1), u(1, 1), v(0, 1), v(1, 1)};
+                REQUIRE(compareEigenVect(c, {0.70710, -0.70710, 0.70710, 0.70710}));
             }
         }
     }
