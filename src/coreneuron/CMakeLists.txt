@@ -563,10 +563,10 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     # TODO: somehow mingw requires explicit linking. This needs to be verified
     # when we will test coreneuron on windows.
     # ~~~
-    if(MINGW) # type msmpi only
-      add_dependencies(core${libname}_lib coreneuron-core)
-      target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES} coreneuron-core)
-    endif()
+    # if(MINGW) # type msmpi only
+    add_dependencies(core${libname}_lib coreneuron-core)
+    target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES} coreneuron-core)
+    # endif()
     set_property(TARGET core${libname}_lib PROPERTY OUTPUT_NAME core${libname})
     list(APPEND corenrn_mpi_targets "core${libname}_lib")
   endforeach(val)
