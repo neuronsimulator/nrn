@@ -255,10 +255,10 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             // For comparison of u and v and problems with signs, see:
             // https://www.educative.io/blog/sign-ambiguity-in-singular-value-decomposition
             IvocVect c(4);
-            c.vec() = {u(0, 0), u(1, 0), v(0, 0), v(1, 0)};
-            REQUIRE_THAT(c.vec(), ApproxOrOpposite({0.70710, 0.70710, 0.70710, -0.70710}));
-            c.vec() = {u(0, 1), u(1, 1), v(0, 1), v(1, 1)};
-            REQUIRE_THAT(c.vec(), ApproxOrOpposite({0.70710, -0.70710, 0.70710, 0.70710}));
+            c.vec() = {u(0, 0), u(0, 1), v(0, 0), v(0, 1)};
+            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, 0.70710, 0.70710, -0.70710}));
+            c.vec() = {u(1, 0), u(1, 1), v(1, 0), v(1, 1)};
+            CHECK_THAT(c.vec(), ApproxOrOpposite({0.70710, -0.70710, 0.70710, 0.70710}));
         }
     }
     GIVEN("A 3x3 Sparse matrix") {
