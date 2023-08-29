@@ -32,9 +32,4 @@ double nrn_wtime() {
     }
 }
 
-extern "C" {
-void (*nrn2core_subworld_info_)(int&, int&, int&);
-}
-
-
 }  // namespace coreneuron

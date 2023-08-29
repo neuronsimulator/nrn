@@ -6,3 +6,5 @@ extern int nrnmpi_numprocs_;
 extern int nrnmpi_myid_;
 void nrnmpi_spike_initialize();
 }  // namespace coreneuron
+
+extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);

@@ -88,8 +88,14 @@ void nrnmpi_finalize_impl(void) {
     }
 }
 
-extern "C" {
-extern void (*nrn2core_subworld_info_)(int&, int&, int&, int&, int&);
+// Info from NEURON subworlds at beginning of psolve.
+void nrn2core_subworld_info(int& cnt,
+                            int& subworld_index,
+                            int& subworld_rank,
+                            int& numprocs_subworld,
+                            int& numprocs_world) {
+    nrnmpi_get_subworld_info(
+        &cnt, &subworld_index, &subworld_rank, &numprocs_subworld, &numprocs_world);
 }
 
 void corenrn_subworld() {
@@ -98,10 +104,7 @@ void corenrn_subworld() {
     static int change_cnt{0};
     int nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank, nrn_mpi_numprocs_subworld,
         nrn_mpi_numprocs_world;
-    if (!nrn2core_subworld_info_) {
-        return;
-    }
-    (*nrn2core_subworld_info_)(nrn_subworld_change_cnt,
+    nrn2core_subworld_info(nrn_subworld_change_cnt,
                                nrn_subworld_index,
                                nrn_subworld_rank,
                                nrn_mpi_numprocs_subworld,

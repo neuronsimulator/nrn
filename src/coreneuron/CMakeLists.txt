@@ -553,7 +553,12 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
     add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB})
+    # Link corenrnmpi_{libname}.so with nrnmpi_{libname}.so. We expect a matching lib
+    # to exists between the two.
+    # find_library(NRN_MPI_LIB NAMES ${libname} PATHS ${CMAKE_BINARY_DIR}/lib)
+    message(STATUS "======== Linking core${libname} with ${libname} =========")
+    add_dependencies(core${libname}_lib ${libname}_lib)
+    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB} ${libname}_lib)
     target_include_directories(
       core${libname}_lib
       PUBLIC ${include}
@@ -563,10 +568,10 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     # TODO: somehow mingw requires explicit linking. This needs to be verified
     # when we will test coreneuron on windows.
     # ~~~
-    # if(MINGW) # type msmpi only
-    add_dependencies(core${libname}_lib coreneuron-core)
-    target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES} coreneuron-core)
-    # endif()
+    if(MINGW) # type msmpi only
+      add_dependencies(core${libname}_lib coreneuron-core)
+      target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES} coreneuron-core)
+    endif()
     set_property(TARGET core${libname}_lib PROPERTY OUTPUT_NAME core${libname})
     list(APPEND corenrn_mpi_targets "core${libname}_lib")
   endforeach(val)
