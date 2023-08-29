@@ -553,8 +553,8 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
     add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-    # Link corenrnmpi_{mpi_impl_name}.so with nrnmpi_{mpi_impl_name}.so. We expect a
-    # matching lib to exist in neuron as well.
+    # Link corenrnmpi_{mpi_impl_name}.so with nrnmpi_{mpi_impl_name}.so. We expect a matching lib to
+    # exist in neuron as well.
     target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB} ${libname}_lib)
     target_include_directories(
       core${libname}_lib

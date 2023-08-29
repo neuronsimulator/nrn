@@ -105,10 +105,10 @@ void corenrn_subworld() {
     int nrn_subworld_change_cnt, nrn_subworld_index, nrn_subworld_rank, nrn_mpi_numprocs_subworld,
         nrn_mpi_numprocs_world;
     nrn2core_subworld_info(nrn_subworld_change_cnt,
-                               nrn_subworld_index,
-                               nrn_subworld_rank,
-                               nrn_mpi_numprocs_subworld,
-                               nrn_mpi_numprocs_world);
+                           nrn_subworld_index,
+                           nrn_subworld_rank,
+                           nrn_mpi_numprocs_subworld,
+                           nrn_mpi_numprocs_world);
     if (nrn_subworld_change_cnt == change_cnt) {
         return;
     }
