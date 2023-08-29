@@ -231,7 +231,7 @@ void OcFullMatrix::setdiag(int k, Vect* in) {
         }
     } else {
         // Yes for negative diagonal we set the vector from the middle
-        // The input vector should ALWAYS be the size of biggest diagonal
+        // The input vector should ALWAYS have `nrows` elements.
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
             m_set_val(m_, i, j, v_elem(in, i));
