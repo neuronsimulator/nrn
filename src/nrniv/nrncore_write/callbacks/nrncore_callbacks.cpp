@@ -1211,6 +1211,3 @@ void nrn2core_patternstim(void** info) {
     assert(ml.nodecount == 1);
     *info = nrn_patternstim_info_ref(ml.pdata[0]);
 }
-
-
-
