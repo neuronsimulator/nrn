@@ -1,6 +1,6 @@
 : Tests for exploring setdata
 NEURON {
-    SUFFIX sdata
+    POINT_PROCESS SData
 }
 
 INCLUDE "sdata.inc"
