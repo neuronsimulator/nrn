@@ -311,25 +311,8 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
             m_.coeffRef(i, j) = in->elem(i);
         }
     } else {
-<<<<<<< HEAD
-        for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
-            // Yes for negative diagonal we set the vector from the middle
-            // The input vector should ALWAYS have `nrows` elements.
-            if ((p = pelm(i, j)) != nullptr) {
-#ifdef WIN32
-                *p = v_elem(in, i);
-            } else if (v_elem(in, i)) {
-                sp_set_val(m_, i, j, v_elem(in, i));
-#else
-                *p = in->elem(i);
-            } else if (in->elem(i)) {
-                sp_set_val(m_, i, j, in->elem(i));
-#endif
-            }
-=======
         for (int i = -k, j = 0; i < row && j < col; ++i, ++j) {
             m_.coeffRef(i, j) = in->elem(i);
->>>>>>> cadb540c4 (Use Eigen instead of Meschach)
         }
     }
 }
