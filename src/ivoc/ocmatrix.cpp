@@ -496,7 +496,7 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
     } else {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
             // Yes for negative diagonal we set the vector from the middle
-            // The input vector should ALWAYS be the size of biggest diagonal
+            // The input vector should ALWAYS have `nrows` elements.
             if ((p = pelm(i, j)) != nullptr) {
 #ifdef WIN32
                 *p = v_elem(in, i);
