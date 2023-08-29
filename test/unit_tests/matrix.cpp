@@ -192,16 +192,18 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(compareMatrix(n, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}));
         }
         {
-            IvocVect v(2);
+            IvocVect v(3);
             m.getdiag(1, &v);
-            REQUIRE_THAT(v.vec(), Catch::Matchers::Approx(std::vector<double>({72., 114.})));
+            REQUIRE_THAT(v.vec(), Catch::Matchers::Approx(std::vector<double>({72., 114., 0.})));
+            v.vec() = {0., 72., 114.};
             m.setdiag(-1, &v);
             REQUIRE(compareMatrix(m, {{42., 72., 72.}, {72., 114., 114.}, {1., 114., 2.}}));
         }
         {
-            IvocVect v(1);
+            IvocVect v(3);
             m.getdiag(-2, &v);
-            REQUIRE_THAT(v.vec(), Catch::Matchers::Approx(std::vector<double>({1.})));
+            REQUIRE(v.vec()[2] == Catch::Detail::Approx({1.}));
+            v.vec() = {1., 0., 0.};
             m.setdiag(2, &v);
             REQUIRE(compareMatrix(m, {{42., 72., 1.}, {72., 114., 114.}, {1., 114., 2.}}));
         }
@@ -377,8 +379,8 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(compareMatrix(m, {{1., 2., 3.}, {2., 2., 2.}, {3., 4., 3.}}));
         }
         {
-            IvocVect v(2);
-            v.vec() = {1, 2};
+            IvocVect v(3);
+            v.vec() = {0., 1., 2.};
             m.setdiag(-1, &v);
             REQUIRE(compareMatrix(m, {{1., 2., 3.}, {1., 2., 2.}, {3., 2., 3.}}));
         }

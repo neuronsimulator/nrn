@@ -193,11 +193,13 @@ void OcFullMatrix::getdiag(int k, Vect* out) {
 #endif
         }
     } else {
+        // Yes for negative diagonal we set the vector from the middle
+        // The output vector should ALWAYS be the size of biggest diagonal
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
-            v_elem(out, j) = m_entry(m_, i, j);
+            v_elem(out, i) = m_entry(m_, i, j);
 #else
-            out->elem(j) = m_entry(m_, i, j);
+            out->elem(i) = m_entry(m_, i, j);
 #endif
         }
     }
@@ -228,11 +230,13 @@ void OcFullMatrix::setdiag(int k, Vect* in) {
 #endif
         }
     } else {
+        // Yes for negative diagonal we set the vector from the middle
+        // The input vector should ALWAYS be the size of biggest diagonal
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
-            m_set_val(m_, i, j, v_elem(in, j));
+            m_set_val(m_, i, j, v_elem(in, i));
 #else
-            m_set_val(m_, i, j, in->elem(j));
+            m_set_val(m_, i, j, in->elem(i));
 #endif
         }
     }
@@ -491,15 +495,17 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
         }
     } else {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
+            // Yes for negative diagonal we set the vector from the middle
+            // The input vector should ALWAYS be the size of biggest diagonal
             if ((p = pelm(i, j)) != nullptr) {
 #ifdef WIN32
-                *p = v_elem(in, j);
+                *p = v_elem(in, i);
             } else if (v_elem(in, i)) {
-                sp_set_val(m_, i, j, v_elem(in, j));
+                sp_set_val(m_, i, j, v_elem(in, i));
 #else
-                *p = in->elem(j);
+                *p = in->elem(i);
             } else if (in->elem(i)) {
-                sp_set_val(m_, i, j, in->elem(j));
+                sp_set_val(m_, i, j, in->elem(i));
 #endif
             }
         }
