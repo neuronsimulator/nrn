@@ -441,7 +441,7 @@ if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(NRN_ENABLE_PROFILING)
-  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
+  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
