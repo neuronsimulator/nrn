@@ -20,6 +20,7 @@ class Components:
     MPI = True
     MUSIC = False  # still early support
     CORENRN = False  # still early support
+    MORPHIO = True
 
 
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
@@ -95,6 +96,10 @@ if "--enable-coreneuron" in sys.argv:
 if "--enable-music" in sys.argv:
     Components.MUSIC = True
     sys.argv.remove("--enable-music")
+
+if "--disable-morphio" in sys.argv:
+    Components.MORPHIO = False
+    sys.argv.remove("--disable-morphio")
 
 if Components.RX3D:
     try:
@@ -398,6 +403,7 @@ def setup_package():
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
                 "-DNRN_ENABLE_RX3D=" + ("ON" if Components.RX3D else "OFF"),
+                "-DNRN_ENABLE_MORPHIO=" + ("ON" if Components.MORPHIO else "OFF"),
                 "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
@@ -483,8 +489,26 @@ def setup_package():
                 **rxd_params,
             ),
         ]
-
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
+
+    if Components.MORPHIO:
+        from pybind11.setup_helpers import Pybind11Extension
+
+        extensions += [
+            Pybind11Extension(
+                "neuron.morphio_api",
+                ["src/nrniv/morphology/morphio_wrapper/morphio_wrapper_bind.cpp"],
+                extra_compile_args=extra_compile_args + ["-std=c++17"],
+                extra_link_args=extra_link_args
+                + [
+                    "-Wl,-rpath,{}{}".format(
+                        REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
+                    )
+                ],
+                **extension_common_params,
+            ),
+        ]
+    logging.info("MORPHIO is %s", "ENABLED" if Components.MORPHIO else "DISABLED")
 
     # package name
     package_name = "NEURON"

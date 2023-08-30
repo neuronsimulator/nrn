@@ -24,6 +24,7 @@ project(
 # =============================================================================
 # CMake common project settings
 # =============================================================================
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -70,6 +71,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
 option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
+option(NRN_ENABLE_MORPHIO "Enable MORPHIO support" ${NRN_ENABLE_MORPHIO_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -325,6 +327,9 @@ endif()
 if(MINGW)
   find_package(Termcap REQUIRED)
 endif()
+
+cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # =============================================================================
 # Enable MPI
@@ -1053,6 +1058,10 @@ if(NRN_ENABLE_PROFILING)
   if(NRN_PROFILER STREQUAL "caliper")
     message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
+endif()
+message(STATUS "MorphIO       | ${NRN_ENABLE_MORPHIO}")
+if(NRN_ENABLE_MORPHIO)
+  message(STATUS "  Inc         | ${MorphIO_INCLUDE_DIR}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

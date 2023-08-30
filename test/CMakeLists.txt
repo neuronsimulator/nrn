@@ -29,6 +29,13 @@ if(NRN_ENABLE_THREADS)
   target_link_libraries(nrn-benchmarks Threads::Threads)
   list(APPEND catch2_targets nrn-benchmarks)
 endif()
+# TODO: currently M1 BBP runner yields different rounding results, disable it for the time being
+if(NRN_ENABLE_MORPHIO)
+  if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    add_executable(nrn-morphio common/catch2_main.cpp unit_tests/morphio/morphio.cpp)
+    list(APPEND catch2_targets nrn-morphio)
+  endif()
+endif()
 foreach(target ${catch2_targets})
   cpp_cc_configure_sanitizers(TARGET ${target})
   target_link_libraries(${target} Catch2::Catch2 nrniv_lib)
@@ -70,6 +77,13 @@ if(TARGET nrn-benchmarks AND NRN_ENABLE_PERFORMANCE_TESTS)
     NAME benchmarks
     PROCESSORS 16
     COMMAND $<TARGET_FILE:nrn-benchmarks> --processors=16)
+endif()
+if(TARGET nrn-morphio)
+  nrn_add_test(
+    GROUP unit_tests
+    NAME nrn-morphio
+    SCRIPT_PATTERNS "test/morphology/soma_single_point.h5"
+    COMMAND $<TARGET_FILE:nrn-morphio>)
 endif()
 
 # =============================================================================
@@ -247,6 +261,17 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
     SCRIPT_PATTERNS test/datahandle/*.py)
+
+  # Morphology tests
+  nrn_add_test_group(NAME morphology_tests)
+  if(NRN_ENABLE_MORPHIO)
+    nrn_add_test(
+      GROUP morphology_tests
+      NAME morphology_tests
+      PRELOAD_SANITIZER
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/morphology
+      SCRIPT_PATTERNS test/morphology/*.py test/morphology/*.h5)
+  endif()
 
   # Mostly to increase coverage
   nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
