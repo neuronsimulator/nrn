@@ -11,7 +11,7 @@
 #include <initializer_list>
 #include <type_traits>
 
-#if defined(CORENEURON_CALIPER)
+#if defined(NRN_CALIPER)
 #include <caliper/cali.h>
 #endif
 
@@ -141,7 +141,7 @@ struct Instrumentor {
 #pragma clang diagnostic pop
 };
 
-#if defined(CORENEURON_CALIPER)
+#if defined(NRN_CALIPER)
 
 struct Caliper {
     inline static void phase_begin(const char* name) {
@@ -267,7 +267,7 @@ struct NullInstrumentor {
 };
 
 using InstrumentorImpl = detail::Instrumentor<
-#if defined CORENEURON_CALIPER
+#if defined NRN_CALIPER
     detail::Caliper,
 #endif
 #ifdef CORENEURON_CUDA_PROFILING
