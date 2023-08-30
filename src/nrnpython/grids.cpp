@@ -875,7 +875,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id) {
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
     double* val;
-    // MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+    // memset(output, 0, sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = num_all_currents;
     m = num_currents;
@@ -924,7 +924,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id) {
     /*Remove the contribution from membrane currents*/
     for (i = 0; i < induced_current_count; i++)
         output[induced_currents_index[i]] -= dt * (induced_currents[i] * induced_currents_scale[i]);
-    MEM_ZERO(induced_currents, induced_current_count * sizeof(double));
+    memset(induced_currents, 0, induced_current_count * sizeof(double));
 }
 
 double* ECS_Grid_node::set_rxd_currents(int current_count,
@@ -1234,7 +1234,7 @@ void ECS_Grid_node::do_multicompartment_reactions(double* result) {
         for (i = 0; i < total_reaction_states; i++)
             result[all_reaction_indices[i]] += all_reaction_states[i];
     }
-    MEM_ZERO(all_reaction_states, total_reaction_states * sizeof(int));
+    memset(all_reaction_states, 0, total_reaction_states * sizeof(int));
 }
 
 // TODO: Implement this
@@ -1640,7 +1640,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
 }
 
 void ICS_Grid_node::do_grid_currents(double* output, double dt, int) {
-    MEM_ZERO(states_cur, sizeof(double) * _num_nodes);
+    memset(states_cur, 0, sizeof(double) * _num_nodes);
     if (ics_current_seg_ptrs != NULL) {
         ssize_t i, j;
         int seg_start_index, seg_stop_index;
