@@ -397,7 +397,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock& node) {
             }
         }
         // divide by COMPARTMENT factor if present
-        if (!compartment_factors[j].empty()) {
+        if (!compartment_factors[j].empty() && !ode_rhs.empty()) {
             ode_rhs = fmt::format("({})/({})", ode_rhs, compartment_factors[j]);
         }
         // if rhs of ODE is not empty, add to list of ODEs
