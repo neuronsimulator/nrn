@@ -246,6 +246,7 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 option(EIGEN_BUILD_TESTING "" OFF)
+option(EIGEN_TEST_NOQT "" ON)
 cpp_cc_git_submodule(eigen BUILD PACKAGE Eigen3::Eigen REQUIRED)
 
 # =================================================================================================
