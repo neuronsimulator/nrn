@@ -313,7 +313,7 @@ set(CORENRN_NMODL_FLAGS
 # =============================================================================
 if(CORENRN_ENABLE_CALIPER_PROFILING)
   find_package(caliper REQUIRED)
-  list(APPEND CORENRN_COMPILE_DEFS CORENEURON_CALIPER)
+  list(APPEND CORENRN_COMPILE_DEFS NRN_CALIPER)
   set(CORENRN_CALIPER_LIB caliper)
 endif()
 
