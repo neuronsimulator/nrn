@@ -42,9 +42,13 @@ class coreneuron(object):
     ----------
     cell_permute
     enable
+    data_path
     file_mode
     gpu
     prcellstate
+    restore
+    save
+    sim_config
     verbose
     warp_balance
 
@@ -72,6 +76,10 @@ class coreneuron(object):
         self._verbose = 2  # INFO
         self._prcellstate = -1
         self._model_stats = False
+        self._sim_config = None
+        self._data_path = None
+        self._save = None
+        self._restore = None
 
     def __call__(self, **kwargs):
         """
@@ -211,6 +219,42 @@ class coreneuron(object):
     def model_stats(self, value):
         self._model_stats = bool(value)
 
+    @property
+    def sim_config(self):
+        """Simulation config file."""
+        return self._sim_config
+
+    @sim_config.setter
+    def sim_config(self, value):
+        self._sim_config = str(value)
+
+    @property
+    def data_path(self):
+        """Data path of the model."""
+        return self._data_path
+
+    @sim_config.setter
+    def data_path(self, value):
+        self._data_path = str(value)
+
+    @property
+    def save(self):
+        """Data path for save."""
+        return self._save
+
+    @sim_config.setter
+    def save(self, value):
+        self._save = str(value)
+
+    @property
+    def restore(self):
+        """Data path for restore."""
+        return self._restore
+
+    @sim_config.setter
+    def restore(self, value):
+        self._restore = str(value)
+
     def nrncore_arg(self, tstop):
         """
         Return str that can be used for pc.nrncore_run(str)
@@ -234,7 +278,10 @@ class coreneuron(object):
             if self._num_gpus:
                 arg += " --num-gpus %d" % self._num_gpus
         if self._file_mode:
-            arg += " --datpath %s" % CORENRN_DATA_DIR
+            if self._data_path is not None:
+                arg += " --datpath %s" % self._data_path
+            else:
+                arg += " --datpath %s" % CORENRN_DATA_DIR
         arg += " --tstop %g" % tstop
         arg += " --cell-permute %d" % self.cell_permute
         if self._warp_balance > 0:
@@ -244,6 +291,12 @@ class coreneuron(object):
         arg += " --verbose %d" % self.verbose
         if self._model_stats:
             arg += " --model-stats"
+        if self._save:
+            arg += " --checkpoint %s" % self._save
+        if self._restore:
+            arg += " --restore %s" % self._restore
+        if self._sim_config:
+            arg += " --read-config %s" % self._sim_config
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()

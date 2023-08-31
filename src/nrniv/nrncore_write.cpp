@@ -276,7 +276,9 @@ int nrncore_run(const char* arg) {
     corenrn_direct = true;
 
     // check that model can be transferred
-    model_ready();
+    if(!args.contains("skip")) {
+        model_ready();
+    }
 
     // get coreneuron library handle
     void* handle = [] {
