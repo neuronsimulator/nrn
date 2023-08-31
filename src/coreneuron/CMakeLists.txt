@@ -669,17 +669,19 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-configure_file("${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp"
-               "${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp" COPYONLY)
+cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
 foreach(header ${main_headers})
-  configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
+  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
 endforeach()
 
-configure_file("utils/profile/profiler_interface.h"
-               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
 
 # main program required for building special-core
-file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for

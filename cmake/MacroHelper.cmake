@@ -184,7 +184,15 @@ endmacro()
 # Copy file from source to destination only if different
 # =============================================================================
 macro(nrn_copy_file_if_different source destination)
-  configure_file(${source} ${destination} COPYONLY)
+  add_custom_command(
+    OUTPUT "${source}"
+    DEPENDS "${destination}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${source}" "${destination}")
+  string(SHA256 target_name "${source};${destination}")
+  set(target_name "nrn-build-time-copy-${target_name}")
+  if(NOT TARGET "${target_name}")
+    add_custom_target(${target_name} ALL DEPENDS "${destination}")
+  endif()
 endmacro()
 
 # =============================================================================

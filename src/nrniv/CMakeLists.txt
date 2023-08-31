@@ -1,6 +1,7 @@
 # =============================================================================
 # Build nrniv binary and corresponding library
 # =============================================================================
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
@@ -582,11 +583,14 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
-file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
-file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-     DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
-file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
