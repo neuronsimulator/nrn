@@ -33,12 +33,12 @@ RUN rpmbuild --rebuild https://vault.centos.org/8-stream/AppStream/Source/SPacka
     && yum -y install rpmbuild/RPMS/*/flex-2.6.1-9.el7.*.rpm \
     && rm -rf rpmbuild
 
-RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
-    && tar -xvzf ncurses-6.2.tar.gz \
-    && cd ncurses-6.2  \
-    && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" \
+RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-5.9.tar.gz \
+    && tar -xvzf ncurses-5.9.tar.gz \
+    && cd ncurses-5.9  \
+    && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" CPPFLAGS="-P" --without-cxx\
     && make -j install \
-    && cd .. && rm -rf ncurses-6.2 ncurses-6.2.tar.gz
+    && cd .. && rm -rf ncurses-5.9 ncurses-5.9.tar.gz
 
 RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \

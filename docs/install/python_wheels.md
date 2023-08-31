@@ -66,18 +66,18 @@ docker push neuronsimulator/neuron_wheel:<tag>
 
 You can either build the neuron images locally or pull them from DockerHub:
 ```
-$ docker pull neuronsimulator/neuron_wheel
-Using default tag: latest
+$ docker pull neuronsimulator/neuron_wheel:latest-x86_64
+Using default tag: latest-x86_64
 latest: Pulling from neuronsimulator/neuron_wheel
 ....
 Status: Downloaded newer image for neuronsimulator/neuron_wheel:latest
-docker.io/neuronsimulator/neuron_wheel:latest
+docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 ```
 
 We can conveniently mount the local NEURON repository inside docker, by using the `-v` option:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
 This is how you can test your NEURON updates inside the NEURON Docker image.
@@ -89,7 +89,7 @@ The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` a
 For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers and mount them in the docker image:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
 You can download the headers with:
