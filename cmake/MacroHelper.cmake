@@ -174,28 +174,6 @@ macro(nrn_create_file_list list_name prefix)
 endmacro()
 
 # =============================================================================
-# Copy file from source to destination in noclobber mode (i.e. no overwrite)
-# =============================================================================
-macro(nrn_copy_file_without_overwrite source destination)
-  execute_process(COMMAND cp -n ${source} ${destination})
-endmacro()
-
-# =============================================================================
-# Copy file from source to destination only if different
-# =============================================================================
-macro(nrn_copy_file_if_different source destination)
-  add_custom_command(
-    OUTPUT "${source}"
-    DEPENDS "${destination}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${source}" "${destination}")
-  string(SHA256 target_name "${source};${destination}")
-  set(target_name "nrn-build-time-copy-${target_name}")
-  if(NOT TARGET "${target_name}")
-    add_custom_target(${target_name} ALL DEPENDS "${destination}")
-  endif()
-endmacro()
-
-# =============================================================================
 # Set string with double quotes
 # =============================================================================
 macro(nrn_set_string variable value)
