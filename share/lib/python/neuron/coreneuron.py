@@ -80,6 +80,7 @@ class coreneuron(object):
         self._data_path = None
         self._save = None
         self._restore = None
+        self._only_simulate = False
 
     def __call__(self, **kwargs):
         """
@@ -255,6 +256,15 @@ class coreneuron(object):
     def restore(self, value):
         self._restore = str(value)
 
+    @property
+    def only_simulate(self):
+        """Data path for restore."""
+        return self._only_simulate
+
+    @sim_config.setter
+    def only_simulate(self, value):
+        self._only_simulate = value
+
     def nrncore_arg(self, tstop):
         """
         Return str that can be used for pc.nrncore_run(str)
@@ -282,6 +292,8 @@ class coreneuron(object):
                 arg += " --datpath %s" % self._data_path
             else:
                 arg += " --datpath %s" % CORENRN_DATA_DIR
+            if self._only_simulate:
+                arg += " --only-simulate"
         arg += " --tstop %g" % tstop
         arg += " --cell-permute %d" % self.cell_permute
         if self._warp_balance > 0:

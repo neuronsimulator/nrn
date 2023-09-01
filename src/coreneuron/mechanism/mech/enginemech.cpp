@@ -108,7 +108,7 @@ int corenrn_embedded_run(int nthread,
                          const char* mpi_lib,
                          const char* nrn_arg) {
     // set coreneuron's internal variable based on neuron arguments
-    corenrn_embedded = nrn_arg.contains("skip")? false : true;
+    corenrn_embedded = static_cast<std::string>(nrn_arg).find("--only-simulate") != std::string::npos;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps != 0;
     coreneuron::nrn_use_fast_imem = use_fast_imem != 0;

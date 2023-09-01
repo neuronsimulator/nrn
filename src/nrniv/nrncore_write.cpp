@@ -276,7 +276,8 @@ int nrncore_run(const char* arg) {
     corenrn_direct = true;
 
     // check that model can be transferred
-    if(!args.contains("skip")) {
+    // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
+    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
         model_ready();
     }
 
