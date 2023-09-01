@@ -4,8 +4,7 @@
 
 #define v_elem(v, i) (*(vector_vec(v) + i))
 
-#include <Eigen/Sparse>
-#include <Eigen/Eigenvalues>
+#include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include "ivocvect.h"
@@ -162,22 +161,22 @@ void OcFullMatrix::getdiag(int k, Vect* out) {
 
 void OcFullMatrix::setrow(int k, Vect* in) {
     auto v1 = Vect2VEC(in);
-    m_.row(k) = v1;
+    m_.block(k, 0, 1, v1.size()) = v1.transpose();
 }
 
 void OcFullMatrix::setcol(int k, Vect* in) {
     auto v1 = Vect2VEC(in);
-    m_.col(k) = v1;
+    m_.block(0, k, v1.size(), 1) = v1;
 }
 
 void OcFullMatrix::setdiag(int k, Vect* in) {
     auto out = m_.diagonal(k);
     if (k >= 0) {
-        for (int i = 0, j = k; i < nrow() && j < ncol(); ++i, ++j) {
+        for (int i = 0, j = k; i < nrow() && j < ncol() && i < in->size(); ++i, ++j) {
             out(i) = in->elem(i);
         }
     } else {
-        for (int i = -k, j = 0; i < nrow() && j < ncol(); ++i, ++j) {
+        for (int i = -k, j = 0; i < nrow() && j < ncol() && i < in->size(); ++i, ++j) {
             out(j) = in->elem(i);
         }
     }
