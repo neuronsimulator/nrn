@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <coreneuron/engine.h>
 #include <string>
+#include <iostream>
 
 namespace coreneuron {
 
@@ -112,9 +113,13 @@ int corenrn_embedded_run(int nthread,
     // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON and CoreNEURON
     // Instead run the CoreNEURON simulation only with the coredat files provided
     // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI options so it is removed from "nrn_arg"
-    if (const auto ind = static_cast<std::string>(nrn_arg).find(only_simulate_str) != std::string::npos) {
+    const auto ind = static_cast<std::string>(nrn_arg).find(only_simulate_str);
+    std::cout << "================ " << nrn_arg << " ==================" << std::endl;
+    if (ind != std::string::npos) {
+        std::cout << "================ " << ind << " ==================" << std::endl;
         corenrn_only_simulate = true;
         static_cast<std::string>(nrn_arg).erase(ind, only_simulate_str.size());
+        std::cout << "================ " << nrn_arg << " ==================" << std::endl;
     }
     // set coreneuron's internal variable based on neuron arguments
     corenrn_embedded = !corenrn_only_simulate;
