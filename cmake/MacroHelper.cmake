@@ -174,20 +174,6 @@ macro(nrn_create_file_list list_name prefix)
 endmacro()
 
 # =============================================================================
-# Copy file from source to destination in noclobber mode (i.e. no overwrite)
-# =============================================================================
-macro(nrn_copy_file_without_overwrite source destination)
-  execute_process(COMMAND cp -n ${source} ${destination})
-endmacro()
-
-# =============================================================================
-# Copy file from source to destination only if different
-# =============================================================================
-macro(nrn_copy_file_if_different source destination)
-  configure_file(${source} ${destination} COPYONLY)
-endmacro()
-
-# =============================================================================
 # Set string with double quotes
 # =============================================================================
 macro(nrn_set_string variable value)
