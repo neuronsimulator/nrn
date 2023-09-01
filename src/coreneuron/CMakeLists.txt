@@ -318,10 +318,10 @@ if(CORENRN_ENABLE_CALIPER_PROFILING)
 endif()
 
 if(CORENRN_ENABLE_LIKWID_PROFILING)
-  find_package(likwid REQUIRED)
+  include(GetLIKWID)
+
   list(APPEND CORENRN_COMPILE_DEFS LIKWID_PERFMON)
-  # TODO: avoid this part, probably by using some likwid CMake target
-  include_directories(${likwid_INCLUDE_DIRS})
+  set(CORENRN_LIKWID_LIB nrn_likwid)
 endif()
 
 # enable debugging code with extra logs to stdout
@@ -479,7 +479,7 @@ if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_include_directories(
     ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src
                                     ${CMAKE_BINARY_DIR}/generated)
-  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB})
+  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
@@ -553,7 +553,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
     add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB})
+    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
     target_include_directories(
       core${libname}_lib
       PUBLIC ${include}
@@ -582,7 +582,7 @@ endif()
 # Suppress some compiler warnings.
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}
-                                             ${likwid_LIBRARIES})
+                                             ${CORENRN_LIKWID_LIB})
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
