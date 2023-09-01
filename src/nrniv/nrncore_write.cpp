@@ -311,9 +311,13 @@ int nrncore_run(const char* arg) {
         nrn_spike_exchange(nrn_threads);
     }
 
-    // prepare the model, the returned token will keep the NEURON-side copy of
-    // the model frozen until the end of nrncore_run.
-    auto sorted_token = part1().sorted_token;
+    // check that model can be transferred
+    // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
+    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
+        // prepare the model, the returned token will keep the NEURON-side copy of
+        // the model frozen until the end of nrncore_run.
+        auto sorted_token = part1().sorted_token;
+    }
 
     int have_gap = nrnthread_v_transfer_ ? 1 : 0;
 #if !NRNMPI
@@ -326,6 +330,12 @@ int nrncore_run(const char* arg) {
 
     // close handle and return result
     dlclose(handle);
+
+    // check that model can be transferred
+    // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
+    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
+        return result;
+    }
 
     // Note: possibly non-empty only if nrn_nthread > 1
     CellGroup::clean_deferred_type2artml();
