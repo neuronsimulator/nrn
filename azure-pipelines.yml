@@ -184,7 +184,7 @@ stages:
         name: readlineSF
         displayName: 'Download readline secure file'
         inputs:
-          secureFile: 'readline7.0.tar.gz'
+          secureFile: 'readline7.0-ncurses6.4.tar.gz'
 
       - script: |
           export MACOSX_DEPLOYMENT_TARGET=10.9
