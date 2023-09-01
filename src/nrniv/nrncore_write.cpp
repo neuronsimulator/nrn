@@ -275,9 +275,14 @@ int nrncore_run(const char* arg) {
     // using direct memory mode
     corenrn_direct = true;
 
+    // If "--simulate-only" argument is passed that means that the model is already dumped to disk
+    // and we just need to simulate it with CoreNEURON
+    // Avoid trying to check the NEURON model, passing any data between them and other bookeeping actions
+    bool only_simulate_coreneuron = static_cast<std::string>(arg).find("--only-simulate") == std::string::npos;
+
     // check that model can be transferred
     // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
-    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
+    if(only_simulate_coreneuron) {
         model_ready();
     }
 
@@ -311,9 +316,9 @@ int nrncore_run(const char* arg) {
         nrn_spike_exchange(nrn_threads);
     }
 
-    // check that model can be transferred
-    // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
-    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
+    // check that model can be transferred unless we only want to run the CoreNEURON simulation
+    // with prebuilt model
+    if(only_simulate_coreneuron) {
         // prepare the model, the returned token will keep the NEURON-side copy of
         // the model frozen until the end of nrncore_run.
         auto sorted_token = part1().sorted_token;
@@ -331,9 +336,8 @@ int nrncore_run(const char* arg) {
     // close handle and return result
     dlclose(handle);
 
-    // check that model can be transferred
-    // unless "--simulate-only" argument is passed that means that the model is already dumped to disk
-    if(static_cast<std::string>(arg).find("--only-simulate") == std::string::npos) {
+    // Simulation has finished after calling coreneuron_launcher so we can now return
+    if(only_simulate_coreneuron) {
         return result;
     }
 

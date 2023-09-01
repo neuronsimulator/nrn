@@ -107,8 +107,17 @@ int corenrn_embedded_run(int nthread,
                          int use_fast_imem,
                          const char* mpi_lib,
                          const char* nrn_arg) {
+    bool corenrn_only_simulate = false;
+    const std::string only_simulate_str{"--only-simulate"};
+    // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON and CoreNEURON
+    // Instead run the CoreNEURON simulation only with the coredat files provided
+    // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI options so it is removed from "nrn_arg"
+    if (const auto ind = static_cast<std::string>(nrn_arg).find(only_simulate_str) != std::string::npos) {
+        corenrn_only_simulate = true;
+        static_cast<std::string>(nrn_arg).erase(ind, only_simulate_str.size());
+    }
     // set coreneuron's internal variable based on neuron arguments
-    corenrn_embedded = static_cast<std::string>(nrn_arg).find("--only-simulate") != std::string::npos;
+    corenrn_embedded = !corenrn_only_simulate;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps != 0;
     coreneuron::nrn_use_fast_imem = use_fast_imem != 0;
