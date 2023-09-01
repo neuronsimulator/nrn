@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include "nrn_ansi.h"
 
+#include "../utils/profile/profiler_interface.h"
+
 long hoc_nframe, hoc_nstack;
 
 #if !HAVE_IV
@@ -372,6 +374,8 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    nrn::Instrumentor::init_profile();
+
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
@@ -771,6 +775,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
     hoc_final_exit();
     ivoc_final_exit();
+    nrn::Instrumentor::finalize_profile();
+
     return exit_status;
 }
 
