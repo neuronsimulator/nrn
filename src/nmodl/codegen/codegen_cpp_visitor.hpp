@@ -12,7 +12,7 @@
  * \brief Code generation backend implementations for CoreNEURON
  *
  * \file
- * \brief \copybrief nmodl::codegen::CodegenCVisitor
+ * \brief \copybrief nmodl::codegen::CodegenCppVisitor
  */
 
 #include <algorithm>
@@ -167,7 +167,7 @@ using printer::CodePrinter;
  */
 
 /**
- * \class CodegenCVisitor
+ * \class CodegenCppVisitor
  * \brief %Visitor for printing C code compatible with legacy api of CoreNEURON
  *
  * \todo
@@ -177,7 +177,7 @@ using printer::CodePrinter;
  *    error checking. For example, see netstim.mod where we
  *    have removed return from verbatim block.
  */
-class CodegenCVisitor: public visitor::ConstAstVisitor {
+class CodegenCppVisitor: public visitor::ConstAstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
@@ -1428,7 +1428,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print the \c nrn\_cur kernel with NMODL \c conductance keyword provisions
      *
      * If the NMODL \c conductance keyword is used in the \c breakpoint block, then
-     * CodegenCVisitor::print_nrn_cur_kernel will use this printer
+     * CodegenCppVisitor::print_nrn_cur_kernel will use this printer
      *
      * \param node the AST node representing the NMODL breakpoint block
      */
@@ -1439,7 +1439,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print the \c nrn\_cur kernel without NMODL \c conductance keyword provisions
      *
      * If the NMODL \c conductance keyword is \b not used in the \c breakpoint block, then
-     * CodegenCVisitor::print_nrn_cur_kernel will use this printer
+     * CodegenCppVisitor::print_nrn_cur_kernel will use this printer
      */
     void print_nrn_cur_non_conductance_kernel();
 
@@ -1577,12 +1577,12 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     virtual void print_wrapper_routines();
 
 
-    CodegenCVisitor(const std::string& mod_filename,
-                    const std::string& output_dir,
-                    const std::string& float_type,
-                    const bool optimize_ionvar_copies,
-                    const std::string& extension,
-                    const std::string& wrapper_ext)
+    CodegenCppVisitor(const std::string& mod_filename,
+                      const std::string& output_dir,
+                      const std::string& float_type,
+                      const bool optimize_ionvar_copies,
+                      const std::string& extension,
+                      const std::string& wrapper_ext)
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , wrapper_printer(new CodePrinter(output_dir + "/" + mod_filename + wrapper_ext))
         , printer(target_printer)
@@ -1590,12 +1590,12 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
-    CodegenCVisitor(const std::string& mod_filename,
-                    std::ostream& stream,
-                    const std::string& float_type,
-                    const bool optimize_ionvar_copies,
-                    const std::string& extension,
-                    const std::string& wrapper_ext)
+    CodegenCppVisitor(const std::string& mod_filename,
+                      std::ostream& stream,
+                      const std::string& float_type,
+                      const bool optimize_ionvar_copies,
+                      const std::string& extension,
+                      const std::string& wrapper_ext)
         : target_printer(new CodePrinter(stream))
         , wrapper_printer(new CodePrinter(stream))
         , printer(target_printer)
@@ -1622,11 +1622,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *                     as-is in the target code. This defaults to \c double.
      * \param extension    The file extension to use. This defaults to \c .cpp .
      */
-    CodegenCVisitor(const std::string& mod_filename,
-                    const std::string& output_dir,
-                    std::string float_type,
-                    const bool optimize_ionvar_copies,
-                    const std::string& extension = ".cpp")
+    CodegenCppVisitor(const std::string& mod_filename,
+                      const std::string& output_dir,
+                      std::string float_type,
+                      const bool optimize_ionvar_copies,
+                      const std::string& extension = ".cpp")
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
         , mod_filename(mod_filename)
@@ -1634,7 +1634,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
     /**
-     * \copybrief nmodl::codegen::CodegenCVisitor
+     * \copybrief nmodl::codegen::CodegenCppVisitor
      *
      * This constructor instantiates an NMODL C code generator and allows writing generated code
      * into an output stream.
@@ -1649,10 +1649,10 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      */
-    CodegenCVisitor(const std::string& mod_filename,
-                    std::ostream& stream,
-                    const std::string& float_type,
-                    const bool optimize_ionvar_copies)
+    CodegenCppVisitor(const std::string& mod_filename,
+                      std::ostream& stream,
+                      const std::string& float_type,
+                      const bool optimize_ionvar_copies)
         : target_printer(new CodePrinter(stream))
         , printer(target_printer)
         , mod_filename(mod_filename)
@@ -1661,7 +1661,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * \copybrief nmodl::codegen::CodegenCVisitor
+     * \copybrief nmodl::codegen::CodegenCppVisitor
      *
      * This constructor instantiates an NMODL C code generator and allows writing generated code
      * using an nmodl::printer::CodePrinter defined elsewhere.
@@ -1677,10 +1677,10 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param target_printer A printer defined outside this visitor to be used for the code
      *                       generation
      */
-    CodegenCVisitor(std::string mod_filename,
-                    std::string float_type,
-                    const bool optimize_ionvar_copies,
-                    std::shared_ptr<CodePrinter>& target_printer)
+    CodegenCppVisitor(std::string mod_filename,
+                      std::string float_type,
+                      const bool optimize_ionvar_copies,
+                      std::shared_ptr<CodePrinter>& target_printer)
         : target_printer(target_printer)
         , printer(target_printer)
         , mod_filename(mod_filename)
@@ -1866,9 +1866,9 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
 template <typename T>
-void CodegenCVisitor::print_vector_elements(const std::vector<T>& elements,
-                                            const std::string& separator,
-                                            const std::string& prefix) {
+void CodegenCppVisitor::print_vector_elements(const std::vector<T>& elements,
+                                              const std::string& separator,
+                                              const std::string& prefix) {
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {
         printer->add_text(prefix);
         (*iter)->accept(*this);
@@ -1906,7 +1906,7 @@ bool has_parameter_of_name(const T& node, const std::string& name) {
  * different in case of table statement.
  */
 template <typename T>
-void CodegenCVisitor::print_function_declaration(const T& node, const std::string& name) {
+void CodegenCppVisitor::print_function_declaration(const T& node, const std::string& name) {
     enable_variable_name_lookup = false;
     auto type = default_float_data_type();
 

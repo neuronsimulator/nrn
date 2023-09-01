@@ -32,9 +32,9 @@ using nmodl::parser::NmodlDriver;
 using nmodl::test_utils::reindent_text;
 
 /// Helper for creating C codegen visitor
-std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
-                                                  const std::string& /* text */,
-                                                  std::stringstream& ss) {
+std::shared_ptr<CodegenCppVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
+                                                    const std::string& /* text */,
+                                                    std::stringstream& ss) {
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
@@ -44,7 +44,7 @@ std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Pro
     SolveBlockVisitor().visit_program(*ast);
 
     /// create C code generation visitor
-    auto cv = std::make_shared<CodegenCVisitor>("temp.mod", ss, "double", false);
+    auto cv = std::make_shared<CodegenCppVisitor>("temp.mod", ss, "double", false);
     cv->setup(*ast);
     return cv;
 }
@@ -311,7 +311,7 @@ std::string get_instance_structure(std::string nmodl_text) {
     PerfVisitor{}.visit_program(*ast);
     // setup codegen
     std::stringstream ss{};
-    CodegenCVisitor cv{"temp.mod", ss, "double", false};
+    CodegenCppVisitor cv{"temp.mod", ss, "double", false};
     cv.setup(*ast);
     cv.print_mechanism_range_var_structure(true);
     return ss.str();

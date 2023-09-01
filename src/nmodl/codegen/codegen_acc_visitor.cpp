@@ -84,7 +84,7 @@ std::string CodegenAccVisitor::backend_name() const {
 void CodegenAccVisitor::print_memory_allocation_routine() const {
     // memory for artificial cells should be allocated on CPU
     if (info.artificial_cell) {
-        CodegenCVisitor::print_memory_allocation_routine();
+        CodegenCppVisitor::print_memory_allocation_routine();
         return;
     }
     printer->add_newline(2);

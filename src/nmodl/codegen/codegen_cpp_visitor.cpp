@@ -50,7 +50,7 @@ namespace codegen_utils = nmodl::codegen::utils;
 
 static const std::regex regex_special_chars{R"([-[\]{}()*+?.,\^$|#\s])"};
 
-void CodegenCVisitor::visit_string(const String& node) {
+void CodegenCppVisitor::visit_string(const String& node) {
     if (!codegen) {
         return;
     }
@@ -62,7 +62,7 @@ void CodegenCVisitor::visit_string(const String& node) {
 }
 
 
-void CodegenCVisitor::visit_integer(const Integer& node) {
+void CodegenCppVisitor::visit_integer(const Integer& node) {
     if (!codegen) {
         return;
     }
@@ -71,7 +71,7 @@ void CodegenCVisitor::visit_integer(const Integer& node) {
 }
 
 
-void CodegenCVisitor::visit_float(const Float& node) {
+void CodegenCppVisitor::visit_float(const Float& node) {
     if (!codegen) {
         return;
     }
@@ -79,7 +79,7 @@ void CodegenCVisitor::visit_float(const Float& node) {
 }
 
 
-void CodegenCVisitor::visit_double(const Double& node) {
+void CodegenCppVisitor::visit_double(const Double& node) {
     if (!codegen) {
         return;
     }
@@ -87,7 +87,7 @@ void CodegenCVisitor::visit_double(const Double& node) {
 }
 
 
-void CodegenCVisitor::visit_boolean(const Boolean& node) {
+void CodegenCppVisitor::visit_boolean(const Boolean& node) {
     if (!codegen) {
         return;
     }
@@ -95,7 +95,7 @@ void CodegenCVisitor::visit_boolean(const Boolean& node) {
 }
 
 
-void CodegenCVisitor::visit_name(const Name& node) {
+void CodegenCppVisitor::visit_name(const Name& node) {
     if (!codegen) {
         return;
     }
@@ -103,12 +103,12 @@ void CodegenCVisitor::visit_name(const Name& node) {
 }
 
 
-void CodegenCVisitor::visit_unit(const ast::Unit& node) {
+void CodegenCppVisitor::visit_unit(const ast::Unit& node) {
     // do not print units
 }
 
 
-void CodegenCVisitor::visit_prime_name(const PrimeName& /* node */) {
+void CodegenCppVisitor::visit_prime_name(const PrimeName& /* node */) {
     throw std::runtime_error("PRIME encountered during code generation, ODEs not solved?");
 }
 
@@ -116,7 +116,7 @@ void CodegenCVisitor::visit_prime_name(const PrimeName& /* node */) {
 /**
  * \todo : Validate how @ is being handled in neuron implementation
  */
-void CodegenCVisitor::visit_var_name(const VarName& node) {
+void CodegenCppVisitor::visit_var_name(const VarName& node) {
     if (!codegen) {
         return;
     }
@@ -138,7 +138,7 @@ void CodegenCVisitor::visit_var_name(const VarName& node) {
 }
 
 
-void CodegenCVisitor::visit_indexed_name(const IndexedName& node) {
+void CodegenCppVisitor::visit_indexed_name(const IndexedName& node) {
     if (!codegen) {
         return;
     }
@@ -151,7 +151,7 @@ void CodegenCVisitor::visit_indexed_name(const IndexedName& node) {
 }
 
 
-void CodegenCVisitor::visit_local_list_statement(const LocalListStatement& node) {
+void CodegenCppVisitor::visit_local_list_statement(const LocalListStatement& node) {
     if (!codegen) {
         return;
     }
@@ -161,7 +161,7 @@ void CodegenCVisitor::visit_local_list_statement(const LocalListStatement& node)
 }
 
 
-void CodegenCVisitor::visit_if_statement(const IfStatement& node) {
+void CodegenCppVisitor::visit_if_statement(const IfStatement& node) {
     if (!codegen) {
         return;
     }
@@ -177,7 +177,7 @@ void CodegenCVisitor::visit_if_statement(const IfStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_else_if_statement(const ElseIfStatement& node) {
+void CodegenCppVisitor::visit_else_if_statement(const ElseIfStatement& node) {
     if (!codegen) {
         return;
     }
@@ -188,7 +188,7 @@ void CodegenCVisitor::visit_else_if_statement(const ElseIfStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_else_statement(const ElseStatement& node) {
+void CodegenCppVisitor::visit_else_statement(const ElseStatement& node) {
     if (!codegen) {
         return;
     }
@@ -197,7 +197,7 @@ void CodegenCVisitor::visit_else_statement(const ElseStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_while_statement(const WhileStatement& node) {
+void CodegenCppVisitor::visit_while_statement(const WhileStatement& node) {
     printer->add_text("while (");
     node.get_condition()->accept(*this);
     printer->add_text(") ");
@@ -205,7 +205,7 @@ void CodegenCVisitor::visit_while_statement(const WhileStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_from_statement(const ast::FromStatement& node) {
+void CodegenCppVisitor::visit_from_statement(const ast::FromStatement& node) {
     if (!codegen) {
         return;
     }
@@ -229,7 +229,7 @@ void CodegenCVisitor::visit_from_statement(const ast::FromStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_paren_expression(const ParenExpression& node) {
+void CodegenCppVisitor::visit_paren_expression(const ParenExpression& node) {
     if (!codegen) {
         return;
     }
@@ -239,7 +239,7 @@ void CodegenCVisitor::visit_paren_expression(const ParenExpression& node) {
 }
 
 
-void CodegenCVisitor::visit_binary_expression(const BinaryExpression& node) {
+void CodegenCppVisitor::visit_binary_expression(const BinaryExpression& node) {
     if (!codegen) {
         return;
     }
@@ -260,7 +260,7 @@ void CodegenCVisitor::visit_binary_expression(const BinaryExpression& node) {
 }
 
 
-void CodegenCVisitor::visit_binary_operator(const BinaryOperator& node) {
+void CodegenCppVisitor::visit_binary_operator(const BinaryOperator& node) {
     if (!codegen) {
         return;
     }
@@ -268,7 +268,7 @@ void CodegenCVisitor::visit_binary_operator(const BinaryOperator& node) {
 }
 
 
-void CodegenCVisitor::visit_unary_operator(const UnaryOperator& node) {
+void CodegenCppVisitor::visit_unary_operator(const UnaryOperator& node) {
     if (!codegen) {
         return;
     }
@@ -281,7 +281,7 @@ void CodegenCVisitor::visit_unary_operator(const UnaryOperator& node) {
  * Sometime we want to analyse ast nodes even if code generation is
  * false. Hence we visit children even if code generation is false.
  */
-void CodegenCVisitor::visit_statement_block(const StatementBlock& node) {
+void CodegenCppVisitor::visit_statement_block(const StatementBlock& node) {
     if (!codegen) {
         node.visit_children(*this);
         return;
@@ -290,7 +290,7 @@ void CodegenCVisitor::visit_statement_block(const StatementBlock& node) {
 }
 
 
-void CodegenCVisitor::visit_function_call(const FunctionCall& node) {
+void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
     if (!codegen) {
         return;
     }
@@ -298,7 +298,7 @@ void CodegenCVisitor::visit_function_call(const FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::visit_verbatim(const Verbatim& node) {
+void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
     if (!codegen) {
         return;
     }
@@ -314,24 +314,24 @@ void CodegenCVisitor::visit_verbatim(const Verbatim& node) {
     }
 }
 
-void CodegenCVisitor::visit_update_dt(const ast::UpdateDt& node) {
+void CodegenCppVisitor::visit_update_dt(const ast::UpdateDt& node) {
     // dt change statement should be pulled outside already
 }
 
-void CodegenCVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
+void CodegenCppVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
     print_atomic_reduction_pragma();
     printer->add_indent();
     node.get_expression()->accept(*this);
     printer->add_text(";");
 }
 
-void CodegenCVisitor::visit_mutex_lock(const ast::MutexLock& node) {
+void CodegenCppVisitor::visit_mutex_lock(const ast::MutexLock& node) {
     printer->fmt_line("#pragma omp critical ({})", info.mod_suffix);
     printer->add_indent();
     printer->start_block();
 }
 
-void CodegenCVisitor::visit_mutex_unlock(const ast::MutexUnlock& node) {
+void CodegenCppVisitor::visit_mutex_unlock(const ast::MutexUnlock& node) {
     printer->end_block(1);
 }
 
@@ -346,7 +346,7 @@ void CodegenCVisitor::visit_mutex_unlock(const ast::MutexUnlock& node) {
  * statement and hence we have to check inner expression. It's also true
  * for the initial block defined inside net receive block.
  */
-bool CodegenCVisitor::statement_to_skip(const Statement& node) {
+bool CodegenCppVisitor::statement_to_skip(const Statement& node) {
     // clang-format off
     if (node.is_unit_state()
         || node.is_line_comment()
@@ -370,7 +370,7 @@ bool CodegenCVisitor::statement_to_skip(const Statement& node) {
 }
 
 
-bool CodegenCVisitor::net_send_buffer_required() const noexcept {
+bool CodegenCppVisitor::net_send_buffer_required() const noexcept {
     if (net_receive_required() && !info.artificial_cell) {
         if (info.net_event_used || info.net_send_used || info.is_watch_used()) {
             return true;
@@ -380,12 +380,12 @@ bool CodegenCVisitor::net_send_buffer_required() const noexcept {
 }
 
 
-bool CodegenCVisitor::net_receive_buffering_required() const noexcept {
+bool CodegenCppVisitor::net_receive_buffering_required() const noexcept {
     return info.point_process && !info.artificial_cell && info.net_receive_node != nullptr;
 }
 
 
-bool CodegenCVisitor::nrn_state_required() const noexcept {
+bool CodegenCppVisitor::nrn_state_required() const noexcept {
     if (info.artificial_cell) {
         return false;
     }
@@ -393,22 +393,22 @@ bool CodegenCVisitor::nrn_state_required() const noexcept {
 }
 
 
-bool CodegenCVisitor::nrn_cur_required() const noexcept {
+bool CodegenCppVisitor::nrn_cur_required() const noexcept {
     return info.breakpoint_node != nullptr && !info.currents.empty();
 }
 
 
-bool CodegenCVisitor::net_receive_exist() const noexcept {
+bool CodegenCppVisitor::net_receive_exist() const noexcept {
     return info.net_receive_node != nullptr;
 }
 
 
-bool CodegenCVisitor::breakpoint_exist() const noexcept {
+bool CodegenCppVisitor::breakpoint_exist() const noexcept {
     return info.breakpoint_node != nullptr;
 }
 
 
-bool CodegenCVisitor::net_receive_required() const noexcept {
+bool CodegenCppVisitor::net_receive_required() const noexcept {
     return net_receive_exist();
 }
 
@@ -417,12 +417,12 @@ bool CodegenCVisitor::net_receive_required() const noexcept {
  * \details When floating point data type is not default (i.e. double) then we
  * have to copy old array to new type (for range variables).
  */
-bool CodegenCVisitor::range_variable_setup_required() const noexcept {
+bool CodegenCppVisitor::range_variable_setup_required() const noexcept {
     return codegen::naming::DEFAULT_FLOAT_TYPE != float_data_type();
 }
 
 
-int CodegenCVisitor::position_of_float_var(const std::string& name) const {
+int CodegenCppVisitor::position_of_float_var(const std::string& name) const {
     int index = 0;
     for (const auto& var: codegen_float_variables) {
         if (var->get_name() == name) {
@@ -434,7 +434,7 @@ int CodegenCVisitor::position_of_float_var(const std::string& name) const {
 }
 
 
-int CodegenCVisitor::position_of_int_var(const std::string& name) const {
+int CodegenCppVisitor::position_of_int_var(const std::string& name) const {
     int index = 0;
     for (const auto& var: codegen_int_variables) {
         if (var.symbol->get_name() == name) {
@@ -454,13 +454,13 @@ int CodegenCVisitor::position_of_int_var(const std::string& name) const {
  * they are represented in the mod file by user. If the value is in scientific
  * representation (1e+20, 1E-15) then keep it as it is.
  */
-std::string CodegenCVisitor::format_double_string(const std::string& s_value) {
-    return codegen_utils::format_double_string<CodegenCVisitor>(s_value);
+std::string CodegenCppVisitor::format_double_string(const std::string& s_value) {
+    return codegen_utils::format_double_string<CodegenCppVisitor>(s_value);
 }
 
 
-std::string CodegenCVisitor::format_float_string(const std::string& s_value) {
-    return codegen_utils::format_float_string<CodegenCVisitor>(s_value);
+std::string CodegenCppVisitor::format_float_string(const std::string& s_value) {
+    return codegen_utils::format_float_string<CodegenCppVisitor>(s_value);
 }
 
 
@@ -470,7 +470,7 @@ std::string CodegenCVisitor::format_float_string(const std::string& s_value) {
  * block can appear as statement using expression statement which need to
  * be inspected.
  */
-bool CodegenCVisitor::need_semicolon(Statement* node) {
+bool CodegenCppVisitor::need_semicolon(Statement* node) {
     // clang-format off
     if (node->is_if_statement()
         || node->is_else_if_statement()
@@ -501,7 +501,7 @@ bool CodegenCVisitor::need_semicolon(Statement* node) {
 
 
 // check if there is a function or procedure defined with given name
-bool CodegenCVisitor::defined_method(const std::string& name) const {
+bool CodegenCppVisitor::defined_method(const std::string& name) const {
     const auto& function = program_symtab->lookup(name);
     auto properties = NmodlType::function_block | NmodlType::procedure_block;
     return function && function->has_any_property(properties);
@@ -516,7 +516,7 @@ bool CodegenCVisitor::defined_method(const std::string& name) const {
  * the variable is renamed. Note that we have to look into the symbol table
  * of statement block and not breakpoint.
  */
-std::string CodegenCVisitor::breakpoint_current(std::string current) const {
+std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
     auto breakpoint = info.breakpoint_node;
     if (breakpoint == nullptr) {
         return current;
@@ -535,7 +535,7 @@ std::string CodegenCVisitor::breakpoint_current(std::string current) const {
 }
 
 
-int CodegenCVisitor::float_variables_size() const {
+int CodegenCppVisitor::float_variables_size() const {
     auto count_length = [](int l, const SymbolType& variable) {
         return l += variable->get_length();
     };
@@ -574,7 +574,7 @@ int CodegenCVisitor::float_variables_size() const {
 }
 
 
-int CodegenCVisitor::int_variables_size() const {
+int CodegenCppVisitor::int_variables_size() const {
     int num_variables = 0;
     for (const auto& semantic: info.semantics) {
         num_variables += semantic.size;
@@ -590,7 +590,7 @@ int CodegenCVisitor::int_variables_size() const {
  * different variable names, we rely on backend-specific read_ion_variable_name
  * and write_ion_variable_name method which will be overloaded.
  */
-std::vector<std::string> CodegenCVisitor::ion_read_statements(BlockType type) {
+std::vector<std::string> CodegenCppVisitor::ion_read_statements(BlockType type) {
     if (optimize_ion_variable_copies()) {
         return ion_read_statements_optimized(type);
     }
@@ -620,7 +620,7 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements(BlockType type) {
 }
 
 
-std::vector<std::string> CodegenCVisitor::ion_read_statements_optimized(BlockType type) {
+std::vector<std::string> CodegenCppVisitor::ion_read_statements_optimized(BlockType type) {
     std::vector<std::string> statements;
     for (const auto& ion: info.ions) {
         for (const auto& var: ion.writes) {
@@ -636,7 +636,7 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements_optimized(BlockTyp
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType type) {
+std::vector<ShadowUseStatement> CodegenCppVisitor::ion_write_statements(BlockType type) {
     std::vector<ShadowUseStatement> statements;
     for (const auto& ion: info.ions) {
         std::string concentration;
@@ -693,7 +693,7 @@ std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType 
  * \details Often top level verbatim blocks use variables with old names.
  * Here we process if we are processing verbatim block at global scope.
  */
-std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
+std::string CodegenCppVisitor::process_verbatim_token(const std::string& token) {
     const std::string& name = token;
 
     /*
@@ -724,7 +724,7 @@ std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
 }
 
 
-bool CodegenCVisitor::ion_variable_struct_required() const {
+bool CodegenCppVisitor::ion_variable_struct_required() const {
     return optimize_ion_variable_copies() && info.ion_has_write_variable();
 }
 
@@ -734,7 +734,7 @@ bool CodegenCVisitor::ion_variable_struct_required() const {
  * except in INITIAL block where they are set to 0. As initial block is/can be
  * executed on c/cpu backend, gpu backend can mark the parameter as constant.
  */
-bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
+bool CodegenCppVisitor::is_constant_variable(const std::string& name) const {
     auto symbol = program_symtab->lookup_in_scope(name);
     bool is_constant = false;
     if (symbol != nullptr) {
@@ -758,7 +758,7 @@ bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
  * \details Once variables are populated, update index semantics to register with coreneuron
  */
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void CodegenCVisitor::update_index_semantics() {
+void CodegenCppVisitor::update_index_semantics() {
     int index = 0;
     info.semantics.clear();
 
@@ -825,7 +825,7 @@ void CodegenCVisitor::update_index_semantics() {
 }
 
 
-std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
+std::vector<SymbolType> CodegenCppVisitor::get_float_variables() {
     // sort with definition order
     auto comparator = [](const SymbolType& first, const SymbolType& second) -> bool {
         return first->get_definition_order() < second->get_definition_order();
@@ -891,7 +891,7 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
  *  - style_ionname is index / offset
  */
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
+std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
     std::vector<IndexVariableInfo> variables;
     if (info.point_process) {
         variables.emplace_back(make_symbol(naming::NODE_AREA_VARIABLE));
@@ -1014,7 +1014,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
 
-std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
+std::string CodegenCppVisitor::get_parameter_str(const ParamVector& params) {
     std::string param{};
     for (auto iter = params.begin(); iter != params.end(); iter++) {
         param += fmt::format("{}{} {}{}",
@@ -1030,31 +1030,31 @@ std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
 }
 
 
-void CodegenCVisitor::print_deriv_advance_flag_transfer_to_device() const {
+void CodegenCppVisitor::print_deriv_advance_flag_transfer_to_device() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_device_atomic_capture_annotation() const {
+void CodegenCppVisitor::print_device_atomic_capture_annotation() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_net_send_buf_count_update_to_host() const {
+void CodegenCppVisitor::print_net_send_buf_count_update_to_host() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_net_send_buf_update_to_host() const {
+void CodegenCppVisitor::print_net_send_buf_update_to_host() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_net_send_buf_count_update_to_device() const {
+void CodegenCppVisitor::print_net_send_buf_count_update_to_device() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_dt_update_to_device() const {
+void CodegenCppVisitor::print_dt_update_to_device() const {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_device_stream_wait() const {
+void CodegenCppVisitor::print_device_stream_wait() const {
     // backend specific, do nothing
 }
 
@@ -1072,20 +1072,20 @@ void CodegenCVisitor::print_device_stream_wait() const {
  *  }
  *  \endcode
  */
-void CodegenCVisitor::print_kernel_data_present_annotation_block_begin() {
+void CodegenCppVisitor::print_kernel_data_present_annotation_block_begin() {
     // backend specific, do nothing
 }
 
 
-void CodegenCVisitor::print_kernel_data_present_annotation_block_end() {
+void CodegenCppVisitor::print_kernel_data_present_annotation_block_end() {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_net_init_acc_serial_annotation_block_begin() {
+void CodegenCppVisitor::print_net_init_acc_serial_annotation_block_begin() {
     // backend specific, do nothing
 }
 
-void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
+void CodegenCppVisitor::print_net_init_acc_serial_annotation_block_end() {
     // backend specific, do nothing
 }
 
@@ -1101,8 +1101,8 @@ void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */,
-                                                                  const ast::Block* block) {
+void CodegenCppVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */,
+                                                                    const ast::Block* block) {
     // ivdep allows SIMD parallelisation of a block/loop but doesn't provide
     // a standard mechanism for atomics. Also, even with openmp 5.0, openmp
     // atomics do not enable vectorisation under "omp simd" (gives compiler
@@ -1123,12 +1123,12 @@ void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType /* t
 }
 
 
-bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
+bool CodegenCppVisitor::nrn_cur_reduction_loop_required() {
     return info.point_process;
 }
 
 
-void CodegenCVisitor::print_rhs_d_shadow_variables() {
+void CodegenCppVisitor::print_rhs_d_shadow_variables() {
     if (info.point_process) {
         printer->fmt_line("double* shadow_rhs = nt->{};", naming::NTHREAD_RHS_SHADOW);
         printer->fmt_line("double* shadow_d = nt->{};", naming::NTHREAD_D_SHADOW);
@@ -1136,7 +1136,7 @@ void CodegenCVisitor::print_rhs_d_shadow_variables() {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_matrix_shadow_update() {
+void CodegenCppVisitor::print_nrn_cur_matrix_shadow_update() {
     if (info.point_process) {
         printer->add_line("shadow_rhs[id] = rhs;");
         printer->add_line("shadow_d[id] = g;");
@@ -1149,7 +1149,7 @@ void CodegenCVisitor::print_nrn_cur_matrix_shadow_update() {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_matrix_shadow_reduction() {
+void CodegenCppVisitor::print_nrn_cur_matrix_shadow_reduction() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     if (info.point_process) {
@@ -1165,47 +1165,47 @@ void CodegenCVisitor::print_nrn_cur_matrix_shadow_reduction() {
  * only with PROTECT construct (atomic rduction requirement for other cases on CPU
  * is handled via separate shadow vectors).
  */
-void CodegenCVisitor::print_atomic_reduction_pragma() {
+void CodegenCppVisitor::print_atomic_reduction_pragma() {
     printer->add_line("#pragma omp atomic update");
 }
 
 
-void CodegenCVisitor::print_device_method_annotation() {
+void CodegenCppVisitor::print_device_method_annotation() {
     // backend specific, nothing for cpu
 }
 
 
-void CodegenCVisitor::print_global_method_annotation() {
+void CodegenCppVisitor::print_global_method_annotation() {
     // backend specific, nothing for cpu
 }
 
 
-void CodegenCVisitor::print_backend_namespace_start() {
+void CodegenCppVisitor::print_backend_namespace_start() {
     // no separate namespace for C (cpu) backend
 }
 
 
-void CodegenCVisitor::print_backend_namespace_stop() {
+void CodegenCppVisitor::print_backend_namespace_stop() {
     // no separate namespace for C (cpu) backend
 }
 
 
-void CodegenCVisitor::print_backend_includes() {
+void CodegenCppVisitor::print_backend_includes() {
     // backend specific, nothing for cpu
 }
 
 
-std::string CodegenCVisitor::backend_name() const {
+std::string CodegenCppVisitor::backend_name() const {
     return "C (api-compatibility)";
 }
 
 
-bool CodegenCVisitor::optimize_ion_variable_copies() const {
+bool CodegenCppVisitor::optimize_ion_variable_copies() const {
     return optimize_ionvar_copies;
 }
 
 
-void CodegenCVisitor::print_memory_allocation_routine() const {
+void CodegenCppVisitor::print_memory_allocation_routine() const {
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
     printer->fmt_start_block("static inline void* mem_alloc({})", args);
@@ -1222,7 +1222,7 @@ void CodegenCVisitor::print_memory_allocation_routine() const {
 }
 
 
-void CodegenCVisitor::print_abort_routine() const {
+void CodegenCppVisitor::print_abort_routine() const {
     printer->add_newline(2);
     printer->start_block("static inline void coreneuron_abort()");
     printer->add_line("abort();");
@@ -1230,7 +1230,7 @@ void CodegenCVisitor::print_abort_routine() const {
 }
 
 
-std::string CodegenCVisitor::compute_method_name(BlockType type) const {
+std::string CodegenCppVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
     }
@@ -1253,11 +1253,11 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) const {
 }
 
 
-std::string CodegenCVisitor::global_var_struct_type_qualifier() {
+std::string CodegenCppVisitor::global_var_struct_type_qualifier() {
     return "";
 }
 
-void CodegenCVisitor::print_global_var_struct_decl() {
+void CodegenCppVisitor::print_global_var_struct_decl() {
     printer->fmt_line("{} {};", global_struct(), global_struct_instance());
 }
 
@@ -1266,15 +1266,15 @@ void CodegenCVisitor::print_global_var_struct_decl() {
 /****************************************************************************************/
 
 
-void CodegenCVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
+void CodegenCppVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
     printer->add_text(fmt::format("nrn_watch_activate(inst, id, pnodecount, {}, v, watch_remove)",
                                   current_watch_statement++));
 }
 
 
-void CodegenCVisitor::print_statement_block(const ast::StatementBlock& node,
-                                            bool open_brace,
-                                            bool close_brace) {
+void CodegenCppVisitor::print_statement_block(const ast::StatementBlock& node,
+                                              bool open_brace,
+                                              bool close_brace) {
     if (open_brace) {
         printer->start_block();
     }
@@ -1304,7 +1304,7 @@ void CodegenCVisitor::print_statement_block(const ast::StatementBlock& node,
 }
 
 
-void CodegenCVisitor::print_function_call(const FunctionCall& node) {
+void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     auto function_name = name;
     if (defined_method(name)) {
@@ -1341,7 +1341,7 @@ void CodegenCVisitor::print_function_call(const FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::print_top_verbatim_blocks() {
+void CodegenCppVisitor::print_top_verbatim_blocks() {
     if (info.top_verbatim_blocks.empty()) {
         return;
     }
@@ -1372,7 +1372,7 @@ void CodegenCVisitor::print_top_verbatim_blocks() {
  * is because verbatim renaming pass has already stripped out prefixes from
  * the text.
  */
-void CodegenCVisitor::rename_function_arguments() {
+void CodegenCppVisitor::rename_function_arguments() {
     auto default_arguments = stringutils::split_string(nrn_thread_arguments(), ',');
     for (auto& arg: default_arguments) {
         stringutils::trim(arg);
@@ -1391,7 +1391,7 @@ void CodegenCVisitor::rename_function_arguments() {
 }
 
 
-void CodegenCVisitor::print_function_prototypes() {
+void CodegenCppVisitor::print_function_prototypes() {
     if (info.functions.empty() && info.procedures.empty()) {
         return;
     }
@@ -1426,11 +1426,11 @@ static const TableStatement* get_table_statement(const ast::Block& node) {
 }
 
 
-std::tuple<bool, int> CodegenCVisitor::check_if_var_is_array(const std::string& name) {
+std::tuple<bool, int> CodegenCppVisitor::check_if_var_is_array(const std::string& name) {
     auto symbol = program_symtab->lookup_in_scope(name);
     if (!symbol) {
         throw std::runtime_error(
-            fmt::format("CodegenCVisitor:: {} not found in symbol table!", name));
+            fmt::format("CodegenCppVisitor:: {} not found in symbol table!", name));
     }
     if (symbol->is_array()) {
         return {true, symbol->get_length()};
@@ -1440,7 +1440,7 @@ std::tuple<bool, int> CodegenCVisitor::check_if_var_is_array(const std::string& 
 }
 
 
-void CodegenCVisitor::print_table_check_function(const Block& node) {
+void CodegenCppVisitor::print_table_check_function(const Block& node) {
     auto statement = get_table_statement(node);
     auto table_variables = statement->get_table_vars();
     auto depend_variables = statement->get_depend_vars();
@@ -1537,7 +1537,7 @@ void CodegenCVisitor::print_table_check_function(const Block& node) {
 }
 
 
-void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
+void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node) {
     auto name = node.get_node_name();
     auto statement = get_table_statement(node);
     auto table_variables = statement->get_table_vars();
@@ -1647,7 +1647,7 @@ void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
 }
 
 
-void CodegenCVisitor::print_check_table_thread_function() {
+void CodegenCppVisitor::print_check_table_thread_function() {
     if (info.table_count == 0) {
         return;
     }
@@ -1671,7 +1671,8 @@ void CodegenCVisitor::print_check_table_thread_function() {
 }
 
 
-void CodegenCVisitor::print_function_or_procedure(const ast::Block& node, const std::string& name) {
+void CodegenCppVisitor::print_function_or_procedure(const ast::Block& node,
+                                                    const std::string& name) {
     printer->add_newline(2);
     print_function_declaration(node, name);
     printer->add_text(" ");
@@ -1691,7 +1692,7 @@ void CodegenCVisitor::print_function_or_procedure(const ast::Block& node, const 
 }
 
 
-void CodegenCVisitor::print_function_procedure_helper(const ast::Block& node) {
+void CodegenCppVisitor::print_function_procedure_helper(const ast::Block& node) {
     codegen = true;
     auto name = node.get_node_name();
 
@@ -1708,12 +1709,12 @@ void CodegenCVisitor::print_function_procedure_helper(const ast::Block& node) {
 }
 
 
-void CodegenCVisitor::print_procedure(const ast::ProcedureBlock& node) {
+void CodegenCppVisitor::print_procedure(const ast::ProcedureBlock& node) {
     print_function_procedure_helper(node);
 }
 
 
-void CodegenCVisitor::print_function(const ast::FunctionBlock& node) {
+void CodegenCppVisitor::print_function(const ast::FunctionBlock& node) {
     auto name = node.get_node_name();
 
     // name of return variable
@@ -1733,7 +1734,7 @@ void CodegenCVisitor::print_function(const ast::FunctionBlock& node) {
 }
 
 
-void CodegenCVisitor::print_function_tables(const ast::FunctionTableBlock& node) {
+void CodegenCppVisitor::print_function_tables(const ast::FunctionTableBlock& node) {
     auto name = node.get_node_name();
     const auto& p = node.get_parameters();
     auto params = internal_method_parameters();
@@ -1808,7 +1809,7 @@ bool is_functor_const(const ast::StatementBlock& variable_block,
     return is_functor_const;
 }
 
-void CodegenCVisitor::print_functor_definition(const ast::EigenNewtonSolverBlock& node) {
+void CodegenCppVisitor::print_functor_definition(const ast::EigenNewtonSolverBlock& node) {
     // functor that evaluates F(X) and J(X) for
     // Newton solver
     auto float_type = default_float_data_type();
@@ -1871,7 +1872,7 @@ void CodegenCVisitor::print_functor_definition(const ast::EigenNewtonSolverBlock
     printer->end_block(";");
 }
 
-void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) {
+void CodegenCppVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) {
     // solution vector to store copy of state vars for Newton solver
     printer->add_newline();
 
@@ -1897,7 +1898,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolv
     printer->add_line("newton_functor.finalize();");
 }
 
-void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) {
+void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) {
     printer->add_newline();
 
     const std::string float_type = default_float_data_type();
@@ -1921,7 +1922,7 @@ void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolv
     print_statement_block(*node.get_finalize_block(), false, false);
 }
 
-void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
+void CodegenCppVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
     if (N <= 4) {
         // Faster compared to LU, given the template specialization in Eigen.
         printer->add_line("bool invertible;");
@@ -1962,7 +1963,7 @@ void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type, i
 /****************************************************************************************/
 
 
-std::string CodegenCVisitor::internal_method_arguments() {
+std::string CodegenCppVisitor::internal_method_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
     }
@@ -1973,7 +1974,7 @@ std::string CodegenCVisitor::internal_method_arguments() {
 /**
  * @todo: figure out how to correctly handle qualifiers
  */
-CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
+CodegenCppVisitor::ParamVector CodegenCppVisitor::internal_method_parameters() {
     auto params = ParamVector();
     params.emplace_back("", "int", "", "id");
     params.emplace_back("", "int", "", "pnodecount");
@@ -1990,12 +1991,12 @@ CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
 }
 
 
-std::string CodegenCVisitor::external_method_arguments() {
+std::string CodegenCppVisitor::external_method_arguments() {
     return "id, pnodecount, data, indexes, thread, nt, ml, v";
 }
 
 
-std::string CodegenCVisitor::external_method_parameters(bool table) {
+std::string CodegenCppVisitor::external_method_parameters(bool table) {
     if (table) {
         return "int id, int pnodecount, double* data, Datum* indexes, "
                "ThreadDatum* thread, NrnThread* nt, Memb_list* ml, int tml_id";
@@ -2005,7 +2006,7 @@ std::string CodegenCVisitor::external_method_parameters(bool table) {
 }
 
 
-std::string CodegenCVisitor::nrn_thread_arguments() {
+std::string CodegenCppVisitor::nrn_thread_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, ionvar, data, indexes, thread, nt, ml, v";
     }
@@ -2017,7 +2018,7 @@ std::string CodegenCVisitor::nrn_thread_arguments() {
  * Function call arguments when function or procedure is defined in the
  * same mod file itself
  */
-std::string CodegenCVisitor::nrn_thread_internal_arguments() {
+std::string CodegenCppVisitor::nrn_thread_internal_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
     }
@@ -2029,7 +2030,7 @@ std::string CodegenCVisitor::nrn_thread_internal_arguments() {
  * Replace commonly used variables in the verbatim blocks into their corresponding
  * variable name in the new code generation backend.
  */
-std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
+std::string CodegenCppVisitor::replace_if_verbatim_variable(std::string name) {
     if (naming::VERBATIM_VARIABLES_MAPPING.find(name) != naming::VERBATIM_VARIABLES_MAPPING.end()) {
         name = naming::VERBATIM_VARIABLES_MAPPING.at(name);
     }
@@ -2058,7 +2059,7 @@ std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
  * @todo : this is still ad-hoc and requires re-implementation to
  * handle it more elegantly.
  */
-std::string CodegenCVisitor::process_verbatim_text(std::string const& text) {
+std::string CodegenCppVisitor::process_verbatim_text(std::string const& text) {
     parser::CDriver driver;
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
@@ -2085,7 +2086,7 @@ std::string CodegenCVisitor::process_verbatim_text(std::string const& text) {
 }
 
 
-std::string CodegenCVisitor::register_mechanism_arguments() const {
+std::string CodegenCppVisitor::register_mechanism_arguments() const {
     auto nrn_cur = nrn_cur_required() ? method_name(naming::NRN_CUR_METHOD) : "nullptr";
     auto nrn_state = nrn_state_required() ? method_name(naming::NRN_STATE_METHOD) : "nullptr";
     auto nrn_alloc = method_name(naming::NRN_ALLOC_METHOD);
@@ -2102,21 +2103,21 @@ std::string CodegenCVisitor::register_mechanism_arguments() const {
 }
 
 
-std::pair<std::string, std::string> CodegenCVisitor::read_ion_variable_name(
+std::pair<std::string, std::string> CodegenCppVisitor::read_ion_variable_name(
     const std::string& name) {
     return {name, naming::ION_VARNAME_PREFIX + name};
 }
 
 
-std::pair<std::string, std::string> CodegenCVisitor::write_ion_variable_name(
+std::pair<std::string, std::string> CodegenCppVisitor::write_ion_variable_name(
     const std::string& name) {
     return {naming::ION_VARNAME_PREFIX + name, name};
 }
 
 
-std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
-                                                  const std::string& concentration,
-                                                  int index) {
+std::string CodegenCppVisitor::conc_write_statement(const std::string& ion_name,
+                                                    const std::string& concentration,
+                                                    int index) {
     auto conc_var_name = get_variable_name(naming::ION_VARNAME_PREFIX + concentration);
     auto style_var_name = get_variable_name("style_" + ion_name);
     return fmt::format(
@@ -2142,8 +2143,8 @@ std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
  * case we first update current mechanism's shadow vector and then add statement
  * to queue that will be used in reduction queue.
  */
-std::string CodegenCVisitor::process_shadow_update_statement(const ShadowUseStatement& statement,
-                                                             BlockType /* type */) {
+std::string CodegenCppVisitor::process_shadow_update_statement(const ShadowUseStatement& statement,
+                                                               BlockType /* type */) {
     // when there is no operator or rhs then that statement doesn't need shadow update
     if (statement.op.empty() && statement.rhs.empty()) {
         auto text = statement.lhs + ";";
@@ -2166,7 +2167,7 @@ std::string CodegenCVisitor::process_shadow_update_statement(const ShadowUseStat
  * NMODL constants from unit database
  *
  */
-void CodegenCVisitor::print_nmodl_constants() {
+void CodegenCppVisitor::print_nmodl_constants() {
     if (!info.factor_definitions.empty()) {
         printer->add_newline(2);
         printer->add_line("/** constants used in nmodl from UNITS */");
@@ -2178,7 +2179,7 @@ void CodegenCVisitor::print_nmodl_constants() {
 }
 
 
-void CodegenCVisitor::print_first_pointer_var_index_getter() {
+void CodegenCppVisitor::print_first_pointer_var_index_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline int first_pointer_var_index()");
@@ -2187,7 +2188,7 @@ void CodegenCVisitor::print_first_pointer_var_index_getter() {
 }
 
 
-void CodegenCVisitor::print_num_variable_getter() {
+void CodegenCppVisitor::print_num_variable_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline int float_variables_size()");
@@ -2202,7 +2203,7 @@ void CodegenCVisitor::print_num_variable_getter() {
 }
 
 
-void CodegenCVisitor::print_net_receive_arg_size_getter() {
+void CodegenCppVisitor::print_net_receive_arg_size_getter() {
     if (!net_receive_exist()) {
         return;
     }
@@ -2214,7 +2215,7 @@ void CodegenCVisitor::print_net_receive_arg_size_getter() {
 }
 
 
-void CodegenCVisitor::print_mech_type_getter() {
+void CodegenCppVisitor::print_mech_type_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline int get_mech_type()");
@@ -2224,7 +2225,7 @@ void CodegenCVisitor::print_mech_type_getter() {
 }
 
 
-void CodegenCVisitor::print_memb_list_getter() {
+void CodegenCppVisitor::print_memb_list_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline Memb_list* get_memb_list(NrnThread* nt)");
@@ -2236,13 +2237,13 @@ void CodegenCVisitor::print_memb_list_getter() {
 }
 
 
-void CodegenCVisitor::print_namespace_start() {
+void CodegenCppVisitor::print_namespace_start() {
     printer->add_newline(2);
     printer->start_block("namespace coreneuron");
 }
 
 
-void CodegenCVisitor::print_namespace_stop() {
+void CodegenCppVisitor::print_namespace_stop() {
     printer->end_block(1);
 }
 
@@ -2259,7 +2260,7 @@ void CodegenCVisitor::print_namespace_stop() {
  * decide the index of thread.
  */
 
-void CodegenCVisitor::print_thread_getters() {
+void CodegenCppVisitor::print_thread_getters() {
     if (info.vectorize && info.derivimplicit_used()) {
         int tid = info.derivimplicit_var_thread_id;
         int list = info.derivimplicit_list_num;
@@ -2306,8 +2307,8 @@ void CodegenCVisitor::print_thread_getters() {
 /****************************************************************************************/
 
 
-std::string CodegenCVisitor::float_variable_name(const SymbolType& symbol,
-                                                 bool use_instance) const {
+std::string CodegenCppVisitor::float_variable_name(const SymbolType& symbol,
+                                                   bool use_instance) const {
     auto name = symbol->get_name();
     auto dimension = symbol->get_length();
     auto position = position_of_float_var(name);
@@ -2326,9 +2327,9 @@ std::string CodegenCVisitor::float_variable_name(const SymbolType& symbol,
 }
 
 
-std::string CodegenCVisitor::int_variable_name(const IndexVariableInfo& symbol,
-                                               const std::string& name,
-                                               bool use_instance) const {
+std::string CodegenCppVisitor::int_variable_name(const IndexVariableInfo& symbol,
+                                                 const std::string& name,
+                                                 bool use_instance) const {
     auto position = position_of_int_var(name);
     // clang-format off
     if (symbol.is_index) {
@@ -2352,8 +2353,8 @@ std::string CodegenCVisitor::int_variable_name(const IndexVariableInfo& symbol,
 }
 
 
-std::string CodegenCVisitor::global_variable_name(const SymbolType& symbol,
-                                                  bool use_instance) const {
+std::string CodegenCppVisitor::global_variable_name(const SymbolType& symbol,
+                                                    bool use_instance) const {
     if (use_instance) {
         return fmt::format("inst->{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
     } else {
@@ -2362,7 +2363,7 @@ std::string CodegenCVisitor::global_variable_name(const SymbolType& symbol,
 }
 
 
-std::string CodegenCVisitor::update_if_ion_variable_name(const std::string& name) const {
+std::string CodegenCppVisitor::update_if_ion_variable_name(const std::string& name) const {
     std::string result(name);
     if (ion_variable_struct_required()) {
         if (info.is_ion_read_variable(name)) {
@@ -2379,7 +2380,7 @@ std::string CodegenCVisitor::update_if_ion_variable_name(const std::string& name
 }
 
 
-std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use_instance) const {
+std::string CodegenCppVisitor::get_variable_name(const std::string& name, bool use_instance) const {
     std::string varname = update_if_ion_variable_name(name);
 
     // clang-format off
@@ -2451,7 +2452,7 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
 /****************************************************************************************/
 
 
-void CodegenCVisitor::print_backend_info() {
+void CodegenCppVisitor::print_backend_info() {
     time_t tr{};
     time(&tr);
     auto date = std::string(asctime(localtime(&tr)));
@@ -2470,7 +2471,7 @@ void CodegenCVisitor::print_backend_info() {
 }
 
 
-void CodegenCVisitor::print_standard_includes() {
+void CodegenCppVisitor::print_standard_includes() {
     printer->add_newline();
     printer->add_line("#include <math.h>");
     printer->add_line("#include <stdio.h>");
@@ -2479,7 +2480,7 @@ void CodegenCVisitor::print_standard_includes() {
 }
 
 
-void CodegenCVisitor::print_coreneuron_includes() {
+void CodegenCppVisitor::print_coreneuron_includes() {
     printer->add_newline();
     printer->add_line("#include <coreneuron/nrnconf.h>");
     printer->add_line("#include <coreneuron/sim/multicore.hpp>");
@@ -2526,7 +2527,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
  * same for some variables to keep same code as neuron.
  */
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void CodegenCVisitor::print_mechanism_global_var_structure(bool print_initialisers) {
+void CodegenCppVisitor::print_mechanism_global_var_structure(bool print_initialisers) {
     const auto value_initialise = print_initialisers ? "{}" : "";
     const auto qualifier = global_var_struct_type_qualifier();
 
@@ -2726,7 +2727,7 @@ void CodegenCVisitor::print_mechanism_global_var_structure(bool print_initialise
     print_global_var_struct_decl();
 }
 
-void CodegenCVisitor::print_global_var_struct_assertions() const {
+void CodegenCppVisitor::print_global_var_struct_assertions() const {
     // Assert some things that we assume when copying instances of this struct
     // to the GPU and so on.
     printer->fmt_line("static_assert(std::is_trivially_copy_constructible_v<{}>);",
@@ -2739,14 +2740,14 @@ void CodegenCVisitor::print_global_var_struct_assertions() const {
 }
 
 
-void CodegenCVisitor::print_prcellstate_macros() const {
+void CodegenCppVisitor::print_prcellstate_macros() const {
     printer->add_line("#ifndef NRN_PRCELLSTATE");
     printer->add_line("#define NRN_PRCELLSTATE 0");
     printer->add_line("#endif");
 }
 
 
-void CodegenCVisitor::print_mechanism_info() {
+void CodegenCppVisitor::print_mechanism_info() {
     auto variable_printer = [&](std::vector<SymbolType>& variables) {
         for (const auto& v: variables) {
             auto name = v->get_name();
@@ -2783,7 +2784,7 @@ void CodegenCVisitor::print_mechanism_info() {
  * Print structs that encapsulate information about scalar and
  * vector elements of type global and thread variables.
  */
-void CodegenCVisitor::print_global_variables_for_hoc() {
+void CodegenCppVisitor::print_global_variables_for_hoc() {
     auto variable_printer =
         [&](const std::vector<SymbolType>& variables, bool if_array, bool if_vector) {
             for (const auto& variable: variables) {
@@ -2889,7 +2890,7 @@ static std::string get_register_type_for_ba_block(const ast::Block* block) {
  *    compatible for cpu as well as gpu target.
  */
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void CodegenCVisitor::print_mechanism_register() {
+void CodegenCppVisitor::print_mechanism_register() {
     printer->add_newline(2);
     printer->add_line("/** register channel with the simulator */");
     printer->fmt_start_block("void _{}_reg()", info.mod_file);
@@ -3031,7 +3032,7 @@ void CodegenCVisitor::print_mechanism_register() {
 }
 
 
-void CodegenCVisitor::print_thread_memory_callbacks() {
+void CodegenCppVisitor::print_thread_memory_callbacks() {
     if (!info.thread_callback_register) {
         return;
     }
@@ -3093,7 +3094,7 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
 }
 
 
-void CodegenCVisitor::print_mechanism_range_var_structure(bool print_initialisers) {
+void CodegenCppVisitor::print_mechanism_range_var_structure(bool print_initialisers) {
     auto const value_initialise = print_initialisers ? "{}" : "";
     auto float_type = default_float_data_type();
     auto int_type = default_int_data_type();
@@ -3136,7 +3137,7 @@ void CodegenCVisitor::print_mechanism_range_var_structure(bool print_initialiser
 }
 
 
-void CodegenCVisitor::print_ion_var_structure() {
+void CodegenCppVisitor::print_ion_var_structure() {
     if (!ion_variable_struct_required()) {
         return;
     }
@@ -3166,7 +3167,7 @@ void CodegenCVisitor::print_ion_var_structure() {
 }
 
 
-void CodegenCVisitor::print_ion_var_constructor(const std::vector<std::string>& members) {
+void CodegenCppVisitor::print_ion_var_constructor(const std::vector<std::string>& members) {
     // constructor
     printer->add_newline();
     printer->add_line("IonCurVar() : ", 0);
@@ -3181,17 +3182,17 @@ void CodegenCVisitor::print_ion_var_constructor(const std::vector<std::string>& 
 }
 
 
-void CodegenCVisitor::print_ion_variable() {
+void CodegenCppVisitor::print_ion_variable() {
     printer->add_line("IonCurVar ionvar;");
 }
 
 
-void CodegenCVisitor::print_global_variable_device_update_annotation() {
+void CodegenCppVisitor::print_global_variable_device_update_annotation() {
     // nothing for cpu
 }
 
 
-void CodegenCVisitor::print_setup_range_variable() {
+void CodegenCppVisitor::print_setup_range_variable() {
     auto type = float_data_type();
     printer->add_newline(2);
     printer->add_line("/** allocate and setup array for range variable */");
@@ -3212,7 +3213,7 @@ void CodegenCVisitor::print_setup_range_variable() {
  * are pointers to internal variables (e.g. ions). Hence, we check if given
  * variable can be safely converted to new type. If so, return new type.
  */
-std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) {
+std::string CodegenCppVisitor::get_range_var_float_type(const SymbolType& symbol) {
     // clang-format off
     auto with   =   NmodlType::read_ion_var
                     | NmodlType::write_ion_var
@@ -3228,7 +3229,7 @@ std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) 
 }
 
 
-void CodegenCVisitor::print_instance_variable_setup() {
+void CodegenCppVisitor::print_instance_variable_setup() {
     if (range_variable_setup_required()) {
         print_setup_range_variable();
     }
@@ -3333,7 +3334,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
 }
 
 
-void CodegenCVisitor::print_initial_block(const InitialBlock* node) {
+void CodegenCppVisitor::print_initial_block(const InitialBlock* node) {
     if (info.artificial_cell) {
         printer->add_line("double v = 0.0;");
     } else {
@@ -3377,8 +3378,8 @@ void CodegenCVisitor::print_initial_block(const InitialBlock* node) {
 }
 
 
-void CodegenCVisitor::print_global_function_common_code(BlockType type,
-                                                        const std::string& function_name) {
+void CodegenCppVisitor::print_global_function_common_code(BlockType type,
+                                                          const std::string& function_name) {
     std::string method;
     if (function_name.empty()) {
         method = compute_method_name(type);
@@ -3425,7 +3426,7 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type,
     printer->add_newline(1);
 }
 
-void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
+void CodegenCppVisitor::print_nrn_init(bool skip_init_check) {
     codegen = true;
     printer->add_newline(2);
     printer->add_line("/** initialize channel */");
@@ -3502,7 +3503,7 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     codegen = false;
 }
 
-void CodegenCVisitor::print_before_after_block(const ast::Block* node, size_t block_id) {
+void CodegenCppVisitor::print_before_after_block(const ast::Block* node, size_t block_id) {
     codegen = true;
 
     std::string ba_type;
@@ -3559,7 +3560,7 @@ void CodegenCVisitor::print_before_after_block(const ast::Block* node, size_t bl
     codegen = false;
 }
 
-void CodegenCVisitor::print_nrn_constructor() {
+void CodegenCppVisitor::print_nrn_constructor() {
     printer->add_newline(2);
     print_global_function_common_code(BlockType::Constructor);
     if (info.constructor_node != nullptr) {
@@ -3571,7 +3572,7 @@ void CodegenCVisitor::print_nrn_constructor() {
 }
 
 
-void CodegenCVisitor::print_nrn_destructor() {
+void CodegenCppVisitor::print_nrn_destructor() {
     printer->add_newline(2);
     print_global_function_common_code(BlockType::Destructor);
     if (info.destructor_node != nullptr) {
@@ -3583,7 +3584,7 @@ void CodegenCVisitor::print_nrn_destructor() {
 }
 
 
-void CodegenCVisitor::print_functors_definitions() {
+void CodegenCppVisitor::print_functors_definitions() {
     codegen = true;
     for (const auto& functor_name: info.functor_names) {
         printer->add_newline(2);
@@ -3593,7 +3594,7 @@ void CodegenCVisitor::print_functors_definitions() {
 }
 
 
-void CodegenCVisitor::print_nrn_alloc() {
+void CodegenCppVisitor::print_nrn_alloc() {
     printer->add_newline(2);
     auto method = method_name(naming::NRN_ALLOC_METHOD);
     printer->fmt_start_block("static void {}(double* data, Datum* indexes, int type)", method);
@@ -3606,7 +3607,7 @@ void CodegenCVisitor::print_nrn_alloc() {
  * according to grammar. Check if this is correctly handled in neuron
  * and coreneuron.
  */
-void CodegenCVisitor::print_watch_activate() {
+void CodegenCppVisitor::print_watch_activate() {
     if (info.watch_statements.empty()) {
         return;
     }
@@ -3655,7 +3656,7 @@ void CodegenCVisitor::print_watch_activate() {
  * \todo Similar to print_watch_activate, we are using only
  * first watch. need to verify with neuron/coreneuron about rest.
  */
-void CodegenCVisitor::print_watch_check() {
+void CodegenCppVisitor::print_watch_check() {
     if (info.watch_statements.empty()) {
         return;
     }
@@ -3738,7 +3739,7 @@ void CodegenCVisitor::print_watch_check() {
 }
 
 
-void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need_mech_inst) {
+void CodegenCppVisitor::print_net_receive_common_code(const Block& node, bool need_mech_inst) {
     printer->add_line("int tid = pnt->_tid;");
     printer->add_line("int id = pnt->_i_instance;");
     printer->add_line("double v = 0;");
@@ -3783,7 +3784,7 @@ void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need
 }
 
 
-void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
+void CodegenCppVisitor::print_net_send_call(const FunctionCall& node) {
     auto const& arguments = node.get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "weight_index";
@@ -3815,7 +3816,7 @@ void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
+void CodegenCppVisitor::print_net_move_call(const FunctionCall& node) {
     if (!printing_net_receive && !printing_net_init) {
         throw std::runtime_error("Error : net_move only allowed in NET_RECEIVE block");
     }
@@ -3843,7 +3844,7 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::print_net_event_call(const FunctionCall& node) {
+void CodegenCppVisitor::print_net_event_call(const FunctionCall& node) {
     const auto& arguments = node.get_arguments();
     if (info.artificial_cell) {
         printer->add_text("net_event(pnt, ");
@@ -3895,7 +3896,7 @@ static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive
 }
 
 
-void CodegenCVisitor::print_net_init() {
+void CodegenCppVisitor::print_net_init() {
     const auto node = info.net_receive_initial_node;
     if (node == nullptr) {
         return;
@@ -3929,7 +3930,7 @@ void CodegenCVisitor::print_net_init() {
 }
 
 
-void CodegenCVisitor::print_send_event_move() {
+void CodegenCppVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
     print_net_send_buf_update_to_host();
@@ -3948,12 +3949,12 @@ void CodegenCVisitor::print_send_event_move() {
 }
 
 
-std::string CodegenCVisitor::net_receive_buffering_declaration() {
+std::string CodegenCppVisitor::net_receive_buffering_declaration() {
     return fmt::format("void {}(NrnThread* nt)", method_name("net_buf_receive"));
 }
 
 
-void CodegenCVisitor::print_get_memb_list() {
+void CodegenCppVisitor::print_get_memb_list() {
     printer->add_line("Memb_list* ml = get_memb_list(nt);");
     printer->start_block("if (!ml)");
     printer->add_line("return;");
@@ -3961,19 +3962,19 @@ void CodegenCVisitor::print_get_memb_list() {
 }
 
 
-void CodegenCVisitor::print_net_receive_loop_begin() {
+void CodegenCppVisitor::print_net_receive_loop_begin() {
     printer->add_line("int count = nrb->_displ_cnt;");
     print_channel_iteration_block_parallel_hint(BlockType::NetReceive, info.net_receive_node);
     printer->start_block("for (int i = 0; i < count; i++)");
 }
 
 
-void CodegenCVisitor::print_net_receive_loop_end() {
+void CodegenCppVisitor::print_net_receive_loop_end() {
     printer->end_block(1);
 }
 
 
-void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
+void CodegenCppVisitor::print_net_receive_buffering(bool need_mech_inst) {
     if (!net_receive_required() || info.artificial_cell) {
         return;
     }
@@ -4016,17 +4017,17 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     printer->end_block(1);
 }
 
-void CodegenCVisitor::print_net_send_buffering_cnt_update() const {
+void CodegenCppVisitor::print_net_send_buffering_cnt_update() const {
     printer->add_line("i = nsb->_cnt++;");
 }
 
-void CodegenCVisitor::print_net_send_buffering_grow() {
+void CodegenCppVisitor::print_net_send_buffering_grow() {
     printer->start_block("if (i >= nsb->_size)");
     printer->add_line("nsb->grow();");
     printer->end_block(1);
 }
 
-void CodegenCVisitor::print_net_send_buffering() {
+void CodegenCppVisitor::print_net_send_buffering() {
     if (!net_send_buffer_required()) {
         return;
     }
@@ -4052,7 +4053,7 @@ void CodegenCVisitor::print_net_send_buffering() {
 }
 
 
-void CodegenCVisitor::visit_for_netcon(const ast::ForNetcon& node) {
+void CodegenCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     // For_netcon should take the same arguments as net_receive and apply the operations
     // in the block to the weights of the netcons. Since all the weights are on the same vector,
     // weights, we have a mask of operations that we apply iteratively, advancing the offset
@@ -4089,7 +4090,7 @@ void CodegenCVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     printer->add_line("}");
 }
 
-void CodegenCVisitor::print_net_receive_kernel() {
+void CodegenCppVisitor::print_net_receive_kernel() {
     if (!net_receive_required()) {
         return;
     }
@@ -4150,7 +4151,7 @@ void CodegenCVisitor::print_net_receive_kernel() {
 }
 
 
-void CodegenCVisitor::print_net_receive() {
+void CodegenCppVisitor::print_net_receive() {
     if (!net_receive_required()) {
         return;
     }
@@ -4190,7 +4191,7 @@ void CodegenCVisitor::print_net_receive() {
  * actual variable names? [resolved now?]
  * slist needs to added as local variable
  */
-void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
+void CodegenCppVisitor::print_derivimplicit_kernel(Block* block) {
     auto ext_args = external_method_arguments();
     auto ext_params = external_method_parameters();
     auto suffix = info.mod_suffix;
@@ -4277,12 +4278,12 @@ void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
 }
 
 
-void CodegenCVisitor::print_newtonspace_transfer_to_device() const {
+void CodegenCppVisitor::print_newtonspace_transfer_to_device() const {
     // nothing to do on cpu
 }
 
 
-void CodegenCVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) {
+void CodegenCppVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) {
     if (!codegen) {
         return;
     }
@@ -4292,7 +4293,7 @@ void CodegenCVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallb
                       external_method_arguments());
 }
 
-void CodegenCVisitor::visit_solution_expression(const SolutionExpression& node) {
+void CodegenCppVisitor::visit_solution_expression(const SolutionExpression& node) {
     auto block = node.get_node_to_solve().get();
     if (block->is_statement_block()) {
         auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
@@ -4308,7 +4309,7 @@ void CodegenCVisitor::visit_solution_expression(const SolutionExpression& node) 
 /****************************************************************************************/
 
 
-void CodegenCVisitor::print_nrn_state() {
+void CodegenCppVisitor::print_nrn_state() {
     if (!nrn_state_required()) {
         return;
     }
@@ -4365,7 +4366,7 @@ void CodegenCVisitor::print_nrn_state() {
 /****************************************************************************************/
 
 
-void CodegenCVisitor::print_nrn_current(const BreakpointBlock& node) {
+void CodegenCppVisitor::print_nrn_current(const BreakpointBlock& node) {
     auto args = internal_method_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
@@ -4384,7 +4385,7 @@ void CodegenCVisitor::print_nrn_current(const BreakpointBlock& node) {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& node) {
+void CodegenCppVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& node) {
     const auto& block = node.get_statement_block();
     print_statement_block(*block, false, false);
     if (!info.currents.empty()) {
@@ -4421,7 +4422,7 @@ void CodegenCVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& no
 }
 
 
-void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
+void CodegenCppVisitor::print_nrn_cur_non_conductance_kernel() {
     printer->fmt_line("double g = nrn_current_{}({}+0.001);",
                                   info.mod_suffix,
                                   internal_method_arguments());
@@ -4455,7 +4456,7 @@ void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
+void CodegenCppVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
     print_v_unused();
@@ -4490,7 +4491,7 @@ void CodegenCVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
     print_g_unused();
 }
 
-void CodegenCVisitor::print_fast_imem_calculation() {
+void CodegenCppVisitor::print_fast_imem_calculation() {
     if (!info.electrode_current) {
         return;
     }
@@ -4518,7 +4519,7 @@ void CodegenCVisitor::print_fast_imem_calculation() {
     printer->end_block(1);
 }
 
-void CodegenCVisitor::print_nrn_cur() {
+void CodegenCppVisitor::print_nrn_cur() {
     if (!nrn_cur_required()) {
         return;
     }
@@ -4557,26 +4558,26 @@ void CodegenCVisitor::print_nrn_cur() {
 /*                            Main code printing entry points                            */
 /****************************************************************************************/
 
-void CodegenCVisitor::print_headers_include() {
+void CodegenCppVisitor::print_headers_include() {
     print_standard_includes();
     print_backend_includes();
     print_coreneuron_includes();
 }
 
 
-void CodegenCVisitor::print_namespace_begin() {
+void CodegenCppVisitor::print_namespace_begin() {
     print_namespace_start();
     print_backend_namespace_start();
 }
 
 
-void CodegenCVisitor::print_namespace_end() {
+void CodegenCppVisitor::print_namespace_end() {
     print_backend_namespace_stop();
     print_namespace_stop();
 }
 
 
-void CodegenCVisitor::print_common_getters() {
+void CodegenCppVisitor::print_common_getters() {
     print_first_pointer_var_index_getter();
     print_net_receive_arg_size_getter();
     print_thread_getters();
@@ -4586,13 +4587,13 @@ void CodegenCVisitor::print_common_getters() {
 }
 
 
-void CodegenCVisitor::print_data_structures(bool print_initialisers) {
+void CodegenCppVisitor::print_data_structures(bool print_initialisers) {
     print_mechanism_global_var_structure(print_initialisers);
     print_mechanism_range_var_structure(print_initialisers);
     print_ion_var_structure();
 }
 
-void CodegenCVisitor::print_v_unused() const {
+void CodegenCppVisitor::print_v_unused() const {
     if (!info.vectorize) {
         return;
     }
@@ -4601,13 +4602,13 @@ void CodegenCVisitor::print_v_unused() const {
     printer->add_line("#endif");
 }
 
-void CodegenCVisitor::print_g_unused() const {
+void CodegenCppVisitor::print_g_unused() const {
     printer->add_line("#if NRN_PRCELLSTATE");
     printer->add_line("inst->g_unused[id] = g;");
     printer->add_line("#endif");
 }
 
-void CodegenCVisitor::print_compute_functions() {
+void CodegenCppVisitor::print_compute_functions() {
     print_top_verbatim_blocks();
     for (const auto& procedure: info.procedures) {
         print_procedure(*procedure);
@@ -4638,7 +4639,7 @@ void CodegenCVisitor::print_compute_functions() {
 }
 
 
-void CodegenCVisitor::print_codegen_routines() {
+void CodegenCppVisitor::print_codegen_routines() {
     codegen = true;
     print_backend_info();
     print_headers_include();
@@ -4666,17 +4667,17 @@ void CodegenCVisitor::print_codegen_routines() {
 }
 
 
-void CodegenCVisitor::print_wrapper_routines() {
+void CodegenCppVisitor::print_wrapper_routines() {
     // nothing to do
 }
 
 
-void CodegenCVisitor::set_codegen_global_variables(std::vector<SymbolType>& global_vars) {
+void CodegenCppVisitor::set_codegen_global_variables(std::vector<SymbolType>& global_vars) {
     codegen_global_variables = global_vars;
 }
 
 
-void CodegenCVisitor::setup(const Program& node) {
+void CodegenCppVisitor::setup(const Program& node) {
     program_symtab = node.get_symbol_table();
 
     CodegenHelperVisitor v;
@@ -4684,7 +4685,7 @@ void CodegenCVisitor::setup(const Program& node) {
     info.mod_file = mod_filename;
 
     if (!info.vectorize) {
-        logger->warn("CodegenCVisitor : MOD file uses non-thread safe constructs of NMODL");
+        logger->warn("CodegenCppVisitor : MOD file uses non-thread safe constructs of NMODL");
     }
 
     codegen_float_variables = get_float_variables();
@@ -4695,7 +4696,7 @@ void CodegenCVisitor::setup(const Program& node) {
 }
 
 
-void CodegenCVisitor::visit_program(const Program& node) {
+void CodegenCppVisitor::visit_program(const Program& node) {
     setup(node);
     print_codegen_routines();
     print_wrapper_routines();

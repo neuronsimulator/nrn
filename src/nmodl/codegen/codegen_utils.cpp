@@ -21,7 +21,7 @@ namespace utils {
  * representation (1e+20, 1E-15) then keep it as it is.
  */
 template <>
-std::string format_double_string<CodegenCVisitor>(const std::string& s_value) {
+std::string format_double_string<CodegenCppVisitor>(const std::string& s_value) {
     double value = std::stod(s_value);
     if (std::ceil(value) == value && s_value.find_first_of("eE") == std::string::npos) {
         return fmt::format("{:.1f}", value);
@@ -31,7 +31,7 @@ std::string format_double_string<CodegenCVisitor>(const std::string& s_value) {
 
 
 template <>
-std::string format_float_string<CodegenCVisitor>(const std::string& s_value) {
+std::string format_float_string<CodegenCppVisitor>(const std::string& s_value) {
     float value = std::stof(s_value);
     if (std::ceil(value) == value && s_value.find_first_of("eE") == std::string::npos) {
         return fmt::format("{:.1f}", value);

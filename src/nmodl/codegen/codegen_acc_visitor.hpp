@@ -27,7 +27,7 @@ namespace codegen {
  * \class CodegenAccVisitor
  * \brief %Visitor for printing C code with OpenACC backend
  */
-class CodegenAccVisitor: public CodegenCVisitor {
+class CodegenAccVisitor: public CodegenCppVisitor {
   protected:
     /// name of the code generation backend
     std::string backend_name() const override;
@@ -137,13 +137,13 @@ class CodegenAccVisitor: public CodegenCVisitor {
                       const std::string& output_dir,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
+        : CodegenCppVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
 
     CodegenAccVisitor(const std::string& mod_file,
                       std::ostream& stream,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
+        : CodegenCppVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
 };
 
 /** @} */  // end of codegen_backends

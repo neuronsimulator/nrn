@@ -2237,12 +2237,12 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
 }
 
 /// Helper for creating C codegen visitor
-std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
-                                                  const std::string& /* text */,
-                                                  std::stringstream& ss,
-                                                  bool inline_visitor = true,
-                                                  bool pade = false,
-                                                  bool cse = false) {
+std::shared_ptr<CodegenCppVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
+                                                    const std::string& /* text */,
+                                                    std::stringstream& ss,
+                                                    bool inline_visitor = true,
+                                                    bool pade = false,
+                                                    bool cse = false) {
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
@@ -2264,14 +2264,14 @@ std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Pro
     NeuronSolveVisitor().visit_program(*ast);
     SolveBlockVisitor().visit_program(*ast);
 
-    // Update symtab before CodegenCVisitor
+    // Update symtab before CodegenCppVisitor
     SymtabVisitor(true).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
     CheckParentVisitor().check_ast(*ast);
 
     /// create C code generation visitor
-    auto cv = std::make_shared<CodegenCVisitor>("temp.mod", ss, "double", false);
+    auto cv = std::make_shared<CodegenCppVisitor>("temp.mod", ss, "double", false);
     cv->setup(*ast);
     return cv;
 }

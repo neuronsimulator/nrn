@@ -530,10 +530,10 @@ int main(int argc, const char* argv[]) {
 
             else if (c_backend) {
                 logger->info("Running C backend code generator");
-                CodegenCVisitor visitor(modfile,
-                                        output_dir,
-                                        data_type,
-                                        optimize_ionvar_copies_codegen);
+                CodegenCppVisitor visitor(modfile,
+                                          output_dir,
+                                          data_type,
+                                          optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
         }
