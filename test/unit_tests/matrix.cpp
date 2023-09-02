@@ -303,7 +303,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             c.vec() = {0., 0., v(2, 0), v(2, 1), v(2, 2)};
             CHECK_THAT(c.vec(), ApproxOrOpposite({0., 0., 0.66666, -0.66666, -0.3333333}));
         }
-        { // Try with vectors too short
+        {  // Try with vectors too short
             IvocVect s(2);
             s.vec() = {1., 2.};
             m.setrow(0, &s);
