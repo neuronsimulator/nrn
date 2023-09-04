@@ -1,6 +1,7 @@
 # =============================================================================
 # Build nrniv binary and corresponding library
 # =============================================================================
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
@@ -382,6 +383,8 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/memory_usage.cpp
+                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
@@ -441,7 +444,7 @@ if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(NRN_ENABLE_PROFILING)
-  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
+  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
@@ -582,11 +585,14 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
-file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
-file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-     DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
-file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
