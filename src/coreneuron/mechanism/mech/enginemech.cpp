@@ -113,13 +113,12 @@ int corenrn_embedded_run(int nthread,
     // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON and CoreNEURON
     // Instead run the CoreNEURON simulation only with the coredat files provided
     // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI options so it is removed from "nrn_arg"
-    const auto ind = static_cast<std::string>(nrn_arg).find(only_simulate_str);
-    std::cout << "================ " << nrn_arg << " ==================" << std::endl;
+    // first construct all arguments as string
+    std::string filtered_nrn_arg{nrn_arg};
+    const auto ind = static_cast<std::string>(filtered_nrn_arg).find(only_simulate_str);
     if (ind != std::string::npos) {
-        std::cout << "================ " << ind << " ==================" << std::endl;
         corenrn_only_simulate = true;
-        static_cast<std::string>(nrn_arg).erase(ind, only_simulate_str.size());
-        std::cout << "================ " << nrn_arg << " ==================" << std::endl;
+        filtered_nrn_arg.erase(ind, only_simulate_str.size());
     }
     // set coreneuron's internal variable based on neuron arguments
     corenrn_embedded = !corenrn_only_simulate;
@@ -130,23 +129,20 @@ int corenrn_embedded_run(int nthread,
     // set number of openmp threads
     set_openmp_threads(nthread);
 
-    // first construct all arguments as string
-    std::string args(nrn_arg);
-
-    args.insert(0, " coreneuron ");
-    args.append(" --skip-mpi-finalize ");
+    filtered_nrn_arg.insert(0, " coreneuron ");
+    filtered_nrn_arg.append(" --skip-mpi-finalize ");
 
     if (use_mpi) {
-        args.append(" --mpi ");
+        filtered_nrn_arg.append(" --mpi ");
     }
 
-    add_mpi_library_arg(mpi_lib, args);
+    add_mpi_library_arg(mpi_lib, filtered_nrn_arg);
 
     // pre-process argumnets from neuron and prepare new for coreneuron
     int argc;
     char** argv;
 
-    char* new_arg = prepare_args(argc, argv, args);
+    char* new_arg = prepare_args(argc, argv, filtered_nrn_arg);
 
     // initialize internal arguments
     mk_mech_init(argc, argv);
