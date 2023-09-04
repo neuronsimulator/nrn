@@ -334,6 +334,7 @@ void apply_node_flux(int n,
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
+                Py_DECREF(result);
             }
         } else {
             PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
