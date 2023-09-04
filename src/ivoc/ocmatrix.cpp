@@ -79,7 +79,9 @@ int OcFullMatrix::ncol() {
 }
 
 void OcFullMatrix::resize(int i, int j) {
-    m_.conservativeResize(i, j);
+    // This is here because we want that new values are initialized to 0
+    auto v = Eigen::MatrixXd::Zero(i, j);
+    m_.conservativeResizeLike(v);
 }
 
 void OcFullMatrix::mulv(Vect* vin, Vect* vout) {
