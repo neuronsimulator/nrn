@@ -153,7 +153,6 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
-    ${NRN_SPARSE13_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
 
 if(NRN_ENABLE_MPI)
@@ -414,6 +413,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
+target_link_libraries(nrniv_lib sparse13)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")

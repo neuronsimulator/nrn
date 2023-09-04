@@ -388,7 +388,7 @@
  * MEMORY ALLOCATION
  */
 #if 1
-#include <spmatrix.h>
+#include "spmatrix.h"
 #include <stdlib.h>
 #else
 #if !defined(__MWERKS__)

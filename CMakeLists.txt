@@ -567,6 +567,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
