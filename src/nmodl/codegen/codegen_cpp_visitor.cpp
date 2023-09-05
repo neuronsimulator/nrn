@@ -1117,8 +1117,8 @@ void CodegenCppVisitor::print_channel_iteration_block_parallel_hint(BlockType /*
                                ast::AstNodeType::MUTEX_UNLOCK});
     }
     if (nodes.empty()) {
-        printer->add_line("#pragma ivdep");
         printer->add_line("#pragma omp simd");
+        printer->add_line("#pragma ivdep");
     }
 }
 

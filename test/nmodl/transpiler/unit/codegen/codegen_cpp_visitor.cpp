@@ -569,8 +569,8 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
                              ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_2_ba1, "
                                                "BAType::Before + BAType::Initial);"));
                 std::string generated_code = R"(
-        #pragma ivdep
         #pragma omp simd
+        #pragma ivdep
         for (int id = 0; id < nodecount; id++) {
             int node_id = node_index[id];
             double v = voltage[node_id];
@@ -591,8 +591,8 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
                              ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_3_ba1, "
                                                "BAType::After + BAType::Initial);"));
                 std::string generated_code = R"(
-        #pragma ivdep
         #pragma omp simd
+        #pragma ivdep
         for (int id = 0; id < nodecount; id++) {
             int node_id = node_index[id];
             double v = voltage[node_id];
@@ -613,8 +613,8 @@ SCENARIO("Check that BEFORE/AFTER block are well generated", "[codegen][before/a
                              ContainsSubstring("hoc_reg_ba(mech_type, nrn_before_after_4_ba1, "
                                                "BAType::Before + BAType::Step);"));
                 std::string generated_code = R"(
-        #pragma ivdep
         #pragma omp simd
+        #pragma ivdep
         for (int id = 0; id < nodecount; id++) {
             int node_id = node_index[id];
             double v = voltage[node_id];
@@ -890,8 +890,8 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
         auto* const inst = static_cast<_Instance*>(ml->instance);
         int count = nrb->_displ_cnt;
-        #pragma ivdep
         #pragma omp simd
+        #pragma ivdep
         for (int i = 0; i < count; i++) {
             int start = nrb->_displ[i];
             int end = nrb->_displ[i+1];
