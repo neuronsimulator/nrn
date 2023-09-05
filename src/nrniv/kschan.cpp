@@ -10,6 +10,7 @@
 #include "ocnotify.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
+#include "ocmatrix.h"
 
 #define NSingleIndex 0
 #if defined(__MWERKS__) && !defined(_MSC_VER)
@@ -22,7 +23,6 @@ static KSChanList* channels;
 
 extern char* hoc_symbol_units(Symbol*, const char*);
 extern void nrn_mk_table_check();
-extern spREAL* spGetElement(char*, int, int);
 
 static Symbol* ksstate_sym;
 static Symbol* ksgate_sym;
@@ -880,7 +880,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
     Sprintf(buf, "Chan%d", obj_->index);
     name_ = buf;
     ion_ = "NonSpecific";
-    mat_ = NULL;
+    mat_ = nullptr;
     elms_ = NULL;
     diag_ = NULL;
     gmax_deflt_ = 0.;
@@ -1277,10 +1277,9 @@ void KSChan::free1() {
         ligands_ = NULL;
     }
     if (mat_) {
-        spDestroy(mat_);
+        mat_ = nullptr;
         delete[] elms_;
         delete[] diag_;
-        mat_ = NULL;
     }
     ngate_ = 0;
     nstate_ = 0;
@@ -2109,44 +2108,30 @@ void KSChan::freesym(Symbol* s, Symbol* top) {
 }
 
 void KSChan::setupmat() {
-    int i, j, err;
     // printf("KSChan::setupmat nksstate=%d\n", nksstate_);
-    if (mat_) {
-        spDestroy(mat_);
-        delete[] elms_;
-        delete[] diag_;
-        mat_ = NULL;
-    }
     if (!nksstate_) {
         return;
     }
-    mat_ = spCreate(nksstate_, 0, &err);
-    if (err != spOKAY) {
-        hoc_execerror("Couldn't create sparse matrix", 0);
-    }
-    spFactor(mat_);  // will fail but creates an internal vector needed by
-                     // mulmat which might be called prior to initialization
-                     // when switching to cvode active.
+    mat_ = std::make_unique<OcSparseMatrix>(nksstate_, nksstate_);
     elms_ = new double*[4 * (ntrans_ - ivkstrans_)];
     diag_ = new double*[nksstate_];
-    for (i = ivkstrans_, j = 0; i < ntrans_; ++i) {
-        int s, t;
-        s = trans_[i].src_ - nhhstate_ + 1;
-        t = trans_[i].target_ - nhhstate_ + 1;
-        elms_[j++] = spGetElement(mat_, s, s);
-        elms_[j++] = spGetElement(mat_, s, t);
-        elms_[j++] = spGetElement(mat_, t, t);
-        elms_[j++] = spGetElement(mat_, t, s);
+    for (int i = ivkstrans_, j = 0; i < ntrans_; ++i) {
+        int s = trans_[i].src_ - nhhstate_;
+        int t = trans_[i].target_ - nhhstate_;
+        elms_[j++] = mat_->mep(s, s);
+        elms_[j++] = mat_->mep(s, t);
+        elms_[j++] = mat_->mep(t, t);
+        elms_[j++] = mat_->mep(t, s);
     }
-    for (i = 0; i < nksstate_; ++i) {
-        diag_[i] = spGetElement(mat_, i + 1, i + 1);
+    for (int i = 0; i < nksstate_; ++i) {
+        diag_[i] = mat_->mep(i, i);
     }
 }
 
 void KSChan::fillmat(double v, Datum* pd) {
     int i, j;
     double a, b;
-    spClear(mat_);
+    mat_->zero();
     for (i = ivkstrans_, j = 0; i < iligtrans_; ++i) {
         trans_[i].ab(v, a, b);
         // printf("trans %d v=%g a=%g b=%g\n", i, v, a, b);
@@ -2164,7 +2149,6 @@ void KSChan::fillmat(double v, Datum* pd) {
         *elms_[j++] += a;
     }
     // printf("after fill\n");
-    // spPrint(mat_, 0, 1, 0);
 }
 
 void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset) {
@@ -2181,26 +2165,15 @@ void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t 
 void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     // spSolve seems to require that the parameters are contiguous, which
     // they're not anymore in the real NEURON data structure
-    std::vector<double> s(nksstate_ + 1);  // +1 so the pointer arithmetic to account for 1-based
-                                           // indexing is valid
+    std::vector<double> s(nksstate_);
     for (auto j = 0; j < nksstate_; ++j) {
-        s[j + 1] = ml->data(instance, offset + j);
+        s[j] = ml->data(instance, offset + j);
     }
-    auto const e = spFactor(mat_);
-    if (e != spOKAY) {
-        switch (e) {
-        case spZERO_DIAG:
-            hoc_execerror("spFactor error:", "Zero Diagonal");
-        case spNO_MEMORY:
-            hoc_execerror("spFactor error:", "No Memory");
-        case spSINGULAR:
-            hoc_execerror("spFactor error:", "Singular");
-        }
-    }
-    spSolve(mat_, s.data(), s.data());
+    IvocVect in{}; in.vec() = s;
+    mat_->solv(&in, &in, false);
     // Propgate the solution back to the mechanism data
     for (auto j = 0; j < nksstate_; ++j) {
-        ml->data(instance, offset + j) = s[j + 1];
+        ml->data(instance, offset + j) = s[j];
     }
 }
 
@@ -2216,7 +2189,9 @@ void KSChan::mulmat(Memb_list* ml,
         s[j + 1] = ml->data(instance, offset_s + j);
         ds[j + 1] = ml->data(instance, offset_ds + j);
     }
-    spMultiply(mat_, ds.data(), s.data());
+    IvocVect in{}; in.vec() = ds;
+    IvocVect out{}; out.vec() = s;
+    mat_->mulv(&in, &out);
     // Propagate the results
     for (auto j = 0; j < nksstate_; ++j) {
         ml->data(instance, offset_s + j) = s[j + 1];
