@@ -303,7 +303,7 @@ class JinjaTask(
         raise Exception("Unexpected output file extension: " + suffix)
 
     def render(self):
-        """Call Jinja renderer to create the output file and mark it read-only
+        """Call Jinja renderer to create the output file.
 
         The output file is updated only if missing or if the new content
         is different.
@@ -322,10 +322,6 @@ class JinjaTask(
             self.format_output(Path(tmp_path))
             if not filecmp.cmp(str(self.output), tmp_path, shallow=False):
                 self.logger.debug("previous output differs, updating it")
-                # ensure destination file has write permissions
-                mode = self.output.stat().st_mode
-                rm_write_mask = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
-                self.output.chmod(mode | rm_write_mask)
                 shutil.copy2(tmp_path, self.output)
                 updated = True
         else:
@@ -333,10 +329,7 @@ class JinjaTask(
                 fd.write(content)
             self.format_output(self.output)
             updated = True
-        # remove write permissions on the generated file
-        mode = self.output.stat().st_mode
-        rm_write_mask = ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-        self.output.chmod(mode & rm_write_mask)
+
         return updated
 
 
