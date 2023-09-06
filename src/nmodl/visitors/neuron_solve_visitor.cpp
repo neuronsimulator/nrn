@@ -32,7 +32,7 @@ void NeuronSolveVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
     node.visit_children(*this);
     derivative_block = false;
     if (solve_blocks[derivative_block_name] == codegen::naming::EULER_METHOD) {
-        auto& statement_block = node.get_statement_block();
+        const auto& statement_block = node.get_statement_block();
         for (auto& e: euler_solution_expressions) {
             statement_block->emplace_back_statement(e);
         }

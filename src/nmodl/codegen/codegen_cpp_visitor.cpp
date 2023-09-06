@@ -4060,7 +4060,7 @@ void CodegenCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     // to the next netcon.
     const auto& args = node.get_parameters();
     RenameVisitor v;
-    auto& statement_block = node.get_statement_block();
+    const auto& statement_block = node.get_statement_block();
     for (size_t i_arg = 0; i_arg < args.size(); ++i_arg) {
         // sanitize node_name since we want to substitute names like (*w) as they are
         auto old_name =

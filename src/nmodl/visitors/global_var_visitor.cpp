@@ -25,7 +25,7 @@ void GlobalToRangeVisitor::visit_neuron_block(ast::NeuronBlock& node) {
     std::unordered_set<ast::GlobalVar*> global_variables_to_remove;
     std::unordered_set<ast::Statement*> global_statements_to_remove;
 
-    auto& statement_block = node.get_statement_block();
+    auto const& statement_block = node.get_statement_block();
     auto& statements = (*statement_block).get_statements();
     const auto& symbol_table = ast.get_symbol_table();
 

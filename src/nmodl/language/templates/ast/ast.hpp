@@ -273,7 +273,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    *
    * \sa ast::StatementBlock
    */
-  virtual const std::shared_ptr<StatementBlock>& get_statement_block() const;
+  virtual std::shared_ptr<StatementBlock> get_statement_block() const;
 
   /**
    * \brief Set symbol table for the AST node

@@ -253,8 +253,8 @@ class SympyReplaceSolutionsVisitor: public AstVisitor {
      */
     void try_replace_tagged_statement(
         const ast::Node& node,
-        const std::shared_ptr<ast::Expression>& get_lhs(const ast::Node& node),
-        const std::shared_ptr<ast::Expression>& get_rhs(const ast::Node& node));
+        std::shared_ptr<ast::Expression> get_lhs(const ast::Node& node),
+        std::shared_ptr<ast::Expression> get_rhs(const ast::Node& node));
 
     /**
      * \struct InterleavesCounter
