@@ -1297,6 +1297,7 @@ if (g != nil) g.line(tobj.x[0], tobj.x[1]) g.flush
 	for i=1,3 { $oi = pts.getrow(i-1) }
 //	print d  d.printf  print rad rad.printf
 //	print side2 side2.printf  print rad2  rad2.printf
+        orient($o1, $o2, $o3, $o4) // 0 end first
 }
 
 proc contourstack2centroid() {local i, j, area, d  localobj c
@@ -1309,6 +1310,29 @@ proc contourstack2centroid() {local i, j, area, d  localobj c
 		c = $o5.contour_list.object(j).approximate_contour_by_circle(&d)
 		$o4.append(d) for i=1,3 { $oi.append(c.x[i-1]) }
 	}
+        orient($o1, $o2, $o3, $o4) // 0 end first
+}
+
+proc orient() { local i, n1, r  localobj v1
+    // first point defines the 0 end. If we want that to be the 1 end,
+    // then reverse.
+    r = 0 // do not reverse
+    n1 = $o1.size() - 1
+    v1 = new Vector(3)
+    v1.x[0] = $o1.x[n1] - $o1.x[0]
+    v1.x[1] = $o2.x[n1] - $o2.x[0]
+    v1.x[2] = $o3.x[n1] - $o3.x[0]
+    // reverse if largest direction not positive
+    i = v1.c().abs().max_ind()
+    if (v1.x[i] < 0) {
+        r = 1
+    }
+    if (r) {
+        $o1.reverse()
+        $o2.reverse()
+        $o3.reverse()
+        $o4.reverse()
+    }
 }
 
 proc name() {
