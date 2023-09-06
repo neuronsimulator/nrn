@@ -535,54 +535,6 @@ std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
 }
 
 
-int CodegenCppVisitor::float_variables_size() const {
-    auto count_length = [](int l, const SymbolType& variable) {
-        return l += variable->get_length();
-    };
-
-    int float_size = std::accumulate(info.range_parameter_vars.begin(),
-                                     info.range_parameter_vars.end(),
-                                     0,
-                                     count_length);
-    float_size += std::accumulate(info.range_assigned_vars.begin(),
-                                  info.range_assigned_vars.end(),
-                                  0,
-                                  count_length);
-    float_size += std::accumulate(info.range_state_vars.begin(),
-                                  info.range_state_vars.end(),
-                                  0,
-                                  count_length);
-    float_size +=
-        std::accumulate(info.assigned_vars.begin(), info.assigned_vars.end(), 0, count_length);
-
-    /// all state variables for which we add Dstate variables
-    float_size += std::accumulate(info.state_vars.begin(), info.state_vars.end(), 0, count_length);
-
-    /// for v_unused variable
-    if (info.vectorize) {
-        float_size++;
-    }
-    /// for g_unused variable
-    if (breakpoint_exist()) {
-        float_size++;
-    }
-    /// for tsave variable
-    if (net_receive_exist()) {
-        float_size++;
-    }
-    return float_size;
-}
-
-
-int CodegenCppVisitor::int_variables_size() const {
-    int num_variables = 0;
-    for (const auto& semantic: info.semantics) {
-        num_variables += semantic.size;
-    }
-    return num_variables;
-}
-
-
 /**
  * \details Depending upon the block type, we have to print read/write ion variables
  * during code generation. Depending on block/procedure being printed, this
@@ -2192,13 +2144,13 @@ void CodegenCppVisitor::print_num_variable_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline int float_variables_size()");
-    printer->fmt_line("return {};", float_variables_size());
+    printer->fmt_line("return {};", codegen_float_variables.size());
     printer->end_block(1);
 
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline int int_variables_size()");
-    printer->fmt_line("return {};", int_variables_size());
+    printer->fmt_line("return {};", codegen_int_variables.size());
     printer->end_block(1);
 }
 
