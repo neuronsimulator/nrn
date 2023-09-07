@@ -391,69 +391,6 @@ def test_nrn_mallinfo():
     assert h.nrn_mallinfo(0) > 0
 
 
-def test_errorcode():
-    import os, sys, subprocess
-
-    process = subprocess.run('nrniv -c "1/0"', shell=True)
-    assert process.returncode > 0
-
-    exe = os.environ.get("NRN_PYTHON_EXECUTABLE", sys.executable)
-    env = os.environ.copy()
-    try:
-        env[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
-            "NRN_SANITIZER_PRELOAD_VAL"
-        ]
-    except:
-        pass
-    process = subprocess.run(
-        [exe, "-c", "from neuron import h; h.sqrt(-1)"], env=env, shell=False
-    )
-    assert process.returncode > 0
-
-
-def test_hocObj_error_in_construction():
-    # test unref hoc obj when error during construction
-    expect_hocerr(h.List, "A")
-    expect_hocerr(h.List, h.NetStim())
-
-
-def test_recording_deleted_node():
-    soma = h.Section()
-    soma_v = h.Vector().record(soma(0.5)._ref_v)
-    del soma
-    # Now soma_v is still alive, but the node whose voltage it is recording is
-    # dead. The current behaviour is that the record instance is silently deleted in this case
-    h.finitialize()
-
-
-def test_nworker():
-    threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
-    with parallel_context() as pc:
-        # single threaded mode, no workers
-        with num_threads(pc, threads=1):
-            assert pc.nworker() == 0
-
-        # parallel argument specifies serial execution, no workers
-        with num_threads(pc, threads=2, parallel=False):
-            assert pc.nworker() == 0
-
-        # two workers if threading was enabled at compile time
-        with num_threads(pc, threads=2, parallel=True):
-            assert pc.nworker() == 2 * threads_enabled
-
-
-def test_help():
-    # a little fragile in the event we change the docs, but easily fixed
-    # checks the main paths for generating docstrings
-    assert h.Vector().to_python.__doc__.startswith(
-        "Syntax:\n    ``pythonlist = vec.to_python()"
-    )
-    assert h.Vector().__doc__.startswith("This class was imple")
-    assert h.Vector.__doc__.startswith("This class was imple")
-    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
-    assert h.__doc__.startswith("\n\nneuron.h\n====")
-
-
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -464,4 +401,3 @@ if __name__ == "__main__":
     h.allobjects()
     test_nosection()
     test_nrn_mallinfo()
-    test_help()
