@@ -40,6 +40,8 @@ jobs:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Install Python dependencies
         working-directory: ${{runner.workspace}}/nrn
