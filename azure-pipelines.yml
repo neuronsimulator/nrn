@@ -81,26 +81,6 @@ stages:
       - template: ci/azure-wheel-test-upload.yml
 
 
-    - job: 'ManyLinuxGPUWheels'
-      timeoutInMinutes: 30
-      pool:
-        vmImage: 'ubuntu-20.04'
-      variables:
-        GPU_BUILD: 'true'
-      strategy:
-        matrix:
-          Python37:
-            python.version: '3.7'
-          Python38:
-            python.version: '3.8'
-          Python39:
-            python.version: '3.9'
-          Python310:
-            python.version: '3.10'
-          Python311:
-            python.version: '3.11'
-      steps:
-
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
       #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
