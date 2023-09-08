@@ -51,7 +51,7 @@ Matrix* matrix_arg(int i) {
 static Object** temp_objvar(Matrix* m) {
     Object** po;
     if (m->obj_) {
-        po = hoc_temp_objptr((Object*) m->obj_);
+        po = hoc_temp_objptr(m->obj_);
     } else {
         po = hoc_temp_objvar(nrn_matrix_sym, (void*) m);
         m->obj_ = *po;

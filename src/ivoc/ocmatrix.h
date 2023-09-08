@@ -10,6 +10,7 @@
 #include <vector>
 using std::vector;
 
+struct Object;
 class IvocVect;
 class OcFullMatrix;
 #define Vect   IvocVect
@@ -143,7 +144,7 @@ class OcMatrix {
     OcMatrix(int type);
 
   public:
-    void* obj_;
+    Object* obj_{};
 
   private:
     int type_;
