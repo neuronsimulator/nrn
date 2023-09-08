@@ -10,7 +10,6 @@
 #include <vector>
 using std::vector;
 
-struct Object;
 class IvocVect;
 class OcFullMatrix;
 #define Vect   IvocVect
@@ -139,13 +138,12 @@ class OcMatrix {
     }
 
     void unimp();
-    Object** temp_objvar();
 
   protected:
     OcMatrix(int type);
 
   public:
-    Object* obj_;
+    void* obj_;
 
   private:
     int type_;
