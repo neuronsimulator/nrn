@@ -385,6 +385,7 @@ T NrnFullMatrix<T>::det(int* e) {
     PX_FREE(piv);
     return m;
 }
+template class NrnFullMatrix<double>;
 
 //--------------------------
 
