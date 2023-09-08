@@ -15,31 +15,32 @@ class OcFullMatrix;
 #define Vect   IvocVect
 #define Matrix OcMatrix
 
-class OcMatrix {
+template <typename T>
+class NrnMatrix {
   public:
     enum { MFULL = 1, MSPARSE, MBAND };
-    static OcMatrix* instance(int nrow, int ncol, int type = MFULL);
-    virtual ~OcMatrix();
+    static NrnMatrix* instance(int nrow, int ncol, int type = MFULL);
+    virtual ~NrnMatrix() = default;
 
-    virtual double* mep(int i, int j) {
+    virtual T* mep(int i, int j) {
         unimp();
         return nullptr;
     }  // matrix element pointer
-    inline double& operator()(int i, int j) {
+    inline T& operator()(int i, int j) {
         return *mep(i, j);
     };
 
-    virtual double getval(int i, int j) {
+    virtual T getval(int i, int j) {
         unimp();
-        return 0.;
+        return {};
     }
     virtual int nrow() {
         unimp();
-        return 0;
+        return {};
     }
     virtual int ncol() {
         unimp();
-        return 0;
+        return {};
     }
     virtual void resize(int, int) {
         unimp();
@@ -55,13 +56,13 @@ class OcMatrix {
     virtual void mulv(Vect* in, Vect* out) {
         unimp();
     }
-    virtual void mulm(Matrix* in, Matrix* out) {
+    virtual void mulm(NrnMatrix<T>* in, NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void muls(double, Matrix* out) {
+    virtual void muls(T, NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void add(Matrix*, Matrix* out) {
+    virtual void add(NrnMatrix<T>*, NrnMatrix<T>* out) {
         unimp();
     }
     virtual void getrow(int, Vect* out) {
@@ -82,13 +83,13 @@ class OcMatrix {
     virtual void setdiag(int, Vect* in) {
         unimp();
     }
-    virtual void setrow(int, double in) {
+    virtual void setrow(int, T in) {
         unimp();
     }
-    virtual void setcol(int, double in) {
+    virtual void setcol(int, T in) {
         unimp();
     }
-    virtual void setdiag(int, double in) {
+    virtual void setdiag(int, T in) {
         unimp();
     }
     virtual void zero() {
@@ -97,50 +98,50 @@ class OcMatrix {
     virtual void ident() {
         unimp();
     }
-    virtual void exp(Matrix* out) {
+    virtual void exp(NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void pow(int, Matrix* out) {
+    virtual void pow(int, NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void inverse(Matrix* out) {
+    virtual void inverse(NrnMatrix<T>* out) {
         unimp();
     }
     virtual void solv(Vect* vin, Vect* vout, bool use_lu) {
         unimp();
     }
-    virtual void copy(Matrix* out) {
+    virtual void copy(NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) {
+    virtual void bcopy(NrnMatrix<T>* mout, int i0, int j0, int n0, int m0, int i1, int j1) {
         unimp();
     }
-    virtual void transpose(Matrix* out) {
+    virtual void transpose(NrnMatrix<T>* out) {
         unimp();
     }
-    virtual void symmeigen(Matrix* mout, Vect* vout) {
+    virtual void symmeigen(NrnMatrix<T>* mout, Vect* vout) {
         unimp();
     }
-    virtual void svd1(Matrix* u, Matrix* v, Vect* d) {
+    virtual void svd1(NrnMatrix<T>* u, NrnMatrix<T>* v, Vect* d) {
         unimp();
     }
-    virtual double det(int* e) {
+    virtual T det(int* e) {
         unimp();
-        return 0.0;
+        return {};
     }
     virtual int sprowlen(int) {
         unimp();
-        return 0;
+        return {};
     }
-    virtual double spgetrowval(int i, int jindx, int* j) {
+    virtual T spgetrowval(int i, int jindx, int* j) {
         unimp();
-        return 0.;
+        return {};
     }
 
     void unimp();
 
   protected:
-    OcMatrix(int type);
+    NrnMatrix(int type);
 
   public:
     void* obj_;
@@ -148,10 +149,11 @@ class OcMatrix {
   private:
     int type_;
 };
+using OcMatrix = NrnMatrix<double>;
 
 extern Matrix* matrix_arg(int);
 
-class OcFullMatrix: public OcMatrix {  // type 1
+class OcFullMatrix: public NrnMatrix<double> {  // type 1
   public:
     OcFullMatrix(int, int);
     virtual ~OcFullMatrix();
@@ -194,7 +196,7 @@ class OcFullMatrix: public OcMatrix {  // type 1
     PERM* lu_pivot_;
 };
 
-class OcSparseMatrix: public OcMatrix {  // type 2
+class OcSparseMatrix: public NrnMatrix<double> {  // type 2
   public:
     OcSparseMatrix(int, int);
     virtual ~OcSparseMatrix();

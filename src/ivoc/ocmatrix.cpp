@@ -24,7 +24,7 @@ int nrn_matrix_dim(void*, int);
 using std::vector;
 
 int nrn_matrix_dim(void* vm, int d) {
-    OcMatrix* m = (OcMatrix*) vm;
+    NrnMatrix<double>* m = (NrnMatrix<double>*) vm;
     return d ? m->ncol() : m->nrow();
 }
 
@@ -40,13 +40,14 @@ static void Vect2VEC(Vect* v1, VEC& v2) {
 #endif
 }
 
-OcMatrix::OcMatrix(int type) {
+template <typename T>
+NrnMatrix<T>::NrnMatrix(int type) {
     obj_ = nullptr;
     type_ = type;
 }
-OcMatrix::~OcMatrix() {}
 
-OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
+template <typename T>
+NrnMatrix<T>* NrnMatrix<T>::instance(int nrow, int ncol, int type) {
     switch (type) {
     default:
     case MFULL:
@@ -56,11 +57,13 @@ OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
     }
 }
 
-void OcMatrix::unimp() {
+template <typename T>
+void NrnMatrix<T>::unimp() {
     hoc_execerror("Matrix method not implemented for this type matrix", 0);
 }
 
-void OcMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+template <typename T>
+void NrnMatrix<T>::nonzeros(vector<int>& m, vector<int>& n) {
     m.clear();
     n.clear();
     for (int i = 0; i < nrow(); i++) {
@@ -73,6 +76,7 @@ void OcMatrix::nonzeros(vector<int>& m, vector<int>& n) {
     }
 }
 
+template class NrnMatrix<double>;
 void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
     m.clear();
     n.clear();
@@ -88,7 +92,8 @@ void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
 }
 
 
-OcFullMatrix* OcMatrix::full() {
+template <typename T>
+OcFullMatrix* NrnMatrix<T>::full() {
     if (type_ != MFULL) {  // could clone one maybe
         hoc_execerror("Matrix is not a FULL matrix (type 1)", 0);
     }
@@ -96,7 +101,7 @@ OcFullMatrix* OcMatrix::full() {
 }
 
 OcFullMatrix::OcFullMatrix(int nrow, int ncol)
-    : OcMatrix(MFULL) {
+    : NrnMatrix<double>(MFULL) {
     lu_factor_ = nullptr;
     lu_pivot_ = nullptr;
     m_ = m_get(nrow, ncol);
@@ -352,7 +357,7 @@ double OcFullMatrix::det(int* e) {
 //--------------------------
 
 OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
-    : OcMatrix(MSPARSE) {
+    : NrnMatrix<double>(MSPARSE) {
     /* sp_get -- get sparse matrix
        -- len is number of elements available for each row without
           allocating further memory */
