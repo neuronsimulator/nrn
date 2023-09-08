@@ -7,6 +7,7 @@
 
 from importlib import import_module
 
+import itertools
 import sympy as sp
 import re
 
@@ -310,13 +311,14 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     vecFcode = []
     for i, eq in enumerate(eqs):
         vecFcode.append(f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}")
+
     vecJcode = []
-    for i, jac in enumerate(jacobian):
-        # todo: fix indexing to be ascending order
-        flat_index = jacobian.rows * (i % jacobian.rows) + (i // jacobian.rows)
-        vecJcode.append(
-            f"J[{flat_index}] = {sp.ccode(jac.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}"
-        )
+    for i, j in itertools.product(range(jacobian.rows), range(jacobian.cols)):
+        flat_index = i + jacobian.rows * j
+
+        rhs = sp.ccode(jacobian[i,j].simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)
+        vecJcode.append(f"J[{flat_index}] = {rhs}")
+
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
 
