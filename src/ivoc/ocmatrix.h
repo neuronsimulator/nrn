@@ -11,7 +11,8 @@
 using std::vector;
 
 class IvocVect;
-class OcFullMatrix;
+template <typename T>
+class NrnFullMatrix;
 #define Vect   IvocVect
 #define Matrix OcMatrix
 
@@ -48,7 +49,7 @@ class NrnMatrix {
 
     virtual void nonzeros(vector<int>& m, vector<int>& n);
 
-    OcFullMatrix* full();
+    NrnFullMatrix<T>* full();
 
     inline void mulv(Vect& in, Vect& out) {
         mulv(&in, &out);
@@ -153,20 +154,21 @@ using OcMatrix = NrnMatrix<double>;
 
 extern Matrix* matrix_arg(int);
 
-class OcFullMatrix: public NrnMatrix<double> {  // type 1
+template <typename T>
+class NrnFullMatrix: public NrnMatrix<T> {  // type 1
   public:
-    OcFullMatrix(int, int);
-    virtual ~OcFullMatrix();
+    NrnFullMatrix(int, int);
+    virtual ~NrnFullMatrix();
 
-    virtual double* mep(int, int);
-    virtual double getval(int i, int j);
+    virtual T* mep(int, int);
+    virtual T getval(int i, int j);
     virtual int nrow();
     virtual int ncol();
     virtual void resize(int, int);
 
     virtual void mulv(Vect* in, Vect* out);
     virtual void mulm(Matrix* in, Matrix* out);
-    virtual void muls(double, Matrix* out);
+    virtual void muls(T, Matrix* out);
     virtual void add(Matrix*, Matrix* out);
     virtual void getrow(int, Vect* out);
     virtual void getcol(int, Vect* out);
@@ -174,9 +176,9 @@ class OcFullMatrix: public NrnMatrix<double> {  // type 1
     virtual void setrow(int, Vect* in);
     virtual void setcol(int, Vect* in);
     virtual void setdiag(int, Vect* in);
-    virtual void setrow(int, double in);
-    virtual void setcol(int, double in);
-    virtual void setdiag(int, double in);
+    virtual void setrow(int, T in);
+    virtual void setcol(int, T in);
+    virtual void setdiag(int, T in);
     virtual void zero();
     virtual void ident();
     virtual void exp(Matrix* out);
@@ -188,13 +190,14 @@ class OcFullMatrix: public NrnMatrix<double> {  // type 1
     virtual void transpose(Matrix* out);
     virtual void symmeigen(Matrix* mout, Vect* vout);
     virtual void svd1(Matrix* u, Matrix* v, Vect* d);
-    virtual double det(int* exponent);
+    virtual T det(int* exponent);
 
   private:
     MAT* m_;
     MAT* lu_factor_;
     PERM* lu_pivot_;
 };
+using OcFullMatrix = NrnFullMatrix<double>;
 
 class OcSparseMatrix: public NrnMatrix<double> {  // type 2
   public:

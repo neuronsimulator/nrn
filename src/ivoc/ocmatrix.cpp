@@ -51,7 +51,7 @@ NrnMatrix<T>* NrnMatrix<T>::instance(int nrow, int ncol, int type) {
     switch (type) {
     default:
     case MFULL:
-        return new OcFullMatrix(nrow, ncol);
+        return new NrnFullMatrix<double>(nrow, ncol);
     case MSPARSE:
         return new OcSparseMatrix(nrow, ncol);
     }
@@ -93,99 +93,118 @@ void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
 
 
 template <typename T>
-OcFullMatrix* NrnMatrix<T>::full() {
+NrnFullMatrix<T>* NrnMatrix<T>::full() {
     if (type_ != MFULL) {  // could clone one maybe
         hoc_execerror("Matrix is not a FULL matrix (type 1)", 0);
     }
-    return (OcFullMatrix*) this;
+    return (NrnFullMatrix<T>*) this;
 }
 
-OcFullMatrix::OcFullMatrix(int nrow, int ncol)
-    : NrnMatrix<double>(MFULL) {
+template <typename T>
+NrnFullMatrix<T>::NrnFullMatrix(int nrow, int ncol)
+    : NrnMatrix<T>(NrnMatrix<T>::MFULL) {
     lu_factor_ = nullptr;
     lu_pivot_ = nullptr;
     m_ = m_get(nrow, ncol);
 }
-OcFullMatrix::~OcFullMatrix() {
+template <typename T>
+NrnFullMatrix<T>::~NrnFullMatrix() {
     if (lu_factor_) {
         M_FREE(lu_factor_);
         PX_FREE(lu_pivot_);
     }
     M_FREE(m_);
 }
-double* OcFullMatrix::mep(int i, int j) {
+template <typename T>
+T* NrnFullMatrix<T>::mep(int i, int j) {
     return &m_->me[i][j];
 }
-double OcFullMatrix::getval(int i, int j) {
+template <typename T>
+T NrnFullMatrix<T>::getval(int i, int j) {
     return m_->me[i][j];
 }
-int OcFullMatrix::nrow() {
+template <typename T>
+int NrnFullMatrix<T>::nrow() {
     return m_->m;
 }
-int OcFullMatrix::ncol() {
+template <typename T>
+int NrnFullMatrix<T>::ncol() {
     return m_->n;
 }
 
-void OcFullMatrix::resize(int i, int j) {
+template <typename T>
+void NrnFullMatrix<T>::resize(int i, int j) {
     m_resize(m_, i, j);
 }
 
-void OcFullMatrix::mulv(Vect* vin, Vect* vout) {
+template <typename T>
+void NrnFullMatrix<T>::mulv(Vect* vin, Vect* vout) {
     VEC v1, v2;
     Vect2VEC(vin, v1);
     Vect2VEC(vout, v2);
     mv_mlt(m_, &v1, &v2);
 }
 
-void OcFullMatrix::mulm(Matrix* in, Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::mulm(Matrix* in, Matrix* out) {
     m_mlt(m_, in->full()->m_, out->full()->m_);
 }
 
-void OcFullMatrix::muls(double s, Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::muls(T s, Matrix* out) {
     sm_mlt(s, m_, out->full()->m_);
 }
 
-void OcFullMatrix::add(Matrix* in, Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::add(Matrix* in, Matrix* out) {
     m_add(m_, in->full()->m_, out->full()->m_);
 }
 
-void OcFullMatrix::copy(Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::copy(Matrix* out) {
     m_copy(m_, out->full()->m_);
 }
 
-void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) {
+template <typename T>
+void NrnFullMatrix<T>::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) {
     m_move(m_, i0, j0, n0, m0, out->full()->m_, i1, j1);
 }
 
-void OcFullMatrix::transpose(Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::transpose(Matrix* out) {
     m_transp(m_, out->full()->m_);
 }
 
-void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
+template <typename T>
+void NrnFullMatrix<T>::symmeigen(Matrix* mout, Vect* vout) {
     VEC v1;
     Vect2VEC(vout, v1);
     symmeig(m_, mout->full()->m_, &v1);
 }
 
-void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
+template <typename T>
+void NrnFullMatrix<T>::svd1(Matrix* u, Matrix* v, Vect* d) {
     VEC v1;
     Vect2VEC(d, v1);
     svd(m_, u ? u->full()->m_ : nullptr, v ? v->full()->m_ : nullptr, &v1);
 }
 
-void OcFullMatrix::getrow(int k, Vect* out) {
+template <typename T>
+void NrnFullMatrix<T>::getrow(int k, Vect* out) {
     VEC v1;
     Vect2VEC(out, v1);
     get_row(m_, k, &v1);
 }
 
-void OcFullMatrix::getcol(int k, Vect* out) {
+template <typename T>
+void NrnFullMatrix<T>::getcol(int k, Vect* out) {
     VEC v1;
     Vect2VEC(out, v1);
     get_col(m_, k, &v1);
 }
 
-void OcFullMatrix::getdiag(int k, Vect* out) {
+template <typename T>
+void NrnFullMatrix<T>::getdiag(int k, Vect* out) {
     int i, j, row, col;
     row = nrow();
     col = ncol();
@@ -210,19 +229,22 @@ void OcFullMatrix::getdiag(int k, Vect* out) {
     }
 }
 
-void OcFullMatrix::setrow(int k, Vect* in) {
+template <typename T>
+void NrnFullMatrix<T>::setrow(int k, Vect* in) {
     VEC v1;
     Vect2VEC(in, v1);
     set_row(m_, k, &v1);
 }
 
-void OcFullMatrix::setcol(int k, Vect* in) {
+template <typename T>
+void NrnFullMatrix<T>::setcol(int k, Vect* in) {
     VEC v1;
     Vect2VEC(in, v1);
     set_col(m_, k, &v1);
 }
 
-void OcFullMatrix::setdiag(int k, Vect* in) {
+template <typename T>
+void NrnFullMatrix<T>::setdiag(int k, Vect* in) {
     int i, j, row, col;
     row = nrow();
     col = ncol();
@@ -247,21 +269,24 @@ void OcFullMatrix::setdiag(int k, Vect* in) {
     }
 }
 
-void OcFullMatrix::setrow(int k, double in) {
+template <typename T>
+void NrnFullMatrix<T>::setrow(int k, T in) {
     int i, col = ncol();
     for (i = 0; i < col; ++i) {
         m_set_val(m_, k, i, in);
     }
 }
 
-void OcFullMatrix::setcol(int k, double in) {
+template <typename T>
+void NrnFullMatrix<T>::setcol(int k, T in) {
     int i, row = nrow();
     for (i = 0; i < row; ++i) {
         m_set_val(m_, i, k, in);
     }
 }
 
-void OcFullMatrix::setdiag(int k, double in) {
+template <typename T>
+void NrnFullMatrix<T>::setdiag(int k, T in) {
     int i, j, row, col;
     row = nrow();
     col = ncol();
@@ -276,27 +301,33 @@ void OcFullMatrix::setdiag(int k, double in) {
     }
 }
 
-void OcFullMatrix::zero() {
+template <typename T>
+void NrnFullMatrix<T>::zero() {
     m_zero(m_);
 }
 
-void OcFullMatrix::ident() {
+template <typename T>
+void NrnFullMatrix<T>::ident() {
     m_ident(m_);
 }
 
-void OcFullMatrix::exp(Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::exp(Matrix* out) {
     m_exp(m_, 0., out->full()->m_);
 }
 
-void OcFullMatrix::pow(int i, Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::pow(int i, Matrix* out) {
     m_pow(m_, i, out->full()->m_);
 }
 
-void OcFullMatrix::inverse(Matrix* out) {
+template <typename T>
+void NrnFullMatrix<T>::inverse(Matrix* out) {
     m_inverse(m_, out->full()->m_);
 }
 
-void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+template <typename T>
+void NrnFullMatrix<T>::solv(Vect* in, Vect* out, bool use_lu) {
     bool call_lufac = true;
     if (!lu_factor_) {
         lu_factor_ = m_get(nrow(), nrow());
@@ -316,13 +347,14 @@ void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     LUsolve(lu_factor_, lu_pivot_, &v1, &v2);
 }
 
-double OcFullMatrix::det(int* e) {
+template <typename T>
+T NrnFullMatrix<T>::det(int* e) {
     int n = nrow();
     MAT* lu = m_get(n, n);
     PERM* piv = px_get(n);
     m_copy(m_, lu);
     LUfactor(lu, piv);
-    double m = 1.0;
+    T m = 1.0;
     *e = 0;
     for (int i = 0; i < n; ++i) {
         m *= lu->me[i][i];
@@ -348,7 +380,7 @@ double OcFullMatrix::det(int* e) {
             *e -= 1;
         }
     }
-    m *= double(px_sign(piv));
+    m *= T(px_sign(piv));
     M_FREE(lu);
     PX_FREE(piv);
     return m;
