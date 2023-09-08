@@ -38,7 +38,7 @@ nrn_pragma_acc(routine seq)
 nrn_pragma_omp(declare target)
 #endif
 template <typename T>
-EIGEN_DEVICE_FUNC inline int Crout(int n, T* a, int* perm, double* rowmax) {
+EIGEN_DEVICE_FUNC inline int Crout(int n, T* const a, int* const perm, double* const rowmax) {
     // roundoff is the minimal value for a pivot element without its being considered too close to
     // zero
     double roundoff = 1.e-20;
@@ -137,7 +137,12 @@ nrn_pragma_acc(routine seq)
 nrn_pragma_omp(declare target)
 #endif
 template <typename T>
-EIGEN_DEVICE_FUNC inline int solveCrout(int n, T* a, T* b, T* p, int* perm, int* y = (int*) 0) {
+EIGEN_DEVICE_FUNC inline int solveCrout(int n,
+                                        T const* const a,
+                                        T const* const b,
+                                        T* const p,
+                                        int const* const perm,
+                                        int const* const y = nullptr) {
     int i, j, pivot;
     T sum;
 
