@@ -63,7 +63,7 @@ class ApproxOrOpposite: public Catch::MatcherBase<std::vector<T>> {
     mutable Catch::Detail::Approx approx = Catch::Detail::Approx::custom();
 };
 
-bool compareMatrix(OcMatrix& m, const std::vector<std::vector<double>>& ref) {
+bool compareMatrix(NrnMatrix<double>& m, const std::vector<std::vector<double>>& ref) {
     REQUIRE(m.nrow() == ref.size());
     for (int i = 0; i < m.nrow(); ++i) {
         REQUIRE(m.ncol() == ref[i].size());
@@ -74,9 +74,9 @@ bool compareMatrix(OcMatrix& m, const std::vector<std::vector<double>>& ref) {
     return true;
 }
 
-SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
+SCENARIO("A Matrix", "[neuron_ivoc][NrnMatrix<double>]") {
     GIVEN("A 3x3 Full matrix") {
-        OcFullMatrix m{3, 3};
+        NrnFullMatrix<double> m{3, 3};
         REQUIRE(m.nrow() == 3);
         REQUIRE(m.ncol() == 3);
         {
@@ -120,18 +120,18 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         }
 
         {
-            OcFullMatrix n(4, 3);
+            NrnFullMatrix<double> n(4, 3);
             n.ident();
             m.add(&n, &m);
             REQUIRE(compareMatrix(m, {{6., 6., 0.}, {7., 6., 6.}, {0., 7., 6.}, {2., 4., 7.}}));
         }
         {
-            OcFullMatrix n(4, 3);
+            NrnFullMatrix<double> n(4, 3);
             m.bcopy(&n, 1, 1, 3, 2, 0, 0);
             REQUIRE(compareMatrix(n, {{6., 6., 0.}, {7., 6., 0.}, {4., 7., 0.}, {0., 0., 0.}}));
         }
         {
-            OcFullMatrix n(4, 3);
+            NrnFullMatrix<double> n(4, 3);
             m.transpose(&n);
             REQUIRE(compareMatrix(n, {{6., 7., 0., 2.}, {6., 6., 7., 4.}, {0., 6., 6., 7.}}));
         }
@@ -154,7 +154,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(compareMatrix(m, {{0., 6., 6.}, {7., 6., 6.}, {0., 6., 6.}}));
         }
         {
-            OcFullMatrix n(4, 3);
+            NrnFullMatrix<double> n(4, 3);
             m.exp(&n);
             REQUIRE(n(0, 0) == Catch::Detail::Approx(442925.));
             REQUIRE(compareMatrix(n,
@@ -181,7 +181,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             // REQUIRE(det == -1.2348_a);
             // REQUIRE(e == 5);
         } {
-            OcFullMatrix n(4, 3);
+            NrnFullMatrix<double> n(4, 3);
             m.inverse(&n);
             n.resize(3, 3);  // ???
             REQUIRE(compareMatrix(n,
@@ -216,16 +216,16 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
                          Catch::Matchers::Approx(std::vector<double>({115., 300., 117.})));
         }
         {
-            OcFullMatrix n(3, 3);
+            NrnFullMatrix<double> n(3, 3);
             m.copy(&n);
             REQUIRE(compareMatrix(n, {{42., 72., 1.}, {72., 114., 114.}, {1., 114., 2.}}));
-            OcFullMatrix o(3, 3);
+            NrnFullMatrix<double> o(3, 3);
             m.mulm(&n, &o);
             REQUIRE(compareMatrix(
                 o, {{6949., 11346., 8252.}, {11346., 31176., 13296.}, {8252., 13296., 13001.}}));
         }
         {
-            OcFullMatrix n(3, 3);
+            NrnFullMatrix<double> n(3, 3);
             m.muls(2, &n);
             REQUIRE(compareMatrix(n, {{84., 144., 2.}, {144., 228., 228.}, {2., 228., 4.}}));
         }
@@ -244,7 +244,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         }
         {
             IvocVect v(3);
-            OcFullMatrix n(3, 3);
+            NrnFullMatrix<double> n(3, 3);
             v.vec() = {1, 2, 3};
             m.setrow(0, &v);
             v.vec() = {2, 1, 4};
@@ -264,8 +264,8 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         }
         {
             m.resize(2, 2);
-            OcFullMatrix u(2, 2);
-            OcFullMatrix v(2, 2);
+            NrnFullMatrix<double> u(2, 2);
+            NrnFullMatrix<double> v(2, 2);
             IvocVect d(2);
             m.svd1(&u, &v, &d);
             REQUIRE_THAT(d.vec(), Catch::Matchers::Approx(std::vector<double>({3., 1.})));
@@ -286,8 +286,8 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
                 s.vec() = {2., 3., -2.};
                 m.setrow(1, &s);
             }
-            OcFullMatrix u(2, 2);
-            OcFullMatrix v(3, 3);
+            NrnFullMatrix<double> u(2, 2);
+            NrnFullMatrix<double> v(3, 3);
             IvocVect d(2);
             m.svd1(&u, &v, &d);
             REQUIRE_THAT(d.vec(), Catch::Matchers::Approx(std::vector<double>({5., 3.})));
@@ -305,7 +305,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         }
     }
     GIVEN("A 3x3 Sparse matrix") {
-        OcSparseMatrix m{3, 3};
+        NrnSparseMatrix<double> m{3, 3};
         REQUIRE(m.nrow() == 3);
         REQUIRE(m.ncol() == 3);
         {

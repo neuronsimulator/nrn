@@ -14,7 +14,7 @@ class IvocVect;
 template <typename T>
 class NrnFullMatrix;
 #define Vect   IvocVect
-#define Matrix OcMatrix
+#define Matrix NrnMatrix<double>
 
 template <typename T>
 class NrnMatrix {
@@ -150,7 +150,6 @@ class NrnMatrix {
   private:
     int type_;
 };
-using OcMatrix = NrnMatrix<double>;
 
 extern Matrix* matrix_arg(int);
 
@@ -197,18 +196,18 @@ class NrnFullMatrix: public NrnMatrix<T> {  // type 1
     MAT* lu_factor_;
     PERM* lu_pivot_;
 };
-using OcFullMatrix = NrnFullMatrix<double>;
 
-class OcSparseMatrix: public NrnMatrix<double> {  // type 2
+template <typename T>
+class NrnSparseMatrix: public NrnMatrix<T> {  // type 2
   public:
-    OcSparseMatrix(int, int);
-    virtual ~OcSparseMatrix();
+    NrnSparseMatrix(int, int);
+    virtual ~NrnSparseMatrix();
 
-    virtual double* mep(int, int);
-    virtual double* pelm(int, int);  // nullptr if element does not exist
+    virtual T* mep(int, int);
+    virtual T* pelm(int, int);  // nullptr if element does not exist
     virtual int nrow();
     virtual int ncol();
-    virtual double getval(int, int);
+    virtual T getval(int, int);
     virtual void ident(void);
     virtual void mulv(Vect* in, Vect* out);
     virtual void solv(Vect* vin, Vect* vout, bool use_lu);
@@ -216,14 +215,14 @@ class OcSparseMatrix: public NrnMatrix<double> {  // type 2
     virtual void setrow(int, Vect* in);
     virtual void setcol(int, Vect* in);
     virtual void setdiag(int, Vect* in);
-    virtual void setrow(int, double in);
-    virtual void setcol(int, double in);
-    virtual void setdiag(int, double in);
+    virtual void setrow(int, T in);
+    virtual void setcol(int, T in);
+    virtual void setdiag(int, T in);
 
     virtual void nonzeros(vector<int>& m, vector<int>& n);
 
     virtual int sprowlen(int);  // how many elements in row
-    virtual double spgetrowval(int i, int jindx, int* j);
+    virtual T spgetrowval(int i, int jindx, int* j);
 
     virtual void zero();
 

@@ -156,7 +156,7 @@ NrnDAE::NrnDAE(Matrix* cmat,
         assumed_identity_ = NULL;
     } else {
         const int size = y_.size();
-        assumed_identity_ = new OcSparseMatrix(size, size);
+        assumed_identity_ = new NrnSparseMatrix<double>(size, size);
         // assumed_identity_->setdiag(0, 1);
         for (int i = 0; i < size; i++)
             (*assumed_identity_)(i, i) = 1;

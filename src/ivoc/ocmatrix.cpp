@@ -51,9 +51,9 @@ NrnMatrix<T>* NrnMatrix<T>::instance(int nrow, int ncol, int type) {
     switch (type) {
     default:
     case MFULL:
-        return new NrnFullMatrix<double>(nrow, ncol);
+        return new NrnFullMatrix<T>(nrow, ncol);
     case MSPARSE:
-        return new OcSparseMatrix(nrow, ncol);
+        return new NrnSparseMatrix<T>(nrow, ncol);
     }
 }
 
@@ -75,9 +75,10 @@ void NrnMatrix<T>::nonzeros(vector<int>& m, vector<int>& n) {
         }
     }
 }
-
 template class NrnMatrix<double>;
-void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+
+template <typename T>
+void NrnSparseMatrix<T>::nonzeros(vector<int>& m, vector<int>& n) {
     m.clear();
     n.clear();
     for (int i = 0; i < m_->m; i++) {
@@ -389,8 +390,9 @@ template class NrnFullMatrix<double>;
 
 //--------------------------
 
-OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
-    : NrnMatrix<double>(MSPARSE) {
+template <typename T>
+NrnSparseMatrix<T>::NrnSparseMatrix(int nrow, int ncol)
+    : NrnMatrix<T>(NrnMatrix<T>::MSPARSE) {
     /* sp_get -- get sparse matrix
        -- len is number of elements available for each row without
           allocating further memory */
@@ -400,7 +402,8 @@ OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
     lu_factor_ = nullptr;
     lu_pivot_ = nullptr;
 }
-OcSparseMatrix::~OcSparseMatrix() {
+template <typename T>
+NrnSparseMatrix<T>::~NrnSparseMatrix() {
     if (lu_factor_) {
         SP_FREE(lu_factor_);
         PX_FREE(lu_pivot_);
@@ -409,7 +412,8 @@ OcSparseMatrix::~OcSparseMatrix() {
 }
 
 // returns pointer to sparse element. nullptr if it does not exist.
-double* OcSparseMatrix::pelm(int i, int j) {
+template <typename T>
+T* NrnSparseMatrix<T>::pelm(int i, int j) {
     SPROW* r = m_->row + i;
     int idx = sprow_idx(r, j);
     if (idx >= 0) {
@@ -419,7 +423,8 @@ double* OcSparseMatrix::pelm(int i, int j) {
     }
 }
 
-double* OcSparseMatrix::mep(int i, int j) {
+template <typename T>
+T* NrnSparseMatrix<T>::mep(int i, int j) {
     SPROW* r = m_->row + i;
     int idx = sprow_idx(r, j);
     if (idx >= 0) {
@@ -432,27 +437,33 @@ double* OcSparseMatrix::mep(int i, int j) {
     return &r->elt[idx].val;
 }
 
-void OcSparseMatrix::zero() {
+template <typename T>
+void NrnSparseMatrix<T>::zero() {
     sp_zero(m_);
 }
 
-double OcSparseMatrix::getval(int i, int j) {
+template <typename T>
+T NrnSparseMatrix<T>::getval(int i, int j) {
     return sp_get_val(m_, i, j);
 }
-int OcSparseMatrix::nrow() {
+template <typename T>
+int NrnSparseMatrix<T>::nrow() {
     return m_->m;
 }
-int OcSparseMatrix::ncol() {
+template <typename T>
+int NrnSparseMatrix<T>::ncol() {
     return m_->n;
 }
-void OcSparseMatrix::mulv(Vect* vin, Vect* vout) {
+template <typename T>
+void NrnSparseMatrix<T>::mulv(Vect* vin, Vect* vout) {
     VEC v1, v2;
     Vect2VEC(vin, v1);
     Vect2VEC(vout, v2);
     sp_mv_mlt(m_, &v1, &v2);
 }
 
-void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+template <typename T>
+void NrnSparseMatrix<T>::solv(Vect* in, Vect* out, bool use_lu) {
     bool call_lufac = true;
     if (!lu_factor_) {
         lu_factor_ = sp_get(nrow(), nrow(), 4);
@@ -472,11 +483,12 @@ void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     spLUsolve(lu_factor_, lu_pivot_, &v1, &v2);
 }
 
-void OcSparseMatrix::setrow(int k, Vect* in) {
+template <typename T>
+void NrnSparseMatrix<T>::setrow(int k, Vect* in) {
     VEC v1;
     Vect2VEC(in, v1);
     int i, n = ncol();
-    double* p;
+    T* p;
     for (i = 0; i < n; ++i) {
         if ((p = pelm(k, i)) != nullptr) {
 #ifdef WIN32
@@ -492,11 +504,12 @@ void OcSparseMatrix::setrow(int k, Vect* in) {
     }
 }
 
-void OcSparseMatrix::setcol(int k, Vect* in) {
+template <typename T>
+void NrnSparseMatrix<T>::setcol(int k, Vect* in) {
     VEC v1;
     Vect2VEC(in, v1);
     int i, n = nrow();
-    double* p;
+    T* p;
     for (i = 0; i < n; ++i) {
         if ((p = pelm(i, k)) != nullptr) {
 #ifdef WIN32
@@ -512,11 +525,12 @@ void OcSparseMatrix::setcol(int k, Vect* in) {
     }
 }
 
-void OcSparseMatrix::setdiag(int k, Vect* in) {
+template <typename T>
+void NrnSparseMatrix<T>::setdiag(int k, Vect* in) {
     int i, j, row, col;
     row = nrow();
     col = ncol();
-    double* p;
+    T* p;
     if (k >= 0) {
         for (i = 0, j = k; i < row && j < col; ++i, ++j) {
             if ((p = pelm(i, j)) != nullptr) {
@@ -550,25 +564,29 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
     }
 }
 
-void OcSparseMatrix::setrow(int k, double in) {
+template <typename T>
+void NrnSparseMatrix<T>::setrow(int k, T in) {
     int i, col = ncol();
     for (i = 0; i < col; ++i) {
         sp_set_val(m_, k, i, in);
     }
 }
 
-void OcSparseMatrix::setcol(int k, double in) {
+template <typename T>
+void NrnSparseMatrix<T>::setcol(int k, T in) {
     int i, row = nrow();
     for (i = 0; i < row; ++i) {
         sp_set_val(m_, i, k, in);
     }
 }
 
-void OcSparseMatrix::ident(void) {
+template <typename T>
+void NrnSparseMatrix<T>::ident(void) {
     setdiag(0, 1);
 }
 
-void OcSparseMatrix::setdiag(int k, double in) {
+template <typename T>
+void NrnSparseMatrix<T>::setdiag(int k, T in) {
     int i, j, row, col;
     row = nrow();
     col = ncol();
@@ -583,11 +601,14 @@ void OcSparseMatrix::setdiag(int k, double in) {
     }
 }
 
-int OcSparseMatrix::sprowlen(int i) {
+template <typename T>
+int NrnSparseMatrix<T>::sprowlen(int i) {
     return m_->row[i].len;
 }
 
-double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) {
+template <typename T>
+T NrnSparseMatrix<T>::spgetrowval(int i, int jindx, int* j) {
     *j = m_->row[i].elt[jindx].col;
     return m_->row[i].elt[jindx].val;
 }
+template class NrnSparseMatrix<double>;
