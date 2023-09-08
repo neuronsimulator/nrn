@@ -392,11 +392,11 @@ ELSE                    {
                               * for using lexer program. */
                             std::string str(yytext);
                             cur_line = str;
-                            stringutils::trim(str);
+                            str = stringutils::trim(str);
 
                             if (driver.is_verbose()) {
                                 if(str.length()) {
-                                    stringutils::trim_newline(str);
+                                    str = stringutils::trim_newline(str);
                                     std::cout << "LINE "<< yylineno << ": " << str << std::endl;
                                 } else {
                                     std::cout << "LINE " << yylineno << ": " << std::endl;
@@ -472,7 +472,7 @@ ELSE                    {
                             /** For title return string without new line character */
                             loc.lines(1);
                             std::string str(yytext);
-                            stringutils::trim_newline(str);
+                            str = stringutils::trim_newline(str);
                             BEGIN(INITIAL);
                             return NmodlParser::make_LINE_PART(str, loc);
                         }

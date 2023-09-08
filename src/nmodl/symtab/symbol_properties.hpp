@@ -272,13 +272,16 @@ std::vector<std::string> to_string_vector(const syminfo::Status& obj);
 
 template <typename T>
 std::string to_string(const T& obj) {
-    auto elements = to_string_vector(obj);
     std::string text;
-    for (const auto& element: elements) {
-        text += element + " ";
+    bool is_first{true};
+    for (const auto& element: to_string_vector(obj)) {
+        if (is_first) {
+            text += element;
+            is_first = false;
+        } else {
+            text += " " + element;
+        }
     }
-    // remove extra whitespace at the end
-    stringutils::trim(text);
     return text;
 }
 

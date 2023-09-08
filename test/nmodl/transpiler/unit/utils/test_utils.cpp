@@ -20,16 +20,15 @@ namespace test_utils {
 
 int count_leading_spaces(std::string text) {
     auto const length = text.size();
-    nmodl::stringutils::ltrim(text);
+    text = nmodl::stringutils::ltrim(text);
     auto const num_whitespaces = length - text.size();
     assert(num_whitespaces <= std::numeric_limits<int>::max());
     return static_cast<int>(num_whitespaces);
 }
 
 /// check if string has only whitespaces
-bool is_empty(std::string text) {
-    nmodl::stringutils::trim(text);
-    return text.empty();
+bool is_empty(const std::string& text) {
+    return nmodl::stringutils::trim(text).empty();
 }
 
 /** Reindent nmodl text for text-to-text comparison

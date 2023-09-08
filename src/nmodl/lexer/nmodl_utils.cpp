@@ -93,7 +93,7 @@ SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType typ
 SymbolType prime_symbol(std::string text, PositionType& pos) {
     ModToken token(text, Token::PRIME, pos);
     auto order = std::count(text.begin(), text.end(), '\'');
-    stringutils::remove_character(text, '\'');
+    text = stringutils::remove_character(text, '\'');
 
     auto prime_name = new ast::String(text);
     assert(order <= std::numeric_limits<int>::max());

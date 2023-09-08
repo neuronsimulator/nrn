@@ -302,14 +302,14 @@ void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
     if (!codegen) {
         return;
     }
-    auto text = node.get_statement()->eval();
-    auto result = process_verbatim_text(text);
+    const auto& text = node.get_statement()->eval();
+    const auto& result = process_verbatim_text(text);
 
-    auto statements = stringutils::split_string(result, '\n');
-    for (auto& statement: statements) {
-        stringutils::trim_newline(statement);
-        if (statement.find_first_not_of(' ') != std::string::npos) {
-            printer->add_line(statement);
+    const auto& statements = stringutils::split_string(result, '\n');
+    for (const auto& statement: statements) {
+        const auto& trimed_stmt = stringutils::trim_newline(statement);
+        if (trimed_stmt.find_first_not_of(' ') != std::string::npos) {
+            printer->add_line(trimed_stmt);
         }
     }
 }
@@ -1373,9 +1373,9 @@ void CodegenCppVisitor::print_top_verbatim_blocks() {
  * the text.
  */
 void CodegenCppVisitor::rename_function_arguments() {
-    auto default_arguments = stringutils::split_string(nrn_thread_arguments(), ',');
-    for (auto& arg: default_arguments) {
-        stringutils::trim(arg);
+    const auto& default_arguments = stringutils::split_string(nrn_thread_arguments(), ',');
+    for (const auto& dirty_arg: default_arguments) {
+        const auto& arg = stringutils::trim(dirty_arg);
         RenameVisitor v(arg, "arg_" + arg);
         for (const auto& function: info.functions) {
             if (has_parameter_of_name(function, arg)) {

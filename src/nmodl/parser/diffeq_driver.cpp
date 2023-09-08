@@ -27,7 +27,7 @@ void DiffeqDriver::parse_equation(const std::string& equation,
     auto const wide_order = std::count(state.begin(), state.end(), '\'');
     assert(wide_order >= 0 && wide_order <= std::numeric_limits<int>::max());
     order = static_cast<int>(wide_order);
-    stringutils::remove_character(state, '\'');
+    state = stringutils::remove_character(state, '\'');
 
     /// error if no prime in equation or not an assignment statement
     if (order == 0 || state.empty()) {

@@ -27,62 +27,95 @@ namespace nmodl {
 namespace stringutils {
 
 /**
- * @addtogroup utils
- * @{
+ * \addtogroup utils
+ * \{
  */
 
 /// text alignment when printing in the tabular form
 enum class text_alignment { left, right, center };
 
-/// Trim from start
-static inline std::string& ltrim(std::string& s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
-    return s;
+/**
+ * \param text the string to manipulate
+ * \return a copy of the given string with leading ASCII space characters removed
+ */
+[[nodiscard]] static inline std::string ltrim(std::string text) {
+    text.erase(text.begin(),
+               std::find_if(text.begin(), text.end(), [](int c) { return !std::isspace(c); }));
+    return text;
 }
 
-/// Trim from end
-static inline std::string& rtrim(std::string& s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(),
-            s.end());
-    return s;
+/**
+ * \param text the string to manipulate
+ * \return a copy of the given string with trailing characters removed.
+ */
+[[nodiscard]] static inline std::string rtrim(std::string text) {
+    text.erase(
+        std::find_if(text.rbegin(), text.rend(), [](int c) { return !std::isspace(c); }).base(),
+        text.end());
+    return text;
 }
 
-/// Trim from both ends
-static inline std::string& trim(std::string& s) {
-    return ltrim(rtrim(s));
+/**
+ *
+ * \param text the string to manipulate
+ * \return a copy of the given string with both leading and trailing ASCII space characters removed
+ */
+[[nodiscard]] static inline std::string trim(std::string text) {
+    return ltrim(rtrim(std::move(text)));
 }
 
-static inline void remove_character(std::string& str, const char c) {
-    str.erase(std::remove(str.begin(), str.end(), c), str.end());
+/**
+ * Remove all occurrences of a given character in a text
+ * \param text the string to manipulate
+ * \param c the character to remove
+ * @return a copy the modified text
+ */
+[[nodiscard]] static inline std::string remove_character(std::string text, const char c) {
+    text.erase(std::remove(text.begin(), text.end(), c), text.end());
+    return text;
 }
 
-/// Remove leading newline for the string read by grammar
-static inline std::string& trim_newline(std::string& s) {
-    remove_character(s, '\n');
-    return s;
+/**
+ *
+ * \param text the string to manipulate
+ * \return a copy of the given string with all occurrences of the ASCII newline character removed
+ */
+[[nodiscard]] static inline std::string trim_newline(std::string text) {
+    return remove_character(std::move(text), '\n');
 }
 
-/// for printing json, we have to escape double quotes
-static inline std::string escape_quotes(const std::string& before) {
-    std::string after;
+/**
+ * Escape double-quote in a text, useful for JSON pretty printer.
+ * \param text the string to manipulate
+ * \return a copy of the given string with every " and \ characters prefixed with an extra \
+ */
+[[nodiscard]] static inline std::string escape_quotes(const std::string& text) {
+    std::ostringstream oss;
+    std::string result;
 
-    for (auto c: before) {
+    for (auto c: text) {
         switch (c) {
         case '"':
         case '\\':
-            after += '\\';
+            result += '\\';
             /// don't break here as we want to append actual character
 
         default:
-            after += c;
+            result += c;
         }
     }
 
-    return after;
+    return result;
 }
 
-/// Spilt string with given delimiter and returns vector
-static inline std::vector<std::string> split_string(const std::string& text, char delimiter) {
+/**
+ * Split a text in a list of words, using a given delimiter character
+ * \param text the string to manipulate
+ * \param delimiter the delimiter character
+ * \return a container holding copies of the substrings
+ */
+[[nodiscard]] static inline std::vector<std::string> split_string(const std::string& text,
+                                                                  char delimiter) {
     std::vector<std::string> elements;
     std::stringstream ss(text);
     std::string item;
@@ -94,13 +127,22 @@ static inline std::vector<std::string> split_string(const std::string& text, cha
     return elements;
 }
 
-/// Left/Right/Center-aligns string within a field of width "width"
-static inline std::string align_text(std::string text, int width, text_alignment type) {
+///
+/**
+ * Aligns a text within a field of width \a width
+ * \param text the string to manipulate
+ * \param width the width of the field
+ * \param type the kind of alignment Left, Right, or Center
+ * \return a copy of the string aligned
+ */
+[[nodiscard]] static inline std::string align_text(const std::string& text,
+                                                   int width,
+                                                   text_alignment type) {
     /// left and right spacing
     std::string left, right;
 
     /// count excess room to pad
-    int padding = width - text.size();
+    const int padding = width - static_cast<int>(text.size());
 
     if (padding > 0) {
         if (type == text_alignment::left) {
@@ -111,7 +153,7 @@ static inline std::string align_text(std::string text, int width, text_alignment
             left = std::string(padding / 2, ' ');
             right = std::string(padding / 2, ' ');
             /// if odd #, add one more space
-            if (padding > 0 && padding % 2 != 0) {
+            if (padding % 2 != 0) {
                 right += " ";
             }
         }
@@ -120,7 +162,11 @@ static inline std::string align_text(std::string text, int width, text_alignment
 }
 
 /// To lower case
-static inline std::string tolower(std::string text) {
+/**
+ * \param text the string to manipulate
+ * \return a copy of string converted to lowercase
+ */
+[[nodiscard]] static inline std::string tolower(std::string text) {
     std::transform(text.begin(), text.end(), text.begin(), ::tolower);
     return text;
 }
@@ -135,7 +181,7 @@ static inline std::string tolower(std::string text) {
  */
 std::string to_string(double value, const std::string& format_spec = "{:.16g}");
 
-/** @} */  // end of utils
+/** \} */  // end of utils
 
 }  // namespace stringutils
 }  // namespace nmodl
