@@ -997,6 +997,20 @@ static double nrncorewrite_argvec(void*) {
     return double(nrncore_write());
 }
 
+static double print_memory_stats(void*) {
+    neuron::container::MemoryUsage local_memory_usage = neuron::container::local_memory_usage();
+
+#if NRNMPI
+    neuron::container::MemoryStats memory_stats;
+    nrnmpi_memory_stats(memory_stats, local_memory_usage);
+    nrnmpi_print_memory_stats(memory_stats);
+#else
+    print_memory_usage(local_memory_usage);
+#endif
+
+    return 1.0;
+}
+
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
@@ -1107,6 +1121,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"nrncore_write", nrncorewrite_argappend},
                                 {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
                                 {"nrncore_run", nrncorerun},
+                                {"print_memory_stats", print_memory_stats},
 
                                 {0, 0}};
 

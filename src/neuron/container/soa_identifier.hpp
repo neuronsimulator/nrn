@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/non_owning_soa_identifier.hpp"
 
 #include <cassert>
@@ -18,6 +19,8 @@ namespace detail {
  * This is defined in container.cpp to avoid multiple-definition issues.
  */
 extern std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage;
+VectorMemoryUsage compute_identifier_defer_delete_storage_size();
+
 }  // namespace detail
 
 /**
