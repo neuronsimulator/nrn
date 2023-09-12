@@ -536,50 +536,13 @@ std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
 
 
 int CodegenCppVisitor::float_variables_size() const {
-    auto count_length = [](int l, const SymbolType& variable) {
-        return l += variable->get_length();
-    };
-
-    int float_size = std::accumulate(info.range_parameter_vars.begin(),
-                                     info.range_parameter_vars.end(),
-                                     0,
-                                     count_length);
-    float_size += std::accumulate(info.range_assigned_vars.begin(),
-                                  info.range_assigned_vars.end(),
-                                  0,
-                                  count_length);
-    float_size += std::accumulate(info.range_state_vars.begin(),
-                                  info.range_state_vars.end(),
-                                  0,
-                                  count_length);
-    float_size +=
-        std::accumulate(info.assigned_vars.begin(), info.assigned_vars.end(), 0, count_length);
-
-    /// all state variables for which we add Dstate variables
-    float_size += std::accumulate(info.state_vars.begin(), info.state_vars.end(), 0, count_length);
-
-    /// for v_unused variable
-    if (info.vectorize) {
-        float_size++;
-    }
-    /// for g_unused variable
-    if (breakpoint_exist()) {
-        float_size++;
-    }
-    /// for tsave variable
-    if (net_receive_exist()) {
-        float_size++;
-    }
-    return float_size;
+    return codegen_float_variables.size();
 }
 
 
 int CodegenCppVisitor::int_variables_size() const {
-    int num_variables = 0;
-    for (const auto& semantic: info.semantics) {
-        num_variables += semantic.size;
-    }
-    return num_variables;
+    const auto count_semantics = [](int sum, const IndexSemantics& sem) { return sum += sem.size; };
+    return std::accumulate(info.semantics.begin(), info.semantics.end(), 0, count_semantics);
 }
 
 
