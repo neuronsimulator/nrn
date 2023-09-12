@@ -341,6 +341,11 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
         Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
+        Lappendstr(defs_list,
+                   "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
+        Lappendstr(
+            defs_list,
+            "static neuron::container::non_owning_identifier_without_container _prop_id{};\n");
     }
 #if 0
 	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
@@ -427,6 +432,7 @@ extern Memb_func* memb_func;\n\
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
     if (vectorize) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
+        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
     } else {
         Lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
@@ -3207,8 +3213,9 @@ void func_needs_setdata() {
         if (f.second.q && f.second.need_setdata) {
             Symbol* s = f.first;
             sprintf(buf,
-                    "\n  if(!_extcall_prop) { hoc_execerror(\""
-                    "No data for %s_%s. Requires prior call to setdata_%s\","
+                    "\n  if(!_prop_id) { hoc_execerror(\""
+                    "No data for %s_%s. Requires prior call to setdata_%s"
+                    " and that the specified mechanism instance still be in existence.\","
                     " NULL); }\n",
                     s->name,
                     mechname,
