@@ -41,10 +41,11 @@ class coreneuron(object):
     Attributes
     ----------
     cell_permute
-    enable
     data_path
+    enable
     file_mode
     gpu
+    only_simulate
     prcellstate
     restore
     save
@@ -258,7 +259,12 @@ class coreneuron(object):
 
     @property
     def only_simulate(self):
-        """Data path for restore."""
+        """Set internal flag to only simulate the model with CoreNEURON.
+        Avoids dumping the coreneuron input data to the data_path in
+        CoreNEURON embedded mode when launched thourgh the NEURON Python
+        API. The coreneuron input data should already be there and CoreNEURON
+        uses them for launching the simulation.
+        """
         return self._only_simulate
 
     @sim_config.setter
