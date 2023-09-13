@@ -20,11 +20,17 @@ RUN yum -y install \
 
 WORKDIR /root
 
-RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
-    && tar -xvzf ncurses-6.2.tar.gz \
-    && cd ncurses-6.2  \
-    && ./configure --prefix=/nrnwheel/ncurses --without-shared CFLAGS="-fPIC" \
-    && make -j install
+# newer flex with rpmbuild (manylinux2014 based on Centos7 currently has flex < 2.6)
+RUN rpmbuild --rebuild https://vault.centos.org/8-stream/AppStream/Source/SPackages/flex-2.6.1-9.el8.src.rpm \
+    && yum -y install rpmbuild/RPMS/*/flex-2.6.1-9.el7.*.rpm \
+    && rm -rf rpmbuild
+
+RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+    && tar -xvzf ncurses-6.4.tar.gz \
+    && cd ncurses-6.4  \
+    && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" \
+    && make -j install \
+    && cd .. && rm -rf ncurses-6.4 ncurses-6.4.tar.gz
 
 RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \

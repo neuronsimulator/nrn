@@ -4,12 +4,13 @@
 // can be given extra arguments in the lib/neuron.sh file which
 // finally executes nrniv.exe.  Nrniv.exe can be run by itself if
 // it does not need a console or system("command")
-
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "d2upath.cpp"
+
+#include <cstdio>
 
 char* nrnhome;
 char* nh;
@@ -67,9 +68,7 @@ static char* argstr(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     int err;
-    char* buf;
     char* args;
-    char* msg;
 
 #ifndef MINGW
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -77,40 +76,65 @@ int main(int argc, char** argv) {
     setneuronhome();
     nh = hoc_dos2unixpath(nrnhome);
     args = argstr(argc, argv);
-    buf = new char[strlen(args) + 6 * strlen(nh) + 200];
+    auto const buf_size = strlen(args) + 6 * strlen(nh) + 200;
+    char* const buf = new char[buf_size];
 #ifdef MINGW
-    // sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh
-    // nrngui %s", nrnhome, nh, nh, args);
-#if 0
-	if (nh[1] == ':') {
-		nh[1] = nh[0];
-		nh[0] = '/';
-	}
-#endif
-    sprintf(buf,
-            "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
-            nrnhome,
-            nh,
-            nh,
-            args);
-// MessageBox(0, buf, "NEURON", MB_OK);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  args);
 #else
-    sprintf(buf,
-            "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
-            "%s/lib/neuron.sh %s %s",
-            nrnhome,
-            nh,
-            nh,
-            nh,
-            nh,
-            nh,
-            args);
+    std::snprintf(buf,
+                  buf_size,
+                  "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh "
+                  "%s/lib/neuron.sh %s %s",
+                  nrnhome,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  nh,
+                  args);
 #endif
-    msg = new char[strlen(buf) + 100];
-    err = WinExec(buf, SW_SHOW);
-    if (err < 32) {
-        sprintf(msg, "Cannot WinExec %s\n", buf);
+    auto const msg_size = strlen(buf) + 100;
+    char* const msg = new char[msg_size];
+
+    // Windows 11 exits immediately
+    // https://stackoverflow.com/questions/2255608/force-application-to-wait-until-winexec-has-completed
+    // WinExec is no longer recommended. You can use CreateProcess and WaitForSingleObject as
+    // shown in this example on Creating Processes.
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+    // Start the child process.
+    err = CreateProcess(NULL,   // No module name (use command line)
+                        buf,    // Command line
+                        NULL,   // Process handle not inheritable
+                        NULL,   // Thread handle not inheritable
+                        FALSE,  // Set handle inheritance to FALSE
+                        0,      // No creation flags
+                        NULL,   // Use parent's environment block
+                        NULL,   // Use parent's starting directory
+                        &si,    // Pointer to STARTUPINFO structure
+                        &pi);   // Pointer to PROCESS_INFORMATION structure
+
+    if (!err) {
+        std::snprintf(msg, msg_size, "CreateProcess failed (%d).  %s\n", GetLastError(), buf);
         MessageBox(0, msg, "NEURON", MB_OK);
+        return 1;
     }
+
+    // Wait until child process exits.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
     return 0;
 }
