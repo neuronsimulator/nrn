@@ -118,21 +118,24 @@ struct non_owning_identifier_without_container {
     template <typename, typename...>
     friend struct soa;
     friend struct std::hash<non_owning_identifier_without_container>;
-    non_owning_identifier_without_container(std::size_t* ptr)
-        : m_ptr{ptr} {}
+    non_owning_identifier_without_container(std::shared_ptr<std::size_t> ptr)
+        : m_ptr{std::move(ptr)} {}
     void set_current_row(std::size_t row) {
         assert(m_ptr);
         *m_ptr = row;
     }
 
+    non_owning_identifier_without_container(size_t row)
+        : m_ptr(std::make_shared<size_t>(row)) {}
+
   private:
-    std::size_t* m_ptr{};
+    std::shared_ptr<std::size_t> m_ptr{};
 };
 }  // namespace neuron::container
 template <>
 struct std::hash<neuron::container::non_owning_identifier_without_container> {
     std::size_t operator()(
         neuron::container::non_owning_identifier_without_container const& h) noexcept {
-        return reinterpret_cast<std::size_t>(h.m_ptr);
+        return reinterpret_cast<std::size_t>(h.m_ptr.get());
     }
 };

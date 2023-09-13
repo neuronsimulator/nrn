@@ -86,7 +86,6 @@ struct owning_identifier {
     owning_identifier(const owning_identifier&) = delete;
     owning_identifier(owning_identifier&& other) {
         m_ptr = std::move(other.m_ptr);
-        other.m_ptr = nullptr;
 
         m_data_ptr = other.m_data_ptr;
         other.m_data_ptr = nullptr;
@@ -97,7 +96,6 @@ struct owning_identifier {
         destroy();
 
         m_ptr = std::move(other.m_ptr);
-        other.m_ptr = nullptr;
 
         m_data_ptr = other.m_data_ptr;
         other.m_data_ptr = nullptr;
@@ -139,7 +137,7 @@ struct owning_identifier {
      */
     [[nodiscard]] std::size_t current_row() const {
         assert(m_ptr);
-        return *m_ptr;
+        return m_ptr.current_row();
     }
 
     friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
@@ -162,15 +160,15 @@ struct owning_identifier {
 
         // We should still be a valid reference at this point.
         assert(m_ptr);
-        assert(*m_ptr < data_container.size());
+        assert(m_ptr.current_row() < data_container.size());
 
         // Prove that the bookkeeping works.
-        assert(data_container.at(*m_ptr) == m_ptr);
+        assert(data_container.at(m_ptr.current_row()) == m_ptr);
 
         bool terminate = false;
         // Delete the corresponding row from `data_container`
         try {
-            data_container.erase(*m_ptr);
+            data_container.erase(m_ptr.current_row());
         } catch (std::exception const& e) {
             // Cannot throw from unique_ptr release/reset/destructor, this
             // is the best we can do. Most likely what has happened is
@@ -190,32 +188,22 @@ struct owning_identifier {
         }
         // We don't know how many people know the pointer `p`, so write a sentinel
         // value to it and transfer ownership "elsewhere".
-        set_current_row(invalid_row);
+        m_ptr.set_current_row(invalid_row);
 
         // This is to provide compatibility with NEURON's old nrn_notify_when_double_freed and
         // nrn_notify_when_void_freed methods.
         detail::notify_handle_dying(m_ptr);
-
-        // This is sort-of formalising a memory leak. In principle we could cleanup
-        // identifier_defer_delete_storage by scanning all our data structures and finding
-        // references to the pointers that it contains. In practice it seems unlikely that
-        // either this, or using std::shared_ptr just to avoid it, would be worth it.
-        if (detail::identifier_defer_delete_storage) {
-            detail::identifier_defer_delete_storage->emplace_back(m_ptr);
-        } else {
-            delete m_ptr;
-        }
     }
 
 
-    size_t* m_ptr = nullptr;
+    non_owning_identifier_without_container m_ptr{};
     Storage* m_data_ptr{};
 
     template <typename, typename...>
     friend struct soa;
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
-        *m_ptr = new_row;
+        m_ptr.set_current_row(new_row);
     }
     /**
      * @brief Create a non-null owning identifier that owns the given row.
@@ -225,9 +213,7 @@ struct owning_identifier {
      * be used without great care.
      */
     owning_identifier(Storage& storage, std::size_t row)
-        : m_ptr(new size_t)
-        , m_data_ptr(&storage) {
-          *m_ptr = row;
-        }
+        : m_ptr(row)
+        , m_data_ptr(&storage) {}
 };
 }  // namespace neuron::container
