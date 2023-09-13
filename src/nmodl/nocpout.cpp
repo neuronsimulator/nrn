@@ -343,9 +343,7 @@ void parout() {
         Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
         Lappendstr(defs_list,
                    "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
-        Lappendstr(
-            defs_list,
-            "static neuron::container::non_owning_identifier_without_container _prop_id{};\n");
+        Lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
     }
 #if 0
 	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
@@ -2104,6 +2102,8 @@ void declare_p() {
                "using _nrn_mechanism_cache_instance = "
                "neuron::cache::MechanismInstance<number_of_floating_point_variables, "
                "number_of_datum_variables>;\n"
+               "using _nrn_non_owning_id_without_container = "
+               "neuron::container::non_owning_identifier_without_container;\n"
                "template <typename T>\n"
                "using _nrn_mechanism_field = neuron::mechanism::field<T>;\n"
                "template <typename... Args>\n"
