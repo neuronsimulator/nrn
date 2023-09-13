@@ -12,17 +12,6 @@
 #include <vector>
 
 namespace neuron::container {
-namespace detail {
-/**
- * @brief The vector in which dying owning_identifier std::size_t's live.
- *
- * This is defined in container.cpp to avoid multiple-definition issues.
- */
-extern std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage;
-VectorMemoryUsage compute_identifier_defer_delete_storage_size();
-
-}  // namespace detail
-
 /**
  * @brief A non-owning permutation-stable identifier for a entry in a container.
  * @tparam Storage The type of the referred-to container. This might be a type

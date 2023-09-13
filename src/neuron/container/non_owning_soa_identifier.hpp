@@ -13,6 +13,7 @@ namespace neuron::container {
 struct field_index {
     int field{}, array_index{};
 };
+
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 
 /**
