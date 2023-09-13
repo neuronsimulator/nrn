@@ -3210,17 +3210,22 @@ void func_needs_setdata() {
     }
     for (auto& f: funcs) {  // update the hocfunc item if need_setdata
         auto& q = f.second.q;
-        if (f.second.q && f.second.need_setdata) {
+        if (q && f.second.need_setdata) {  // error if not valid id
             Symbol* s = f.first;
             sprintf(buf,
                     "\n  if(!_prop_id) { hoc_execerror(\""
                     "No data for %s_%s. Requires prior call to setdata_%s"
                     " and that the specified mechanism instance still be in existence.\","
-                    " NULL); }\n",
+                    " NULL); }\n"
+                    "  Prop* _local_prop = _extcall_prop;\n",
                     s->name,
                     mechname,
                     mechname);
-            insertstr(f.second.q, buf);
+            insertstr(q, buf);
+        } else if (q && vectorize) {
+            // valid id not required but _extcall_prop must be nullptr
+            // because of later _ppvar = _extcall_prop ? ...
+            insertstr(q, "\n  Prop* _local_prop = _prop_id ? _extcall_prop : nullptr;\n");
         }
     }
 }

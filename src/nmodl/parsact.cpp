@@ -761,10 +761,10 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
         hocfunc_setdata_item(n, lappendstr(procfunc, ""));
         vectorize_substitute(
             lappendstr(procfunc, ""),
-            "_nrn_mechanism_cache_instance _ml_real{_extcall_prop};\n"
+            "_nrn_mechanism_cache_instance _ml_real{_local_prop};\n"
             "auto* const _ml = &_ml_real;\n"
             "size_t const _iml{};\n"
-            "_ppvar = _extcall_prop ? _nrn_mechanism_access_dparam(_extcall_prop) : nullptr;\n"
+            "_ppvar = _local_prop ? _nrn_mechanism_access_dparam(_local_prop) : nullptr;\n"
             "_thread = _extcall_thread.data();\n"
             "_nt = nrn_threads;\n");
     }
