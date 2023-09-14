@@ -27,7 +27,7 @@ jobs:
 
     name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }}${{ matrix.config.sanitizer }})
 
-    timeout-minutes: 45
+    timeout-minutes: 75
 
     env:
       INSTALL_DIR: install
