@@ -32,6 +32,19 @@ def test_setdata(sfx):  #  "" or "ts"
         assert mech.b == 10 * x
         assert mech.c[1] == 100 * x
 
+    # What happens if we setdata, call a function that sweeps over all
+    # instances, and then call an instance function. We expect the value
+    # in accordance with the last setdata.
+    for seg in s:  # set a value that does not get changed by finitialize
+        x = seg.x
+        mech = seg.sdata if sfx == "" else seg.sdatats
+        mech.c[2] = 1000 * x
+    fc = h.C_sdata if sfx == "" else h.C_sdatats
+    setdata(s(0.5))
+    assert fc(2) == 1000 * 0.5
+    h.finitialize()
+    assert fc(2) == 1000 * 0.5
+
     del s, setdata, seg, mech, x
     locals()
 
@@ -78,6 +91,6 @@ def test_prop_invalid(sfx):  #  "" or "ts"
 
 
 if __name__ == "__main__":
-    for sfx in ["ts"]:
+    for sfx in ["ts", ""]:
         test_setdata(sfx)
         test_prop_invalid(sfx)

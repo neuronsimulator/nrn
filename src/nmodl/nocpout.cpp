@@ -340,20 +340,14 @@ void parout() {
 
     if (vectorize) {
         Lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
+    }
+    if (!point_process) {
         Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
         Lappendstr(defs_list,
                    "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
         Lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
     }
-#if 0
-	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
-	SYMLISTITER {
-		if (SYM(q)->nrntype & NRNSTATIC) {
-			Sprintf(buf, "static double %s;\n", SYM(q)->name);
-			Lappendstr(defs_list, buf);
-		}
-	}
-#endif
+
     Lappendstr(defs_list, "/* external NEURON variables */\n");
     SYMLISTITER {
         s = SYM(q);
@@ -428,10 +422,11 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-    if (vectorize) {
+    if (!point_process) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
         Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
-    } else {
+    }
+    if (!vectorize) {
         Lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
@@ -3198,10 +3193,6 @@ void func_needs_setdata() {
     if (!mechname | strcmp(mechname, "nothing") == 0) {
         return;
     }
-    // No _extcall_prop for non vectorized density mechanisms.
-    if (!vectorize) {
-        return;
-    }
     for (auto& f: funcs) {
         f.second.is_being_looked_at = false;
     }
@@ -3210,22 +3201,38 @@ void func_needs_setdata() {
     }
     for (auto& f: funcs) {  // update the hocfunc item if need_setdata
         auto& q = f.second.q;
-        if (q && f.second.need_setdata) {  // error if not valid id
+        if (q && f.second.need_setdata) {
+            // error if not valid id
             Symbol* s = f.first;
             sprintf(buf,
-                    "\n  if(!_prop_id) { hoc_execerror(\""
+                    "\n"
+                    "  if(!_prop_id) {\n"
+                    "    hoc_execerror(\""
                     "No data for %s_%s. Requires prior call to setdata_%s"
                     " and that the specified mechanism instance still be in existence.\","
-                    " NULL); }\n"
-                    "  Prop* _local_prop = _extcall_prop;\n",
+                    " NULL);\n",
                     s->name,
                     mechname,
                     mechname);
             insertstr(q, buf);
-        } else if (q && vectorize) {
-            // valid id not required but _extcall_prop must be nullptr
-            // because of later _ppvar = _extcall_prop ? ...
-            insertstr(q, "\n  Prop* _local_prop = _prop_id ? _extcall_prop : nullptr;\n");
+            if (vectorize) {
+                insertstr(q,
+                          " }\n"
+                          "  Prop* _local_prop = _extcall_prop;\n");
+            } else {
+                // ensure current instance matches _extcall_prop
+                insertstr(q,
+                          " } else {\n"
+                          "    _setdata(_extcall_prop);\n"
+                          "  }\n");
+            }
+
+        } else if (q) {
+            if (vectorize) {
+                // if id not valid then _local_prop must be nullptr
+                // because of later _ppvar = _local_prop ? ...
+                insertstr(q, "\n  Prop* _local_prop = _prop_id ? _extcall_prop : nullptr;\n");
+            }
         }
     }
 }
