@@ -115,7 +115,7 @@ if os.environ.get("READTHEDOCS"):
     # Install neuron accordingly (nightly for master, otherwise incoming version)
     # Note that neuron wheel must be published a priori.
     subprocess.run(
-        "pip install ./NEURON_nightly-8.2.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"),
+        "pip install ./NEURON_nightly-8.2.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
         shell=True,
         check=True,
     )
