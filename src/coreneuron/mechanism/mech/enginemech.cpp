@@ -110,10 +110,10 @@ int corenrn_embedded_run(int nthread,
                          const char* nrn_arg) {
     bool only_simulate_coreneuron = false;
     const std::string only_simulate_coreneuron_str{"--only-simulate"};
-    // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON and CoreNEURON
-    // Instead run the CoreNEURON simulation only with the coredat files provided
-    // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI options so it is removed from "nrn_arg"
-    // first construct all arguments as string
+    // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON
+    // and CoreNEURON Instead run the CoreNEURON simulation only with the coredat files provided
+    // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI
+    // options so it is removed from "nrn_arg" first construct all arguments as string
     std::string filtered_nrn_arg{nrn_arg};
     const auto ind = static_cast<std::string>(filtered_nrn_arg).find(only_simulate_coreneuron_str);
     if (ind != std::string::npos) {
