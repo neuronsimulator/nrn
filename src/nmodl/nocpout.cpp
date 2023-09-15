@@ -3186,6 +3186,7 @@ void set_inside_func(Symbol* s) {
 // Make sure need_setdata is properly marked for all funcs.
 // I.e on entry, only ones marked are those that use RANGE or VERBATIM.
 // Need to recursively look through func_calls but watch out for loops.
+// If there are no RANGE then VERBATIM is ok and set all need_setdata to false.
 
 static bool check_func(Symbol* s);  // recursive
 
@@ -3196,6 +3197,24 @@ void func_needs_setdata() {
     for (auto& f: funcs) {
         f.second.is_being_looked_at = false;
     }
+
+    // if there are no RANGE then set all need_setdata to false.
+    bool norange{true};
+    Item* q;
+    int i;
+    SYMLISTITER {
+        Symbol* s = SYM(q);
+        if (s->type == NAME && s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            norange = false;
+            break;
+        }
+    }
+    if (norange) {
+        for (auto& f: funcs) {
+            f.second.need_setdata = false;
+        }
+    }
+
     for (auto& f: funcs) {
         check_func(f.first);
     }
