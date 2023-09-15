@@ -411,7 +411,6 @@ int nrncore_psolve(double tstop, int file_mode) {
                 std::string CORENRN_DATA_DIR = "corenrn_data";
                 if (args_as_str.find("--datpath") != std::string::npos) {
                     CORENRN_DATA_DIR = find_datpath_in_arguments(args);
-                    std::cout << "Dumping coreneuron data to " << CORENRN_DATA_DIR << std::endl;
                 }
                 write_corenrn_model(CORENRN_DATA_DIR);
             }
