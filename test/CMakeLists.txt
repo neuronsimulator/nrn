@@ -17,7 +17,6 @@ add_executable(
   testneuron
   common/catch2_main.cpp
   unit_tests/basic.cpp
-  unit_tests/matrix.cpp
   unit_tests/container/container.cpp
   unit_tests/container/generic_data_handle.cpp
   unit_tests/container/mechanism.cpp

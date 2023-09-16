@@ -34,8 +34,8 @@ PROCEDURE Aexp2(x) {
   printf("exp(%g) is %g\n", a, exp(a))
 }
 
-FUNCTION C() {
-  C = c[1]
+FUNCTION C(i) {
+  C = c[i]
 }
 
 PROCEDURE d(x) {
