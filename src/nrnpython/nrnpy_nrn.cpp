@@ -2311,8 +2311,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    // Bug that ix is not passed as the last argument?
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, 0 /* idx */);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
@@ -2332,7 +2331,6 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                        neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
                        0);
     } else {
-        assert(ix == 0);  // d += ix;
         if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
