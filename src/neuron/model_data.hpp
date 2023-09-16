@@ -1,6 +1,7 @@
 #pragma once
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/mechanism_data.hpp"
+#include "neuron/container/memory_usage.hpp"
 #include "neuron/container/node_data.hpp"
 #include "neuron/model_data_fwd.hpp"
 
@@ -24,10 +25,26 @@ struct Model {
         return m_node_data;
     }
 
+    /** @brief Access the structure containing the data of all Nodes.
+     */
+    container::Node::storage const& node_data() const {
+        return m_node_data;
+    }
+
     /** @brief Apply a function to each non-null Mechanism.
      */
     template <typename Callable>
     void apply_to_mechanisms(Callable const& callable) {
+        for (auto type = 0; type < m_mech_data.size(); ++type) {
+            if (!m_mech_data[type]) {
+                continue;
+            }
+            callable(*m_mech_data[type]);
+        }
+    }
+
+    template <typename Callable>
+    void apply_to_mechanisms(Callable const& callable) const {
         for (auto type = 0; type < m_mech_data.size(); ++type) {
             if (!m_mech_data[type]) {
                 continue;
@@ -74,20 +91,21 @@ struct Model {
     /** @brief Get the structure holding the data of a particular Mechanism.
      */
     container::Mechanism::storage& mechanism_data(int type) {
-        if (type >= m_mech_data.size()) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
-                                     "): type out of range");
-        }
-        const auto& data_ptr = m_mech_data[type];
-        if (!data_ptr) {
-            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
-                                     "): data for type was null");
-        }
-        return *data_ptr;
+        return mechanism_data_impl(type);
+    }
+
+    /** @brief Get the structure holding the data of a particular Mechanism.
+     */
+    container::Mechanism::storage const& mechanism_data(int type) const {
+        return mechanism_data_impl(type);
     }
 
     [[nodiscard]] std::size_t mechanism_storage_size() const {
         return m_mech_data.size();
+    }
+
+    [[nodiscard]] bool is_valid_mechanism(int type) const {
+        return 0 <= type && type < mechanism_storage_size() && m_mech_data[type];
     }
 
     /**
@@ -99,7 +117,29 @@ struct Model {
     [[nodiscard]] std::unique_ptr<container::utils::storage_info> find_container_info(
         void const* cont) const;
 
+    void shrink_to_fit() {
+        m_node_data.shrink_to_fit();
+        apply_to_mechanisms([](auto& mech_data) { mech_data.shrink_to_fit(); });
+
+        m_identifier_ptrs_for_deferred_deletion.shrink_to_fit();
+    }
+
   private:
+    container::Mechanism::storage& mechanism_data_impl(int type) const {
+        if (0 <= type && type >= m_mech_data.size()) {
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): type out of range");
+        }
+        const auto& data_ptr = m_mech_data[type];
+        if (!data_ptr) {
+            throw std::runtime_error("mechanism_data(" + std::to_string(type) +
+                                     "): data for type was null");
+        }
+
+        return *data_ptr;
+    }
+
+
     void set_unsorted_callback(container::Mechanism::storage& mech_data);
 
     /** @brief One structure for all Nodes.
@@ -173,4 +213,9 @@ extern Model model_data;
 inline Model& model() {
     return detail::model_data;
 }
+
+namespace container {
+neuron::container::ModelMemoryUsage memory_usage(const Model& model);
+}
+
 }  // namespace neuron

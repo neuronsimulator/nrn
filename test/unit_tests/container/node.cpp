@@ -258,6 +258,7 @@ std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_vol
 }  // namespace neuron::test
 
 TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
+    REQUIRE(neuron::model().node_data().size() == 0);
     GIVEN("A default-constructed node") {
         ::Node node{};
         THEN("Check its SOA-backed members have their default values") {
@@ -443,9 +444,12 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             }
         }
     }
+    REQUIRE(neuron::model().node_data().size() == 0);
 }
 
 TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast_imem]") {
+    REQUIRE(neuron::model().node_data().size() == 0);
+
     auto const set_fast_imem = [](bool new_value) {
         nrn_use_fast_imem = new_value;
         nrn_fast_imem_alloc();
@@ -467,6 +471,7 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
     GIVEN("fast_imem calculation is disabled") {
         set_fast_imem(false);
         WHEN("A node is default-constructed") {
+            REQUIRE(neuron::model().node_data().size() == 0);
             ::Node node{};
             check_throws(node);
             auto handle = node.sav_rhs_handle();

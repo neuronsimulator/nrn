@@ -932,18 +932,25 @@ Most likely, the best approach is to uniformly handle ``area`` and ``diam`` in t
 voltages, both in terms of the underlying data structure and how they are accessed in the generated
 code.
 
-Report memory usage statistics, including the bookkeeping overhead
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Provide a useful tool for reporting how much memory is consumed in the model data structures (those
-reachable via ``neuron::model()``).
-This should provide some kind of breakdown between the actual data, the "active" bookkeeping costs
+Analyze the bookkeeping overhead
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There a crude printf-based tool to access memory usage of the datastructures
+``print_local_memory_usage`` and ``print_memory_stats``.
+This provides some kind of breakdown between the actual data, the "active" bookkeeping costs
 (the currently-used index columns, as explained above), and also the "wasted" overhead of values
 that have their deletion deferred in order to avoid leaving any data handles "in the wild" from
 accidentally dereferencing freed pointers.
 
-This "wasted" storage could, in principle, be recovered after a full traversal of all data
+The need to "leak" the stable identifiers could be avoided by replacing the
+"raw pointer to integer" idea with a reference counted integer, with bitpacking
+and all.
+
+Alternatively, this "wasted" storage could, be recovered after a full traversal of all data
 structures that hold ``data_handle<T>`` or ``generic_data_handle`` that collapses handles that are
 in previously-valid-but-not-any-more (once valid?) state into "null" (never valid?) state.
 
 Reporting and monitoring the scale of this "waste" is much easier than recovering it, which should
 only be done **if** this is **shown** to be a real problem.
+
+Measurements at BBP have shown that under certain conditions the amount of
+"leaked" stable identifiers adds up.
