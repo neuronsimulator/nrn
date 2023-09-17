@@ -1115,7 +1115,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     int narg = hocobj_pushargs(args, strings_to_free);
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
-        double x = (f) (nullptr, self->pymech_->prop_);
+        double x = (f) (self->pymech_->prop_);
         result = Py_BuildValue("d", x);
     } catch (std::exception const& e) {
         std::ostringstream oss;

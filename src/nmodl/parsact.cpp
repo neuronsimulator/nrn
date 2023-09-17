@@ -747,7 +747,7 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
         Sprintf(buf, "\nstatic void _hoc_%s(void) {\n  double _r;\n", n->name);
     } else {  // _npy_...
         Sprintf(buf,
-                "\nstatic double _npy_%s(Node* _nd, Prop* _prop) {\n"
+                "\nstatic double _npy_%s(Prop* _prop) {\n"
                 "    double _r{0.0};\n",
                 n->name);
     }
@@ -775,7 +775,10 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
             "_thread = _extcall_thread.data();\n"
             "_nt = nrn_threads;\n");
     } else {  // _npy_...
-        vectorize_substitute(lappendstr(procfunc, ""),
+        q = lappendstr(procfunc,
+                       "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
+                       "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        vectorize_substitute(q,
                              "_nrn_mechanism_cache_instance _ml_real{_prop};\n"
                              "auto* const _ml = &_ml_real;\n"
                              "size_t const _iml{};\n"

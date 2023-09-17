@@ -482,7 +482,7 @@ extern Memb_func* memb_func;\n\
         SYMLISTITER {
             s = SYM(q);
             if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
-                Sprintf(buf, "static double _npy_%s(Node*, Prop*);\n", s->name, s->name);
+                Sprintf(buf, "static double _npy_%s(Prop*);\n", s->name, s->name);
                 Lappendstr(defs_list, buf);
             }
         }

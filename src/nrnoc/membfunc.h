@@ -92,7 +92,7 @@ struct Memb_func {
 /* Direct call Python wrappers to density mechanism functions */
 struct NPyDirectMechFunc {
     const char* name;
-    double (*func)(Node*, Prop*);
+    double (*func)(Prop*);
 };
 /* Above struct in translated mod files are elements of a {nullptr, nullptr}
    terminated list. The translator could easily create an unordered map instead,
