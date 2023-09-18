@@ -81,11 +81,7 @@ struct owning_identifier {
      * @brief Create a non-null owning identifier by creating a new entry.
      */
     owning_identifier(Storage& storage)
-        : owning_identifier{} {
-        // The default constructor has finished, so *this is a valid object.
-        auto tmp = storage.acquire_owning_identifier();
-        swap(*this, tmp);
-    }
+        : owning_identifier(storage.acquire_owning_identifier()) {}
 
     owning_identifier(const owning_identifier&) = delete;
     owning_identifier(owning_identifier&& other) = default;
@@ -126,10 +122,6 @@ struct owning_identifier {
     [[nodiscard]] std::size_t current_row() const {
         assert(m_ptr);
         return *m_ptr;
-    }
-
-    friend void swap(owning_identifier& first, owning_identifier& second) {
-        std::swap(first.m_ptr, second.m_ptr);
     }
 
     friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
