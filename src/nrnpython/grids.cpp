@@ -1169,7 +1169,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                                     proc_induced_current_count[nrnmpi_numprocs - 1];
 
             all_scales = (double*) malloc(induced_current_count * sizeof(double));
-            all_indices = (int*) malloc(induced_current_count * sizeof(double));
+            all_indices = (int*) malloc(induced_current_count * sizeof(int));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]],
                    induced_currents_scale,
                    sizeof(double) * proc_induced_current_count[nrnmpi_myid]);
