@@ -128,10 +128,8 @@ def test_spikes(
             temp_coreneuron_data_folder = tempfile.TemporaryDirectory(
                 "coreneuron_input"
             )  # auto removed
-            # if not os.path.exists(temp_coreneuron_data_folder.name):
-            #     os.makedirs(temp_coreneuron_data_folder.name)
             coreneuron.data_path = temp_coreneuron_data_folder.name
-            run(mode)
+            run(0)
 
     return h
 
