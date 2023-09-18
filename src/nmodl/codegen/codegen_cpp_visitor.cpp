@@ -8,6 +8,7 @@
 #include "codegen/codegen_cpp_visitor.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <ctime>
 #include <regex>
@@ -1433,9 +1434,9 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
         }
 
         for (const auto& variable: depend_variables) {
-            auto name = variable->get_node_name();
-            auto instance_name = get_variable_name(name);
-            printer->fmt_start_block("if (save_{} != {})", name, instance_name);
+            auto var_name = variable->get_node_name();
+            auto instance_name = get_variable_name(var_name);
+            printer->fmt_start_block("if (save_{} != {})", var_name, instance_name);
             printer->add_line("make_table = true;");
             printer->end_block(1);
         }
@@ -1466,10 +1467,10 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
             if (node.is_procedure_block()) {
                 printer->fmt_line("{}({}, x);", function, internal_method_arguments());
                 for (const auto& variable: table_variables) {
-                    auto name = variable->get_node_name();
-                    auto instance_name = get_variable_name(name);
-                    auto table_name = get_variable_name("t_" + name);
-                    auto [is_array, array_length] = check_if_var_is_array(name);
+                    auto var_name = variable->get_node_name();
+                    auto instance_name = get_variable_name(var_name);
+                    auto table_name = get_variable_name("t_" + var_name);
+                    auto [is_array, array_length] = check_if_var_is_array(var_name);
                     if (is_array) {
                         for (int j = 0; j < array_length; j++) {
                             printer->fmt_line(
@@ -1489,9 +1490,9 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
             printer->end_block(1);
 
             for (const auto& variable: depend_variables) {
-                auto name = variable->get_node_name();
-                auto instance_name = get_variable_name(name);
-                printer->fmt_line("save_{} = {};", name, instance_name);
+                auto var_name = variable->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                printer->fmt_line("save_{} = {};", var_name, instance_name);
             }
         }
         printer->end_block(1);
@@ -1506,7 +1507,6 @@ void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node)
     auto table_variables = statement->get_table_vars();
     auto with = statement->get_with()->eval();
     auto use_table_var = get_variable_name(naming::USE_TABLE_VARIABLE);
-    auto float_type = default_float_data_type();
     auto tmin_name = get_variable_name("tmin_" + name);
     auto mfac_name = get_variable_name("mfac_" + name);
     auto function_name = method_name("f_" + name);
@@ -1538,14 +1538,14 @@ void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node)
         printer->start_block("if (isnan(xi))");
         if (node.is_procedure_block()) {
             for (const auto& var: table_variables) {
-                auto name = get_variable_name(var->get_node_name());
+                auto var_name = get_variable_name(var->get_node_name());
                 auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
                 if (is_array) {
                     for (int j = 0; j < array_length; j++) {
-                        printer->fmt_line("{}[{}] = xi;", name, j);
+                        printer->fmt_line("{}[{}] = xi;", var_name, j);
                     }
                 } else {
-                    printer->fmt_line("{} = xi;", name);
+                    printer->fmt_line("{} = xi;", var_name);
                 }
             }
             printer->add_line("return 0;");
@@ -1558,10 +1558,10 @@ void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node)
         printer->fmt_line("int index = (xi <= 0.) ? 0 : {};", with);
         if (node.is_procedure_block()) {
             for (const auto& variable: table_variables) {
-                auto name = variable->get_node_name();
-                auto instance_name = get_variable_name(name);
-                auto table_name = get_variable_name("t_" + name);
-                auto [is_array, array_length] = check_if_var_is_array(name);
+                auto var_name = variable->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
+                auto [is_array, array_length] = check_if_var_is_array(var_name);
                 if (is_array) {
                     for (int j = 0; j < array_length; j++) {
                         printer->fmt_line(
@@ -1582,9 +1582,9 @@ void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node)
         printer->add_line("double theta = xi - double(i);");
         if (node.is_procedure_block()) {
             for (const auto& var: table_variables) {
-                auto name = var->get_node_name();
-                auto instance_name = get_variable_name(name);
-                auto table_name = get_variable_name("t_" + name);
+                auto var_name = var->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
                 auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
                 if (is_array) {
                     for (size_t j = 0; j < array_length; j++) {
@@ -1625,9 +1625,9 @@ void CodegenCppVisitor::print_check_table_thread_function() {
     printer->add_line("double v = 0;");
 
     for (const auto& function: info.functions_with_table) {
-        auto name = method_name("check_" + function->get_node_name());
+        auto method_name_str = method_name("check_" + function->get_node_name());
         auto arguments = internal_method_arguments();
-        printer->fmt_line("{}({});", name, arguments);
+        printer->fmt_line("{}({});", method_name_str, arguments);
     }
 
     printer->end_block(1);
@@ -1736,9 +1736,6 @@ void CodegenCppVisitor::print_function_tables(const ast::FunctionTableBlock& nod
  */
 bool is_functor_const(const ast::StatementBlock& variable_block,
                       const ast::StatementBlock& functor_block) {
-    // Save DUChain for every variable in variable_block
-    std::unordered_map<std::string, DUChain> chains;
-
     // Create complete_block with both variable declarations (done in variable_block) and solver
     // part (done in functor_block) to be able to run the SymtabVisitor and DefUseAnalyzeVisitor
     // then and get the proper DUChains for the variables defined in the variable_block
@@ -2416,9 +2413,9 @@ std::string CodegenCppVisitor::get_variable_name(const std::string& name, bool u
 
 
 void CodegenCppVisitor::print_backend_info() {
-    time_t tr{};
-    time(&tr);
-    auto date = std::string(asctime(localtime(&tr)));
+    time_t current_time{};
+    time(&current_time);
+    std::string data_time_str{std::ctime(&current_time)};
     auto version = nmodl::Version::NMODL_VERSION + " [" + nmodl::Version::GIT_REVISION + "]";
 
     printer->add_line("/*********************************************************");
@@ -2427,7 +2424,7 @@ void CodegenCppVisitor::print_backend_info() {
     printer->fmt_line("NMODL Version   : {}", nmodl_version());
     printer->fmt_line("Vectorized      : {}", info.vectorize);
     printer->fmt_line("Threadsafe      : {}", info.thread_safe);
-    printer->fmt_line("Created         : {}", stringutils::trim(date));
+    printer->fmt_line("Created         : {}", stringutils::trim(data_time_str));
     printer->fmt_line("Backend         : {}", backend_name());
     printer->fmt_line("NMODL Compiler  : {}", version);
     printer->add_line("*********************************************************/");
@@ -2711,7 +2708,7 @@ void CodegenCppVisitor::print_prcellstate_macros() const {
 
 
 void CodegenCppVisitor::print_mechanism_info() {
-    auto variable_printer = [&](std::vector<SymbolType>& variables) {
+    auto variable_printer = [&](const std::vector<SymbolType>& variables) {
         for (const auto& v: variables) {
             auto name = v->get_name();
             if (!info.point_process) {
@@ -2871,18 +2868,18 @@ void CodegenCppVisitor::print_mechanism_register() {
     printer->add_line("_nrn_layout_reg(mech_type, 0);");  // 0 for SoA
 
     // register mechanism
-    auto args = register_mechanism_arguments();
-    auto nobjects = num_thread_objects();
+    const auto mech_arguments = register_mechanism_arguments();
+    const auto number_of_thread_objects = num_thread_objects();
     if (info.point_process) {
         printer->fmt_line("point_register_mech({}, {}, {}, {});",
-                          args,
+                          mech_arguments,
                           info.constructor_node ? method_name(naming::NRN_CONSTRUCTOR_METHOD)
                                                 : "nullptr",
                           info.destructor_node ? method_name(naming::NRN_DESTRUCTOR_METHOD)
                                                : "nullptr",
-                          nobjects);
+                          number_of_thread_objects);
     } else {
-        printer->fmt_line("register_mech({}, {});", args, nobjects);
+        printer->fmt_line("register_mech({}, {});", mech_arguments, number_of_thread_objects);
         if (info.constructor_node) {
             printer->fmt_line("register_constructor({});",
                               method_name(naming::NRN_CONSTRUCTOR_METHOD));
@@ -3059,7 +3056,6 @@ void CodegenCppVisitor::print_thread_memory_callbacks() {
 
 void CodegenCppVisitor::print_mechanism_range_var_structure(bool print_initialisers) {
     auto const value_initialise = print_initialisers ? "{}" : "";
-    auto float_type = default_float_data_type();
     auto int_type = default_int_data_type();
     printer->add_newline(2);
     printer->add_line("/** all mechanism instance variables and global variables */");
@@ -3797,7 +3793,6 @@ void CodegenCppVisitor::print_net_move_call(const FunctionCall& node) {
         printer->add_text(")");
     } else {
         auto point_process = get_variable_name("point_process");
-        std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
         printer->fmt_text("nt, ml->_net_send_buffer, 2, {}, {}, {}, ", tqitem, weight_index, point_process);
         print_vector_elements(arguments, ", ");

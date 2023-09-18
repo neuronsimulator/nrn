@@ -127,10 +127,10 @@ struct IndexVariableInfo {
     /// if the variable is qualified as constant (this is property of IndexVariable)
     bool is_constant = false;
 
-    IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
-                      bool is_vdata = false,
-                      bool is_index = false,
-                      bool is_integer = false)
+    explicit IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
+                               bool is_vdata = false,
+                               bool is_index = false,
+                               bool is_integer = false)
         : symbol(std::move(symbol))
         , is_vdata(is_vdata)
         , is_index(is_index)
@@ -192,19 +192,39 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     using ParamVector = std::vector<std::tuple<std::string, std::string, std::string, std::string>>;
 
     /**
+     * Code printer object for target (C++)
+     */
+    std::shared_ptr<CodePrinter> target_printer;
+
+    /**
+     * Code printer object for wrappers
+     */
+    std::shared_ptr<CodePrinter> wrapper_printer;
+
+    /**
+     * Pointer to active code printer
+     */
+    std::shared_ptr<CodePrinter> printer;
+
+    /**
      * Name of mod file (without .mod suffix)
      */
     std::string mod_filename;
 
     /**
-     * Flag to indicate if visitor should print the visited nodes
+     * Data type of floating point variables
      */
-    bool codegen = false;
+    std::string float_type = codegen::naming::DEFAULT_FLOAT_TYPE;
 
     /**
      * Flag to indicate if visitor should avoid ion variable copies
      */
     bool optimize_ionvar_copies = true;
+
+    /**
+     * Flag to indicate if visitor should print the visited nodes
+     */
+    bool codegen = false;
 
     /**
      * Variable name should be converted to instance name (but not for function arguments)
@@ -259,29 +279,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     int current_watch_statement = 0;
 
     /**
-     * Data type of floating point variables
-     */
-    std::string float_type = codegen::naming::DEFAULT_FLOAT_TYPE;
-
-    /**
      * All ast information for code generation
      */
     codegen::CodegenInfo info;
-
-    /**
-     * Code printer object for target (C)
-     */
-    std::shared_ptr<CodePrinter> target_printer;
-
-    /**
-     * Code printer object for wrappers
-     */
-    std::shared_ptr<CodePrinter> wrapper_printer;
-
-    /**
-     * Pointer to active code printer
-     */
-    std::shared_ptr<CodePrinter> printer;
 
     /**
      * Return Nmodl language version
@@ -1577,30 +1577,31 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual void print_wrapper_routines();
 
 
-    CodegenCppVisitor(const std::string& mod_filename,
+    CodegenCppVisitor(std::string mod_filename,
                       const std::string& output_dir,
-                      const std::string& float_type,
+                      std::string float_type,
                       const bool optimize_ionvar_copies,
                       const std::string& extension,
                       const std::string& wrapper_ext)
-        : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
-        , wrapper_printer(new CodePrinter(output_dir + "/" + mod_filename + wrapper_ext))
+        : target_printer(std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + extension))
+        , wrapper_printer(
+              std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + wrapper_ext))
         , printer(target_printer)
-        , mod_filename(mod_filename)
-        , float_type(float_type)
+        , mod_filename(std::move(mod_filename))
+        , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
-    CodegenCppVisitor(const std::string& mod_filename,
+    CodegenCppVisitor(std::string mod_filename,
                       std::ostream& stream,
-                      const std::string& float_type,
+                      std::string float_type,
                       const bool optimize_ionvar_copies,
                       const std::string& extension,
                       const std::string& wrapper_ext)
-        : target_printer(new CodePrinter(stream))
-        , wrapper_printer(new CodePrinter(stream))
+        : target_printer(std::make_shared<CodePrinter>(stream))
+        , wrapper_printer(std::make_shared<CodePrinter>(stream))
         , printer(target_printer)
-        , mod_filename(mod_filename)
-        , float_type(float_type)
+        , mod_filename(std::move(mod_filename))
+        , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
 
@@ -1622,14 +1623,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *                     as-is in the target code. This defaults to \c double.
      * \param extension    The file extension to use. This defaults to \c .cpp .
      */
-    CodegenCppVisitor(const std::string& mod_filename,
+    CodegenCppVisitor(std::string mod_filename,
                       const std::string& output_dir,
                       std::string float_type,
                       const bool optimize_ionvar_copies,
                       const std::string& extension = ".cpp")
-        : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
+        : target_printer(std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
-        , mod_filename(mod_filename)
+        , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
@@ -1649,42 +1650,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      */
-    CodegenCppVisitor(const std::string& mod_filename,
-                      std::ostream& stream,
-                      const std::string& float_type,
-                      const bool optimize_ionvar_copies)
-        : target_printer(new CodePrinter(stream))
-        , printer(target_printer)
-        , mod_filename(mod_filename)
-        , float_type(float_type)
-        , optimize_ionvar_copies(optimize_ionvar_copies) {}
-
-
-    /**
-     * \copybrief nmodl::codegen::CodegenCppVisitor
-     *
-     * This constructor instantiates an NMODL C code generator and allows writing generated code
-     * using an nmodl::printer::CodePrinter defined elsewhere.
-     *
-     * \note No code generation is performed at this stage. Since the code
-     * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
-     * visit_program in order to generate the C code corresponding to the AST.
-     *
-     * \param mod_filename   The name of the model for which code should be generated.
-     *                       It is used for constructing an output filename.
-     * \param float_type     The float type to use in the generated code. The string will be used
-     *                       as-is in the target code. This defaults to \c double.
-     * \param target_printer A printer defined outside this visitor to be used for the code
-     *                       generation
-     */
     CodegenCppVisitor(std::string mod_filename,
+                      std::ostream& stream,
                       std::string float_type,
-                      const bool optimize_ionvar_copies,
-                      std::shared_ptr<CodePrinter>& target_printer)
-        : target_printer(target_printer)
+                      const bool optimize_ionvar_copies)
+        : target_printer(std::make_shared<CodePrinter>(stream))
         , printer(target_printer)
-        , mod_filename(mod_filename)
-        , float_type(float_type)
+        , mod_filename(std::move(mod_filename))
+        , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
 
@@ -1890,12 +1863,11 @@ void CodegenCppVisitor::print_vector_elements(const std::vector<T>& elements,
 template <typename T>
 bool has_parameter_of_name(const T& node, const std::string& name) {
     auto parameters = node->get_parameters();
-    for (const auto& parameter: parameters) {
-        if (parameter->get_node_name() == name) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(parameters.begin(),
+                       parameters.end(),
+                       [&name](const decltype(*parameters.begin()) arg) {
+                           return arg->get_node_name() == name;
+                       });
 }
 
 
