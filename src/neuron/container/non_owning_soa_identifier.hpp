@@ -27,6 +27,19 @@ struct non_owning_identifier_without_container {
      */
     non_owning_identifier_without_container() = default;
 
+    non_owning_identifier_without_container(const non_owning_identifier_without_container& other) =
+        default;
+    non_owning_identifier_without_container(non_owning_identifier_without_container&& other) =
+        default;
+
+    non_owning_identifier_without_container& operator=(
+        const non_owning_identifier_without_container&) = default;
+    non_owning_identifier_without_container& operator=(non_owning_identifier_without_container&&) =
+        default;
+
+    ~non_owning_identifier_without_container() = default;
+
+
     /**
      * @brief Does the identifier refer to a valid entry?
      *

@@ -87,6 +87,14 @@ struct owning_identifier {
         swap(*this, tmp);
     }
 
+    owning_identifier(const owning_identifier&) = delete;
+    owning_identifier(owning_identifier&& other) = default;
+
+    owning_identifier& operator=(const owning_identifier&) = delete;
+    owning_identifier& operator=(owning_identifier&&) = default;
+
+    ~owning_identifier() = default;
+
     /**
      * @brief Return a reference to the container in which this entry lives.
      */
