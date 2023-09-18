@@ -380,16 +380,12 @@ std::string find_datpath_in_arguments(const std::string& coreneuron_arguments) {
     std::string arg;
     std::stringstream ss(coreneuron_arguments);
     // Split the coreneuron arguments based on spaces
-    // and look for the --datpath argument
+    // and look for the `--datpath <argument>`
     getline(ss, arg, ' ');
-    auto datapath_iterator = arg.find("--datpath");
-    while (datapath_iterator != std::string::npos) {
+    while (arg != "--datpath") {
         getline(ss, arg, ' ');
-        datapath_iterator = arg.find("--datpath");
     }
-    // Read a string with a single space after --datpath
-    getline(ss, arg, ' ');
-    // Read the real path
+    // Read the real path that follows `--datpath`
     getline(ss, arg, ' ');
     return arg;
 }
