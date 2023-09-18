@@ -2,6 +2,7 @@
 #include "hocdec.h"      // Datum
 #include "section.h"     // Section
 #include "structpool.h"  // Pool
+#include "../neuron/model_data.hpp"
 
 #include <memory>
 #include <vector>
@@ -111,6 +112,7 @@ void nrn_poolshrink(int shrink) {
                 pdatum.reset();
             }
         }
+        neuron::model().shrink_to_fit();
     } else {
         Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
         for (auto i = 0; i < datumpools().size(); ++i) {
