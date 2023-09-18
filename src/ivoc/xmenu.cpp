@@ -2001,7 +2001,10 @@ void HocValEditor::audit() {
     } else if (variable_) {
         Sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
     } else if (pval_) {
-        Sprintf(buf, "// %p pointer set to %s\n", pval_, fe_->text()->string());
+        Sprintf(buf,
+                "// %p pointer set to %s\n",
+                static_cast<double*>(pval_),
+                fe_->text()->string());
     }
     hoc_audit_command(buf);
 }
@@ -2718,7 +2721,7 @@ void OcSlider::audit() {
     if (variable_) {
         Sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
     } else if (pval_) {
-        Sprintf(buf, "// %p pointer set to %g\n", pval_, *pval_);
+        Sprintf(buf, "// %p pointer set to %g\n", static_cast<double*>(pval_), *pval_);
     }
     hoc_audit_command(buf);
     if (send_) {
