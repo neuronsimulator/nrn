@@ -26,11 +26,7 @@
 
 extern NetCvode* net_cvode_instance;
 
-class GLineRecordList;
-
-declarePtrList(GLineRecordList, GLineRecord)
-implementPtrList(GLineRecordList, GLineRecord)
-static GLineRecordList* grl;
+static std::vector<GLineRecord*>* grl;
 
 // Since GraphLine is not an observable, its destructor calls this.
 // So ivoc will work, a stub is placed in ivoc/datapath.cpp
@@ -38,11 +34,9 @@ void graphLineRecDeleted(GraphLine* gl) {
     if (!grl) {
         return;
     }
-    int i, cnt = grl->count();
-    for (i = 0; i < cnt; ++i) {
-        GLineRecord* r = grl->item(i);
-        if (r->uses(gl)) {
-            delete r;
+    for (auto& item: *grl) {
+        if (item->uses(gl)) {
+            delete item;
             return;
         }
     }
@@ -52,15 +46,15 @@ void NetCvode::simgraph_remove() {
     if (!grl) {
         return;
     }
-    while (grl->count()) {
-        delete grl->item(grl->count() - 1);
+    for(auto& item: *grl) {
+        delete item;
     }
 }
 
 void Graph::simgraph() {
     int i, cnt;
     if (!grl) {
-        grl = new GLineRecordList();
+        grl = new std::vector<GLineRecord*>();
     }
     cnt = line_list_.count();
     for (i = 0; i < cnt; ++i) {
@@ -70,7 +64,7 @@ void Graph::simgraph() {
             delete pr;
         }
         GLineRecord* r = new GLineRecord(gl);
-        grl->append(r);
+        grl->push_back(r);
     }
 }
 
@@ -171,10 +165,10 @@ GLineRecord::~GLineRecord() {
         }
     }
 
-    for (int i = grl->count() - 1; i >= 0; --i) {
-        if (grl->item(i) == this) {
+    for (int i = grl->size() - 1; i >= 0; --i) {
+        if ((*grl)[i] == this) {
             gl_->simgraph_activate(false);
-            grl->remove(i);
+            grl->erase(grl->begin() + i);
             return;
         }
     }
