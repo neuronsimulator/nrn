@@ -279,13 +279,13 @@ int nrncore_run(const char* arg) {
     // and we just need to simulate it with CoreNEURON
     // Avoid trying to check the NEURON model, passing any data between them and other bookeeping
     // actions
-    bool only_simulate_coreneuron = static_cast<std::string>(arg).find("--only-simulate") !=
-                                    std::string::npos;
+    bool corenrn_skip_write_model_to_disk = static_cast<std::string>(arg).find(
+                                                "--skip-write-model-to-disk") != std::string::npos;
 
     // check that model can be transferred
     // unless "--simulate-only" argument is passed that means that the model is already dumped to
     // disk
-    if (!only_simulate_coreneuron) {
+    if (!corenrn_skip_write_model_to_disk) {
         model_ready();
     }
 
@@ -321,7 +321,7 @@ int nrncore_run(const char* arg) {
 
     // check that model can be transferred unless we only want to run the CoreNEURON simulation
     // with prebuilt model
-    if (!only_simulate_coreneuron) {
+    if (!corenrn_skip_write_model_to_disk) {
         // prepare the model, the returned token will keep the NEURON-side copy of
         // the model frozen until the end of nrncore_run.
         auto sorted_token = part1().sorted_token;
@@ -340,7 +340,7 @@ int nrncore_run(const char* arg) {
     dlclose(handle);
 
     // Simulation has finished after calling coreneuron_launcher so we can now return
-    if (!only_simulate_coreneuron) {
+    if (!corenrn_skip_write_model_to_disk) {
         return result;
     }
 
@@ -401,9 +401,9 @@ int nrncore_psolve(double tstop, int file_mode) {
             // if file mode is requested then write model to a directory
             // note that CORENRN_DATA_DIR name is also used in module
             // file coreneuron.py
-            auto only_simulate_coreneuron = args_as_str.find("--only-simulate") !=
-                                            std::string::npos;
-            if (file_mode && !only_simulate_coreneuron) {
+            auto corenrn_skip_write_model_to_disk =
+                args_as_str.find("--skip-write-model-to-disk") != std::string::npos;
+            if (file_mode && !corenrn_skip_write_model_to_disk) {
                 std::string CORENRN_DATA_DIR = "corenrn_data";
                 if (args_as_str.find("--datpath") != std::string::npos) {
                     CORENRN_DATA_DIR = find_datpath_in_arguments(args);
@@ -415,7 +415,7 @@ int nrncore_psolve(double tstop, int file_mode) {
             t = nrn_threads[0]._t;
             free(args);
             // Really just want to get NetParEvent back onto queue.
-            if (!only_simulate_coreneuron) {
+            if (!corenrn_skip_write_model_to_disk) {
                 nrn_spike_exchange_init();
             }
             return 0;
