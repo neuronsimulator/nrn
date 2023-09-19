@@ -41,7 +41,6 @@ static void Vect2VEC(Vect* v1, VEC& v2) {
 }
 
 OcMatrix::OcMatrix(int type) {
-    obj_ = nullptr;
     type_ = type;
 }
 OcMatrix::~OcMatrix() {}
