@@ -53,8 +53,7 @@ void Oc::help(const char* s) {
 #endif
 
 #if defined(WIN32)
-void Oc::help(const char* s) {
-}
+void Oc::help(const char* s) {}
 #endif  // WIN32
 
 void Oc::helpmode(bool b) {
