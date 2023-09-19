@@ -95,7 +95,7 @@ extern Symlist* hoc_built_in_symlist;
 extern Symlist* hoc_top_level_symlist;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern hoc_Item* net_cvode_instance_psl();
-extern PlayRecList* net_cvode_instance_prl();
+extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
@@ -300,7 +300,7 @@ hoc_Item* net_cvode_instance_psl() {
     return net_cvode_instance->psl_;
 }
 
-PlayRecList* net_cvode_instance_prl() {
+std::vector<PlayRecord*>* net_cvode_instance_prl() {
     return net_cvode_instance->playrec_list();
 }
 
@@ -1213,7 +1213,8 @@ NetCvode::NetCvode(bool single) {
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
     alloc_list();
-    prl_ = new PlayRecList(10);
+    prl_ = new std::vector<PlayRecord*>();
+    prl_->reserve(10);
     fixed_play_ = new PlayRecList(10);
     fixed_record_ = new PlayRecList(10);
     vec_event_store_ = nullptr;
@@ -1248,8 +1249,8 @@ NetCvode::~NetCvode() {
     delete std::exchange(pst_, nullptr);
     delete std::exchange(fixed_play_, nullptr);
     delete std::exchange(fixed_record_, nullptr);
-    while (prl_->count()) {
-        delete prl_->item(prl_->count() - 1);
+    for (auto& item: *prl_) {
+        delete item;
     }
     delete std::exchange(prl_, nullptr);
     unused_presyn = nullptr;
@@ -4189,8 +4190,7 @@ void record_init_clear(const TQItem* q, int) {
 }
 
 void NetCvode::record_init() {
-    int i, cnt = prl_->count();
-    if (cnt) {
+    if (!prl_->empty()) {
         // there may be some events on the queue descended from
         // finitialize that need to be removed
         record_init_items_->clear();
@@ -4200,15 +4200,14 @@ void NetCvode::record_init() {
         }
         record_init_items_->clear();
     }
-    for (i = 0; i < cnt; ++i) {
-        prl_->item(i)->record_init();
+    for (auto& item: *prl_) {
+        item->record_init();
     }
 }
 
 void NetCvode::play_init() {
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
-        prl_->item(i)->play_init();
+    for (auto& item: *prl_) {
+        item->play_init();
     }
 }
 
@@ -6128,28 +6127,27 @@ implementPtrList(PlayRecList, PlayRecord)
 void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
                                               // printf("NetCvode::playrec_add %p\n", pr);
     playrec_change_cnt_ = 0;
-    prl_->append(pr);
+    prl_->push_back(pr);
 }
 
 void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destructor
                                                  // printf("NetCvode::playrec_remove %p\n", pr);
     playrec_change_cnt_ = 0;
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (prl_->item(i) == pr) {
-            prl_->remove(i);
+    for (auto it = prl_->begin(); it != prl_->end(); ++it) {
+        if (*it == pr) {
+            prl_->erase(it);
             break;
         }
     }
-    cnt = fixed_play_->count();
-    for (i = 0; i < cnt; ++i) {
+    int cnt = fixed_play_->count();
+    for (int i = 0; i < cnt; ++i) {
         if (fixed_play_->item(i) == pr) {
             fixed_play_->remove(i);
             break;
         }
     }
     cnt = fixed_record_->count();
-    for (i = 0; i < cnt; ++i) {
+    for (int i = 0; i < cnt; ++i) {
         if (fixed_record_->item(i) == pr) {
             fixed_record_->remove(i);
             break;
@@ -6158,9 +6156,8 @@ void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destruc
 }
 
 int NetCvode::playrec_item(PlayRecord* pr) {
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (prl_->item(i) == pr) {
+    for (std::size_t i = 0; i < prl_->size(); ++i) {
+        if ((*prl_)[i] == pr) {
             return i;
         }
     }
@@ -6168,15 +6165,13 @@ int NetCvode::playrec_item(PlayRecord* pr) {
 }
 
 PlayRecord* NetCvode::playrec_item(int i) {
-    assert(i < prl_->count());
-    return prl_->item(i);
+    return prl_->at(i);
 }
 
 PlayRecord* NetCvode::playrec_uses(void* v) {
-    int i, cnt = prl_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (prl_->item(i)->uses(v)) {
-            return prl_->item(i);
+    for (auto& item: *prl_) {
+        if (item->uses(v)) {
+            return item;
         }
     }
     return nullptr;
@@ -6446,8 +6441,8 @@ void NetCvode::vec_remove() {
 }
 
 void NetCvode::playrec_setup() {
-    long i, j, prlc;
-    prlc = prl_->count();
+    long i, j;
+    long prlc = prl_->size();
     fixed_record_->remove_all();
     fixed_play_->remove_all();
     if (gcv_) {
@@ -6459,7 +6454,7 @@ void NetCvode::playrec_setup() {
     }
     std::vector<PlayRecord*> to_delete{};
     for (long iprl = 0; iprl < prlc; ++iprl) {
-        PlayRecord* pr = prl_->item(iprl);
+        PlayRecord* pr = (*prl_)[iprl];
         if (!pr->pd_) {
             // Presumably the recorded value was invalidated elsewhere, e.g. it
             // was a voltage of a deleted node, or a range variable of a deleted
