@@ -46,7 +46,7 @@ void NetCvode::simgraph_remove() {
     if (!grl) {
         return;
     }
-    for(auto& item: *grl) {
+    for (auto& item: *grl) {
         delete item;
     }
 }
