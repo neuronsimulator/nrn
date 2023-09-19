@@ -621,7 +621,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     // copy weights back to NEURON NetCon
-    if (nrn2core_all_weights_return_) {
+    if (nrn2core_all_weights_return_ && corenrn_embedded) {
         // first update weights from gpu
         update_weights_from_gpu(nrn_threads, nrn_nthread);
 
@@ -635,7 +635,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
         (*nrn2core_all_weights_return_)(weights);
     }
 
-    core2nrn_data_return();
+    if (corenrn_embedded) {
+        core2nrn_data_return();
+    }
 
     {
         Instrumentor::phase p("checkpoint");
