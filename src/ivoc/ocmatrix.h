@@ -139,13 +139,12 @@ class OcMatrix {
     }
 
     void unimp();
-    Object** temp_objvar();
 
   protected:
     OcMatrix(int type);
 
   public:
-    Object* obj_;
+    Object* obj_{};
 
   private:
     int type_;
