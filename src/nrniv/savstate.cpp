@@ -711,7 +711,7 @@ void SaveState::restore(int type) {
         return;
     }
     std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
-    // during a local step the PlayRecList is augmented with GLineRecord
+    // during a local step prl is augmented with GLineRecord
     // assert(nprs_ == prl->count());
     assert(nprs_ <= prl->size());
     int i;

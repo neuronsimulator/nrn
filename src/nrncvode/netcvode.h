@@ -23,7 +23,6 @@ class SelfEvent;
 using SelfEventPool = MutexPool<SelfEvent>;
 struct hoc_Item;
 class PlayRecord;
-class PlayRecList;
 class IvocVect;
 struct BAMechList;
 class HTList;
@@ -134,7 +133,7 @@ class NetCvode {
     void simgraph_remove();
     // fixed step continuous play and record
     std::vector<PlayRecord*>* fixed_play_;
-    PlayRecList* fixed_record_;
+    std::vector<PlayRecord*>* fixed_record_;
     void vecrecord_add();  // hoc interface functions
     void vec_remove();
     void record_init();

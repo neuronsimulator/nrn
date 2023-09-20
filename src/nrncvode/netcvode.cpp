@@ -1217,7 +1217,8 @@ NetCvode::NetCvode(bool single) {
     prl_->reserve(10);
     fixed_play_ = new std::vector<PlayRecord*>();
     fixed_play_->reserve(10);
-    fixed_record_ = new PlayRecList(10);
+    fixed_record_ = new std::vector<PlayRecord*>();
+    fixed_record_->reserve(10);
     vec_event_store_ = nullptr;
     if (!record_init_items_) {
         record_init_items_ = new TQList();
@@ -5615,9 +5616,7 @@ void Cvode::check_deliver(NrnThread* nt) {
 void NetCvode::fixed_record_continuous(neuron::model_sorted_token const& cache_token,
                                        NrnThread& nt) {
     nrn_ba(cache_token, nt, BEFORE_STEP);
-    auto const cnt = fixed_record_->count();
-    for (int i = 0; i < cnt; ++i) {  // should be made more efficient
-        PlayRecord* pr = fixed_record_->item(i);
+    for (auto& pr: *fixed_record_) {
         if (pr->ith_ == nt.id) {
             pr->continuous(nt._t);
         }
@@ -5720,12 +5719,9 @@ void nrnthread_get_trajectory_requests(int tid,
     pvars = NULL;
     if (tid < nrn_nthread) {
         NrnThread& nt = nrn_threads[tid];
-        PlayRecList* fr = net_cvode_instance->fixed_record_;
-        int cntp;
-        cntp = fr->count();
+        auto* fr = net_cvode_instance->fixed_record_;
         // allocate
-        for (int i = 0; i < cntp; ++i) {
-            PlayRecord* pr = fr->item(i);
+        for (auto& pr: *fr) {
             if (pr->ith_ == tid) {
                 if (pr->type() == TvecRecordType || pr->type() == YvecRecordType) {
                     n_pr++;
@@ -5774,9 +5770,8 @@ void nrnthread_get_trajectory_requests(int tid,
         // everything allocated, start over and fill
         n_pr = 0;
         n_trajec = 0;
-        for (int i = 0; i < cntp; ++i) {
+        for (auto& pr: *fr) {
             int err = 0;
-            PlayRecord* pr = fr->item(i);
             if (pr->ith_ == tid) {
                 if (1) {  // buffered or per time step value return
                     IvocVect* v = NULL;
@@ -6120,8 +6115,6 @@ tryagain:
     nt->_t = tsav;
 }
 
-implementPtrList(PlayRecList, PlayRecord)
-
 void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructor
                                               // printf("NetCvode::playrec_add %p\n", pr);
     playrec_change_cnt_ = 0;
@@ -6143,10 +6136,9 @@ void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destruc
             break;
         }
     }
-    int cnt = fixed_record_->count();
-    for (int i = 0; i < cnt; ++i) {
-        if (fixed_record_->item(i) == pr) {
-            fixed_record_->remove(i);
+    for (auto it = fixed_record_->begin(); it != fixed_record_->end(); ++it) {
+        if (*it == pr) {
+            fixed_record_->erase(it);
             break;
         }
     }
@@ -6208,7 +6200,7 @@ void PlayRecord::record_add(Cvode* cv) {
     if (cv) {
         cv->record_add(this);
     }
-    net_cvode_instance->fixed_record_->append(this);
+    net_cvode_instance->fixed_record_->push_back(this);
 }
 
 void PlayRecord::play_add(Cvode* cv) {
@@ -6440,7 +6432,7 @@ void NetCvode::vec_remove() {
 void NetCvode::playrec_setup() {
     long i, j;
     long prlc = prl_->size();
-    fixed_record_->remove_all();
+    fixed_record_->clear();
     fixed_play_->clear();
     if (gcv_) {
         gcv_->delete_prl();
