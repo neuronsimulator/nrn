@@ -1995,18 +1995,16 @@ void HocValEditor::evalField() {
 }
 
 void HocValEditor::audit() {
-    char buf[200];
+    auto sout = std::stringstream{};
     if (pyvar_) {
         return;
     } else if (variable_) {
-        Sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
+        sout << variable_->string() << " = " << fe_->text()->string();
     } else if (pval_) {
-        Sprintf(buf,
-                "// %p pointer set to %s\n",
-                static_cast<double*>(pval_),
-                fe_->text()->string());
+        sout << "// " << pval_ << " pointer set to " << fe_->text()->string();
     }
-    hoc_audit_command(buf);
+    auto buf = sout.str();
+    hoc_audit_command(buf.c_str());
 }
 
 void HocValEditor::updateField() {
@@ -2717,13 +2715,16 @@ void OcSlider::update(Observable*) {
 }
 
 void OcSlider::audit() {
+    auto sout = std::stringstream{};
     char buf[200];
+    Sprintf(buf, "%g", *pval_);
     if (variable_) {
-        Sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
+        sout << variable_->string() << " = " << buf << "\n";
     } else if (pval_) {
-        Sprintf(buf, "// %p pointer set to %g\n", static_cast<double*>(pval_), *pval_);
+        sout << "// " << pval_ << " set to " << buf << "\n";
     }
-    hoc_audit_command(buf);
+    auto str = sout.str();
+    hoc_audit_command(str.c_str());
     if (send_) {
         send_->audit();
     }
