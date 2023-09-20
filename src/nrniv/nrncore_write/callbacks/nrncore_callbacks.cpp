@@ -632,7 +632,6 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
     // error if not a VecPlayContinuous with no discon vector
     int i = 0;
     for (auto& item: *net_cvode_instance->fixed_play_) {
-        ++i;
         if (item->type() == VecPlayContinuousType) {
             auto* vp = static_cast<VecPlayContinuous*>(item);
             if (vp->discon_indices_ == NULL) {
@@ -646,6 +645,7 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
         } else {
             assert(0);
         }
+        ++i;
     }
 
     return 1;
