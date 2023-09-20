@@ -2479,12 +2479,10 @@ void Graph::choose_sym() {
         w = v->canvas()->window();
     }
     while ((w && sc_->post_for_aligned(w, .5, 1.)) || (!w && sc_->post_at(300, 300))) {
-        // printf("Graph selected %s\n", sc_->selected()->string());
         char buf[256];
         double* pd = sc_->selected_var();
         neuron::container::data_handle<double> pd_handle{pd};
-        assert(!pd_handle.refers_to_a_modern_data_structure());  // pd + i below would be
-                                                                 // problematic
+
         if (sc_->selected_vector_count()) {
             Sprintf(buf, "%s", sc_->selected()->string());
             GraphVector* gv = new GraphVector(buf);
@@ -2492,9 +2490,7 @@ void Graph::choose_sym() {
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                gv->add(double(i),
-                        neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                               pd + i});
+                gv->add(double(i), pd_handle.next_array_element(i));
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);
@@ -2503,7 +2499,6 @@ void Graph::choose_sym() {
             flush();
             break;
         } else if (pd) {
-            //		add_var(sc_->selected()->string(), color(), brush(), 1, 2, pd);
             add_var(sc_->selected()->string(), color(), brush(), 1, 2);
             break;
         } else {

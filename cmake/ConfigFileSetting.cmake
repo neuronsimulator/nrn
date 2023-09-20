@@ -28,7 +28,6 @@ set(YYTEXT_POINTER 1)
 set(TIME_WITH_SYS_TIME 1)
 # below two are universal nowadays
 set(IVOS_FABS "::fabs")
-set(HAVE_STL "/**/")
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set(exec_prefix ${prefix})
@@ -184,8 +183,6 @@ nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("SIGSEGV" "signal.h" HAVE_SIGSEGV)
 nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
-# not necessary to check as it should be always there
-set(HAVE_SSTREAM /**/)
 
 # =============================================================================
 # Check data types

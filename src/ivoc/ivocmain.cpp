@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include "nrn_ansi.h"
 
+#include "../utils/profile/profiler_interface.h"
+
 long hoc_nframe, hoc_nstack;
 
 #if !HAVE_IV
@@ -182,15 +184,6 @@ extern void setneuronhome(const char*) {
 }
 #endif
 
-#if 0
-void penv() {
-	int i;
-	for (i=0; environ[i]; ++i) {
-		printf("%p %s\n", environ[i], environ[i]);
-	}
-}
-#endif
-
 #if DARWIN || defined(__linux__)
 #include "nrnwrap_dlfcn.h"
 #include <string>
@@ -238,7 +231,7 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -310,14 +303,8 @@ static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dfl
     return i;
 }
 
-#if 0  // for debugging
-void prargs(const char* s, int argc, const char** argv) {
-	int i;
-	printf("%s argc=%d\n", s, argc);
-	for (i=0; i < argc; ++i) {
-		printf(" %d |%s|\n", i, argv[i]);
-	}
-}
+#if USENRNJAVA
+void nrn_InitializeJavaVM();
 #endif
 
 void hoc_nrnmpi_init() {
@@ -325,7 +312,7 @@ void hoc_nrnmpi_init() {
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        auto const pmes = nrnmpi_load(1);
+        auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
             std::cout << pmes << std::endl;
         }
@@ -387,6 +374,8 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    nrn::Instrumentor::init_profile();
+
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
@@ -518,6 +507,12 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (!neuron_home) {
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
+#else
+#error "I don't know how to set environment variables."
+// Maybe in this case the user will have to set it by hand.
+#endif
+        // putenv and setenv may invalidate env but we no longer
+        // use it so following should not be needed
     }
 #else  // Not unix:
     neuron_home = getenv("NEURONHOME");
@@ -775,6 +770,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
     hoc_final_exit();
     ivoc_final_exit();
+    nrn::Instrumentor::finalize_profile();
+
     return exit_status;
 }
 
