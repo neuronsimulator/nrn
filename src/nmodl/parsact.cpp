@@ -755,9 +755,14 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
     vectorize_substitute(lappendstr(procfunc, ""),
                          "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
-        vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
-                             "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
-                             "  auto* const _p = _pnt->_prop;\n"
+        Lappendstr(procfunc,
+                   "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
+                   "  auto* const _p = _pnt->_prop;\n"
+                   "  if (!_p) {\n"
+                   "    hoc_execerror(\"POINT_PROCESS data instance not valid\", NULL);\n"
+                   "  }\n");
+        q = lappendstr(procfunc, "  _setdata(_p);\n");
+        vectorize_substitute(q,
                              "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
                              "  auto* const _ml = &_ml_real;\n"
                              "  size_t const _iml{};\n"

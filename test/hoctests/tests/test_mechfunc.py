@@ -1,6 +1,9 @@
 # test pp.func(...) and sec(x).mech.func(...)
 
 from neuron import h
+from neuron.expect_hocerr import expect_err, set_quiet
+
+set_quiet(False)
 
 
 def fc(name, m):  # callable
@@ -11,11 +14,11 @@ def varref(name, m):  # variable reference
     return getattr("_ref_" + name, m)
 
 
-def model():  # 3 cables each with nseg=2
+def model():  # 3 cables each with nseg=3
     cables = [h.Section(name="cable%d" % i) for i in range(3)]
     mechs = []
     for c in cables:
-        c.nseg = 2
+        c.nseg = 3
         c.insert("sdata")
         c.insert("sdatats")
         for seg in c:
@@ -27,16 +30,90 @@ def model():  # 3 cables each with nseg=2
 
 
 def test1():
+    s = h.Section()  # so we can delete later and verify mechs is still ok
+    s.nseg = 10
     mechs = model()
-    for i, m in enumerate(mechs):
-        m.A(i, 2 * i, 3 * i)
-    for i, m in enumerate(mechs):
-        assert m.a == float(i)
-        assert m.b == float(2 * i)
-        assert m.c[1] == float(3 * i)
-    h.topology()
+
+    def tst():
+        for i, m in enumerate(mechs):
+            m.A(i, 2 * i, 3 * i)
+        for i, m in enumerate(mechs):
+            assert m.a == float(i)
+            assert m.b == float(2 * i)
+            assert m.c[1] == float(3 * i)
+
+    tst()
+    h.finitialize()
+    tst()
+    del s
+    tst()
+    h.finitialize()
+    tst()
+
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
+    for i in range(4):
+        expect_err("mechs[i].A(0, 0, 0)")
+
+    del mechs, sec, i
+    locals()
+
+
+def refs(mech):
+    sec = mech.segment().sec
+    seg = mech.segment()
+    Af = mech.A
+    aref = mech._ref_a
+    return sec, seg, mech, Af, aref
+
+
+def mech_expect_invalid(mech, Af, aref):
+    expect_err("Af(0, 0, 0)")
+    expect_err("aref[0] = 1.0")
+    assert "died" in str(aref)
+    expect_err("print(mech)")
+    expect_err("print(mech.name())")
+    del mech, Af, aref
+    locals()
+
+
+def test2():
+    mechs = model()
+    sec, seg, mech, Af, aref = refs(mechs[-1])
+    # mech uninserted, should invalidate mechs[-1]
+    mechs[-1].segment().sec.uninsert(mechs[-1].name())
+    mech_expect_invalid(mech, Af, aref)
+    del mechs, sec, seg, mech, Af, aref
+    locals()
+
+
+def test3():
+    mechs = model()
+    sec, seg, mech, Af, aref = refs(mechs[-1])
+    # internal segment destroyed, should invalidate mechs[-1]
+    sec.nseg = 1
+    mech_expect_invalid(mech, Af, aref)
+    # seg exists but refers to the internal segment containing x
+    assert seg.sec == sec
+    assert seg.x == 5.0 / 6.0
+    assert str(seg) == "cable2(0.833333)"
+    del mechs, sec, seg, mech, Af, aref
+    locals()
+
+
+def test4():
+    mechs = model()
+    sec, seg, mech, Af, aref = refs(mechs[-1])
+    # section deleted, should invalidate mechs[-1]
+    h.delete_section(sec=mechs[-1].segment().sec)
+    mech_expect_invalid(mech, Af, aref)
+    del mechs, sec, seg, mech, Af, aref
+    locals()
 
 
 if __name__ == "__main__":
     test1()
+    test2()
+    test3()
+    test4()
     h.topology()

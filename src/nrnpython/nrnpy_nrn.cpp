@@ -61,6 +61,7 @@ typedef struct {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
+    neuron::container::non_owning_identifier_without_container prop_id_{};
 } NPyMechObj;
 
 typedef struct {
@@ -140,6 +141,10 @@ static void remake_pmech_types();
 
 void nrnpy_sec_referr() {
     PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
+}
+
+void nrnpy_prop_referr() {
+    PyErr_SetString(PyExc_ReferenceError, "mechanism instance is invalid");
 }
 
 static char* pysec_name(Section* sec) {
@@ -1082,30 +1087,25 @@ static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
-    CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
-    PyObject* result = NULL;
-    if (self->prop_) {
-        result = PyString_FromString(memb_func[self->prop_->_type].sym->name);
-    }
+    CHECK_PROP_INVALID(self->prop_id_);
+    PyObject* result = PyString_FromString(memb_func[self->prop_->_type].sym->name);
     return result;
 }
 
 static PyObject* NPyMechFunc_name(NPyMechFunc* self) {
-    CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
+    CHECK_PROP_INVALID(self->pymech_->prop_id_);
     PyObject* result = NULL;
-    if (self->pymech_) {
-        std::string s = memb_func[self->pymech_->prop_->_type].sym->name;
-        s += ".";
-        s += self->f_->name;
-        result = PyString_FromString(s.c_str());
-    }
+    std::string s = memb_func[self->pymech_->prop_->_type].sym->name;
+    s += ".";
+    s += self->f_->name;
+    result = PyString_FromString(s.c_str());
     return result;
 }
 
 static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
+    CHECK_PROP_INVALID(self->pymech_->prop_id_);
     PyObject* result = NULL;
     auto pyseg = self->pymech_->pyseg_;
-    CHECK_SEC_INVALID(pyseg->pysec_->sec_);
     auto& f = self->f_->func;
 
     // patterning after fcall
@@ -1158,11 +1158,7 @@ static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
 
 static PyObject* pymech_repr(PyObject* p) {
     NPyMechObj* pymech = (NPyMechObj*) p;
-    Section* sec = pymech->pyseg_->pysec_->sec_;
-    if (sec && sec->prop) {
-        return NPyMechObj_name(pymech);
-    }
-    return PyString_FromString("<mechanism of deleted section>");
+    return NPyMechObj_name(pymech);
 }
 
 static PyObject* pymechfunc_repr(PyObject* p) {
@@ -1889,6 +1885,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             } else {
                 m->pyseg_ = self;
                 m->prop_ = p;
+                m->prop_id_ = p->id();
                 Py_INCREF(m->pyseg_);
                 result = (PyObject*) m;
             }
@@ -2091,7 +2088,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         PyErr_SetString(PyExc_ReferenceError, "nrn.Mechanism can't access a deleted section");
         return NULL;
     }
-
+    CHECK_PROP_INVALID(self->prop_id_);
     Py_INCREF(pyname);
     Py2NRNString name(pyname);
     char* n = name.c_str();
