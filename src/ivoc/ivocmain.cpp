@@ -507,10 +507,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (!neuron_home) {
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
-#else
-#error "I don't know how to set environment variables."
-// Maybe in this case the user will have to set it by hand.
-#endif
         // putenv and setenv may invalidate env but we no longer
         // use it so following should not be needed
     }
@@ -703,9 +699,12 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     }
     Oc oc(session, our_argv[0], env);
 #else
-hoc_main1_init(our_argv[0], env);
+    hoc_main1_init(our_argv[0], env);
 #endif  // HAVE_IV
 
+#if USENRNJAVA
+    nrn_InitializeJavaVM();
+#endif
 #if OCSMALL
     if (argc == 1) {
         ocsmall_argv[0] = our_argv[0];
@@ -737,7 +736,7 @@ hoc_main1_init(our_argv[0], env);
 #if HAVE_IV
         exit_status = oc.run(our_argc, our_argv);
 #else
-    exit_status = hoc_main1(our_argc, our_argv, env);
+        exit_status = hoc_main1(our_argc, our_argv, env);
 #endif
     } else {
         return 0;
