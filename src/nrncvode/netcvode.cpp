@@ -1215,7 +1215,8 @@ NetCvode::NetCvode(bool single) {
     alloc_list();
     prl_ = new std::vector<PlayRecord*>();
     prl_->reserve(10);
-    fixed_play_ = new PlayRecList(10);
+    fixed_play_ = new std::vector<PlayRecord*>();
+    fixed_play_->reserve(10);
     fixed_record_ = new PlayRecList(10);
     vec_event_store_ = nullptr;
     if (!record_init_items_) {
@@ -5624,10 +5625,7 @@ void NetCvode::fixed_record_continuous(neuron::model_sorted_token const& cache_t
 }
 
 void NetCvode::fixed_play_continuous(NrnThread* nt) {
-    int i, cnt;
-    cnt = fixed_play_->count();
-    for (i = 0; i < cnt; ++i) {
-        PlayRecord* pr = fixed_play_->item(i);
+    for (auto& pr: *fixed_play_) {
         if (pr->ith_ == nt->id) {
             pr->continuous(nt->_t);
         }
@@ -6139,14 +6137,13 @@ void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destruc
             break;
         }
     }
-    int cnt = fixed_play_->count();
-    for (int i = 0; i < cnt; ++i) {
-        if (fixed_play_->item(i) == pr) {
-            fixed_play_->remove(i);
+    for (auto it = fixed_play_->begin(); it != fixed_play_->end(); ++it) {
+        if (*it == pr) {
+            fixed_play_->erase(it);
             break;
         }
     }
-    cnt = fixed_record_->count();
+    int cnt = fixed_record_->count();
     for (int i = 0; i < cnt; ++i) {
         if (fixed_record_->item(i) == pr) {
             fixed_record_->remove(i);
@@ -6219,7 +6216,7 @@ void PlayRecord::play_add(Cvode* cv) {
     if (cv) {
         cv->play_add(this);
     }
-    net_cvode_instance->fixed_play_->append(this);
+    net_cvode_instance->fixed_play_->push_back(this);
 }
 
 void PlayRecord::pr() {
@@ -6444,7 +6441,7 @@ void NetCvode::playrec_setup() {
     long i, j;
     long prlc = prl_->size();
     fixed_record_->remove_all();
-    fixed_play_->remove_all();
+    fixed_play_->clear();
     if (gcv_) {
         gcv_->delete_prl();
     } else {

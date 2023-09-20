@@ -133,7 +133,7 @@ class NetCvode {
     }
     void simgraph_remove();
     // fixed step continuous play and record
-    PlayRecList* fixed_play_;
+    std::vector<PlayRecord*>* fixed_play_;
     PlayRecList* fixed_record_;
     void vecrecord_add();  // hoc interface functions
     void vec_remove();
