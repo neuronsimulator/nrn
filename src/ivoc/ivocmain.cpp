@@ -703,7 +703,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     }
     Oc oc(session, our_argv[0], env);
 #else
-    hoc_main1_init(our_argv[0], env);
+hoc_main1_init(our_argv[0], env);
 #endif  // HAVE_IV
 
 #if OCSMALL
@@ -737,7 +737,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #if HAVE_IV
         exit_status = oc.run(our_argc, our_argv);
 #else
-        exit_status = hoc_main1(our_argc, our_argv, env);
+    exit_status = hoc_main1(our_argc, our_argv, env);
 #endif
     } else {
         return 0;
