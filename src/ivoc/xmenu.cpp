@@ -2001,7 +2001,7 @@ void HocValEditor::audit() {
     } else if (variable_) {
         sout << variable_->string() << " = " << fe_->text()->string();
     } else if (pval_) {
-        sout << "// " << pval_ << " pointer set to " << fe_->text()->string();
+        sout << "// " << pval_ << " set to " << fe_->text()->string();
     }
     auto buf = sout.str();
     hoc_audit_command(buf.c_str());
