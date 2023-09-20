@@ -16,6 +16,7 @@ jobs:
       image: ubuntu-2004:202101-01
 
     environment:
+      NEURON_WHEEL_VERSION: 8.2.3
       SETUPTOOLS_SCM_PRETEND_VERSION: 8.2.3
       NEURON_NIGHTLY_TAG: ""
       NRN_NIGHTLY_UPLOAD: false
