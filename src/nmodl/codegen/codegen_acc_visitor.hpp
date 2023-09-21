@@ -25,7 +25,7 @@ namespace codegen {
 
 /**
  * \class CodegenAccVisitor
- * \brief %Visitor for printing C code with OpenACC backend
+ * \brief %Visitor for printing C++ code with OpenACC backend
  */
 class CodegenAccVisitor: public CodegenCppVisitor {
   protected:
@@ -33,7 +33,7 @@ class CodegenAccVisitor: public CodegenCppVisitor {
     std::string backend_name() const override;
 
 
-    /// common includes : standard c/c++, coreneuron and backend specific
+    /// common includes : standard c++, coreneuron and backend specific
     void print_backend_includes() override;
 
 

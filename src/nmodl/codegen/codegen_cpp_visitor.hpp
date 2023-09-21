@@ -169,7 +169,7 @@ using printer::CodePrinter;
 
 /**
  * \class CodegenCppVisitor
- * \brief %Visitor for printing C code compatible with legacy api of CoreNEURON
+ * \brief %Visitor for printing C++ code compatible with legacy api of CoreNEURON
  *
  * \todo
  *  - Handle define statement (i.e. macros)
@@ -196,17 +196,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Code printer object for target (C++)
      */
-    std::shared_ptr<CodePrinter> target_printer;
-
-    /**
-     * Code printer object for wrappers
-     */
-    std::shared_ptr<CodePrinter> wrapper_printer;
-
-    /**
-     * Pointer to active code printer
-     */
-    std::shared_ptr<CodePrinter> printer;
+    std::unique_ptr<CodePrinter> printer;
 
     /**
      * Name of mod file (without .mod suffix)
@@ -568,7 +558,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *
      * This function typically returns the accessor expression in backend code for the given symbol.
      * Since the model variables are stored in data arrays and accessed by offset, this function
-     * will return the C string representing the array access at the correct offset
+     * will return the C++ string representing the array access at the correct offset
      *
      * \param symbol       The symbol of a variable for which we want to obtain its name
      * \param use_instance Should the variable be accessed via instance or data array
@@ -583,7 +573,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *
      * This function typically returns the accessor expression in backend code for the given symbol.
      * Since the model variables are stored in data arrays and accessed by offset, this function
-     * will return the C string representing the array access at the correct offset
+     * will return the C++ string representing the array access at the correct offset
      *
      * \param symbol       The symbol of a variable for which we want to obtain its name
      * \param name         The name of the index variable
@@ -601,7 +591,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param symbol The symbol of a variable for which we want to obtain its name
      * \param use_instance Should the variable be accessed via the (host-only)
      * global variable or the instance-specific copy (also available on GPU).
-     * \return       The C string representing the access to the global variable
+     * \return       The C++ string representing the access to the global variable
      */
     std::string global_variable_name(const SymbolType& symbol, bool use_instance = true) const;
 
@@ -611,8 +601,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *
      * \param name         Variable name that is being printed
      * \param use_instance Should the variable be accessed via instance or data array
-     * \return             The C string representing the access to the variable in the neuron thread
-     * structure
+     * \return             The C++ string representing the access to the variable in the neuron
+     * thread structure
      */
     std::string get_variable_name(const std::string& name, bool use_instance = true) const;
 
@@ -621,7 +611,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Determine the variable name for the "current" used in breakpoint block taking into account
      * intermediate code transformations.
      * \param current The variable name for the current used in the model
-     * \return        The name for the current to be printed in C
+     * \return        The name for the current to be printed in C++
      */
     std::string breakpoint_current(std::string current) const;
 
@@ -843,7 +833,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * The used global type qualifier
      *
-     * For C code generation this is empty
+     * For C++ code generation this is empty
      * \return ""
      *
      * \return "uniform "
@@ -853,7 +843,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Instantiate global var instance
      *
-     * For C code generation this is empty
+     * For C++ code generation this is empty
      * \return ""
      */
     virtual void print_global_var_struct_decl();
@@ -878,7 +868,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Prints the start of namespace for the backend-specific code
      *
-     * For the C backend no additional namespace is required
+     * For the C++ backend no additional namespace is required
      */
     virtual void print_backend_namespace_start();
 
@@ -886,7 +876,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Prints the end of namespace for the backend-specific code
      *
-     * For the C backend no additional namespace is required
+     * For the C++ backend no additional namespace is required
      */
     virtual void print_backend_namespace_stop();
 
@@ -937,7 +927,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print backend specific includes (none needed for C backend)
+     * Print backend specific includes (none needed for C++ backend)
      */
     virtual void print_backend_includes();
 
@@ -1142,7 +1132,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print the pragma annotation to update global variables from host to the device
      *
-     * \note This is not used for the C backend
+     * \note This is not used for the C++ backend
      */
     virtual void print_global_variable_device_update_annotation();
 
@@ -1157,7 +1147,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print the backend specific device method annotation
      *
-     * \note This is not used for the C backend
+     * \note This is not used for the C++ backend
      */
     virtual void print_device_method_annotation();
 
@@ -1165,7 +1155,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print backend specific global method annotation
      *
-     * \note This is not used for the C backend
+     * \note This is not used for the C++ backend
      */
     virtual void print_global_method_annotation();
 
@@ -1588,10 +1578,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                       const bool optimize_ionvar_copies,
                       const std::string& extension,
                       const std::string& wrapper_ext)
-        : target_printer(std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + extension))
-        , wrapper_printer(
-              std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + wrapper_ext))
-        , printer(target_printer)
+        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + extension))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
@@ -1604,9 +1591,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                       const bool optimize_ionvar_copies,
                       const std::string& /* extension */,
                       const std::string& /* wrapper_ext */)
-        : target_printer(std::make_shared<CodePrinter>(stream))
-        , wrapper_printer(std::make_shared<CodePrinter>(stream))
-        , printer(target_printer)
+        : printer(std::make_unique<CodePrinter>(stream))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
@@ -1614,18 +1599,18 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
   public:
     /**
-     * \brief Constructs the C code generator visitor
+     * \brief Constructs the C++ code generator visitor
      *
-     * This constructor instantiates an NMODL C code generator and allows writing generated code
+     * This constructor instantiates an NMODL C++ code generator and allows writing generated code
      * directly to a file in \c [output_dir]/[mod_filename].[extension].
      *
      * \note No code generation is performed at this stage. Since the code
      * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
-     * visit_program in order to generate the C code corresponding to the AST.
+     * visit_program in order to generate the C++ code corresponding to the AST.
      *
      * \param mod_filename The name of the model for which code should be generated.
      *                     It is used for constructing an output filename.
-     * \param output_dir   The directory where target C file should be generated.
+     * \param output_dir   The directory where target C++ file should be generated.
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      * \param extension    The file extension to use. This defaults to \c .cpp .
@@ -1635,8 +1620,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                       std::string float_type,
                       const bool optimize_ionvar_copies,
                       const std::string& extension = ".cpp")
-        : target_printer(std::make_shared<CodePrinter>(output_dir + "/" + mod_filename + extension))
-        , printer(target_printer)
+        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + extension))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
@@ -1644,12 +1628,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * \copybrief nmodl::codegen::CodegenCppVisitor
      *
-     * This constructor instantiates an NMODL C code generator and allows writing generated code
+     * This constructor instantiates an NMODL C++ code generator and allows writing generated code
      * into an output stream.
      *
      * \note No code generation is performed at this stage. Since the code
      * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
-     * visit_program in order to generate the C code corresponding to the AST.
+     * visit_program in order to generate the C++ code corresponding to the AST.
      *
      * \param mod_filename The name of the model for which code should be generated.
      *                     It is used for constructing an output filename.
@@ -1661,8 +1645,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                       std::ostream& stream,
                       std::string float_type,
                       const bool optimize_ionvar_copies)
-        : target_printer(std::make_shared<CodePrinter>(stream))
-        , printer(target_printer)
+        : printer(std::make_unique<CodePrinter>(stream))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}

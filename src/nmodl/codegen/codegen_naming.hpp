@@ -152,7 +152,7 @@ static constexpr char NRN_STATE_METHOD[] = "nrn_state";
 /// nrn_cur method in generated code
 static constexpr char NRN_CUR_METHOD[] = "nrn_cur";
 
-/// nrn_watch_check method in generated c file
+/// nrn_watch_check method in generated c++ file
 static constexpr char NRN_WATCH_CHECK_METHOD[] = "nrn_watch_check";
 
 /// verbatim name of the variable for nrn thread arguments

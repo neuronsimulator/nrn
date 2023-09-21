@@ -77,7 +77,7 @@ void CodegenAccVisitor::print_backend_includes() {
 
 
 std::string CodegenAccVisitor::backend_name() const {
-    return "C-OpenAcc (api-compatibility)";
+    return "C++-OpenAcc (api-compatibility)";
 }
 
 
