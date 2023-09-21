@@ -6431,7 +6431,6 @@ void NetCvode::vec_remove() {
 
 void NetCvode::playrec_setup() {
     long i, j;
-    long prlc = prl_->size();
     fixed_record_->clear();
     fixed_play_->clear();
     if (gcv_) {
@@ -6442,8 +6441,7 @@ void NetCvode::playrec_setup() {
         }
     }
     std::vector<PlayRecord*> to_delete{};
-    for (long iprl = 0; iprl < prlc; ++iprl) {
-        PlayRecord* pr = (*prl_)[iprl];
+    for (auto& pr: *prl_) {
         if (!pr->pd_) {
             // Presumably the recorded value was invalidated elsewhere, e.g. it
             // was a voltage of a deleted node, or a range variable of a deleted

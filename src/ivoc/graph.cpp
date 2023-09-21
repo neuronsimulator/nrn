@@ -1526,18 +1526,17 @@ GLabel* Graph::new_proto_label() const {
 }
 
 bool Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
-    GlyphIndex i, cnt = line_list_.size();
     if (strcmp(glab->text(), text)) {
-        for (i = 0; i < cnt; ++i) {
-            if (line_list_[i]->label() == glab) {
-                if (!line_list_[i]->change_expr(text, &symlist_)) {
+        for (auto& line: line_list_) {
+            if (line->label() == glab) {
+                if (!line->change_expr(text, &symlist_)) {
                     return false;
                 }
             }
         }
         glab->text(text);
     }
-    i = glyph_index(glab);
+    GlyphIndex i = glyph_index(glab);
     if (glab->fixtype() != gl->fixtype()) {
         if (gl->fixed()) {
             glab->fixed(gl->scale());
@@ -1570,8 +1569,8 @@ void Graph::change_line_color(GPolyLine* glin) {
 }
 
 GlyphIndex Graph::glyph_index(const Glyph* gl) {
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
+    GlyphIndex cnt = count();
+    for (GlyphIndex i = 0; i < cnt; ++i) {
         Glyph* g = ((GraphItem*) component(i))->body();
         if (g == gl) {
             return i;
@@ -1616,8 +1615,8 @@ void Graph::ascii_save(std::ostream& o) const {
         }
         if (lcnt) {
             o << lcnt << " addvar/addexpr lines:";
-            for (i = 0; i < lcnt; ++i) {
-                o << " " << line_list_[i]->name();
+            for (const auto& line: line_list_) {
+                o << " " << line->name();
             }
             o << std::endl;
         }

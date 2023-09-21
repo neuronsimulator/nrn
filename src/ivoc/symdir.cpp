@@ -203,6 +203,7 @@ SymDirectory::~SymDirectory() {
         delete item;
     }
     impl_->symbol_lists_.clear();
+    impl_->symbol_lists_.shrink_to_fit();
     if (impl_->obj_) {
         ObjObservable::Detach(impl_->obj_, impl_);
     }
@@ -579,9 +580,9 @@ void SymDirectoryImpl::append(Object* ob) {
     symbol_lists_.push_back(new SymbolItem(ob));
 }
 void SymDirectoryImpl::un_append(Object* ob) {
-    for (std::size_t i = 0; i < symbol_lists_.size(); ++i) {
-        if (symbol_lists_[i]->object() == ob) {
-            symbol_lists_[i]->no_object();
+    for (auto& symbol: symbol_lists_) {
+        if (symbol->object() == ob) {
+            symbol->no_object();
             break;
         }
     }

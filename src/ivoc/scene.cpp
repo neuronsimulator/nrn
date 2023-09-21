@@ -576,18 +576,14 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
             canvas->pop_transform();
         }
     }
-    GlyphIndex count = info_->size();
     bool are_fixed = false;
-    for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = (*info_)[index];
+    for (auto& info: *info_) {
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
             Allocation& a = info.allocation_;
             Extension b;
             b.set(canvas, a);
-            // printf("%d alloc %g %g %g %g\n", index, a.left(), a.bottom(), a.right(), a.top());
-            // printf("%d exten %g %g %g %g\n", index, b.left(), b.bottom(), b.right(), b.top());
             if (canvas->damaged(b)) {
                 info.glyph_->draw(canvas, a);
             }
@@ -602,8 +598,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
         const Transformer& tv = XYView::current_draw_view()->s2o();
         canvas->transform(tv);
         IfIdraw(pict(tv));
-        for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = (*info_)[index];
+        for (auto& info: *info_) {
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
@@ -635,10 +630,8 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
     if (background_ != NULL) {
         background_->print(canvas, a);
     }
-    GlyphIndex count = info_->size();
     bool are_fixed = false;
-    for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = (*info_)[index];
+    for (auto& info: *info_) {
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
@@ -658,8 +651,7 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
         // view_transform(canvas, 2, tv);
         const Transformer& tv = XYView::current_draw_view()->s2o();
         canvas->transform(tv);
-        for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = (*info_)[index];
+        for (auto& info: *info_) {
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
@@ -780,9 +772,8 @@ void Scene::save_all(std::ostream& o) {
         Sprintf(buf, "objectvar scene_vector_[%ld]", scene_list->size());
         o << buf << std::endl;
     }
-    long count = scene_list->size();
-    for (long i = 0; i < count; ++i) {
-        (*scene_list)[i]->mark(false);
+    for (auto& scene: *scene_list) {
+        scene->mark(false);
     }
 }
 
