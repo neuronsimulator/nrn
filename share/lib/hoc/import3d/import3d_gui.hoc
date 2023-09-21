@@ -1228,10 +1228,10 @@ proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max,
 	// major axis is the one with largest eigenvalue
 	major = m.getcol(tobj.max_ind)
 	// For plotting and round-off error consistency
-        // want major axis to point in negative direction.
-	// i.e. greatest value is negative.
-	if (major.x[major.c.abs().max_ind()] > 0) {
-		printf("reorient major\n")
+	// between meschach and eigen use the heuristic that
+	// major axis points in positive direction.
+	// i.e. if greatest value is negative, reverse orientation.
+	if (major.x[major.c.abs().max_ind()] < 0) {
 		major.mul(-1)
 	}
 	// minor is normal and in xy plane
