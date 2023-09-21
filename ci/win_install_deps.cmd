@@ -71,6 +71,8 @@ mingw-w64-x86_64-python3-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
 
+%MSYS2_ROOT%\usr\bin\pip install py-build-cmake
+
 :: if all goes well, go to end
 goto :EOF
 
