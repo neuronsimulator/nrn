@@ -2085,6 +2085,7 @@ void Graph::erase_all() {
         Resource::unref(item);
     }
     line_list_.clear();
+    line_list_.shrink_to_fit();
     label_n_ = 0;
 }
 void Graph::family_value() {

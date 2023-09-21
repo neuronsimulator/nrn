@@ -1027,7 +1027,6 @@ HocPanel::HocPanel(const char* name, bool h)
 }
 
 HocPanel::~HocPanel() {
-    long i;
     box_->unref();
     for (auto& item: ilist_) {
         item->HocItem::unref();
@@ -1039,7 +1038,10 @@ HocPanel::~HocPanel() {
     if (it != hoc_panel_list->end()) {
         hoc_panel_list->erase(it);
     }
+    ilist_.clear();
+    ilist_.shrink_to_fit();
     elist_.clear();
+    elist_.shrink_to_fit();
     //	printf("~HocPanel\n");
 }
 
@@ -1059,11 +1061,9 @@ std::vector<HocUpdateItem*>* HocPanel::update_list_;
 void HocPanel::keep_updated() {
     static int cnt = 0;
     if (update_list_ && (++cnt % 10 == 0)) {
-        long i, cnt = update_list_->size();
-        if (cnt)
-            for (auto& item: *update_list_) {
-                item->update_hoc_item();
-            }
+        for (auto& item: *update_list_) {
+            item->update_hoc_item();
+        }
     }
 }
 void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
@@ -1372,7 +1372,6 @@ void HocPanel::save(std::ostream& o) {
 void HocPanel::write(std::ostream& o) {
     Oc oc;
     char buf[200];
-    long i;
     //	o << "xpanel(\"" << getName() << "\")" << std::endl;
     Sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
     o << buf << std::endl;

@@ -1080,7 +1080,6 @@ void Cvode::play_add(PlayRecord* pr) {
     CvodeThreadData& z = CTD(pr->ith_);
     if (!z.play_) {
         z.play_ = new std::vector<PlayRecord*>();
-        z.play_->reserve(1);
     }
     z.play_->push_back(pr);
 }

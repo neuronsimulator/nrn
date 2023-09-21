@@ -40,7 +40,6 @@ StandardPicker::StandardPicker() {
     ms_ = unknown;
     for (int i = 0; i < unknown; ++i) {
         handlers_[i] = new std::vector<ButtonHandler*>();
-        handlers_[i]->reserve(1);
     }
 }
 StandardPicker::~StandardPicker() {

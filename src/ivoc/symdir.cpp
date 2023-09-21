@@ -219,6 +219,7 @@ void SymDirectoryImpl::disconnect(Observable*) {
         delete item;
     }
     symbol_lists_.clear();
+    symbol_lists_.shrink_to_fit();
     obj_ = NULL;
 }
 
