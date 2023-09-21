@@ -24,23 +24,23 @@ CodePrinter::CodePrinter(const std::string& filename) {
     }
 
     sbuf = ofs.rdbuf();
-    result = std::make_shared<std::ostream>(sbuf);
+    result = std::make_unique<std::ostream>(sbuf);
 }
 
-void CodePrinter::start_block() {
-    *result << "{";
+void CodePrinter::push_block() {
+    *result << '{';
     add_newline();
     indent_level++;
 }
 
-void CodePrinter::start_block(std::string&& expression) {
+void CodePrinter::push_block(const std::string& expression) {
     add_indent();
     *result << expression << " {";
     add_newline();
     indent_level++;
 }
 
-void CodePrinter::restart_block(std::string const& expression) {
+void CodePrinter::chain_block(std::string const& expression) {
     --indent_level;
     add_indent();
     *result << "} " << expression << " {";
@@ -49,41 +49,63 @@ void CodePrinter::restart_block(std::string const& expression) {
 }
 
 void CodePrinter::add_indent() {
-    *result << std::string(indent_level * NUM_SPACES, ' ');
-}
-
-void CodePrinter::add_text(const std::string& text) {
-    *result << text;
-}
-
-void CodePrinter::add_line(const std::string& text, int num_new_lines) {
-    add_indent();
-    *result << text;
-    add_newline(num_new_lines);
+    for (std::size_t i = 0; i < indent_level * NUM_SPACES; ++i) {
+        *result << ' ';
+    }
 }
 
 void CodePrinter::add_multi_line(const std::string& text) {
-    auto lines = stringutils::split_string(text, '\n');
+    const auto& lines = stringutils::split_string(text, '\n');
+
+    int prefix_length{};
+    int start_line{};
+    while (start_line < lines.size()) {
+        const auto& line = lines[start_line];
+        // skip first empty line, if any
+        if (line.empty()) {
+            ++start_line;
+            continue;
+        }
+        // The common indentation of all blocks if the number of spaces
+        // at the beginning of the first non-empty line.
+        for (auto line_it = line.begin(); line_it != line.end() && *line_it == ' '; ++line_it) {
+            prefix_length += 1;
+        }
+        break;
+    }
+
     for (const auto& line: lines) {
-        add_line(line);
+        if (line.size() < prefix_length) {
+            // ignore lines made of ' ' characters
+            if (std::find_if_not(line.begin(), line.end(), [](char c) { return c == ' '; }) !=
+                line.end()) {
+                throw std::invalid_argument("Indentation mismatch");
+            }
+        } else {
+            add_line(line.substr(prefix_length));
+        }
     }
 }
 
-void CodePrinter::add_newline(int n) {
-    for (int i = 0; i < n; i++) {
-        *result << std::endl;
+void CodePrinter::add_newline(std::size_t n) {
+    for (std::size_t i{}; i < n; ++i) {
+        *result << '\n';
     }
 }
 
-void CodePrinter::end_block(int num_newlines) {
+void CodePrinter::pop_block() {
+    pop_block_nl(1);
+}
+
+void CodePrinter::pop_block_nl(std::size_t num_newlines) {
     indent_level--;
     add_indent();
-    *result << "}";
+    *result << '}';
     add_newline(num_newlines);
 }
 
-void CodePrinter::end_block(std::string_view suffix, std::size_t num_newlines) {
-    end_block(0);
+void CodePrinter::pop_block(const std::string_view& suffix, std::size_t num_newlines) {
+    pop_block_nl(0);
     *result << suffix;
     add_newline(num_newlines);
 }

@@ -28,8 +28,8 @@ namespace codegen {
 using namespace ast;
 
 /**
- * @addtogroup codegen_backends
- * @{
+ * \addtogroup codegen_backends
+ * \{
  */
 
 /**
@@ -44,22 +44,18 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// function needed to be called for every kind of error
     typedef std::string (CodegenCompatibilityVisitor::*FunctionPointer)(
         ast::Ast& node,
-        const std::shared_ptr<ast::Ast>&);
+        const std::shared_ptr<ast::Ast>&) const;
 
     /// associated container to find the function needed to be called in
     /// for every ast::AstNodeType that is unsupported
     static const std::map<ast::AstNodeType, FunctionPointer> unhandled_ast_types_func;
 
     /// Set of handled solvers by the NMODL \c C++ code generator
-    const std::set<std::string> handled_solvers{codegen::naming::CNEXP_METHOD,
-                                                codegen::naming::EULER_METHOD,
-                                                codegen::naming::DERIVIMPLICIT_METHOD,
-                                                codegen::naming::SPARSE_METHOD,
-                                                codegen::naming::AFTER_CVODE_METHOD};
-
-    /// Vector that stores all the ast::Node that are unhandled
-    /// by the NMODL \c C++ code generator
-    std::vector<std::shared_ptr<ast::Ast>> unhandled_ast_nodes;
+    static const inline std::set<std::string> handled_solvers{codegen::naming::CNEXP_METHOD,
+                                                              codegen::naming::EULER_METHOD,
+                                                              codegen::naming::DERIVIMPLICIT_METHOD,
+                                                              codegen::naming::SPARSE_METHOD,
+                                                              codegen::naming::AFTER_CVODE_METHOD};
 
   public:
     /// \name Ctor & dtor
@@ -70,12 +66,12 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
 
     /// \}
 
-    /// Function that searches the ast::Ast for nodes that
+    /// Search the ast::Ast for nodes that
     /// are incompatible with NMODL \c C++ code generator
     ///
     /// \param node Ast
     /// \return bool if there are unhandled nodes or not
-    bool find_unhandled_ast_nodes(Ast& node);
+    bool find_unhandled_ast_nodes(Ast& node) const;
 
   private:
     /// Takes as parameter an std::shared_ptr<ast::Ast>,
@@ -87,7 +83,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \return std::string error
     std::string return_error_if_solve_method_is_unhandled(
         ast::Ast& node,
-        const std::shared_ptr<ast::Ast>& ast_node);
+        const std::shared_ptr<ast::Ast>& ast_node) const;
 
     /// Takes as parameter an std::shared_ptr<ast::Ast> node
     /// and returns a relative error with the name, the type
@@ -98,7 +94,8 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param ast_node Ast node which is checked
     /// \return std::string error
     template <typename T>
-    std::string return_error_with_name(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node) {
+    std::string return_error_with_name(ast::Ast& /* node */,
+                                       const std::shared_ptr<ast::Ast>& ast_node) const {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
         auto token = real_type_block->get_token();
         try {
@@ -122,8 +119,8 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param ast_node Ast node which is checked
     /// \return std::string error
     template <typename T>
-    std::string return_error_without_name(ast::Ast& node,
-                                          const std::shared_ptr<ast::Ast>& ast_node) {
+    std::string return_error_without_name(ast::Ast& /* node */,
+                                          const std::shared_ptr<ast::Ast>& ast_node) const {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
         return fmt::format("{}construct found at [{}] is not handled\n",
                            real_type_block->get_nmodl_name(),
@@ -138,9 +135,11 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Ast
     /// \param ast_node Ast node which is checked
     /// \return std::string error
-    std::string return_error_global_var(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_global_var(ast::Ast& node,
+                                        const std::shared_ptr<ast::Ast>& ast_node) const;
 
-    std::string return_error_param_var(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_param_var(ast::Ast& node,
+                                       const std::shared_ptr<ast::Ast>& ast_node) const;
 
     /// Takes as parameter the ast::Ast and checks if the
     /// functions "bbcore_read" and "bbcore_write" are defined
@@ -151,11 +150,12 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Ast
     /// \param ast_node Not used by the function
     /// \return std::string error
-    std::string return_error_if_no_bbcore_read_write(ast::Ast& node,
-                                                     const std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_if_no_bbcore_read_write(
+        ast::Ast& node,
+        const std::shared_ptr<ast::Ast>& ast_node) const;
 };
 
-/** @} */  // end of codegen_backends
+/** \} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

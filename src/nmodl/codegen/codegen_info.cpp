@@ -18,7 +18,7 @@ namespace codegen {
 using visitor::VarUsageVisitor;
 
 /// if any ion has write variable
-bool CodegenInfo::ion_has_write_variable() const {
+bool CodegenInfo::ion_has_write_variable() const noexcept {
     return std::any_of(ions.begin(), ions.end(), [](auto const& ion) {
         return !ion.writes.empty();
     });
@@ -26,7 +26,7 @@ bool CodegenInfo::ion_has_write_variable() const {
 
 
 /// if given variable is ion write variable
-bool CodegenInfo::is_ion_write_variable(const std::string& name) const {
+bool CodegenInfo::is_ion_write_variable(const std::string& name) const noexcept {
     return std::any_of(ions.begin(), ions.end(), [&name](auto const& ion) {
         return std::any_of(ion.writes.begin(), ion.writes.end(), [&name](auto const& var) {
             return var == name;
@@ -36,7 +36,7 @@ bool CodegenInfo::is_ion_write_variable(const std::string& name) const {
 
 
 /// if given variable is ion read variable
-bool CodegenInfo::is_ion_read_variable(const std::string& name) const {
+bool CodegenInfo::is_ion_read_variable(const std::string& name) const noexcept {
     return std::any_of(ions.begin(), ions.end(), [&name](auto const& ion) {
         return std::any_of(ion.reads.begin(), ion.reads.end(), [&name](auto const& var) {
             return var == name;
@@ -46,13 +46,13 @@ bool CodegenInfo::is_ion_read_variable(const std::string& name) const {
 
 
 /// if either read or write variable
-bool CodegenInfo::is_ion_variable(const std::string& name) const {
+bool CodegenInfo::is_ion_variable(const std::string& name) const noexcept {
     return is_ion_read_variable(name) || is_ion_write_variable(name);
 }
 
 
 /// if a current (ionic or non-specific)
-bool CodegenInfo::is_current(const std::string& name) const {
+bool CodegenInfo::is_current(const std::string& name) const noexcept {
     return std::any_of(currents.begin(), currents.end(), [&name](auto const& var) {
         return var == name;
     });
@@ -60,20 +60,20 @@ bool CodegenInfo::is_current(const std::string& name) const {
 
 /// true is a given variable name if a ionic current
 /// (i.e. currents excluding non-specific current)
-bool CodegenInfo::is_ionic_current(const std::string& name) const {
+bool CodegenInfo::is_ionic_current(const std::string& name) const noexcept {
     return std::any_of(ions.begin(), ions.end(), [&name](auto const& ion) {
         return ion.is_ionic_current(name);
     });
 }
 
 /// true if given variable name is a ionic concentration
-bool CodegenInfo::is_ionic_conc(const std::string& name) const {
+bool CodegenInfo::is_ionic_conc(const std::string& name) const noexcept {
     return std::any_of(ions.begin(), ions.end(), [&name](auto const& ion) {
         return ion.is_ionic_conc(name);
     });
 }
 
-bool CodegenInfo::function_uses_table(std::string& name) const {
+bool CodegenInfo::function_uses_table(const std::string& name) const noexcept {
     return std::any_of(functions_with_table.begin(),
                        functions_with_table.end(),
                        [&name](auto const& function) { return name == function->get_node_name(); });

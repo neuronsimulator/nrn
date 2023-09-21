@@ -199,13 +199,11 @@ std::vector<std::string> to_string_vector(const Status& obj) {
 }
 
 std::ostream& operator<<(std::ostream& os, const NmodlType& obj) {
-    os << to_string(obj);
-    return os;
+    return os << to_string(obj);
 }
 
 std::ostream& operator<<(std::ostream& os, const Status& obj) {
-    os << to_string(obj);
-    return os;
+    return os << to_string(obj);
 }
 
 }  // namespace syminfo

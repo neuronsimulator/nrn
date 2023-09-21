@@ -84,13 +84,13 @@ class SymbolTable {
     };
 
     /// name of the block
-    std::string symtab_name;
+    const std::string symtab_name;
 
     /// table holding all symbols in the current block
     Table table;
 
     /// pointer to ast node for which current symbol table created
-    ast::Ast* node = nullptr;
+    const ast::Ast* node = nullptr;
 
     /// true if current symbol table is global. blocks like NEURON,
     /// PARAMETER defines global variables and hence they go into
@@ -110,8 +110,8 @@ class SymbolTable {
     /// \name Ctor & dtor
     /// \{
 
-    SymbolTable(std::string name, ast::Ast* node, bool global = false)
-        : symtab_name(name)
+    SymbolTable(std::string name, const ast::Ast* node, bool global = false)
+        : symtab_name(std::move(name))
         , node(node)
         , global(global) {}
 
@@ -123,7 +123,7 @@ class SymbolTable {
     /// \name Getter
     /// \{
 
-    SymbolTable* get_parent_table() const {
+    SymbolTable* get_parent_table() const noexcept {
         return parent;
     }
 
@@ -161,21 +161,21 @@ class SymbolTable {
     /// \}
 
     /// convert symbol table to string
-    std::string to_string() {
-        std::stringstream s;
+    std::string to_string() const {
+        std::ostringstream s;
         print(s, 0);
         return s.str();
     }
 
-    std::string name() const {
+    const std::string& name() const noexcept {
         return symtab_name;
     }
 
-    bool global_scope() const {
+    bool global_scope() const noexcept {
         return global;
     }
 
-    void insert(std::shared_ptr<Symbol> symbol) {
+    void insert(const std::shared_ptr<Symbol>& symbol) {
         table.insert(symbol);
     }
 
@@ -191,7 +191,7 @@ class SymbolTable {
      * Create a copy of symbol table
      * \todo Revisit the usage as tokens will be pointing to old nodes
      */
-    SymbolTable* clone() {
+    SymbolTable* clone() const {
         return new SymbolTable(*this);
     }
 
@@ -207,7 +207,7 @@ class SymbolTable {
     bool under_global_scope();
 
     /// insert new symbol table as one of the children block
-    void insert_table(const std::string& name, std::shared_ptr<SymbolTable> table);
+    void insert_table(const std::string& name, const std::shared_ptr<SymbolTable>& table);
 
     void print(std::ostream& ss, int level) const;
 

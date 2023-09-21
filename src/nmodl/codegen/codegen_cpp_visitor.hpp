@@ -32,18 +32,19 @@
 #include "visitors/ast_visitor.hpp"
 
 
-namespace nmodl {
 /// encapsulates code generation backend implementations
+namespace nmodl {
+
 namespace codegen {
 
 /**
- * @defgroup codegen Code Generation Implementation
- * @brief Implementations of code generation backends
+ * \defgroup codegen Code Generation Implementation
+ * \brief Implementations of code generation backends
  *
- * @defgroup codegen_details Codegen Helpers
- * @ingroup codegen
- * @brief Helper routines/types for code generation
- * @{
+ * \defgroup codegen_details Codegen Helpers
+ * \ingroup codegen
+ * \brief Helper routines/types for code generation
+ * \{
  */
 
 /**
@@ -53,7 +54,7 @@ namespace codegen {
  * Note: do not assign integers to these enums
  *
  */
-enum BlockType {
+enum class BlockType {
     /// initial block
     Initial,
 
@@ -112,7 +113,7 @@ struct IndexVariableInfo {
     /// symbol for the variable
     const std::shared_ptr<symtab::Symbol> symbol;
 
-    /// if variable reside in vdata field of NrnThread
+    /// if variable resides in vdata field of NrnThread
     /// typically true for bbcore pointer
     bool is_vdata = false;
 
@@ -153,7 +154,7 @@ struct ShadowUseStatement {
     std::string rhs;
 };
 
-/** @} */  // end of codegen_details
+/** \} */  // end of codegen_details
 
 
 using printer::CodePrinter;
@@ -188,6 +189,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * - type (e.g. \c double)
      * - pointer qualifier (e.g. \c \_\_restrict\_\_)
      * - parameter name (e.g. \c data)
+     *
      */
     using ParamVector = std::vector<std::tuple<std::string, std::string, std::string, std::string>>;
 
@@ -305,7 +307,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Operator for rhs vector update (matrix update)
      */
-    std::string operator_for_rhs() const noexcept {
+    const char* operator_for_rhs() const noexcept {
         return info.electrode_current ? "+=" : "-=";
     }
 
@@ -313,7 +315,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Operator for diagonal vector update (matrix update)
      */
-    std::string operator_for_d() const noexcept {
+    const char* operator_for_d() const noexcept {
         return info.electrode_current ? "-=" : "+=";
     }
 
@@ -321,7 +323,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Data type for the local variables
      */
-    std::string local_var_type() const noexcept {
+    const char* local_var_type() const noexcept {
         return codegen::naming::DEFAULT_LOCAL_VAR_TYPE;
     }
 
@@ -329,7 +331,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Default data type for floating point elements
      */
-    std::string default_float_data_type() const noexcept {
+    const char* default_float_data_type() const noexcept {
         return codegen::naming::DEFAULT_FLOAT_TYPE;
     }
 
@@ -345,7 +347,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Default data type for integer (offset) elements
      */
-    std::string default_int_data_type() const noexcept {
+    const char* default_int_data_type() const noexcept {
         return codegen::naming::DEFAULT_INTEGER_TYPE;
     }
 
@@ -492,7 +494,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param node The AST Statement node to check
      * \return     \c true if this Statement requires a semicolon
      */
-    static bool need_semicolon(ast::Statement* node);
+    static bool need_semicolon(const ast::Statement& node);
 
 
     /**
@@ -634,7 +636,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Determine all \c float variables required during code generation
      * \return A \c vector of \c float variables
      */
-    std::vector<SymbolType> get_float_variables();
+    std::vector<SymbolType> get_float_variables() const;
 
 
     /**
@@ -651,10 +653,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * current printer. Elements are expected to be of type nmodl::ast::Ast and are printed by being
      * visited. Care is taken to omit the separator after the the last element.
      *
-     * \tparam The element type in the vector, which must be of type nmodl::ast::Ast
+     * \tparam T The element type in the vector, which must be of type nmodl::ast::Ast
      * \param  elements The vector of elements to be printed
-     * \param  prefix A prefix string to printed before each element
-     * \param  separator The seperator string to be printed between all elements
+     * \param  separator The separator string to print between all elements
+     * \param  prefix A prefix string to print before each element
      */
     template <typename T>
     void print_vector_elements(const std::vector<T>& elements,
@@ -667,7 +669,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * The procedure parameters are stored in a vector of 4-tuples each representing a parameter.
      *
      * \param params The parameters that should be concatenated into the function parameter
-     * declaration \return The string representing the declaration of function parameters
+     * declaration
+     * \return The string representing the declaration of function parameters
      */
     static std::string get_parameter_str(const ParamVector& params);
 
@@ -722,7 +725,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param type The type of code block being generated
      * \return     A \c vector of strings representing the reading of ion variables
      */
-    std::vector<std::string> ion_read_statements(BlockType type);
+    std::vector<std::string> ion_read_statements(BlockType type) const;
 
 
     /**
@@ -731,7 +734,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param type The type of code block being generated
      * \return     A \c vector of strings representing the reading of ion variables
      */
-    std::vector<std::string> ion_read_statements_optimized(BlockType type);
+    std::vector<std::string> ion_read_statements_optimized(BlockType type) const;
 
 
     /**
@@ -789,7 +792,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Arguments for external functions called from generated code
      * \return A string representing the arguments passed to an external function
      */
-    static std::string external_method_arguments();
+    static const char* external_method_arguments() noexcept;
 
 
     /**
@@ -801,7 +804,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param table
      * \return      A string representing the parameters of the function
      */
-    static std::string external_method_parameters(bool table = false);
+    static const char* external_method_parameters(bool table = false) noexcept;
 
 
     /**
@@ -813,7 +816,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Arguments for "_threadargs_" macro in neuron implementation
      */
-    std::string nrn_thread_arguments();
+    std::string nrn_thread_arguments() const;
 
 
     /**
@@ -980,10 +983,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print the structure that wraps all global variables used in the NMODL
      *
-     * @param print_initialisers Whether to include default values in the struct
+     * \param print_initializers Whether to include default values in the struct
      *                           definition (true: int foo{42}; false: int foo;)
      */
-    void print_mechanism_global_var_structure(bool print_initialisers);
+    void print_mechanism_global_var_structure(bool print_initializers);
 
 
     /**
@@ -1374,9 +1377,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print derivative kernel when \c derivimplicit method is used
      *
-     * \param block The corresponding AST node represening an NMODL \c derivimplicit block
+     * \param block The corresponding AST node representing an NMODL \c derivimplicit block
      */
-    void print_derivimplicit_kernel(ast::Block* block);
+    void print_derivimplicit_kernel(const ast::Block& block);
 
 
     /**
@@ -1540,9 +1543,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print all classes
-     * @param print_initialisers Whether to include default values.
+     * \param print_initializers Whether to include default values.
      */
-    void print_data_structures(bool print_initialisers);
+    void print_data_structures(bool print_initializers);
 
 
     /**
@@ -1577,6 +1580,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual void print_wrapper_routines();
 
 
+    /// This constructor is private, see the public section below to find how to create an instance
+    /// of this class.
     CodegenCppVisitor(std::string mod_filename,
                       const std::string& output_dir,
                       std::string float_type,
@@ -1591,12 +1596,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
+    /// This constructor is private, see the public section below to find how to create an instance
+    /// of this class.
     CodegenCppVisitor(std::string mod_filename,
                       std::ostream& stream,
                       std::string float_type,
                       const bool optimize_ionvar_copies,
-                      const std::string& extension,
-                      const std::string& wrapper_ext)
+                      const std::string& /* extension */,
+                      const std::string& /* wrapper_ext */)
         : target_printer(std::make_shared<CodePrinter>(stream))
         , wrapper_printer(std::make_shared<CodePrinter>(stream))
         , printer(target_printer)
@@ -1660,11 +1667,15 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
+    /**
+     * Main and only member function to call after creating an instance of this class.
+     * \param program the AST to translate to C++ code
+     */
+    void visit_program(const ast::Program& program) override;
 
     /**
      * Print the \c nrn\_init function definition
-     * \param skip_init_check \c true if we want the generated code to execute the initialization
-     *                        conditionally
+     * \param skip_init_check \c true to generate code executing the initialization conditionally
      */
     void print_nrn_init(bool skip_init_check = true);
 
@@ -1744,8 +1755,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Print NMODL before / after block in target backend code
-     * @param node AST node of type before/after type being printed
-     * @param block_id Index of the before/after block
+     * \param node AST node of type before/after type being printed
+     * \param block_id Index of the before/after block
      */
     virtual void print_before_after_block(const ast::Block* node, size_t block_id);
 
@@ -1761,23 +1772,23 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Set the global variables to be generated in target backend code
      * \param global_vars
      */
-    void set_codegen_global_variables(std::vector<SymbolType>& global_vars);
+    void set_codegen_global_variables(const std::vector<SymbolType>& global_vars);
 
     /**
      * Find unique variable name defined in nmodl::utils::SingletonRandomString by the
      * nmodl::visitor::SympySolverVisitor
-     * @param original_name Original name of variable to change
-     * @return std::string Unique name produced as [original_name]_[random_string]
+     * \param original_name Original name of variable to change
+     * \return std::string Unique name produced as [original_name]_[random_string]
      */
     std::string find_var_unique_name(const std::string& original_name) const;
 
     /**
      * Print the structure that wraps all range and int variables required for the NMODL
      *
-     * @param print_initialisers Whether or not default values for variables
+     * \param print_initializers Whether or not default values for variables
      *                           be included in the struct declaration.
      */
-    void print_mechanism_range_var_structure(bool print_initialisers);
+    void print_mechanism_range_var_structure(bool print_initializers);
 
     /**
      * Print the function that initialize instance structure
@@ -1793,10 +1804,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void print_functors_definitions();
 
     /**
-     * @brief Based on the \c EigenNewtonSolverBlock passed print the definition needed for its
+     * \brief Based on the \c EigenNewtonSolverBlock passed print the definition needed for its
      * functor
      *
-     * @param node \c EigenNewtonSolverBlock for which to print the functor
+     * \param node \c EigenNewtonSolverBlock for which to print the functor
      */
     void print_functor_definition(const ast::EigenNewtonSolverBlock& node);
 
@@ -1819,7 +1830,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_name(const ast::Name& node) override;
     void visit_paren_expression(const ast::ParenExpression& node) override;
     void visit_prime_name(const ast::PrimeName& node) override;
-    void visit_program(const ast::Program& node) override;
     void visit_statement_block(const ast::StatementBlock& node) override;
     void visit_string(const ast::String& node) override;
     void visit_solution_expression(const ast::SolutionExpression& node) override;
@@ -1890,7 +1900,7 @@ void CodegenCppVisitor::print_function_declaration(const T& node, const std::str
     }
 
     // procedures have "int" return type by default
-    std::string return_type = "int";
+    const char* return_type = "int";
     if (node.is_function_block()) {
         return_type = default_float_data_type();
     }

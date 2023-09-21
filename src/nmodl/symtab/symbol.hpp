@@ -111,7 +111,7 @@ class Symbol {
 
     Symbol() = delete;
 
-    Symbol(std::string name)
+    explicit Symbol(std::string name)
         : name(std::move(name)) {}
 
     Symbol(std::string name, ast::Ast* node)
@@ -244,14 +244,14 @@ class Symbol {
         nodes.push_back(node);
     }
 
-    std::vector<ast::Ast*> get_nodes() const noexcept {
+    const std::vector<ast::Ast*>& get_nodes() const noexcept {
         return nodes;
     }
 
     std::vector<ast::Ast*> get_nodes_by_type(
         std::initializer_list<ast::AstNodeType> l) const noexcept;
 
-    ModToken get_token() const noexcept {
+    const ModToken& get_token() const noexcept {
         return token;
     }
 

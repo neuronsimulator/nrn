@@ -183,7 +183,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             THEN("table size increases") {
                 REQUIRE(table->symbol_count() == 1);
             }
-            THEN("lookup returns a inserted symbol") {
+            THEN("lookup returns an inserted symbol") {
                 REQUIRE(table->lookup("alpha") != nullptr);
                 REQUIRE(table->lookup("beta") == nullptr);
             }
@@ -227,6 +227,29 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             THEN("children symbol table can lookup into parent table scope") {
                 REQUIRE(next_table->lookup("alpha") == nullptr);
                 REQUIRE(next_table->lookup_in_scope("alpha") != nullptr);
+            }
+            THEN("children can figure if it is in global scope or not") {
+                REQUIRE(next_table->global_scope() == table->global_scope());
+            }
+        }
+        WHEN("pretty-printing a symbol table to a stream") {
+            std::ostringstream oss;
+            table->print(oss, 0);
+            auto text = oss.str();
+            THEN("nothing is written when the table is empty") {
+                REQUIRE(text.empty());
+            }
+            table->insert(symbol);
+            table->print(oss, 0);
+            text = oss.str();
+            THEN("the symbol present in the table can be found in the written string") {
+                REQUIRE(text.find(symbol->get_name()) != std::string::npos);
+            }
+        }
+        WHEN("creating a clone of symbol table") {
+            const std::unique_ptr<SymbolTable> clone(table->clone());
+            THEN("clone has the same name") {
+                REQUIRE(clone->name() == table->name());
             }
         }
         WHEN("query for symbol with and without properties") {
@@ -313,7 +336,7 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
                                     Catch::Matchers::ContainsSubstring("Can not insert"));
             }
         }
-        WHEN("enter scope multipel times") {
+        WHEN("enter scope multiple times") {
             auto program1 = std::make_shared<ast::Program>();
             auto program2 = std::make_shared<ast::Program>();
             mod_symtab.enter_scope("scope1", program1.get(), false, old_symtab);
@@ -333,7 +356,7 @@ SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
                 REQUIRE(symbol->get_properties() == properties);
             }
         }
-        WHEN("added same symbol with exisiting property") {
+        WHEN("added same symbol with existing property") {
             mod_symtab.enter_scope("scope", program.get(), true, old_symtab);
             mod_symtab.insert(symbol1);
             mod_symtab.insert(symbol2);

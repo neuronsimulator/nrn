@@ -19,8 +19,8 @@ namespace nmodl {
 namespace codegen {
 
 /**
- * @addtogroup codegen_backends
- * @{
+ * \addtogroup codegen_backends
+ * \{
  */
 
 /**
@@ -97,7 +97,8 @@ class CodegenAccVisitor: public CodegenCppVisitor {
     void print_instance_struct_transfer_routine_declarations() override;
 
     /// define helper functions for copying the instance struct to the device
-    void print_instance_struct_transfer_routines(std::vector<std::string> const&) override;
+    void print_instance_struct_transfer_routines(
+        const std::vector<std::string>& ptr_members) override;
 
     /// call helper function for copying the instance struct to the device
     void print_instance_struct_copy_to_device() override;
@@ -105,30 +106,32 @@ class CodegenAccVisitor: public CodegenCppVisitor {
     /// call helper function that deletes the instance struct from the device
     void print_instance_struct_delete_from_device() override;
 
-    // update derivimplicit advance flag on the gpu device
+    /// update derivimplicit advance flag on the gpu device
     void print_deriv_advance_flag_transfer_to_device() const override;
 
-    // update NetSendBuffer_t count from device to host
+    /// update NetSendBuffer_t count from device to host
     void print_net_send_buf_count_update_to_host() const override;
 
-    // update NetSendBuffer_t from device to host
+    /// update NetSendBuffer_t from device to host
     void print_net_send_buf_update_to_host() const override;
 
-    // update NetSendBuffer_t count from host to device
+    /// update NetSendBuffer_t count from host to device
     virtual void print_net_send_buf_count_update_to_device() const override;
 
-    // update dt from host to device
+    /// update dt from host to device
     virtual void print_dt_update_to_device() const override;
 
     // synchronise/wait on stream specific to NrnThread
     virtual void print_device_stream_wait() const override;
 
-    // print atomic capture pragma
+    /// print atomic capture pragma
     void print_device_atomic_capture_annotation() const override;
 
-    // print atomic update of NetSendBuffer_t cnt
+    /// print atomic update of NetSendBuffer_t cnt
     void print_net_send_buffering_cnt_update() const override;
 
+    /// Replace default implementation by a no-op
+    /// since the buffer cannot be grown up during gpu execution
     void print_net_send_buffering_grow() override;
 
 
@@ -146,7 +149,7 @@ class CodegenAccVisitor: public CodegenCppVisitor {
         : CodegenCppVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
 };
 
-/** @} */  // end of codegen_backends
+/** \} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

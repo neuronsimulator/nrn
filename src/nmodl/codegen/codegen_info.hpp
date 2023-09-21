@@ -9,12 +9,13 @@
 
 /**
  * \file
- * \brief Variour types to store code generation specific information
+ * \brief Various types to store code generation specific information
  */
 
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
@@ -23,8 +24,8 @@ namespace nmodl {
 namespace codegen {
 
 /**
- * @addtogroup codegen_details
- * @{
+ * \addtogroup codegen_details
+ * \{
  */
 
 /**
@@ -62,7 +63,7 @@ struct Ion {
 
     Ion() = delete;
 
-    Ion(std::string name)
+    explicit Ion(std::string name)
         : name(std::move(name)) {}
 
     /**
@@ -134,7 +135,7 @@ struct IndexSemantics {
     IndexSemantics() = delete;
     IndexSemantics(int index, std::string name, int size)
         : index(index)
-        , name(name)
+        , name(std::move(name))
         , size(size) {}
 };
 
@@ -201,7 +202,7 @@ struct CodegenInfo {
     /// number of watch expressions
     int watch_count = 0;
 
-    // number of table statements
+    /// number of table statements
     int table_count = 0;
 
     /**
@@ -302,7 +303,7 @@ struct CodegenInfo {
     /// range variables which are assigned variables as well
     std::vector<SymbolType> range_assigned_vars;
 
-    /// reamining assigned variables
+    /// remaining assigned variables
     std::vector<SymbolType> assigned_vars;
 
     /// all state variables
@@ -326,8 +327,8 @@ struct CodegenInfo {
     /// note that if tqitem doesn't exist then the default value should be 0
     int tqitem_index = 0;
 
-    // updated dt to use with steadystate solver (in initial block)
-    // empty string means no change in dt
+    /// updated dt to use with steadystate solver (in initial block)
+    /// empty string means no change in dt
     std::string changed_dt;
 
     /// global variables
@@ -390,25 +391,25 @@ struct CodegenInfo {
     bool eigen_linear_solver_exist = false;
 
     /// if any ion has write variable
-    bool ion_has_write_variable() const;
+    bool ion_has_write_variable() const noexcept;
 
     /// if given variable is ion write variable
-    bool is_ion_write_variable(const std::string& name) const;
+    bool is_ion_write_variable(const std::string& name) const noexcept;
 
     /// if given variable is ion read variable
-    bool is_ion_read_variable(const std::string& name) const;
+    bool is_ion_read_variable(const std::string& name) const noexcept;
 
     /// if either read or write variable
-    bool is_ion_variable(const std::string& name) const;
+    bool is_ion_variable(const std::string& name) const noexcept;
 
     /// if given variable is a current
-    bool is_current(const std::string& name) const;
+    bool is_current(const std::string& name) const noexcept;
 
     /// if given variable is a ionic current
-    bool is_ionic_current(const std::string& name) const;
+    bool is_ionic_current(const std::string& name) const noexcept;
 
     /// if given variable is a ionic concentration
-    bool is_ionic_conc(const std::string& name) const;
+    bool is_ionic_conc(const std::string& name) const noexcept;
 
     /// if watch statements are used
     bool is_watch_used() const noexcept {
@@ -424,7 +425,7 @@ struct CodegenInfo {
         return !derivimplicit_callbacks.empty();
     }
 
-    bool function_uses_table(std::string& name) const;
+    bool function_uses_table(const std::string& name) const noexcept;
 
     /// true if EigenNewtonSolver is used in nrn_state block
     bool nrn_state_has_eigen_solver_block() const;
@@ -436,7 +437,7 @@ struct CodegenInfo {
     bool require_wrote_conc = false;
 };
 
-/** @} */  // end of codegen_backends
+/** \} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

@@ -28,7 +28,7 @@ int SymbolTable::Table::counter = 0;  // NOLINT(cppcoreguidelines-avoid-non-cons
  *  cases where we were getting re-insertion errors.
  */
 void SymbolTable::Table::insert(const std::shared_ptr<Symbol>& symbol) {
-    std::string name = symbol->get_name();
+    const auto& name = symbol->get_name();
     if (lookup(name) != nullptr) {
         throw std::runtime_error("Trying to re-insert symbol " + name);
     }
@@ -54,11 +54,11 @@ SymbolTable::SymbolTable(const SymbolTable& table)
     , parent{nullptr} {}
 
 bool SymbolTable::is_method_defined(const std::string& name) const {
-    auto symbol = lookup_in_scope(name);
+    const auto& symbol = lookup_in_scope(name);
     if (symbol == nullptr) {
         return false;
     }
-    auto nodes = symbol->get_nodes_by_type(
+    const auto& nodes = symbol->get_nodes_by_type(
         {AstNodeType::FUNCTION_BLOCK, AstNodeType::PROCEDURE_BLOCK});
     return !nodes.empty();
 }
@@ -76,7 +76,7 @@ std::string SymbolTable::position() const {
 }
 
 
-void SymbolTable::insert_table(const std::string& name, std::shared_ptr<SymbolTable> table) {
+void SymbolTable::insert_table(const std::string& name, const std::shared_ptr<SymbolTable>& table) {
     if (children.find(name) != children.end()) {
         throw std::runtime_error("Trying to re-insert SymbolTable " + name);
     }
@@ -106,8 +106,8 @@ std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
 /// return all symbol which has all "with" properties and none of the "without" properties
 std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with,
                                                                 NmodlType without) const {
-    auto variables = get_variables_with_properties(with, true);
-    decltype(variables) result;
+    const auto& variables = get_variables_with_properties(with, true);
+    std::decay_t<decltype(variables)> result;
     for (auto& variable: variables) {
         if (!variable->has_any_property(without)) {
             result.push_back(variable);
@@ -169,25 +169,24 @@ std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(const std::string& name) co
     return symbol;
 }
 
-/// lookup in current sytab as well as all parent symbol tables
+/// lookup in current symtab as well as all parent symbol tables
 std::shared_ptr<Symbol> ModelSymbolTable::lookup(const std::string& name) {
     if (current_symtab == nullptr) {
         throw std::logic_error("Lookup with previous symtab = nullptr ");
     }
 
     auto symbol = current_symtab->lookup(name);
-    if (symbol) {
-        return symbol;
-    }
 
-    // check into all parent symbol tables
-    auto parent = current_symtab->get_parent_table();
-    while (parent != nullptr) {
-        symbol = parent->lookup(name);
-        if (symbol) {
-            break;
+    if (!symbol) {
+        // check into all parent symbol tables
+        auto parent = current_symtab->get_parent_table();
+        while (parent != nullptr) {
+            symbol = parent->lookup(name);
+            if (symbol) {
+                break;
+            }
+            parent = parent->get_parent_table();
         }
-        parent = parent->get_parent_table();
     }
     return symbol;
 }
@@ -200,8 +199,8 @@ std::shared_ptr<Symbol> ModelSymbolTable::lookup(const std::string& name) {
 void ModelSymbolTable::emit_message(const std::shared_ptr<Symbol>& first,
                                     const std::shared_ptr<Symbol>& second,
                                     bool redefinition) {
-    auto nodes = first->get_nodes();
-    std::string name = first->get_name();
+    const auto& nodes = first->get_nodes();
+    const auto& name = first->get_name();
     auto properties = to_string(second->get_properties());
     std::string type = "UNKNOWN";
     if (!nodes.empty()) {
@@ -247,7 +246,7 @@ std::shared_ptr<Symbol> ModelSymbolTable::update_mode_insert(
     symbol->set_scope(current_symtab->name());
     symbol->mark_created();
 
-    std::string name = symbol->get_name();
+    const auto& name = symbol->get_name();
     auto search_symbol = lookup(name);
 
     /// if no symbol found then safe to insert
@@ -271,10 +270,11 @@ std::shared_ptr<Symbol> ModelSymbolTable::update_mode_insert(
 
 void ModelSymbolTable::update_order(const std::shared_ptr<Symbol>& present_symbol,
                                     const std::shared_ptr<Symbol>& new_symbol) {
-    auto symbol = (present_symbol != nullptr) ? present_symbol : new_symbol;
+    const auto& symbol = (present_symbol != nullptr) ? present_symbol : new_symbol;
 
-    bool is_parameter = new_symbol->has_any_property(NmodlType::param_assign);
-    bool is_assigned_definition = new_symbol->has_any_property(NmodlType::assigned_definition);
+    const bool is_parameter = new_symbol->has_any_property(NmodlType::param_assign);
+    const bool is_assigned_definition = new_symbol->has_any_property(
+        NmodlType::assigned_definition);
 
     if (symbol->get_definition_order() == -1) {
         if (is_parameter || is_assigned_definition) {
@@ -288,7 +288,7 @@ std::shared_ptr<Symbol> ModelSymbolTable::insert(const std::shared_ptr<Symbol>& 
         throw std::logic_error("Can not insert symbol without entering scope");
     }
 
-    auto search_symbol = lookup(symbol->get_name());
+    const auto& search_symbol = lookup(symbol->get_name());
     update_order(search_symbol, symbol);
 
     /// handle update mode insertion
@@ -396,7 +396,7 @@ SymbolTable* ModelSymbolTable::enter_scope(const std::string& name,
     }
 
     if (node_symtab == nullptr || !update_table) {
-        auto new_name = get_unique_name(name, node, global);
+        const auto& new_name = get_unique_name(name, node, global);
         auto new_symtab = std::make_shared<SymbolTable>(new_name, node, global);
         new_symtab->set_parent_table(current_symtab);
         if (symtab == nullptr) {
@@ -421,9 +421,7 @@ void ModelSymbolTable::leave_scope() {
     if (current_symtab == nullptr) {
         throw std::logic_error("Trying leave scope without entering");
     }
-    if (current_symtab != nullptr) {
-        current_symtab = current_symtab->get_parent_table();
-    }
+    current_symtab = current_symtab->get_parent_table();
     if (current_symtab == nullptr) {
         current_symtab = symtab.get();
     }
@@ -481,13 +479,13 @@ void SymbolTable::Table::print(std::ostream& stream, std::string title, int inde
             if (symbol->is_array()) {
                 name += "[" + std::to_string(symbol->get_length()) + "]";
             }
-            auto position = symbol->get_token().position();
-            auto properties = syminfo::to_string(symbol->get_properties());
-            auto status = syminfo::to_string(symbol->get_status());
-            auto reads = std::to_string(symbol->get_read_count());
-            auto nodes = std::to_string(symbol->get_nodes().size());
+            const auto& position = symbol->get_token().position();
+            const auto& properties = syminfo::to_string(symbol->get_properties());
+            const auto status = syminfo::to_string(symbol->get_status());
+            const auto reads = std::to_string(symbol->get_read_count());
+            const auto nodes = std::to_string(symbol->get_nodes().size());
             std::string value;
-            auto sym_value = symbol->get_value();
+            const auto& sym_value = symbol->get_value();
             if (sym_value) {
                 value = std::to_string(*sym_value);
             }
@@ -501,10 +499,10 @@ void SymbolTable::Table::print(std::ostream& stream, std::string title, int inde
 
 /// construct title for symbol table
 std::string SymbolTable::title() const {
-    auto node_type = node->get_node_type_name();
-    auto name = symtab_name + " [" + node_type + " IN " + get_parent_table_name() + "] ";
-    auto location = "POSITION : " + position();
-    auto scope = global ? "GLOBAL" : "LOCAL";
+    const auto& node_type = node->get_node_type_name();
+    const auto& name = symtab_name + " [" + node_type + " IN " + get_parent_table_name() + "] ";
+    const auto& location = "POSITION : " + position();
+    const auto scope = global ? "GLOBAL" : "LOCAL";
     return name + location + " SCOPE : " + scope;
 }
 

@@ -464,9 +464,9 @@ void CodegenHelperVisitor::find_table_variables() {
 void CodegenHelperVisitor::find_neuron_global_variables() {
     // TODO: it would be nicer not to have this hardcoded list
     using pair = std::pair<const char*, const char*>;
-    for (auto [var, type]: {pair{naming::CELSIUS_VARIABLE, "double"},
-                            pair{"secondorder", "int"},
-                            pair{"pi", "double"}}) {
+    for (const auto& [var, type]: {pair{naming::CELSIUS_VARIABLE, "double"},
+                                   pair{"secondorder", "int"},
+                                   pair{"pi", "double"}}) {
         auto sym = psymtab->lookup(var);
         if (sym && (sym->get_read_count() || sym->get_write_count())) {
             info.neuron_global_variables.emplace_back(std::move(sym), type);

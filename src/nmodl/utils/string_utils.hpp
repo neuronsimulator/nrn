@@ -90,7 +90,6 @@ enum class text_alignment { left, right, center };
  * \return a copy of the given string with every " and \ characters prefixed with an extra \
  */
 [[nodiscard]] static inline std::string escape_quotes(const std::string& text) {
-    std::ostringstream oss;
     std::string result;
 
     for (auto c: text) {

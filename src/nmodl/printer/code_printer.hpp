@@ -43,16 +43,16 @@ class CodePrinter {
   private:
     std::ofstream ofs;
     std::streambuf* sbuf = nullptr;
-    std::shared_ptr<std::ostream> result;
+    std::unique_ptr<std::ostream> result;
     size_t indent_level = 0;
-    const int NUM_SPACES = 4;
+    const size_t NUM_SPACES = 4;
 
   public:
     CodePrinter()
-        : result(std::make_shared<std::ostream>(std::cout.rdbuf())) {}
+        : result(std::make_unique<std::ostream>(std::cout.rdbuf())) {}
 
     CodePrinter(std::ostream& stream)
-        : result(std::make_shared<std::ostream>(stream.rdbuf())) {}
+        : result(std::make_unique<std::ostream>(stream.rdbuf())) {}
 
     CodePrinter(const std::string& filename);
 
@@ -64,17 +64,25 @@ class CodePrinter {
     void add_indent();
 
     /// start a block scope without indentation (i.e. "{\n")
-    void start_block();
+    void push_block();
 
     /// start a block scope with an expression (i.e. "[indent][expression] {\n")
-    void start_block(std::string&& expression);
+    void push_block(const std::string& expression);
 
     /// end a block and immediately start a new one (i.e. "[indent-1]} [expression] {\n")
-    void restart_block(std::string const& expression);
+    void chain_block(std::string const& expression);
 
-    void add_text(const std::string&);
+    template <typename... Args>
+    void add_text(Args&&... args) {
+        (operator<<(*result, args), ...);
+    }
 
-    void add_line(const std::string&, int num_new_lines = 1);
+    template <typename... Args>
+    void add_line(Args&&... args) {
+        add_indent();
+        add_text(std::forward<Args>(args)...);
+        add_newline(1);
+    }
 
     /// fmt_line(x, y, z) is just shorthand for add_line(fmt::format(x, y, z))
     template <typename... Args>
@@ -82,10 +90,10 @@ class CodePrinter {
         add_line(fmt::format(std::forward<Args>(args)...));
     }
 
-    /// fmt_start_block(args...) is just shorthand for start_block(fmt::format(args...))
+    /// fmt_push_block(args...) is just shorthand for push_block(fmt::format(args...))
     template <typename... Args>
-    void fmt_start_block(Args&&... args) {
-        start_block(fmt::format(std::forward<Args>(args)...));
+    void fmt_push_block(Args&&... args) {
+        push_block(fmt::format(std::forward<Args>(args)...));
     }
 
     /// fmt_text(args...) is just shorthand for add_text(fmt::format(args...))
@@ -96,7 +104,7 @@ class CodePrinter {
 
     void add_multi_line(const std::string&);
 
-    void add_newline(int n = 1);
+    void add_newline(std::size_t n = 1);
 
     void increase_indent() {
         indent_level++;
@@ -106,11 +114,15 @@ class CodePrinter {
         indent_level--;
     }
 
-    /// end of current block scope (i.e. end with "}")
-    void end_block(int num_newlines = 0);
+    /// end of current block scope (i.e. end with "}") and adds one NL character
+    void pop_block();
+
+    /// same as \a pop_block but control the number of NL characters (0 or more) with \a
+    /// num_newlines parameter
+    void pop_block_nl(std::size_t num_newlines = 0);
 
     /// end a block with `suffix` before the newline(s) (i.e. [indent]}[suffix]\n*num_newlines)
-    void end_block(std::string_view suffix, std::size_t num_newlines = 1);
+    void pop_block(const std::string_view& suffix, std::size_t num_newlines = 1);
 
     int indent_spaces() {
         return NUM_SPACES * indent_level;
