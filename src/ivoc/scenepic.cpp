@@ -16,6 +16,7 @@
 #include "apwindow.h"
 #include "utility.h"
 #include "oc2iv.h"
+#include "utils/enumerate.h"
 
 #define Scene_SceneMover_     "Translate Scene"
 #define Scene_SceneZoom_      "ZoomInOut Scene"
@@ -309,9 +310,7 @@ MenuItem* ScenePicker::add_radio_menu(const char* name, OcHandler* h, int tool, 
 }
 
 long ScenePickerImpl::info_index(const char* name) {
-    std::size_t cnt = bil_->size();
-    for (std::size_t i = 0; i < cnt; ++i) {
-        ButtonItemInfo* b = bil_->at(i);
+    for (const auto&& [i, b]: enumerate(*bil_)) {
         if (strcmp(b->name_.string(), name) == 0) {
             return i;
         }
@@ -410,8 +409,8 @@ ScenePickerImpl::ScenePickerImpl(Scene* scene)
 ScenePickerImpl::~ScenePickerImpl() {
     Resource::unref(menu_);
     Resource::unref(tg_);
-    for (auto it = bil_->rbegin(); it != bil_->rend(); ++it) {
-        delete *it;
+    for (auto& elem: *bil_) {
+        delete elem;
     }
     delete bil_;
 }

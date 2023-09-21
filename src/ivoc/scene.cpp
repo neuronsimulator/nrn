@@ -51,6 +51,7 @@
 #include "scenepic.h"
 #include "idraw.h"
 #include "ivoc.h"
+#include "utils/enumerate.h"
 
 #define Scene_Move_Text_   "MoveText Graph"
 #define Scene_ChangeColor_ "ChangeColor Graph"
@@ -311,10 +312,7 @@ Scene::~Scene() {
     // without first deleteing all the views.
     assert(views_->empty());
 
-    if (auto it = std::find(scene_list->begin(), scene_list->end(), this);
-        it != scene_list->end()) {
-        scene_list->erase(it);
-    }
+    erase_first(*scene_list, this);
     delete views_;
 }
 
@@ -335,14 +333,12 @@ void Scene::append_view(XYView* v) {
 }
 
 void Scene::remove_view(XYView* v) {
-    if (auto it = std::find(views_->begin(), views_->end(), v); it != views_->end()) {
-        views_->erase(it);
-    }
+    erase_first(*views_, v);
 }
 
 void Scene::dismiss() {
-    for (auto it = views_->rbegin(); it != views_->rend(); ++it) {
-        OcViewGlyph* g = (*it)->parent();
+    for (auto&& item: reverse(*views_)) {
+        OcViewGlyph* g = item->parent();
         if (g && g->has_window()) {
             g->window()->dismiss();
             g->window(NULL);
@@ -513,8 +509,8 @@ void Scene::replace(GlyphIndex index, Glyph* glyph) {
 }
 
 GlyphIndex Scene::glyph_index(const Glyph* g) {
-    for (std::size_t i = 0; i < info_->size(); ++i) {
-        if ((*info_)[i].glyph_ == g) {
+    for (const auto&& [i, info]: enumerate(*info_)) {
+        if (info.glyph_ == g) {
             return i;
         }
     }
@@ -536,7 +532,7 @@ void Scene::request(Requisition& req) const {
 
 void Scene::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     // printf("Scene::allocate\n");
-    for (GlyphIndex index = 0; index < info_->size(); ++index) {
+    for (const auto&& [index, _]: enumerate(*info_)) {
         check_allocation(index);
     }
     ext.set(c, a);
@@ -693,14 +689,12 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     if (background_ != NULL) {
         background_->pick(c, a, depth, h);
     }
-    GlyphIndex count = info_->size();
     // pick with some extra epsilon in canvas coords
     Coord epsx = XYView::current_pick_view()->x_pick_epsilon();
     Coord epsy = XYView::current_pick_view()->y_pick_epsilon();
 
     bool are_fixed = false;
-    for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = (*info_)[index];
+    for (auto&& [index, info]: enumerate(*info_)) {
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
@@ -720,8 +714,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
         const Transformer& tv = XYView::current_pick_view()->s2o();
         float scx, scy, tmp;
         tv.matrix(scx, tmp, tmp, scy, tmp, tmp);
-        for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = (*info_)[index];
+        for (auto&& [index, info]: enumerate(*info_)) {
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
@@ -752,9 +745,8 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 long Scene::scene_list_index(Scene* s) {
-    std::size_t cnt = scene_list->size();
-    for (std::size_t i = 0; i < cnt; ++i) {
-        if (s == scene_list->at(i)) {
+    for (const auto&& [i, scene]: enumerate(*scene_list)) {
+        if (s == scene) {
             return i;
         }
     }

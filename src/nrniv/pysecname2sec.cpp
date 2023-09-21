@@ -8,6 +8,7 @@
 #include <nrnoc2iv.h>
 
 #include "nrnsymdiritem.h"
+#include "utils/enumerate.h"
 
 #include <string>
 #include <map>
@@ -249,10 +250,9 @@ void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void* v) {
     activate();
     if (!v) {
         // top level items are any of the four types
-        for (Name2CellorSec::iterator it = n2cs.begin(); it != n2cs.end(); ++it) {
-            CellorSec& cs = it->second;
+        for (auto&& [symbol, cs]: n2cs) {
             if (cs.first != NONETYPE && cs.first != OVERLOADCOUNT) {
-                SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
+                SymbolItem* si = new SymbolItem(symbol.c_str(), 0);
                 si->pysec_type_ = cs.first == CELLTYPE ? PYSECOBJ : PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
                 sl.push_back(si);
@@ -260,11 +260,9 @@ void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void* v) {
         }
     } else {
         // in cell items are either OVERLOADCOUNT or SECTYPE
-        Name2CellorSec* n2s = (Name2CellorSec*) v;
-        for (Name2CellorSec::iterator it = n2s->begin(); it != n2s->end(); ++it) {
-            CellorSec& cs = it->second;
+        for (auto&& [symbol, cs]: *static_cast<Name2CellorSec*>(v)) {
             if (cs.first == SECTYPE) {
-                SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
+                SymbolItem* si = new SymbolItem(symbol.c_str(), 0);
                 si->pysec_type_ = PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
                 sl.push_back(si);

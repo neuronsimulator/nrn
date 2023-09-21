@@ -5,6 +5,7 @@
 #include <OS/string.h>
 #include <stdio.h>
 #include "ocobserv.h"
+#include "utils/enumerate.h"
 
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
@@ -60,32 +61,16 @@ class SymDirectoryImpl: public Observer {
     void sort();
 };
 
-static int compare_entries(const void* k1, const void* k2) {
-    SymbolItem* e1 = *((SymbolItem**) k1);
-    SymbolItem* e2 = *((SymbolItem**) k2);
+static int compare_entries(const SymbolItem* e1, const SymbolItem* e2) {
     int i = strcmp(e1->name().string(), e2->name().string());
     if (i == 0) {
-        if (e1->array_index() > e2->array_index()) {
-            i = 1;
-        } else {
-            i = -1;
-        }
+        return e1->array_index() > e2->array_index();
     }
-    return i;
+    return i > 0;
 };
 
 void SymDirectoryImpl::sort() {
-    std::size_t cnt = symbol_lists_.size();
-    SymbolItem** slist = new SymbolItem*[cnt];
-    for (std::size_t i = 0; i < cnt; ++i) {
-        slist[i] = symbol_lists_[i];
-    }
-    qsort(slist, cnt, sizeof(SymbolItem*), compare_entries);
-    symbol_lists_.clear();
-    for (std::size_t i = 0; i < cnt; ++i) {
-        symbol_lists_.push_back(slist[i]);
-    }
-    delete[] slist;
+    std::sort(symbol_lists_.begin(), symbol_lists_.end(), compare_entries);
 }
 
 // SymDirectory
@@ -307,9 +292,8 @@ int SymDirectory::array_index(int i) const {
 }
 
 int SymDirectory::index(const String& name) const {
-    long cnt = count();
-    for (long i = 0; i < cnt; ++i) {
-        if (name == impl_->symbol_lists_[i]->name()) {
+    for (const auto&& [i, symbol]: enumerate(impl_->symbol_lists_)) {
+        if (name == symbol->name()) {
             return i;
         }
     }
@@ -451,8 +435,7 @@ void SymDirectoryImpl::load(int type) {
 }
 
 void SymDirectoryImpl::load(int type, Symlist* sl) {
-    Symbol* sym;
-    for (sym = sl->first; sym; sym = sym->next) {
+    for (Symbol* sym = sl->first; sym; sym = sym->next) {
         if (type == -1) {
             switch (sym->type) {
             case SECTION:
@@ -492,7 +475,7 @@ void SymDirectoryImpl::load_aliases() {
         return;
     for (const auto& kv: a->symtab_) {
         Symbol* s = kv.second;
-        append(s, NULL, obj_);
+        append(s, nullptr, obj_);
     }
 }
 

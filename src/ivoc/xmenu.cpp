@@ -1,9 +1,9 @@
-
 #include <../../nrnconf.h>
 
 #include "oc2iv.h"
 #include "classreg.h"
 #include "gui-redirect.h"
+#include "utils/enumerate.h"
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
@@ -992,8 +992,8 @@ void HocPanel::map_window(int scroll) {
 // HocPanel
 static void var_freed(void* pd, int size) {
     if (hoc_panel_list) {
-        for (auto it = hoc_panel_list->rbegin(); it != hoc_panel_list->rend(); ++it) {
-            (*it)->check_valid_pointers(pd, size);
+        for (auto&& elem: reverse(*hoc_panel_list)) {
+            elem->check_valid_pointers(pd, size);
         }
     }
 }
@@ -1034,10 +1034,7 @@ HocPanel::~HocPanel() {
     for (auto& item: elist_) {
         item->HocItem::unref();
     }
-    if (auto it = std::find(hoc_panel_list->begin(), hoc_panel_list->end(), this);
-        it != hoc_panel_list->end()) {
-        hoc_panel_list->erase(it);
-    }
+    erase_first(*hoc_panel_list, this);
     ilist_.clear();
     ilist_.shrink_to_fit();
     elist_.clear();
@@ -1073,10 +1070,7 @@ void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
     if (add) {
         update_list_->push_back(hui);
     } else {
-        if (auto it = std::find(update_list_->begin(), update_list_->end(), hui);
-            it != update_list_->end()) {
-            update_list_->erase(it);
-        }
+        erase_first(*update_list_, hui);
     }
 }
 
@@ -2278,22 +2272,22 @@ void Oc::notifyHocValue() {
     ParseTopLevel ptl;
     ptl.save();
     if (hoc_panel_list) {
-        for (auto it = hoc_panel_list->rbegin(); it != hoc_panel_list->rend(); ++it) {
-            (*it)->notifyHocValue();
+        for (auto&& e: reverse(*hoc_panel_list)) {
+            e->notifyHocValue();
         }
     }
     ptl.restore();
 }
 
 void HocPanel::notifyHocValue() {
-    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
-        (*it)->update_hoc_item();
+    for (auto&& e: reverse(elist_)) {
+        e->update_hoc_item();
     }
 }
 
 void HocPanel::check_valid_pointers(void* v, int size) {
-    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
-        (*it)->check_pointer(v, size);
+    for (auto&& e: reverse(elist_)) {
+        e->check_pointer(v, size);
     }
 }
 
@@ -2320,8 +2314,8 @@ void HocVarLabel::check_pointer(void* v, int) {
 }
 
 void HocPanel::data_path(HocDataPaths* hdp, bool append) {
-    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
-        (*it)->data_path(hdp, append);
+    for (auto&& e: reverse(elist_)) {
+        e->data_path(hdp, append);
     }
 }
 
