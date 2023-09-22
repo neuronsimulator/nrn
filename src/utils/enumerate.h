@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <tuple>
 
 template <typename T,
@@ -13,7 +14,7 @@ void apply_to_first(T&& iterable, value_type&& value, F&& f) {
                         std::end(std::forward<T>(iterable)),
                         std::forward<value_type>(value));
     if (it != std::end(std::forward<T>(iterable))) {
-        f(std::forward<TIter>(it));
+        f(it);
     }
 }
 
@@ -67,7 +68,7 @@ constexpr auto reverse(T&& iterable) {
         void operator++() {
             ++iter;
         }
-        auto operator*() const {
+        auto&& operator*() const {
             return *iter;
         }
     };
