@@ -36,7 +36,7 @@ then
     for py in 9 10 11
     do
         python3.${py} -m venv venv3.${py}
-        venv3.${py}/bin/pip install wheelhouse/NEURON-9.0a0-cp3${py}-cp3${py}-macosx_11_0_arm64.whl
+        venv3.${py}/bin/pip install wheelhouse/NEURON-${1}-cp3${py}-cp3${py}-macosx_11_0_arm64.whl
         venv3.${py}/bin/nrniv
     done
 fi
