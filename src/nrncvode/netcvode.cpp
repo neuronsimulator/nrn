@@ -6124,23 +6124,16 @@ void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructo
 void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destructor
                                                  // printf("NetCvode::playrec_remove %p\n", pr);
     playrec_change_cnt_ = 0;
-    for (auto it = prl_->begin(); it != prl_->end(); ++it) {
-        if (*it == pr) {
-            prl_->erase(it);
-            break;
-        }
+    if (auto it = std::find(prl_->begin(), prl_->end(), pr); it != prl_->end()) {
+        prl_->erase(it);
     }
-    for (auto it = fixed_play_->begin(); it != fixed_play_->end(); ++it) {
-        if (*it == pr) {
-            fixed_play_->erase(it);
-            break;
-        }
+    if (auto it = std::find(fixed_play_->begin(), fixed_play_->end(), pr);
+        it != fixed_play_->end()) {
+        fixed_play_->erase(it);
     }
-    for (auto it = fixed_record_->begin(); it != fixed_record_->end(); ++it) {
-        if (*it == pr) {
-            fixed_record_->erase(it);
-            break;
-        }
+    if (auto it = std::find(fixed_record_->begin(), fixed_record_->end(), pr);
+        it != fixed_record_->end()) {
+        fixed_record_->erase(it);
     }
 }
 

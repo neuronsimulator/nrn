@@ -1034,8 +1034,8 @@ HocPanel::~HocPanel() {
     for (auto& item: elist_) {
         item->HocItem::unref();
     }
-    auto it = std::find(hoc_panel_list->begin(), hoc_panel_list->end(), this);
-    if (it != hoc_panel_list->end()) {
+    if (auto it = std::find(hoc_panel_list->begin(), hoc_panel_list->end(), this);
+        it != hoc_panel_list->end()) {
         hoc_panel_list->erase(it);
     }
     ilist_.clear();
@@ -1073,8 +1073,8 @@ void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
     if (add) {
         update_list_->push_back(hui);
     } else {
-        auto it = std::find(update_list_->begin(), update_list_->end(), hui);
-        if (it != update_list_->end()) {
+        if (auto it = std::find(update_list_->begin(), update_list_->end(), hui);
+            it != update_list_->end()) {
             update_list_->erase(it);
         }
     }

@@ -311,8 +311,8 @@ Scene::~Scene() {
     // without first deleteing all the views.
     assert(views_->empty());
 
-    auto it = std::find(scene_list->begin(), scene_list->end(), this);
-    if (it != scene_list->end()) {
+    if (auto it = std::find(scene_list->begin(), scene_list->end(), this);
+        it != scene_list->end()) {
         scene_list->erase(it);
     }
     delete views_;
@@ -335,8 +335,7 @@ void Scene::append_view(XYView* v) {
 }
 
 void Scene::remove_view(XYView* v) {
-    auto it = std::find(views_->begin(), views_->end(), v);
-    if (it != views_->end()) {
+    if (auto it = std::find(views_->begin(), views_->end(), v); it != views_->end()) {
         views_->erase(it);
     }
 }

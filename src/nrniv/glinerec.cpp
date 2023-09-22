@@ -153,21 +153,18 @@ void GraphVector::record_uninstall() {}
 GLineRecord::~GLineRecord() {
     if (v_) {
         delete v_;
-        v_ = NULL;
+        v_ = nullptr;
     }
 
-    for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-        if ((*it).second) {
-            delete (*it).second;
+    for (auto& [_, vec]: pd_and_vec_) {
+        if (vec.second) {
+            delete vec.second;
         }
     }
 
-    for (int i = grl->size() - 1; i >= 0; --i) {
-        if ((*grl)[i] == this) {
-            gl_->simgraph_activate(false);
-            grl->erase(grl->begin() + i);
-            return;
-        }
+    if (auto it = std::find(grl->rbegin(), grl->rend(), this); it != grl->rend()) {
+        gl_->simgraph_activate(false);
+        grl->erase(std::next(it).base());  // Reverse iterator need that
     }
 }
 
