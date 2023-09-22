@@ -231,14 +231,13 @@ void SaveState::ssi_def() {
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
     ssi = new StateStructInfo[n_memb_func];
-    int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
         ssi[im].offset = -1;
         ssi[im].size = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
+        Symbol* mechsym = memb_func[im].sym;
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -249,28 +248,25 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size();  // sum over array dimensions
+            ssi[im].size = nrn_prop_param_size_[im];
         } else {
             int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
+            for (int i = 0; i < mechsym->s_varn; ++i) {
+                Symbol* sym = mechsym->u.ppsym[i];
+                if (nrn_vartype(sym) == type || nrn_vartype(sym) == STATE ||
                     sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = sym->u.rng.index;
                     } else {
                         // assert what we assume: that after this code the variables we want are
                         // `size` contiguous legacy indices starting at `offset`
-                        assert(ssi[im].offset + ssi[im].size == np->prop_index(sym));
+                        assert(ssi[im].offset + ssi[im].size == sym->u.rng.index);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
             }
         }
-        delete np;
     }
-    // Following set to 1 when NrnProperty constructor calls prop_alloc.
-    // so change back to original value.
-    v_structure_change = sav;
 }
 
 bool SaveState::check(bool warn) {
