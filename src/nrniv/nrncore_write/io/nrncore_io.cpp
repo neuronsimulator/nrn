@@ -54,6 +54,28 @@ std::string get_filename(const std::string& path, std::string file_name) {
     return fname;
 }
 
+std::string get_rank_fname(const char* basepath, bool create_folder = true) {
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    std::string nodepath = "";
+    if (std::getenv("SLURM_NODEID") != nullptr) {
+        const int factor = 20;
+        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
+
+        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+    }
+    else if (std::getenv("HOSTNAME") != nullptr) {
+        nodepath = std::getenv("HOSTNAME");
+    }
+
+    // Create subfolder for the rank, based on the node
+    if (create_folder) {
+        std::string path = std::string(basepath) + "/" + nodepath;
+        mkdir_p(path.c_str());
+    }
+
+    return (path + "/" + nrnmpi_myid + ".dat");
+}
+
 
 void write_memb_mech_types(const char* fname) {
     if (nrnmpi_myid > 0) {
@@ -113,18 +135,22 @@ void write_globals(const char* fname) {
     fclose(f);
 }
 
+std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
+    std::array<size_t, 2> offsets = { 0, 0 };
 
-void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
-    char fname[1000];
     if (cg.n_output <= 0) {
-        return;
+        return offsets;
     }
     assert(cg.group_id >= 0);
-    nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
-    FILE* f = fopen(fname, "wb");
+
+    FILE* f = fopen(get_rank_fname(path).c_str(), "ab");
     if (!f) {
-        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
+        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname.c_str());
     }
+
+    // Set the first offset inside the file
+    offsets[0] = ftell(f);
+
     fprintf(f, "%s\n", bbcore_write_version);
 
     // nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
@@ -138,13 +164,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
         delete[] cg.netcon_srcgid;
         cg.netcon_srcgid = NULL;
     }
-    fclose(f);
 
-    nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
-    f = fopen(fname, "w");
-    if (!f) {
-        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
-    }
+    // Set the second offset inside the file
+    offsets[1] = ftell(f);
 
     fprintf(f, "%s\n", bbcore_write_version);
 
@@ -286,6 +308,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrnbbcore_vecplay_write(f, nt);
 
     fclose(f);
+
+    return offsets;
 }
 
 
@@ -516,17 +540,15 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
 }
 
 /** @brief dump mapping information to gid_3.dat file */
-void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
-    /** full path of mapping file */
-    std::stringstream ss;
-    ss << path << "/" << gid << "_3.dat";
-
-    std::string fname(ss.str());
-    FILE* f = fopen(fname.c_str(), "w");
-
+size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
+    size_t offset = 0;
+    FILE* f = fopen(get_rank_fname(path).c_str(), "ab");
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
+    
+    // Set the offset inside the file
+    offset = ftell(f);
 
     fprintf(f, "%s\n", bbcore_write_version);
 
@@ -563,4 +585,6 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
         }
     }
     fclose(f);
+
+    return offset;
 }

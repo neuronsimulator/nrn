@@ -2,6 +2,7 @@
 #define NRN_NRNCORE_IO_H
 #include "hocdec.h"
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -27,7 +28,7 @@ extern int chkpnt;
 
 void write_memb_mech_types(const char* fname);
 void write_globals(const char* fname);
-void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
+std::array<size_t, 2> write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 void writeint_(int* p, size_t size, FILE* f);
 void writedbl_(double* p, size_t size, FILE* f);
 
@@ -41,7 +42,7 @@ using bbcore_write_t =
 void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 
-void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo);
+size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo);
 
 
 #endif  // NRN_NRNCORE_IO_H

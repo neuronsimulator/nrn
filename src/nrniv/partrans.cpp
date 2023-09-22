@@ -964,10 +964,35 @@ SetupTransferInfo* nrn_get_partrans_setup_info(int ngroup, int cn_nthread, size_
     return nrncore_transfer_info(cn_nthread);
 }
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< WATCH OUT! Move to common header!!
+std::string get_rank_fname(const char* basepath, bool create_folder = true) {
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    std::string nodepath = "";
+    if (std::getenv("SLURM_NODEID") != nullptr) {
+        const int factor = 20;
+        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
+
+        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+    }
+    else if (std::getenv("HOSTNAME") != nullptr) {
+        nodepath = std::getenv("HOSTNAME");
+    }
+
+    // Create subfolder for the rank, based on the node
+    if (create_folder) {
+        std::string path = std::string(basepath) + "/" + nodepath;
+        mkdir_p(path.c_str());
+    }
+
+    return (path + "/" + nrnmpi_myid + ".dat");
+}
+
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
+    size_t offset = 0;
+
     auto gi = nrncore_transfer_info(nrn_nthread);  // gi stood for gapinfo
     if (gi == nullptr) {
-        return 0;
+        return offset;
     }
 
     // print the files
@@ -978,10 +1003,14 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
             continue;
         }
 
-        char fname[1000];
-        Sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
-        FILE* f = fopen(fname, "wb");
-        assert(f);
+        FILE* f = fopen(get_rank_fname(path).c_str(), "ab");
+        if (!f) {
+            hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
+        }
+        
+        // Set the offset inside the file
+        offset = ftell(f);
+        
         fprintf(f, "%s\n", bbcore_write_version);
         fprintf(f, "%d sizeof_sid_t\n", int(sizeof(sgid_t)));
 
@@ -1010,7 +1039,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
 
     // cleanup
     delete[] gi;
-    return 0;
+    return offset;
 }
 
 static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {

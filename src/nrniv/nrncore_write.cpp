@@ -218,17 +218,58 @@ static part1_ret part1() {
     return {rankbytes, std::move(sorted_token)};
 }
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< WATCH OUT! Move to common header!!
+std::string get_rank_fname(const char* basepath, bool create_folder = true) {
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    std::string nodepath = "";
+    if (std::getenv("SLURM_NODEID") != nullptr) {
+        const int factor = 20;
+        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
+
+        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+    }
+    else if (std::getenv("HOSTNAME") != nullptr) {
+        nodepath = std::getenv("HOSTNAME");
+    }
+
+    // Create subfolder for the rank, based on the node
+    if (create_folder) {
+        std::string path = std::string(basepath) + "/" + nodepath;
+        mkdir_p(path.c_str());
+    }
+
+    return (path + "/" + nrnmpi_myid + ".dat");
+}
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+size_t get_filesize(const char* fname) {
+    FILE* f = fopen(fname, "ab");
+    if (!f) {
+        hoc_execerror("get_filesize could not open:", fname.c_str());
+    }
+    const size_t offset = ftell(f);
+    fclose(f);
+
+    return offset;
+}
+
 static void part2(const char* path) {
+    std::array<size_t, 5> offsets;
+
     CellGroup* cgs = cellgroups_;
     for (int i = 0; i < nrn_nthread; ++i) {
         chkpnt = 0;
-        write_nrnthread(path, nrn_threads[i], cgs[i]);
+        const auto &nrnthread_offsets = write_nrnthread(path, nrn_threads[i], cgs[i]);
+        if (nrnthread_offsets[1] > 0) {
+            offsets[0] = nrnthread_offsets[0];
+            offsets[1] = nrnthread_offsets[1];
+        }
     }
 
     /** write mapping information */
     if (mapinfo.size()) {
         int gid = cgs[0].group_id;
-        nrn_write_mapping_info(path, gid, mapinfo);
+        offsets[2] = nrn_write_mapping_info(path, gid, mapinfo);
         mapinfo.clear();
     }
 
@@ -238,9 +279,11 @@ static void part2(const char* path) {
         for (int i = 0; i < nrn_nthread; ++i) {
             group_ids[i] = cgs[i].group_id;
         }
-        nrnbbcore_gap_write(path, group_ids);
+        offsets[3] = nrnbbcore_gap_write(path, group_ids);
         delete[] group_ids;
     }
+
+    // get_filesize(get_rank_fname(path).c_str()) <<<<<<<<<<<<<<<<<<<<<<<<<<< (gap junction may or may not be there, and we still need the last size of the file)
 
     // filename data might have to be collected at hoc level since
     // pc.nrncore_write might be called
@@ -262,7 +305,7 @@ static void part2(const char* path) {
                 hoc_execerror("Second arg must be Vector or double.", NULL);
             }
         }
-        write_nrnthread_task(path, cgs, append);
+        write_nrnthread_task(path, cgs, append, offsets); // <<<<<<<
     }
 
     part2_clean();
