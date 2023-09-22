@@ -157,8 +157,8 @@ GLineRecord::~GLineRecord() {
     }
 
     for (auto& [_, vec]: pd_and_vec_) {
-        if (vec.second) {
-            delete vec.second;
+        if (vec) {
+            delete vec;
         }
     }
 
