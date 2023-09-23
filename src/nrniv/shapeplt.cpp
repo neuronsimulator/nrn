@@ -438,7 +438,7 @@ void ShapePlotData::varobj(void* obj) {
 
 #if HAVE_IV
 
-/* static */ class ShapePlotImpl: public Observer {
+/* static */ class ShapePlotImpl {
   public:
     ShapePlotImpl(ShapePlot*, Symbol*);
     ~ShapePlotImpl();
@@ -449,7 +449,7 @@ void ShapePlotData::varobj(void* obj) {
     virtual void select_variable();
     virtual void scale();
     virtual void colorbar();
-    virtual void update(Observable*);
+    void update(ColorValue*);
 
   public:
     ShapePlot* sp_;
@@ -508,13 +508,13 @@ ShapePlot::ShapePlot(Symbol* sym, SectionList* sl)
                              new ActionCallback(ShapePlotImpl)(spi_, &ShapePlotImpl::space));
     picker()->add_radio_menu("Shape Plot",
                              new ActionCallback(ShapePlotImpl)(spi_, &ShapePlotImpl::shape));
-    color_value()->attach(spi_);
+    slotId = color_value()->updated.attach([&](ColorValue* cv) { spi_->update(cv); });
     spi_->colorbar();
 }
 ShapePlot::~ShapePlot() {
     if (sl_)
         hoc_dec_refcount(&sl_);
-    color_value()->detach(spi_);
+    color_value()->updated.detach(slotId);
     delete spi_;
 }
 
@@ -554,7 +554,7 @@ void ShapePlot::erase_all() {
     spi_->colorbar_ = NULL;
     ShapeScene::erase_all();
 }
-void ShapePlotImpl::update(Observable*) {
+void ShapePlotImpl::update(ColorValue*) {
     colorbar();
     sp_->damage_all();
 }
@@ -1032,7 +1032,7 @@ void ColorValue::set_scale(float low, float high) {
         low_ = low;
         high_ = high;
     }
-    notify();
+    updated(this);
 }
 
 const Color* ColorValue::get_color(float val) const {

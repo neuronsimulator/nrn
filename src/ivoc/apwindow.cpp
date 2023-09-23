@@ -330,27 +330,11 @@ void PrintableWindow::request_on_resize(bool b) {
 }
 
 Coord PrintableWindow::save_left() const {
-#if 0
-	Coord decor = 0.;
-	if (style()) {
-		style()->find_attribute("pwm_win_left_decor", decor);
-	}
-	return Window::left() - decor;
-#else
     return Coord(xleft());
-#endif
 }
 
 Coord PrintableWindow::save_bottom() const {
-#if 0
-	Coord decor = 0.;
-	if (style()) {
-		style()->find_attribute("pwm_win_top_decor", decor);
-	}
-	return Window::bottom() + decor;
-#else
     return Coord(xtop());
-#endif
 }
 
 Glyph* PrintableWindow::print_glyph() {
@@ -361,7 +345,7 @@ void PrintableWindow::map() {
     if (mappable_) {
         DismissableWindow::map();
         single_event_run();
-        notify();
+        updated(this);
     } else {
         delete this;
     }
@@ -376,7 +360,7 @@ void PrintableWindow::unmap() {
         xtop_ = xtop();
         DismissableWindow::unmap();
     }
-    notify();
+    updated(this);
 }
 
 OcGlyphContainer* PrintableWindow::intercept_ = NULL;
@@ -400,7 +384,7 @@ bool iv_user_keydown(long w) {
 bool PrintableWindow::receive(const Event& e) {
     if (e.rep()->messageOf() == WM_WINDOWPOSCHANGED) {
         reconfigured();
-        notify();
+        updated(this);
     }
     return DismissableWindow::receive(e);
 }
@@ -413,7 +397,7 @@ bool PrintableWindow::receive(const Event& e) {
         // LCOV_EXCL_START
         case ConfigureNotify:
             reconfigured();
-            notify();
+            updated(this);
             break;
         // LCOV_EXCL_END
         case MapNotify:
@@ -425,7 +409,7 @@ bool PrintableWindow::receive(const Event& e) {
                 }
             }
             map_notify();
-            notify();
+            updated(this);
             break;
         case UnmapNotify:
             // printf("UnMapNotify %p xleft=%d xtop=%d\n", this, xleft(), xtop());
@@ -436,7 +420,7 @@ bool PrintableWindow::receive(const Event& e) {
             // xleft_ = xleft();
             // xtop_ = xtop();
             unmap_notify();
-            notify();
+            updated(this);
             break;
         case EnterNotify:
             //			printf("EnterNotify\n");

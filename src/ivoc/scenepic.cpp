@@ -463,7 +463,7 @@ void RadioSelect::execute() {
     s_->picker()->select_name(this->name_.string());
     for (int i = 0; i < s_->view_count(); ++i) {
         XYView* v = s_->sceneview(i);
-        v->notify();
+        v->updated(v);
     }
 }
 

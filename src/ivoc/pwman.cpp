@@ -1403,14 +1403,9 @@ void PrintableWindowManager::xplace(int left, int top, bool m) {
     }
 }
 
-void PrintableWindowManager::update(Observable* o) {
-    PrintableWindow* w = (PrintableWindow*) o;
+void PrintableWindowManager::update(PrintableWindow* w) {
     // printf("PrintableWindowManager::update(%p)\n", w);
     reconfigured(w);
-}
-
-void PrintableWindowManager::disconnect(Observable* o) {
-    //	printf("disconnect %p\n", (PrintableWindow*)o);
 }
 
 void PrintableWindowManager::append(PrintableWindow* w) {
@@ -1418,7 +1413,7 @@ void PrintableWindowManager::append(PrintableWindow* w) {
     if (w == NULL) {
         return;
     }
-    w->attach(this);
+    slot = w->updated.attach([this](PrintableWindow* w) { this->update(w); });
     pwmi_->screen_->append(new ScreenItem(w));
     pwmi_->relabel();
     PrintableWindow* pw = PrintableWindow::leader();
@@ -1441,7 +1436,7 @@ void PrintableWindowManager::remove(PrintableWindow* w) {
         impl->w_ = NULL;
     }
     //	printf("remove %p\n", w);
-    w->detach(this);
+    w->updated.detach(slot);
     Scene* s = impl->screen_;
     if (s) {
         GlyphIndex i = impl->index(w);

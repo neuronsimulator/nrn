@@ -17,12 +17,12 @@
 ColorBrushWidget::ColorBrushWidget(Graph* g) {
     g_ = g;
     Resource::ref(g_);
-    g->attach(this);
+    slotId = g->updated.attach([this](Scene* s) { this->update(s); });
 }
 
 ColorBrushWidget::~ColorBrushWidget() {
     // printf("~ColorBrushWidget\n");
-    g_->detach(this);
+    g_->updated.detach(slotId);
     Resource::unref(g_);
 }
 
@@ -83,7 +83,7 @@ void ColorBrushWidget::start(Graph* g) {
     cb->map();
 }
 
-void ColorBrushWidget::update(Observable*) {
+void ColorBrushWidget::update(Scene*) {
     if (g_->tool() != Scene::CHANGECOLOR) {
         // printf("dismiss window of ColorBrushWidget\n");
         w_->dismiss();

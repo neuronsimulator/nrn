@@ -1,6 +1,7 @@
 #ifndef shapeplot_h
 #define shapeplot_h
 
+#include "utils/signal.h"
 
 #if HAVE_IV
 #include "shape.h"
@@ -78,13 +79,14 @@ class ShapePlot: public ShapeScene, public ShapePlotInterface {
     void has_iv_view(bool);
 
   private:
+    std::size_t slotId;
     ShapePlotImpl* spi_;
     Object* sl_;
     bool has_iv_view_;
     void* py_var_;
 };
 
-class ColorValue: public Resource, public Observable {
+class ColorValue: public Resource {
   public:
     ColorValue();
     virtual ~ColorValue();
@@ -100,6 +102,7 @@ class ColorValue: public Resource, public Observable {
     Glyph* make_glyph();
     void colormap(int size, bool global = false);
     void colormap(int index, int red, int green, int blue);
+    signal<void(ColorValue*)> updated;
 
   private:
     float low_, high_;

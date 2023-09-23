@@ -7,6 +7,7 @@
 #include <InterViews/handler.h>
 #include <InterViews/observe.h>
 #include <OS/string.h>
+#include "utils/signal.h"
 
 class Menu;
 class MenuItem;
@@ -64,7 +65,7 @@ class DismissableWindow: public TransientWindow {
 
 
 // If you want to place a screen window onto a piece of paper
-class PrintableWindow: public DismissableWindow, public Observable {
+class PrintableWindow: public DismissableWindow {
   public:
     PrintableWindow(OcGlyph*);
     virtual ~PrintableWindow();
@@ -98,6 +99,8 @@ class PrintableWindow: public DismissableWindow, public Observable {
     static void leader(PrintableWindow* w) {
         leader_ = w;
     }
+
+    signal<void(PrintableWindow*)> updated;
 
   protected:
     virtual void default_geometry();
@@ -136,7 +139,7 @@ class StandardWindow: public PrintableWindow {
 
 class PWMImpl;
 
-class PrintableWindowManager: public Observer {
+class PrintableWindowManager {
   public:
     PrintableWindowManager();
     virtual ~PrintableWindowManager();
@@ -149,14 +152,14 @@ class PrintableWindowManager: public Observer {
     void reconfigured(PrintableWindow*);
     void doprint();
 
-    virtual void update(Observable*);
-    virtual void disconnect(Observable*);
+    void update(PrintableWindow* w);
 
   public:
     PWMImpl* pwmi_;
 
   private:
     static PrintableWindowManager* current_;
+    std::size_t slot{};
 };
 
 #endif

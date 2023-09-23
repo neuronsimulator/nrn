@@ -71,12 +71,10 @@ void Axis::init(Coord x1, Coord x2, Coord pos, int ntic, int nminor, int invert,
     number_ = number;
     amin_ = x1;
     amax_ = x2;
-    s_->attach(this);
     install();
 }
 
 Axis::~Axis() {
-    s_->detach(this);
     //	printf("~Axis\n");
 }
 
@@ -105,8 +103,6 @@ void Axis::save(std::ostream& o) {
             number_);
     o << buf << std::endl;
 }
-
-void Axis::update(Observable*) {}
 
 bool Axis::set_range() {
     Coord x1, x2;

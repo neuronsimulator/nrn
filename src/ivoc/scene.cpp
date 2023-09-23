@@ -239,7 +239,7 @@ int Scene::tool() {
 }
 void Scene::tool(int t) {
     tool_ = t;
-    notify();
+    updated(this);
 }
 
 void Scene::help() {
@@ -293,7 +293,7 @@ void Scene::new_size(Coord x1, Coord y1, Coord x2, Coord y2) {
         }
     }
 
-    notify();
+    updated(this);
 }
 
 Scene::~Scene() {

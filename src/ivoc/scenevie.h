@@ -75,6 +75,7 @@ with the common append/move.
 #include "apwindow.h"
 #include "ocglyph.h"
 #include <vector>
+#include "utils/signal.h"
 
 #undef Scene
 
@@ -104,7 +105,7 @@ class OcViewGlyph: public OcGlyph {
 
 // view into a scene; independent scales in x and y direction.
 // ie. as window resized, view remains same (directions magnified separately)
-class XYView: public TransformSetter, public Observable {
+class XYView: public TransformSetter {
   public:
     XYView(Scene*, Coord xsize = 200, Coord ysize = 200);
     XYView(Coord x1,
@@ -174,6 +175,8 @@ class XYView: public TransformSetter, public Observable {
     virtual void ratio_view(Coord x, Coord y, float& xratio, float& yratio) const;
     virtual void stroke(Canvas*, const Color*, const Brush*);
 
+    signal<void(XYView*)> updated;
+
   protected:
     virtual void transform(Transformer&, const Allocation&, const Allocation& natural) const;
     void scene2view(const Allocation& parent) const;
@@ -231,7 +234,7 @@ class View: public XYView {
     Coord x_span_, y_span_;
 };
 
-class Scene: public Glyph, public Observable {
+class Scene: public Glyph {
   public:
     Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* background = NULL);
     virtual ~Scene();
@@ -311,6 +314,7 @@ class Scene: public Glyph, public Observable {
     bool menu_picked() {
         return menu_picked_;
     }
+    signal<void(Scene*)> updated;
 
   protected:
     virtual void save_class(std::ostream&, const char*);
@@ -345,12 +349,15 @@ class Scene: public Glyph, public Observable {
     Coord x1_orig_, x2_orig_, y1_orig_, y2_orig_;
 };
 
-class ViewWindow: public PrintableWindow, public Observer {
+class ViewWindow: public PrintableWindow {
   public:
     ViewWindow(XYView*, const char* name);
     virtual ~ViewWindow();
-    virtual void update(Observable*);
+    void update(XYView* v);
     virtual void reconfigured();
+
+  private:
+    std::size_t slotId{};
 };
 
 inline Coord Scene::x1() const {

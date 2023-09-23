@@ -3,19 +3,21 @@
 
 #include <InterViews/action.h>
 class Graph;
+class Scene;
 
-class ColorBrushWidget: public Action, public Observer {
+class ColorBrushWidget: public Action {
   public:
     static void start(Graph*);
     virtual ~ColorBrushWidget();
     void execute();
-    virtual void update(Observable*);
+    void update(Scene*);
 
   private:
     ColorBrushWidget(Graph*);
     void map();
 
   private:
+    std::size_t slotId{};
     Graph* g_;
     PolyGlyph* cb_;
     PolyGlyph* bb_;

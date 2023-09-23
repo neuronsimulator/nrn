@@ -385,13 +385,13 @@ void XYView::size(Coord x1, Coord y1, Coord x2, Coord y2) {
     y1_ = std::min(y1, y2);
     x_span_ = std::abs(x2 - x1);
     y_span_ = std::abs(y2 - y1);
-    notify();
+    updated(this);
 }
 
 void XYView::origin(Coord x1, Coord y1) {
     x1_ = x1;
     y1_ = y1;
-    notify();
+    updated(this);
 }
 
 void XYView::csize(Coord x0, Coord x, Coord y0, Coord y) const {
@@ -408,11 +408,11 @@ void XYView::box_size(Coord x1, Coord y1, Coord x2, Coord y2) {
 
 void XYView::x_span(Coord x) {
     x_span_ = (x > 0) ? x : 1.;
-    notify();
+    updated(this);
 }
 void XYView::y_span(Coord x) {
     y_span_ = (x > 0) ? x : 1.;
-    notify();
+    updated(this);
 }
 
 
@@ -770,18 +770,17 @@ ViewWindow::ViewWindow(XYView* v, const char* name)
     if (name) {
         type(name);
     }
-    v->attach(this);
+    slotId = v->updated.attach([this](XYView* v) { this->update(v); });
     update(v);
 }
 
 ViewWindow::~ViewWindow() {
     OcViewGlyph* g = (OcViewGlyph*) glyph();
-    g->view()->detach(this);
+    g->view()->updated.detach(slotId);
 }
 
-void ViewWindow::update(Observable* o) {
+void ViewWindow::update(XYView* v) {
     char s[200];
-    XYView* v = (XYView*) o;
     Sprintf(s,
             "%s %s x %g : %g  y %g : %g",
             type(),

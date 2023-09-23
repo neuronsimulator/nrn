@@ -6,7 +6,7 @@
 
 class Scene;
 
-class Axis: public Glyph, public Observer {
+class Axis: public Glyph {
   public:
     Axis(Scene*, DimensionName);
     Axis(Scene*, DimensionName, Coord x1, Coord x2);
@@ -21,7 +21,6 @@ class Axis: public Glyph, public Observer {
          bool number = true);
     virtual ~Axis();
     virtual void save(std::ostream&);
-    virtual void update(Observable*);
     virtual void size(float&, float&);
 
   private:
