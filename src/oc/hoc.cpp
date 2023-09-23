@@ -638,7 +638,6 @@ int yystart;
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
     yystart = 1;
-    hoc_menu_cleanup();
     hoc_errno_check();
     if (debug_message_ || prnt) {
         hoc_warning(s, t);
@@ -1176,9 +1175,6 @@ int hoc_moreinput() {
         }
         return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
-#if OCSMALL
-        hoc_menu_cleanup();
-#endif
         Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {

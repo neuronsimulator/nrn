@@ -244,9 +244,13 @@ struct handle_interface: handle_base<Identifier> {
     }
 
     friend std::ostream& operator<<(std::ostream& os, handle_interface const& handle) {
-        return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()
-                  << " v=" << handle.v() << " area=" << handle.area() << " a=" << handle.a()
-                  << " b=" << handle.b() << " d=" << handle.d() << '}';
+        if (handle.id()) {
+            return os << "Node{" << handle.id() << '/' << handle.underlying_storage().size()
+                      << " v=" << handle.v() << " area=" << handle.area() << " a=" << handle.a()
+                      << " b=" << handle.b() << " d=" << handle.d() << '}';
+        } else {
+            return os << "Node{null}";
+        }
     }
 };
 }  // namespace neuron::container::Node

@@ -92,7 +92,7 @@ struct NrnThread {
     double* _sp13_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
                                     need to be transfered to actual_rhs */
     char* _sp13mat;              /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list; /* normally nil */
+    Memb_list* _ecell_memb_list; /* normally nullptr */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
     void* _vcv;                  /* replaces old cvode_instance and nrn_cvode_ */
 

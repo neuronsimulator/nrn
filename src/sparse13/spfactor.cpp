@@ -1,6 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
-#endif
 /*
  *  MATRIX FACTORIZATION MODULE
  *
@@ -67,6 +64,7 @@ static char RCSid[] = "@(#)$Header$";
 #include "spconfig.h"
 #include "spdefs.h"
 #include "spmatrix.h"
+#include <climits>
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
 static int FactorComplexMatrix(MatrixPtr Matrix);
@@ -896,10 +894,10 @@ static void MarkowitzProducts(MatrixPtr Matrix, int Step)
 
     for (I = Step; I <= Size; I++) {
         /* If chance of overflow, use real numbers. */
-        if ((*pMarkowitzRow > LARGEST_SHORT_INTEGER AND * pMarkowitzCol != 0) OR(*pMarkowitzCol > LARGEST_SHORT_INTEGER AND * pMarkowitzRow != 0)) {
+        if ((*pMarkowitzRow > SHRT_MAX AND * pMarkowitzCol != 0) OR(*pMarkowitzCol > SHRT_MAX AND * pMarkowitzRow != 0)) {
             fProduct = (double)(*pMarkowitzRow++) * (double)(*pMarkowitzCol++);
-            if (fProduct >= (double)LARGEST_LONG_INTEGER)
-                *pMarkowitzProduct++ = LARGEST_LONG_INTEGER;
+            if (fProduct >= (double)LONG_MAX)
+                *pMarkowitzProduct++ = LONG_MAX;
             else
                 *pMarkowitzProduct++ = fProduct;
         } else {
@@ -1228,7 +1226,7 @@ static ElementPtr QuicklySearchDiagonal(MatrixPtr Matrix, int Step)
 
     /* Begin `QuicklySearchDiagonal'. */
     NumberOfTies = -1;
-    MinMarkowitzProduct = LARGEST_LONG_INTEGER;
+    MinMarkowitzProduct = LONG_MAX;
     pMarkowitzProduct = &(Matrix->MarkowitzProd[Matrix->Size + 2]);
     Matrix->MarkowitzProd[Matrix->Size + 1] = Matrix->MarkowitzProd[Step];
 
@@ -1409,7 +1407,7 @@ static ElementPtr QuicklySearchDiagonal(MatrixPtr Matrix, int Step)
 
     /* Begin `QuicklySearchDiagonal'. */
     ChosenPivot = NULL;
-    MinMarkowitzProduct = LARGEST_LONG_INTEGER;
+    MinMarkowitzProduct = LONG_MAX;
     pMarkowitzProduct = &(Matrix->MarkowitzProd[Matrix->Size + 2]);
     Matrix->MarkowitzProd[Matrix->Size + 1] = Matrix->MarkowitzProd[Step];
 
@@ -1563,7 +1561,7 @@ static ElementPtr SearchDiagonal(MatrixPtr Matrix, int Step)
 
     /* Begin `SearchDiagonal'. */
     ChosenPivot = NULL;
-    MinMarkowitzProduct = LARGEST_LONG_INTEGER;
+    MinMarkowitzProduct = LONG_MAX;
     pMarkowitzProduct = &(Matrix->MarkowitzProd[Size + 2]);
     Matrix->MarkowitzProd[Size + 1] = Matrix->MarkowitzProd[Step];
 
@@ -1674,7 +1672,7 @@ static ElementPtr SearchEntireMatrix(MatrixPtr Matrix, int Step)
     /* Begin `SearchEntireMatrix'. */
     ChosenPivot = NULL;
     LargestElementMag = 0.0;
-    MinMarkowitzProduct = LARGEST_LONG_INTEGER;
+    MinMarkowitzProduct = LONG_MAX;
 
     /* Start search of matrix on column by column basis. */
     for (I = Step; I <= Size; I++) {
@@ -2570,10 +2568,10 @@ static void UpdateMarkowitzNumbers(MatrixPtr Matrix, ElementPtr pPivot)
         --MarkoRow[Row];
 
         /* Form Markowitz product while being cautious of overflows. */
-        if ((MarkoRow[Row] > LARGEST_SHORT_INTEGER AND MarkoCol[Row] != 0) OR(MarkoCol[Row] > LARGEST_SHORT_INTEGER AND MarkoRow[Row] != 0)) {
+        if ((MarkoRow[Row] > SHRT_MAX AND MarkoCol[Row] != 0) OR(MarkoCol[Row] > SHRT_MAX AND MarkoRow[Row] != 0)) {
             Product = MarkoCol[Row] * MarkoRow[Row];
-            if (Product >= (double)LARGEST_LONG_INTEGER)
-                Matrix->MarkowitzProd[Row] = LARGEST_LONG_INTEGER;
+            if (Product >= (double)LONG_MAX)
+                Matrix->MarkowitzProd[Row] = LONG_MAX;
             else
                 Matrix->MarkowitzProd[Row] = Product;
         } else
@@ -2587,10 +2585,10 @@ static void UpdateMarkowitzNumbers(MatrixPtr Matrix, ElementPtr pPivot)
         --MarkoCol[Col];
 
         /* Form Markowitz product while being cautious of overflows. */
-        if ((MarkoRow[Col] > LARGEST_SHORT_INTEGER AND MarkoCol[Col] != 0) OR(MarkoCol[Col] > LARGEST_SHORT_INTEGER AND MarkoRow[Col] != 0)) {
+        if ((MarkoRow[Col] > SHRT_MAX AND MarkoCol[Col] != 0) OR(MarkoCol[Col] > SHRT_MAX AND MarkoRow[Col] != 0)) {
             Product = MarkoCol[Col] * MarkoRow[Col];
-            if (Product >= (double)LARGEST_LONG_INTEGER)
-                Matrix->MarkowitzProd[Col] = LARGEST_LONG_INTEGER;
+            if (Product >= (double)LONG_MAX)
+                Matrix->MarkowitzProd[Col] = LONG_MAX;
             else
                 Matrix->MarkowitzProd[Col] = Product;
         } else

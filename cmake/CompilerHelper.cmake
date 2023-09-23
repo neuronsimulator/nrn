@@ -34,11 +34,10 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/nrnpython/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
     # "src/nmodl/nocpout.cpp", warning #550-D: variable "sion" was set but never used
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
-    # "src/oc/fmenu.cpp", warning #941-D: missing return statement at end of non-void function "ibmgetc"
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
     list(APPEND NRN_COMPILE_FLAGS
-         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
+         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,2465)
   endif()
   list(APPEND NRN_COMPILE_FLAGS -noswitcherror)
   list(APPEND NRN_LINK_FLAGS -noswitcherror)

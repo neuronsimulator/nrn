@@ -39,6 +39,13 @@ data_handle<T> transform(data_handle<T> handle, Transform type) {
 
 constexpr static double magic_voltage_value = 42.;
 
+template <typename T>
+static std::string to_str(T const& x) {
+    std::ostringstream oss;
+    oss << x;
+    return oss.str();
+}
+
 TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     GIVEN("A null handle") {
         data_handle<double> handle{};
@@ -54,9 +61,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle == other_handle);
         }
         THEN("Check it prints the right value") {
-            std::ostringstream os;
-            os << handle;
-            REQUIRE(os.str() == "data_handle<double>{null}");
+            REQUIRE(to_str(handle) == "data_handle<double>{null}");
         }
         THEN("Check it doesn't claim to be modern") {
             REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
@@ -99,10 +104,9 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(foo_ptr == foo.data());
         }
         THEN("Check it prints the right value") {
-            std::ostringstream actual, expected{};
-            actual << handle;
+            std::ostringstream expected;
             expected << "data_handle<double>{raw=" << foo.data() << '}';
-            REQUIRE(actual.str() == expected.str());
+            REQUIRE(to_str(handle) == expected.str());
         }
         THEN("Check that we can store/retrieve in/from unordered_map") {
             std::unordered_map<data_handle<double>, std::string> map;
@@ -138,10 +142,9 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle == other_handle);
         }
         THEN("Check it prints the right value") {
-            std::ostringstream actual, expected{};
-            actual << handle;
+            std::ostringstream expected;
             expected << "data_handle<void>{raw=" << foo.get() << '}';
-            REQUIRE(actual.str() == expected.str());
+            REQUIRE(to_str(handle) == expected.str());
         }
     }
     GIVEN("A handle referring to an entry in an SOA container") {
@@ -181,9 +184,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE(handle.refers_to_a_modern_data_structure());
         }
         THEN("Check it prints the right value") {
-            std::ostringstream actual;
-            actual << handle;
-            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage row=0/1 val=42}");
+            REQUIRE(to_str(handle) == "data_handle<double>{Node::field::Voltage row=0/1 val=42}");
         }
         THEN("Check that getting next_array_element throws, dimension is 1") {
             REQUIRE_THROWS(handle.next_array_element());
@@ -201,9 +202,7 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
             REQUIRE_FALSE(handle);
             // REQUIRE(handle == data_handle<double>{});
             REQUIRE(handle.refers_to_a_modern_data_structure());
-            std::ostringstream actual;
-            actual << handle;
-            REQUIRE(actual.str() == "data_handle<double>{Node::field::Voltage died/0}");
+            REQUIRE(to_str(handle) == "data_handle<double>{Node::field::Voltage died/0}");
             REQUIRE(handle.refers_to<neuron::container::Node::field::Voltage>(
                 neuron::model().node_data()));
             REQUIRE_THROWS(*handle);
@@ -230,100 +229,6 @@ TEST_CASE("data_handle<double>", "[Neuron][data_structures][data_handle]") {
     }
 }
 
-TEST_CASE("generic_data_handle", "[Neuron][data_structures][generic_data_handle]") {
-    GIVEN("A null generic handle") {
-        // no default constructor, have to go via a data_handle<T>
-        generic_data_handle null_handle{data_handle<double>{}};
-        THEN("Check it remembered the double type") {
-            REQUIRE(null_handle.type_name() == "double*");
-        }
-        THEN("Check it can be converted back to data_handle<double>") {
-            auto const round_trip = static_cast<data_handle<double>>(null_handle);
-            REQUIRE_FALSE(round_trip);
-            REQUIRE(round_trip == data_handle<double>{});
-        }
-        THEN("Check it cannot be converted to data_handle<int>") {
-            REQUIRE_THROWS(static_cast<data_handle<int>>(null_handle));
-        }
-        THEN("Check it has the expected string representation") {
-            std::ostringstream actual;
-            actual << null_handle;
-            REQUIRE(actual.str() == "generic_data_handle{raw=nullptr type=double*}");
-        }
-        THEN("Check it does not claim to refer to a modern container") {
-            REQUIRE_FALSE(null_handle.refers_to_a_modern_data_structure());
-        }
-    }
-    GIVEN("A handle wrapping a raw pointer (compatibility mode)") {
-        double foo{};
-        data_handle<double> typed_handle{&foo};
-        generic_data_handle handle{typed_handle};
-        THEN("Check it remembered the double type") {
-            REQUIRE(handle.type_name() == "double*");
-        }
-        THEN("Check it can be converted back to data_handle<double>") {
-            REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
-        }
-        THEN("Check it cannot be converted to data_handle<int>") {
-            REQUIRE_THROWS(static_cast<data_handle<int>>(handle));
-        }
-        THEN("Check it has the expected string representation") {
-            std::ostringstream actual, expected;
-            actual << handle;
-            expected << "generic_data_handle{raw=" << &foo << " type=double*}";
-            REQUIRE(actual.str() == expected.str());
-        }
-        THEN("Check it does not claim to refer to a modern container") {
-            REQUIRE_FALSE(handle.refers_to_a_modern_data_structure());
-        }
-        THEN("Check we can't get another type out of it") {
-            REQUIRE_THROWS(handle.get<int>());
-            REQUIRE_THROWS(handle.literal_value<int>());
-        }
-    }
-    GIVEN("A generic_handle referring to an entry in an SOA container") {
-        REQUIRE(neuron::model().node_data().size() == 0);
-        std::optional<::Node> node{std::in_place};
-        node->v() = magic_voltage_value;
-        auto typed_handle = node->v_handle();
-        THEN("Match typed_handle as true") {
-            REQUIRE(typed_handle);
-        }
-        generic_data_handle handle{typed_handle};
-        THEN("Check it remembered the double type") {
-            REQUIRE(handle.type_name() == "double*");
-        }
-        THEN("Check it can be converted back to data_handle<double>") {
-            REQUIRE_NOTHROW(static_cast<data_handle<double>>(handle));
-        }
-        THEN("Check it cannot be converted to data_handle<int>") {
-            REQUIRE_THROWS(static_cast<data_handle<int>>(handle));
-        }
-        THEN("Check it has the expected string representation") {
-            std::ostringstream actual;
-            actual << handle;
-            REQUIRE(actual.str() ==
-                    "generic_data_handle{Node::field::Voltage row=0/1 type=double*}");
-        }
-        THEN("Check that it knows it refers to a modern data structure") {
-            REQUIRE(handle.refers_to_a_modern_data_structure());
-        }
-        THEN("Check that we can't get another type out of it") {
-            REQUIRE_THROWS(handle.get<int>());
-        }
-        WHEN("The row of the modern data structure is deleted") {
-            node.reset();
-            THEN("Check it still reports referring to a modern data structure") {
-                REQUIRE(handle.refers_to_a_modern_data_structure());
-            }
-            THEN("Check we cannot obtain a literal value") {
-                REQUIRE_THROWS(handle.literal_value<double>());
-            }
-        }
-    }
-}
-
-// Declared in model_test_utils.hpp so they can be reused in other tests too
 namespace neuron::test {
 std::vector<double> get_node_voltages(std::vector<::Node> const& nodes) {
     std::vector<double> ret{};
@@ -353,6 +258,7 @@ std::tuple<std::vector<::Node>, std::vector<double>> get_nodes_and_reference_vol
 }  // namespace neuron::test
 
 TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
+    REQUIRE(neuron::model().node_data().size() == 0);
     GIVEN("A default-constructed node") {
         ::Node node{};
         THEN("Check its SOA-backed members have their default values") {
@@ -384,8 +290,11 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         auto& reference_voltages = std::get<1>(nodes_and_voltages);
         auto& node_data = neuron::model().node_data();
         // Flag this original order as "sorted" so that the tests that it is no
-        // longer sorted after permutation are meaningful
-        { auto token = node_data.get_sorted_token(); }
+        // longer sorted after permutation are meaningful.
+        {
+            auto write_token = node_data.issue_frozen_token();
+            node_data.mark_as_sorted(write_token);
+        }
         auto const require_logical_match = [&]() {
             THEN("Check the logical voltages still match") {
                 REQUIRE(get_node_voltages(nodes) == reference_voltages);
@@ -413,9 +322,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 AND_THEN("Check the underlying storage no longer matches") {
                     REQUIRE_FALSE(storage_match());
                 }
-                AND_THEN("Check the container is not flagged as sorted") {
-                    REQUIRE_FALSE(node_data.is_sorted());
-                }
             }
         };
         WHEN("Values are read back immediately") {
@@ -426,7 +332,7 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("The underlying storage is rotated") {
             auto rotated = perm_vector;
             std::rotate(rotated.begin(), std::next(rotated.begin()), rotated.end());
-            node_data.apply_reverse_permutation(std::move(rotated));
+            auto const sorted_token = node_data.apply_reverse_permutation(std::move(rotated));
             require_logical_match_and_storage_different();
         }
         WHEN("A unit reverse permutation is applied to the underlying storage") {
@@ -439,13 +345,10 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
         WHEN("A random permutation is applied to the underlying storage") {
             std::mt19937 g{42};
             std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-            node_data.apply_reverse_permutation(std::move(perm_vector));
+            auto const sorted_token = node_data.apply_reverse_permutation(std::move(perm_vector));
             // the permutation is random, so we don't know if voltage_storage
             // will match reference_voltages or not
             require_logical_match();
-            THEN("Check the storage is no longer flagged as sorted") {
-                REQUIRE_FALSE(node_data.is_sorted());
-            }
         }
         auto const require_exception = [&](auto perm) {
             THEN("An exception is thrown") {
@@ -501,7 +404,8 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                 // Label the current order as sorted and acquire a token that
                 // freezes it that way. The data should be sorted until the
                 // token goes out of scope.
-                auto const sorted_token = node_data.get_sorted_token();
+                auto frozen_token = node_data.issue_frozen_token();
+                node_data.mark_as_sorted(frozen_token);
                 REQUIRE(node_data.is_sorted());
                 THEN("New nodes cannot be created") {
                     // Underlying node data is read-only, cannot allocate new Nodes.
@@ -520,7 +424,12 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
                         REQUIRE(node_data.is_sorted());
                     }
                 }
-                THEN("The storage cannot be permuted") {
+                THEN(
+                    "The storage *can* be permuted if the sorted token is transferred back to the "
+                    "container") {
+                    node_data.apply_reverse_permutation(std::move(perm_vector), frozen_token);
+                }
+                THEN("The storage cannot be permuted when a 2nd sorted token is used") {
                     // Checking one of the permuting operations should be enough
                     REQUIRE_THROWS(node_data.apply_reverse_permutation(std::move(perm_vector)));
                 }
@@ -535,9 +444,12 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             }
         }
     }
+    REQUIRE(neuron::model().node_data().size() == 0);
 }
 
 TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast_imem]") {
+    REQUIRE(neuron::model().node_data().size() == 0);
+
     auto const set_fast_imem = [](bool new_value) {
         nrn_use_fast_imem = new_value;
         nrn_fast_imem_alloc();
@@ -556,14 +468,10 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
             CHECK(*node.sav_rhs_handle() == 0.0);
         }
     };
-    auto const to_str = [](auto const& handle) {
-        std::ostringstream oss;
-        oss << handle;
-        return oss.str();
-    };
     GIVEN("fast_imem calculation is disabled") {
         set_fast_imem(false);
         WHEN("A node is default-constructed") {
+            REQUIRE(neuron::model().node_data().size() == 0);
             ::Node node{};
             check_throws(node);
             auto handle = node.sav_rhs_handle();
@@ -628,7 +536,8 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
             AND_WHEN("A random permutation is applied") {
                 std::mt19937 g{42};
                 std::shuffle(perm_vector.begin(), perm_vector.end(), g);
-                neuron::model().node_data().apply_reverse_permutation(std::move(perm_vector));
+                auto& node_data = neuron::model().node_data();
+                node_data.apply_reverse_permutation(std::move(perm_vector));
                 THEN("The logical values should still match") {
                     for (auto i = 0; i < num_nodes; ++i) {
                         REQUIRE(nodes[i].sav_d() == i * i);
@@ -644,9 +553,9 @@ TEST_CASE("Fast membrane current storage", "[Neuron][data_structures][node][fast
 // [tests_that_abort] means we have a tag to run them with.
 TEST_CASE("Deleting a row from a frozen SoA container causes a fatal error",
           "[.][tests_that_abort]") {
-    auto& node_data = neuron::model().node_data();           // SoA data store
-    std::optional<::Node> node{std::in_place};               // take ownership of a row in node_data
-    REQUIRE(node_data.size() == 1);                          // quick sanity check
-    auto const sorted_token = node_data.get_sorted_token();  // mark node_data frozen
+    auto& node_data = neuron::model().node_data();  // SoA data store
+    std::optional<::Node> node{std::in_place};      // take ownership of a row in node_data
+    REQUIRE(node_data.size() == 1);                 // quick sanity check
+    auto const frozen_token = node_data.issue_frozen_token();  // mark node_data frozen
     node.reset();  // Node destructor will trigger a call to std::terminate.
 }

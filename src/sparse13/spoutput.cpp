@@ -1,6 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
-#endif
 /*
  *  MATRIX OUTPUT MODULE
  *
@@ -57,6 +54,7 @@ static char RCSid[] = "$Header$";
 #include "spconfig.h"
 #include "spdefs.h"
 #include "spmatrix.h"
+#include <cfloat>
 
 #if DOCUMENTATION
 
@@ -184,7 +182,7 @@ void spPrint(char* eMatrix, int PrintReordered, int Data, int Header)
         else
             printf("Matrix before factorization:\n");
 
-        SmallestElement = LARGEST_REAL;
+        SmallestElement = DBL_MAX;
         SmallestDiag = SmallestElement;
     }
 
@@ -667,7 +665,7 @@ int spFileStats(char* eMatrix, char* File, char* Label)
     /* Search matrix. */
     NumberOfElements = 0;
     LargestElement = 0.0;
-    SmallestElement = LARGEST_REAL;
+    SmallestElement = DBL_MAX;
 
     for (I = 1; I <= Size; I++) {
         pElement = Matrix->FirstInCol[I];

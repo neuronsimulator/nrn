@@ -98,9 +98,9 @@ class NetCvode {
     void tstop_event(double);
     void hoc_event(double,
                    const char* hoc_stmt,
-                   Object* ppobj = nil,
+                   Object* ppobj = nullptr,
                    int reinit = 0,
-                   Object* pyact = nil);
+                   Object* pyact = nullptr);
     NetCon* install_deliver(neuron::container::data_handle<double> psrc,
                             Section* ssrc,
                             Object* osrc,
@@ -259,8 +259,7 @@ class NetCvode {
 
   public:
     MUTDEC  // only for enqueueing_ so far.
-        void
-        set_enqueueing();
+    void set_enqueueing();
     double allthread_least_t(int& tid);
     int solve_when_threads(double);
     void deliver_events_when_threads(double);

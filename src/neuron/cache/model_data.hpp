@@ -1,6 +1,9 @@
 #pragma once
 #include <optional>
 #include <vector>
+
+#include "neuron/container/memory_usage.hpp"
+
 // Forward declare Datum
 namespace neuron::container {
 struct generic_data_handle;
@@ -36,3 +39,7 @@ struct Model {
 };
 extern std::optional<Model> model;
 }  // namespace neuron::cache
+namespace neuron::container {
+cache::ModelMemoryUsage memory_usage(const std::optional<neuron::cache::Model>& model);
+cache::ModelMemoryUsage memory_usage(const neuron::cache::Model& model);
+}  // namespace neuron::container

@@ -352,8 +352,8 @@ int nrnthread_dat2_mech(int tid,
     int sz = nrn_prop_param_size_[type];
 
     // As the NEURON data is now transposed then for now always create a new
-    // copy in the format expected by CoreNEURON -- TODO make sure this is
-    // freed, then later TODO remove the need for this entirely
+    // copy in the format expected by CoreNEURON.
+    // TODO remove the need for this entirely
     if (!copy) {
         data = new double[n * sz];
     }
@@ -363,13 +363,10 @@ int nrnthread_dat2_mech(int tid,
         }
     }
 
-    // double* data1;
     if (isart) {  // data may not be contiguous
-        // data1 = contiguous_art_data(ml, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        // data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -378,15 +375,6 @@ int nrnthread_dat2_mech(int tid,
                 nodeindices[i] = ml->nodeindices[i];
             }
         }
-        // int nn = n * sz;
-        // for (int i = 0; i < nn; ++i) {
-        //     data[i] = data1[i];
-        // }
-        // if (isart) {
-        //     delete[] data1;
-        // }
-        // } else {
-        //     data = data1;
     }
 
     sz = bbcore_dparam_size[type];  // nrn_prop_dparam_size off by 1 if cvode_ieq.
@@ -1231,9 +1219,14 @@ void nrn2core_subworld_info(int& cnt,
                             int& subworld_rank,
                             int& numprocs_subworld,
                             int& numprocs_world) {
-    cnt = nrnmpi_subworld_change_cnt;
-    subworld_index = nrnmpi_subworld_id;
-    subworld_rank = nrnmpi_myid;
-    numprocs_subworld = nrnmpi_numprocs_subworld;
-    numprocs_world = nrnmpi_numprocs_world;
+#ifdef NRNMPI
+    nrnmpi_get_subworld_info(
+        &cnt, &subworld_index, &subworld_rank, &numprocs_subworld, &numprocs_world);
+#else
+    cnt = 0;
+    subworld_index = -1;
+    subworld_rank = 0;
+    numprocs_subworld = 1;
+    numprocs_world = 1;
+#endif
 }

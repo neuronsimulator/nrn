@@ -478,8 +478,7 @@ void nrn_setup(const char* filesdat,
     } else {
         nrn_multithread_job([](NrnThread* n) {
             Phase1 p1{n->id};
-            NrnThread& nt = *n;
-            p1.populate(nt, mut);
+            p1.populate(*n, mut);
         });
     }
 

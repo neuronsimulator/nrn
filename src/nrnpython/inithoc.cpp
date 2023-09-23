@@ -26,7 +26,7 @@ extern PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 #if NRN_ENABLE_THREADS
@@ -248,14 +248,14 @@ extern "C" PyObject* PyInit_hoc() {
      * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
      * and there is no '-mpi' arg.
      * We call nrnmpi_load to load MPI library which returns:
-     *  - nil if loading is successfull
+     *  - nullptr if loading is successfull
      *  - error message in case of loading error
      */
     if (env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {
         libnrnmpi_is_loaded = 0;
     }
     if (libnrnmpi_is_loaded) {
-        pmes = nrnmpi_load(1);
+        pmes = nrnmpi_load();
         if (!pmes.empty() && env_mpi == NULL) {
             // common case on MAC distribution is no NEURON_INIT_MPI and
             // no MPI installed (so nrnmpi_load fails)
