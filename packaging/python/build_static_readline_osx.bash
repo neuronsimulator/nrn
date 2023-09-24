@@ -29,9 +29,9 @@ else
 	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
 fi
 
-(wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
-    && tar -xvzf ncurses-6.2.tar.gz \
-    && cd ncurses-6.2  \
+(wget http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+    && tar -xvzf ncurses-6.4.tar.gz \
+    && cd ncurses-6.4  \
     && ./configure --prefix=/opt/nrnwheel/ncurses --without-shared CFLAGS="-fPIC" \
     && make -j install)
 

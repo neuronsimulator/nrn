@@ -352,8 +352,8 @@ int nrnthread_dat2_mech(int tid,
     int sz = nrn_prop_param_size_[type];
 
     // As the NEURON data is now transposed then for now always create a new
-    // copy in the format expected by CoreNEURON -- TODO make sure this is
-    // freed, then later TODO remove the need for this entirely
+    // copy in the format expected by CoreNEURON.
+    // TODO remove the need for this entirely
     if (!copy) {
         data = new double[n * sz];
     }
@@ -363,13 +363,10 @@ int nrnthread_dat2_mech(int tid,
         }
     }
 
-    // double* data1;
     if (isart) {  // data may not be contiguous
-        // data1 = contiguous_art_data(ml, n, sz);  // delete after use
         nodeindices = NULL;
     } else {
         nodeindices = ml->nodeindices;  // allocated below if copy
-        // data1 = ml->_data[0];           // do not delete after use
     }
     if (copy) {
         if (!isart) {
@@ -378,15 +375,6 @@ int nrnthread_dat2_mech(int tid,
                 nodeindices[i] = ml->nodeindices[i];
             }
         }
-        // int nn = n * sz;
-        // for (int i = 0; i < nn; ++i) {
-        //     data[i] = data1[i];
-        // }
-        // if (isart) {
-        //     delete[] data1;
-        // }
-        // } else {
-        //     data = data1;
     }
 
     sz = bbcore_dparam_size[type];  // nrn_prop_dparam_size off by 1 if cvode_ieq.
@@ -642,10 +630,10 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
 
     // add the index of each instance in fixed_play_ for thread tid.
     // error if not a VecPlayContinuous with no discon vector
-    PlayRecList* fp = net_cvode_instance->fixed_play_;
-    for (int i = 0; i < fp->count(); ++i) {
-        if (fp->item(i)->type() == VecPlayContinuousType) {
-            VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
+    int i = 0;
+    for (auto& item: *net_cvode_instance->fixed_play_) {
+        if (item->type() == VecPlayContinuousType) {
+            auto* vp = static_cast<VecPlayContinuous*>(item);
             if (vp->discon_indices_ == NULL) {
                 if (vp->ith_ == nt.id) {
                     assert(vp->y_ && vp->t_);
@@ -657,6 +645,7 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
         } else {
             assert(0);
         }
+        ++i;
     }
 
     return 1;
@@ -678,9 +667,9 @@ int nrnthread_dat2_vecplay_inst(int tid,
     }
     NrnThread& nt = nrn_threads[tid];
 
-    PlayRecList* fp = net_cvode_instance->fixed_play_;
-    if (fp->item(i)->type() == VecPlayContinuousType) {
-        auto* const vp = static_cast<VecPlayContinuous*>(fp->item(i));
+    auto* fp = net_cvode_instance->fixed_play_;
+    if (fp->at(i)->type() == VecPlayContinuousType) {
+        auto* const vp = static_cast<VecPlayContinuous*>(fp->at(i));
         if (!vp->discon_indices_) {
             if (vp->ith_ == nt.id) {
                 auto* pd = static_cast<double*>(vp->pd_);
@@ -721,9 +710,9 @@ void core2nrn_vecplay(int tid, int i, int last_index, int discon_index, int ubou
     if (tid >= nrn_nthread) {
         return;
     }
-    PlayRecList* fp = net_cvode_instance->fixed_play_;
-    assert(fp->item(i)->type() == VecPlayContinuousType);
-    VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
+    auto* fp = net_cvode_instance->fixed_play_;
+    assert(fp->at(i)->type() == VecPlayContinuousType);
+    VecPlayContinuous* vp = (VecPlayContinuous*) fp->at(i);
     vp->last_index_ = last_index;
     vp->discon_index_ = discon_index;
     vp->ubound_index_ = ubound_index;
@@ -731,10 +720,9 @@ void core2nrn_vecplay(int tid, int i, int last_index, int discon_index, int ubou
 
 /** start the vecplay events **/
 void core2nrn_vecplay_events() {
-    PlayRecList* fp = net_cvode_instance->fixed_play_;
-    for (int i = 0; i < fp->count(); ++i) {
-        if (fp->item(i)->type() == VecPlayContinuousType) {
-            VecPlayContinuous* vp = (VecPlayContinuous*) fp->item(i);
+    for (auto& item: *net_cvode_instance->fixed_play_) {
+        if (item->type() == VecPlayContinuousType) {
+            auto* vp = static_cast<VecPlayContinuous*>(item);
             NrnThread* nt = nrn_threads + vp->ith_;
             vp->e_->send(vp->t_->elem(vp->ubound_index_), net_cvode_instance, nt);
         }
@@ -1231,9 +1219,14 @@ void nrn2core_subworld_info(int& cnt,
                             int& subworld_rank,
                             int& numprocs_subworld,
                             int& numprocs_world) {
-    cnt = nrnmpi_subworld_change_cnt;
-    subworld_index = nrnmpi_subworld_id;
-    subworld_rank = nrnmpi_myid;
-    numprocs_subworld = nrnmpi_numprocs_subworld;
-    numprocs_world = nrnmpi_numprocs_world;
+#ifdef NRNMPI
+    nrnmpi_get_subworld_info(
+        &cnt, &subworld_index, &subworld_rank, &numprocs_subworld, &numprocs_world);
+#else
+    cnt = 0;
+    subworld_index = -1;
+    subworld_rank = 0;
+    numprocs_subworld = 1;
+    numprocs_world = 1;
+#endif
 }

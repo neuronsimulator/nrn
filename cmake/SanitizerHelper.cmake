@@ -8,6 +8,8 @@ set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
     float-divide-by-zero implicit-signed-integer-truncation unsigned-integer-overflow
     CACHE STRING "" FORCE)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
+
 # Propagate the sanitizer flags to the NEURON sources
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
@@ -33,6 +35,9 @@ if(NRN_SANITIZERS)
   if("address" IN_LIST nrn_sanitizers)
     list(APPEND NRN_COMPILE_DEFS NRN_ASAN_ENABLED)
   endif()
+  if("thread" IN_LIST nrn_sanitizers)
+    list(APPEND NRN_COMPILE_DEFS NRN_TSAN_ENABLED)
+  endif()
   # generate and install a launcher script called nrn-enable-sanitizer [--preload] that sets
   # *SAN_OPTIONS variables and, optionally, LD_PRELOAD -- this is useful both in CI configuration
   # and when using the sanitizers "downstream" of NEURON
@@ -43,8 +48,8 @@ if(NRN_SANITIZERS)
   # directory
   foreach(sanitizer ${nrn_sanitizers})
     if(EXISTS "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp")
-      configure_file(".sanitizers/${sanitizer}.supp" "share/nrn/sanitizers/${sanitizer}.supp"
-                     COPYONLY)
+      cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
+                             OUTPUT "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp")
       install(FILES "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp"
               DESTINATION "${CMAKE_INSTALL_PREFIX}/share/nrn/sanitizers")
     endif()

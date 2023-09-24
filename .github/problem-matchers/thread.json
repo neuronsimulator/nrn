@@ -1,0 +1,15 @@
+
+{
+  "problemMatcher": [
+      {
+          "owner": "tsan-problem-matcher",
+          "severity": "warning",
+          "pattern": [
+              {
+                  "regexp": "^.*ThreadSanitizer: (.*)$",
+                  "message": 1
+              }
+          ]
+      }
+  ]
+}

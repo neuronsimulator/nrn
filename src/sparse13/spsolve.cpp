@@ -1,6 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
-#endif
 /*
  *  MATRIX SOLVE MODULE
  *

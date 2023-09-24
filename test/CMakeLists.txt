@@ -15,8 +15,13 @@ include(NeuronTestHelper)
 # =============================================================================
 add_executable(
   testneuron
-  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/container.cpp
-  unit_tests/container/mechanism.cpp unit_tests/container/node.cpp
+  common/catch2_main.cpp
+  unit_tests/basic.cpp
+  unit_tests/matrix.cpp
+  unit_tests/container/container.cpp
+  unit_tests/container/generic_data_handle.cpp
+  unit_tests/container/mechanism.cpp
+  unit_tests/container/node.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -60,7 +65,7 @@ string(
   JOIN " "
   regex "neuron::container::owning_identifier<neuron::container::Node::storage> destructor could"
         "not delete from the underlying storage:"
-        "neuron::container::Node::storage\\[frozen_count=1,sorted=true\\]: erase\\(\\) called on a"
+        "neuron::container::Node::storage\\[frozen_count=1,sorted=false\\]: erase\\(\\) called on a"
         "frozen structure \\[std::runtime_error\\]\\. This is not recoverable, aborting\\.")
 set_tests_properties(unit_tests::testneuron_soa_erase_calls_terminate
                      PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
@@ -510,6 +515,13 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
                 ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_version_macros.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME inputpresyn_py
+    REQUIRES coreneuron mpi ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/coreneuron/test_inputpresyn.py
+    PROCESSORS 2
+    COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_inputpresyn.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
@@ -534,7 +546,7 @@ if(NRN_ENABLE_PYTHON)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES coreneuron ${processor}
       SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
       ENVIRONMENT ${processor_env}
       COMMAND ${modtests_launch_hoc} test/coreneuron/test_direct.hoc)
@@ -663,15 +675,6 @@ if(NRN_ENABLE_PYTHON)
         PROCESSORS 2
         ENVIRONMENT ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
         COMMAND ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
-      nrn_add_test(
-        GROUP coreneuron_modtests
-        NAME inputpresyn_py_${processor}
-        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-        PROCESSORS 2
-        COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-          special ${MPIEXEC_POSTFLAGS} -mpi -python
-          ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME test_subworlds_py_${processor}

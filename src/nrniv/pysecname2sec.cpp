@@ -245,7 +245,7 @@ void nrnpy_pysecname2sec_remove(Section* sec) {
 #endif
 }
 
-void nrn_symdir_load_pysec(SymbolList& sl, void* v) {
+void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void* v) {
     activate();
     if (!v) {
         // top level items are any of the four types
@@ -255,7 +255,7 @@ void nrn_symdir_load_pysec(SymbolList& sl, void* v) {
                 SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
                 si->pysec_type_ = cs.first == CELLTYPE ? PYSECOBJ : PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
-                sl.append(si);
+                sl.push_back(si);
             }
         }
     } else {
@@ -267,7 +267,7 @@ void nrn_symdir_load_pysec(SymbolList& sl, void* v) {
                 SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
                 si->pysec_type_ = PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
-                sl.append(si);
+                sl.push_back(si);
             }
         }
     }

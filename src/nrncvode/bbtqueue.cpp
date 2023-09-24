@@ -1,9 +1,9 @@
 // balanced binary tree queue implemented by Michael Hines
 
 TQItem::TQItem() {
-    left_ = nil;
-    right_ = nil;
-    parent_ = nil;
+    left_ = nullptr;
+    right_ = nullptr;
+    parent_ = nullptr;
 }
 
 TQItem::~TQItem() {
@@ -22,8 +22,8 @@ static void deleteitem(TQItem* i) {
     if (i->right_) {
         deleteitem(i->right_);
     }
-    i->left_ = nil;
-    i->right_ = nil;
+    i->left_ = nullptr;
+    i->right_ = nullptr;
     tpool_->free(i);
 }
 
@@ -91,8 +91,8 @@ TQueue::TQueue() {
     if (!tpool_) {
         tpool_ = new TQItemPool(1000);
     }
-    root_ = nil;
-    least_ = nil;
+    root_ = nullptr;
+    least_ = nullptr;
 
 #if COLLECT_TQueue_STATISTICS
     nmove = ninsert = nrem = nleast = nbal = ncmplxrem = 0;
@@ -124,7 +124,7 @@ void TQueue::check(const char* mes) {
     if (root_) {
         root_->t_iterate(chk, 0);
     }
-    errmess_ = nil;
+    errmess_ = nullptr;
 #endif
 }
 
@@ -170,7 +170,7 @@ void TQueue::new_least() {
             assert(b->left_ == least_);
             least_ = b;
         } else {
-            least_ = nil;
+            least_ = nullptr;
         }
     }
 }
@@ -315,15 +315,15 @@ void TQueue::remove1(TQItem* i) {
             (*child)->parent_ = p;
         } else {
             root_ = i->right_;
-            root_->parent_ = nil;
+            root_->parent_ = nullptr;
         }
     } else {
         // a leaf
         // printf("removing leaf %g\n", i->t_);
         if (p) {
-            *child = nil;
+            *child = nullptr;
         } else {
-            root_ = nil;
+            root_ = nullptr;
         }
     }
     if (doweight) {
@@ -332,9 +332,9 @@ void TQueue::remove1(TQItem* i) {
             p = p->parent_;
         }
     }
-    i->right_ = nil;
-    i->left_ = nil;
-    i->parent_ = nil;
+    i->right_ = nullptr;
+    i->left_ = nullptr;
+    i->parent_ = nullptr;
     check("end remove1");
 }
 
@@ -359,7 +359,7 @@ void TQueue::reverse(TQItem* b) {  // switch item and parent
             }
         } else {
             assert(root_ == p);
-            b->parent_ = nil;
+            b->parent_ = nullptr;
             root_ = b;
         }
         b->w_ = p->w_;
