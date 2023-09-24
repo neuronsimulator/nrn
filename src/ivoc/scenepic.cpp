@@ -85,9 +85,6 @@ GlyphIndex ButtonItemInfo::menu_index() {
     return -1;
 }
 
-declarePtrList(ButtonItemInfoList, ButtonItemInfo)
-implementPtrList(ButtonItemInfoList, ButtonItemInfo)
-
 /*static*/ class SceneMover: public OcHandler {
   public:
     SceneMover();
@@ -193,7 +190,7 @@ ScenePicker* Scene::picker() {
     Scene* scene_;
     TelltaleGroup* tg_;
     CopyString sel_name_;
-    ButtonItemInfoList* bil_;
+    std::vector<ButtonItemInfo*>* bil_;
     static DismissableWindow* window_;
 };
 
@@ -276,7 +273,7 @@ MenuItem* ScenePicker::add_menu(const char* name, MenuItem* mi, Menu* m) {
         mm = spi_->menu_->menu();
     }
     mm->append_item(mi);
-    spi_->bil_->append(new ButtonItemInfo(name, mi->action(), mi->state(), mi, mm));
+    spi_->bil_->push_back(new ButtonItemInfo(name, mi->action(), mi->state(), mi, mm));
     return mi;
 }
 
@@ -294,7 +291,7 @@ Button* ScenePicker::radio_button(const char* name, Action* a) {
     Button* mi = WidgetKit::instance()->radio_button(spi_->tg_,
                                                      name,
                                                      new RadioSelect(name, a, spi_->scene_));
-    spi_->bil_->append(new ButtonItemInfo(name, mi->action(), mi->state()));
+    spi_->bil_->push_back(new ButtonItemInfo(name, mi->action(), mi->state()));
     return mi;
 }
 MenuItem* ScenePicker::add_radio_menu(const char* name,
@@ -312,10 +309,9 @@ MenuItem* ScenePicker::add_radio_menu(const char* name, OcHandler* h, int tool, 
 }
 
 long ScenePickerImpl::info_index(const char* name) {
-    long i, cnt;
-    cnt = bil_->count();
-    for (i = 0; i < cnt; ++i) {
-        ButtonItemInfo* b = bil_->item(i);
+    std::size_t cnt = bil_->size();
+    for (std::size_t i = 0; i < cnt; ++i) {
+        ButtonItemInfo* b = bil_->at(i);
         if (strcmp(b->name_.string(), name) == 0) {
             return i;
         }
@@ -337,7 +333,7 @@ void ScenePicker::exec_item(const char* name) {
     }
     i = spi_->info_index(name);
     if (i > -1) {
-        ButtonItemInfo* b = spi_->bil_->item(i);
+        ButtonItemInfo* b = spi_->bil_->at(i);
         TelltaleState* t = b->s_;
         bool chosen = t->test(TelltaleState::is_chosen);
         bool act = !chosen;
@@ -355,11 +351,10 @@ void ScenePicker::exec_item(const char* name) {
 }
 
 void ScenePicker::remove_item(const char* name) {
-    long i;
-    i = spi_->info_index(name);
+    long i = spi_->info_index(name);
     if (i > -1) {
-        ButtonItemInfo* b = spi_->bil_->item(i);
-        spi_->bil_->remove(i);
+        ButtonItemInfo* b = spi_->bil_->at(i);
+        spi_->bil_->erase(spi_->bil_->begin() + i);
         GlyphIndex j = b->menu_index();
         if (j > -1) {
             b->parent_->remove_item(j);
@@ -375,11 +370,11 @@ void ScenePicker::insert_item(const char* insert, const char* name, MenuItem* mi
     long i;
     i = spi_->info_index(insert);
     if (i > -1) {
-        ButtonItemInfo* b = spi_->bil_->item(i);
+        ButtonItemInfo* b = spi_->bil_->at(i);
         GlyphIndex j = b->menu_index();
         if (j > -1) {
             b->parent_->insert_item(j, mi);
-            spi_->bil_->insert(i,
+            spi_->bil_->insert(spi_->bil_->begin() + i,
                                new ButtonItemInfo(name, mi->action(), mi->state(), mi, b->parent_));
         }
     }
@@ -408,14 +403,15 @@ ScenePickerImpl::ScenePickerImpl(Scene* scene)
     tg_ = new TelltaleGroup();
     tg_->ref();
     scene_ = scene;  // not ref'ed since picker deleted when scene is deleted
-    bil_ = new ButtonItemInfoList(20);
+    bil_ = new std::vector<ButtonItemInfo*>();
+    bil_->reserve(20);
 }
 
 ScenePickerImpl::~ScenePickerImpl() {
     Resource::unref(menu_);
     Resource::unref(tg_);
-    for (long i = bil_->count() - 1; i >= 0; --i) {
-        delete bil_->item(i);
+    for (auto it = bil_->rbegin(); it != bil_->rend(); ++it) {
+        delete *it;
     }
     delete bil_;
 }
