@@ -91,6 +91,7 @@ static struct { /* Keywords */
                 {"MUTEXLOCK", NRNMUTEXLOCK},
                 {"MUTEXUNLOCK", NRNMUTEXUNLOCK},
                 {"REPRESENTS", REPRESENTS},
+                {"RANDOM", RANDOM},
                 {0, 0}};
 
 /*

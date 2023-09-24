@@ -96,6 +96,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	declare parmblk indepblk depblk stateblk
 %type	<qp>	watchstmt watchdir watch1 fornetcon
 %type	<qp>	constblk
+%type   <qp>    numlist
 
 %token	<qp>	KINETIC CONSERVE REACTION REACT1 COMPARTMENT UNITS
 %token	<qp>	UNITSON UNITSOFF LONGDIFUS
@@ -111,6 +112,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
+%token	<qp>	RANDOM
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -240,8 +242,18 @@ number: NUMBER	{lastok = $1;}
 		remove($1); lastok = $2;
 		}
  	;
+
 NUMBER: integer | REAL
 	;
+
+numlist: number
+		{
+		}
+	| numlist ',' number
+		{
+		}
+	;
+
 integer: INTEGER
 	| DEFINEDVAR {replacstr($1, SYM($1)->u.str);}
 	;
@@ -341,6 +353,7 @@ conducthint: CONDUCTANCE Name
 	| CONDUCTANCE Name USEION NAME
 		{conductance_hint(blocktype, $1, $4);}
 	;
+
 locallist: LOCAL
 		{
 		  if (toplocal1_) {freelist(&toplocal1_);}
@@ -1010,6 +1023,10 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt THREADSAFE
 		{ assert_threadsafe = 1; }
+	| nrnstmt RANDOM name '(' numlist ')' namelist
+	    {
+
+	    }
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}

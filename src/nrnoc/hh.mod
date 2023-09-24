@@ -32,6 +32,7 @@ NEURON {
         : `GLOBAL minf` will be replaced with `RANGE minf` if CoreNEURON enabled
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
 	THREADSAFE : assigned GLOBALs will be per thread
+    RANDOM NORMAL (-1, -2.0, 2.2) r
 }
  
 PARAMETER {
