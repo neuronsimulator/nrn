@@ -5,6 +5,13 @@ concurrency:
   cancel-in-progress: true  
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release version (tag name)'
+        default: ''
+        required: true
+        type: string
   push:
     branches: 
       - master
@@ -27,14 +34,20 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
-        
+        ref: ${{ inputs.tag }}
+
+    - name: Retrieve rxd test data
+      run: |
+        git submodule update --init test/rxd/testdata
+      shell: powershell
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Set up Python3
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: Download Dependencies
       run: |
@@ -65,7 +78,7 @@ jobs:
       uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
@@ -76,8 +89,14 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
-      # see https://github.com/neuronsimulator/nrn/issues/1522
-      run: .\ci\win_test_installer_wo_rxd.cmd
+      run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
+
+    - name: Publish Release Installer
+      working-directory: ${{runner.workspace}}\nrn
+      if: inputs.tag != ''
+      run: |
+        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

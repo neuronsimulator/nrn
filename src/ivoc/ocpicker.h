@@ -1,15 +1,17 @@
 #ifndef ocpicker_h
 #define ocpicker_h
 
+#include <vector>
+
 #include <InterViews/input.h>
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
 #include "rubband.h"
 
-class HandlerList;
 class Canvas;
 class Allocation;
 class Hit;
+class ButtonHandler;
 
 /* steer to the right method in response to a mouse action */
 
@@ -66,51 +68,6 @@ class StandardPicker {
     enum { motion, press, drag, release, unknown };
     State ms_;
     EventButton mb_;
-    HandlerList* handlers_[unknown];
+    std::vector<ButtonHandler*>* handlers_[unknown];
 };
-
-/*
- * Handler denoted by an object and member function to call on the object.
- * Used the FieldEditorAction as a template
- */
-
-#if defined(__STDC__) || defined(__ANSI_CPP__)
-#define __HandlerCallback(T)       T##_HandlerCallback
-#define HandlerCallback(T)         __HandlerCallback(T)
-#define __HandlerMemberFunction(T) T##_HandlerMemberFunction
-#define HandlerMemberFunction(T)   __HandlerMemberFunction(T)
-#else
-#define __HandlerCallback(T)       T /**/ _HandlerCallback
-#define HandlerCallback(T)         __HandlerCallback(T)
-#define __HandlerMemberFunction(T) T /**/ _HandlerMemberFunction
-#define HandlerMemberFunction(T)   __HandlerMemberFunction(T)
-#endif
-
-#define declareHandlerCallback(T)                         \
-    typedef bool (T::*HandlerMemberFunction(T))(Event&);  \
-    class HandlerCallback(T)                              \
-        : public Handler {                                \
-      public:                                             \
-        HandlerCallback(T)(T*, HandlerMemberFunction(T)); \
-        virtual ~HandlerCallback(T)();                    \
-                                                          \
-        virtual bool event(Event&);                       \
-                                                          \
-      private:                                            \
-        T* obj_;                                          \
-        HandlerMemberFunction(T) func_;                   \
-    };
-
-#define implementHandlerCallback(T)                                                  \
-    HandlerCallback(T)::HandlerCallback(T)(T * obj, HandlerMemberFunction(T) func) { \
-        obj_ = obj;                                                                  \
-        func_ = func;                                                                \
-    }                                                                                \
-                                                                                     \
-    HandlerCallback(T)::~HandlerCallback(T)() {}                                     \
-                                                                                     \
-    bool HandlerCallback(T)::event(Event& e) {                                       \
-        return (obj_->*func_)(e);                                                    \
-    }
-
 #endif

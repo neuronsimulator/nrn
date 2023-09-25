@@ -8,13 +8,14 @@ import shutil
 import subprocess
 import sys
 from pkg_resources import working_set
-from distutils.ccompiler import new_compiler
+from setuptools.command.build_ext import new_compiler
+from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
+from find_libpython import find_libpython
 
 
-# This replaces the now depricated distutils.sysutils.customize_compiler
 def _customize_compiler(compiler):
-    """Do platform-sepcific customizations of compilers on unix platforms."""
+    """Do platform-specific customizations of compilers on unix platforms."""
     if compiler.compiler_type == "unix":
         (cc, cxx, cflags) = get_config_vars("CC", "CXX", "CFLAGS")
         if "CC" in os.environ:
@@ -40,19 +41,33 @@ def _set_default_compiler():
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
 
+def _check_cpp_compiler_version():
+    """Check if GCC compiler is >= 9.0 otherwise show warning"""
+    try:
+        cpp_compiler = os.environ.get("CXX", "")
+        version = subprocess.run(
+            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+        ).stdout.decode("utf-8")
+        if "GCC" in version:
+            version = subprocess.run(
+                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+            ).stdout.decode("utf-8")
+            if Version(version) <= Version("9.0"):
+                print(
+                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
+                    version,
+                )
+    except:
+        pass
+
+
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
 
     package_name = "neuron"
 
     # determine package to find the install location
-    if "neuron-gpu-nightly" in working_set.by_key:
-        print("INFO : Using neuron-gpu-nightly Package (Alpha Developer Version)")
-        package_name = "neuron-gpu-nightly"
-    elif "neuron-gpu" in working_set.by_key:
-        print("INFO : Using neuron-gpu Package (Alpha Version)")
-        package_name = "neuron-gpu"
-    elif "neuron-nightly" in working_set.by_key:
+    if "neuron-nightly" in working_set.by_key:
         print("INFO : Using neuron-nightly Package (Developer Version)")
         package_name = "neuron-nightly"
     elif "neuron" in working_set.by_key:
@@ -70,6 +85,11 @@ def _config_exe(exe_name):
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
+
+    if "NMODLHOME" not in os.environ:
+        os.environ["NMODLHOME"] = NRN_PREFIX
+    if "NMODL_PYLIB" not in os.environ:
+        os.environ["NMODL_PYLIB"] = find_libpython()
 
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)
@@ -91,6 +111,7 @@ if __name__ == "__main__":
 
     if exe.endswith("nrnivmodl"):
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
+        _check_cpp_compiler_version()
         subprocess.check_call([exe, *sys.argv[1:]])
         _wrap_executable("special")
         sys.exit(0)

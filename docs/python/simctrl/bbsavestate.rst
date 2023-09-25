@@ -31,7 +31,7 @@ BBSaveState
           bbss = h.BBSaveState()
           if restore:
             bbss.restore_test()
-            print('after restore t=%g' % h.t)
+            print(f'after restore t={h.t}')
           else:
             pc.psolve(tstop/2)
             bbss.save_test()

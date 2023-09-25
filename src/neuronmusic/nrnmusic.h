@@ -7,8 +7,10 @@ typedef struct _object PyObject;
 #endif
 #include <music.hh>
 
+#include <unordered_map>
+
 class PreSyn;
-class Gi2PreSynTable;
+using Gi2PreSynTable = std::unordered_map<int, PreSyn*>;
 
 // Interface which nrnmusic.so module (which mdj writes) will use
 

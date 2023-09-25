@@ -9,7 +9,7 @@
 #include "ivocvect.h"
 
 #define EPS hoc_epsilon
-static Symbol* smat_;
+Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
 
 extern int hoc_return_type_code;
 
@@ -29,9 +29,8 @@ extern Object** hoc_temp_objptr(Object*);
 
 static void check_domain(int i, int j) {
     if (i > j || i < 0) {
-        char buf[256];
-        sprintf(buf, "index=%d  max_index=%d\n", i, j);
-        hoc_execerror("Matrix index out of range:", buf);
+        auto const tmp = "index=" + std::to_string(i) + "  max_index=" + std::to_string(j) + "\n";
+        hoc_execerror("Matrix index out of range:", tmp.c_str());
     }
 }
 
@@ -43,20 +42,19 @@ static void check_capac(int i, int j) {
 
 Matrix* matrix_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
-    if (!ob || ob->ctemplate != smat_->u.ctemplate) {
+    if (!ob || ob->ctemplate != nrn_matrix_sym->u.ctemplate) {
         check_obj_type(ob, "Matrix");
     }
     return (Matrix*) (ob->u.this_pointer);
 }
 
-Object** Matrix::temp_objvar() {
-    Matrix* m = (Matrix*) this;
+static Object** temp_objvar(Matrix* m) {
     Object** po;
     if (m->obj_) {
         po = hoc_temp_objptr(m->obj_);
     } else {
-        po = hoc_temp_objvar(smat_, (void*) m);
-        obj_ = *po;
+        po = hoc_temp_objvar(nrn_matrix_sym, (void*) m);
+        m->obj_ = *po;
     }
     return po;
 }
@@ -190,7 +188,7 @@ static double m_scanf(void* v) {
 static Object** m_resize(void* v) {
     Matrix* m = (Matrix*) v;
     m->resize((int) (chkarg(1, 1., 1e9) + EPS), (int) (chkarg(2, 1., 1e9) + EPS));
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_mulv(void* v) {
@@ -266,7 +264,7 @@ static Object** m_add(void* v) {
         out = matrix_arg(2);
     }
     m->add(matrix_arg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_bcopy(void* v) {
@@ -288,7 +286,7 @@ static Object** m_bcopy(void* v) {
     }
     out = get_out_mat(m, m0, n0, i);
     m->bcopy(out, i0, j0, m0, n0, i1, j1);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_mulm(void* v) {
@@ -306,14 +304,14 @@ static Object** m_mulm(void* v) {
     out->resize(m->nrow(), in->ncol());
     check_domain(m->ncol(), in->nrow());
     m->mulm(in, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_c(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->copy(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_transpose(void* v) {
@@ -321,7 +319,7 @@ static Object** m_transpose(void* v) {
     Matrix* out = get_out_mat(m, 1);
     out->resize(m->ncol(), m->nrow());
     m->transpose(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_symmeig(void* v) {
@@ -376,7 +374,7 @@ static Object** m_muls(void* v) {
     //		out->resize(...
     //	}
     m->muls(*getarg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_getrow(void* v) {
@@ -445,7 +443,7 @@ static Object** m_setrow(void* v) {
 #endif
         m->setrow(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setcol(void* v) {
@@ -462,7 +460,7 @@ static Object** m_setcol(void* v) {
 #endif
         m->setcol(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setdiag(void* v) {
@@ -479,7 +477,7 @@ static Object** m_setdiag(void* v) {
 #endif
         m->setdiag(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_getdiag(void* v) {
@@ -511,20 +509,20 @@ static Object** m_getdiag(void* v) {
 static Object** m_zero(void* v) {
     Matrix* m = (Matrix*) v;
     m->zero();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_ident(void* v) {
     Matrix* m = (Matrix*) v;
     m->ident();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_exp(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1, "exponentiation");
     m->exp(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_pow(void* v) {
@@ -532,14 +530,14 @@ static Object** m_pow(void* v) {
     int k = (int) chkarg(1, 0., 100.);
     Matrix* out = get_out_mat(m, 2, "raising to a power");
     m->pow(k, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_inverse(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->inverse(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static double m_det(void* v) {
@@ -620,7 +618,7 @@ static Object** m_set(void* v) {
             *(m->mep(i, j)) = *getarg(++k);
         }
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_to_vector(void* v) {
@@ -658,7 +656,7 @@ static Object** m_from_vector(void* v) {
         for (i = 0; i < nrow; ++i) {
             *(m->mep(i, j)) = ve[k++];
         }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Member_func m_members[] = {
@@ -730,6 +728,10 @@ static void steer_x(void* v) {
     Matrix* m = (Matrix*) v;
     int i1, i2;
     Symbol* s = hoc_spop();
+    if (!hoc_stack_type_is_ndim()) {
+        hoc_execerr_ext("Array dimension of Matrix.x is 2");
+    }
+    hoc_pop_ndim();
     i2 = (int) (hoc_xpop() + EPS);
     i1 = (int) (hoc_xpop() + EPS);
     check_domain(i1, m->nrow() - 1);
@@ -744,9 +746,9 @@ void Matrix_reg();
 
 void Matrix_reg() {
     class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
-    smat_ = hoc_lookup("Matrix");
+    nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
-    Symbol* sx = hoc_table_lookup("x", smat_->u.ctemplate->symtable);
+    Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);
     sx->type = VAR;
     sx->arayinfo = (Arrayinfo*) hoc_Emalloc(sizeof(Arrayinfo) + 2 * sizeof(int));
     sx->arayinfo->refcount = 1;
@@ -754,5 +756,5 @@ void Matrix_reg() {
     sx->arayinfo->nsub = 2;
     sx->arayinfo->sub[0] = 1;
     sx->arayinfo->sub[1] = 1;
-    smat_->u.ctemplate->steer = steer_x;
+    nrn_matrix_sym->u.ctemplate->steer = steer_x;
 }

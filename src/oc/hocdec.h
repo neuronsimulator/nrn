@@ -2,15 +2,18 @@
 #ifndef hocdec_h
 #define hocdec_h
 #define INCLUDEHOCH 1
-#define OOP         1
 
-
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+#include "wrap_sprintf.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <iostream>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+
 
 #define gargstr hoc_gargstr
 #define getarg  hoc_getarg
@@ -21,7 +24,6 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-union Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -140,20 +142,10 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
-union Datum { /* interpreter stack type */
-    double val;
-    Symbol* sym;
-    int i;
-    double* pval; /* first used with Eion in NEURON */
-    Object** pobj;
-    Object* obj; /* sections keep this to construct a name */
-    char** pstr;
-    hoc_Item* itm;
-    hoc_List* lst;
-    void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-};
+/** @brief Type of pdata in mechanisms.
+ */
+using Datum = neuron::container::generic_data_handle;
 
-#if OOP
 struct cTemplate {
     Symbol* sym;
     Symlist* symtable;
@@ -168,7 +160,7 @@ struct cTemplate {
     void* observers; /* hook to c++ ClassObservable */
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
-    void (*steer)(void*); /* normally nil */
+    void (*steer)(void*); /* normally nullptr */
     int (*checkpoint)(void**);
 };
 
@@ -198,7 +190,6 @@ struct Object {
     short recurse;           /* to stop infinite recursions */
     short unref_recurse_cnt; /* free only after last return from unref callback */
 };
-#endif
 
 struct VoidFunc { /* User Functions */
     const char* name;
@@ -228,13 +219,12 @@ struct HocStateTolerance { /* recommended tolerance for CVODE */
 
 struct HocParmUnits { /* units for symbol values */
     const char* name;
-    char* units;
+    const char* units;
 };
 
 #include "oc_ansi.h"
 
-// Used in sparse.c so needs C linkage.
-extern "C" void* emalloc(size_t n);
+void* emalloc(size_t n);
 void* ecalloc(size_t n, size_t size);
 void* erealloc(void* ptr, size_t n);
 
@@ -280,24 +270,18 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Sprintf cplint = sprintf
 #define Printf  ilint = printf
-#else
-#if defined(__TURBOC__)
-#undef IGNORE
-#define IGNORE
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
-#endif
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Sprintf sprintf
 #define Printf  nrnpy_pr
 #endif
+using neuron::Sprintf;
 
 #define ERRCHK(c1) c1
 
@@ -306,13 +290,6 @@ int ilint;
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */
 extern int nrn_istty_;
-extern int parallel_sub; /* for use with parallel neuron (see parallel.cl) */
-
-#define NOT_PARALLEL_SUB(c1) \
-    {                        \
-        if (!parallel_sub)   \
-            c1               \
-    }
 
 /* Enter handling for PVM  NJP 11/21/94 */
 #ifdef PVM

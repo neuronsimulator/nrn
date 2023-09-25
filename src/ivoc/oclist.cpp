@@ -1,7 +1,4 @@
 #include <../../nrnconf.h>
-#if defined(__GO32__)
-#define HAVE_IV 0
-#endif
 
 #include <stdio.h>
 #include <OS/string.h>
@@ -15,9 +12,7 @@
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
 #include "ocglyph.h"
-#if !MAC
 #include "checkpnt.h"
-#endif
 #include "apwindow.h"
 #include "ocbrowsr.h"
 #include "objcmd.h"
@@ -29,10 +24,6 @@
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
-
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern int hoc_return_type_code;
 
@@ -464,7 +455,7 @@ OcList::~OcList() {
 }
 
 static int l_chkpt(void** vp) {
-#if HAVE_IV && !MAC
+#if HAVE_IV
     OcList* o;
     Checkpoint& chk = *Checkpoint::instance();
     if (chk.out()) {
@@ -513,9 +504,8 @@ int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 #else
             if (obj == ob) {
 #endif
-            char buf[200];
-            sprintf(buf, "object(%ld)", i);
-            hoc_path_prepend(path, buf, "");
+            auto const tmp = "object(" + std::to_string(i) + ")";
+            hoc_path_prepend(path, tmp.c_str(), "");
             return 1;
         }
     }

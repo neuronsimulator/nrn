@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include "model.h"
 #include <ctype.h>
-#if MAC && TARGET_API_MAC_CARBON
-#include <SIOUX.h>
-#endif
 #undef METHOD
 #include "parse1.hpp"
 Item* lastok; /*should be last token accepted by parser that gives
@@ -111,7 +108,7 @@ char* Gets(char* buf) {
 }
 
 /* two arguments so we can pass a name to construct an error message. */
-void diag(char* s1, char* s2) {
+void diag(const char* s1, const char* s2) {
     char* cp;
     Item *q1, *q2, *q;
 
@@ -168,10 +165,6 @@ void diag(char* s1, char* s2) {
         }
     }
     Fprintf(stderr, "\n");
-#if MAC && TARGET_API_MAC_CARBON
-    SIOUXSettings.autocloseonquit = true;
-    RunApplicationEventLoop();
-#endif
     exit(1);
 }
 
@@ -264,7 +257,7 @@ static FILE* include_open(char* fname, int err) {
     if (f) {
         return f;
     }
-    sprintf(buf, "../%s", fname); /* Next try next dir up. */
+    Sprintf(buf, "../%s", fname); /* Next try next dir up. */
     if ((f = fopen(buf, "r")) != NULL)
         return f;
 
@@ -348,7 +341,7 @@ static int file_stack_empty() {
 
 /* io.c,v
  * Revision 1.2  1997/11/24  16:19:09  hines
- * modlunit port to MAC (not complete)
+ * modlunit port to mac (not complete)
  *
  * Revision 1.1.1.1  1994/10/12  17:22:48  hines
  * NEURON 3.0 distribution

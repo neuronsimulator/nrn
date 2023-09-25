@@ -17,7 +17,6 @@
 #undef pdata
 #undef prop
 #undef nodecount
-#undef pval
 
 #undef id
 

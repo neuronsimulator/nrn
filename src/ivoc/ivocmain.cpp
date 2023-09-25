@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
-#include <../nrnpython/nrnpython_config.h>
 #include "nrn_ansi.h"
+
+#include "../utils/profile/profiler_interface.h"
 
 long hoc_nframe, hoc_nstack;
 
@@ -27,7 +28,6 @@ extern char** environ;
 void iv_display_scale(float);
 #endif
 
-#include <ivstream.h>
 #include <assert.h>
 #include "ivoc.h"
 #include "idraw.h"
@@ -37,6 +37,7 @@ void iv_display_scale(float);
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
@@ -148,8 +149,7 @@ extern const char* nrn_mech_dll;
 #if defined(USE_PYTHON)
 int nrn_nopython;
 extern int use_python_interpreter;
-extern int (*p_nrnpython_start)(int);
-char* nrnpy_pyexe;
+std::string nrnpy_pyexe;
 #endif
 
 /*****************************************************************************/
@@ -178,18 +178,9 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW) && !defined(WIN32) && !MAC
+#if !defined(MINGW) && !defined(WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
-}
-#endif
-
-#if 0
-void penv() {
-	int i;
-	for (i=0; environ[i]; ++i) {
-		printf("%p %s\n", environ[i], environ[i]);
-	}
 }
 #endif
 
@@ -230,37 +221,6 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-#if MAC
-#include <string.h>
-#include <sioux.h>
-extern bool mac_load_dll(const char*);
-void mac_open_doc(const char* s) {
-    // only chdir and load dll on the first opendoc
-    static bool done = false;
-    char cs[256];
-    strncpy(cs, s, 256);
-    char* cp = strrchr(cs, ':');
-    if (cp && !done) {
-        *cp = '\0';
-        if (chdir(cs) == 0) {
-            done = true;
-            printf("current directory is \"%s\"\n", cs);
-            if (mac_load_dll("nrnmac.dll")) {
-                hoc_default_dll_loaded_ = 1.;
-            }
-        }
-    }
-    hoc_xopen1(s, 0);
-}
-void mac_open_app() {
-    hoc_xopen1(":lib:hoc:macload.hoc", 0);
-}
-#endif
-
-#ifdef MAC
-#pragma export on
-#endif
-
 int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 int (*p_neosim_main)(int, const char**, const char**);
@@ -271,7 +231,7 @@ extern int nrn_is_python_extension;
 extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
+extern std::string nrnmpi_load();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -291,10 +251,6 @@ static bool isdir(const char* p) {
     // printf("isdir %s returns %d\n", p, b);
     return b;
 }
-#endif
-
-#ifdef MAC
-#pragma export off
 #endif
 
 // in case we are running without IV then get some important args this way
@@ -351,22 +307,12 @@ static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dfl
 void nrn_InitializeJavaVM();
 #endif
 
-#if 0  // for debugging
-void prargs(const char* s, int argc, const char** argv) {
-	int i;
-	printf("%s argc=%d\n", s, argc);
-	for (i=0; i < argc; ++i) {
-		printf(" %d |%s|\n", i, argv[i]);
-	}
-}
-#endif
-
 void hoc_nrnmpi_init() {
 #if NRNMPI
     if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
         nrnmpi_stubs();
-        auto const pmes = nrnmpi_load(1);
+        auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
             std::cout << pmes << std::endl;
         }
@@ -428,6 +374,8 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    nrn::Instrumentor::init_profile();
+
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
@@ -547,7 +495,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -557,14 +505,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // But I have decided to use the environment variable if it exists
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        // the only reason the following is static is to prevent valgrind
-        // from complaining it is a memory leak.
-        static char* buffer = new char[strlen(NEURON_DATA_DIR) + 12];
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else
@@ -573,14 +514,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
         // putenv and setenv may invalidate env but we no longer
         // use it so following should not be needed
-#if 0
-#if HAVE_UNISTD_H && !defined(__APPLE__)
-	env = environ;
-#endif
-#if defined(__APPLE__)
-	env = (*_NSGetEnviron());
-#endif
-#endif
     }
 
 #else  // Not unix:
@@ -612,13 +545,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     our_argv[1] = ":lib:hoc:macload.hoc";
     session = new Session("NEURON", our_argc, our_argv, options, properties);
 #else
-#if MAC
-    our_argc = 1;
-    our_argv = new char*[1];
-    our_argv[0] = "Neuron";
-    session = new Session("NEURON", our_argc, our_argv, options, properties);
-    SIOUXSettings.asktosaveonclose = false;
-#else
 #if defined(WIN32)
     IFGUI
     session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
@@ -635,11 +561,10 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     }
     ENDGUI
 #endif
-#endif
-    char* nrn_props;
-    nrn_props = new char[strlen(neuron_home) + 20];
+    auto const nrn_props_size = strlen(neuron_home) + 20;
+    char* nrn_props = new char[nrn_props_size];
     if (session) {
-        sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.defaults");
+        std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.defaults");
 #ifdef WIN32
         FILE* f;
         if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
@@ -647,29 +572,27 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             session->style()->load_file(String(nrn_props), -5);
         } else {
 #ifdef MINGW
-            sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
 #else
-            sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
+            std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
 #endif
             if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
                 fclose(f);
                 session->style()->load_file(String(nrn_props), -5);
             } else {
                 char buf[256];
-                sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
+                Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
                 printf("%s\n", buf);
             }
         }
 #else
         session->style()->load_file(String(nrn_props), -5);
 #endif
-#if !MAC
         char* h = getenv("HOME");
         if (h) {
-            sprintf(nrn_props, "%s/%s", h, ".nrn.defaults");
+            std::snprintf(nrn_props, nrn_props_size, "%s/%s", h, ".nrn.defaults");
             session->style()->load_file(String(nrn_props), -5);
         }
-#endif
     }
     delete[] nrn_props;
 
@@ -700,7 +623,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             }
             String str;
             if (session->style()->find_attribute("pyexe", str)) {
-                nrnpy_pyexe = strdup(str.string());
+                nrnpy_pyexe = str.string();
             }
         } else
 #endif
@@ -708,9 +631,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
                 nrn_nopython = 1;
             }
-            const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv);
-            if (buf) {
-                nrnpy_pyexe = strdup(buf);
+            if (const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv)) {
+                nrnpy_pyexe = buf;
             }
         }
     }
@@ -808,11 +730,10 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (nrn_is_python_extension) {
         return 0;
     }
-    // printf("p_nrnpython_start = %p\n", p_nrnpython_start);
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(1);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(1);
     }
-    if (use_python_interpreter && !p_nrnpython_start) {
+    if (use_python_interpreter && !neuron::python::methods.interpreter_start) {
         fprintf(stderr, "Python not available\n");
         exit(1);
     }
@@ -841,18 +762,21 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         // process the .py files and an interactive interpreter
-        if (p_nrnpython_start && (*p_nrnpython_start)(2) != 0) {
+        if (neuron::python::methods.interpreter_start &&
+            neuron::python::methods.interpreter_start(2) != 0) {
             // We encountered an error when processing the -c argument or Python
             // script given on the commandline.
             exit_status = 1;
         }
     }
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     hoc_final_exit();
     ivoc_final_exit();
+    nrn::Instrumentor::finalize_profile();
+
     return exit_status;
 }
 

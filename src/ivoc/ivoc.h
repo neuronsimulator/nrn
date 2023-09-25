@@ -6,7 +6,6 @@
 #include <InterViews/session.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include <ivstream.h>
 #include "gui-redirect.h"
 extern int nrn_err_dialog_active_;
 
@@ -57,7 +56,6 @@ class Oc {
 
     void notify_freed(void (*pf)(void*, int));  // register a callback func
     void notify_when_freed(void* p, Observer*);
-    void notify_when_freed(double* p, Observer*);
     void notify_pointer_disconnect(Observer*);
 
     static Session* getSession();

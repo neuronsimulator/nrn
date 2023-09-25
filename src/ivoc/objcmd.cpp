@@ -10,14 +10,11 @@
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "nrnpy.h"
 #include "objcmd.h"
 #include "oc2iv.h"
 
 extern Object* hoc_thisobject;
-int (*nrnpy_hoccommand_exec)(Object*);
-int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
-void (*nrnpy_cmdtool)(Object*, int type, double x, double y, int kd);
-double (*nrnpy_func_call)(Object*, int, int*);
 
 HocCommand::HocCommand(const char* cmd) {
     init(cmd, hoc_thisobject);
@@ -69,9 +66,9 @@ void HocCommand::help() {
 #if HAVE_IV
     char buf[200];
     if (obj_) {
-        sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
+        Sprintf(buf, "%s %s", s_->string(), obj_->ctemplate->sym->name);
     } else {
-        sprintf(buf, "%s", s_->string());
+        Sprintf(buf, "%s", s_->string());
     }
     Oc::help(buf);
 #endif
@@ -92,9 +89,9 @@ void HocCommand::audit() {
     }
     char buf[256];
     if (obj_) {
-        sprintf(buf, "// execute(\"%s\", %p)\n", name(), obj_);
+        Sprintf(buf, "// execute(\"%s\", %p)\n", name(), obj_);
     } else {
-        sprintf(buf, "{%s}\n", name());
+        Sprintf(buf, "{%s}\n", name());
     }
     hoc_audit_command(buf);
 }
@@ -102,14 +99,14 @@ void HocCommand::audit() {
 int HocCommand::execute(bool notify) {
     int err;
     if (po_) {
-        assert(nrnpy_hoccommand_exec);
-        err = (*nrnpy_hoccommand_exec)(po_);
+        assert(neuron::python::methods.hoccommand_exec);
+        err = neuron::python::methods.hoccommand_exec(po_);
     } else {
         if (!s_) {
             return 0;
         }
         char buf[256];
-        sprintf(buf, "{%s}\n", s_->string());
+        Sprintf(buf, "{%s}\n", s_->string());
         err = hoc_obj_run(buf, obj_);
     }
 #if HAVE_IV
@@ -121,7 +118,8 @@ int HocCommand::execute(bool notify) {
     return err;
 }
 int HocCommand::exec_strret(char* buf, int size, bool notify) {
-    assert(po_) int err = (*nrnpy_hoccommand_exec_strret)(po_, buf, size);
+    assert(po_);
+    int err = neuron::python::methods.hoccommand_exec_strret(po_, buf, size);
 #if HAVE_IV
     if (notify) {
         Oc oc;
@@ -133,7 +131,7 @@ int HocCommand::exec_strret(char* buf, int size, bool notify) {
 int HocCommand::execute(const char* s, bool notify) {
     assert(po_ == NULL);
     char buf[256];
-    sprintf(buf, "{%s}\n", s);
+    Sprintf(buf, "{%s}\n", s);
     int err = hoc_obj_run(buf, obj_);
 #if HAVE_IV
     if (notify) {
@@ -146,8 +144,8 @@ int HocCommand::execute(const char* s, bool notify) {
 
 double HocCommand::func_call(int narg, int* perr) {
     if (po_) {
-        if (nrnpy_func_call) {
-            return (*nrnpy_func_call)(po_, narg, perr);
+        if (neuron::python::methods.call_func) {
+            return neuron::python::methods.call_func(po_, narg, perr);
         }
         *perr = 1;
         return 0.0;
@@ -218,11 +216,11 @@ bool HocCommandTool::event(Event& e) {
 #endif
     }
     if (hc_->pyobject()) {
-        (*nrnpy_cmdtool)(hc_->pyobject(), e.type(), x, y, kd);
+        neuron::python::methods.cmdtool(hc_->pyobject(), e.type(), x, y, kd);
         Oc oc;
         oc.notify();
     } else {
-        sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
+        Sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
         hc_->execute(buf, true);
     }
     if (e.type() == Event::up) {

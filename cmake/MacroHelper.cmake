@@ -174,20 +174,6 @@ macro(nrn_create_file_list list_name prefix)
 endmacro()
 
 # =============================================================================
-# Copy file from source to destination in noclobber mode (i.e. no overwrite)
-# =============================================================================
-macro(nrn_copy_file_without_overwrite source destination)
-  execute_process(COMMAND cp -n ${source} ${destination})
-endmacro()
-
-# =============================================================================
-# Copy file from source to destination only if different
-# =============================================================================
-macro(nrn_copy_file_if_different source destination)
-  configure_file(${source} ${destination} COPYONLY)
-endmacro()
-
-# =============================================================================
 # Set string with double quotes
 # =============================================================================
 macro(nrn_set_string variable value)
@@ -201,20 +187,6 @@ macro(dospath path var)
   # file(TO_NATIVE_PATH does not convert / to \ for us in msys2.
   string(REPLACE "/" "\\" var1 "${path}")
   set(${var} ${var1})
-endmacro()
-
-# =============================================================================
-# Given list of file names, find their path in project source tree
-# =============================================================================
-macro(nrn_find_project_files list_name)
-  foreach(name ${ARGN})
-    file(GLOB_RECURSE filepath "${PROJECT_SOURCE_DIR}/src/*${name}")
-    if(filepath STREQUAL "")
-      message(FATAL_ERROR " ${name} not found in ${PROJECT_SOURCE_DIR}/src")
-    else()
-      list(APPEND ${list_name} ${filepath})
-    endif()
-  endforeach(name)
 endmacro()
 
 # =============================================================================
@@ -237,11 +209,15 @@ endmacro()
 macro(nocmodl_mod_to_cpp modfile_basename)
   message(WARNING "foo::: ${modfile_basename}.cpp")
   add_custom_command(
-    OUTPUT ${modfile_basename}.cpp
-    COMMAND ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
-    COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.cpp > ${modfile_basename}.cpp.tmp
-    COMMAND mv ${modfile_basename}.cpp.tmp ${modfile_basename}.cpp
-    DEPENDS nocmodl ${modfile_basename}.mod
+    OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
+    COMMAND
+      ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/nocmodl
+      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+    COMMAND sed "'s/_reg()/_reg_()/'" ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
+            ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
+    COMMAND rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
+    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
 

@@ -66,10 +66,8 @@ void print_stim() {
 }
 
 static double stimulus(int i) {
-#if CVODE
     at_time(nrn_threads, pstim[i].delay);
     at_time(nrn_threads, pstim[i].delay + pstim[i].duration);
-#endif
     if (nt_t < pstim[i].delay - 1e-9 || nt_t > pstim[i].delay + pstim[i].duration - 1e-9) {
         return 0.0;
     }

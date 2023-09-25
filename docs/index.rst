@@ -8,7 +8,8 @@ NEURON is a simulator for neurons and networks of neurons that runs efficiently 
 Build and simulate models using Python, HOC, and/or NEURON's graphical interface. From this page you can watch :ref:`recorded NEURON classes <training_videos>`, 
 read the :ref:`Python <python_prog_ref>` or :ref:`HOC <hoc_prog_ref>` programmer's references,
 `browse the NEURON forum <https://www.neuron.yale.edu/phpBB/>`_,
-explore the `source code for over 750 NEURON models on ModelDB <https://senselab.med.yale.edu/ModelDB/ModelList?id=1882&allsimu=true>`_, and more (use the links on the side or search).
+explore the `source code for over 800 NEURON models on ModelDB <https://modeldb.science/modellist/1882?all_simu=true>`_, 
+and more (use the links on the side or search).
 
 .. toctree::
    :maxdepth: 1
@@ -38,12 +39,20 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
    :caption: NEURON scripting:
    :hidden:
 
+   scripting.rst
    python/index
    hoc/index
    otherscripting.rst
    tutorials/index
    rxd-tutorials/index
    coreneuron/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: NMODLanguage:
+   :hidden:
+
+   nmodl/index
 
 .. toctree::
    :maxdepth: 2
@@ -88,9 +97,9 @@ Installation
 
          pip3 install neuron
       
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1-macosx-10.9-universal2-py-38-39-310.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.2/nrn-8.2.2-macosx-10.9-universal2-py-38-39-310-311.pkg>`_.
 
-      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
 
    .. tab-item:: Linux
@@ -101,16 +110,16 @@ Installation
 
          pip3 install neuron
       
-      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.1/nrn-8.2.1.w64-mingw-py-37-38-39-310-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.2/nrn-8.2.2.w64-mingw-py-37-38-39-310-311-setup.exe>`_.
 
       You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 
-      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
    
    .. tab-item:: Cloud

@@ -1,5 +1,6 @@
 #ifndef bbsavestate_h
 #define bbsavestate_h
+#include "neuron/container/data_handle.hpp"
 
 struct Object;
 struct Section;
@@ -17,6 +18,8 @@ class BBSS_IO {
     virtual void i(int& j, int chk = 0) = 0;
     virtual void d(int n, double& p) = 0;
     virtual void d(int n, double* p) = 0;
+    virtual void d(int n, double** p) = 0;
+    virtual void d(int n, neuron::container::data_handle<double> h) = 0;
     virtual void s(char* cp, int chk = 0) = 0;
     virtual Type type() = 0;
     virtual void skip(int) {}  // only when reading

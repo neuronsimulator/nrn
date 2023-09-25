@@ -200,6 +200,13 @@ class NeuronTestCase(unittest.TestCase):
         return 0
 
     def testRxDexistence(self):
+        from neuron import config
+
+        enable_rx3d = config.arguments["NRN_ENABLE_RX3D"]
+        if not enable_rx3d:
+            print("Skipping because NRN_ENABLE_RX3D={}".format(enable_rx3d))
+            return
+
         from multiprocessing import Process
 
         p = Process(target=NeuronTestCase.RxDexistence)
@@ -277,7 +284,16 @@ def basicRxD3D():
 
 
 def suite():
+    import os
 
+    # For sanitizer runtimes that need to be preloaded on macOS, we need to
+    # propagate this manually so multiprocessing.Process works
+    try:
+        os.environ[os.environ["NRN_SANITIZER_PRELOAD_VAR"]] = os.environ[
+            "NRN_SANITIZER_PRELOAD_VAL"
+        ]
+    except:
+        pass
     suite = unittest.makeSuite(NeuronTestCase, "test")
     return suite
 

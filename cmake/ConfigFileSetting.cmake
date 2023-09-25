@@ -13,7 +13,6 @@ set(UNQUOTED_PACKAGE_VERSION "${PROJECT_VERSION}")
 # ~~~
 nrn_set_string(PACKAGE "nrn")
 nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
-nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
 nrn_set_string(PACKAGE_STRING "nrn ${PROJECT_VERSION}")
 nrn_set_string(PACKAGE_VERSION "${PROJECT_VERSION}")
 nrn_set_string(VERSION "${PROJECT_VERSION}")
@@ -31,7 +30,6 @@ set(HAVE_NAMESPACES "/**/")
 set(HAVE_STTY 0)
 # below two are universal nowadays
 set(IVOS_FABS "::fabs")
-set(HAVE_STL "/**/")
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set(exec_prefix ${prefix})
@@ -39,7 +37,6 @@ set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
-set(BGPDMA ${NRNMPI})
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings
@@ -130,8 +127,7 @@ else()
 endif()
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  # the value needs to be made not to matter
-  set(NRNPYTHON_DYNAMICLOAD 3)
+  list(APPEND NRN_COMPILE_DEFS NRNPYTHON_DYNAMICLOAD)
 endif()
 
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
@@ -189,11 +185,6 @@ check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;str
 check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
 
 # =============================================================================
-# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
-# =============================================================================
-check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
-
-# =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
 # =============================================================================
 # note that this must be called after all *check_include_files because we use
@@ -216,12 +207,12 @@ nrn_check_symbol_exists("mkdir" "" HAVE_MKDIR)
 nrn_check_symbol_exists("mkstemp" "" HAVE_MKSTEMP)
 nrn_check_symbol_exists("namespaces" "" HAVE_NAMESPACES)
 nrn_check_symbol_exists("posix_memalign" "" HAVE_POSIX_MEMALIGN)
-nrn_check_symbol_exists("putenv" "" HAVE_PUTENV)
 nrn_check_symbol_exists("realpath" "" HAVE_REALPATH)
 nrn_check_symbol_exists("select" "" HAVE_SELECT)
 nrn_check_symbol_exists("setenv" "" HAVE_SETENV)
 nrn_check_symbol_exists("setitimer" "" HAVE_SETITIMER)
-nrn_check_symbol_exists("sigaction" "" HAVE_SIGACTION)
+nrn_check_symbol_exists("sigaction" "signal.h" HAVE_SIGACTION)
+nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("SIGSEGV" "signal.h" HAVE_SIGSEGV)
 nrn_check_symbol_exists("strdup" "" HAVE_STRDUP)
@@ -231,8 +222,6 @@ nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
 nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
-# not necessary to check as it should be always there
-set(HAVE_SSTREAM /**/)
 
 # =============================================================================
 # Check data types
@@ -269,15 +258,17 @@ endif()
 # =============================================================================
 # Generate file from file.in template
 # =============================================================================
+set(version_strs ${NRN_PYTHON_VERSIONS})
+list(TRANSFORM version_strs APPEND "\"")
+list(TRANSFORM version_strs PREPEND "\"")
+string(JOIN ", " NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS ${version_strs})
 nrn_configure_dest_src(nrnconf.h . cmake_nrnconf.h .)
 nrn_configure_dest_src(nmodlconf.h . cmake_nrnconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
 nrn_configure_file(nrnconfigargs.h src/nrnoc)
-nrn_configure_file(nrnpython_config.h src/nrnpython)
 nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
 nrn_configure_file(sundials_config.h src/sundials)
-nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 # NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
@@ -312,12 +303,6 @@ else()
   file(REMOVE "${PROJECT_BINARY_DIR}/config.h")
 endif()
 
-# Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
-set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
-set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED PREPEND "'")
-string(JOIN ", " NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_COMPILE_FLAGS_QUOTED})
-string(JOIN ", " NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_LINK_FLAGS_QUOTED})
+# Prepare some variables for setup.py extension building (hoc_module, rx3d and music)
+string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS})
+string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS})

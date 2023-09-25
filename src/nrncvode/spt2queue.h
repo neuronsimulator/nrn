@@ -28,8 +28,6 @@ class TQueue {
   public:
     TQueue();
     virtual ~TQueue();
-
-#if FAST_LEAST  // must be on
     TQItem* least() {
         return least_;
     }
@@ -40,10 +38,6 @@ class TQueue {
             return 1e15;
         }
     }
-#else
-    TQItem* least();  // does not remove from TQueue
-    double least_t();
-#endif
     TQItem* insert(double t, void* data_);
     TQItem* insert_fifo(double t, void* data_);
     TQItem* find(double t);

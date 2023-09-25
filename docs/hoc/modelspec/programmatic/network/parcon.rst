@@ -2339,7 +2339,7 @@ Description:
 .. hoc:method:: ParallelContext.spike_compress
 
     Syntax:
-        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress})`
+        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress}, {xchng_meth})`
 
     Description:
         If nspike > 0, selects an alternative implementation of spike exchange 
@@ -2369,6 +2369,13 @@ Description:
         interprocessor spikes, the real 4 byte integer gids are used in the 
         (spiketime, gid) pairs and only the spiketime is compressed to 1 byte. i.e. 
         instead of 2 bytes the pair consists of 5 bytes. 
+
+        xchng_meth is a bit-field.
+        bits | usage
+           0 | 0: Allgather, 1: Multisend (MPI_ISend)
+           1 | unused
+           2 | 0: multisend_interval = 1, 1: multisend_interval = 2
+           3 | 0: don't use phase2, 1: use phase2
 
     .. seealso::
         :hoc:meth:`CVode.queue_mode`
@@ -2733,9 +2740,6 @@ Parallel Transfer
         a single cpu. It does not matter if a one sid subtree is declared short 
         or not; it is solved exactly in any case. 
          
-        Note: using multisplit automatically sets 
-        ``CVode.cache_efficient(1)``
-
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
         be used with variable step 
@@ -3050,8 +3054,8 @@ Parallel Transfer
         and instead the pc.nthread() gidgroup values for the rank will be
         returned in the Vector. 
 
-        This function requires cvode.cache_efficient(1) . Multisplit is not
-        supported. The model cannot be more complicated than a spike or gap
+        Multisplit is not supported.
+        The model cannot be more complicated than a spike or gap
         junction coupled parallel network model of real and artificial cells.
         Real cells must have gids, Artificial cells without gids connect
         only to cells in the same thread. No POINTER to data outside of the

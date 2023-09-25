@@ -8,9 +8,9 @@
 #include <InterViews/patch.h>
 #include <InterViews/background.h>
 #include <InterViews/box.h>
+#include <InterViews/resource.h>
 #include <IV-look/kit.h>
 #include <InterViews/input.h>
-#include <ivstream.h>
 #include <stdio.h>
 #include "ocbox.h"
 #include "apwindow.h"
@@ -18,16 +18,12 @@
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
 
 #include "gui-redirect.h"
 
 extern int hoc_return_type_code;
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 
@@ -357,10 +353,10 @@ static double save(void* v) {
             hoc_assign_str(hoc_pgargstr(1), pwm_session_filename());
             return 1.;
         } else {
-            sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
+            Sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
         }
     } else {
-        // sprintf(buf, "%s", gargstr(1));
+        // Sprintf(buf, "%s", gargstr(1));
         b->save_action(gargstr(1), 0);
         return 1.0;
     }
@@ -484,9 +480,6 @@ OcBox::OcBox(int type, int frame, bool scroll)
             box = lk.hbox(sb, lk.hspace(4), wk.vscroll_bar(sb));
         } else {
             box = bi_->box_ = lk.vbox(3);
-            //((Box*)box)->debug_ = new char[50];
-            // sprintf(((Box*)box)->debug_, "box%p:", this);
-            // printf("%s\n", ((Box*)box)->debug_);
         }
     }
     Resource::ref(bi_->box_);
@@ -735,7 +728,7 @@ void OcBox::save(std::ostream& o) {
             return;
         }
         if (has_window()) {
-            sprintf(buf, "\n//Begin %s", window()->name());
+            Sprintf(buf, "\n//Begin %s", window()->name());
             o << buf << std::endl;
         }
         o << "{" << std::endl;
@@ -771,35 +764,30 @@ void OcBox::save(std::ostream& o) {
         } else {
             cp1 = window()->name();
         }
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)\n}",
                 cp1,
 #else
-        sprintf(buf,
+        Sprintf(buf,
                 "ocbox_.map(\"%s\", %g, %g, %g, %g)\n}",
                 window()->name(),
 #endif
                 window()->save_left(),
                 window()->save_bottom(),
-#if MAC
-                window()->canvas()->width(),
-                window()->canvas()->height());
-#else
                 window()->width(),
                 window()->height());
-#endif
         o << buf << std::endl;
     } else {
         o << "ocbox_.map()\n}" << std::endl;
     }
     if (bi_->oc_ref_) {
-        sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
+        Sprintf(buf, "%s = ocbox_", hoc_object_pathname(bi_->oc_ref_));
         o << buf << std::endl;
         o << "ocbox_list_.remove(0)" << std::endl;
     }
     o << "objref ocbox_" << std::endl;
     if (bi_->save_action_ && has_window()) {
-        sprintf(buf, "//End %s\n", window()->name());
+        Sprintf(buf, "//End %s\n", window()->name());
         o << buf << std::endl;
     }
 }

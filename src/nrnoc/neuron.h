@@ -1,10 +1,5 @@
 #include "options.h"
 
-
-#if METHOD3
-extern int spatial_method();
-#endif
-
 #if NEMO
 extern int neuron2nemo(), nemo2neuron();
 #endif
@@ -34,7 +29,7 @@ extern int secondorder, diam_changed, nrn_shape_changed_;
 extern int nrn_netrec_state_adjust, nrn_sparse_partrans;
 extern double clamp_resist;
 extern double celsius;
-extern "C" int stoprun;
+extern int stoprun;
 extern void fit_praxis(), attr_praxis(), pval_praxis(), stop_praxis();
 #if KEEP_NSEG_PARM
 extern void keep_nseg_parm();
@@ -46,3 +41,4 @@ extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
 extern void this_section(), this_node(), parent_section(), parent_node();
 extern void parent_connection(), section_orientation();
+extern void print_local_memory_usage();

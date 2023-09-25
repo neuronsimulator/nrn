@@ -3,11 +3,11 @@
 #include "symbol.h"
 #include "units.h"
 #include "parse1.hpp"
-extern char* indepunits;
+extern const char* indepunits;
 static List* reactnames;
 
 static void set_flux_units(unit*);
-static void react_unit_err(char*, unit*);
+static void react_unit_err(const char*, unit*);
 
 void kinunits(Item* type, int pass) {
     struct unit ux1, ux2, ur1, ur2, uflux;
@@ -102,7 +102,7 @@ static void set_flux_units(unit* up) {
     s->u.str = stralloc(buf, (char*) 0);
 }
 
-static void react_unit_err(char* s, unit* up) {
+static void react_unit_err(const char* s, unit* up) {
     Fprintf(stderr, "Flux units for this reaction: %s\n", Unit_str(up));
     ucopypop(up);
     Fprintf(stderr, "This implies %s rate units: %s\n", s, Unit_str(up));

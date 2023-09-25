@@ -2,6 +2,7 @@
 #undef check
 #include <InterViews/resource.h>
 #include <ctype.h>
+#include "membfunc.h"
 #include "nrnoc2iv.h"
 #include "nrniv_mf.h"
 
@@ -11,7 +12,6 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_symlist;
 extern void hoc_unlink_symbol(Symbol*, Symlist*);
 extern void hoc_link_symbol(Symbol*, Symlist*);
-extern Datum* hoc_look_inside_stack(int, int);
 extern void nrn_loc_point_process(int, Point_process*, Section*, Node*);
 extern char* pnt_map;
 extern Symbol** pointsym;
@@ -61,7 +61,7 @@ void hoc_construct_point(Object* ob, int narg) {
     assert(last_created_pp_ob_ == NULL);
     last_created_pp_ob_ = ob;
     if (narg > 0) {
-        double x = hoc_look_inside_stack(narg - 1, NUMBER)->val;
+        auto const x = hoc_look_inside_stack<double>(narg - 1);
         // printf("x=%g\n", x);
         Section* sec = chk_access();
         Node* nd = node_exact(sec, x);
@@ -100,7 +100,7 @@ int special_pnt_call(Object* ob, Symbol* sym, int narg) {
         if (narg != 1) {
             hoc_execerror("no argument", 0);
         }
-        double x = hoc_look_inside_stack(narg - 1, NUMBER)->val;
+        auto const x = hoc_look_inside_stack<double>(narg - 1);
         Section* sec = chk_access();
         Node* node = node_exact(sec, x);
         nrn_loc_point_process(ptype, ob2pntproc(ob), sec, node);
@@ -165,7 +165,7 @@ static void call(Symbol* s, Node* nd, Prop* p) {
     nrn_popsec();
 }
 
-static void initial(void* nt, Memb_list* ml, int type) {
+static void initial(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     HocMech* hm = (HocMech*) memb_func[type].hoc_mech;
     int i, cnt = ml->nodecount;
     for (i = 0; i < cnt; ++i) {
@@ -173,7 +173,7 @@ static void initial(void* nt, Memb_list* ml, int type) {
     }
 }
 
-static void after_step(void* nt, Memb_list* ml, int type) {
+static void after_step(neuron::model_sorted_token const&, NrnThread* nt, Memb_list* ml, int type) {
     HocMech* hm = (HocMech*) memb_func[type].hoc_mech;
     int i, cnt = ml->nodecount;
     for (i = 0; i < cnt; ++i) {
@@ -188,23 +188,24 @@ static HocMech* common_register(const char** m,
                                 Symlist* slist,
                                 void(hm_alloc)(Prop*),
                                 int& type) {
-    Pvmi cur, jacob, stat, initialize;
-    cur = NULL;
-    jacob = NULL;
-    stat = NULL;
-    initialize = NULL;
+    nrn_cur_t cur{};
+    nrn_init_t initialize{};
+    nrn_jacob_t jacob{};
+    nrn_state_t stat{};
     HocMech* hm = new HocMech();
     hm->slist = NULL;
     hm->mech = classsym;
     hm->initial = hoc_table_lookup("initial", slist);
     hm->after_step = hoc_table_lookup("after_step", slist);
-    if (hm->initial)
-        initialize = (Pvmi) initial;
-    if (hm->after_step)
-        stat = (Pvmi) after_step;
+    if (hm->initial) {
+        initialize = initial;
+    }
+    if (hm->after_step) {
+        stat = after_step;
+    }
     register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
     type = nrn_get_mechtype(m[1]);
-    hoc_register_cvode(type, NULL, NULL, NULL, NULL);
+    hoc_register_cvode(type, nullptr, nullptr, nullptr, nullptr);
     memb_func[type].hoc_mech = hm;
     return hm;
 }
@@ -236,7 +237,7 @@ void make_mechanism() {
 
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
-            sprintf(buf, "%s_%s", sp->name, m[1]);
+            Sprintf(buf, "%s_%s", sp->name, m[1]);
             Symbol* sp1 = hoc_lookup(buf);
             sp1->u.rng.index = sp->u.oboff;
         }
@@ -387,21 +388,22 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
                 }
             }
             if (suffix) {
-                sprintf(buf, "%s_%s", cp, m[1]);
+                Sprintf(buf, "%s_%s", cp, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", cp);
+                Sprintf(buf, "%s", cp);
             }
             if (!(sp = hoc_table_lookup(cp, slist)) || !sp->cpublic || !(sp->type == VAR)) {
                 hoc_execerror(cp, "is not a public variable");
             }
-            cc = new char[strlen(cp) + strlen(m[1]) + 20];
+            auto cc_size = strlen(cp) + strlen(m[1]) + 20;
+            cc = new char[cc_size];
             // above 20 give enough room for _ and possible array size
             imax = hoc_total_array_data(sp, 0);
             if (imax > 1) {
-                sprintf(cc, "%s[%d]", buf, imax);
+                std::snprintf(cc, cc_size, "%s[%d]", buf, imax);
             } else {
-                sprintf(cc, "%s", buf);
+                std::snprintf(cc, cc_size, "%s", buf);
             }
             m[i] = cc;
             // printf("m[%d]=%s\n", i, m[i]);
@@ -413,10 +415,10 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
             if (suffix) {
-                sprintf(buf, "%s_%s", sp->name, m[1]);
+                Sprintf(buf, "%s_%s", sp->name, m[1]);
                 check(buf);
             } else {
-                sprintf(buf, "%s", sp->name);
+                Sprintf(buf, "%s", sp->name);
             }
             bool b = false;
             for (j = 1; j < jmax; ++j) {
@@ -428,13 +430,14 @@ static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, c
             if (b) {
                 continue;
             }
-            cc = new char[strlen(buf) + 20];
+            auto cc_size = strlen(buf) + 20;
+            cc = new char[cc_size];
             // above 20 give enough room for possible array size
             imax = hoc_total_array_data(sp, 0);
             if (imax > 1) {
-                sprintf(cc, "%s[%d]", buf, imax);
+                std::snprintf(cc, cc_size, "%s[%d]", buf, imax);
             } else {
-                sprintf(cc, "%s", buf);
+                std::snprintf(cc, cc_size, "%s", buf);
             }
             m[i] = cc;
             // printf("m[%d]=%s\n", i, m[i]);

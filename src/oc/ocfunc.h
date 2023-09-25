@@ -1,6 +1,8 @@
 #pragma once
 #include "nrnfilewrap.h"
 
+#include <cstddef>
+
 extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double),
     hoc_integer(double);
 extern double hoc_Pow(double, double);
@@ -9,7 +11,7 @@ extern void hoc_System(void), hoc_Prmat(void), hoc_solve(void), hoc_eqinit(void)
 extern void hoc_symbols(void), hoc_PRintf(void), hoc_Xred(void), hoc_Sred(void);
 extern void hoc_ropen(void), hoc_wopen(void), hoc_xopen(void), hoc_Fscan(void), hoc_Fprint(void);
 extern void hoc_Graph(void), hoc_Graphmode(void), hoc_Plot(void), hoc_axis(void), hoc_Sprint(void);
-extern void hoc_fmenu(void), hoc_Getstr(void), hoc_Strcmp(void);
+extern void hoc_Getstr(void), hoc_Strcmp(void);
 extern void hoc_Lw(void), hoc_machine_name(void), hoc_Saveaudit(void), hoc_Retrieveaudit(void);
 extern void hoc_plotx(void), hoc_ploty(void), hoc_regraph(void);
 extern void hoc_startsw(void), hoc_stopsw(void), hoc_object_id(void);
@@ -50,26 +52,23 @@ extern void hoc_settext(void);
 extern void hoc_win_exec();
 #endif
 
-union Datum;
-namespace nrn {
-namespace oc {
+namespace nrn::oc {
 // Avoid `Frame` because InterViews likes #define-ing that as something else
 struct frame;
-}  // namespace oc
-}  // namespace nrn
+}  // namespace nrn::oc
 union Inst;
 struct Object;
 union Objectdata;
 struct Symlist;
 void oc_restore_code(Inst** a1,
                      Inst** a2,
-                     Datum** a3,
+                     std::size_t& a3,
                      nrn::oc::frame** a4,
                      int* a5,
                      int* a6,
                      Inst** a7,
                      nrn::oc::frame** a8,
-                     Datum** a9,
+                     std::size_t& a9,
                      Symlist** a10,
                      Inst** a11,
                      int* a12);
@@ -77,13 +76,13 @@ void oc_restore_hoc_oop(Object** a1, Objectdata** a2, int* a4, Symlist** a5);
 void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4);
 void oc_save_code(Inst** a1,
                   Inst** a2,
-                  Datum** a3,
+                  std::size_t& a3,
                   nrn::oc::frame** a4,
                   int* a5,
                   int* a6,
                   Inst** a7,
                   nrn::oc::frame** a8,
-                  Datum** a9,
+                  std::size_t& a9,
                   Symlist** a10,
                   Inst** a11,
                   int* a12);

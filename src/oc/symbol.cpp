@@ -25,9 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if MAC
-#undef HAVE_MALLOC_H
-#endif
 #if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -41,13 +38,11 @@
 #include <mach/mach.h>
 #endif
 
-#if OOP
 Symlist* hoc_built_in_symlist = nullptr;  /* keywords, built-in functions,
      all name linked into hoc. Look in this list last */
 Symlist* hoc_top_level_symlist = nullptr; /* all user names seen at top-level
         (non-public names inside templates do not appear here) */
 extern Objectdata* hoc_top_level_data;
-#endif /*OOP*/
 
 Symlist* symlist = nullptr;   /* the current user symbol table: linked list */
 Symlist* p_symlist = nullptr; /* current proc, func, or temp table */
@@ -85,11 +80,9 @@ Symbol* lookup(const char* s) /* find s in symbol table */
     if ((sp = hoc_table_lookup(s, symlist)) != nullptr) {
         return sp;
     }
-#if OOP
     if ((sp = hoc_table_lookup(s, hoc_built_in_symlist)) != nullptr) {
         return sp;
     }
-#endif
 
     return nullptr; /* nullptr ==> not found */
 }

@@ -4,8 +4,7 @@
 // assume all Datum.pval point into this cell. In practice, this holds because
 // they point either to the area or an ion property of the given node.
 // This is tightly coupled to cache_efficient
-// NrnThread.NrnThreadMembList.Memb_List.data and pdata and
-// NrnThread._actual_area
+// NrnThread.NrnThreadMembList.Memb_List.data and pdata etc.
 class DatumIndices {
   public:
     DatumIndices();

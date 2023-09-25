@@ -1,12 +1,12 @@
 #ifndef NRN_NRNCORE_IO_H
 #define NRN_NRNCORE_IO_H
+#include "hocdec.h"
 
 #include <string>
 #include <vector>
 
 class CellGroup;
 struct NrnThread;
-union Datum;
 struct NrnMappingInfo;
 
 void create_dir_path(const std::string& path);
@@ -33,10 +33,11 @@ void writedbl_(double* p, size_t size, FILE* f);
 
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
-typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
+// also for read
+struct Memb_list;
+using bbcore_write_t =
+    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
 
-void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f);
-double* contiguous_art_data(double** data, int nitem, int szitem);
 void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 

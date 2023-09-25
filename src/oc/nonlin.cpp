@@ -24,14 +24,8 @@ void dep_make(void) /* tag the variable as dependent with a variable number */
 #if !OCSMALL
     Symbol* sym;
     unsigned* numpt = 0;
-#if defined(__TURBOC__)
-    Inst* pcsav = pc;
-#endif
 
     sym = spop();
-#if defined(__TURBOC__)
-    pc = pcsav;
-#endif
     switch (sym->type) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined in dep_make");
@@ -180,16 +174,10 @@ static void eqn_side(int lhs) {
     struct elm* el;
     double f0, f1;
     Inst* savepc = pc;
-#if defined(__TURBOC__)
-    Inst* pc1;
-#endif
 
     init_access();
     do_equation = 1;
     execute(savepc);
-#if defined(__TURBOC__)
-    pc1 = pc;
-#endif
     do_equation = 0;
 
     if (lhs) {
@@ -211,9 +199,6 @@ static void eqn_side(int lhs) {
         el = getelm((struct elm*) 0, row, (unsigned) i);
         el->value += (f1 - f0) / Delta;
     }
-#if defined(__TURBOC__)
-    pc = pc1;
-#endif
     pc++;
 #endif
 }

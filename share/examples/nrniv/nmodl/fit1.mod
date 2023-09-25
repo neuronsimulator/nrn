@@ -14,7 +14,7 @@ FUNCTION err(n) {
 	LOCAL d, x, a, k
 VERBATIM
 	{
-		double* pp, *hoc_pgetarg();
+		double* pp;
 		pp = hoc_pgetarg(2);
 		_la = pp[0];
 		_lk = pp[1];

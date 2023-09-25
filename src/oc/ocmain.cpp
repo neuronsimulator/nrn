@@ -1,20 +1,11 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/ocmain.cpp,v 1.7 1997/07/29 20:23:33 hines Exp */
-#include "isoc99.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <hocdec.h>
 
-int hoc_nstack, hoc_nframe;
 extern const char* neuron_home;
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-extern double (*nrnpy_object_to_double_)(Object*) = NULL;
-
-#if MAC
-char hoc_console_buffer[256];
-#endif
 
 #if defined(WIN32)
 void* cvode_pmem;
@@ -22,7 +13,7 @@ extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {
-#if !defined(WIN32) && !defined(MAC)
+#ifndef WIN32
     /*
      Gary Holt's first pass at this was:
 
@@ -34,13 +25,7 @@ static void setnrnhome(const char* arg) {
     */
     neuron_home = getenv("NEURONHOME");
     if (!neuron_home) {
-#if defined(HAVE_PUTENV)
-        static char* buffer;
-        buffer = static_cast<char*>(malloc(strlen(NEURON_DATA_DIR) + 12));
-        sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
-        putenv(buffer);
-        neuron_home = NEURON_DATA_DIR;
-#elif defined(HAVE_SETENV)
+#if defined(HAVE_SETENV)
         setenv("NEURONHOME", NEURON_DATA_DIR, 1);
         neuron_home = NEURON_DATA_DIR;
 #else
@@ -56,16 +41,8 @@ static void setnrnhome(const char* arg) {
 
 int main(int argc, const char** argv, const char** envp) {
     int err;
-    nrn_isdouble(nullptr, 0., 0.);
-#if MAC
-    int our_argc = 1;
-    char* our_argv[1];
-    our_argv[0] = "Neuron";
-    err = hoc_main1(our_argc, our_argv, envp);
-#else
     setnrnhome(argv[0]);
     err = hoc_main1(argc, argv, envp);
-#endif
     if (!err) {
         hoc_final_exit();
     }

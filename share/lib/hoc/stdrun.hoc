@@ -398,9 +398,6 @@ proc miscellaneousmenu() {local i
 	xbutton("Family", "load_file(\"family.hoc\",\"Family\") makeFamily()")
 	xbutton("Command", "load_file(\"stdlib.hoc\",\"ExecCommand\") newcommand()")
 	xmenu()
-	xmenu("Builders")
-	xbutton("Kinetic Scheme Builder", "load_file(\"kinbuild.hoc\") makekineticbuilder()")
-	xmenu()
 	for (i=0; i < nrnmainmenu_.misclist.count; i += 2) {
 xbutton(nrnmainmenu_.misclist.object(i).s, nrnmainmenu_.misclist.object(i+1).s)
 	}

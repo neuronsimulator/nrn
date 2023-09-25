@@ -1,18 +1,13 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
+import tempfile
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(
-    distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-)
-mpi4py_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false"))
-)
-file_mode_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false"))
-)
+enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
+file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false")))
 nrnmpi_init_option = bool(
-    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
+    strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
 )
 
 # following at top level and early enough avoids...
@@ -61,7 +56,6 @@ def test_spikes(
 
     h.tstop = 10
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     pc = h.ParallelContext()
 
@@ -82,13 +76,6 @@ def test_spikes(
     nrn_spike_t = nrn_spike_t.to_python()
     nrn_spike_gids = nrn_spike_gids.to_python()
 
-    # CORENEURON run
-    from neuron import coreneuron
-
-    coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
-    coreneuron.file_mode = file_mode
-    coreneuron.verbose = 0
     corenrn_all_spike_t = h.Vector()
     corenrn_all_spike_gids = h.Vector()
 
@@ -129,11 +116,20 @@ def test_spikes(
         assert nrn_spike_t == corenrn_all_spike_t_py
         assert nrn_spike_gids == corenrn_all_spike_gids_py
 
-    if file_mode is False:
-        for mode in [0, 1, 2]:
+    # CORENEURON run
+    from neuron import coreneuron
+
+    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
+        run_modes = [0] if file_mode else [0, 1, 2]
+        for mode in run_modes:
             run(mode)
-    else:
-        run(0)
+        # Make sure that file mode also works with custom coreneuron.data_path
+        if file_mode:
+            temp_coreneuron_data_folder = tempfile.TemporaryDirectory(
+                "coreneuron_input"
+            )  # auto removed
+            coreneuron.data_path = temp_coreneuron_data_folder.name
+            run(0)
 
     return h
 

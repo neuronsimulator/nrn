@@ -32,20 +32,20 @@ char* nrn_version(int i) {
     int b;
     buf[0] = '\0';
     if (strncmp(GIT_BRANCH, "Release", 7) == 0) {
-        sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
+        Sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
     } else {
-        sprintf(head, "VERSION %s %s (%s)", GIT_DESCRIBE, GIT_BRANCH, GIT_CHANGESET);
+        Sprintf(head, "VERSION %s %s (%s)", GIT_DESCRIBE, GIT_BRANCH, GIT_CHANGESET);
     }
     if (i == 0) {
-        sprintf(buf, "%s", PACKAGE_VERSION);
+        Sprintf(buf, "%s", PACKAGE_VERSION);
     } else if (i == 2) {
-        sprintf(buf, "%s", head);
+        Sprintf(buf, "%s", head);
     } else if (i == 3) {
-        sprintf(buf, "%s", GIT_CHANGESET);
+        Sprintf(buf, "%s", GIT_CHANGESET);
     } else if (i == 4) {
-        sprintf(buf, "%s", GIT_DATE);
+        Sprintf(buf, "%s", GIT_DATE);
     } else if (i == 5) {
-        sprintf(buf, "%s", GIT_DESCRIBE);
+        Sprintf(buf, "%s", GIT_DESCRIBE);
     } else if (i == 6) {
         return configargs;
     } else if (i == 7) {
@@ -58,16 +58,19 @@ char* nrn_version(int i) {
             }
             sarg = (char*) calloc(size + 1, sizeof(char));
             c = sarg;
+            auto c_size = size + 1;
             for (j = 0; j < nrn_global_argc; ++j) {
-                sprintf(c, "%s%s", j ? " " : "", nrn_global_argv[j]);
-                c = c + strlen(c);
+                auto const res = std::snprintf(c, c_size, "%s%s", j ? " " : "", nrn_global_argv[j]);
+                assert(res < c_size);
+                c += res;
+                c_size -= res;
             }
         }
         return sarg;
     } else if (i == 8) {
-        sprintf(buf, "%s", NRNHOST);
+        Sprintf(buf, "%s", NRNHOST);
     } else if (i == 9) {
-        sprintf(buf, "%d", nrn_main_launch);
+        Sprintf(buf, "%d", nrn_main_launch);
     } else {
         nrn_assert(snprintf(buf, 1024, "NEURON -- %s %s", head, GIT_DATE) < 1024);
     }

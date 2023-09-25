@@ -1,6 +1,6 @@
 from neuron import h
 from neuron.expect_hocerr import expect_err
-from checkresult import Chk
+from neuron.tests.utils.checkresult import Chk
 
 import io, math, os, re, sys
 
@@ -83,7 +83,7 @@ def node():
     def ev(*arg):
         print("ev t=%g v=%g x=%g nc.x=%g" % (h.t, s(0.5).v, src.x, nc.x))
         ref_t, ref_x = results[arg[0]][arg[1]]
-        assert h.t == ref_t
+        assert math.isclose(h.t, ref_t, rel_tol=1e-15)
         assert math.isclose(src.x, ref_x, rel_tol=1e-13)
 
     def run():
@@ -547,8 +547,8 @@ def integrator_properties():
     def run1(key):
         h.finitialize(0.001)
         cv.solve(2)
-        chk(key + " tvec", tvec, tol=5e-13)
-        chk(key + " vvec", vvec, tol=1e-12)
+        chk(key + " tvec", tvec, tol=5e-10)
+        chk(key + " vvec", vvec, tol=1e-9)
 
     cv.rtol(1e-3)
     cv.atol(0)

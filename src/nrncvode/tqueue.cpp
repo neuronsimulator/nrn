@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <InterViews/resource.h>
 #include "tqueue.h"
 #include "pool.h"
 
@@ -105,35 +104,20 @@ void TQueue_reg() {
 
 //----------------
 
-implementPool(TQItemPool, TQItem)
 #if BBTQ == 0
 #include <bbtqueue.cpp>
-#endif
-
-#if BBTQ == 1
-#include <rbtqueue.cpp>
-#endif
-
-#if BBTQ == 2
+#elif BBTQ == 2
 #include <sptqueue.cpp>
-#endif
-
-#if BBTQ == 3
-#include <sptfifoq.cpp>
-#endif
-
-#if BBTQ == 4
+#elif BBTQ == 4
 #include <spt2queue.cpp>
-#endif
-
-#if BBTQ == 5
+#elif BBTQ == 5
 #include <sptbinq.cpp>
 #endif
 
-    SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
+SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
     MUTCONSTRUCT(mkmut)
     tpool_ = tp;
-    head_ = nil;
+    head_ = nullptr;
 }
 SelfQueue::~SelfQueue() {
     remove_all();
@@ -142,7 +126,7 @@ SelfQueue::~SelfQueue() {
 TQItem* SelfQueue::insert(void* d) {
     MUTLOCK
     TQItem* q = tpool_->alloc();
-    q->left_ = nil;
+    q->left_ = nullptr;
     q->right_ = head_;
     if (head_) {
         head_->left_ = q;
@@ -172,6 +156,6 @@ void SelfQueue::remove_all() {
     for (TQItem* q = first(); q; q = next(q)) {
         tpool_->hpfree(q);
     }
-    head_ = nil;
+    head_ = nullptr;
     MUTUNLOCK
 }

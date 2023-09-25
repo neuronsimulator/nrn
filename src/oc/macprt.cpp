@@ -8,10 +8,6 @@
 
 #include "gui-redirect.h"
 
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 extern void debugfile(const char*, ...);
 extern int oc_print_from_dll(char*);
 extern void single_event_run();
@@ -182,7 +178,6 @@ hoc_axis() {
 
 
 plt(int mode, double x, double y) {}
-hoc_menu_cleanup() {}
 
 
 initplot() {}

@@ -30,7 +30,7 @@ are
     dendrite[2].L = dendrite[1].L + dendrite[0].L 
     axon.v = soma.v 
     print soma.gnabar 
-    axon.nseg = 2*axon.nseg 
+    axon.nseg = 3*axon.nseg 
 
 This notation is necessary when one needs to refer to more than 
 one section within a single statement. 

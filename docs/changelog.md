@@ -1,5 +1,30 @@
 # NEURON 8.2
 
+## 8.2.2
+_Release Date_ : 15-12-2022
+
+### What's New
+
+- Python 3.11 support
+- Re-enabled MUSIC support in NEURON (#1896)
+- CVode.poolshrink(1) deletes unused mechanism pools. (#2033)
+
+### Bug Fixes
+
+- Bugfix for rxd reactions involving rxd parameters. #1933
+
+### Improvements /  Other Changes
+
+- Documentation
+  - windows build updates (#1991)
+    - how to build NEURON
+    - adapt scripts for local usage
+  - added NMODL documentation in various constructs in hoc and python (#2011)
+- SETUPTOOLS_USE_DISTUTILS=stdlib (#1924)
+- Update CoreNEURON submodule to latest version
+
+For the complete list of commits, see the list in [GitHub Issue #2109](https://github.com/neuronsimulator/nrn/issues/2109)
+
 ## 8.2.1
 _Release Date_ : 12-08-2022
 

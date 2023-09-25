@@ -198,7 +198,7 @@ Miscellaneous tips
 Raising a NEURON error
 ----------------------
 
-Use ``hoc_exec_error`` which takes two ``char*`` arguments (which can be NULL). e.g.
+Use ``hoc_execerror`` which takes two ``char*`` arguments (which can be NULL). e.g.
 
     .. code-block:: c
     

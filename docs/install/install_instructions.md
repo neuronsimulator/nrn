@@ -27,10 +27,10 @@ You can download legacy versions from:
 * [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
 
 Earlier Mac OS pkg installers have name in the format of
-`nrn-<version-id>-osx-37-38-39-310.pkg`.
+`nrn-<version-id>-osx-38-39-310-311.pkg`.
 Like windows installers,
-the, `py-37-38-39-310` string in the installer name indicates that the given installer is
-compatible with Python versions  3.7, 3.8, 3.9 and 3.10. Note that if you double-click the installer
+the, `py-38-39-310-311` string in the installer name indicates that the given installer is
+compatible with Python versions  3.8, 3.9, 3.10 and 3.11. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -124,9 +124,9 @@ or recent releases from:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-The naming convention for Windows installers is `nrn-<version-id>-mingw-py-37-38-39-310-setup.exe`.
-The `py-37-38-39-310` string in the installer name indicates that the given installer is compatible
-with Python versions 3.7, 3.8, 3.9 and 3.10. Once the installer is downloaded, you can install it
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
+The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
+with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -199,15 +199,22 @@ In order to build NEURON from source, the following packages must be available:
 
 - Bison
 - Flex >= 2.6
-- C/C++ compiler suite supporting C++17
-- CMake 3.15.0
+- C/C++ compiler suite supporting C++17 (e.g. GCC >=9.3.1, Clang >= 11.0.0)
+  - Note that some C++17 features require a newer compiler version.
+  - C++17 features must be available without linking extra libraries. This notably excludes some older versions of GCC where `std::filesystem` required `libstdc++fs.so`.
+- CMake >= 3.15 (>= 3.18 if ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
 
 The following packages are optional (see build options):
 
-- Python >=3.7 (for Python interface)
-- Cython (for RXD)
+- Python >=3.8 (for Python interface)
+- Cython < 3 (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
+
+Note that you may have to force Cython version:
+```bash
+pip install "cython<3"
+```
 
 Depending on platform you can install these dependencies as follows:
 
@@ -360,7 +367,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
-Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
+Please refer to [docs/cmake_doc/options.rst](../cmake_doc/options.rst) for more information on
 the CMake options.
 
 #### Optimized CPU and GPU Support using CoreNEURON
@@ -368,7 +375,7 @@ the CMake options.
 NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](../coreneuron/index.html) and
+step method. You can find detailed instructions [here](../coreneuron/index.rst) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
 #### Run integrated tests
@@ -467,10 +474,9 @@ being used by running following command:
 ```bash
 $ nrnpyenv.sh
 ...
-export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
 export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
 ```
-If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
+If `NRN_PYLIB` is inappropriate then you can set it explicitly or use `-pyexe` option mentioned above.
 
 * **How to build NEURON in cluster environment where build node architecture is different than compute node?**
 

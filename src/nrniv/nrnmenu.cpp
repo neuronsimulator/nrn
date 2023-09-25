@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <OS/string.h>
-#include <ivstream.h>
 
 #if HAVE_IV
 #include "secbrows.h"
@@ -12,12 +11,10 @@
 #endif
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "nrnmenu.h"
 #include "classreg.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
@@ -26,7 +23,6 @@ extern int hoc_return_type_code;
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern double* point_process_pointer(Point_process*, Symbol*, int);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
@@ -43,9 +39,7 @@ void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
 
-Object* (*nrnpy_callable_with_args)(Object*, int narg);
 int (*nrnpy_ob_is_seg)(Object*);
-
 
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
@@ -93,7 +87,7 @@ char* strstr(const char*, const char*);
 static bool has_globals(const char* name) {
     Symbol* sp;
     char suffix[100];
-    sprintf(suffix, "_%s", name);
+    Sprintf(suffix, "_%s", name);
     for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE && strstr(sp->name, suffix)) {
             return true;
@@ -114,7 +108,7 @@ void nrnglobalmechmenu() {
         hoc_ivmenu("Mechanisms (Globals)");
         for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
             if (sp->type == MECHANISM && sp->subtype != MORPHOLOGY && has_globals(sp->name)) {
-                sprintf(buf, "nrnglobalmechmenu(\"%s\")", sp->name);
+                Sprintf(buf, "nrnglobalmechmenu(\"%s\")", sp->name);
                 hoc_ivbutton(sp->name, buf);
             }
         }
@@ -123,7 +117,7 @@ void nrnglobalmechmenu() {
         return;
     }
     char* name = gargstr(1);
-    sprintf(suffix, "_%s", name);
+    Sprintf(suffix, "_%s", name);
     if (ifarg(2) && *getarg(2) == 0.) {
         int cnt = 0;
         for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
@@ -135,7 +129,7 @@ void nrnglobalmechmenu() {
         hoc_retpushx(double(cnt));
         return;
     }
-    sprintf(buf, "%s (Globals)", name);
+    Sprintf(buf, "%s (Globals)", name);
     hoc_ivpanel(buf);
     for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE && (s = strstr(sp->name, suffix)) != 0 &&
@@ -147,9 +141,9 @@ void nrnglobalmechmenu() {
                 for (i = 0; i < a->sub[0]; i++) {
                     if (i > 5)
                         break;
-                    sprintf(buf, "%s[%d]", sp->name, i);
-                    sprintf(n, "%s[%d]", sp->name, i);
-                    hoc_ivpvalue(n, hoc_val_pointer(buf), false, sp->extra);
+                    Sprintf(buf, "%s[%d]", sp->name, i);
+                    Sprintf(n, "%s[%d]", sp->name, i);
+                    hoc_ivpvalue(n, hoc_val_handle(buf), false, sp->extra);
                 }
             } else {
                 hoc_ivvalue(sp->name, sp->name, 1);
@@ -195,9 +189,9 @@ void section_menu(double x1, int type, MechSelector* ms) {
     if (x1 >= 0) {
         node = node_exact(sec, x1);
         x = nrn_arc_position(sec, node);
-        sprintf(buf, "%s(%g) %s", name, x, btype.string());
+        Sprintf(buf, "%s(%g) %s", name, x, btype.string());
     } else {
-        sprintf(buf, "%s(0 - 1) %s", name, btype.string());
+        Sprintf(buf, "%s(0 - 1) %s", name, btype.string());
         node = sec->pnode[0];
         x = nrn_arc_position(sec, node);
         sname = hoc_section_pathname(sec);
@@ -207,20 +201,29 @@ void section_menu(double x1, int type, MechSelector* ms) {
     hoc_ivlabel(buf);
     if (type == nrnocCONST) {
         if (x1 < 0) {
-            sprintf(buf, "nseg = %d", sec->nnode - 1);
+            Sprintf(buf, "nseg = %d", sec->nnode - 1);
             hoc_ivlabel(buf);
-            sprintf(buf, "%s.L", sname.string());
+            Sprintf(buf, "%s.L", sname.string());
             if (sec->npt3d) {
                 hoc_ivvaluerun("L", buf, "define_shape()", 1);
             } else {
                 hoc_ivvalue("L", buf, 1);
             }
-            sprintf(buf, "%s.Ra += 0", sname.string());
-            hoc_ivpvaluerun("Ra", &sec->prop->dparam[7].val, buf, 1, 0, hoc_var_extra("Ra"));
+            Sprintf(buf, "%s.Ra += 0", sname.string());
+            hoc_ivpvaluerun("Ra",
+                            neuron::container::data_handle<double>{
+                                neuron::container::do_not_search,
+                                &(sec->prop->dparam[7].literal_value<double>())},
+                            buf,
+                            1,
+                            0,
+                            hoc_var_extra("Ra"));
             p = sec->prop;
-            if (p->dparam[4].val != 1) {
+            if (p->dparam[4].literal_value<double>() != 1) {
                 hoc_ivpvaluerun("Rall",
-                                &sec->prop->dparam[4].val,
+                                neuron::container::data_handle<double>{
+                                    neuron::container::do_not_search,
+                                    &(sec->prop->dparam[4].literal_value<double>())},
                                 "diam_changed = 1",
                                 1,
                                 0,
@@ -229,11 +232,11 @@ void section_menu(double x1, int type, MechSelector* ms) {
         }
     } else {
         if (x1 < 0) {
-            sprintf(buf, "%s.%s", sname.string(), "v");
+            Sprintf(buf, "%s.%s", sname.string(), "v");
             hoc_ivvalue("v", buf);
         } else {
-            sprintf(buf, "v(%g)", x);
-            hoc_ivpvalue("v", hoc_val_pointer(buf), false, hoc_lookup("v")->extra);
+            Sprintf(buf, "v(%g)", x);
+            hoc_ivpvalue("v", hoc_val_handle(buf), false, hoc_lookup("v")->extra);
         }
     }
 
@@ -262,7 +265,7 @@ static void pnodemenu(Prop* p1, double x, int type, const char* path, MechSelect
 #if HAVE_IV
 static bool nrn_is_const(const char* path, const char* name) {
     char buf[256];
-    sprintf(buf,
+    Sprintf(buf,
             "%s for (hoc_ac_) if (hoc_ac_ > 0 && hoc_ac_ < 1) if (%s(hoc_ac_) != %s(.5)) {hoc_ac_ "
             "= 0  break}\n",
             path,
@@ -301,39 +304,39 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
                         for (i = 0; i < a->sub[0]; i++) {
                             if (i > 5)
                                 break;
-                            sprintf(n, "%s[%d]", vsym->name, i);
+                            Sprintf(n, "%s[%d]", vsym->name, i);
                             if (path) {
                                 if (nrn_is_const(path, n)) {
-                                    sprintf(buf, "%s.%s", path, n);
+                                    Sprintf(buf, "%s.%s", path, n);
                                     hoc_ivvalue(n, buf, deflt);
                                 } else {
-                                    sprintf(buf, "%s is not constant", n);
+                                    Sprintf(buf, "%s is not constant", n);
                                     hoc_ivlabel(buf);
                                 }
                             } else {
-                                sprintf(buf, "%s[%d](%g)", vsym->name, i, x);
-                                hoc_ivpvalue(n, hoc_val_pointer(buf), false, vsym->extra);
+                                Sprintf(buf, "%s[%d](%g)", vsym->name, i, x);
+                                hoc_ivpvalue(n, hoc_val_handle(buf), false, vsym->extra);
                             }
                         }
                     } else {
                         if (path) {
                             if (nrn_is_const(path, vsym->name)) {
-                                sprintf(buf, "%s.%s", path, vsym->name);
+                                Sprintf(buf, "%s.%s", path, vsym->name);
                                 hoc_ivvalue(vsym->name, buf, deflt);
                             } else {
-                                sprintf(buf, "%s is not constant", vsym->name);
+                                Sprintf(buf, "%s is not constant", vsym->name);
                                 hoc_ivlabel(buf);
                             }
                         } else {
-                            sprintf(buf, "%s(%g)", vsym->name, x);
+                            Sprintf(buf, "%s(%g)", vsym->name, x);
                             if (p1->_type == MORPHOLOGY) {
                                 Section* sec = chk_access();
                                 char buf2[200];
-                                sprintf(buf2, "%s.Ra += 0", secname(sec));
+                                Sprintf(buf2, "%s.Ra += 0", secname(sec));
                                 hoc_ivpvaluerun(
-                                    vsym->name, hoc_val_pointer(buf), buf2, 1, 0, vsym->extra);
+                                    vsym->name, hoc_val_handle(buf), buf2, 1, 0, vsym->extra);
                             } else {
-                                hoc_ivpvalue(vsym->name, hoc_val_pointer(buf), deflt, vsym->extra);
+                                hoc_ivpvalue(vsym->name, hoc_val_handle(buf), deflt, vsym->extra);
                             }
                         }
                     }
@@ -357,7 +360,7 @@ void nrnallpointmenu() {
     if (!ifarg(1)) {
         hoc_ivmenu("Point Processes");
         for (i = 1; (sp = pointsym[i]) != (Symbol*) 0; i++) {
-            sprintf(buf, "nrnallpointmenu(%d)", i);
+            Sprintf(buf, "nrnallpointmenu(%d)", i);
             hoc_ivbutton(sp->name, buf);
         }
         hoc_ivmenu(0);
@@ -380,7 +383,7 @@ void nrnallpointmenu() {
 
         bool are_globals = false;
         char suffix[100];
-        sprintf(suffix, "_%s", sp->name);
+        Sprintf(suffix, "_%s", sp->name);
         for (Symbol* stmp = hoc_built_in_symlist->first; stmp; stmp = stmp->next) {
             if (stmp->type == VAR && stmp->subtype == USERDOUBLE && strstr(stmp->name, suffix)) {
                 are_globals = true;
@@ -392,7 +395,7 @@ void nrnallpointmenu() {
             Object* ob = OBJ(q);
             Point_process* pp = ob2pntproc(ob);
             if (pp->sec) {
-                sprintf(buf, "nrnpointmenu(%p)", ob);
+                Sprintf(buf, "nrnpointmenu(%p)", ob);
                 hoc_ivbutton(sec_and_position(pp->sec, pp->node), buf);
             }
         }
@@ -400,7 +403,7 @@ void nrnallpointmenu() {
             hoc_ivmenu(0);
         }
         if (are_globals) {
-            sprintf(buf, "nrnglobalmechmenu(\"%s\")", psym->name);
+            Sprintf(buf, "nrnglobalmechmenu(\"%s\")", psym->name);
             hoc_ivbutton("Globals", buf);
         }
         hoc_ivpanelmap();
@@ -443,10 +446,10 @@ static void point_menu(Object* ob, int make_label) {
     bool deflt;
 
     if (pp->sec) {
-        sprintf(buf, "%s at ", hoc_object_name(ob));
+        Sprintf(buf, "%s at ", hoc_object_name(ob));
         strcat(buf, sec_and_position(pp->sec, pp->node));
     } else {
-        sprintf(buf, "%s", hoc_object_name(ob));
+        Sprintf(buf, "%s", hoc_object_name(ob));
     }
     hoc_ivpanel(buf);
 
@@ -463,14 +466,14 @@ static void point_menu(Object* ob, int make_label) {
 #if 0
         switch (type) {
         case nrnocCONST:
-                sprintf(buf, "%s[%d] (Parameters)", psym->name, j);
+                Sprintf(buf,"%s[%d] (Parameters)", psym->name, j);
                 break;
         case STATE:
-                sprintf(buf, "%s[%d] (States)", psym->name, j);
-                break; 
-        case 2: 
-                sprintf(buf, "%s[%d] (Assigned)", psym->name, j);
-                break; 
+                Sprintf(buf,"%s[%d] (States)", psym->name, j);
+                break;
+        case 2:
+                Sprintf(buf,"%s[%d] (Assigned)", psym->name, j);
+                break;
         }
 #endif
 
@@ -489,11 +492,10 @@ static void point_menu(Object* ob, int make_label) {
             if (ISARRAY(vsym)) {
                 Arrayinfo* a = vsym->arayinfo;
                 for (m = 0; m < vsym->arayinfo->sub[0]; m++) {
-                    double* pd;
                     if (m > 5)
                         break;
-                    sprintf(buf, "%s[%d]", vsym->name, m);
-                    pd = point_process_pointer(pp, vsym, m);
+                    Sprintf(buf, "%s[%d]", vsym->name, m);
+                    auto pd = point_process_pointer(pp, vsym, m);
                     if (pd) {
                         hoc_ivpvalue(buf, pd, deflt, vsym->extra);
                     }
@@ -682,7 +684,7 @@ MechanismStandard::MechanismStandard(const char* name, int vartype) {
     if (vartype_ == -1) {
         char suffix[100];
         char* s;
-        sprintf(suffix, "_%s", name);
+        Sprintf(suffix, "_%s", name);
         Symbol* sp;
         for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
             if (sp->type == VAR && sp->subtype == USERDOUBLE &&
@@ -755,13 +757,13 @@ void MechanismStandard::panel(const char* label) {
             Object* pyactval = NULL;
             int size = hoc_total_array_data(sym, 0);
             if (pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(msobj_);
                 hoc_pushx(double(i));
                 hoc_pushx(0.0);
-                pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
             } else {
-                sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
+                Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
             }
             hoc_ivvaluerun_ex(sym->name,
                               NULL,
@@ -780,16 +782,16 @@ void MechanismStandard::panel(const char* label) {
             for (j = 1; j < size; ++j) {
                 ++i;
                 if (pyact_) {
-                    assert(nrnpy_callable_with_args);
+                    assert(neuron::python::methods.callable_with_args);
                     hoc_push_object(msobj_);
                     hoc_pushx(double(i));
                     hoc_pushx(double(j));
-                    pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+                    pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
                 } else {
-                    sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+                    Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
                 }
                 char buf2[200];
-                sprintf(buf2, "%s[%d]", sym->name, j);
+                Sprintf(buf2, "%s[%d]", sym->name, j);
                 hoc_ivvaluerun_ex(buf2,
                                   NULL,
                                   np_->prop_pval(sym, j),
@@ -832,7 +834,7 @@ double MechanismStandard::get(const char* name, int index) {
     if (!s) {
         hoc_execerror(name, "not in this property");
     }
-    double* pval = np_->prop_pval(s, index);
+    auto const pval = np_->prop_pval(s, index);
     if (!pval) {
         return -1e300;
     }
@@ -883,13 +885,13 @@ void MechanismStandard::save(const char* obref, std::ostream* po) {
     mschk("save");
     std::ostream& o = *po;
     char buf[256];
-    sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
+    Sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
     o << buf << std::endl;
     for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
         if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
             int i, cnt = hoc_total_array_data(sym, 0);
             for (i = 0; i < cnt; ++i) {
-                sprintf(
+                Sprintf(
                     buf, "%s.set(\"%s\", %g, %d)", obref, sym->name, *np_->prop_pval(sym, i), i);
                 o << buf << std::endl;
             }
@@ -1047,6 +1049,12 @@ static double mt_is_artificial(void* v) {
     hoc_return_type_code = 2;
     return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
+static double mt_is_ion(void* v) {
+    auto* mt = static_cast<MechanismType*>(v);
+    hoc_return_type_code = 2;
+    return double(mt->is_ion());
+}
+
 static Object** mt_pp_begin(void* v) {
     MechanismType* mt = (MechanismType*) v;
     Point_process* pp = mt->pp_begin();
@@ -1111,6 +1119,7 @@ static Member_func mt_members[] = {{"select", mt_select},
                                    {"is_netcon_target", mt_is_target},
                                    {"has_net_event", mt_has_net_event},
                                    {"is_artificial", mt_is_artificial},
+                                   {"is_ion", mt_is_ion},
                                    {"internal_type", mt_internal_type},
                                    {0, 0}};
 static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
@@ -1196,7 +1205,7 @@ Point_process* MechanismType::pp_next() {
     bool done = mti_->p_iter_ == 0;
     while (!done) {
         if (mti_->p_iter_->_type == mti_->type_[mti_->select_]) {
-            pp = (Point_process*) mti_->p_iter_->dparam[1]._pvoid;
+            pp = mti_->p_iter_->dparam[1].get<Point_process*>();
             done = true;
             // but if it does not belong to this section
             if (pp->sec != mti_->sec_iter_) {
@@ -1237,6 +1246,10 @@ bool MechanismType::has_net_event(int i) {
 bool MechanismType::is_artificial(int i) {
     int j = mti_->type_[i];
     return (nrn_is_artificial_[j] ? true : false);
+}
+
+bool MechanismType::is_ion() {
+    return nrn_is_ion(internal_type());
 }
 
 void MechanismType::select(const char* name) {
@@ -1296,14 +1309,14 @@ void MechanismType::menu() {
         Symbol* s = memb_func[mti_->type_[i]].sym;
         if (s->subtype != MORPHOLOGY) {
             if (mti_->pyact_) {
-                assert(nrnpy_callable_with_args);
+                assert(neuron::python::methods.callable_with_args);
                 hoc_push_object(mtobj_);
                 hoc_pushx(double(i));
-                Object* pyactval = (*nrnpy_callable_with_args)(mti_->pyact_, 2);
+                Object* pyactval = neuron::python::methods.callable_with_args(mti_->pyact_, 2);
                 hoc_ivbutton(s->name, NULL, pyactval);
                 hoc_obj_unref(pyactval);
             } else {
-                sprintf(buf,
+                Sprintf(buf,
                         "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
                         s->name,
                         i,

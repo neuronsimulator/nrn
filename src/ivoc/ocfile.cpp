@@ -1,11 +1,8 @@
 #include <../../nrnconf.h>
-#if defined(__GO32__)
-#define HAVE_IV 0
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#if MAC || defined(HAVE_UNISTD_H)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -16,13 +13,13 @@ extern int hoc_return_type_code;
 #include <io.h>
 #include <fcntl.h>
 #endif
-#include <InterViews/resource.h>
 #if HAVE_IV
 #include "utility.h"
 #include <IV-look/dialogs.h>
 #include <InterViews/session.h>
 #include <InterViews/display.h>
 #include <InterViews/style.h>
+#include <InterViews/resource.h>
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
@@ -39,9 +36,6 @@ extern int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
@@ -137,13 +131,7 @@ static double f_gets(void* v) {
     OcFile* f = (OcFile*) v;
     char** pbuf = hoc_pgargstr(1);
     char* buf;
-#if USE_NRNFILEWRAP
-    NrnFILEWrap nfw, *fw;
-    nfw.f = f->file();
-    fw = &nfw;
-#else
     FILE* fw = f->file();
-#endif
     if ((buf = fgets_unlimited(hoc_tmpbuf, fw)) != 0) {
         hoc_assign_str(pbuf, buf);
         return double(strlen(buf));

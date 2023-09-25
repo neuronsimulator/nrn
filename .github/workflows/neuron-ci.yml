@@ -7,6 +7,7 @@ concurrency:
 on:
   push:
     branches: 
+      # If nothing else, this is important for the ccache logic below...
       - master
       - release/**
   pull_request:
@@ -19,53 +20,69 @@ on:
 #      - '**.rst'
 #      - 'docs/**'
 
-env:
-  BUILD_TYPE: Release
-  DESIRED_CMAKE_VERSION: 3.15.0
-  PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.10'
 
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
 
-    name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }})
+    name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }}${{ matrix.config.sanitizer }})
 
-    timeout-minutes: 45
+    timeout-minutes: 75
 
     env:
       INSTALL_DIR: install
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
+      BUILD_TYPE: Release
+      DESIRED_CMAKE_VERSION: 3.15
+      DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
+      MUSIC_VERSION: 1.2.0
 
     strategy:
       matrix:
         os: [ macOS-11, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake"}
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", python_dynamic: ON}
-          - { matrix_eval : "CC=gcc-7 CXX=g++-7" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
-          - { matrix_eval : "CC=gcc-7 CXX=g++-7",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
         include:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
+              sanitizer: address
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # Cannot use a non-instrumented OpenMP with TSan, and we don't
+              # have a TSan-instrumented OpenMP runtime available.
+              # TODO: debug RX3D + TSan
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
+                -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
+              sanitizer: thread
+          - os: macOS-12
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
       fail-fast: false
 
@@ -73,16 +90,16 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
         with:
-          cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
+          cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install ccache coreutils doxygen flex mpich ninja xz
+          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
-          echo /usr/local/opt/flex/bin >> $GITHUB_PATH
+          echo /usr/local/opt/flex/bin:/usr/local/opt/bison/bin >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
@@ -94,7 +111,7 @@ jobs:
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin patchelf
+            openmpi-bin flex libfl-dev bison
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -109,9 +126,14 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Clone nmodl
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+            git submodule update --init --recursive --force --depth 1 -- external/nmodl
+
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -120,9 +142,10 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -130,6 +153,23 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
+
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
+        if: matrix.config.music == 'ON'
+        run: |
+          python3 -m venv music-venv
+          source music-venv/bin/activate
+          python3 -m pip install mpi4py "cython<3" numpy
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}} 
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -148,8 +188,20 @@ jobs:
           cat matrix.json
           echo -----
 
+      # Workaround for https://github.com/actions/cache/issues/92
+      - name: Checkout cache action
+        uses: actions/checkout@v3
+        with:
+          repository: actions/cache
+          ref: v3
+          path: tmp/actions/cache
+          
+      - name: Make actions/cache@v3 run even on failure
+        run: |
+          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
+
       - name: Restore compiler cache
-        uses: pat-s/always-upload-cache@v3
+        uses: ./tmp/actions/cache
         with:
           path: |
             ${{runner.workspace}}/ccache
@@ -176,6 +228,10 @@ jobs:
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
             export SKIP_EMBEDED_PYTHON_TEST="true"
+            # long TMPDIR path on MacOS can results into runtime failures with OpenMPI
+            # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
+            export TMPDIR=/tmp/$GITHUB_JOB
+            mkdir -p $TMPDIR
           fi
 
           # Python setup
@@ -202,14 +258,23 @@ jobs:
               cmake_args=(-G Ninja)
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
-                CC=$(command -v clang-14)
-                CXX=$(command -v clang++-14)
-                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                echo symbolizer_path=${symbolizer_path}
+                if [ "$RUNNER_OS" == "Linux" ]; then
+                  if [[ "${{matrix.config.sanitizer}}" == "thread" ]]; then
+                    # GitHub/ubuntu-22.04 + clang-14 seems to have problems with TSan.
+                    # Vanilla 22.04 + clang-16 from apt.llvm.org seemed to work.
+                    # Use gcc-12 instead, as GitHub/ubuntu-22.04 already has it.
+                    CC=$(command -v gcc-12)
+                    CXX=$(command -v g++-12)
+                  else
+                    CC=$(command -v clang-14)
+                    CXX=$(command -v clang++-14)
+                    symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                    cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                  fi
+                fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
-                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \
@@ -218,6 +283,7 @@ jobs:
                            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                            -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
                            -DNRN_ENABLE_TESTS=ON \
+                           -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
                            ${{matrix.config.cmake_option}})
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 cmake_args+=(-DNRN_ENABLE_PYTHON=ON \
@@ -226,6 +292,11 @@ jobs:
                              -DNRN_ENABLE_CORENEURON=ON)
               else
                 cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
+              fi
+              if [[ "$NRN_ENABLE_MUSIC" == "ON" ]]; then
+                cmake_args+=(-DNRN_ENABLE_MUSIC=ON \
+                             -DCMAKE_PREFIX_PATH=${MUSIC_INSTALL_DIR} \
+                             -DMUSIC_ROOT=${MUSIC_INSTALL_DIR})
               fi
               # Enable more warnings in the builds whose compiler warnings we
               # highlight in the GitHub UI
@@ -257,6 +328,7 @@ jobs:
               ccache -vs 2>/dev/null || ccache -s
               if [ "$RUNNER_OS" == "macOS" ]
               then
+                mkdir -p src/nrnpython
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
@@ -280,17 +352,20 @@ jobs:
                 cat bin/nrn-enable-sanitizer
                 echo ---
                 nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
-                nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
+                nrn_enable_sanitizer_preload_python="${nrn_enable_sanitizer} --preload python"
               else
                 echo nrn-enable-sanitizer not found, not using it
               fi
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
+          if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
+            nrn_enable_sanitizer_preload_python="${PYTHON}"
+          fi
 
           # basic test for cmake when python is not disabled
           if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-            $PYTHON --version && ${nrn_enable_sanitizer_preload} $PYTHON -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer_preload_python} --version && ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
           fi;
 
           # test neurondemo with cmake
@@ -300,8 +375,8 @@ jobs:
 
           # with cmake dynamic check python_min and python_max together
           if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            ${nrn_enable_sanitizer_preload} $PYTHON_MAX -c 'import neuron; neuron.test()'
-            ${nrn_enable_sanitizer_preload} $PYTHON_MIN -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
+            $PYTHON_MIN -c 'import neuron; neuron.test()'
           fi;
 
           # run rxd tests manually if rxd is enabled *and CoreNEURON is
@@ -309,21 +384,22 @@ jobs:
           if [[ "$BUILD_MODE" == "cmake" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
-            ${nrn_enable_sanitizer_preload} $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py
+            ${nrn_enable_sanitizer_preload_python} ../share/lib/python/neuron/rxdtests/run_all.py
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
             neuron_wheel=wheelhouse/NEURON*.whl;
             # test with virtual environment
-            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
+            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
-            ${nrn_enable_sanitizer_preload} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
+            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
           fi;
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
           CCACHE_DIR: ${{runner.workspace}}/ccache
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
+          NRN_ENABLE_MUSIC: ${{ matrix.config.music }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
@@ -336,3 +412,19 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/neuron-ci.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3
+
+  # see https://github.com/orgs/community/discussions/26822
+  final:
+    name: Final CI
+    needs: [ci]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ci matrix all done
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1

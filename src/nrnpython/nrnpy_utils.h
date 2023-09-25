@@ -102,32 +102,79 @@ class Py2NRNString {
     bool disable_release_;
 };
 
-
-class PyLockGIL {
+/** @brief For when hoc_execerror must handle the Python error.
+ *  Idiom: PyErr2NRNString e;
+ *         -- clean up any python objects --
+ *         hoc_execerr_ext("hoc message : %s", e.c_str());
+ *  e will be automatically deleted even though execerror does not return.
+ */
+class PyErr2NRNString {
   public:
-    PyLockGIL()
-        : state_(PyGILState_Ensure())
-        , locked_(true) {}
-
-    /* This is mainly used to unlock manually prior to a hoc_execerror() call
-     * since this uses longjmp()
-     */
-    void release() {
-        assert(locked_);
-        locked_ = false;
-        PyGILState_Release(state_);
+    PyErr2NRNString() {
+        str_ = NULL;
     }
 
-    ~PyLockGIL() {
-        release();
+    ~PyErr2NRNString() {
+        if (str_) {
+            free(str_);
+        }
+    }
+
+    inline char* c_str() const {
+        return str_;
+    }
+
+    inline char* get_pyerr() {
+        PyObject* ptype = NULL;
+        PyObject* pvalue = NULL;
+        PyObject* ptraceback = NULL;
+        if (PyErr_Occurred()) {
+            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            if (pvalue) {
+                PyObject* pstr = PyObject_Str(pvalue);
+                if (pstr) {
+                    const char* err_msg = PyUnicode_AsUTF8(pstr);
+                    if (err_msg) {
+                        str_ = strdup(err_msg);
+                    } else {
+                        str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
+                    }
+                    Py_XDECREF(pstr);
+                } else {
+                    str_ = strdup("get_pyerr failed at PyObject_Str");
+                }
+            } else {
+                str_ = strdup("get_pyerr failed at PyErr_Fetch");
+            }
+        }
+        PyErr_Clear();  // in case could not turn pvalue into c_str.
+        Py_XDECREF(ptype);
+        Py_XDECREF(pvalue);
+        Py_XDECREF(ptraceback);
+        return str_;
     }
 
   private:
-    PyLockGIL(const PyLockGIL&);
-    PyLockGIL& operator=(const PyLockGIL&);
+    PyErr2NRNString(const PyErr2NRNString&);
+    PyErr2NRNString& operator=(const PyErr2NRNString&);
 
+    char* str_;
+};
+
+
+struct PyLockGIL {
+    PyLockGIL()
+        : state_{PyGILState_Ensure()} {}
+    PyLockGIL(PyLockGIL&&) = delete;
+    PyLockGIL(PyLockGIL const&) = delete;
+    PyLockGIL& operator=(PyLockGIL&&) = delete;
+    PyLockGIL& operator=(PyLockGIL const&) = delete;
+    ~PyLockGIL() {
+        PyGILState_Release(state_);
+    }
+
+  private:
     PyGILState_STATE state_;
-    bool locked_; /* check if double unlocking */
 };
 
 extern void nrnpy_sec_referr();

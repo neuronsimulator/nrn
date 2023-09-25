@@ -97,9 +97,7 @@ static double stimulus(int i) {
         pstim[i].g = 0.0;
         return 0.0;
     }
-#if CVODE
     at_time(nrn_threads, pstim[i].delay);
-#endif
     x = (nt_t - pstim[i].delay) / pstim[i].duration;
     pstim[i].g = g * alpha(x);
     return pstim[i].g * (NODEV(pstim[i].pnd) - pstim[i].erev);

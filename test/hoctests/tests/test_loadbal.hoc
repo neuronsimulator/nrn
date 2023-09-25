@@ -1,0 +1,18 @@
+proc exit_with_error() {
+    nrnpython("import sys; sys.exit(1)")
+}
+
+objref mt
+mt = new MechanismType(0)
+
+// check for non ion type
+mt.select("hh")
+if (mt.is_ion() != 0) {
+    exit_with_error()
+}
+
+// check for ion type
+mt.select("k_ion")
+if (mt.is_ion() != 1) {
+    exit_with_error()
+}

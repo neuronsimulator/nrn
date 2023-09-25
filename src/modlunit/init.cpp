@@ -13,7 +13,7 @@ List* intoken;
 char buf[512]; /* volatile temporary buffer */
 
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     short kval;
 } keywords[] = {{"VERBATIM", VERBATIM},
                 {"ENDVERBATIM", END_VERBATIM}, /* explicit in lex.lpp */
@@ -25,28 +25,24 @@ static struct { /* Keywords */
                 {"INDEPENDENT", INDEPENDENT},
                 {"ASSIGNED", ASSIGNED},
                 {"INITIAL", INITIAL1},
-                {"TERMINAL", TERMINAL},
                 {"DERIVATIVE", DERIVATIVE},
                 {"EQUATION", EQUATION},
                 {"BREAKPOINT", BREAKPOINT},
                 {"CONDUCTANCE", CONDUCTANCE},
                 {"SOLVE", SOLVE},
                 {"STATE", STATE},
-                {"STEPPED", STEPPED},
                 {"LINEAR", LINEAR},
                 {"NONLINEAR", NONLINEAR},
                 {"DISCRETE", DISCRETE},
                 {"FUNCTION", FUNCTION1},
                 {"FUNCTION_TABLE", FUNCTION_TABLE},
                 {"PROCEDURE", PROCEDURE},
-                {"PARTIAL", PARTIAL},
                 {"INT", INT},
                 {"DEL2", DEL2},
                 {"DEL", DEL},
                 {"LOCAL", LOCAL},
                 {"METHOD", USING},
                 {"STEADYSTATE", USING},
-                {"SENS", SENS},
                 {"STEP", STEP},
                 {"WITH", WITH},
                 {"FROM", FROM},
@@ -62,20 +58,11 @@ static struct { /* Keywords */
                 {"DEFINE", DEFINE1},
                 {"KINETIC", KINETIC},
                 {"CONSERVE", CONSERVE},
-                {"PLOT", PLOT},
                 {"VS", VS},
                 {"LAG", LAG},
-                {"RESET", RESET},
-                {"MATCH", MATCH},
-                {"MODEL_LEVEL", MODEL_LEVEL}, /* inserted by merge */
                 {"SWEEP", SWEEP},
-                {"FIRST", FIRST},
-                {"LAST", LAST},
                 {"COMPARTMENT", COMPARTMENT},
                 {"LONGITUDINAL_DIFFUSION", LONGDIFUS},
-                {"PUTQ", PUTQ},
-                {"GETQ", GETQ},
-                {"IFERROR", IFERROR},
                 {"SOLVEFOR", SOLVEFOR},
                 {"UNITS", UNITBLK},
                 {"UNITSON", UNITSON},
@@ -92,7 +79,6 @@ static struct { /* Keywords */
                 {"READ", READ},
                 {"WRITE", WRITE},
                 {"RANGE", RANGE},
-                {"SECTION", SECTION},
                 {"VALENCE", VALENCE},
                 {"CHARGE", VALENCE},
                 {"GLOBAL", GLOBAL},
@@ -116,7 +102,7 @@ static struct { /* Keywords */
  * readable
  */
 static struct { /* special output tokens */
-    char* name;
+    const char* name;
     long subtype;
     Symbol** p;
 } special[] = {{";", SEMI, &semi},
@@ -125,38 +111,31 @@ static struct { /* special output tokens */
                {nullptr, 0, nullptr}};
 
 static struct { /* numerical methods */
-    char* name;
+    const char* name;
     long subtype; /* All the types that will work with this */
     short varstep;
-} methods[] = {{"adams", DERF | KINF, 0},
-               {"runge", DERF | KINF, 0},
+} methods[] = {{"runge", DERF | KINF, 0},
                {"euler", DERF | KINF, 0},
-               {"adeuler", DERF | KINF, 1},
-               {"heun", DERF | KINF, 0},
-               {"adrunge", DERF | KINF, 1},
                {"newton", NLINF, 0},
-               {"simplex", NLINF, 0},
                {"simeq", LINF, 0},
-               {"seidel", LINF, 0},
                {"_advance", KINF, 0},
                {"sparse", KINF, 0},
                {"derivimplicit", DERF, 0}, /* name hard wired in deriv.c */
                {"cnexp", DERF, 0},
-               {"clsoda", DERF | KINF, 0}, /* Tolerance built in to scopgear.c */
                {"after_cvode", 0, 0},
                {"cvode_t", 0, 0},
                {"cvode_t_v", 0, 0},
                {0, 0, 0}};
 
-static char* extdef[] = {/* external names that can be used as doubles
-                          * without giving an error message */
+static const char* extdef[] = {/* external names that can be used as doubles
+                                * without giving an error message */
 #include "extdef.h"
-                         0};
+                               0};
 
-static char* extargs[] = {/* units of args to external functions */
+static const char* extargs[] = {/* units of args to external functions */
 /* format: name, returnunits, arg1unit, arg2unit, ..., 0, */
 #include "extargs.h"
-                          0};
+                                0};
 
 void init() {
     int i;

@@ -42,7 +42,8 @@ function(nrn_add_external_project name)
   find_path(
     ${name}_PATH
     NAMES CMakeLists.txt
-    PATHS "${THIRD_PARTY_DIRECTORY}/${name}")
+    PATHS "${THIRD_PARTY_DIRECTORY}/${name}"
+    NO_DEFAULT_PATH)
   if(NOT EXISTS ${${name}_PATH})
     nrn_submodule_file_not_found("${THIRD_PARTY_DIRECTORY}/${name}")
     nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}")

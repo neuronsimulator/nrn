@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _LogNormal_h 
 
-#include <Normal.h>
+#include "Normal.h"
 
 class LogNormal: public Normal {
 protected:

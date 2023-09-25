@@ -27,10 +27,8 @@ class SymbolItem {
         return index_;
     }
     int whole_vector();
-#if CABLE
     int pysec_type_; /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
     void* pysec_;    /* Name2Section* or Section* */
-#endif
   private:
     CopyString name_;
     Symbol* symbol_;
@@ -39,10 +37,6 @@ class SymbolItem {
     int whole_array_;
 };
 
-declarePtrList(SymbolList, SymbolItem);
-
-#if CABLE
-void nrn_symdir_load_pysec(SymbolList& sl, void*);
-#endif
+void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void*);
 
 #endif

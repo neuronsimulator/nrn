@@ -1,11 +1,15 @@
 wheel
 setuptools
+setuptools_scm
 scikit-build
 matplotlib
-bokeh
+# bokeh 3 seems to break docs notebooks
+bokeh<3
 ipython
-cython
+cython<3
+packaging
 pytest
 pytest-cov
 mpi4py
 numpy
+find_libpython

@@ -18,26 +18,8 @@
 
 typedef void (*fptr)(void);
 
-typedef struct OcPtrVector_ {
-    PyObject_HEAD struct OcPtrVector_ (*newOcPtrVector)();
-    void (*deleteOcPtrVector)();
-    int (*size)(int);
-    void (*resize)();
-    void (*pset)(int, double*);
-    double (*getval)(int);
-    void (*setval)(int, double);
-    void (*scatter)(double*, int);
-    void (*gather)(double*, int);
-    void (*ptr_update_cmd)(void*);
-    void (*ptr_update)();
-    void* update_cmd_;
-    int size_;
-    double** pd_;
-} OcPtrVector;
-/*
-        OcPtrVector* newOcPtrVector();
-        } ;
-*/
+// @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
+// the one in ocptrvector.h
 
 typedef struct {
     Reaction* reaction;

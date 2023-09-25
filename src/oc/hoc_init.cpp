@@ -19,27 +19,15 @@ extern int numprocs(), myproc(), psync();
 #if 0
 extern int	hoc_co();
 #endif
-#if DOS || defined(WIN32)    /*|| defined(MAC)*/
+#if DOS || defined(WIN32)
 extern double erf(), erfc(); /* supplied by unix */
 #endif
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
 
-#if MAC
-static double Fabs(double x) {
-    return (x > 0.) ? x : -x;
-}
-static double Erf(double x) {
-    return erf(x);
-}
-static double Erfc(double x) {
-    return erfc(x);
-}
-#endif
-
 static struct { /* Keywords */
-    char* name;
+    const char* name;
     int kval;
 } keywords[] = {{"proc", parsePROC},
                 {"func", FUNC},
@@ -62,11 +50,9 @@ static struct { /* Keywords */
                 {"local", LOCAL},
                 {"localobj", LOCALOBJ},
                 {"strdef", STRDEF},
-                {"parallel", PARALLEL},
                 {"help", HELP},
                 {"iterator", ITERKEYWORD},
                 {"iterator_statement", ITERSTMT},
-#if CABLE
                 {"create", SECTIONKEYWORD},
                 {"connect", CONNECTKEYWORD},
                 {"setpointer", SETPOINTERKEYWORD},
@@ -76,8 +62,6 @@ static struct { /* Keywords */
                 {"forall", FORALL},
                 {"ifsec", IFSEC},
                 {"forsec", FORSEC},
-#endif /*CABLE*/
-#if OOP
                 {"begintemplate", BEGINTEMPLATE},
                 {"endtemplate", ENDTEMPLATE},
                 {"objectvar", OBJVARDECL},
@@ -85,22 +69,21 @@ static struct { /* Keywords */
                 {"public", PUBLICDECL},
                 {"external", EXTERNALDECL},
                 {"new", NEW},
-#endif
-                {0, 0}};
+                {nullptr, 0}};
 static struct { /* Constants */
-    char* name;
+    const char* name;
     double cval;
 } consts[] = {{"PI", 3.14159265358979323846},
               {"E", 2.71828182845904523536},
               {"GAMMA", 0.57721566490153286060}, /* Euler */
               {"DEG", 57.29577951308232087680},  /* deg/radian */
               {"PHI", 1.61803398874989484820},   /* golden ratio */
-              {0, 0}};
+              {nullptr, 0}};
 
 /* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
 /* also see FARADAY and gasconstant in ../nrnoc/eion.c */
 static struct { /* Modern, Legacy units constants */
-    char* name;
+    const char* name;
     double cval[2];
 } uconsts[] = {{"FARADAY", {_faraday_codata2018, 96485.309}}, /*coulombs/mole*/
                {"R", {_gasconstant_codata2018, 8.31441}}, /*molar gas constant, joules/mole/deg-K*/
@@ -110,7 +93,7 @@ static struct { /* Modern, Legacy units constants */
                {0, {0., 0.}}};
 
 static struct { /* Built-ins */
-    char* name;
+    const char* name;
     double (*func)(double);
 } builtins[] = {{"sin", sin},
                 {"cos", cos},
@@ -121,18 +104,12 @@ static struct { /* Built-ins */
                 {"exp", hoc1_Exp}, /* checks argument */
                 {"sqrt", Sqrt},    /* checks argument */
                 {"int", integer},
-#if MAC
-                {"abs", Fabs},
-                {"erf", Erf},
-                {"erfc", Erfc},
-#else
                 {"abs", fabs},
                 {"erf", erf},
                 {"erfc", erfc},
-#endif
                 {0, 0}};
 static struct { /* Builtin functions with multiple or variable args */
-    char* name;
+    const char* name;
     void (*fun_blt)(void);
 } fun_bltin[] = {{"atan2", hoc_atan2},
                  {"system", hoc_System},
@@ -160,7 +137,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"sprint", hoc_Sprint},
                  {"graph", hoc_Graph},
                  {"graphmode", hoc_Graphmode},
-                 {"fmenu", hoc_fmenu},
                  {"lw", hoc_Lw},
                  {"getstr", hoc_Getstr},
                  {"strcmp", hoc_Strcmp},
@@ -238,7 +214,7 @@ static struct { /* Builtin functions with multiple or variable args */
                  {0, 0}};
 
 static struct { /* functions that return a string */
-    char* name;
+    const char* name;
     void (*strfun_blt)(void);
 } strfun_bltin[] = {{"secname", hoc_secname},
                     {"units", hoc_Symbol_units},
@@ -250,20 +226,18 @@ static struct { /* functions that return a string */
                     {0, 0}};
 
 static struct { /* functions that return an object */
-    char* name;
+    const char* name;
     void (*objfun_blt)(void);
 } objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
 double hoc_epsilon = 1.e-11;
-double hoc_ac_;         /*known to the interpreter to evaluate expressions with hoc_oc() */
-double* hoc_varpointer; /* executing hoc_pointer(&var) will put the address of
-            the variable in this location */
+double hoc_ac_; /*known to the interpreter to evaluate expressions with hoc_oc() */
 
 double hoc_cross_x_, hoc_cross_y_; /* For Graph class in ivoc */
 double hoc_default_dll_loaded_;
 
-const char* neuron_home;
-const char* nrn_mech_dll;            /* but actually only for NEURON mswin and linux */
+char* neuron_home;
+const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
@@ -346,7 +320,6 @@ void hoc_init(void) /* install constants and built-ins table */
     /* initialize pointers ( why doesn't Vax do this?) */
     hoc_access = (int*) 0;
     spinit();
-#if OOP
     hoc_class_registration();
     hoc_built_in_symlist = symlist;
     symlist = (Symlist*) 0;
@@ -354,7 +327,6 @@ void hoc_init(void) /* install constants and built-ins table */
     hoc_top_level_symlist = symlist = (Symlist*) emalloc(sizeof(Symlist));
     symlist->first = symlist->last = (Symbol*) 0;
     hoc_install_hoc_obj();
-#endif
 }
 
 void hoc_unix_mac_pc(void) {
@@ -362,23 +334,16 @@ void hoc_unix_mac_pc(void) {
 #if defined(DARWIN)
     hoc_pushx(4.);
 #else
-#if MAC
-    hoc_pushx(2.);
-#else
 #if defined(WIN32)
     hoc_pushx(3.);
 #else
     hoc_pushx(1.);
 #endif
 #endif
-#endif
 }
 void hoc_show_winio(void) {
     int b;
     b = (int) chkarg(1, 0., 1.);
-#if MAC
-    hoc_sioux_show(b);
-#endif
 #if defined(WIN32)
     hoc_winio_show(b);
 #endif

@@ -24,7 +24,7 @@ extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern hoc_Item* net_cvode_instance_psl();
-extern PlayRecList* net_cvode_instance_prl();
+extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
@@ -249,7 +249,7 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = np->prop()->param_size();  // sum over array dimensions
         } else {
             int type = STATE;
             for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
@@ -257,6 +257,10 @@ void SaveState::ssi_def() {
                     sym->subtype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
                         ssi[im].offset = np->prop_index(sym);
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == np->prop_index(sym));
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -475,8 +479,8 @@ void SaveState::alloc() {
             allocacell(acell_[j], i);
             ++j;
         }
-    PlayRecList* prl = net_cvode_instance_prl();
-    nprs_ = prl->count();
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    nprs_ = prl->size();
     if (nprs_) {
         prs_ = new PlayRecordSave*[nprs_];
     }
@@ -623,11 +627,10 @@ void SaveState::save() {
             ++j;
         }
     if (nprs_) {
-        PlayRecList* prl = net_cvode_instance_prl();
-        int i;
-        assert(nprs_ == prl->count());
-        for (i = 0; i < nprs_; ++i) {
-            prs_[i] = prl->item(i)->savestate_save();
+        std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+        assert(nprs_ == prl->size());
+        for (std::size_t i = 0; i < nprs_; ++i) {
+            prs_[i] = (*prl)[i]->savestate_save();
         }
     }
     savenet();
@@ -658,7 +661,7 @@ void SaveState::savenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                ns.state[istate++] = p->param[ip];
+                ns.state[istate++] = p->param_legacy(ip);
             }
         }
     }
@@ -669,9 +672,8 @@ void SaveState::saveacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            (*p++) = d[j];
+            (*p++) = ml.data(i, j);
         }
     }
 }
@@ -708,10 +710,10 @@ void SaveState::restore(int type) {
     if (type == 1) {
         return;
     }
-    PlayRecList* prl = net_cvode_instance_prl();
-    // during a local step the PlayRecList is augmented with GLineRecord
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    // during a local step prl is augmented with GLineRecord
     // assert(nprs_ == prl->count());
-    assert(nprs_ <= prl->count());
+    assert(nprs_ <= prl->size());
     int i;
     for (i = 0; i < nprs_; ++i) {
         prs_[i]->savestate_restore();
@@ -726,8 +728,7 @@ void SaveState::restore(int type) {
 }
 
 void SaveState::restorenode(NodeState& ns, Node* nd) {
-    NODEV(nd) = ns.v;
-    ;
+    nd->v() = ns.v;
     int istate = 0;
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
@@ -745,7 +746,7 @@ void SaveState::restorenode(NodeState& ns, Node* nd) {
 #endif
         {
             for (int ip = ssi[type].offset; ip < max; ++ip) {
-                p->param[ip] = ns.state[istate++];
+                p->param_legacy(ip) = ns.state[istate++];
             }
         }
     }
@@ -756,9 +757,8 @@ void SaveState::restoreacell(ACellState& ac, int type) {
     int sz = ssi[type].size;
     double* p = ac.state;
     for (int i = 0; i < ml.nodecount; ++i) {
-        double* d = ml._data[i];
         for (int j = 0; j < sz; ++j) {
-            d[j] = (*p++);
+            ml.data(i, j) = (*p++);
         }
     }
 }

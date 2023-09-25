@@ -15,26 +15,38 @@ class TQueue;
 typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;
 struct NrnThread;
-class PlayRecList;
 class PlayRecord;
 class STEList;
 class HTList;
+namespace neuron {
+struct model_sorted_token;
+}
 
-class CvMembList {
-  public:
-    CvMembList();
-    virtual ~CvMembList();
-    CvMembList* next;
-    Memb_list* ml;
-    int index;
+/**
+ * @brief Wrapper for Memb_list in CVode related code.
+ *
+ * This gets used in two ways:
+ * - with ml.size() == 1 and ml[0].nodecount > 1 when the mechanism instances to be processed are
+ *   contiguous
+ * - with ml.size() >= 1 and ml[i].nodecount == 1 when non-contiguous instances need to be processed
+ *
+ * generic configurations with ml.size() and ml[i].nodecount both larger than one are not supported.
+ */
+struct CvMembList {
+    CvMembList(int type)
+        : index{type} {
+        ml.emplace_back(type);
+    }
+    CvMembList* next{};
+    std::vector<Memb_list> ml{};
+    int index{};
 };
 
-class BAMechList {
-  public:
+struct BAMechList {
     BAMechList(BAMechList** first);
     BAMechList* next;
     BAMech* bam;
-    Memb_list* ml;
+    std::vector<Memb_list*> ml;
     static void destruct(BAMechList** first);
 };
 
@@ -62,15 +74,14 @@ class CvodeThreadData {
     Node** v_parent_;
     PreSynList* psl_th_;  // with a threshold
     HTList* watch_list_;
-    double** pv_;
-    double** pvdot_;
+    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     int nvoffset_;              // beginning of this threads states
     int nvsize_;                // total number of states for this thread
     int neq_v_;                 // for daspk, number of voltage states for this thread
     int nonvint_offset_;        // synonym for neq_v_. Beginning of this threads nonvint variables.
     int nonvint_extra_offset_;  // extra states (probably Python). Not scattered or gathered.
-    PlayRecList* record_;
-    PlayRecList* play_;
+    std::vector<PlayRecord*>* play_;
+    std::vector<PlayRecord*>* record_;
 };
 
 class Cvode {
@@ -79,9 +90,9 @@ class Cvode {
     Cvode();
     virtual ~Cvode();
 
-    virtual int handle_step(NetCvode*, double);
+    virtual int handle_step(neuron::model_sorted_token const&, NetCvode*, double);
     virtual int init(double t);
-    virtual int advance_tn();
+    virtual int advance_tn(neuron::model_sorted_token const&);
     virtual int interpolate(double t);
     virtual double tn() {
         return tn_;
@@ -114,7 +125,7 @@ class Cvode {
     void alloc_cvode();
     void alloc_daspk();
     int cvode_init(double);
-    int cvode_advance_tn();
+    int cvode_advance_tn(neuron::model_sorted_token const&);
     int cvode_interpolate(double);
     int daspk_init(double);
     int daspk_advance_tn();
@@ -123,13 +134,20 @@ class Cvode {
   public:
     N_Vector nvnew(long);
     int setup(N_Vector ypred, N_Vector fpred);
-    int solvex_thread(double* b, double* y, NrnThread* nt);
+    int solvex_thread(neuron::model_sorted_token const&, double* b, double* y, NrnThread* nt);
     int solvex_thread_part1(double* b, NrnThread* nt);
     int solvex_thread_part2(NrnThread* nt);
     int solvex_thread_part3(double* b, NrnThread* nt);
-    void fun_thread(double t, double* y, double* ydot, NrnThread* nt);
-    void fun_thread_transfer_part1(double t, double* y, NrnThread* nt);
-    void fun_thread_transfer_part2(double* ydot, NrnThread* nt);
+    void fun_thread(neuron::model_sorted_token const&,
+                    double t,
+                    double* y,
+                    double* ydot,
+                    NrnThread* nt);
+    void fun_thread_transfer_part1(neuron::model_sorted_token const&,
+                                   double t,
+                                   double* y,
+                                   NrnThread* nt);
+    void fun_thread_transfer_part2(neuron::model_sorted_token const&, double* ydot, NrnThread* nt);
     void fun_thread_ms_part1(double t, double* y, NrnThread* nt);
     void fun_thread_ms_part2(NrnThread* nt);
     void fun_thread_ms_part3(NrnThread* nt);
@@ -153,8 +171,8 @@ class Cvode {
     void play_add(PlayRecord*);
     void play_continuous(double t);
     void play_continuous_thread(double t, NrnThread*);
-    void do_ode(NrnThread*);
-    void do_nonode(NrnThread* nt = 0);
+    void do_ode(neuron::model_sorted_token const&, NrnThread&);
+    void do_nonode(neuron::model_sorted_token const&, NrnThread* nt = 0);
     double* n_vector_data(N_Vector, int);
 
   private:
@@ -163,17 +181,17 @@ class Cvode {
     void init_eqn();
     void daspk_init_eqn();
     void matmeth();
-    void nocap_v(NrnThread*);
+    void nocap_v(neuron::model_sorted_token const&, NrnThread*);
     void nocap_v_part1(NrnThread*);
     void nocap_v_part2(NrnThread*);
     void nocap_v_part3(NrnThread*);
-    void solvemem(NrnThread*);
+    void solvemem(neuron::model_sorted_token const&, NrnThread*);
     void atolvec_alloc(int);
     double h();
     N_Vector ewtvec();
     N_Vector acorvec();
     void new_no_cap_memb(CvodeThreadData&, NrnThread*);
-    void before_after(BAMechList*, NrnThread*);
+    void before_after(neuron::model_sorted_token const&, BAMechList*, NrnThread*);
 
   public:
     // daspk
@@ -185,7 +203,7 @@ class Cvode {
     void daspk_gather_y(N_Vector);
     void daspk_scatter_y(double*, int);
     void daspk_gather_y(double*, int);
-    void scatter_y(double*, int);
+    void scatter_y(neuron::model_sorted_token const&, double*, int);
     void gather_y(N_Vector);
     void gather_y(double*, int);
     void scatter_ydot(double*, int);
@@ -223,17 +241,18 @@ class Cvode {
     double tstop_begin_, tstop_end_;
 
   private:
-    void rhs(NrnThread*);
-    void rhs_memb(CvMembList*, NrnThread*);
-    void lhs(NrnThread*);
-    void lhs_memb(CvMembList*, NrnThread*);
+    void rhs(neuron::model_sorted_token const&, NrnThread*);
+    void rhs_memb(neuron::model_sorted_token const&, CvMembList*, NrnThread*);
+    void lhs(neuron::model_sorted_token const&, NrnThread*);
+    void lhs_memb(neuron::model_sorted_token const&, CvMembList*, NrnThread*);
     void triang(NrnThread*);
     void bksub(NrnThread*);
 
   private:
     // segregation of old vectorized information to per cell info
     friend class NetCvode;
-    bool is_owner(double*);  // for play and record in local step context.
+    bool is_owner(neuron::container::data_handle<double> const&);  // for play and record in
+                                                                   // local step context.
     bool local_;
     void daspk_setup1_tree_matrix();  // unused
     void daspk_setup2_tree_matrix();  // unused
@@ -241,12 +260,12 @@ class Cvode {
 
   private:
     int prior2init_;
-#if PARANEURON
+#if NRNMPI
   public:
     bool use_partrans_;
     int global_neq_;
     int opmode_;  // 1 advance, 2 interpolate, 3 init; for testing
-#endif            // PARANEURON
+#endif            // NRNMPI
 };
 
 #endif

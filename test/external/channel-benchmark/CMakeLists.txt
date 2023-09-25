@@ -1,15 +1,19 @@
 include(NeuronTestHelper)
-set(prefix "benchmark/channels") # everything is under this prefix in the repository
 set(channel_benchmark_sim_time 10)
 set(channel_benchmark_mpi_ranks 1)
-set(channel_benchmark_neuron_prefix
-    ${MPIEXEC_NAME}
-    ${MPIEXEC_NUMPROC_FLAG}
-    ${channel_benchmark_mpi_ranks}
-    ${MPIEXEC_OVERSUBSCRIBE}
-    ${MPIEXEC_PREFLAGS}
-    special
-    ${MPIEXEC_POSTFLAGS})
+if(NRN_ENABLE_MPI)
+  set(channel_benchmark_neuron_prefix
+      ${MPIEXEC_NAME}
+      ${MPIEXEC_NUMPROC_FLAG}
+      ${channel_benchmark_mpi_ranks}
+      ${MPIEXEC_OVERSUBSCRIBE}
+      ${MPIEXEC_PREFLAGS}
+      special
+      ${MPIEXEC_POSTFLAGS}
+      -mpi)
+else()
+  set(channel_benchmark_neuron_prefix special)
+endif()
 
 set(channel_benchmark_hippo_num_cells 6) # Should be at least 6 to cover all cell types
 set(channel_benchmark_sscx_num_cells 16) # Similarly, should be at least 16.
@@ -21,16 +25,11 @@ foreach(model hippo sscx)
     NAME channel_benchmark_${model}
     SUBMODULE tests/channel-benchmark
     OUTPUT asciispikes::out.dat
-    ENVIRONMENT OMP_NUM_THREADS=1 "HOC_LIBRARY_PATH=${prefix}/lib/hoclib"
-    MODFILE_PATTERNS "${prefix}/lib/modlib/*.mod"
-    SCRIPT_PATTERNS "${prefix}/lib/hoclib/*.hoc" "${prefix}/${model}/*.txt"
-                    "${prefix}/${model}/morphologies/*.asc")
+    SIM_DIRECTORY benchmark/channels
+    ENVIRONMENT OMP_NUM_THREADS=1 "HOC_LIBRARY_PATH=lib/hoclib"
+    MODFILE_PATTERNS "lib/modlib/*.mod"
+    SCRIPT_PATTERNS "lib/hoclib/*.hoc" "${model}/*.txt" "${model}/morphologies/*.asc")
   set(channel_benchmark_neuron_args
-      -mpi
-      -c
-      "strdef arg_datapath"
-      -c
-      "arg_datapath = \"${prefix}\""
       -c
       arg_target_count=${channel_benchmark_${model}_num_cells}
       -c
@@ -39,11 +38,10 @@ foreach(model hippo sscx)
       "strdef arg_model"
       -c
       "arg_model=\"${model}\""
-      "${prefix}/lib/hoclib/init.hoc")
+      "lib/hoclib/init.hoc")
   nrn_add_test(
     GROUP channel_benchmark_${model}
     NAME neuron
-    REQUIRES mpi
     PROCESSORS ${channel_benchmark_mpi_ranks}
     COMMAND ${channel_benchmark_neuron_prefix} ${channel_benchmark_neuron_args})
   foreach(processor gpu cpu)

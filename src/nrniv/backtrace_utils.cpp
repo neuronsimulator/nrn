@@ -4,10 +4,6 @@
 #include "backward.hpp"
 #endif
 
-#if HAVE_CXXABI_H
-#include <cxxabi.h>
-#endif
-
 #include <cstring>
 #include <iostream>
 #include <regex>
@@ -43,8 +39,8 @@ int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offse
     return 0;
 }
 
-int cxx_demangle(char* symbol, char** funcname, size_t* funcname_sz) {
-#if HAVE_CXXABI_H
+int cxx_demangle(const char* symbol, char** funcname, size_t* funcname_sz) {
+#if __has_include(<cxxabi.h>)
     int status = 0;
     char* ret = abi::__cxa_demangle(symbol, *funcname, funcname_sz, &status);
     *funcname = ret;

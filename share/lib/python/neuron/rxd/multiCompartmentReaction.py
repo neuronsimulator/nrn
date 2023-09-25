@@ -1,5 +1,5 @@
 import weakref
-from . import rxdmath, rxd, node, species, region, initializer
+from . import rxdmath, rxd, species, initializer
 import numpy
 from .generalizedReaction import (
     GeneralizedReaction,
@@ -292,7 +292,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     sec for sec in active_secs if sec in sp()._region()._secs1d
                 ]
 
-        # TODO: Support intracellular 3D reactions
         if not self._scale_by_area:
             narea = sum([sec.nseg for sec in active_secs])
             areas = numpy.ones(narea)

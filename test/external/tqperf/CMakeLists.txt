@@ -11,7 +11,7 @@ if("tqperf-heavy" IN_LIST NRN_ENABLE_MODEL_TESTS)
 else()
   set(tqperf_mpi_ranks 2)
 endif()
-set(python_executable ${PYTHON_EXECUTABLE})
+set(python_executable ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 set(special_executable special)
 set(python_requires coreneuron_shared)
 set(special_requires coreneuron)
@@ -22,7 +22,6 @@ foreach(binary special python)
   nrn_add_test(
     GROUP tqperf
     NAME coreneuron_${binary} ${${binary}_preload_sanitizer}
-    CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
     REQUIRES mpi python ${${binary}_requires}
     PROCESSORS ${tqperf_mpi_ranks}
     ENVIRONMENT ${${binary}_environment}

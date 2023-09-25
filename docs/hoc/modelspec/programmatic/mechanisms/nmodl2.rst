@@ -29,7 +29,7 @@ user level. It declares:
 
 The syntax is (each statement can occur none or more times) : 
 
-Neuron
+NEURON
 ~~~~~~
 
 
@@ -51,7 +51,7 @@ Description:
 
 
 
-Suffix
+SUFFIX
 ~~~~~~
 
 
@@ -75,7 +75,7 @@ Description:
     from NEURON by the user and you want to specify those function names exactly. 
 
 
-Range
+RANGE
 ~~~~~
 
 
@@ -93,7 +93,7 @@ Description:
     ``NEURON`` block. 
 
 
-Global
+GLOBAL
 ~~~~~~
 
 
@@ -107,7 +107,7 @@ Description:
 
 .. nonspecific_current:
 
-Nonspecific Current
+NONSPECIFIC_CURRENT
 ~~~~~~~~~~~~~~~~~~~
 
 
@@ -120,7 +120,19 @@ Description:
     ``NEURON RANGE`` statement. 
 
 
-Useion
+ELECTRODE_CURRENT
+~~~~~~~~~~~~~~~~~
+
+
+Description:
+    The ELECTRODE_CURRENT statement has two important consequences: positive values of the current
+    will depolarize the cell (in contrast to the hyperpolarizing effect of positive transmembrane
+    currents), and when the extracellular mechanism is present there will be a change in the
+    extracellular potential ``vext``.
+    ``TODO``: Add existing example mod file (iclamp1.mod)
+
+
+USEION
 ~~~~~~
 
 
@@ -157,7 +169,7 @@ Description:
     section. The rules are defined in the reference to the function 
     ion_style(). Three cases are noteworthy. 
 
-Read
+READ
 ====
 
     Assume only one model is inserted in a section. 
@@ -181,7 +193,7 @@ Read
     will be treated as constant PARAMETER's, and 3) eca will be computed 
     from the Nernst equation when finitialize() is called. 
 
-Write
+WRITE
 =====
 
     Lastly, insert a final model at the same location in addition to the 
@@ -220,7 +232,7 @@ Write
     your purposes.  Concentrations and reversal potentials should be considered 
     parameters unless explicitly calculated by some mechanism. 
 
-Valence
+VALENCE
 =======
 
     The ``READ`` list of a ``USEION`` specifies those ionic variables which 
@@ -259,51 +271,72 @@ Valence
     for use in the mechanism. Ion variables get updated on exit from these 
     functions such that WRITE currents are added to ion currents. 
 
-     
+REPRESENTS
+==========
+    Optionally provide CURIE (Compact URI) to annotate what the species represents
+    e.g. ``CHEBI:29101`` for sodium(1+).
+
+    ``TODO``: Add existing example mod file (src/nrnoc/hh.mod)
+
 .. point_process:
 
-Point_Process
+POINT_PROCESS
 ~~~~~~~~~~~~~
 
 
 Description:
-    The ``READ`` list of a ``USEION`` specifies those ionic variables which 
-    will be used to calculate other values but is not calculated itself. 
-    The ``WRITE`` list of a ``USEION`` specifies those ionic variables which 
-    will be calculated within this mechanism. Normally, a channel will read 
-    the concentration or reversal potential variables and write a current. 
-    A mechanism that calculates concentrations will normally read a current 
-    and write the intracellular and/or extracellular; it is no longer necessary 
-    to ever write the reversal potential as that will be automatically computed 
-    via the nernst equation. 
-    It usually does not make sense to both read and 
-    write the same ionic concentrations. 
-    It is possible to READ and WRITE currents. 
-    One can imagine,  a large calcium 
-    model which would ``WRITE`` all the ion variables (including current) 
-    and READ the ion current. 
-    And one can imagine 
-    models which ``READ`` some ion variables and do not ``WRITE`` any. 
-    It would be an error if more than one mechanism at the same location tried 
-    to WRITE the same concentration. 
-     
+    .. code-block::
+
+    NEURON {
+        POINT_PROCESS ...
+    }
+
     
-
- 
-    A bit of implementation specific discussion may be in order here. 
-    All the statements after the SOLVE statement in the BREAKPOINT block are 
-    collected to form a function which is called during the construction of 
-    the charge conservation matrix equation.  This function is called 
-    several times in order to compute the current and conductance  to be added 
-    into the matrix equation.  This function is never called if you are not 
-    writing any current.  The SOLVE statement is executed after the new voltages 
-    have been computed in order to integrate the states over the time step, ``dt``. 
-    Local static variables get appropriate copies of the proper ion variables 
-    for use in the mechanism. Ion variables get updated on exit from these 
-    functions such that WRITE currents are added to ion currents. 
+    Point models are used for synapses, electrode stimuli, etc.
+    They are distinguished from standard mechanisms in that instead of inserting
+    the mechanism into a section and accessing parameters via range variables,
+    point mechanisms are created as interpreter objects, eg.
 
 
-Pointer
+    .. code-block::
+        none
+
+            objref stim
+            stim = new IClamp(x)    
+
+    Values are accessed via the standard object syntax, eg. ``stim.amp = 2``.
+    Since standard mechanisms are considered in terms of density,
+    the appropriate current units for standard mechanisms are mA/cm2 and conductance units are mho/cm2.
+    However, point process current units are nA and conductance units are umho.
+    These conventions ensure that the simulation is independent of the number of segments in a section
+    (assuming the number of segments is large enough so spatial discretization error is small).
+
+    At the NEURON user level, all variables and functions associated with a POINT_PROCESS
+    are accessed via the normal object syntax. A point process, call it ``pnt`` is inserted into (or moved to)
+    the currently specified section at location, ``0 < x < 1``, with the function, ``pnt.loc(x)``. See :hoc:meth:`pnt.get_loc`
+    
+    If a point process is created with no argument then it is not located anywhere.
+    If an argument is present and there is a currently accessed section then the point process is placed there.
+    At this time, point processes are placed at the center of the nearest segment.
+
+    ``pnt.has_loc()`` returns 1 if the point process is located in a section and returns 0 if not located.
+    If a point process has no location then attempts to access its variables or get its location will
+    produce an error message. See :hoc:meth:`pnt.has_loc`
+    
+    One finds the location of a point process via the function,  ``x = pnt.get_loc()``. See :hoc:meth:`pnt.get_loc` 
+
+    
+    The function returns the x location at the center of the segment where the process was placed and pushes the section name onto the stack so that it becomes the currently accessed section. The stack must be popped with pop_section() at a subsequent time. BE SURE TO POP THE SECTION STACK! This can be a dangerous function in the sense that if the stack is not popped, then section access is completely screwed up.
+
+    The POINT_PROCESS mechanism can be used to implement classes written in c/c++ for use by the interpreter.
+    To aid in this the special block CONSTRUCTOR is called when a point process is created with the ``new``  command in the interpreter.
+    Just before the memory associated with a point process instance is freed the users DESTRUCTOR block (if any) is called.
+
+    .. seealso:: 
+        :ref:`hoc_mech`
+
+
+POINTER
 ~~~~~~~
 
 
@@ -324,7 +357,17 @@ Description:
     is up to the user to reconnect the POINTER to a valid actual variable. 
 
 
-External
+BBCOREPOINTER
+~~~~~~~~~~~~~~
+
+
+Description:
+    See: :ref:`Memory Management for POINTER Variables`
+
+    ``TODO``: Add description (?) and existing example mod file (provided by link)
+
+
+EXTERNAL
 ~~~~~~~~
 
 
@@ -344,6 +387,111 @@ Description:
         extern double fname_othermodelsuffix(); 
 
     in a ``VERBATIM`` block and use them with the proper suffix. 
+
+
+THREADSAFE
+~~~~~~~~~~
+
+Description:
+    See: :ref:`Multithreaded paralellization` and :ref:`Thread Safe MOD Files`
+
+    ``TODO``: Add description and existing example mod file
+
+
+BEFORE
+~~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+AFTER
+~~~~~
+
+Description:
+    ``TODO``: Add description and existing example mod file
+
+
+FOR_NETCONS
+~~~~~~~~~~~
+
+Description:
+    FOR_NETCONS (args) means to loop over all NetCon connecting to this
+    target instance and args are the names of the items of each NetCon's
+    weight vector (same as the enclosing NET_RECEIVE but possible different
+    local names).
+
+    ``TODO``: Add existing example mod file (test/coreneuron/mod/fornetcon.mod)
+
+
+PROTECT
+~~~~~~~
+
+Description:
+    .. code-block::
+
+        NEURON {
+            GLOBAL var
+        }
+
+        BREAKPOINT {
+            PROTECT var = var + 1
+        }
+
+    Mod files that update values to :ref:`GLOBAL` variables are not considered
+    thread safe. In case of multi-threaded/SIMD/GPU execution, such updates can result
+    in a race condition. To avoid this, one needs to use ``PROTECT`` keyword. Note that
+    ``PROTECT`` internally uses atomic operations on CPU or GPU execution and hence
+    the statement needs to be of a simple form such as:
+
+    .. code-block::
+
+        var1 = var1 binary_operator expression
+        var1 = expression binary_operator var1
+
+    If the mod file is using the ``GLOBAL`` essentially as a file scope :ref:`LOCAL`
+    along with the possibility of passing values back to hoc in response to calling a
+    :ref:`PROCEDURE`, make sure to use the :ref:`THREADSAFE` keyword in the
+    :ref:`NEURON` block to automatically treat those ``GLOBAL`` variables as thread
+    specific variables. NEURON assigns and evaluates only the thread 0 version and if
+    :ref:`FUNCTION` and ::ref:`PROCEDURE` are called from Python, the thread 0 version
+    of these globals are used.
+
+    .. note::
+        For the performance reason, we recommend to reduce or remove the use of
+        ``PROTECT`` construct.
+
+
+MUTEXLOCK / MUTEXUNLOCK
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Description:
+    .. code-block::
+
+        LOCAL factors_done
+
+        INITIAL {
+            MUTEXLOCK
+            if (factors_done == 0) {
+                  factors_done = 1
+                  factors()
+            }
+            MUTEXUNLOCK
+        }
+
+        PROCEDURE factors() {
+            : ...
+        }
+
+    Similar to ``PROTECT``, ``MUTEXLOCK`` and ``MUTEXUNLOCK`` are two constructs to
+    handle thread-safety in case update of updates to ``GLOBAL`` variables in
+    multi-threaded execution. Internally it uses mutex mechanism to avoid race condition.
+
+    .. note::
+        This construct is not supported in the case of GPU execution via CoreNEURON.
+        For the performance reason and compatibility with GPU execution, either avoid
+        the usage of this construct or check alternatives using ``PROTECT`` construct.
+
 
 
 .. _hoc_connectingmechanismstogether:

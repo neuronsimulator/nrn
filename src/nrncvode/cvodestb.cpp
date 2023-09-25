@@ -2,7 +2,6 @@
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include <cmath>
-#include <InterViews/resource.h>
 #include "classreg.h"
 #include "cvodeobj.h"
 #include "nrncvode.h"
@@ -30,7 +29,6 @@ void nrn_deliver_events(NrnThread*);
 void init_net_events();
 void nrn_record_init();
 void nrn_play_init();
-void fixed_record_continuous(NrnThread* nt);
 void fixed_play_continuous(NrnThread* nt);
 void nrn_solver_prepare();
 static void check_thresh(NrnThread*);
@@ -59,6 +57,12 @@ void clear_event_queue() {
     }
 }
 
+void free_event_queues() {
+    if (net_cvode_instance) {
+        net_cvode_instance->free_event_pools();
+    }
+}
+
 void init_net_events() {
     if (net_cvode_instance) {
         net_cvode_instance->init_events();
@@ -83,9 +87,9 @@ void fixed_play_continuous(NrnThread* nt) {
     }
 }
 
-void fixed_record_continuous(NrnThread* nt) {
+void fixed_record_continuous(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (net_cvode_instance) {
-        net_cvode_instance->fixed_record_continuous(nt);
+        net_cvode_instance->fixed_record_continuous(cache_token, nt);
     }
 }
 

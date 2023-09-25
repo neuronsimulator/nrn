@@ -130,13 +130,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     // nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
     fprintf(f, "%d npresyn\n", cg.n_presyn);
     fprintf(f, "%d nnetcon\n", cg.n_netcon);
-    writeint(cg.output_gid, cg.n_presyn);
+    writeint(cg.output_gid.data(), cg.n_presyn);
     writeint(cg.netcon_srcgid, cg.n_netcon);
 
-    if (cg.output_gid) {
-        delete[] cg.output_gid;
-        cg.output_gid = NULL;
-    }
+    cg.output_gid.clear();
     if (cg.netcon_srcgid) {
         delete[] cg.netcon_srcgid;
         cg.netcon_srcgid = NULL;
@@ -190,10 +187,13 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     double *a = NULL, *b = NULL, *area = NULL, *v = NULL, *diamvec = NULL;
     nrnthread_dat2_2(nt.id, v_parent_index, a, b, area, v, diamvec);
     writeint(nt._v_parent_index, nt.end);
-    writedbl(nt._actual_a, nt.end);
-    writedbl(nt._actual_b, nt.end);
-    writedbl(nt._actual_area, nt.end);
-    writedbl(nt._actual_v, nt.end);
+    // Warning: this is only correct if no modifications have been made to any
+    // Node since reorder_secorder() was last called.
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
+    writedbl(nt.node_a_storage(), nt.end);
+    writedbl(nt.node_b_storage(), nt.end);
+    writedbl(nt.node_area_storage(), nt.end);
+    writedbl(nt.node_voltage_storage(), nt.end);
     if (cg.ndiam) {
         writedbl(diamvec, nt.end);
         delete[] diamvec;
@@ -215,7 +215,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             writeint(nodeindices, n);
         }
         writedbl(data, n * sz);
-        if (nrn_is_artificial_[type]) {
+        if (data) {
             delete[] data;
         }
         sz = bbcore_dparam_size[type];
@@ -303,28 +303,6 @@ void writedbl_(double* p, size_t size, FILE* f) {
 
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
-
-void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f) {
-    fprintf(f, "chkpnt %d\n", chkpnt++);
-    // the assumption is that an fwrite of nitem groups of szitem doubles can be
-    // fread as a single group of nitem*szitem doubles.
-    for (int i = 0; i < nitem; ++i) {
-        size_t n = fwrite(data[i], sizeof(double), szitem, f);
-        assert(n == szitem);
-    }
-}
-
-double* contiguous_art_data(double** data, int nitem, int szitem) {
-    double* d1 = new double[nitem * szitem];
-    int k = 0;
-    for (int i = 0; i < nitem; ++i) {
-        for (int j = 0; j < szitem; ++j) {
-            d1[k++] = data[i][j];
-        }
-    }
-    return d1;
-}
-
 
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     // Get the indices in NetCvode.fixed_play_ for this thread
@@ -564,13 +542,23 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
 
         for (size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
+            size_t total_lfp_factors = s->seglfp_factors.size();
             /** section list name, number of sections, number of segments */
-            fprintf(f, "%s %d %zd\n", s->name.c_str(), s->nsec, s->size());
+            fprintf(f,
+                    "%s %d %zd %zd %d\n",
+                    s->name.c_str(),
+                    s->nsec,
+                    s->size(),
+                    total_lfp_factors,
+                    s->num_electrodes);
 
             /** section - segment mapping */
             if (s->size()) {
                 writeint(&(s->sections.front()), s->size());
                 writeint(&(s->segments.front()), s->size());
+                if (total_lfp_factors) {
+                    writedbl(&(s->seglfp_factors.front()), total_lfp_factors);
+                }
             }
         }
     }

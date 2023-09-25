@@ -11,33 +11,16 @@
 #include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
-#include <setjmp.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
 
 #include <direct.h>
 
 
-extern jmp_buf begin;
-extern const char* neuron_home;
+extern char* neuron_home;
 
 NrnFILEWrap* frin;
 FILE* fout;
-
-#if 0 && MAC
-#include <stdarg.h>
-
-void debugfile(const char* format, ...) {
-	va_list args;
-	static FILE* df;
-	if (!df) {
-		df = fopen("debugfile", "w");
-	}
-	va_start(args, format);
-	vfprintf(df, format, args);
-	fflush(df);
-}
-#endif
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -73,7 +56,7 @@ void hoc_stdout(void) {
 void ropen(void) /* open file for reading */
 {
     double d;
-    char* fname;
+    const char* fname;
 
     if (ifarg(1))
         fname = gargstr(1);
@@ -100,7 +83,7 @@ void ropen(void) /* open file for reading */
 
 void wopen(void) /* open file for writing */
 {
-    char* fname;
+    const char* fname;
     double d;
 
     if (ifarg(1))
@@ -163,39 +146,6 @@ const char* expand_env_var(const char* s) {
         }
     }
     *cp2 = '\0';
-#if MAC && !defined(DARWIN)
-    /* convert / to : */
-    for (cp1 = hs->buf + begin; *cp1; ++cp1) {
-        if (*cp1 == '/') {
-            *cp1 = ':';
-        }
-    }
-    /* if a : in the original name then assume already mac and done */
-    /* if $ in original name then done since NEURONHOME already has correct prefix */
-    /* if first is : then remove it, otherwise prepend it */
-    if (!strchr(s, ':') && !strchr(s, '$')) {
-        if (hs->buf[begin] == ':') {
-            begin = 2;
-        } else {
-            begin = 0;
-            hs->buf[0] = ':';
-        }
-    }
-    for (cp1 = hs->buf + begin, cp2 = cp1; *cp1;) {
-        if (cp1[0] == ':' && cp1[1] == '.') {
-            if (cp1[2] == ':') {
-                cp1 += 2;
-                continue;
-            } else if (cp1[2] == '.' && cp1[3] == ':') {
-                cp1 += 3;
-                *cp2++ = ':';
-                continue;
-            }
-        }
-        *cp2++ = *cp1++;
-    }
-    *cp2 = '\0';
-#endif
     return hs->buf + begin;
 }
 
@@ -206,87 +156,70 @@ char* hoc_current_xopen(void) {
     return hoc_xopen_file_;
 }
 
-int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc program */
-{
-    /*printf("hoc_xopen1 %d %s\n", strlen(name), name);*/
-    NrnFILEWrap* savfin;
-    int savpipflag, save_lineno;
-    char* savname;
-    char* fname = strdup(name);
-    assert(fname);
-#if 1
+// read and execute a hoc program
+int hoc_xopen1(const char* name, const char* rcs) {
+    std::string fname{name};
     if (rcs) {
         if (rcs[0] != '\0') {
-            int sz = 2 * (strlen(rcs) + strlen(name)) + 20;
-            free(fname);
-            fname = static_cast<char*>(emalloc(sz));
-            Sprintf(fname, "co -p%s %s > %s-%s", rcs, name, name, rcs);
-            ERRCHK(if (system(fname) != 0) {
-                free(fname);
+            // cmd ---> co -p{rcs} {fname} > {fname}-{rcs}
+            // fname -> {fname}-{rcs}
+            std::string cmd{"co -p"};
+            cmd.append(rcs);
+            cmd.append(1, ' ');
+            cmd.append(fname);
+            cmd.append(" > ");
+            fname.append(1, '-');
+            fname.append(rcs);
+            cmd.append(fname);
+            if (system(cmd.c_str()) != 0) {
                 hoc_execerror(name, "\nreturned error in hoc_co system call");
-            })
-            Sprintf(fname, "%s-%s", name, rcs);
+            }
         }
     } else if (hoc_retrieving_audit()) {
-        hoc_xopen_from_audit(fname);
-        free(fname);
+        hoc_xopen_from_audit(fname.c_str());
         return 0;
     }
-#endif
-    savpipflag = pipeflag;
-    savfin = fin;
-    pipeflag = 0;
+    auto const savpipflag = hoc_pipeflag;
+    auto const savfin = hoc_fin;
+    hoc_pipeflag = 0;
 
     errno = EINTR;
     while (errno == EINTR) {
         errno = 0;
-#if MAC
-        if ((fin = nrn_fw_fopen(fname, "rb")) == NULL) {
-#else
-        if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
-#endif
-            const char* retry;
-            retry = expand_env_var(fname);
-            free(fname);
-            nrn_assert((fname = strdup(retry)));
-#if MAC
-            if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
-#else
-            if ((fin = nrn_fw_fopen(retry, "r")) == NULL) {
-#endif
-                fin = savfin;
-                pipeflag = savpipflag;
-                free(fname);
-                execerror("Can't open ", retry);
+        constexpr auto mode_str = "r";
+        if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
+            fname = expand_env_var(fname.c_str());
+            if (!(hoc_fin = nrn_fw_fopen(fname.c_str(), mode_str))) {
+                hoc_fin = savfin;
+                hoc_pipeflag = savpipflag;
+                hoc_execerror("Can't open ", fname.c_str());
             }
         }
     }
 
-    save_lineno = hoc_lineno;
+    auto const save_lineno = hoc_lineno;
     hoc_lineno = 0;
-    nrn_assert((savname = strdup(hoc_xopen_file_)));
-    if (strlen(fname) >= hoc_xopen_file_size_) {
-        hoc_xopen_file_size_ = strlen(fname) + 100;
+    std::string savname{hoc_xopen_file_};
+    if (fname.size() >= hoc_xopen_file_size_) {
+        hoc_xopen_file_size_ = fname.size() + 100;
         hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
     }
-    strcpy(hoc_xopen_file_, fname);
-    if (fin) {
-        hoc_audit_from_xopen1(fname, rcs);
+    strcpy(hoc_xopen_file_, fname.c_str());
+    if (hoc_fin) {
+        hoc_audit_from_xopen1(fname.c_str(), rcs);
         IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
     }
-    if (fin && !nrn_fw_eq(fin, stdin)) {
-        ERRCHK(IGNORE(nrn_fw_fclose(fin));)
+    if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
+        IGNORE(nrn_fw_fclose(hoc_fin));
     }
-    fin = savfin;
-    pipeflag = savpipflag;
+    hoc_fin = savfin;
+    hoc_pipeflag = savpipflag;
     if (rcs && rcs[0]) {
-        unlink(fname);
+        unlink(fname.c_str());
     }
-    free(fname);
     hoc_xopen_file_[0] = '\0';
     hoc_lineno = save_lineno;
-    strcpy(hoc_xopen_file_, savname);
-    free(savname);
+    strcpy(hoc_xopen_file_, savname.c_str());
     return 0;
 }
 
@@ -319,14 +252,14 @@ void PRintf(void) /* printf function */
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    NOT_PARALLEL_SUB(plprint(buf);)
+    plprint(buf);
     fflush(stdout);
     ret();
     pushx(d);
 }
 
 
-void hoc_Sprint(void) /* sprintf function */
+void hoc_Sprint(void) /* sprintf_function */
 {
     char** cpp;
     char* buf;
@@ -428,8 +361,8 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
     /* argn is argument number where format is */
     static HocStr* hs;
-    char *pbuf, *pfmt, *pfrag, frag[120];
-    int n, convflag, lflag, didit;  //, hoc_argtype();
+    char *pfmt, *pfrag, frag[120];
+    int convflag, lflag, didit;  //, hoc_argtype();
     char *fmt, *cp;
 
     if (!hs) {
@@ -437,11 +370,19 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     }
     fmt = gargstr(argn++);
     convflag = lflag = didit = 0;
-    pbuf = hs->buf;
+    auto* pbuf = hs->buf;
+    auto pbuf_size = hs->size + 1;
     pfrag = frag;
     *pfrag = 0;
     *pbuf = 0;
 
+    auto const resize = [&pbuf, &pbuf_size](HocStr* hs, std::size_t extra_size) {
+        auto const n = pbuf - hs->buf;
+        auto const new_size = n + extra_size;
+        hocstr_resize(hs, new_size);
+        pbuf = hs->buf + n;
+        pbuf_size = new_size + 1 - n;
+    };
     for (pfmt = fmt; *pfmt; pfmt++) {
         *pfrag++ = *pfmt;
         *pfrag = 0;
@@ -460,22 +401,22 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                         pfrag[0] = pfrag[-1];
                         pfrag[-1] = 'l';
                     }
-                    Sprintf(pbuf, frag, (long long) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (long long) *getarg(argn));
                 } else {
-                    Sprintf(pbuf, frag, (int) *getarg(argn));
+                    std::snprintf(pbuf, pbuf_size, frag, (int) *getarg(argn));
                 }
                 didit = 1;
                 break;
 
             case 'c':
-                Sprintf(pbuf, frag, (char) *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, (char) *getarg(argn));
                 didit = 1;
                 break;
 
             case 'f':
             case 'e':
             case 'g':
-                Sprintf(pbuf, frag, *getarg(argn));
+                std::snprintf(pbuf, pbuf_size, frag, *getarg(argn));
                 didit = 1;
                 break;
 
@@ -485,16 +426,15 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
                 } else {
                     cp = gargstr(argn);
                 }
-                n = pbuf - hs->buf;
-                hocstr_resize(hs, n + strlen(cp) + 100);
-                pbuf = hs->buf + n;
-                Sprintf(pbuf, frag, cp);
+                resize(hs, std::strlen(cp) + 100);
+                std::snprintf(pbuf, pbuf_size, frag, cp);
                 didit = 1;
                 break;
 
             case '%':
                 pfrag[-1] = 0;
-                strcpy(pbuf, frag);
+                std::strncpy(pbuf, frag, pbuf_size);
+                assert(pbuf[pbuf_size - 1] == '\0');
                 didit = 1;
                 argn--; /* an arg was not consumed */
                 break;
@@ -505,19 +445,17 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
         } else if (*pfmt == '%') {
             convflag = 1;
         } else if (pfrag - frag > 100) {
-            n = pbuf - hs->buf;
-            hocstr_resize(hs, n + strlen(frag) + 100);
-            pbuf = hs->buf + n;
-            Sprintf(pbuf, "%s", frag);
+            resize(hs, std::strlen(frag) + 100);
+            std::snprintf(pbuf, pbuf_size, "%s", frag);
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
-                pbuf++;
+                ++pbuf;
+                --pbuf_size;
             }
         }
 
         if (didit) {
-            int n;
             argn++;
             lflag = 0;
             convflag = 0;
@@ -525,24 +463,23 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
             pfrag = frag;
             *pfrag = 0;
             while (*pbuf) {
-                pbuf++;
+                ++pbuf;
+                --pbuf_size;
             }
-            n = pbuf - hs->buf;
-            hocstr_resize(hs, n + 100);
-            pbuf = hs->buf + n;
+            resize(hs, 100);
         }
     }
     if (pfrag != frag)
-        Sprintf(pbuf, "%s", frag);
+        std::snprintf(pbuf, pbuf_size, "%s", frag);
     *ppbuf = hs->buf;
 }
 
-#if defined(__TURBOC__) || defined(__GO32__) || defined(WIN32) || defined(MAC)
+#if defined(WIN32)
 static FILE* oc_popen(char* cmd, char* type) {
     FILE* fp;
     char buf[1024];
     assert(strlen(cmd) + 20 < 1024);
-    sprintf(buf, "sh %s > hocload.tmp", cmd);
+    Sprintf(buf, "sh %s > hocload.tmp", cmd);
     if (system(buf) != 0) {
         return (FILE*) 0;
     } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
@@ -576,7 +513,7 @@ static void hoc_load(const char* stype) {
         sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
             assert(strlen(stype) + strlen(s) + 50 < 1024);
-            sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
+            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
             p = oc_popen(cmd, "r");
             if (p) {
                 f = fgets(file, 1024, p);
@@ -627,6 +564,7 @@ void hoc_load_file(void) {
     pushx((double) i);
 }
 
+static constexpr auto hoc_load_file_size_ = 1024;
 static int hoc_Load_file(int always, const char* name) {
     /*
       if always is 0 then
@@ -638,7 +576,6 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-#define hoc_load_file_size_ 1024
     static hoc_List* loaded;
     hoc_Item* q;
     int b, is_loaded;
@@ -647,11 +584,7 @@ static int hoc_Load_file(int always, const char* name) {
     const char* base;
     char path[hoc_load_file_size_], old[hoc_load_file_size_];
     char fname[hoc_load_file_size_], cmd[hoc_load_file_size_ + 50];
-#if USE_NRNFILEWRAP
-    int f;
-#else
     FILE* f;
-#endif
 
     old[0] = '\0';
     goback = 0;
@@ -679,22 +612,13 @@ static int hoc_Load_file(int always, const char* name) {
         strncpy(path, name, base - name);
         path[base - name] = '\0';
         ++base;
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(name);
-#else
         f = fopen(name, "r");
-#endif
     } else {
         base = name;
         path[0] = '\0';
         /* otherwise find the file in the default directories */
-#if USE_NRNFILEWRAP
-        f = nrn_fw_readaccess(base);
-#else
         f = fopen(base, "r"); /* cwd */
-#endif
-#if !MAC
-        if (!f) { /* try HOC_LIBRARY_PATH */
+        if (!f) {             /* try HOC_LIBRARY_PATH */
             char* hlp;
             hlp = getenv("HOC_LIBRARY_PATH");
             while (hlp && *hlp) {
@@ -716,11 +640,7 @@ static int hoc_Load_file(int always, const char* name) {
                 if (path[0]) {
                     nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                                hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-                    f = nrn_fw_readaccess(expand_env_var(fname));
-#else
                     f = fopen(expand_env_var(fname), "r");
-#endif
                     if (f) {
                         break;
                     }
@@ -729,17 +649,12 @@ static int hoc_Load_file(int always, const char* name) {
                 }
             }
         }
-#endif
         if (!f) { /* try NEURONHOME/lib/hoc */
-            sprintf(path, "$(NEURONHOME)/lib/hoc");
+            Sprintf(path, "$(NEURONHOME)/lib/hoc");
             assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
             nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) <
                        hoc_load_file_size_);
-#if USE_NRNFILEWRAP
-            f = nrn_fw_readaccess(expand_env_var(fname));
-#else
             f = fopen(expand_env_var(fname), "r");
-#endif
         }
     }
     /* add the name to the list of loaded packages */
@@ -747,9 +662,6 @@ static int hoc_Load_file(int always, const char* name) {
         if (!is_loaded) {
             hoc_l_lappendstr(loaded, name);
         }
-#if USE_NRNFILEWRAP == 0
-        fclose(f);
-#endif
         b = 1;
     } else {
         b = 0;
@@ -777,6 +689,9 @@ static int hoc_Load_file(int always, const char* name) {
                  base);
         b = hoc_oc(cmd);
         b = (int) hoc_ac_;
+        if (!b) {
+            hoc_execerror("hoc_Load_file", base);
+        }
     }
     /* change back */
     if (path[0] && goback) {
@@ -803,23 +718,16 @@ void hoc_getcwd(void) {
     { strcpy(buf, hoc_back2forward(buf)); }
 #endif
     len = strlen(buf);
-#if defined(MAC)
-    if (buf[len - 1] != ':') {
-        buf[len] = ':';
-        buf[len + 1] = '\0';
-    }
-#else
     if (buf[len - 1] != '/') {
         buf[len] = '/';
         buf[len + 1] = '\0';
     }
-#endif
     hoc_ret();
     hoc_pushstr(&buf);
 }
 
 void hoc_machine_name(void) {
-#if !defined(__GO32__) && !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
     /*----- functions called -----*/
     /*----- local  variables -----*/
     char buf[20];
@@ -846,10 +754,8 @@ static int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
-    if (nrn_is_python_extension) {
-        nrnpy_pr_stdoe_callback = cbpr_stdoe;
-        nrnpy_pass_callback = cbpass;
-    }
+    nrnpy_pr_stdoe_callback = cbpr_stdoe;
+    nrnpy_pass_callback = cbpass;
 }
 
 void nrnpy_pass() {
@@ -930,7 +836,7 @@ int Fprintf(FILE* stream, const char* fmt, ...) {
 }
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/
-void hoc_execerr_ext(const char* fmt, ...) {
+[[noreturn]] void hoc_execerr_ext(const char* fmt, ...) {
     int size;  // vsnprintf returns -1 on error.
     va_list ap;
 

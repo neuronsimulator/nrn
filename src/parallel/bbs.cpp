@@ -56,7 +56,6 @@ void BBS::init(int) {
     if (!BBSImpl::started_) {
         BBSImpl::is_master_ = (nrnmpi_myid_bbs == 0) ? true : false;
         BBSImpl::master_works_ = true;
-        // printf("%d BBS::init is_master=%d\n", nrnmpi_myid_bbs, BBSImpl::is_master_);
     }
     // Just as with PVM which stored buffers on the bulletin board
     // so we have the following files to store MPI_PACKED buffers
@@ -427,6 +426,12 @@ void BBSImpl::worker() {
     // forever request and execute commands
     double st, et;
     int id;
+    if (debug) {
+        printf("%d BBS::worker is_master=%d nrnmpi_myid = %d\n",
+               nrnmpi_myid_world,
+               is_master(),
+               nrnmpi_myid);
+    }
     if (!is_master()) {
         if (nrnmpi_myid_bbs == -1) {  // wait for message from
             for (;;) {                // the proper nrnmpi_myid == 0

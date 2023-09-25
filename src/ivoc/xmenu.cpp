@@ -1,26 +1,15 @@
 
 #include <../../nrnconf.h>
 
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
-double (*nrnpy_guigetval)(Object*);
-void (*nrnpy_guisetval)(Object*, double);
-int (*nrnpy_guigetstr)(Object*, char**);
-
 #include "gui-redirect.h"
-
-Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-double (*nrnpy_object_to_double_)(Object*) = NULL;
-Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include <ivstream.h>
 #include <cctype>
 #include <cerrno>
 
@@ -40,6 +29,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include <InterViews/color.h>
 #include <InterViews/telltale.h>
 #include <InterViews/hit.h>
+#include <InterViews/resource.h>
 
 #include <InterViews/display.h>
 #include "mymath.h"
@@ -47,12 +37,11 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "datapath.h"
 #include "ivoc.h"
 #include "bndedval.h"
+#include "nrnpy.h"
 #include "objcmd.h"
 #include "parse.hpp"
 #include "utility.h"
 #include "scenepic.h"
-#include "treeset.h"
-
 
 // The problem this overcomes is that the pick of an input handler normally
 // succeeds for a keystroke only if the mouse is over one of the child
@@ -271,7 +260,8 @@ void hoc_xstatebutton() {
     s1 = gargstr(1);
 
     if (hoc_is_object_arg(2)) {
-        hoc_ivstatebutton(NULL,
+        neuron::container::data_handle<double> ptr1{};
+        hoc_ivstatebutton(ptr1,
                           s1,
                           NULL,
                           HocStateButton::PALETTE,
@@ -281,7 +271,7 @@ void hoc_xstatebutton() {
         if (ifarg(3)) {
             s2 = gargstr(3);
         }
-        hoc_ivstatebutton(hoc_pgetarg(2), s1, s2, HocStateButton::PALETTE);
+        hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::PALETTE);
     }
     ENDGUI
     hoc_ret();
@@ -304,7 +294,8 @@ void hoc_xcheckbox() {
     s1 = gargstr(1);
 
     if (hoc_is_object_arg(2)) {
-        hoc_ivstatebutton(NULL,
+        neuron::container::data_handle<double> ptr1{};
+        hoc_ivstatebutton(ptr1,
                           s1,
                           NULL,
                           HocStateButton::CHECKBOX,
@@ -314,7 +305,7 @@ void hoc_xcheckbox() {
         if (ifarg(3)) {
             s2 = gargstr(3);
         }
-        hoc_ivstatebutton(hoc_pgetarg(2), s1, s2, HocStateButton::CHECKBOX);
+        hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::CHECKBOX);
     }
     ENDGUI
     hoc_ret();
@@ -355,7 +346,8 @@ static void hoc_xvalue_helper() {
     IFGUI  // prompt, variable, deflt,action,canrun,usepointer
         char *s1,
         *s2, *s3;
-    double* ptr2 = NULL; /*allow variable arg2 to be double* */
+    // allow variable arg2 to be data_handle
+    neuron::container::data_handle<double> ptr2{};
     Object* pyvar = NULL;
     Object* pyact = NULL;
     s2 = s3 = NULL;
@@ -364,7 +356,7 @@ static void hoc_xvalue_helper() {
         if (hoc_is_object_arg(2)) {
             pyvar = *hoc_objgetarg(2);
         } else if (hoc_is_pdouble_arg(2)) {
-            ptr2 = hoc_pgetarg(2);
+            ptr2 = hoc_hgetarg<double>(2);
         } else {
             s2 = gargstr(2);
         }
@@ -433,15 +425,15 @@ static void hoc_xpvalue_helper() {
     IFGUI  // prompt,variable,deflt,action,canrun
         char *s1,
         *s3;
-    double* pd;
+    neuron::container::data_handle<double> pd{};
     HocSymExtension* extra = NULL;
     Symbol* sym;
     s1 = gargstr(1);
     if (ifarg(2)) {
-        pd = hoc_pgetarg(2);
+        pd = hoc_hgetarg<double>(2);
         sym = hoc_get_last_pointer_symbol();
     } else {
-        pd = hoc_val_pointer(s1);
+        pd = hoc_val_handle(s1);
         sym = hoc_get_symbol(s1);
     }
     if (sym) {
@@ -512,7 +504,7 @@ void hoc_xslider() {
     int nsteps = 10;
     char* send = NULL;
     Object* pysend = NULL;
-    double* pval = NULL;
+    neuron::container::data_handle<double> pval{};
     Object* pyvar = NULL;
     bool vert = 0;
     if (ifarg(3)) {
@@ -540,7 +532,7 @@ void hoc_xslider() {
     if (hoc_is_object_arg(1)) {
         pyvar = *hoc_objgetarg(1);
     } else {
-        pval = hoc_pgetarg(1);
+        pval = hoc_hgetarg<double>(1);
     }
     hoc_ivslider(pval, low, high, resolution, nsteps, send, vert, slow, pyvar, pysend);
     ENDGUI
@@ -578,8 +570,7 @@ void HocButton::print(Printer* pr, const Allocation& a) const {
     l_->print(pr, a);
 }
 
-implementPtrList(HocPanelList, HocPanel);
-static HocPanelList* hoc_panel_list;
+static std::vector<HocPanel*>* hoc_panel_list;
 static HocPanel* curHocPanel;
 static HocValEditor* last_fe_constructed_;
 static void checkOpenPanel() {
@@ -588,39 +579,38 @@ static void checkOpenPanel() {
     }
 }
 
-declarePtrList(HocMenuList, HocMenu) implementPtrList(HocMenuList, HocMenu)
-    /*static*/ class MenuStack {
+/*static*/ class MenuStack {
   public:
     bool isEmpty() {
-        return l_.count() == 0;
+        return l_.empty();
     }
     void push(HocMenu* m);
     void pop() {
-        if (l_.count()) {
-            l_.item(0)->unref();
-            l_.remove(0);
+        if (!l_.empty()) {
+            l_.front()->unref();
+            l_.erase(l_.begin());
         }
     }
     Menu* top() {
-        return (l_.count()) ? l_.item(0)->menu() : NULL;
+        return (l_.empty()) ? nullptr : l_.front()->menu();
     }
     HocItem* hoc_item() {
-        return (l_.count()) ? l_.item(0) : NULL;
+        return (l_.empty()) ? nullptr : l_.front();
     }
     void clean();
 
   private:
-    HocMenuList l_;
+    std::vector<HocMenu*> l_;
 };
 void MenuStack::push(HocMenu* m) {
     m->ref();
-    l_.prepend(m);
+    l_.insert(l_.begin(), m);
 }
 void MenuStack::clean() {
-    for (long i = 0; i < l_.count(); i++) {
-        l_.item(i)->unref();
+    for (auto& item: l_) {
+        item->unref();
     }
-    l_.remove_all();
+    l_.clear();
 }
 static MenuStack* menuStack;
 static Menu* hocmenubar;
@@ -776,7 +766,7 @@ void hoc_ivbutton(const char* name, const char* action, Object* pyact) {
     }
 }
 
-void hoc_ivstatebutton(double* pd,
+void hoc_ivstatebutton(neuron::container::data_handle<double> pd,
                        const char* name,
                        const char* action,
                        int style,
@@ -837,7 +827,7 @@ void hoc_ivvalue_keep_updated(const char* name, const char* variable, Object* py
                          variable,
                          NULL,
                          false,
-                         hoc_val_pointer(variable),
+                         hoc_val_handle(variable),
                          false,
                          true,
                          (s ? s->extra : NULL),
@@ -852,7 +842,10 @@ void hoc_ivfixedvalue(const char* name, const char* variable, bool deflt, bool u
     hoc_ivvaluerun(name, variable, NULL, deflt, false, usepointer);
 }
 
-void hoc_ivpvalue(const char* name, double* pd, bool deflt, HocSymExtension* extra) {
+void hoc_ivpvalue(const char* name,
+                  neuron::container::data_handle<double> pd,
+                  bool deflt,
+                  HocSymExtension* extra) {
     hoc_ivpvaluerun(name, pd, 0, deflt, false, extra);
 }
 
@@ -864,12 +857,12 @@ void hoc_ivvaluerun(const char* name,
                     bool usepointer,
                     Object* pyvar,
                     Object* pyact) {
-    hoc_ivvaluerun_ex(name, variable, NULL, pyvar, action, pyact, deflt, canRun, usepointer);
+    hoc_ivvaluerun_ex(name, variable, {}, pyvar, action, pyact, deflt, canRun, usepointer);
 }
 
 void hoc_ivvaluerun_ex(CChar* name,
                        CChar* variable,
-                       double* pvar,
+                       neuron::container::data_handle<double> pvar,
                        Object* pyvar,
                        CChar* action,
                        Object* pyact,
@@ -883,7 +876,7 @@ void hoc_ivvaluerun_ex(CChar* name,
     if (!pvar && !pyvar) {
         s = hoc_get_symbol(variable);
         if (usepointer) {
-            pvar = hoc_val_pointer(variable);
+            pvar = hoc_val_handle(variable);
         }
     }
     HocSymExtension* xtra = extra;
@@ -894,7 +887,7 @@ void hoc_ivvaluerun_ex(CChar* name,
 }
 
 void hoc_ivpvaluerun(const char* name,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      const char* action,
                      bool deflt,
                      bool canRun,
@@ -917,7 +910,7 @@ void hoc_ivvarlabel(char** s, Object* pyvar) {
 }
 
 // ZFM added vert
-void hoc_ivslider(double* pd,
+void hoc_ivslider(neuron::container::data_handle<double> pd,
                   float low,
                   float high,
                   float resolution,
@@ -957,55 +950,19 @@ void HocPanel::save_all(std::ostream&) {
     long i, cnt;
 
     HocDataPaths* data_paths = new HocDataPaths();
-    cnt = hoc_panel_list->count();
-    if (hoc_panel_list)
-        for (i = 0; i < cnt; ++i) {
-            hoc_panel_list->item(i)->data_path(data_paths, true);
+    if (hoc_panel_list) {
+        for (auto& item: *hoc_panel_list) {
+            item->data_path(data_paths, true);
         }
+    }
     data_paths->search();
-    if (hoc_panel_list)
-        for (i = 0; i < cnt; ++i) {
-            hoc_panel_list->item(i)->data_path(data_paths, false);
+    if (hoc_panel_list) {
+        for (auto& item: *hoc_panel_list) {
+            item->data_path(data_paths, false);
         }
+    }
     delete data_paths;
 }
-
-void HocPanel::update_ptrs() {
-    if (!hoc_panel_list)
-        return;
-    int i, j;
-    for (i = 0; i < hoc_panel_list->count(); ++i) {
-        HocUpdateItemList& ul = hoc_panel_list->item(i)->elist_;
-        for (j = 0; j < ul.count(); ++j) {
-            ul.item(j)->update_ptrs();
-        }
-    }
-}
-
-#if MAC
-void HocPanel::mac_menubar() {
-    int i = 1;
-    int mindex = 0;
-    printf("menubar 0 %s\n", getName());
-    mac_menubar(mindex, i, 0);
-}
-
-void HocPanel::mac_menubar(int& mindex, int& i, int m) {
-    int mr;
-    int mi = 0;
-    while (i < ilist_.count()) {
-        mr = ilist_.item(i)->mac_menubar(mindex, m, mi);
-        ++i;
-        ++mi;
-        if (mr > m) {
-            mac_menubar(mindex, i, mr);
-        } else if (mr < m) {
-            return;
-        }
-    }
-    return;
-}
-#endif
 
 void HocPanel::map_window(int scroll) {
     // switch to scrollbox if too many items
@@ -1033,15 +990,12 @@ void HocPanel::map_window(int scroll) {
 }
 
 // HocPanel
-
-implementPtrList(HocUpdateItemList, HocUpdateItem);
-implementPtrList(HocItemList, HocItem);
-
 static void var_freed(void* pd, int size) {
-    if (hoc_panel_list)
-        for (long i = hoc_panel_list->count() - 1; i >= 0; --i) {
-            hoc_panel_list->item(i)->check_valid_pointers(pd, size);
+    if (hoc_panel_list) {
+        for (auto it = hoc_panel_list->rbegin(); it != hoc_panel_list->rend(); ++it) {
+            (*it)->check_valid_pointers(pd, size);
         }
+    }
 }
 
 HocPanel::HocPanel(const char* name, bool h)
@@ -1061,11 +1015,11 @@ HocPanel::HocPanel(const char* name, bool h)
                             wk.background()),
              wk.style()));
     if (!hoc_panel_list) {
-        hoc_panel_list = new HocPanelList;
+        hoc_panel_list = new std::vector<HocPanel*>;
         Oc oc;
         oc.notify_freed(var_freed);
     }
-    hoc_panel_list->append(this);
+    hoc_panel_list->push_back(this);
     item_append(new HocItem(name));
     left_ = -1000.;
     bottom_ = -1000.;
@@ -1073,22 +1027,21 @@ HocPanel::HocPanel(const char* name, bool h)
 }
 
 HocPanel::~HocPanel() {
-    long i;
     box_->unref();
-    for (i = 0; i < ilist_.count(); i++) {
-        ilist_.item(i)->HocItem::unref();
+    for (auto& item: ilist_) {
+        item->HocItem::unref();
     }
-    for (i = 0; i < elist_.count(); i++) {
-        elist_.item(i)->HocItem::unref();
+    for (auto& item: elist_) {
+        item->HocItem::unref();
     }
-    for (i = 0; i < hoc_panel_list->count(); ++i) {
-        if (hoc_panel_list->item(i) == this) {
-            hoc_panel_list->remove(i);
-            break;
-        }
+    if (auto it = std::find(hoc_panel_list->begin(), hoc_panel_list->end(), this);
+        it != hoc_panel_list->end()) {
+        hoc_panel_list->erase(it);
     }
-    ilist_.remove_all();
-    elist_.remove_all();
+    ilist_.clear();
+    ilist_.shrink_to_fit();
+    elist_.clear();
+    elist_.shrink_to_fit();
     //	printf("~HocPanel\n");
 }
 
@@ -1103,30 +1056,26 @@ void HocUpdateItem::check_pointer(void*, int) {}
 void HocUpdateItem::data_path(HocDataPaths*, bool) {}
 
 // ones that get updated on every doEvents()
-HocUpdateItemList* HocPanel::update_list_;
+std::vector<HocUpdateItem*>* HocPanel::update_list_;
 
 void HocPanel::keep_updated() {
     static int cnt = 0;
     if (update_list_ && (++cnt % 10 == 0)) {
-        long i, cnt = update_list_->count();
-        if (cnt)
-            for (i = 0; i < cnt; ++i) {
-                update_list_->item(i)->update_hoc_item();
-            }
+        for (auto& item: *update_list_) {
+            item->update_hoc_item();
+        }
     }
 }
 void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
     if (!update_list_) {
-        update_list_ = new HocUpdateItemList();
+        update_list_ = new std::vector<HocUpdateItem*>();
     }
     if (add) {
-        update_list_->append(hui);
+        update_list_->push_back(hui);
     } else {
-        for (long i = 0; i < update_list_->count(); ++i) {
-            if (update_list_->item(i) == hui) {
-                update_list_->remove(i);
-                break;
-            }
+        if (auto it = std::find(update_list_->begin(), update_list_->end(), hui);
+            it != update_list_->end()) {
+            update_list_->erase(it);
         }
     }
 }
@@ -1161,11 +1110,11 @@ PolyGlyph* HocPanel::box() {
 }
 
 const char* HocPanel::getName() {
-    return ilist_.item(0)->getStr();
+    return ilist_.front()->getStr();
 }
 
 HocItem* HocPanel::hoc_item() {
-    return ilist_.item(0);
+    return ilist_.front();
 }
 
 void HocPanel::pushButton(const char* name, const char* action, bool activate, Object* pyact) {
@@ -1201,13 +1150,6 @@ void HocPushButton::write(std::ostream& o) {
     o << buf << std::endl;
 }
 
-#if MAC
-int HocPushButton::mac_menubar(int&, int m, int mi) {
-    printf("button item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
-
 HocRadioButton::HocRadioButton(const char* name, HocRadioAction* a, HocItem* hi)
     : HocItem(name, hi) {
     a_ = a;
@@ -1224,13 +1166,6 @@ void HocRadioButton::write(std::ostream& o) {
     o << buf << std::endl;
 }
 
-#if MAC
-int HocRadioButton::mac_menubar(int&, int m, int mi) {
-    printf("radio item %d in menu %d \"%s\", \"%s\"\n", mi, m, getStr(), hideQuote(a_->name()));
-    return m;
-}
-#endif
-
 void HocPanel::label(const char* name) {
     box()->append(LayoutKit::instance()->margin(WidgetKit::instance()->label(name), 3));
     item_append(new HocLabel(name));
@@ -1239,12 +1174,12 @@ void HocPanel::label(const char* name) {
 void HocPanel::var_label(char** name, Object* pyvar) {
     HocVarLabel* l = new HocVarLabel(name, box(), pyvar);
     item_append(l);
-    elist_.append(l);
+    elist_.push_back(l);
     l->ref();
 }
 
 // ZFM added vert
-void HocPanel::slider(double* pd,
+void HocPanel::slider(neuron::container::data_handle<double> pd,
                       float low,
                       float high,
                       float resolution,
@@ -1269,7 +1204,7 @@ void HocPanel::slider(double* pd,
         wk->end_style();
     }
     item_append(s);
-    elist_.append(s);
+    elist_.push_back(s);
     s->ref();
 }
 
@@ -1337,17 +1272,9 @@ HocMenu::~HocMenu() {
 }
 void HocMenu::write(std::ostream& o) {
     char buf[200];
-    sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
+    Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
     o << buf << std::endl;
 }
-
-#if MAC
-int HocMenu::mac_menubar(int& mindex, int m, int mi) {
-    ++mindex;
-    printf("menu %d is item %d in %d %s\n", mindex, mi, m, getStr());
-    return mindex;
-}
-#endif
 
 static Coord xvalue_field_size;
 
@@ -1357,14 +1284,14 @@ void HocPanel::valueEd(const char* prompt,
                        bool canrun,
                        bool deflt,
                        bool keep_updated) {
-    valueEd(prompt, NULL, NULL, canrun, NULL, deflt, keep_updated, NULL, pyvar, pyact);
+    valueEd(prompt, NULL, NULL, canrun, {}, deflt, keep_updated, NULL, pyvar, pyact);
 }
 
 void HocPanel::valueEd(const char* name,
                        const char* variable,
                        const char* action,
                        bool canrun,
-                       double* pd,
+                       neuron::container::data_handle<double> pd,
                        bool deflt,
                        bool keep_updated,
                        HocSymExtension* extra,
@@ -1383,7 +1310,7 @@ void HocPanel::valueEd(const char* name,
     }
     if (extra && extra->units && units_on_flag_) {
         char nu[256];
-        sprintf(nu, "%s (%s)", name, extra->units);
+        Sprintf(nu, "%s (%s)", name, extra->units);
         vel = new ValEdLabel(WidgetKit::instance()->label(nu));
     } else {
         vel = new ValEdLabel(WidgetKit::instance()->label(name));
@@ -1408,7 +1335,7 @@ void HocPanel::valueEd(const char* name,
         fe = new HocValEditor(name, variable, vel, act, pd, canrun, hoc_item(), pyvar);
     }
     ih_->append_input_handler(fe->field_editor());
-    elist_.append(fe);
+    elist_.push_back(fe);
     fe->ref();
     act->setFieldSEditor(fe);  // so button can change the editor
     LayoutKit* lk = LayoutKit::instance();
@@ -1445,15 +1372,16 @@ void HocPanel::save(std::ostream& o) {
 void HocPanel::write(std::ostream& o) {
     Oc oc;
     char buf[200];
-    long i;
     //	o << "xpanel(\"" << getName() << "\")" << std::endl;
-    sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
+    Sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
     o << buf << std::endl;
-    for (i = 1; i < ilist_.count(); i++) {
-        ilist_.item(i)->write(o);
+    if (ilist_.size() > 1) {
+        for (std::size_t i = 1; i < ilist_.size(); ++i) {
+            ilist_[i]->write(o);
+        }
     }
     if (has_window()) {
-        sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
+        Sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
         o << buf << std::endl;
     } else {
         o << "xpanel()" << std::endl;
@@ -1462,7 +1390,7 @@ void HocPanel::write(std::ostream& o) {
 
 void HocPanel::item_append(HocItem* hi) {
     hi->ref();
-    ilist_.append(hi);
+    ilist_.push_back(hi);
 }
 
 // HocItem
@@ -1476,18 +1404,6 @@ HocItem::~HocItem() {
 void HocItem::write(std::ostream& o) {
     o << str_.string() << std::endl;
 }
-
-#if MAC
-int HocItem::mac_menubar(int&, int m, int mi) {
-    if (strcmp(getStr(), "xmenu()") == 0) {
-        printf("end menu %d\n", m);
-        return -1;
-    } else {
-        printf("invalid menuitem %s\n", getStr());
-    }
-    return m;
-}
-#endif
 
 const char* HocItem::getStr() {
     return str_.string();
@@ -1508,7 +1424,7 @@ void HocItem::help(const char* child) {
     }
     *c2 = '\0';
     if (child) {
-        sprintf(path, "%s %s", child, buf);
+        Sprintf(path, "%s %s", child, buf);
     } else {
         strcpy(path, buf);
     }
@@ -1525,7 +1441,7 @@ HocLabel::HocLabel(const char* s)
 HocLabel::~HocLabel() {}
 void HocLabel::write(std::ostream& o) {
     char buf[210];
-    sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
+    Sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
     o << buf << std::endl;
 }
 
@@ -1542,7 +1458,7 @@ HocVarLabel::HocVarLabel(char** cpp, PolyGlyph* pg, Object* pyvar)
     cp_ = NULL;
     if (pyvar_) {
         hoc_obj_ref(pyvar_);
-        (*nrnpy_guigetstr)(pyvar_, &cp_);
+        neuron::python::methods.guigetstr(pyvar_, &cp_);
     } else {
         cp_ = *cpp_;
     }
@@ -1568,7 +1484,7 @@ HocVarLabel::~HocVarLabel() {
 void HocVarLabel::write(std::ostream& o) {
     if (variable_ && cpp_) {
         char buf[256];
-        sprintf(buf, "xvarlabel(%s)", variable_->string());
+        Sprintf(buf, "xvarlabel(%s)", variable_->string());
         o << buf << std::endl;
     } else {
         o << "xlabel(\"<can't retrieve>\")" << std::endl;
@@ -1577,7 +1493,7 @@ void HocVarLabel::write(std::ostream& o) {
 
 void HocVarLabel::update_hoc_item() {
     if (pyvar_) {
-        if ((*nrnpy_guigetstr)(pyvar_, &cp_)) {
+        if (neuron::python::methods.guigetstr(pyvar_, &cp_)) {
             p_->body(LayoutKit::instance()->margin(WidgetKit::instance()->label(cp_), 3));
             p_->redraw();
             p_->reallocate();
@@ -1679,13 +1595,14 @@ const char* HocAction::name() const {
 }
 
 #if UseFieldEditor
-declareFieldEditorCallback(HocValAction) implementFieldEditorCallback(HocValAction)
+declareFieldEditorCallback(HocValAction)
+implementFieldEditorCallback(HocValAction)
 #else
 declareFieldSEditorCallback(HocValAction);
 implementFieldSEditorCallback(HocValAction);
 #endif
-    // HocValAction
-    HocValAction::HocValAction(const char* action, Object* pyact)
+// HocValAction
+HocValAction::HocValAction(const char* action, Object* pyact)
     : HocAction(action, pyact) {
     fe_ = NULL;
 #if UseFieldEditor
@@ -1778,7 +1695,7 @@ HocDefaultValEditor::HocDefaultValEditor(const char* name,
                                          const char* variable,
                                          ValEdLabel* prompt,
                                          HocValAction* a,
-                                         double* pd,
+                                         neuron::container::data_handle<double> pd,
                                          bool canrun,
                                          HocItem* hi,
                                          Object* pyvar)
@@ -1803,11 +1720,11 @@ void HocDefaultValEditor::def_change(float x0, float y0) {
     double x = get_val();
     if (x != deflt_) {
         char form[200], buf[200];
-        sprintf(form,
+        Sprintf(form,
                 "Permanently replace default value %s with %s",
                 xvalue_format->string(),
                 xvalue_format->string());
-        sprintf(buf, form, deflt_, x);
+        Sprintf(buf, form, deflt_, x);
         if (boolean_dialog(buf, "Replace", "Cancel", NULL, x0, y0)) {
             deflt_ = x;
             most_recent_ = x;
@@ -1865,7 +1782,7 @@ HocValEditorKeepUpdated::HocValEditorKeepUpdated(const char* name,
                                                  const char* variable,
                                                  ValEdLabel* prompt,
                                                  HocValAction* act,
-                                                 double* pd,
+                                                 neuron::container::data_handle<double> pd,
                                                  HocItem* hi,
                                                  Object* pyvar)
     : HocValEditor(name, variable, prompt, act, pd, false, hi, pyvar) {
@@ -1898,7 +1815,7 @@ static void set_format() {
         xvalue_format = new String("%.5g");
         WidgetKit::instance()->style()->find_attribute("xvalue_format", *xvalue_format);
         char buf[100];
-        sprintf(buf, xvalue_format->string(), -8.888888888888888e-18);
+        Sprintf(buf, xvalue_format->string(), -8.888888888888888e-18);
         Glyph* g = WidgetKit::instance()->label(buf);
         g->ref();
         Requisition r;
@@ -1920,7 +1837,7 @@ double MyMath::resolution(double x) {
         set_format();
     }
     char buf[100];
-    sprintf(buf, xvalue_format->string(), std::abs(x));
+    Sprintf(buf, xvalue_format->string(), std::abs(x));
     char* cp;
     char* least = NULL;
     for (cp = buf; *cp; ++cp) {
@@ -1950,11 +1867,12 @@ HocValEditor::HocValEditor(const char* name,
                            const char* variable,
                            ValEdLabel* prompt,
                            HocValAction* a,
-                           double* pd,
+                           neuron::container::data_handle<double> pd,
                            bool canrun,
                            HocItem* hi,
                            Object* pyvar)
-    : HocUpdateItem(name, hi) {
+    : HocUpdateItem(name, hi)
+    , pval_{pd} {
     if (!xvalue_format) {
         set_format();
     }
@@ -1969,10 +1887,6 @@ HocValEditor::HocValEditor(const char* name,
     domain_limits_ = NULL;
     variable_ = NULL;
     pyvar_ = pyvar;
-    pval_ = NULL;
-    if (pd) {
-        pval_ = pd;
-    }
     if (pyvar) {
         hoc_obj_ref(pyvar);
     } else if (variable) {
@@ -2027,7 +1941,7 @@ void HocValEditor::print(Printer* p, const Allocation& a) const {
 void HocValEditor::set_val(double x) {
     char buf[200];
     if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
         return;
     }
     hoc_ac_ = x;
@@ -2035,7 +1949,7 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (variable_) {
-        sprintf(buf, "%s = hoc_ac_\n", variable_->string());
+        Sprintf(buf, "%s = hoc_ac_\n", variable_->string());
         oc.run(buf);
     }
 }
@@ -2043,12 +1957,12 @@ void HocValEditor::set_val(double x) {
 double HocValEditor::get_val() {
     char buf[200];
     if (pyvar_) {
-        return (*nrnpy_guigetval)(pyvar_);
+        return neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         return *pval_;
     } else if (variable_) {
         Oc oc;
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         oc.run(buf);
         return hoc_ac_;
     } else {
@@ -2063,7 +1977,7 @@ double HocValEditor::domain_limits(double val) {
 void HocValEditor::evalField() {
     char buf[200];
     Oc oc;
-    sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
+    Sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
     oc.run(buf);
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
@@ -2076,9 +1990,9 @@ void HocValEditor::audit() {
     if (pyvar_) {
         return;
     } else if (variable_) {
-        sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
+        Sprintf(buf, "%s = %s\n", variable_->string(), fe_->text()->string());
     } else if (pval_) {
-        sprintf(buf, "// %p pointer set to %s\n", pval_, fe_->text()->string());
+        Sprintf(buf, "// %p pointer set to %s\n", pval_, fe_->text()->string());
     }
     hoc_audit_command(buf);
 }
@@ -2089,20 +2003,20 @@ void HocValEditor::updateField() {
     char buf[200];
     if (pyvar_) {
         hoc_ac_ = get_val();
-        sprintf(buf, xvalue_format->string(), hoc_ac_);
+        Sprintf(buf, xvalue_format->string(), hoc_ac_);
     } else if (pval_) {
-        sprintf(buf, xvalue_format->string(), *pval_);
+        Sprintf(buf, xvalue_format->string(), *pval_);
         hoc_ac_ = *pval_;
     } else if (variable_) {
         Oc oc;
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         if (oc.run(buf, 0)) {
             strcpy(buf, "Doesn't exist");
         } else {
-            sprintf(buf, xvalue_format->string(), hoc_ac_);
+            Sprintf(buf, xvalue_format->string(), hoc_ac_);
         }
     } else {
-        sprintf(buf, "Free'd");
+        Sprintf(buf, "Free'd");
     }
     if (strcmp(buf, fe_->text()->string()) != 0) {
         fe_->field(buf);
@@ -2113,14 +2027,14 @@ void HocValEditor::write(std::ostream& o) {
     char buf[200];
     Oc oc;
     if (variable_) {
-        sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", variable_->string());
         oc.run(buf);
-        sprintf(buf, "%s = %g", variable_->string(), hoc_ac_);
+        Sprintf(buf, "%s = %g", variable_->string(), hoc_ac_);
     } else if (pval_) {
-        sprintf(buf, "/* don't know the hoc path to %g", *pval_);
+        Sprintf(buf, "/* don't know the hoc path to %g", *pval_);
         return;
     } else {
-        sprintf(buf, "/* variable freed */");
+        Sprintf(buf, "/* variable freed */");
         return;
     }
     o << buf << std::endl;
@@ -2155,11 +2069,11 @@ const char* HocValEditor::variable() const {
 void HocValEditorKeepUpdated::write(std::ostream& o) {
     char buf[200];
     Oc oc;
-    sprintf(buf, "hoc_ac_ = %s\n", variable());
+    Sprintf(buf, "hoc_ac_ = %s\n", variable());
     oc.run(buf);
-    sprintf(buf, "%s = %g", variable(), hoc_ac_);
+    Sprintf(buf, "%s = %g", variable(), hoc_ac_);
     o << buf << std::endl;
-    sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(), variable());
+    Sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(), variable());
     o << buf << std::endl;
 }
 
@@ -2363,36 +2277,39 @@ void Oc::notifyHocValue() {
     // printf("notifyHocValue %d\n", ++j);
     ParseTopLevel ptl;
     ptl.save();
-    if (hoc_panel_list)
-        for (long i = hoc_panel_list->count() - 1; i >= 0; --i) {
-            hoc_panel_list->item(i)->notifyHocValue();
+    if (hoc_panel_list) {
+        for (auto it = hoc_panel_list->rbegin(); it != hoc_panel_list->rend(); ++it) {
+            (*it)->notifyHocValue();
         }
+    }
     ptl.restore();
 }
 
 void HocPanel::notifyHocValue() {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->update_hoc_item();
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->update_hoc_item();
     }
 }
 
 void HocPanel::check_valid_pointers(void* v, int size) {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->check_pointer(v, size);
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->check_pointer(v, size);
     }
 }
 
 void HocValEditor::check_pointer(void* v, int size) {
-    if (pval_) {
-        double* pd = (double*) v;
+    auto* const pval_raw = static_cast<double const*>(pval_);
+    if (pval_raw) {
+        auto* const pd = static_cast<double*>(v);
         if (size == 1) {
-            if (pd != pval_)
+            if (pd != pval_raw) {
                 return;
+            }
         } else {
-            if (pval_ < pd || pval_ >= pd + size)
+            if (pval_raw < pd || pval_raw >= pd + size)
                 return;
         }
-        pval_ = 0;
+        pval_ = {};
     }
 }
 void HocVarLabel::check_pointer(void* v, int) {
@@ -2403,17 +2320,18 @@ void HocVarLabel::check_pointer(void* v, int) {
 }
 
 void HocPanel::data_path(HocDataPaths* hdp, bool append) {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->data_path(hdp, append);
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->data_path(hdp, append);
     }
 }
 
 void HocValEditor::data_path(HocDataPaths* hdp, bool append) {
     if (!variable_) {
+        auto* const pval_raw = static_cast<double*>(pval_);
         if (append) {
-            hdp->append(pval_);
+            hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_);
+            String* s = hdp->retrieve(pval_raw);
             if (s) {
                 variable_ = new CopyString(s->string());
             }
@@ -2506,7 +2424,7 @@ StepperMenu::StepperMenu() {
     m->action(new StepperMenuAction(true, pow(2., .1)));
     append_item(m);
     for (double x = 1000; x > .0005; x /= 10.) {
-        sprintf(buf, "+%g", x);
+        Sprintf(buf, "+%g", x);
         m = K::menu_item(buf);
         m->action(new StepperMenuAction(false, x));
         append_item(m);
@@ -2713,7 +2631,7 @@ void HocValStepper::right() {}
 // OcSlider
 
 // ZFM added vert_
-OcSlider::OcSlider(double* pd,
+OcSlider::OcSlider(neuron::container::data_handle<double> pd,
                    float low,
                    float high,
                    float resolution,
@@ -2767,7 +2685,7 @@ void OcSlider::update(Observable*) {
     if (pval_) {
         *pval_ = x;
     } else if (pyvar_) {
-        (*nrnpy_guisetval)(pyvar_, x);
+        neuron::python::methods.guisetval(pyvar_, x);
     } else {
         return;
     }
@@ -2790,9 +2708,9 @@ void OcSlider::update(Observable*) {
 void OcSlider::audit() {
     char buf[200];
     if (variable_) {
-        sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
+        Sprintf(buf, "%s = %g\n", variable_->string(), *pval_);
     } else if (pval_) {
-        sprintf(buf, "// %p pointer set to %g\n", pval_, *pval_);
+        Sprintf(buf, "// %p pointer set to %g\n", pval_, *pval_);
     }
     hoc_audit_command(buf);
     if (send_) {
@@ -2815,10 +2733,11 @@ double OcSlider::slider_val() {
 void OcSlider::update_hoc_item() {
     Coord x = 0.;
     if (pyvar_) {
-        x = Coord((*nrnpy_guigetval)(pyvar_));
+        x = Coord(neuron::python::methods.guigetval(pyvar_));
     } else if (pval_) {
         x = Coord(*pval_);
     } else {
+        pval_ = {};
         return;
     }
     if (x != bv_->cur_lower(Dimension_X)) {
@@ -2829,24 +2748,26 @@ void OcSlider::update_hoc_item() {
     }
 }
 void OcSlider::check_pointer(void* v, int size) {
-    if (pval_) {
-        double* pd = (double*) v;
+    auto* const pval_raw = static_cast<double const*>(pval_);
+    if (pval_raw) {
+        auto* const pd = static_cast<double*>(v);
         if (size == 1) {
-            if (pd != pval_)
+            if (pd != pval_raw)
                 return;
         } else {
-            if (pval_ < pd || pval_ >= pd + size)
+            if (pval_raw < pd || pval_raw >= pd + size)
                 return;
         }
-        pval_ = 0;
+        pval_ = {};
     }
 }
 void OcSlider::data_path(HocDataPaths* hdp, bool append) {
     if (!variable_ && pval_) {
+        auto* const pval_raw = static_cast<double*>(pval_);
         if (append) {
-            hdp->append(pval_);
+            hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_);
+            String* s = hdp->retrieve(pval_raw);
             if (s) {
                 variable_ = new CopyString(s->string());
             }
@@ -2857,7 +2778,7 @@ void OcSlider::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (send_) {
-            sprintf(buf,
+            Sprintf(buf,
                     "xslider(&%s, %g, %g, \"%s\", %d, %d)",
                     variable_->string(),
                     bv_->lower(Dimension_X),
@@ -2866,7 +2787,7 @@ void OcSlider::write(std::ostream& o) {
                     vert_,
                     slow_);
         } else {
-            sprintf(buf,
+            Sprintf(buf,
                     "xslider(&%s, %g, %g, %d, %d)",
                     variable_->string(),
                     bv_->lower(Dimension_X),
@@ -2881,7 +2802,7 @@ void OcSlider::write(std::ostream& o) {
 
 //  Button with state
 
-void HocPanel::stateButton(double* pd,
+void HocPanel::stateButton(neuron::container::data_handle<double> pd,
                            const char* name,
                            const char* action,
                            int style,
@@ -2897,14 +2818,14 @@ void HocPanel::stateButton(double* pd,
     box()->append(button);
     HocStateButton* hsb = new HocStateButton(pd, name, button, act, style, hoc_item(), pyvar);
     item_append(hsb);
-    elist_.append(hsb);
+    elist_.push_back(hsb);
     hsb->ref();
 }
 
 declareActionCallback(HocStateButton);
 implementActionCallback(HocStateButton);
 
-HocStateButton::HocStateButton(double* pd,
+HocStateButton::HocStateButton(neuron::container::data_handle<double> pd,
                                const char* text,
                                Button* button,
                                HocAction* action,
@@ -2960,16 +2881,15 @@ void HocStateButton::button_action() {
         b_->state()->set(TelltaleState::is_chosen, !chosen());
         return;
     }
-    if (pval_) {
+    if (pyvar_) {
+        TelltaleState* t = b_->state();
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
+        }
+    } else if (pval_) {
         TelltaleState* t = b_->state();
         if (chosen() != bool(*pval_)) {
             *pval_ = double(chosen());
-        }
-    }
-    if (pyvar_) {
-        TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -2985,9 +2905,13 @@ void HocStateButton::button_action() {
 void HocStateButton::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
+    } else {  // not (no longer) valid
+        pval_ = {};
+        b_->state()->set(TelltaleState::is_enabled_visible_active_chosen, false);
+        return;
     }
     if (x) {
         b_->state()->set(TelltaleState::is_chosen, true);
@@ -2997,25 +2921,27 @@ void HocStateButton::update_hoc_item() {
 }
 
 void HocStateButton::check_pointer(void* v, int size) {
-    if (pval_) {
-        double* pd = (double*) v;
+    auto* const pval_raw = static_cast<double const*>(pval_);
+    if (pval_raw) {
+        auto* const pd = static_cast<double*>(v);
         if (size == 1) {
-            if (pd != pval_)
+            if (pd != pval_raw)
                 return;
         } else {
-            if (pval_ < pd || pval_ >= pd + size)
+            if (pval_raw < pd || pval_raw >= pd + size)
                 return;
         }
-        pval_ = 0;
+        pval_ = {};
     }
 }
 
 void HocStateButton::data_path(HocDataPaths* hdp, bool append) {
     if (!variable_ && pval_) {
+        auto* const pval_raw = static_cast<double*>(pval_);
         if (append) {
-            hdp->append(pval_);
+            hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_);
+            String* s = hdp->retrieve(pval_raw);
             if (s) {
                 variable_ = new CopyString(s->string());
             }
@@ -3026,13 +2952,13 @@ void HocStateButton::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
         if (style_ == PALETTE) {
-            sprintf(buf,
+            Sprintf(buf,
                     "xstatebutton(\"%s\",&%s,\"%s\")",
                     name_->string(),
                     variable_->string(),
                     hideQuote(action_->name()));
         } else {
-            sprintf(buf,
+            Sprintf(buf,
                     "xcheckbox(\"%s\",&%s,\"%s\")",
                     name_->string(),
                     variable_->string(),
@@ -3046,7 +2972,7 @@ void HocStateButton::write(std::ostream& o) {
 // menu item with state
 
 
-MenuItem* HocPanel::menuStateItem(double* pd,
+MenuItem* HocPanel::menuStateItem(neuron::container::data_handle<double> pd,
                                   const char* name,
                                   const char* action,
                                   Object* pyvar,
@@ -3055,7 +2981,7 @@ MenuItem* HocPanel::menuStateItem(double* pd,
     HocAction* act = new HocAction(action, pyact);
     HocStateMenuItem* hsb = new HocStateMenuItem(pd, name, mi, act, hoc_item(), pyvar);
     item_append(hsb);
-    elist_.append(hsb);
+    elist_.push_back(hsb);
     hsb->ref();
     return mi;
 }
@@ -3064,7 +2990,7 @@ MenuItem* HocPanel::menuStateItem(double* pd,
 declareActionCallback(HocStateMenuItem);
 implementActionCallback(HocStateMenuItem);
 
-HocStateMenuItem::HocStateMenuItem(double* pd,
+HocStateMenuItem::HocStateMenuItem(neuron::container::data_handle<double> pd,
                                    const char* text,
                                    MenuItem* mi,
                                    HocAction* action,
@@ -3126,8 +3052,8 @@ void HocStateMenuItem::button_action() {
     }
     if (pyvar_) {
         TelltaleState* t = b_->state();
-        if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
-            (*nrnpy_guisetval)(pyvar_, double(chosen()));
+        if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
+            neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     }
     if (action_) {
@@ -3143,9 +3069,13 @@ void HocStateMenuItem::button_action() {
 void HocStateMenuItem::update_hoc_item() {
     double x = 0.;
     if (pyvar_) {
-        x = nrnpy_guigetval(pyvar_);
+        x = neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         x = *pval_;
+    } else {  // not (no longer) valid
+        pval_ = {};
+        b_->state()->set(TelltaleState::is_enabled_visible_active_chosen, false);
+        return;
     }
     if (x) {
         b_->state()->set(TelltaleState::is_chosen, true);
@@ -3155,25 +3085,27 @@ void HocStateMenuItem::update_hoc_item() {
 }
 
 void HocStateMenuItem::check_pointer(void* v, int size) {
-    if (pval_) {
-        double* pd = (double*) v;
+    auto* const pval_raw = static_cast<double const*>(pval_);
+    if (pval_raw) {
+        auto* const pd = static_cast<double*>(v);
         if (size == 1) {
-            if (pd != pval_)
+            if (pd != pval_raw)
                 return;
         } else {
-            if (pval_ < pd || pval_ >= pd + size)
+            if (pval_raw < pd || pval_raw >= pd + size)
                 return;
         }
-        pval_ = 0;
+        pval_ = {};
     }
 }
 
 void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
     if (!variable_ && pval_) {
+        auto* const pval_raw = static_cast<double*>(pval_);
         if (append) {
-            hdp->append(pval_);
+            hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_);
+            String* s = hdp->retrieve(pval_raw);
             if (s) {
                 variable_ = new CopyString(s->string());
             }
@@ -3184,7 +3116,7 @@ void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
 void HocStateMenuItem::write(std::ostream& o) {
     if (variable_) {
         char buf[256];
-        sprintf(buf,
+        Sprintf(buf,
                 "xcheckbox(\"%s\",&%s,\"%s\")",
                 name_->string(),
                 variable_->string(),
@@ -3238,29 +3170,3 @@ static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
 void ValueFieldEditor_reg() {
     class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }
-
-#if HAVE_IV
-void HocValEditor::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
-
-void OcSlider::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
-
-void HocStateButton::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
-
-void HocStateMenuItem::update_ptrs() {
-    update_ptrs_helper(&pval_);
-}
-
-void HocUpdateItem::update_ptrs_helper(double** p) {
-    if (*p) {
-        double* pd = nrn_recalc_ptr(*p);
-        *p = pd;
-    }
-}
-
-#endif
