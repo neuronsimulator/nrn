@@ -996,7 +996,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     }
 
     // print the files
-    for (int tid = 0; tid < nrn_nthread; ++tid) {
+    for (int tid = 0; tid < nrn_nthread; ++tid) { // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Sometimes more than one has data!!
         auto& g = gi[tid];
 
         if (g.src_sid.empty() && g.tar_sid.empty()) {  // no file
@@ -1033,6 +1033,9 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
             CHKPNT fwrite(g.tar_type.data(), ntar, sizeof(int), f);
             CHKPNT fwrite(g.tar_index.data(), ntar, sizeof(int), f);
         }
+
+        // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        fputc(0, f);
 
         fclose(f);
     }

@@ -254,7 +254,7 @@ size_t get_filesize(const char* fname) {
 }
 
 static void part2(const char* path) {
-    std::array<size_t, 5> offsets;
+    std::array<size_t, 4> offsets;
 
     CellGroup* cgs = cellgroups_;
     for (int i = 0; i < nrn_nthread; ++i) {

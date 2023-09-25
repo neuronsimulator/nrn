@@ -165,6 +165,9 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
         cg.netcon_srcgid = NULL;
     }
 
+    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    fputc(0, f);
+
     // Set the second offset inside the file
     offsets[1] = ftell(f);
 
@@ -307,6 +310,9 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
 
     nrnbbcore_vecplay_write(f, nt);
 
+    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    fputc(0, f);
+
     fclose(f);
 
     return offsets;
@@ -375,72 +381,82 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
-    // ids of datasets that will be created
-    std::vector<int> iSend;
+void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::vector<size_t> file_offsets) {
+//     // ids of datasets that will be created
+//     std::vector<int> iSend;
 
-    // ignore empty nrnthread (has -1 id)
-    for (int iInt = 0; iInt < nrn_nthread; ++iInt) {
-        if (cgs[iInt].group_id >= 0) {
-            iSend.push_back(cgs[iInt].group_id);
-        }
-    }
+//     // ignore empty nrnthread (has -1 id)
+//     for (int iInt = 0; iInt < nrn_nthread; ++iInt) {
+//         if (cgs[iInt].group_id >= 0) {
+//             iSend.push_back(cgs[iInt].group_id);
+//         }
+//     }
 
-    // receive and displacement buffers for mpi
-    std::vector<int> iRecv, iDispl;
+//     // receive and displacement buffers for mpi
+//     std::vector<int> iRecv, iDispl;
 
-    if (nrnmpi_myid == 0) {
-        iRecv.resize(nrnmpi_numprocs);
-        iDispl.resize(nrnmpi_numprocs);
-    }
+//     if (nrnmpi_myid == 0) {
+//         iRecv.resize(nrnmpi_numprocs);
+//         iDispl.resize(nrnmpi_numprocs);
+//     }
 
-    // number of datasets on the current rank
-    int num_datasets = iSend.size();
+//     // number of datasets on the current rank
+//     int num_datasets = iSend.size();
 
-#ifdef NRNMPI
-    // gather number of datasets from each task
-    if (nrnmpi_numprocs > 1) {
-        nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
-    } else {
-        iRecv[0] = num_datasets;
-    }
-#else
-    iRecv[0] = num_datasets;
-#endif
+// #ifdef NRNMPI
+//     // gather number of datasets from each task
+//     if (nrnmpi_numprocs > 1) {
+//         nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
+//     } else {
+//         iRecv[0] = num_datasets;
+//     }
+// #else
+//     iRecv[0] = num_datasets;
+// #endif
 
-    // total number of datasets across all ranks
-    int iSumThread = 0;
+//     // total number of datasets across all ranks
+//     int iSumThread = 0;
 
-    // calculate mpi displacements
-    if (nrnmpi_myid == 0) {
-        for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt) {
-            iDispl[iInt] = iSumThread;
-            iSumThread += iRecv[iInt];
-        }
-    }
+//     // calculate mpi displacements
+//     if (nrnmpi_myid == 0) {
+//         for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt) {
+//             iDispl[iInt] = iSumThread;
+//             iSumThread += iRecv[iInt];
+//         }
+//     }
 
-    // buffer for receiving all dataset ids
-    std::vector<int> iRecvVec(iSumThread);
+//     // buffer for receiving all dataset ids
+//     std::vector<int> iRecvVec(iSumThread);
 
-#ifdef NRNMPI
-    // gather ids into the array with correspondent offsets
-    if (nrnmpi_numprocs > 1) {
-        nrnmpi_int_gatherv(begin_ptr(iSend),
-                           num_datasets,
-                           begin_ptr(iRecvVec),
-                           begin_ptr(iRecv),
-                           begin_ptr(iDispl),
-                           0);
-    } else {
-        for (int iInt = 0; iInt < num_datasets; ++iInt) {
-            iRecvVec[iInt] = iSend[iInt];
-        }
-    }
-#else
-    for (int iInt = 0; iInt < num_datasets; ++iInt) {
-        iRecvVec[iInt] = iSend[iInt];
-    }
-#endif
+// #ifdef NRNMPI
+//     // gather ids into the array with correspondent offsets
+//     if (nrnmpi_numprocs > 1) {
+//         nrnmpi_int_gatherv(begin_ptr(iSend),
+//                            num_datasets,
+//                            begin_ptr(iRecvVec),
+//                            begin_ptr(iRecv),
+//                            begin_ptr(iDispl),
+//                            0);
+//     } else {
+//         for (int iInt = 0; iInt < num_datasets; ++iInt) {
+//             iRecvVec[iInt] = iSend[iInt];
+//         }
+//     }
+// #else
+//     for (int iInt = 0; iInt < num_datasets; ++iInt) {
+//         iRecvVec[iInt] = iSend[iInt];
+//     }
+// #endif
+
+    int num_offsets = file_offsets.size();
+    file_offsets.resize(file_offsets.size() * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
+
+
+
+    // <<<<<<<<<<<<<<<<<<<<<<<<< The writing part is not done!! Just collecitng the offsets from all of the ranks, and we have to write that to the file, somehow
+
+
 
     /// Writing the file with task, correspondent number of threads and list of correspondent first
     /// gids
@@ -584,6 +600,10 @@ size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) 
             }
         }
     }
+
+    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    fputc(0, f);
+
     fclose(f);
 
     return offset;
