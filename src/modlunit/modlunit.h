@@ -63,7 +63,6 @@ void unit_init();
 void unit_ldifuslist(Item*, int);
 void unit_less();
 void unit_logic(int type, Item* q1, Item* q2, Item* q3);
-void unit_mag_mul(double);
 void unit_mul();
 void unit_pop();
 void unit_push(Item*);

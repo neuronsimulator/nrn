@@ -33,11 +33,6 @@
   static double _nrnunit_FARADAY_[2] = {96485.3321233100184, 96485.3};
 **/
 
-/* modlunit can do its thing in the old way */
-#if !defined(NRN_DYNAMIC_UNITS)
-#define NRN_DYNAMIC_UNITS 0
-#endif
-
 #ifdef MINGW
 #include "../mswin/extra/d2upath.cpp"
 #endif
@@ -60,11 +55,7 @@ extern void diag(const char*, const char*);
 
 #define NTAB 601
 
-#if NRN_DYNAMIC_UNITS
 #define SUFFIX ".in"
-#else
-#define SUFFIX ""
-#endif
 
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if defined(NEURON_DATA_DIR)
@@ -100,12 +91,10 @@ static struct table {
 
 static char* names;
 
-#if NRN_DYNAMIC_UNITS
 static struct dynam {
     struct table* table; /* size NTAB */
     char* names;         /* size NTAB*10 */
 } dynam[2];
-#endif
 
 static struct prefix {
     double factor;
@@ -239,10 +228,6 @@ double unit_mag() { /* return unit magnitude that is on stack */
     return usp->factor;
 }
 
-void unit_mag_mul(double d) {
-    usp->factor *= d;
-}
-
 void punit() {
     struct unit* i;
     for (i = usp; i != unit_stack - 1; --i) {
@@ -331,22 +316,16 @@ static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
 }
 
 static void switch_units(int legacy) {
-#if NRN_DYNAMIC_UNITS
     table = dynam[legacy].table;
     names = dynam[legacy].names;
-#endif
 }
 
 void install_units(char* s1, char* s2) {
-#if NRN_DYNAMIC_UNITS
     int i;
     for (i = 0; i < 2; ++i) {
         switch_units(i);
         install_units_help(s1, s2);
     }
-#else
-    install_units_help(s1, s2);
-#endif
 }
 
 void check_num() {
@@ -567,7 +546,6 @@ static void units_alloc() {
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
-#if NRN_DYNAMIC_UNITS
         for (i = 0; i < 2; ++i) {
             dynam[i].table = (struct table*) calloc(NTAB, sizeof(struct table));
             assert(dynam[i].table);
@@ -575,12 +553,6 @@ static void units_alloc() {
             assert(dynam[i].names);
             switch_units(i);
         }
-#else
-        table = (struct table*) calloc(NTAB, sizeof(struct table));
-        assert(table);
-        names = (char*) calloc(NTAB * 10, sizeof(char));
-        assert(names);
-#endif
     }
 }
 
@@ -592,14 +564,10 @@ void modl_units() {
     unitonflag = 1;
     if (first) {
         units_alloc();
-#if NRN_DYNAMIC_UNITS
         for (i = 0; i < 2; ++i) {
             switch_units(i);
             unit_init();
         }
-#else
-        unit_init();
-#endif
         first = 0;
     }
 }
@@ -841,7 +809,6 @@ l0:
         goto l0;
     }
 
-#if NRN_DYNAMIC_UNITS
     if (c == '@') {
         /**
            Dynamic unit line beginning with @LegacyY@ or @LegacyN@.
@@ -869,7 +836,6 @@ l0:
         }
         c = get();
     }
-#endif
 
     if (c == '\n')
         goto l0;
@@ -922,7 +888,6 @@ redef:
     goto l0;
 }
 
-#if NRN_DYNAMIC_UNITS
 /* Translate string to double using a2f for modern units
    to allow consistency with BlueBrain/nmodl
 */
@@ -968,18 +933,15 @@ l1:
     peekc = c;
     return (d_modern);
 }
-#endif /* NRN_DYNAMIC_UNITS */
 
 double getflt() {
     int c, i, dp;
     double d, e;
     int f;
 
-#if NRN_DYNAMIC_UNITS
     if (table == dynam[0].table) {
         return modern_getflt();
     }
-#endif /* NRN_DYNAMIC_UNITS */
     d = 0.;
     dp = 0;
     do
@@ -1094,8 +1056,6 @@ static double dynam_unit_mag(int legacy, char* u1, char* u2) {
 }
 
 void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, char* u2) {
-#if NRN_DYNAMIC_UNITS
-
     double legacy = dynam_unit_mag(1, u1, u2);
     double modern = dynam_unit_mag(0, u1, u2);
     Sprintf(buf,
@@ -1107,18 +1067,4 @@ void nrnunit_dynamic_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, c
             name,
             modern,
             legacy);
-
-#else
-
-    Unit_push(u1);
-    Unit_push(u2);
-    unit_div();
-#if (defined(LegacyFR) && LegacyFR == 1)
-    Sprintf(buf, "static double %s = %g;\n", name, unit_mag());
-#else
-    Sprintf(buf, "static double %s = %a;\n", name, unit_mag());
-#endif
-    unit_pop();
-
-#endif
 }
