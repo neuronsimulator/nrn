@@ -165,7 +165,7 @@ GLineRecord::~GLineRecord() {
 
     if (auto it = std::find(grl->rbegin(), grl->rend(), this); it != grl->rend()) {
         gl_->simgraph_activate(false);
-        grl->erase(std::next(it).base());  // Need for it
+        grl->erase(std::next(it).base());  // Reverse iterator need that
     }
 }
 
