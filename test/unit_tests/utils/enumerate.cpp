@@ -1,6 +1,3 @@
-// Must appear before `enumerate.h` otherwise, std::begin and std::rbegin are
-// undefined. This should be fixed by including the correct headers in
-// `utils/enumerate.h`.
 #include <vector>
 
 #include "utils/enumerate.h"

@@ -473,8 +473,7 @@ void SymDirectoryImpl::load_aliases() {
     IvocAliases* a = (IvocAliases*) obj_->aliases;
     if (!a)
         return;
-    for (const auto& kv: a->symtab_) {
-        Symbol* s = kv.second;
+    for (const auto& [_, s]: a->symtab_) {
         append(s, nullptr, obj_);
     }
 }

@@ -745,12 +745,11 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 long Scene::scene_list_index(Scene* s) {
-    for (const auto&& [i, scene]: enumerate(*scene_list)) {
-        if (s == scene) {
-            return i;
-        }
+    auto it = std::find(scene_list.begin(), scene_list.end(), s);
+    if (it == scene_list.end()) {
+        return -1;
     }
-    return -1;
+    return std::distance(scene_list.begin(), it);
 }
 
 void Scene::save_all(std::ostream& o) {
