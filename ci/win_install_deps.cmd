@@ -21,6 +21,12 @@ pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -repla
 pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
+:: update setuptools
+C:\Python38\python.exe -m pip install --upgrade pip "setuptools>=61" || goto :error
+C:\Python39\python.exe -m pip install --upgrade pip "setuptools>=61" || goto :error
+C:\Python310\python.exe -m pip install --upgrade pip "setuptools>=61" || goto :error
+C:\Python311\python.exe -m pip install --upgrade pip "setuptools>=61" || goto :error
+
 :: install numpy
 C:\Python38\python.exe -m pip install  numpy==1.17.5 "cython < 3" || goto :error
 C:\Python39\python.exe -m pip install  numpy==1.19.3 "cython < 3" || goto :error
