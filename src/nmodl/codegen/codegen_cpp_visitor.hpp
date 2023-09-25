@@ -1564,39 +1564,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual void print_codegen_routines();
 
 
-    /**
-     * Print entry point to code generation for wrappers
-     */
-    virtual void print_wrapper_routines();
-
-
-    /// This constructor is private, see the public section below to find how to create an instance
-    /// of this class.
-    CodegenCppVisitor(std::string mod_filename,
-                      const std::string& output_dir,
-                      std::string float_type,
-                      const bool optimize_ionvar_copies,
-                      const std::string& extension,
-                      const std::string& wrapper_ext)
-        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + extension))
-        , mod_filename(std::move(mod_filename))
-        , float_type(std::move(float_type))
-        , optimize_ionvar_copies(optimize_ionvar_copies) {}
-
-    /// This constructor is private, see the public section below to find how to create an instance
-    /// of this class.
-    CodegenCppVisitor(std::string mod_filename,
-                      std::ostream& stream,
-                      std::string float_type,
-                      const bool optimize_ionvar_copies,
-                      const std::string& /* extension */,
-                      const std::string& /* wrapper_ext */)
-        : printer(std::make_unique<CodePrinter>(stream))
-        , mod_filename(std::move(mod_filename))
-        , float_type(std::move(float_type))
-        , optimize_ionvar_copies(optimize_ionvar_copies) {}
-
-
   public:
     /**
      * \brief Constructs the C++ code generator visitor
@@ -1613,14 +1580,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param output_dir   The directory where target C++ file should be generated.
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
-     * \param extension    The file extension to use. This defaults to \c .cpp .
      */
     CodegenCppVisitor(std::string mod_filename,
                       const std::string& output_dir,
                       std::string float_type,
-                      const bool optimize_ionvar_copies,
-                      const std::string& extension = ".cpp")
-        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + extension))
+                      const bool optimize_ionvar_copies)
+        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + ".cpp"))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}

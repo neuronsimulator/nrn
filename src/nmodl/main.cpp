@@ -529,7 +529,7 @@ int main(int argc, const char* argv[]) {
             }
 
             else if (c_backend) {
-                logger->info("Running C backend code generator");
+                logger->info("Running C++ backend code generator");
                 CodegenCppVisitor visitor(modfile,
                                           output_dir,
                                           data_type,

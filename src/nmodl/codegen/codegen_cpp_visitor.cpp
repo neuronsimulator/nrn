@@ -4659,11 +4659,6 @@ void CodegenCppVisitor::print_codegen_routines() {
 }
 
 
-void CodegenCppVisitor::print_wrapper_routines() {
-    // nothing to do
-}
-
-
 void CodegenCppVisitor::set_codegen_global_variables(const std::vector<SymbolType>& global_vars) {
     codegen_global_variables = global_vars;
 }
@@ -4691,7 +4686,6 @@ void CodegenCppVisitor::setup(const Program& node) {
 void CodegenCppVisitor::visit_program(const Program& node) {
     setup(node);
     print_codegen_routines();
-    print_wrapper_routines();
 }
 
 }  // namespace codegen
