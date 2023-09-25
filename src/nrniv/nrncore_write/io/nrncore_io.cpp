@@ -13,6 +13,7 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include "nrnsection_mapping.h"
 
 extern short* nrn_is_artificial_;
@@ -55,27 +56,21 @@ std::string get_filename(const std::string& path, std::string file_name) {
 }
 
 std::string get_rank_fname(const char* basepath, bool create_folder = true) {
-    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<
     std::string nodepath = "";
-    if (std::getenv("SLURM_NODEID") != nullptr) {
+    if (const char* node_id = std::getenv("SLURM_NODEID")) {
         const int factor = 20;
-        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
-
-        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+        nodepath = std::to_string(std::atoi(node_id)/factor) + "/" + node_id;
+    } else if (const char* hostname = std::getenv("HOSTNAME")) {
+        nodepath = hostname;
     }
-    else if (std::getenv("HOSTNAME") != nullptr) {
-        nodepath = std::getenv("HOSTNAME");
-    }
-
     // Create subfolder for the rank, based on the node
     if (create_folder) {
-        std::string path = std::string(basepath) + "/" + nodepath;
-        mkdir_p(path.c_str());
+        std::filesystem::create_directories(std::string(basepath) + "/" + nodepath);
     }
 
-    return (path + "/" + nrnmpi_myid + ".dat");
+    return std::string(basepath) + "/" + nodepath + "/" + std::to_string(nrnmpi_myid) + ".dat";
 }
-
 
 void write_memb_mech_types(const char* fname) {
     if (nrnmpi_myid > 0) {
@@ -142,8 +137,8 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
         return offsets;
     }
     assert(cg.group_id >= 0);
-
-    FILE* f = fopen(get_rank_fname(path).c_str(), "ab");
+    const std::string fname = get_rank_fname(path);
+    FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
         hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname.c_str());
     }
@@ -519,37 +514,37 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
             }
         }
 
-        // total number of datasets
-        if (append) {
-            // this is the one that needs the space to get a new value
-            long pos = ftell(fp);
-            fgets_no_newline(line, max_line_len, fp);
-            int oldval = 0;
-            if (sscanf(line, "%d", &oldval) != 1) {
-                fclose(fp);
-                hoc_execerror("nrncore_write append: error reading number of groupids", NULL);
-            }
-            if (oldval == -1) {
-                fclose(fp);
-                hoc_execerror(
-                    "nrncore_write append: existing files.dat has gap junction indicator where we "
-                    "expected a groupgid count.",
-                    NULL);
-            }
-            iSumThread += oldval;
-            fseek(fp, pos, SEEK_SET);
-        }
-        fprintf(fp, "%10d\n", iSumThread);
+        // // total number of datasets
+        // if (append) {
+        //     // this is the one that needs the space to get a new value
+        //     long pos = ftell(fp);
+        //     fgets_no_newline(line, max_line_len, fp);
+        //     int oldval = 0;
+        //     if (sscanf(line, "%d", &oldval) != 1) {
+        //         fclose(fp);
+        //         hoc_execerror("nrncore_write append: error reading number of groupids", NULL);
+        //     }
+        //     if (oldval == -1) {
+        //         fclose(fp);
+        //         hoc_execerror(
+        //             "nrncore_write append: existing files.dat has gap junction indicator where we "
+        //             "expected a groupgid count.",
+        //             NULL);
+        //     }
+        //     iSumThread += oldval;
+        //     fseek(fp, pos, SEEK_SET);
+        // }
+        // fprintf(fp, "%10d\n", iSumThread);
 
-        if (append) {
-            // Start writing the groupids starting at the end of the file.
-            fseek(fp, 0, SEEK_END);
-        }
+        // if (append) {
+        //     // Start writing the groupids starting at the end of the file.
+        //     fseek(fp, 0, SEEK_END);
+        // }
 
-        // write all dataset ids
-        for (int i = 0; i < iRecvVec.size(); ++i) {
-            fprintf(fp, "%d\n", iRecvVec[i]);
-        }
+        // // write all dataset ids
+        // for (int i = 0; i < iRecvVec.size(); ++i) {
+        //     fprintf(fp, "%d\n", iRecvVec[i]);
+        // }
 
         fclose(fp);
     }
@@ -558,7 +553,8 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
 /** @brief dump mapping information to gid_3.dat file */
 size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     size_t offset = 0;
-    FILE* f = fopen(get_rank_fname(path).c_str(), "ab");
+    const std::string fname = get_rank_fname(path);
+    FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }

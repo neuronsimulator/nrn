@@ -31,7 +31,7 @@ void FileHandler::open(const std::string& filename, std::ios::openmode mode) {
         std::cerr << "cannot open file '" << filename << "'" << std::endl;
     }
     nrn_assert(F.is_open());
-    current_filename = filename;
+    //current_filename = filename;
     current_mode = mode;
     char version[256];
     if (current_mode & std::ios::in) {

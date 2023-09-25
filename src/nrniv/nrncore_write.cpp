@@ -218,34 +218,10 @@ static part1_ret part1() {
     return {rankbytes, std::move(sorted_token)};
 }
 
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< WATCH OUT! Move to common header!!
-std::string get_rank_fname(const char* basepath, bool create_folder = true) {
-    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
-    std::string nodepath = "";
-    if (std::getenv("SLURM_NODEID") != nullptr) {
-        const int factor = 20;
-        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
-
-        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
-    }
-    else if (std::getenv("HOSTNAME") != nullptr) {
-        nodepath = std::getenv("HOSTNAME");
-    }
-
-    // Create subfolder for the rank, based on the node
-    if (create_folder) {
-        std::string path = std::string(basepath) + "/" + nodepath;
-        mkdir_p(path.c_str());
-    }
-
-    return (path + "/" + nrnmpi_myid + ".dat");
-}
-
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 size_t get_filesize(const char* fname) {
     FILE* f = fopen(fname, "ab");
     if (!f) {
-        hoc_execerror("get_filesize could not open:", fname.c_str());
+        hoc_execerror("get_filesize could not open:", fname);
     }
     const size_t offset = ftell(f);
     fclose(f);
@@ -283,8 +259,6 @@ static void part2(const char* path) {
         delete[] group_ids;
     }
 
-    // get_filesize(get_rank_fname(path).c_str()) <<<<<<<<<<<<<<<<<<<<<<<<<<< (gap junction may or may not be there, and we still need the last size of the file)
-
     // filename data might have to be collected at hoc level since
     // pc.nrncore_write might be called
     // many times per rank since model may be built as series of submodels.
@@ -305,7 +279,8 @@ static void part2(const char* path) {
                 hoc_execerror("Second arg must be Vector or double.", NULL);
             }
         }
-        write_nrnthread_task(path, cgs, append, offsets); // <<<<<<<
+        std::vector<size_t> offsets_vec(offsets.begin(), offsets.end());
+        write_nrnthread_task(path, cgs, append, offsets_vec);
     }
 
     part2_clean();
