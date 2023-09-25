@@ -3,10 +3,9 @@
 
 /**
  NMODL translated MOD files get unit constants typically from
- share/lib/nrnunits.lib.in. But there were other source files that
+ share/lib/nrnunits.lib. But there were other source files that
  hardcode some of the constants. Here we gather a few modern units into
- a single place (but, unfortunately, also in nrnunits.lib.in). Legacy units
- cannot be gathered here because they can differ slightly from place to place.
+ a single place (but, unfortunately, also in nrnunits.lib).
 
  These come from https://physics.nist.gov/cuu/Constants/index.html.
  Termed the "2018 CODATA recommended values", they became available

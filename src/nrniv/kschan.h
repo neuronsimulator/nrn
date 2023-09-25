@@ -95,9 +95,7 @@ class KSChanSigmoid: public KSChanFunction {
 };
 
 
-// e/(kT) e/k=11.604589 from hoc's FARADAY and R values (legacy units)
-#define _e_over_k _e_over_k_[_nrnunit_use_legacy_]
-static double _e_over_k_[2] = {_e_over_k_codata2018, 11.604589}; /* K/mV */
+static double _e_over_k = _e_over_k_codata2018; /* K/mV */
 #define ebykt (_e_over_k / (273.15 + celsius))
 
 // from MODELING NEURONAL BIOPHYSICS Lyle J Graham

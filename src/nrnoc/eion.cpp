@@ -262,10 +262,8 @@ at least one model using this ion\n",
         }
 }
 
-#define FARADAY _faraday_[_nrnunit_use_legacy_]
-static double _faraday_[2] = {_faraday_codata2018, 96485.309};
-#define gasconstant _gasconstant_[_nrnunit_use_legacy_]
-static double _gasconstant_[2] = {_gasconstant_codata2018, 8.3134};
+static double FARADAY = _faraday_codata2018;
+static double gasconstant = _gasconstant_codata2018;
 
 #define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
 double nrn_nernst(double ci, double co, double z) {

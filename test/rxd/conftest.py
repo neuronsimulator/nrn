@@ -38,8 +38,6 @@ def neuron_nosave_instance(neuron_import):
     h.load_file("stdrun.hoc")
     h.load_file("import3d.hoc")
 
-    h.nrnunit_use_legacy(True)
-
     # pytest fixtures at the function scope that require neuron_instance will go
     # out of scope after neuron_instance. So species, sections, etc. will go
     # out of scope after neuron_instance is torn down.

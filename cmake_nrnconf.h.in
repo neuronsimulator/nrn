@@ -239,9 +239,6 @@
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
-/* 1 for legacy, undef for NIST (as of 2017), for FARADAY and R */
-#undef LegacyFR
-
 /* define if using mingw */
 #undef MINGW
 

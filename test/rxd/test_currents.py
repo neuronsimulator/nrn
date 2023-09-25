@@ -64,9 +64,7 @@ def test_currents(model_pump):
     neuron_instance, model = model_pump
     h, rxd, data, save_path = neuron_instance
     # check changing the units after initialization
-    h.nrnunit_use_legacy(False)
     h.finitialize(-65)
-    h.nrnunit_use_legacy(True)
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)
@@ -80,9 +78,7 @@ def test_currents_cvode(model_pump):
     h, rxd, data, save_path = neuron_instance
     # check changing the units after initialization
     h.CVode().active(True)
-    h.nrnunit_use_legacy(False)
     h.finitialize(-65)
-    h.nrnunit_use_legacy(True)
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)

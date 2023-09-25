@@ -78,19 +78,11 @@ static struct { /* Constants */
               {"GAMMA", 0.57721566490153286060}, /* Euler */
               {"DEG", 57.29577951308232087680},  /* deg/radian */
               {"PHI", 1.61803398874989484820},   /* golden ratio */
-              {nullptr, 0}};
-
-/* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
-/* also see FARADAY and gasconstant in ../nrnoc/eion.c */
-static struct { /* Modern, Legacy units constants */
-    const char* name;
-    double cval[2];
-} uconsts[] = {{"FARADAY", {_faraday_codata2018, 96485.309}}, /*coulombs/mole*/
-               {"R", {_gasconstant_codata2018, 8.31441}}, /*molar gas constant, joules/mole/deg-K*/
-               {"Avogadro_constant",
-                {_avogadro_number_codata2018, 6.02214129e23}}, /* note that the legacy value in
+              {"FARADAY", _faraday_codata2018},  /*coulombs/mole*/
+              {"R", _gasconstant_codata2018},    /*molar gas constant, joules/mole/deg-K*/
+              {"Avogadro_constant", _avogadro_number_codata2018}, /* note that the legacy value in
                                                                  nrnunits.lib.in is 6.022169+23 */
-               {0, {0., 0.}}};
+              {nullptr, 0}};
 
 static struct { /* Built-ins */
     const char* name;
@@ -241,29 +233,11 @@ const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux *
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
-int _nrnunit_use_legacy_; /* allow dynamic switching between legacy and modern units */
 
 void hoc_init(void) /* install constants and built-ins table */
 {
     int i;
     Symbol* s;
-
-#if defined(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
-    _nrnunit_use_legacy_ = 1; /* legacy as default */
-#else
-    _nrnunit_use_legacy_ = 0; /* new units as default */
-#endif
-    { /* but check the environment variable if it exists */
-        const char* envvar = getenv("NRNUNIT_USE_LEGACY");
-        if (envvar) {
-            if (strcmp(envvar, "1") == 0) {
-                _nrnunit_use_legacy_ = 1;
-            } else if (strcmp(envvar, "0") == 0) {
-                _nrnunit_use_legacy_ = 0;
-            }
-        }
-    }
-
     use_mcell_ran4_ = 0;
     nrn_xopen_broadcast_ = 255;
     extern void hoc_init_space(void);
@@ -275,12 +249,6 @@ void hoc_init(void) /* install constants and built-ins table */
         s->type = VAR;
         s->u.pval = &consts[i].cval;
         s->subtype = USERDOUBLE;
-    }
-    for (i = 0; uconsts[i].name; i++) {
-        s = install(uconsts[i].name, UNDEF, uconsts[i].cval[0], &symlist);
-        s->type = VAR;
-        s->u.pval = &uconsts[i].cval[0];
-        s->subtype = DYNAMICUNITS;
     }
     for (i = 0; builtins[i].name; i++) {
         s = install(builtins[i].name, BLTIN, 0.0, &symlist);
