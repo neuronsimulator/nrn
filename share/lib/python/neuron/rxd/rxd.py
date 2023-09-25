@@ -506,6 +506,7 @@ def _find_librxdmath():
 
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
+    print(f"{filename = }")
     with open(filename + ".cpp", "w") as f:
         f.write(formula)
     math_library = "-lm"
@@ -526,6 +527,8 @@ def _cxx_compile(formula):
                 )
         else:
             gcc = "g++"
+
+    print("_cxx_compile: still alive")
     # TODO: Check this works on non-Linux machines
     gcc_cmd = "%s -I%s " % (
         gcc,
@@ -541,10 +544,16 @@ def _cxx_compile(formula):
         )
         os.system(gcc_cmd)
         os.putenv("PATH", my_path)
+        print("_cxx_compile (win): {gcc_cmd = }")
     else:
         os.system(gcc_cmd)
+        print("_cxx_compile (else): {gcc_cmd = }")
+
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
+    print("_cxx_compile: first cdll")
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
+
+    print("_cxx_compile: second cdll")
     dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
     reaction = dll.reaction
     reaction.argtypes = [
@@ -552,13 +561,17 @@ def _cxx_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
+    print("_cxx_compile: remove {filename}.cpp")
     os.remove(f"{filename}.cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
+        print("_cxx_compile (win): strange stuff")
         _windows_dll.append(weakref.ref(dll))
         _windows_dll_files.append(f"{filename}.so")
     else:
         os.remove(f"{filename}.so")
+
+    print("_cxx_compile (win): done")
     return reaction
 
 
