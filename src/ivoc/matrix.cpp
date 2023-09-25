@@ -37,14 +37,13 @@ Matrix* matrix_arg(int i) {
     return (Matrix*) (ob->u.this_pointer);
 }
 
-Object** Matrix::temp_objvar() {
-    Matrix* m = (Matrix*) this;
+static Object** temp_objvar(Matrix* m) {
     Object** po;
     if (m->obj_) {
         po = hoc_temp_objptr(m->obj_);
     } else {
         po = hoc_temp_objvar(nrn_matrix_sym, (void*) m);
-        obj_ = *po;
+        m->obj_ = *po;
     }
     return po;
 }
@@ -178,7 +177,7 @@ static double m_scanf(void* v) {
 static Object** m_resize(void* v) {
     Matrix* m = (Matrix*) v;
     m->resize((int) (chkarg(1, 1., 1e9) + EPS), (int) (chkarg(2, 1., 1e9) + EPS));
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_mulv(void* v) {
@@ -254,7 +253,7 @@ static Object** m_add(void* v) {
         out = matrix_arg(2);
     }
     m->add(matrix_arg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_bcopy(void* v) {
@@ -276,7 +275,7 @@ static Object** m_bcopy(void* v) {
     }
     out = get_out_mat(m, m0, n0, i);
     m->bcopy(out, i0, j0, m0, n0, i1, j1);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_mulm(void* v) {
@@ -294,14 +293,14 @@ static Object** m_mulm(void* v) {
     out->resize(m->nrow(), in->ncol());
     check_domain(m->ncol(), in->nrow());
     m->mulm(in, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_c(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->copy(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_transpose(void* v) {
@@ -309,7 +308,7 @@ static Object** m_transpose(void* v) {
     Matrix* out = get_out_mat(m, 1);
     out->resize(m->ncol(), m->nrow());
     m->transpose(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_symmeig(void* v) {
@@ -364,7 +363,7 @@ static Object** m_muls(void* v) {
     //		out->resize(...
     //	}
     m->muls(*getarg(1), out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_getrow(void* v) {
@@ -433,7 +432,7 @@ static Object** m_setrow(void* v) {
 #endif
         m->setrow(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setcol(void* v) {
@@ -450,7 +449,7 @@ static Object** m_setcol(void* v) {
 #endif
         m->setcol(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_setdiag(void* v) {
@@ -467,7 +466,7 @@ static Object** m_setdiag(void* v) {
 #endif
         m->setdiag(k, in);
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_getdiag(void* v) {
@@ -499,20 +498,20 @@ static Object** m_getdiag(void* v) {
 static Object** m_zero(void* v) {
     Matrix* m = (Matrix*) v;
     m->zero();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_ident(void* v) {
     Matrix* m = (Matrix*) v;
     m->ident();
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_exp(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1, "exponentiation");
     m->exp(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_pow(void* v) {
@@ -520,14 +519,14 @@ static Object** m_pow(void* v) {
     int k = (int) chkarg(1, 0., 100.);
     Matrix* out = get_out_mat(m, 2, "raising to a power");
     m->pow(k, out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static Object** m_inverse(void* v) {
     Matrix* m = (Matrix*) v;
     Matrix* out = get_out_mat(m, 1);
     m->inverse(out);
-    return out->temp_objvar();
+    return temp_objvar(out);
 }
 
 static double m_det(void* v) {
@@ -608,7 +607,7 @@ static Object** m_set(void* v) {
             *(m->mep(i, j)) = *getarg(++k);
         }
     }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Object** m_to_vector(void* v) {
@@ -646,7 +645,7 @@ static Object** m_from_vector(void* v) {
         for (i = 0; i < nrow; ++i) {
             *(m->mep(i, j)) = ve[k++];
         }
-    return m->temp_objvar();
+    return temp_objvar(m);
 }
 
 static Member_func m_members[] = {

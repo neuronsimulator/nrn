@@ -138,7 +138,6 @@ class OcMatrix {
     }
 
     void unimp();
-    Object** temp_objvar();
 
   protected:
     OcMatrix(int type);
