@@ -24,7 +24,7 @@ extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern hoc_Item* net_cvode_instance_psl();
-extern PlayRecList* net_cvode_instance_prl();
+extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
@@ -475,8 +475,8 @@ void SaveState::alloc() {
             allocacell(acell_[j], i);
             ++j;
         }
-    PlayRecList* prl = net_cvode_instance_prl();
-    nprs_ = prl->count();
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    nprs_ = prl->size();
     if (nprs_) {
         prs_ = new PlayRecordSave*[nprs_];
     }
@@ -623,11 +623,10 @@ void SaveState::save() {
             ++j;
         }
     if (nprs_) {
-        PlayRecList* prl = net_cvode_instance_prl();
-        int i;
-        assert(nprs_ == prl->count());
-        for (i = 0; i < nprs_; ++i) {
-            prs_[i] = prl->item(i)->savestate_save();
+        std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+        assert(nprs_ == prl->size());
+        for (std::size_t i = 0; i < nprs_; ++i) {
+            prs_[i] = (*prl)[i]->savestate_save();
         }
     }
     savenet();
@@ -707,10 +706,10 @@ void SaveState::restore(int type) {
     if (type == 1) {
         return;
     }
-    PlayRecList* prl = net_cvode_instance_prl();
-    // during a local step the PlayRecList is augmented with GLineRecord
+    std::vector<PlayRecord*>* prl = net_cvode_instance_prl();
+    // during a local step prl is augmented with GLineRecord
     // assert(nprs_ == prl->count());
-    assert(nprs_ <= prl->count());
+    assert(nprs_ <= prl->size());
     int i;
     for (i = 0; i < nprs_; ++i) {
         prs_[i]->savestate_restore();

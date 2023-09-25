@@ -11,10 +11,6 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon);    // NetCons in same order as Point_process
-implementPtrList(NetConList, NetCon);  // and there may be several per pp.
-
-
 static void pr_memb(int type,
                     Memb_list* ml,
                     int* cellnodes,
@@ -51,9 +47,10 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
 
     // List of NetCon for each of the NET_RECEIVE point process instances
     // ... all NetCon list in the hoc NetCon cTemplate
-    NetConList** nclist = new NetConList*[pnt2index.size()];
+    std::vector<NetCon*>** nclist = new std::vector<NetCon*>*[pnt2index.size()];
     for (size_t i = 0; i < pnt2index.size(); ++i) {
-        nclist[i] = new NetConList(1);
+        nclist[i] = new std::vector<NetCon*>();
+        nclist[i]->reserve(1);
     }
     int nc_cnt = 0;
     Symbol* ncsym = hoc_lookup("NetCon");
@@ -64,15 +61,15 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
         Point_process* pp = nc->target_;
         const auto& it = pnt2index.find(pp);
         if (it != pnt2index.end()) {
-            nclist[it->second]->append(nc);
+            nclist[it->second]->push_back(nc);
             ++nc_cnt;
         }
     }
     fprintf(f, "netcons %d\n", nc_cnt);
     fprintf(f, " pntindex srcgid active delay weights\n");
     for (size_t i = 0; i < pnt2index.size(); ++i) {
-        for (int j = 0; j < nclist[i]->count(); ++j) {
-            NetCon* nc = nclist[i]->item(j);
+        for (int j = 0; j < nclist[i]->size(); ++j) {
+            NetCon* nc = nclist[i]->at(j);
             int srcgid = -3;
             srcgid = (nc->src_) ? nc->src_->gid_ : -3;
             if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
