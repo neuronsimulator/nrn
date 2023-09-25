@@ -454,9 +454,9 @@ if(NRN_ENABLE_PROFILING)
     add_definitions("-DNRN_CALIPER")
     set(CALIPER_LIB "caliper")
   elseif(NRN_PROFILER STREQUAL "likwid")
-    find_package(likwid REQUIRED)
-    include_directories(${likwid_INCLUDE_DIRS})
-    add_definitions("-DLIKWID_PERFMON")
+    include(GetLIKWID)
+    set(LIKWID_LIB nrn_likwid)
+
   endif()
 endif()
 
@@ -567,6 +567,7 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 

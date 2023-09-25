@@ -41,12 +41,17 @@ class coreneuron(object):
     Attributes
     ----------
     cell_permute
+    model_path
     enable
     file_mode
     gpu
     prcellstate
+    sim_config
     verbose
     warp_balance
+    save_path
+    restore_path
+    skip_write_model_to_disk
 
     Examples
     --------
@@ -72,6 +77,11 @@ class coreneuron(object):
         self._verbose = 2  # INFO
         self._prcellstate = -1
         self._model_stats = False
+        self._sim_config = None
+        self._model_path = None
+        self._save_path = None
+        self._restore_path = None
+        self._skip_write_model_to_disk = False
 
     def __call__(self, **kwargs):
         """
@@ -211,6 +221,57 @@ class coreneuron(object):
     def model_stats(self, value):
         self._model_stats = bool(value)
 
+    @property
+    def sim_config(self):
+        """Simulation config file."""
+        return self._sim_config
+
+    @sim_config.setter
+    def sim_config(self, value):
+        self._sim_config = str(value)
+
+    @property
+    def model_path(self):
+        """Data path of the model."""
+        return self._model_path
+
+    @sim_config.setter
+    def model_path(self, value):
+        self._model_path = str(value)
+
+    @property
+    def save_path(self):
+        """Data path for save."""
+        return self._save_path
+
+    @sim_config.setter
+    def save_path(self, value):
+        self._save_path = str(value)
+
+    @property
+    def restore_path(self):
+        """Data path for restore."""
+        return self._restore_path
+
+    @sim_config.setter
+    def restore_path(self, value):
+        self._restore_path = str(value)
+
+    @property
+    def skip_write_model_to_disk(self):
+        """Set internal flag to only simulate the model with CoreNEURON.
+        Avoids writing the coreneuron input data to the data_path in
+        CoreNEURON embedded mode when launched thourgh the NEURON Python
+        API. The coreneuron input data should already be there by calling
+        prior to pc.psolve() pc.nrncore_write() and CoreNEURON uses them
+        for launching the simulation.
+        """
+        return self._skip_write_model_to_disk
+
+    @sim_config.setter
+    def skip_write_model_to_disk(self, value):
+        self._skip_write_model_to_disk = value
+
     def nrncore_arg(self, tstop):
         """
         Return str that can be used for pc.nrncore_run(str)
@@ -234,7 +295,12 @@ class coreneuron(object):
             if self._num_gpus:
                 arg += " --num-gpus %d" % self._num_gpus
         if self._file_mode:
-            arg += " --datpath %s" % CORENRN_DATA_DIR
+            if self._model_path is not None:
+                arg += " --datpath %s" % self._model_path
+            else:
+                arg += " --datpath %s" % CORENRN_DATA_DIR
+            if self._skip_write_model_to_disk:
+                arg += " --skip-write-model-to-disk"
         arg += " --tstop %g" % tstop
         arg += " --cell-permute %d" % self.cell_permute
         if self._warp_balance > 0:
@@ -244,6 +310,12 @@ class coreneuron(object):
         arg += " --verbose %d" % self.verbose
         if self._model_stats:
             arg += " --model-stats"
+        if self._save_path:
+            arg += " --checkpoint %s" % self._save_path
+        if self._restore_path:
+            arg += " --restore %s" % self._restore_path
+        if self._sim_config:
+            arg += " --read-config %s" % self._sim_config
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()

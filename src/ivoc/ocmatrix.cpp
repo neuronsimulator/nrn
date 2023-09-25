@@ -41,7 +41,6 @@ static void Vect2VEC(Vect* v1, VEC& v2) {
 }
 
 OcMatrix::OcMatrix(int type) {
-    obj_ = NULL;
     type_ = type;
 }
 OcMatrix::~OcMatrix() {}
@@ -97,8 +96,8 @@ OcFullMatrix* OcMatrix::full() {
 
 OcFullMatrix::OcFullMatrix(int nrow, int ncol)
     : OcMatrix(MFULL) {
-    lu_factor_ = NULL;
-    lu_pivot_ = NULL;
+    lu_factor_ = nullptr;
+    lu_pivot_ = nullptr;
     m_ = m_get(nrow, ncol);
 }
 OcFullMatrix::~OcFullMatrix() {
@@ -165,7 +164,7 @@ void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
 void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
     VEC v1;
     Vect2VEC(d, v1);
-    svd(m_, u ? u->full()->m_ : NULL, v ? v->full()->m_ : NULL, &v1);
+    svd(m_, u ? u->full()->m_ : nullptr, v ? v->full()->m_ : nullptr, &v1);
 }
 
 void OcFullMatrix::getrow(int k, Vect* out) {
@@ -193,6 +192,8 @@ void OcFullMatrix::getdiag(int k, Vect* out) {
 #endif
         }
     } else {
+        // Yes for negative diagonal we set the vector from the middle
+        // The output vector should ALWAYS be the size of biggest diagonal
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
             v_elem(out, i) = m_entry(m_, i, j);
@@ -228,6 +229,8 @@ void OcFullMatrix::setdiag(int k, Vect* in) {
 #endif
         }
     } else {
+        // Yes for negative diagonal we set the vector from the middle
+        // The input vector should ALWAYS have `nrows` elements.
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
 #ifdef WIN32
             m_set_val(m_, i, j, v_elem(in, i));
@@ -313,15 +316,6 @@ double OcFullMatrix::det(int* e) {
     PERM* piv = px_get(n);
     m_copy(m_, lu);
     LUfactor(lu, piv);
-#if 0
-printf("LU\n");
-for (int i = 0; i < n; ++i) {
-	for (int j = 0; j < n; ++j) {
-		printf(" %g", lu->me[i][j]);
-	}
-	printf("\t%d\n", piv->pe[i]);
-}
-#endif
     double m = 1.0;
     *e = 0;
     for (int i = 0; i < n; ++i) {
@@ -364,8 +358,8 @@ OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
 
     int len = 4;
     m_ = sp_get(nrow, ncol, len);
-    lu_factor_ = NULL;
-    lu_pivot_ = NULL;
+    lu_factor_ = nullptr;
+    lu_pivot_ = nullptr;
 }
 OcSparseMatrix::~OcSparseMatrix() {
     if (lu_factor_) {
@@ -375,14 +369,14 @@ OcSparseMatrix::~OcSparseMatrix() {
     SP_FREE(m_);
 }
 
-// returns pointer to sparse element. NULL if it does not exist.
+// returns pointer to sparse element. nullptr if it does not exist.
 double* OcSparseMatrix::pelm(int i, int j) {
     SPROW* r = m_->row + i;
     int idx = sprow_idx(r, j);
     if (idx >= 0) {
         return &r->elt[idx].val;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -445,7 +439,7 @@ void OcSparseMatrix::setrow(int k, Vect* in) {
     int i, n = ncol();
     double* p;
     for (i = 0; i < n; ++i) {
-        if ((p = pelm(k, i)) != NULL) {
+        if ((p = pelm(k, i)) != nullptr) {
 #ifdef WIN32
             *p = v_elem(in, i);
         } else if (v_elem(in, i)) {
@@ -465,7 +459,7 @@ void OcSparseMatrix::setcol(int k, Vect* in) {
     int i, n = nrow();
     double* p;
     for (i = 0; i < n; ++i) {
-        if ((p = pelm(i, k)) != NULL) {
+        if ((p = pelm(i, k)) != nullptr) {
 #ifdef WIN32
             *p = v_elem(in, i);
         } else if (v_elem(in, i)) {
@@ -486,7 +480,7 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
     double* p;
     if (k >= 0) {
         for (i = 0, j = k; i < row && j < col; ++i, ++j) {
-            if ((p = pelm(i, j)) != NULL) {
+            if ((p = pelm(i, j)) != nullptr) {
 #ifdef WIN32
                 *p = v_elem(in, i);
             } else if (v_elem(in, i)) {
@@ -500,7 +494,9 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
         }
     } else {
         for (i = -k, j = 0; i < row && j < col; ++i, ++j) {
-            if ((p = pelm(i, j)) != NULL) {
+            // Yes for negative diagonal we set the vector from the middle
+            // The input vector should ALWAYS have `nrows` elements.
+            if ((p = pelm(i, j)) != nullptr) {
 #ifdef WIN32
                 *p = v_elem(in, i);
             } else if (v_elem(in, i)) {

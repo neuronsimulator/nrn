@@ -37,8 +37,6 @@ class SymbolItem {
     int whole_array_;
 };
 
-declarePtrList(SymbolList, SymbolItem);
-
-void nrn_symdir_load_pysec(SymbolList& sl, void*);
+void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void*);
 
 #endif
