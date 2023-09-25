@@ -106,6 +106,7 @@ rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
 
 # copy all needed include files by processing output of g++ -E
 copyinc() {
+  ls include
   echo "" > temp.cxx
   for i in $* ; do
     echo "#include $i"
