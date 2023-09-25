@@ -506,7 +506,7 @@ def _find_librxdmath():
 
 def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    print(f"{filename = }")
+    print(f"{filename = }", flush=True)
     with open(filename + ".cpp", "w") as f:
         f.write(formula)
     math_library = "-lm"
@@ -528,7 +528,7 @@ def _cxx_compile(formula):
         else:
             gcc = "g++"
 
-    print("_cxx_compile: still alive")
+    print("_cxx_compile: still alive", flush=True)
     # TODO: Check this works on non-Linux machines
     gcc_cmd = "%s -I%s " % (
         gcc,
@@ -544,16 +544,16 @@ def _cxx_compile(formula):
         )
         os.system(gcc_cmd)
         os.putenv("PATH", my_path)
-        print("_cxx_compile (win): {gcc_cmd = }")
+        print(f"_cxx_compile (win): {gcc_cmd = }", flush=True)
     else:
         os.system(gcc_cmd)
-        print("_cxx_compile (else): {gcc_cmd = }")
+        print(f"_cxx_compile (else): {gcc_cmd = }", flush=True)
 
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     print("_cxx_compile: first cdll")
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
 
-    print("_cxx_compile: second cdll")
+    print("_cxx_compile: second cdll", flush=True)
     dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
     reaction = dll.reaction
     reaction.argtypes = [
