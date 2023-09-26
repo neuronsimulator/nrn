@@ -2,7 +2,7 @@
 #include "wrap_sprintf.h"
 #include <stdio.h>
 #if 1
-#if defined(STDC_HEADERS) || defined(SYSV)
+#if defined(STDC_HEADERS) || defined(SYSV) || defined(WIN32)
 #include <string.h>
 #else
 #include <strings.h>

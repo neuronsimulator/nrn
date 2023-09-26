@@ -289,7 +289,7 @@ if(NRN_WHEEL_STATIC_READLINE)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
-find_package(Readline REQUIRED)
+# find_package(Readline REQUIRED)
 if(READLINE_FOUND)
   # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
   # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be

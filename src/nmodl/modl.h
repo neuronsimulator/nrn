@@ -2,7 +2,7 @@
 #include "wrap_sprintf.h"
 
 #include <stdio.h>
-#if HAVE_STRING_H
+#if HAVE_STRING_H || WIN32
 #include <string.h>
 #else
 #include <strings.h>

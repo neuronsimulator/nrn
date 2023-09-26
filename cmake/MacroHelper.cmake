@@ -207,15 +207,16 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_cpp modfile_basename)
+  message(WARNING "${modfile_basename} is about to be annihilated!")
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/nocmodl
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/DEBUG/nocmodl
       ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-    COMMAND sed "'s/_reg()/_reg_()/'" ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
+    COMMAND sed "s/_reg()/_reg_()/" ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
+    COMMAND ${CMAKE_COMMAND} -E rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
     DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

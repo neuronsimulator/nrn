@@ -22,7 +22,7 @@ int in_comment_;
 char* inputline() {
     /* and removes comment, newline, beginning and trailing blanks */
     /* used to get the TITLE line */
-#if SYSV || defined(MINGW)
+#if SYSV || defined(MINGW) || defined(WIN32)
 #define index strchr
 #endif
     char* cp;
@@ -449,7 +449,11 @@ static int file_stack_empty() {
 /* adapted from : gist@jonathonreinhart/mkdir_p.c */
 int mkdir_p(const char* path) {
     const size_t len = strlen(path);
+#ifdef WIN32
+    char mypath[_MAX_PATH];
+#else
     char mypath[PATH_MAX];
+#endif
     char* p;
 
     errno = 0;
