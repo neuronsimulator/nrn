@@ -71,6 +71,9 @@ mingw-w64-x86_64-python3-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
 
+:: Remove Choco artifacts
+rmdir /s /q C:\ProgramData\chocolatey
+
 :: if all goes well, go to end
 goto :EOF
 
