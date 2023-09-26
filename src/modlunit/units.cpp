@@ -585,65 +585,6 @@ void unit_init() {
     unit_stk_clean();
 }
 
-#if 0
-void main(argc, argv)
-char *argv[];
-{
-	register i;
-	register char *file;
-	struct unit u1, u2;
-	double f;
-
-	if(argc>1 && *argv[1]=='-') {
-		argc--;
-		argv++;
-		dumpflg++;
-	}
-	file = dfile;
-	if(argc > 1)
-		file = argv[1];
-	if ((inpfile = fopen(file, "r")) == NULL) {
-		printf("no table\n");
-		exit(1);
-	}
-	signal(8, fperr);
-	units_cpp_init();
-
-loop:
-	fperrc = 0;
-	printf("you have: ");
-	if(convr(&u1))
-		goto loop;
-	if(fperrc)
-		goto fp;
-loop1:
-	printf("you want: ");
-	if(convr(&u2))
-		goto loop1;
-	for(i=0; i<NDIM; i++)
-		if(u1.dim[i] != u2.dim[i])
-			goto conform;
-	f = u1.factor/u2.factor;
-	if(fperrc)
-		goto fp;
-	printf("\t* %e\n", f);
-	printf("\t/ %e\n", 1./f);
-	goto loop;
-
-conform:
-	if(fperrc)
-		goto fp;
-	printf("conformability\n");
-	units(&u1);
-	units(&u2);
-	goto loop;
-
-fp:
-	printf("underflow or overflow\n");
-	goto loop;
-}
-#endif
-
 void units(unit* up) {
     printf("\t%s\n", Unit_str(up));
 }
@@ -811,9 +752,6 @@ void units_cpp_init() {
 l0:
     c = get();
     if (c == 0) {
-#if 0
-		printf("%d units; %ld bytes\n\n", i, cp-names);
-#endif
         if (dumpflg)
             for (tp = table; tp < table + NTAB; tp++) {
                 if (tp->name == 0)
@@ -884,59 +822,44 @@ redef:
 }
 
 double getflt() {
-    int c, i, dp;
-    double d, e;
-    int f;
+    int c;
+    char str[100];
+    char* cp;
+    double d_modern;
 
-    d = 0.;
-    dp = 0;
+    cp = str;
     do
         c = get();
     while (c == ' ' || c == '\t');
 
 l1:
     if (c >= '0' && c <= '9') {
-        d = d * 10. + c - '0';
-        if (dp)
-            dp++;
+        *cp++ = c;
         c = get();
         goto l1;
     }
     if (c == '.') {
-        dp++;
+        *cp++ = c;
         c = get();
         goto l1;
     }
-    if (dp)
-        dp--;
     if (c == '+' || c == '-') {
-        f = 0;
-        if (c == '-')
-            f++;
-        i = 0;
+        *cp++ = 'e';
+        *cp++ = c;
         c = get();
         while (c >= '0' && c <= '9') {
-            i = i * 10 + c - '0';
+            *cp++ = c;
             c = get();
         }
-        if (f)
-            i = -i;
-        dp -= i;
     }
-    e = 1.;
-    i = dp;
-    if (i < 0)
-        i = -i;
-    while (i--)
-        e *= 10.;
-    if (dp < 0)
-        d *= e;
-    else
-        d /= e;
-    if (c == '|')
-        return (d / getflt());
+    *cp = '\0';
+    d_modern = atof(str);
+    if (c == '|') {
+        d_modern /= getflt();
+        return d_modern;
+    }
     peekc = c;
-    return (d);
+    return (d_modern);
 }
 
 int get() {
