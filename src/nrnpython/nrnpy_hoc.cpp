@@ -233,8 +233,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     if (kwds && PyDict_Check(kwds) && (base = PyDict_GetItemString(kwds, "hocbase"))) {
         if (PyObject_TypeCheck(base, hocobject_type)) {
             hbase = (PyHocObject*) base;
-        }
-        else {
+        } else {
             PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
             Py_DECREF(subself);
             return NULL;
