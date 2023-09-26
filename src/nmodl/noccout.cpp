@@ -5,7 +5,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 
 #define P(arg) fputs(arg, fcout)
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
