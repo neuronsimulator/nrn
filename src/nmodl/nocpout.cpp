@@ -1,4 +1,7 @@
 #include <../../nmodlconf.h>
+
+#include <iostream>
+
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 
 /*
@@ -107,6 +110,7 @@ int thread_data_index = 0;
 List* thread_cleanup_list;
 List* thread_mem_init_list;
 List* toplocal_;
+List* numlist_;
 extern int protect_;
 extern int protect_include_;
 extern List *set_ion_variables(int), *get_ion_variables(int);
@@ -181,6 +185,8 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 static int varcount, parraycount;
 static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
 static std::vector<std::string> data_field_strings;
+
+std::vector<RandomVar> random_vars;
 
 void nrninit() {
     currents = newlist();
@@ -1781,6 +1787,21 @@ void defs_h(Symbol* s) {
         q = lappendstr(defs_list, buf);
     }
     q->itemtype = VERBATIM;
+}
+
+void nrnlist_print(Item*begin, Item* qlist) {
+    for (Item *q = begin->next; q != qlist->next; q = q->next) {
+        std::cout << SYM(q)->name << ' ';
+    }
+    std::cout << "\n";
+}
+
+std::vector<std::string> nrnlist_to_string(Item*begin, Item* qlist) {
+    std::vector<std::string> names;
+    for (Item *q = begin->next; q != qlist->next; q = q->next) {
+        names.emplace_back(SYM(q)->name);
+    }
+    return names;
 }
 
 void nrn_list(Item* q1, Item* q2) {

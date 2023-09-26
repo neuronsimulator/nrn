@@ -64,6 +64,10 @@ static List *table_list = LIST0; /* table information for TABLE statement */
 static Item* astmt_end_;	/* see kinetic.c vectorizing */
 static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 				 and FOR_NETCONS */
+
+extern std::vector<RandomVar> random_vars;
+std::vector<std::string> numbers;
+
 %}
 
 %union {
@@ -247,11 +251,16 @@ NUMBER: integer | REAL
 	;
 
 numlist: number
-		{
-		}
-	| numlist ',' number
-		{
-		}
+    {
+        numbers.clear();
+        numbers.push_back(STR($1));
+        //$$ = $1;
+    }
+	| numlist ',' number {
+        numbers.push_back(STR($3));
+        //remove($2);
+        //$$ = $3;
+	}
 	;
 
 integer: INTEGER
@@ -1023,9 +1032,13 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt THREADSAFE
 		{ assert_threadsafe = 1; }
-	| nrnstmt RANDOM name '(' numlist ')' namelist
+	| nrnstmt RANDOM name '(' numlist ')' nrnlist
 	    {
-
+	        for(const auto& name: nrnlist_to_string($6, $7)) {
+	            RandomVar r({SYM($3)->name, numbers, name.c_str()});
+	            r.print();
+                random_vars.emplace_back(r);
+            }
 	    }
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology

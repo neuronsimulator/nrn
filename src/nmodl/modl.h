@@ -5,6 +5,9 @@
 #include <string.h>
 #include <assert.h>
 
+#include <string>
+#include <vector>
+
 /**
  * \dir
  * \brief NMODL NMODL Translator (NOCMODL) Implementation
@@ -325,6 +328,21 @@ extern Item* qlint;
 #endif
 using neuron::Sprintf;
 
+#include <iostream>
+
+struct RandomVar {
+    std::string distribution;
+    std::vector<std::string> arguments;
+    std::string name;
+
+    void print() {
+        std::cout << "RNG: " << distribution << " DISTR ";
+        for(const auto arg: arguments) {
+            std::cout << arg << " ";
+        }
+        std::cout << "NAME " << name << std::endl;
+    }
+};
 
 void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions
