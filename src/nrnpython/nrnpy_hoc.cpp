@@ -2404,7 +2404,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
             hoc_execerror(hoc_object_name(ho),
                           " does not support the Python Sequence or Iterator protocol");
         }
-        for(nb::handle item : po) {
+        for (nb::handle item: po) {
             if (!PyNumber_Check(item.ptr())) {
                 char buf[50];
                 Sprintf(buf, "Some list items are not a number");
@@ -2423,7 +2423,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
                 x[i] = *(double*) (y + j);
             }
         } else {
-            for (long i=0; i<size; i++) {
+            for (long i = 0; i < size; ++i) {
                 auto item = po[i];
                 if (!PyNumber_Check(item.ptr())) {
                     char buf[50];
