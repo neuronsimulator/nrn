@@ -21,6 +21,10 @@
 #include <vector>
 #include <sstream>
 
+#include <nanobind/nanobind.h>
+
+namespace nb = nanobind;
+
 extern PyTypeObject* psection_type;
 extern std::vector<const char*> py_exposed_classes;
 
@@ -2392,53 +2396,44 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
     if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
         hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
     }
-    PyObject* po = nrnpy_hoc2pyobject(ho);
-    Py_INCREF(po);
-    if (!PySequence_Check(po)) {
-        if (!PyIter_Check(po)) {
+    // We borrow the list, so there's an INCREF and all items are alive
+    nb::object po = nb::borrow(nrnpy_hoc2pyobject(ho));
+
+    if (!PySequence_Check(po.ptr())) {
+        if (!PyIter_Check(po.ptr())) {
             hoc_execerror(hoc_object_name(ho),
                           " does not support the Python Sequence or Iterator protocol");
         }
-        PyObject* iterator = PyObject_GetIter(po);
-        assert(iterator != NULL);
-        int i = 0;
-        PyObject* p;
-        while ((p = PyIter_Next(iterator)) != NULL) {
-            if (!PyNumber_Check(p)) {
+        for(nb::handle item : po) {
+            if (!PyNumber_Check(item.ptr())) {
                 char buf[50];
-                Sprintf(buf, "item %d not a number", i);
+                Sprintf(buf, "Some list items are not a number");
                 hoc_execerror(buf, 0);
             }
-            hv->push_back(PyFloat_AsDouble(p));
-            Py_DECREF(p);
-            ++i;
+            hv->push_back(PyFloat_AsDouble(item.ptr()));
         }
-        Py_DECREF(iterator);
     } else {
-        int size = PySequence_Size(po);
-        //		printf("size = %d\n", size);
+        int size = nb::len(po);
         hv->resize(size);
         double* x = vector_vec(hv);
         long stride;
-        char* y = double_array_interface(po, stride);
+        char* y = double_array_interface(po.ptr(), stride);
         if (y) {
             for (int i = 0, j = 0; i < size; ++i, j += stride) {
                 x[i] = *(double*) (y + j);
             }
         } else {
-            for (int i = 0; i < size; ++i) {
-                PyObject* p = PySequence_GetItem(po, i);
-                if (!PyNumber_Check(p)) {
+            for (long i=0; i<size; i++) {
+                auto item = po[i];
+                if (!PyNumber_Check(item.ptr())) {
                     char buf[50];
                     Sprintf(buf, "item %d not a number", i);
                     hoc_execerror(buf, 0);
                 }
-                x[i] = PyFloat_AsDouble(p);
-                Py_DECREF(p);
+                x[i] = PyFloat_AsDouble(item.ptr());
             }
         }
     }
-    Py_DECREF(po);
     return hv;
 }
 

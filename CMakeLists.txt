@@ -431,6 +431,8 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
+  # Activate nanobind
+  nrn_add_external_project(nanobind)
 endif()
 
 # =============================================================================

@@ -11,6 +11,21 @@ add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
+# minimal nanobind interface
+# =============================================================================
+add_library(nanobind INTERFACE)
+target_sources(nanobind INTERFACE
+    ${NB_DIR}/src/common.cpp
+    ${NB_DIR}/src/error.cpp
+    ${NB_DIR}/src/nb_internals.cpp
+    ${NB_DIR}/src/nb_static_property.cpp
+    ${NB_DIR}/src/nb_type.cpp
+    ${NB_DIR}/src/nb_func.cpp
+    ${NB_DIR}/src/implicit.cpp
+  )
+target_include_directories(nanobind INTERFACE "${NB_DIR}/include" "${NB_DIR}/ext/robin_map/include")
+
+# =============================================================================
 # nrnpython libraries (one lib per python)
 # =============================================================================
 set(nrnpython_lib_list)
@@ -38,7 +53,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
     add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
+    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY} nanobind)
     if(NRN_LINK_AGAINST_PYTHON)
       target_link_libraries(nrnpython${pyver} ${pylib})
     endif()
