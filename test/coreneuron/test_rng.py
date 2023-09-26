@@ -24,22 +24,33 @@ def model():
 
 def test_NetStim_noise():
     # Can use noiseFromRandom
-    use_noiseFromRandom123 = True
 
-    cells = {gid: (h.NetStim(), h.Random()) for gid in range(pc.id(), 5, pc.nhost())}
+    cells = {gid: h.NetStim() for gid in range(pc.id(), 5, pc.nhost())}
     for gid, cell in cells.items():
         pc.set_gid2node(gid, pc.id())
-        pc.cell(gid, h.NetCon(cell[0], None))
-        cell[1].Random123(gid, 2, 3)
-        cell[1].negexp(1)
-        if use_noiseFromRandom123:
-            cell[0].noiseFromRandom123(gid, 2, 3)
-        else:
-            cell[0].noiseFromRandom(cell[1])
-        cell[0].interval = gid + 1
-        cell[0].number = 100
-        cell[0].start = 0
-        cell[0].noise = 1
+        pc.cell(gid, h.NetCon(cell, None))
+
+        cell.noiseFromRandom123(gid, 2, 3)
+
+        #cell.r1.init_rng(1,2,3)
+        #cell.r2.init_rng(1,2,3)
+        #cell.r1.set_seq(1,0)
+        #cell.r2.set_seq(1,0)
+
+        #cell.init_rng()
+
+        #cell.init_rng(cell.r1, 1, 2)
+        #cell.init_rng(cell.r2, 1, 2)
+        #cell.init_rng(cell.r3, 1, 2)
+        #cell.set_seq(cell.r, 10, 1)
+
+        cell.interval = gid + 1
+        cell.number = 100
+        cell.start = 0
+        cell.noise = 1
+
+        cell.init_rng("r", 11, 12, 13);
+
 
     spiketime = h.Vector()
     spikegid = h.Vector()
@@ -47,8 +58,10 @@ def test_NetStim_noise():
 
     pc.set_maxstep(10)
     tstop = 100
-    for cell in cells.values():
-        cell[1].seq(0)  # only _ran_compat==2 initializes the streams
+
+    #for cell in cells.values():
+    #    cell.seq(0)  # only _ran_compat==2 initializes the streams
+
     h.finitialize()
     pc.psolve(tstop)
     spiketime_std = spiketime.c()
@@ -61,8 +74,10 @@ def test_NetStim_noise():
 
     coreneuron.verbose = 0
     coreneuron.enable = False
-    for cell in cells.values():
-        cell[1].seq(0)
+
+    #for cell in cells.values():
+    #    cell.set_seq(0)
+
     h.finitialize()
     while h.t < tstop:
         h.continuerun(h.t + 5)

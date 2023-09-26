@@ -105,6 +105,7 @@ static double _hoc_init_sequence(void*);
 static double _hoc_invl(void*);
 static double _hoc_next_invl(void*);
 static double _hoc_noiseFromRandom123(void*);
+static double _hoc_init_rng(void*);
 static int _mechtype;
 extern void _nrn_cacheloop_reg(int, int);
 extern void hoc_register_limits(int, HocParmLimits*);
@@ -155,6 +156,7 @@ static Member_func _member_func[] = {{"loc", _hoc_loc_pnt},
                                      {"invl", _hoc_invl},
                                      {"next_invl", _hoc_next_invl},
                                      {"noiseFromRandom123", _hoc_noiseFromRandom123},
+                                     {"init_rng", _hoc_init_rng},
                                      {0, 0}};
 #define bbsavestate bbsavestate_NetStim
 #define erand       erand_NetStim
@@ -602,6 +604,42 @@ static void _destructor(Prop* _prop) {
         }
     }
 }
+
+
+static int init_rng(_internalthreadargsproto_) {
+    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_rng_donotuse);
+    if (r123state) {
+        nrnran123_deletestream(r123state);
+        r123state = nullptr;
+    }
+
+    printf("In init_rng :: %s %d %d %d\n", gargstr(1), uint32_t(*getarg(2)), uint32_t(*getarg(3)), uint32_t(*getarg(4)));
+
+    r123state = nrnran123_newstream3(static_cast<uint32_t>(*getarg(2)),
+                                     static_cast<uint32_t>(*getarg(3)),
+                                     static_cast<uint32_t>(*getarg(4)));
+    return 0;
+}
+
+
+static double _hoc_init_rng(void* _vptr) {
+    double _r;
+    Datum* _ppvar;
+    Datum* _thread;
+    NrnThread* _nt;
+    auto* const _pnt = static_cast<Point_process*>(_vptr);
+    auto* const _p = _pnt->_prop;
+    _nrn_mechanism_cache_instance _ml_real{_p};
+    auto* const _ml = &_ml_real;
+    size_t const _iml{};
+    _ppvar = _nrn_mechanism_access_dparam(_p);
+    _thread = _extcall_thread.data();
+    _nt = static_cast<NrnThread*>(_pnt->_vnt);
+    _r = 1.;
+    init_rng(_threadargs_);
+    return (_r);
+}
+
 
 static void initmodel(_internalthreadargsproto_) {
     int _i;
