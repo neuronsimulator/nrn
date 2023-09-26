@@ -4,7 +4,7 @@ import pytest
 @pytest.fixture
 def simple_model(neuron_nosave_instance):
     """A simple rxd model with species and regions and reactions."""
-    
+
     h, rxd, save_path = neuron_nosave_instance
     dend = h.Section(name="dend")
     dend.diam = 2
