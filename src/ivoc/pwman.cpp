@@ -34,14 +34,16 @@ extern int hoc_return_type_code;
 void single_event_run();
 extern char** hoc_strpop();
 
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 char* hoc_back2forward(char*);
 #endif
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define IOS_OUT std::ios::out
 
 #include <IV-look/kit.h>
@@ -417,7 +419,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
 char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
@@ -522,7 +524,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     IFGUI((PrintableWindow*) v)->dismiss();
@@ -536,7 +538,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     IFGUI
     PrintableWindow* pw = PrintableWindow::leader();
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
     if (!nrn_is_gui_thread()) {
         nrn_gui_exec(pwman_iconify1, pw);
         return 0.;
@@ -651,7 +653,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -668,7 +670,7 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     IFGUI
 #if defined(WIN32)
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
     if (!nrn_is_gui_thread()) {
         scale_ = scale;
         nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
