@@ -8,11 +8,13 @@
 #undef PI
 #define nil   0
 #define _pval pval
+// clang-format off
 #include "md1redef.h"
-#include "md2redef.h"
-#include "neuron/cache/mechanism_range.hpp"
-#include "nrniv_mf.h"
 #include "section_fwd.hpp"
+#include "nrniv_mf.h"
+#include "md2redef.h"
+// clang-format on
+#include "neuron/cache/mechanism_range.hpp"
 static constexpr auto number_of_datum_variables = 3;
 static constexpr auto number_of_floating_point_variables = 9;
 namespace {
@@ -85,6 +87,12 @@ extern double* hoc_getarg(int);
 #define _nd_area             *_ml->dptr_field<0>(_iml)
 #define donotuse             *_ppvar[2].get<double*>()
 #define _p_donotuse          _ppvar[2].literal_value<void*>()
+
+//RNG:: Emit this for each new RANDOM variable
+#define rng_donotuse             *_ppvar[3].get<double*>()
+#define _p_rng_donotuse          _ppvar[3].literal_value<void*>()
+//
+
 /* Thread safe. No static _ml, _iml or _ppvar. */
 static int hoc_nrnpointerindex = 2;
 static _nrn_mechanism_std_vector<Datum> _extcall_thread;
@@ -173,8 +181,9 @@ static void _hoc_destroy_pnt(void* _vptr) {
 }
 static void _destructor(Prop*);
 /* connect range variables in _p that hoc is supposed to know about */
+//RNG:: Add entry into variable section
 static const char* _mechanism[] =
-    {"7.7.0", "NetStim", "interval", "number", "start", "noise", 0, 0, 0, "donotuse", 0};
+    {"7.7.0", "NetStim", "interval", "number", "start", "noise", 0, 0, 0, "donotuse", "rng_donotuse", 0};
 
 extern Prop* need_memb(Symbol*);
 static void nrn_alloc(Prop* _prop) {
@@ -251,12 +260,19 @@ extern "C" void _netstim_reg_() {
                                                                              "pntproc"} /* 1 */,
                                         _nrn_mechanism_field<double*>{"donotuse",
                                                                       "bbcorepointer"} /* 2 */,
-                                        _nrn_mechanism_field<void*>{"_tqitem", "netsend"} /* 3 */);
-    hoc_register_prop_size(_mechtype, 9, 4);
+    //RNG:: register new variable. NOTE: here type/semantic needs to be changed to random or something similar
+                                        _nrn_mechanism_field<double*>{"rng_donotuse",
+                                                                      "bbcorepointer"} /* 3 */,
+
+                                        _nrn_mechanism_field<void*>{"_tqitem", "netsend"} /* 4 */);
+    //RNG:: count of variable needs to be increased
+    hoc_register_prop_size(_mechtype, 9, 5);
     hoc_register_dparam_semantics(_mechtype, 0, "area");
     hoc_register_dparam_semantics(_mechtype, 1, "pntproc");
     hoc_register_dparam_semantics(_mechtype, 2, "bbcorepointer");
-    hoc_register_dparam_semantics(_mechtype, 3, "netsend");
+    //RNG:: register semantic. NOTE: should be also random or something similar
+    hoc_register_dparam_semantics(_mechtype, 3, "bbcorepointer");
+    hoc_register_dparam_semantics(_mechtype, 4, "netsend");
     add_nrn_artcell(_mechtype, 3);
     add_nrn_has_net_event(_mechtype);
     pnt_receive[_mechtype] = _net_receive;
