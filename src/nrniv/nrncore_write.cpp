@@ -230,7 +230,7 @@ size_t get_filesize(const char* fname) {
 }
 
 static void part2(const char* path) {
-    std::array<size_t, 4> offsets;
+    std::vector<size_t> offsets(4);
 
     CellGroup* cgs = cellgroups_;
     for (int i = 0; i < nrn_nthread; ++i) {
@@ -279,8 +279,7 @@ static void part2(const char* path) {
                 hoc_execerror("Second arg must be Vector or double.", NULL);
             }
         }
-        std::vector<size_t> offsets_vec(offsets.begin(), offsets.end());
-        write_nrnthread_task(path, cgs, append, offsets_vec);
+        write_nrnthread_task(path, cgs, append, offsets);
     }
 
     part2_clean();

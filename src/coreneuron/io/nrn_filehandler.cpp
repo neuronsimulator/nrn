@@ -23,10 +23,11 @@ bool FileHandler::file_exist(const std::string& filename) {
     return (stat(filename.c_str(), &buffer) == 0);
 }
 
-void FileHandler::open(const std::string& filename, std::ios::openmode mode) {
+void FileHandler::open(const std::string& filename, std::ios::openmode mode, size_t offset) {
     nrn_assert((mode & (std::ios::in | std::ios::out)));
     close();
     F.open(filename, mode | std::ios::binary);
+    F.seekg(offset, std::ios::beg);
     if (!F.is_open()) {
         std::cerr << "cannot open file '" << filename << "'" << std::endl;
     }

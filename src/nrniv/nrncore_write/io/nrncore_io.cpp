@@ -376,7 +376,7 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::vector<size_t> file_offsets) {
+void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::vector<size_t>& file_offsets) {
 //     // ids of datasets that will be created
 //     std::vector<int> iSend;
 
@@ -444,7 +444,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
 // #endif
 
     int num_offsets = file_offsets.size();
-    file_offsets.resize(file_offsets.size() * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
     nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
 
 
@@ -512,6 +512,14 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
             } else {
                 fprintf(fp, "-1\n");
             }
+        }
+
+        // Write the offsets of each rank in a new line
+        for (int i = 0; i < file_offsets.size(); i += num_offsets) {
+            for (int j = i; j < i + num_offsets && j < file_offsets.size(); ++j) {
+                fprintf(fp, "%zu ", file_offsets[j]);
+            }
+            fprintf(fp, "\n");
         }
 
         // // total number of datasets

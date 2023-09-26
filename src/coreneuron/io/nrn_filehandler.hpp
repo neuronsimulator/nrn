@@ -56,7 +56,7 @@ class FileHandler {
     explicit FileHandler(const std::string& filename);
 
     /** Preserving chkpnt state, move to a new file. */
-    void open(const std::string& filename, std::ios::openmode mode = std::ios::in);
+    void open(const std::string& filename, std::ios::openmode mode = std::ios::in, size_t offset=0);
 
     /** Is the file not open */
     bool fail() const {
