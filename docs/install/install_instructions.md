@@ -307,17 +307,16 @@ other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNE
 [NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based
 build system.
 
-Please refer to `the CMake build system
-options <../cmake_doc/options.rst>`__ for more information on how to
+Please refer to [the CMake build system
+options](../cmake_doc/options.rst) for more information on how to
 install the project using ``CMake``.
 
 #### Optimized CPU and GPU Support using CoreNEURON
 
-NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
+NEURON now integrates [CoreNEURON library](https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](../coreneuron/index.rst) and
-[here](https://github.com/BlueBrain/CoreNeuron/#installation).
+step method. You can find detailed instructions [here](../coreneuron/index.rst) and [here](../cmake_doc/options.rst).
 
 #### Run integrated tests
 

@@ -395,7 +395,7 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
-  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
   The ones of particular interest that can be used on the NEURON
   CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
 
