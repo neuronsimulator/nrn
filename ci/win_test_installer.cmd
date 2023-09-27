@@ -3,8 +3,10 @@
 :: error variable
 set "errorfound="
 
-:: uninstall mingw from choco as it would interfer with NEURON's compiler toolchain
-choco uninstall -y all
+:: uninstall all choco as it would interfer with NEURON's compiler toolchain
+:: we can do uninstall all but it takes 20 minutes. So simply remove install
+:: directory as choco packages are self contained in this directory.
+rmdir /s /q C:\ProgramData\chocolatey
 
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
