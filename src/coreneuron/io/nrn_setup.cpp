@@ -73,6 +73,11 @@ int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::ve
 
 void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 
+void (*nrn2core_get_dat3_cell_count)(int& cell_count);
+void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+void (*nrn2core_get_dat3_secmapping)(int i_c, int i_sec, std::string& segname,
+                               int& nsec, int& nseg, size_t& total_lfp_factors, int& n_electrode,
+                               std::vector<int>& data_sec, std::vector<int>& data_seg, std::vector<double>& data_lfp);
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
 // Note that regardless of the gid contents of a group, since all gids are
@@ -516,7 +521,7 @@ void nrn_setup(const char* filesdat,
     }
 
     if (is_mapping_needed)
-        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams);
+        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams, corenrn_embedded);
 
     *mindelay = set_mindelay(*mindelay);
 
@@ -934,6 +939,46 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
     /** mapping information for all neurons in single NrnThread */
     NrnThreadMappingInfo* ntmapping = new NrnThreadMappingInfo();
+    if (corenrn_embedded) {
+        int count;
+        nrn2core_get_dat3_cell_count(count);
+        /** for every neuron */
+        for (int i = 0; i < count; i++) {
+            int gid, nsec, nseg, nseclist;
+            nrn2core_get_dat3_cellmapping(i, gid, nsec, nseg, nseclist);
+            CellMapping* cmap = new CellMapping(gid);
+            for (int j=0; j<nseclist; j++) {
+                std::string segname;
+                int n_secsec, n_secseg, n_electrodes;
+                size_t total_lfp_factors;
+                std::vector<int> data_sec;
+                std::vector<int> data_seg;
+                std::vector<double> data_lfp;
+                nrn2core_get_dat3_secmapping(i, j, segname, n_secsec, n_secseg, total_lfp_factors, n_electrodes, data_sec, data_seg, data_lfp);
+                SecMapping* smap = new SecMapping();
+                smap->name = segname;
+                int factor_offset = 0;
+                for (int i_seg = 0; i_seg < n_secseg; i_seg++) {
+                    smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
+                    ntmapping->add_segment_id(data_seg[i_seg]);
+                    int factor_offset = i_seg * n_electrodes;
+                    if (total_lfp_factors > 0) {
+                        // Abort if the factors contains a NaN
+                        nrn_assert(count_if(data_lfp.begin(), data_lfp.end(), [](double d) {
+                                   return std::isnan(d);
+                               }) == 0);
+                        std::vector<double> segment_factors(data_lfp.begin() + factor_offset,
+                                                            data_lfp.begin() + factor_offset + n_electrodes);
+                        cmap->add_segment_lfp_factor(data_seg[i], segment_factors);
+                }
+            }
+                        cmap->add_sec_map(smap);
+
+        }
+            ntmapping->add_cell_mapping(cmap);
+
+            }
+    } else {
 
     int count = 0;
 
@@ -960,7 +1005,7 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
         ntmapping->add_cell_mapping(cmap);
     }
-
+    }
     // make number #cells match with mapping size
     nrn_assert((int) ntmapping->size() == nt.ncell);
 
