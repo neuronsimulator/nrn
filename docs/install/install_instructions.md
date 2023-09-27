@@ -305,72 +305,11 @@ Starting with the 7.8.1 release, NEURON can be installed using the [CMake build 
 One of the primary advantages of a CMake-based build system is cross-platform support and integration with
 other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/neuronsimulator/nrn/tree/master/src/coreneuron),
 [NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based
-build system, and they can be installed together as shown below:
+build system.
 
-1. Clone the latest version or specific release:
-
-  ```
-  git clone https://github.com/neuronsimulator/nrn           # latest development branch
-  git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
-  cd nrn
-  ```
-
-  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
-  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
-  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
-  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
-
-
-2. Create a build directory:
-
-  ```
-  mkdir build
-  cd build
-  ```
-
-3. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
-can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. e.g. a bare-bones installation:
-
-
-  ```
-  cmake .. \
-   -DNRN_ENABLE_INTERVIEWS=OFF \
-   -DNRN_ENABLE_MPI=OFF \
-   -DNRN_ENABLE_RX3D=OFF \
-   -DPYTHON_EXECUTABLE=$(which python3) \
-   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
-  ```
-
-4. Build the code:
-
-  ```
-  cmake --build . --parallel 8 --target install
-  ```
-  Feel free to set the number of parallel jobs (i.e. 8) according to your system using the `--parallel` option.
-
-  > :warning: When `NEURON` is installed with `CoreNEURON` option enabled then `NMODL` is also installed with the `NMODL` Python bindings which increase a lot the compilation complexity and memory requirements. For that purpose it's recommended to either disable this option if the Python bindings are not needed using the `CMake` option `-DNMODL_ENABLE_PYTHON_BINDINGS=OFF` or restrict the number of parallel jobs running in parallel in the `cmake` command using `cmake --parallel <number_of_parallel_jobs>`. i.e. in a machine with 8 threads do `cmake -parallel 4`.
-
-5. Set PATH and PYTHONPATH environmental variables to use the installation:
-
-  ```
-  export PATH=/path/to/install/directory/bin:$PATH
-  export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
-  ```
-
-Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
-
-* **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
-* **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
-* **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
-* **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
-* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
-* **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
-* **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
-* **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
-* **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
-
-Please refer to [the CMake build system options](../cmake_doc/options.rst) for more information on
-how to install the project using `CMake`.
+Please refer to `the CMake build system
+options <../cmake_doc/options.rst>`__ for more information on how to
+install the project using ``CMake``.
 
 #### Optimized CPU and GPU Support using CoreNEURON
 
