@@ -65,6 +65,8 @@ class FileHandler {
 
     static bool file_exist(const std::string& filename);
 
+    static std::string get_rank_fname(const char* basepath, bool create_folder = true);
+
     /** nothing more to read */
     bool eof();
 

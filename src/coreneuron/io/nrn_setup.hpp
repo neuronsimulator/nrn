@@ -18,6 +18,7 @@
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/mpi/lib/nrnmpi.hpp"
 
+
 namespace coreneuron {
 void read_phase1(NrnThread& nt, UserParams& userParams);
 void read_phase2(NrnThread& nt, UserParams& userParams);
@@ -43,7 +44,6 @@ extern void allocate_data_in_mechanism_nrn_init();
 extern void nrn_setup_cleanup();
 
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
-extern std::string get_rank_fname(const char* basepath, bool create_folder = true);
 
 size_t memb_list_size(NrnThreadMembList* tml, bool include_data);
 
@@ -103,6 +103,8 @@ inline void read_phase_aux<gap>(NrnThread& nt, UserParams& userParams) {
     read_phasegap(nt, userParams);
 }
 
+
+
 /// Reading phase wrapper for each neuron group.
 template <phase P>
 inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memory_transfer) {
@@ -118,7 +120,7 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
             }
 
             size_t file_offset = userParams.file_offsets[i * userParams.num_offsets + P - 1];
-            const auto& fname = get_rank_fname(data_dir);
+            const auto& fname = FileHandler::get_rank_fname(data_dir);
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid.
