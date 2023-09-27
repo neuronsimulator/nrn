@@ -42,9 +42,6 @@ class ValEdLabel;
 class ScenePicker;
 struct HocSymExtension;
 
-declarePtrList(HocUpdateItemList, HocUpdateItem)
-declarePtrList(HocItemList, HocItem)
-declarePtrList(HocPanelList, HocPanel)
 
 class HocPanel: public OcGlyph {
   public:
@@ -122,9 +119,9 @@ class HocPanel: public OcGlyph {
 
   private:
     PolyGlyph* box_;
-    HocUpdateItemList elist_;
-    HocItemList ilist_;
-    static HocUpdateItemList* update_list_;
+    std::vector<HocUpdateItem*> elist_;
+    std::vector<HocItem*> ilist_;
+    static std::vector<HocUpdateItem*>* update_list_;
     bool horizontal_;
     InputHandler* ih_;
 };

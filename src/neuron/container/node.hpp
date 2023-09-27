@@ -249,7 +249,7 @@ struct handle_interface: handle_base<Identifier> {
                       << " v=" << handle.v() << " area=" << handle.area() << " a=" << handle.a()
                       << " b=" << handle.b() << " d=" << handle.d() << '}';
         } else {
-            os << "Node{null}";
+            return os << "Node{null}";
         }
     }
 };
