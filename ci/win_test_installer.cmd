@@ -4,7 +4,7 @@
 set "errorfound="
 
 :: uninstall mingw from choco as it would interfer with NEURON's compiler toolchain
-choco uninstall -y mingw
+choco uninstall -y all
 
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
