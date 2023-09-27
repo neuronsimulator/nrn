@@ -8,7 +8,7 @@ Windows platforms.
 
 #### Mac OS
 
-Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
+Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` by opening a Terminal (Press `⌘` + `Space` and type "terminal") and typing:
 
 ```
 pip3 install neuron
@@ -107,7 +107,7 @@ architecture.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON as:
+Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
 ```
 pip3 install neuron
