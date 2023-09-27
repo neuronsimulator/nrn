@@ -7,7 +7,9 @@
 #include "hocparse.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
@@ -480,7 +482,11 @@ void System(void) {
         extern HocStr* hoc_tmpbuf;
         HocStr* line;
         int i;
+#ifdef _MSC_VER
+        fp = _popen(gargstr(1), "r");
+#else
         fp = popen(gargstr(1), "r");
+#endif
         if (!fp) {
             hoc_execerror("could not popen the command:", gargstr(1));
         }
@@ -496,7 +502,11 @@ void System(void) {
             strcat(hoc_tmpbuf->buf, line->buf);
         }
         hocstr_delete(line);
+#ifdef _MSC_VER
+        d = (double) _pclose(fp);
+#else
         d = (double) pclose(fp);
+#endif
         nrn_fw_delete(fpw);
         hoc_assign_str(hoc_pgargstr(2), hoc_tmpbuf->buf);
     } else {

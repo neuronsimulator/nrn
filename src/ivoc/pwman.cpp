@@ -3340,7 +3340,7 @@ char* ivoc_get_temp_file() {
     if (!tdir) {
         tdir = "/tmp";
     }
-#if defined(WIN32) && defined(__MWERKS__)
+#if (defined(WIN32) && defined(__MWERKS__)) || defined(_MSC_VER)
     char tname[L_tmpnam + 1];
     tmpnam(tname);
     auto const length = strlen(tdir) + 1 + strlen(tname) + 1;

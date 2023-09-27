@@ -190,7 +190,7 @@ double* ivoc_vector_ptr(Object*, int) {return 0;}
 int ivoc_vector_size(Object*) {return 0;}
 #endif
 
-#ifdef MINGW
+#ifdef WIN32
 IOHandler::IOHandler() {}
 IOHandler::~IOHandler() {}
 int IOHandler::inputReady(int) {
@@ -204,9 +204,6 @@ int IOHandler::exceptionRaised(int) {
 }
 void IOHandler::timerExpired(long, long) {}
 void IOHandler::childStatus(pid_t, int) {}
-#endif  // MINGW
-
-#ifdef MINGW
 
 #include <nrnmutdec.h>
 static int bind_tid_;
@@ -267,7 +264,7 @@ void nrniv_bind_call() {
 }
 
 
-#endif  // MINGW
+#endif  // WIN32
 
 #endif  // HAVE_IV
 

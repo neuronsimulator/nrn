@@ -7,7 +7,12 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef _MSC_VER
+#include <direct.h>  // _getcwd
+#endif
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"

@@ -4,7 +4,9 @@
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -893,7 +895,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
+#ifdef WIN32
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -946,7 +948,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef MINGW
+#ifdef WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;

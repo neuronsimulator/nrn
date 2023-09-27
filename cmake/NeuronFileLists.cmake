@@ -113,7 +113,6 @@ set(OC_FILE_LIST
     settext.cpp
     symbol.cpp
     version.cpp
-    x.cpp
     xred.cpp)
 
 # =============================================================================
@@ -199,7 +198,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW)
+if(MINGW OR WIN32)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)

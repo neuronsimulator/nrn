@@ -1,10 +1,16 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/fileio.cpp,v 1.34 1999/09/14 13:11:46 hines Exp */
 
+#ifdef _MSC_VER
+#include <direct.h>  // getcwd, chdir
+#include <io.h>  // dup, dup2, close
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"

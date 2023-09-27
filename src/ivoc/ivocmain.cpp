@@ -171,7 +171,7 @@ extern HWND hCurrWnd;
 
 
 extern void setneuronhome(const char*);
-extern const char* neuron_home;
+extern char* neuron_home;
 int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
@@ -495,7 +495,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW)
+#if !defined(MINGW) && !defined(_MSC_VER)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
