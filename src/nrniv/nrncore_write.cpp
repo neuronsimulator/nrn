@@ -218,17 +218,6 @@ static part1_ret part1() {
     return {rankbytes, std::move(sorted_token)};
 }
 
-size_t get_filesize(const char* fname) {
-    FILE* f = fopen(fname, "ab");
-    if (!f) {
-        hoc_execerror("get_filesize could not open:", fname);
-    }
-    const size_t offset = ftell(f);
-    fclose(f);
-
-    return offset;
-}
-
 static void part2(const char* path) {
     std::vector<size_t> offsets(4);
 

@@ -168,7 +168,7 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
+void nrn_read_filesdat(int& ngrp, int*& grp, int& num_offsets, size_t*& file_offsets, const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded) {
         ngrp = corenrn_embedded_nthread;
@@ -200,6 +200,8 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
         }
     }
 
+    nrn_assert(fscanf(fp, "%d\n", &num_offsets) == 1);
+
     if (nrnmpi_numprocs > iNumFiles && nrnmpi_myid == 0) {
         printf(
             "Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
@@ -207,12 +209,18 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
     ngrp = 0;
     grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+    file_offsets = new size_t[num_offsets * (iNumFiles / nrnmpi_numprocs + 1)];
 
     // irerate over gids in files.dat
+    size_t offsets_idx = 0;
     for (int iNum = 0; iNum < iNumFiles; ++iNum) {
         int iFile;
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
+        for (int i = 0; i < num_offsets; i++, offsets_idx++) {
+            nrn_assert(fscanf(fp, "%zu\n", &file_offsets[ngrp * num_offsets + i]) == 1);
+        }
+
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
             grp[ngrp] = iFile;
             ngrp++;
@@ -398,6 +406,28 @@ void nrn_setup_cleanup() {
     neg_gid2out.clear();
 }
 
+std::string get_rank_fname_2(const char* basepath, bool create_folder) {
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    std::string nodepath = "";
+    if (std::getenv("SLURM_NODEID") != nullptr) {
+        const int factor = 20;
+        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
+
+        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+    }
+    else if (std::getenv("HOSTNAME") != nullptr) {
+        nodepath = std::getenv("HOSTNAME");
+    }
+
+    // Create subfolder for the rank, based on the node
+    std::string path = std::string(basepath) + "/" + nodepath;
+    if (create_folder && !std::filesystem::exists(path)) {
+        std::filesystem::create_directories(path);
+    }
+    
+    return (path + "/" + std::to_string(nrnmpi_myid_) + ".dat");
+}
+
 void nrn_setup(const char* filesdat,
                bool is_mapping_needed,
                CheckPoints& checkPoints,
@@ -409,9 +439,13 @@ void nrn_setup(const char* filesdat,
 
     int ngroup;
     int* gidgroups;
-    nrn_read_filesdat(ngroup, gidgroups, filesdat);
+    int num_offsets;
+    size_t* file_offsets;
+    nrn_read_filesdat(ngroup, gidgroups, num_offsets, file_offsets, filesdat);
     UserParams userParams(ngroup,
                           gidgroups,
+                          num_offsets,
+                          file_offsets,
                           datpath,
                           strlen(restore_path) == 0 ? datpath : restore_path,
                           checkPoints);

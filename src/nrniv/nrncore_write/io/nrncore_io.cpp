@@ -56,21 +56,27 @@ std::string get_filename(const std::string& path, std::string file_name) {
 }
 
 std::string get_rank_fname(const char* basepath, bool create_folder = true) {
-    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<
+    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
     std::string nodepath = "";
-    if (const char* node_id = std::getenv("SLURM_NODEID")) {
+    if (std::getenv("SLURM_NODEID") != nullptr) {
         const int factor = 20;
-        nodepath = std::to_string(std::atoi(node_id)/factor) + "/" + node_id;
-    } else if (const char* hostname = std::getenv("HOSTNAME")) {
-        nodepath = hostname;
+        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
+
+        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
     }
-    // Create subfolder for the rank, based on the node
-    if (create_folder) {
-        std::filesystem::create_directories(std::string(basepath) + "/" + nodepath);
+    else if (std::getenv("HOSTNAME") != nullptr) {
+        nodepath = std::getenv("HOSTNAME");
     }
 
-    return std::string(basepath) + "/" + nodepath + "/" + std::to_string(nrnmpi_myid) + ".dat";
+    // Create subfolder for the rank, based on the node
+    std::string path = std::string(basepath) + "/" + nodepath;
+    if (create_folder && !std::filesystem::exists(path)) {
+        std::filesystem::create_directories(path);
+    }
+
+    return (path + "/" + std::to_string(nrnmpi_myid) + ".dat");
 }
+
 
 void write_memb_mech_types(const char* fname) {
     if (nrnmpi_myid > 0) {
@@ -137,7 +143,8 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
         return offsets;
     }
     assert(cg.group_id >= 0);
-    const std::string fname = get_rank_fname(path);
+
+    const auto& fname = get_rank_fname(path);
     FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
         hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname.c_str());
@@ -377,81 +384,76 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     idN
  */
 void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::vector<size_t>& file_offsets) {
-//     // ids of datasets that will be created
-//     std::vector<int> iSend;
+    // ids of datasets that will be created
+    std::vector<int> iSend;
 
-//     // ignore empty nrnthread (has -1 id)
-//     for (int iInt = 0; iInt < nrn_nthread; ++iInt) {
-//         if (cgs[iInt].group_id >= 0) {
-//             iSend.push_back(cgs[iInt].group_id);
-//         }
-//     }
+    // ignore empty nrnthread (has -1 id)
+    for (int iInt = 0; iInt < nrn_nthread; ++iInt) {
+        if (cgs[iInt].group_id >= 0) {
+            iSend.push_back(cgs[iInt].group_id);
+        }
+    }
 
-//     // receive and displacement buffers for mpi
-//     std::vector<int> iRecv, iDispl;
+    // receive and displacement buffers for mpi
+    std::vector<int> iRecv, iDispl;
 
-//     if (nrnmpi_myid == 0) {
-//         iRecv.resize(nrnmpi_numprocs);
-//         iDispl.resize(nrnmpi_numprocs);
-//     }
+    if (nrnmpi_myid == 0) {
+        iRecv.resize(nrnmpi_numprocs);
+        iDispl.resize(nrnmpi_numprocs);
+    }
 
-//     // number of datasets on the current rank
-//     int num_datasets = iSend.size();
+    // number of datasets on the current rank
+    int num_datasets = iSend.size();
 
-// #ifdef NRNMPI
-//     // gather number of datasets from each task
-//     if (nrnmpi_numprocs > 1) {
-//         nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
-//     } else {
-//         iRecv[0] = num_datasets;
-//     }
-// #else
-//     iRecv[0] = num_datasets;
-// #endif
+#ifdef NRNMPI
+    // gather number of datasets from each task
+    if (nrnmpi_numprocs > 1) {
+        nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
+    } else {
+        iRecv[0] = num_datasets;
+    }
+#else
+    iRecv[0] = num_datasets;
+#endif
 
-//     // total number of datasets across all ranks
-//     int iSumThread = 0;
+    // total number of datasets across all ranks
+    int iSumThread = 0;
 
-//     // calculate mpi displacements
-//     if (nrnmpi_myid == 0) {
-//         for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt) {
-//             iDispl[iInt] = iSumThread;
-//             iSumThread += iRecv[iInt];
-//         }
-//     }
+    // calculate mpi displacements
+    if (nrnmpi_myid == 0) {
+        for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt) {
+            iDispl[iInt] = iSumThread;
+            iSumThread += iRecv[iInt];
+        }
+    }
 
-//     // buffer for receiving all dataset ids
-//     std::vector<int> iRecvVec(iSumThread);
+    // buffer for receiving all dataset ids
+    std::vector<int> iRecvVec(iSumThread);
 
-// #ifdef NRNMPI
-//     // gather ids into the array with correspondent offsets
-//     if (nrnmpi_numprocs > 1) {
-//         nrnmpi_int_gatherv(begin_ptr(iSend),
-//                            num_datasets,
-//                            begin_ptr(iRecvVec),
-//                            begin_ptr(iRecv),
-//                            begin_ptr(iDispl),
-//                            0);
-//     } else {
-//         for (int iInt = 0; iInt < num_datasets; ++iInt) {
-//             iRecvVec[iInt] = iSend[iInt];
-//         }
-//     }
-// #else
-//     for (int iInt = 0; iInt < num_datasets; ++iInt) {
-//         iRecvVec[iInt] = iSend[iInt];
-//     }
-// #endif
+#ifdef NRNMPI
+    // gather ids into the array with correspondent offsets
+    if (nrnmpi_numprocs > 1) {
+        nrnmpi_int_gatherv(begin_ptr(iSend),
+                           num_datasets,
+                           begin_ptr(iRecvVec),
+                           begin_ptr(iRecv),
+                           begin_ptr(iDispl),
+                           0);
+    } else {
+        for (int iInt = 0; iInt < num_datasets; ++iInt) {
+            iRecvVec[iInt] = iSend[iInt];
+        }
+    }
+#else
+    for (int iInt = 0; iInt < num_datasets; ++iInt) {
+        iRecvVec[iInt] = iSend[iInt];
+    }
+#endif
 
+    // Collect the offsets
     int num_offsets = file_offsets.size();
-    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    file_offsets.resize(file_offsets.size() * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
     nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
-
-
-
-    // <<<<<<<<<<<<<<<<<<<<<<<<< The writing part is not done!! Just collecitng the offsets from all of the ranks, and we have to write that to the file, somehow
-
-
 
     /// Writing the file with task, correspondent number of threads and list of correspondent first
     /// gids
@@ -514,45 +516,43 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
             }
         }
 
-        // Write the offsets of each rank in a new line
-        for (int i = 0; i < file_offsets.size(); i += num_offsets) {
-            for (int j = i; j < i + num_offsets && j < file_offsets.size(); ++j) {
-                fprintf(fp, "%zu ", file_offsets[j]);
+        // total number of datasets
+        if (append) {
+            // this is the one that needs the space to get a new value
+            long pos = ftell(fp);
+            fgets_no_newline(line, max_line_len, fp);
+            int oldval = 0;
+            if (sscanf(line, "%d", &oldval) != 1) {
+                fclose(fp);
+                hoc_execerror("nrncore_write append: error reading number of groupids", NULL);
             }
-            fprintf(fp, "\n");
+            if (oldval == -1) {
+                fclose(fp);
+                hoc_execerror(
+                    "nrncore_write append: existing files.dat has gap junction indicator where we "
+                    "expected a groupgid count.",
+                    NULL);
+            }
+            iSumThread += oldval;
+            fseek(fp, pos, SEEK_SET);
+        }
+        fprintf(fp, "%10d\n", iSumThread);
+        fprintf(fp, "%d\n", num_offsets);
+
+        if (append) {
+            // Start writing the groupids starting at the end of the file.
+            fseek(fp, 0, SEEK_END);
         }
 
-        // // total number of datasets
-        // if (append) {
-        //     // this is the one that needs the space to get a new value
-        //     long pos = ftell(fp);
-        //     fgets_no_newline(line, max_line_len, fp);
-        //     int oldval = 0;
-        //     if (sscanf(line, "%d", &oldval) != 1) {
-        //         fclose(fp);
-        //         hoc_execerror("nrncore_write append: error reading number of groupids", NULL);
-        //     }
-        //     if (oldval == -1) {
-        //         fclose(fp);
-        //         hoc_execerror(
-        //             "nrncore_write append: existing files.dat has gap junction indicator where we "
-        //             "expected a groupgid count.",
-        //             NULL);
-        //     }
-        //     iSumThread += oldval;
-        //     fseek(fp, pos, SEEK_SET);
-        // }
-        // fprintf(fp, "%10d\n", iSumThread);
+        // write all dataset + offsets
+        size_t offsets_idx = 0;
+        for (int i = 0; i < iRecvVec.size(); ++i) {
+            fprintf(fp, "%d\n", iRecvVec[i]);
 
-        // if (append) {
-        //     // Start writing the groupids starting at the end of the file.
-        //     fseek(fp, 0, SEEK_END);
-        // }
-
-        // // write all dataset ids
-        // for (int i = 0; i < iRecvVec.size(); ++i) {
-        //     fprintf(fp, "%d\n", iRecvVec[i]);
-        // }
+            for (int i = 0; i < num_offsets; i++, offsets_idx++) {
+                fprintf(fp, "%zu\n", file_offsets[offsets_idx]);
+            }
+        }
 
         fclose(fp);
     }
@@ -561,7 +561,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
 /** @brief dump mapping information to gid_3.dat file */
 size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     size_t offset = 0;
-    const std::string fname = get_rank_fname(path);
+    const auto& fname = get_rank_fname(path);
     FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());

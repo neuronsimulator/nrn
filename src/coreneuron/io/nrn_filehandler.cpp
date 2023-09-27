@@ -7,7 +7,6 @@
 */
 
 #include <iostream>
-#include <regex>
 #include "coreneuron/io/nrn_filehandler.hpp"
 #include "coreneuron/nrnconf.h"
 
@@ -15,7 +14,7 @@ namespace coreneuron {
 FileHandler::FileHandler(const std::string& filename)
     : chkpnt(0)
     , stored_chkpnt(0) {
-    this->open(filename);
+    this->open(filename, 0);
 }
 
 bool FileHandler::file_exist(const std::string& filename) {
@@ -23,7 +22,7 @@ bool FileHandler::file_exist(const std::string& filename) {
     return (stat(filename.c_str(), &buffer) == 0);
 }
 
-void FileHandler::open(const std::string& filename, std::ios::openmode mode, size_t offset) {
+void FileHandler::open(const std::string& filename, size_t offset, std::ios::openmode mode) {
     nrn_assert((mode & (std::ios::in | std::ios::out)));
     close();
     F.open(filename, mode | std::ios::binary);
@@ -32,7 +31,6 @@ void FileHandler::open(const std::string& filename, std::ios::openmode mode, siz
         std::cerr << "cannot open file '" << filename << "'" << std::endl;
     }
     nrn_assert(F.is_open());
-    //current_filename = filename;
     current_mode = mode;
     char version[256];
     if (current_mode & std::ios::in) {

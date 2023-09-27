@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_filehandler.hpp"
@@ -15,6 +16,7 @@
 #include "coreneuron/io/user_params.hpp"
 #include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
+#include "coreneuron/mpi/lib/nrnmpi.hpp"
 
 namespace coreneuron {
 void read_phase1(NrnThread& nt, UserParams& userParams);
@@ -45,6 +47,8 @@ extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
 size_t memb_list_size(NrnThreadMembList* tml, bool include_data);
 
 size_t model_size(bool detailed_report);
+
+std::string get_rank_fname_2(const char* basepath, bool create_folder = true);
 
 namespace coreneuron {
 
@@ -114,9 +118,8 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
                 data_dir = userParams.restore_path;
             }
 
-            std::string fname = std::string(data_dir) + "/" +
-                                std::to_string(userParams.gidgroups[i]) + "_" + getPhaseName<P>() +
-                                ".dat";
+            size_t file_offset = userParams.file_offsets[i * userParams.num_offsets + P - 1];
+            const auto& fname = get_rank_fname_2(data_dir);
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid.
@@ -124,11 +127,11 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
             // because files are opened in the order of `gid_1.dat`, `gid_2.dat` and `gid_gap.dat`.
             // When we open next file, `gid_gap.dat` in this case, we are supposed to close the
             // handle for `gid_2.dat` even though file doesn't exist.
-            if (P == gap && !FileHandler::file_exist(fname)) {
+            if (P == gap && !FileHandler::file_exist(fname)) { // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ????????????
                 userParams.file_reader[i].close();
             } else {
                 // if no file failed to open or not opened at all
-                userParams.file_reader[i].open(fname);
+                userParams.file_reader[i].open(fname, file_offset);
             }
         }
         read_phase_aux<P>(*nt, userParams);
