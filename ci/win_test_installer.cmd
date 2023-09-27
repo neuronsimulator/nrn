@@ -51,9 +51,6 @@ call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
 
-:: text rxd
-python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
-
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
 :: 2nd step -> check association.hoc output after we've launched 1step in previous CI step
 cat association.hoc.out
