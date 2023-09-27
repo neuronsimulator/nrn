@@ -31,7 +31,7 @@ int nrnignore;
 
 /* only set  in ivoc */
 int nrn_global_argc;
-char** nrn_global_argv;
+const char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
