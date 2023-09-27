@@ -105,7 +105,8 @@ static double _hoc_init_sequence(void*);
 static double _hoc_invl(void*);
 static double _hoc_next_invl(void*);
 static double _hoc_noiseFromRandom123(void*);
-static double _hoc_init_rng(void*);
+static double _hoc_init_rng_NetStim(void*);
+static double _hoc_sample_rng_NetStim(void*);
 static int _mechtype;
 extern void _nrn_cacheloop_reg(int, int);
 extern void hoc_register_limits(int, HocParmLimits*);
@@ -156,7 +157,8 @@ static Member_func _member_func[] = {{"loc", _hoc_loc_pnt},
                                      {"invl", _hoc_invl},
                                      {"next_invl", _hoc_next_invl},
                                      {"noiseFromRandom123", _hoc_noiseFromRandom123},
-                                     {"init_rng", _hoc_init_rng},
+                                     {"init_rng", _hoc_init_rng_NetStim},
+                                     {"sample_rng", _hoc_sample_rng_NetStim},
                                      {0, 0}};
 #define bbsavestate bbsavestate_NetStim
 #define erand       erand_NetStim
@@ -606,23 +608,36 @@ static void _destructor(Prop* _prop) {
 }
 
 
-static int init_rng(_internalthreadargsproto_) {
-    auto& r123state = reinterpret_cast<nrnran123_State*&>(_p_rng_donotuse);
+nrnran123_State*& get_random_var_by_name(const char* name, _internalthreadargsproto_) {
+    if(strcmp(name, "rng_donotuse") == 0) {
+        return reinterpret_cast<nrnran123_State*&>(_p_rng_donotuse);
+    }
+    // abort if name doesn't match
+    std::cout << "Error: invalid RANDOM name" << std::endl;
+    abort();
+}
+
+
+static int init_rng_NetStim(_internalthreadargsproto_) {
+    const char *name = gargstr(1);
+    uint32_t id1 = uint32_t(*getarg(2));
+    uint32_t id2 = uint32_t(*getarg(3));
+    uint32_t id3 = uint32_t(*getarg(4));
+
+    // std::cout << "init_rng:: " << name << " " << id1 << " " << id2 << " " << id3 << std::endl;
+
+    auto& r123state = get_random_var_by_name(name, _threadargs_);
     if (r123state) {
         nrnran123_deletestream(r123state);
         r123state = nullptr;
     }
 
-    printf("In init_rng :: %s %d %d %d\n", gargstr(1), uint32_t(*getarg(2)), uint32_t(*getarg(3)), uint32_t(*getarg(4)));
-
-    r123state = nrnran123_newstream3(static_cast<uint32_t>(*getarg(2)),
-                                     static_cast<uint32_t>(*getarg(3)),
-                                     static_cast<uint32_t>(*getarg(4)));
+    r123state = nrnran123_newstream3(id1, id2, id3);
     return 0;
 }
 
 
-static double _hoc_init_rng(void* _vptr) {
+static double _hoc_init_rng_NetStim(void* _vptr) {
     double _r;
     Datum* _ppvar;
     Datum* _thread;
@@ -636,10 +651,40 @@ static double _hoc_init_rng(void* _vptr) {
     _thread = _extcall_thread.data();
     _nt = static_cast<NrnThread*>(_pnt->_vnt);
     _r = 1.;
-    init_rng(_threadargs_);
+    init_rng_NetStim(_threadargs_);
     return (_r);
 }
 
+
+static double sample_rng_NetStim(_internalthreadargsproto_) {
+    const char *name = gargstr(1);
+
+    auto& r123state = get_random_var_by_name(name, _threadargs_);
+   
+    if(strcmp(name, "rng_donotuse") == 0) {
+        return nrnran123_negexp(r123state); // "1.0" from RANDOM declaration
+    }   
+
+    return 0;
+}
+
+static double _hoc_sample_rng_NetStim(void* _vptr) {
+    double _r;
+    Datum* _ppvar;
+    Datum* _thread;
+    NrnThread* _nt;
+    auto* const _pnt = static_cast<Point_process*>(_vptr);
+    auto* const _p = _pnt->_prop;
+    _nrn_mechanism_cache_instance _ml_real{_p};
+    auto* const _ml = &_ml_real;
+    size_t const _iml{};
+    _ppvar = _nrn_mechanism_access_dparam(_p);
+    _thread = _extcall_thread.data();
+    _nt = static_cast<NrnThread*>(_pnt->_vnt);
+    _r = 1.;
+    _r = sample_rng_NetStim(_threadargs_);
+    return (_r);
+}
 
 static void initmodel(_internalthreadargsproto_) {
     int _i;

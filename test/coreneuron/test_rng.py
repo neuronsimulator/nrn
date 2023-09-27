@@ -30,7 +30,11 @@ def test_NetStim_noise():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, h.NetCon(cell, None))
 
-        cell.noiseFromRandom123(gid, 2, 3)
+
+   
+
+        #print ("GID " , gid, "\n")
+        # cell.noiseFromRandom123(gid, 2, 3)
 
         #cell.r1.init_rng(1,2,3)
         #cell.r2.init_rng(1,2,3)
@@ -49,8 +53,8 @@ def test_NetStim_noise():
         cell.start = 0
         cell.noise = 1
 
-        cell.init_rng("r", 11, 12, 13);
-
+        cell.init_rng("rng_donotuse", gid, 11, 12);
+        print(cell.sample_rng("rng_donotuse"));
 
     spiketime = h.Vector()
     spikegid = h.Vector()
