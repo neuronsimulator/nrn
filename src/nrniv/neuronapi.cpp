@@ -1,44 +1,29 @@
+#include "neuronapi.h"
+
 #include "../../nrnconf.h"
+#include "hocdec.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
 #include "ocjump.h"
-
 #include "parse.hpp"
-
-#include "hocdec.h"
 #include "section.h"
 
-// we define these here to allow the API to be independent of internal details
-typedef enum {
-    STACK_IS_STR = 1,
-    STACK_IS_VAR = 2,
-    STACK_IS_NUM = 3,
-    STACK_IS_OBJVAR = 4,
-    STACK_IS_OBJTMP = 5,
-    STACK_IS_USERINT = 6,
-    STACK_IS_SYM = 7,
-    STACK_IS_OBJUNREF = 8,
-    STACK_UNKNOWN = -1
-} nrn_stack_types_t;
+/// A public face of hoc_Item
+struct nrn_Item : public hoc_Item {};
 
-typedef hoc_Item nrn_Item;
-
-
-class SectionListIterator {
-  public:
+struct SectionListIterator {
     SectionListIterator(nrn_Item*);
     Section* next(void);
     int done(void);
 
   private:
-    nrn_Item* initial;
-    nrn_Item* current;
+    hoc_Item* initial;
+    hoc_Item* current;
 };
 
-class SymbolTableIterator {
-  public:
+struct SymbolTableIterator {
     SymbolTableIterator(Symlist*);
     char const* next(void);
     int done(void);
@@ -92,7 +77,7 @@ void nrn_stdout_redirect(int (*myprint)(int, char*)) {
 Section* nrn_section_new(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
-    auto pitm = new nrn_Item*;
+    auto pitm = new hoc_Item*;
     char* name_ptr = new char[strlen(name) + 1];
     strcpy(name_ptr, name);
     symbol->name = name_ptr;
@@ -112,7 +97,7 @@ void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec
     simpleconnectsection();
 }
 
-void nrn_section_length_set(Section* sec, double const length) {
+void nrn_section_length_set(Section* sec, const double length) {
     // TODO: call can_change_morph(sec) to check pt3dconst_; how should we handle
     // that?
     // TODO: is there a named constant so we don't have to use the magic number 2?
@@ -182,20 +167,20 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(Symbol* const sym, Section const* const sec, double x) {
+double nrn_rangevar_get(const Symbol* sym, const Section *const sec, double x) {
     return *nrn_rangepointer(const_cast<Section*>(sec), const_cast<Symbol*>(sym), x);
 }
 
-void nrn_rangevar_set(Symbol* const sym, Section* const sec, double x, double value) {
+void nrn_rangevar_set(Symbol* sym, Section *const sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
 }
 
-void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x) {
+void nrn_rangevar_push(Symbol* sym, Section *const sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
 nrn_Item* nrn_allsec(void) {
-    return section_list;
+    return static_cast<nrn_Item*>(section_list);
 }
 
 nrn_Item* nrn_sectionlist_data(Object* obj) {
@@ -341,7 +326,7 @@ void nrn_object_unref(Object* obj) {
     hoc_obj_unref(obj);
 }
 
-char const* nrn_class_name(Object* obj) {
+char const* nrn_class_name(const Object* obj) {
     return obj->ctemplate->sym->name;
 }
 
@@ -500,7 +485,7 @@ void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value
     ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
 }
 
-void nrn_property_push(Object* obj, const char* name, double value) {
+void nrn_property_push(Object* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -512,7 +497,7 @@ void nrn_property_push(Object* obj, const char* name, double value) {
     }
 }
 
-void nrn_property_array_push(Object* obj, const char* name, int i, double value) {
+void nrn_property_array_push(Object* obj, const char* name, int i) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -525,7 +510,7 @@ void nrn_property_array_push(Object* obj, const char* name, int i, double value)
     }
 }
 
-char const* nrn_symbol_name(Symbol* sym) {
+char const* nrn_symbol_name(const Symbol* sym) {
     return sym->name;
 }
 
