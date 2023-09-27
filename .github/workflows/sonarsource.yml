@@ -1,0 +1,106 @@
+name: SonarCloud
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+env:
+  PY_MIN_VERSION: '3.8'
+  PY_MID_VERSION: '3.10'
+  PY_MAX_VERSION: '3.11'
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+    steps:
+      - name: Install apt packages
+        run: |
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
+        shell: bash
+
+      - name: Setup Xvfb
+        run: |
+          sudo apt-get install xvfb
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1600x1200x24 -noreset -nolock -shmem &  # run in bg
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Clone nmodl
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+            git submodule update --init --recursive --force --depth 1 -- external/nmodl
+
+      - name: Set up Python@${{ env.PY_MIN_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PY_MIN_VERSION }}
+
+      - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
+
+      - name: Set up Python@${{ env.PY_MID_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PY_MID_VERSION }}
+
+      - name: Set up Python@${{ env.PY_MAX_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PY_MAX_VERSION }}
+
+      - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install --upgrade -r external/nmodl/requirements.txt
+
+      - name: Build & Test
+        id: build-test
+        shell: bash
+        working-directory: ${{runner.workspace}}/nrn
+        run:  |
+          export SHELL="/bin/bash"
+
+          # Compiler setup
+          export CC=gcc
+          export CXX=g++
+
+          # Python setup
+          export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
+          export PYTHON_MID=$(which $PYTHON_MID_NAME);
+          export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
+
+          mkdir build
+
+          # CMake options & flags
+          cmake_args=(-G Ninja \
+                      -DCMAKE_BUILD_TYPE=Release \
+                      -DCMAKE_C_COMPILER="$CC" \
+                      -DCMAKE_CXX_COMPILER="$CXX" \
+                      -DNRN_ENABLE_BACKTRACE=ON \
+                      -DNRN_ENABLE_CORENEURON=ON \
+                      -DNRN_ENABLE_INTERVIEWS=OFF \
+                      -DNRN_ENABLE_RX3D=OFF \
+                      -DNRN_ENABLE_MPI=ON \
+                      -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
+                      -DNRN_ENABLE_PYTHON=ON \
+                      -DNRN_ENABLE_TESTS=OFF)
+          cmake -S . -B build "${cmake_args[@]}"
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v2
+      - name: Run build-wrapper
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
