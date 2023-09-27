@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <utility>  // std::forward
+
 namespace neuron {
 /**
  * @brief Redirect sprintf to snprintf if the buffer size can be deduced.
