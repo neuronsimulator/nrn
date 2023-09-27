@@ -90,8 +90,8 @@ package_name = "NMODL"
 if "NMODL_NIGHTLY_TAG" in os.environ:
     package_name += os.environ["NMODL_NIGHTLY_TAG"]
 
-# Parse long description from README.md
-with open('README.md', 'r', encoding='utf-8') as f:
+# Parse long description from README.rst
+with open('README.rst', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
