@@ -19,16 +19,9 @@
 #include <../../nrnconf.h>
 #include <hocassrt.h>
 #include <nrnassrt.h>
-#if HAVE_POSIX_MEMALIGN
-#define HAVE_MEMALIGN 1
-#endif
-#if HAVE_MEMALIGN
-#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
-#define _XOPEN_SOURCE 600
-#endif
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "nvector_nrnserial_ld.h"
 #include "shared/sundialsmath.h"
@@ -147,11 +140,8 @@ N_Vector N_VNew_NrnSerialLD(long int length) {
     /* Create data */
     if (length > 0) {
         /* Allocate memory */
-#if HAVE_MEMALIGN
-        nrn_assert(posix_memalign((void**) &data, 64, length * sizeof(realtype)) == 0);
-#else
-        data = (realtype*) malloc(length * sizeof(realtype));
-#endif
+        data = static_cast<realtype*>(std::aligned_alloc(64, length * sizeof(realtype)));
+        nrn_assert(data != nullptr);
         if (data == NULL) {
             N_VDestroy_NrnSerialLD(v);
             return (NULL);
@@ -355,11 +345,8 @@ N_Vector N_VClone_NrnSerialLD(N_Vector w) {
     /* Create data */
     if (length > 0) {
         /* Allocate memory */
-#if HAVE_MEMALIGN
-        nrn_assert(posix_memalign((void**) &data, 64, length * sizeof(realtype)) == 0);
-#else
-        data = (realtype*) malloc(length * sizeof(realtype));
-#endif
+        data = static_cast<realtype*>(std::aligned_alloc(64, length * sizeof(realtype)));
+        nrn_assert(data != nullptr);
         if (data == NULL) {
             N_VDestroy_NrnSerialLD(v);
             return (NULL);

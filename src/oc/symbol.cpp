@@ -2,17 +2,6 @@
 /* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
 
-#if HAVE_POSIX_MEMALIGN
-#define HAVE_MEMALIGN 1
-#endif
-#if defined(DARWIN) /* posix_memalign seems not to work on Darwin 10.6.2 */
-#undef HAVE_MEMALIGN
-#endif
-#if HAVE_MEMALIGN
-#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
-#define _XOPEN_SOURCE 600
-#endif
-
 #include "hoc.h"
 #include "hocdec.h"
 #include "hoclist.h"
@@ -22,14 +11,11 @@
 #include "parse.hpp"
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
 
 #if HAVE_MALLOC_H
 #include <malloc.h>
-#endif
-#if HAVE_ALLOC_H
-#include <alloc.h> /* at least for turbo C 2.0 */
 #endif
 
 #include "nrnmpiuse.h"
@@ -219,30 +205,19 @@ void* ecalloc(size_t n, size_t size) {
 }
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
-#if HAVE_MEMALIGN
-    static int memalign_is_working = 1;
-    if (memalign_is_working) {
-        if (posix_memalign(memptr, 64, size) != 0) {
-            fprintf(stderr, "posix_memalign not working, falling back to using malloc\n");
-            memalign_is_working = 0;
-            *memptr = hoc_Emalloc(size);
-            hoc_malchk();
-        }
-    } else
-#endif
+    *memptr = std::aligned_alloc(64, size);
+    if (memptr == nullptr) {
+        fprintf(stderr, "std::alignec_alloc not working, falling back to using malloc\n");
         *memptr = hoc_Emalloc(size);
+        hoc_malchk();
+    }
     hoc_malchk();
     return *memptr;
 }
 
 void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
-#if HAVE_MEMALIGN
     nrn_cacheline_alloc(memptr, nmemb * size);
     memset(*memptr, 0, nmemb * size);
-#else
-    *memptr = hoc_Ecalloc(nmemb, size);
-    hoc_malchk();
-#endif
     return *memptr;
 }
 
