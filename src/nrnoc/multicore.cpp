@@ -393,8 +393,9 @@ void nrn_threads_free() {
             tml2 = tml->next;
             free((char*) ml->nodelist);
             free((char*) ml->nodeindices);
-            free((char*) ml->prop);
-            if (!memb_func[tml->index].hoc_mech) {
+            if (memb_func[tml->index].hoc_mech) {
+                delete [] ml->prop;
+            } else {
                 free((char*) ml->pdata);
             }
             if (ml->_thread) {
@@ -500,8 +501,10 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
             mlmap[i] = tml->ml;
             CACHELINE_ALLOC(tml->ml->nodelist, Node*, mlcnt[i]);
             CACHELINE_ALLOC(tml->ml->nodeindices, int, mlcnt[i]);
-            tml->ml->prop = new Prop*[mlcnt[i]];  // used for ode_map
-            if (!memb_func[i].hoc_mech) {
+            if (memb_func[i].hoc_mech) {
+                tml->ml->prop = new Prop*[mlcnt[i]];  // used for ode_map
+            }
+            else {
                 CACHELINE_ALLOC(tml->ml->pdata, Datum*, mlcnt[i]);
             }
             tml->ml->_thread = (Datum*) 0;
@@ -528,8 +531,10 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
                 Memb_list* ml = mlmap[p->_type];
                 ml->nodelist[ml->nodecount] = nd;
                 ml->nodeindices[ml->nodecount] = nd->v_node_index;
-                ml->prop[ml->nodecount] = p;
-                if (!memb_func[p->_type].hoc_mech) {
+                if (memb_func[p->_type].hoc_mech) {
+                    ml->prop[ml->nodecount] = p;
+                }
+                else {
                     // ml->_data[ml->nodecount] = p->param;
                     ml->pdata[ml->nodecount] = p->dparam;
                 }
