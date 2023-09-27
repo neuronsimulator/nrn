@@ -27,9 +27,7 @@
 
 #include <../../nrnconf.h>
 
-#if defined(HAVE_STDINT_H)
 #include <stdint.h>
-#endif
 
 #if !defined(HUGE) && defined(HUGE_VAL)
 #define HUGE HUGE_VAL
@@ -83,22 +81,9 @@ typedef uint32_t u_int;
 #define	SEGMENTED
 #endif
 
-/* An AIX machine had incompatible prototypes between
-malloc.h and stdlib.h so prefer stdlib.h if it exists
-*/
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#else
-/* if the system has malloc.h */
-#ifdef HAVE_MALLOC_H
-#define	MALLOCDECL	1
-#include	<malloc.h>
-#endif
-#endif
 
-/* any compiler should have this header */
-/* if not, change it */
-#include        <stdio.h>
+#include <stdio.h>
 
 
 /* Check for ANSI C memmove and memset */

@@ -258,11 +258,7 @@ Item* putintoken(const char* s, short type, short toktype) { /* make sure a symb
     return q;
 }
 
-#if HAVE_STDARG_H
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 /* make a list of item pointers: notice that the items themselves remain
 in whatever list they happen to be in. */
@@ -270,13 +266,8 @@ in whatever list they happen to be in. */
    is not in any list */
 
 Item *
-#if HAVE_STDARG_H
 makelist(int narg, ...)
 {
-#else
-makelist(va_dcl va_alist) {
-    int narg;
-#endif
     va_list ap;
     int i;
     List* l;
@@ -286,12 +277,7 @@ makelist(va_dcl va_alist) {
     ql = newitem();
     ql->itemtype = LIST;
     ql->element = (void*) l;
-#if HAVE_STDARG_H
     va_start(ap, narg);
-#else
-    va_start(ap);
-    narg = va_arg(ap, int);
-#endif
     for (i = 0; i < narg; i++) {
         q = va_arg(ap, Item*);
         append(ql, q);
@@ -319,23 +305,13 @@ Item* prepend(Item* ql, Item* q) {
 the array is held. */
 
 Item *
-#if HAVE_STDARG_H
 itemarray(int narg, ...) {
-#else
-itemarray(va_dcl va_alist) {
-    int narg;
-#endif
     va_list ap;
     int i;
     Item *ql, *q, **qa;
 
     ql = newitem();
-#if HAVE_STDARG_H
     va_start(ap, narg);
-#else
-    va_start(ap);
-    narg = va_arg(ap, int);
-#endif
     ql->itemtype = ITEMARRAY;
     qa = (Item**) emalloc((unsigned) (narg + 1) * sizeof(Item*));
     qa++;

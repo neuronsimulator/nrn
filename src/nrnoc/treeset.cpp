@@ -21,9 +21,7 @@
 #include "multicore.h"
 
 #include <stdio.h>
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #include <errno.h>
 #include <math.h>
 
