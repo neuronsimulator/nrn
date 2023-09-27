@@ -225,8 +225,7 @@ void nrnthread_dat3_cell_count(int& cell_count) {
     cell_count = mapinfo.size();
 }
 
-void nrnthread_dat3_cellmapping(int i, int& gid,
-                   int& nsec, int& nseg, int& n_seclist) {
+void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_seclist) {
     CellMapping* c = mapinfo.mapping[i];
     gid = c->gid;
     nsec = c->num_sections();
@@ -234,12 +233,19 @@ void nrnthread_dat3_cellmapping(int i, int& gid,
     n_seclist = c->size();
 }
 
-void nrnthread_dat3_secmapping(int i_c, int i_sec, std::string& segname,
-                   int& nsec, int& nseg, size_t& total_lfp_factors, int& n_electrodes,
-                   std::vector<int>& data_sec, std::vector<int>& data_seg, std::vector<double>& data_lfp) {
+void nrnthread_dat3_secmapping(int i_c,
+                               int i_sec,
+                               std::string& segname,
+                               int& nsec,
+                               int& nseg,
+                               size_t& total_lfp_factors,
+                               int& n_electrodes,
+                               std::vector<int>& data_sec,
+                               std::vector<int>& data_seg,
+                               std::vector<double>& data_lfp) {
     CellMapping* c = mapinfo.mapping[i_c];
     SecMapping* s = c->secmapping[i_sec];
-    segname=s->name.c_str();
+    segname = s->name.c_str();
     nsec = s->nsec;
     nseg = s->size();
     total_lfp_factors = s->seglfp_factors.size();
@@ -247,7 +253,6 @@ void nrnthread_dat3_secmapping(int i_c, int i_sec, std::string& segname,
     data_sec = s->sections;
     data_seg = s->segments;
     data_lfp = s->seglfp_factors;
-
 }
 
 // sizes and total data count

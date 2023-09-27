@@ -99,9 +99,16 @@ int nrnthread_dat2_vecplay_inst(int tid,
                                 int& ubound_index);
 void nrnthread_dat3_cell_count(int& cell_count);
 void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
-void nrnthread_dat3_secmapping(int i_c, int i_sec, std::string& segname,
-                               int& nsec, int& nseg, size_t& total_lfp_factors, int& n_electrode,
-                               std::vector<int>& data_sec, std::vector<int>& data_seg, std::vector<double>& data_lfp);
+void nrnthread_dat3_secmapping(int i_c,
+                               int i_sec,
+                               std::string& segname,
+                               int& nsec,
+                               int& nseg,
+                               size_t& total_lfp_factors,
+                               int& n_electrode,
+                               std::vector<int>& data_sec,
+                               std::vector<int>& data_seg,
+                               std::vector<double>& data_lfp);
 
 int* datum2int(int type,
                Memb_list* ml,
