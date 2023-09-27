@@ -75,6 +75,8 @@ mingw-w64-x86_64-toolchain || goto :error
 
 pacman -Ql mingw-w64-x86_64-gcc
 
+tree C:\ProgramData\Chocolatey\lib\mingw
+
 :: if all goes well, go to end
 goto :EOF
 
