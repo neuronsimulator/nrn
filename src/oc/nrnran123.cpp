@@ -86,14 +86,18 @@ double nrnran123_dblpick(nrnran123_State* s) {
     return nrnran123_uint2dbl(nrnran123_ipick(s));
 }
 
-double nrnran123_negexp(nrnran123_State* s) {
+double nrnran123_uniform(nrnran123_State* s, double a, double b) {
+    return a + nrnran123_dblpick(s) * (b - a);
+}
+
+double nrnran123_negexp(nrnran123_State* s, double lambda) {
     /* min 2.3283064e-10 to max 22.18071 */
-    return -log(nrnran123_dblpick(s));
+    return -log(nrnran123_dblpick(s)) / lambda;
 }
 
 /* At cost of a cached  value we could compute two at a time. */
 /* But that would make it difficult to transfer to coreneuron for t > 0 */
-double nrnran123_normal(nrnran123_State* s) {
+double nrnran123_normal(nrnran123_State* s, double mu, double sigma) {
     double w, x, y;
     double u1, u2;
     do {
@@ -106,7 +110,7 @@ double nrnran123_normal(nrnran123_State* s) {
 
     y = sqrt((-2. * log(w)) / w);
     x = u1 * y;
-    return x;
+    return mu + x*sigma;
 }
 
 nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2) {
