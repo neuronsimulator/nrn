@@ -206,7 +206,7 @@ void* ecalloc(size_t n, size_t size) {
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
     *memptr = std::aligned_alloc(64, size);
-    if (memptr == nullptr) {
+    if (*memptr == nullptr) {
         fprintf(stderr, "std::alignec_alloc not working, falling back to using malloc\n");
         *memptr = hoc_Emalloc(size);
         hoc_malchk();
