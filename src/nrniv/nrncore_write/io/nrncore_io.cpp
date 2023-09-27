@@ -58,16 +58,12 @@ std::string get_filename(const std::string& path, std::string file_name) {
 std::string get_rank_fname(const char* basepath, bool create_folder = true) {
     // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
     std::string nodepath = "";
-    if (std::getenv("SLURM_NODEID") != nullptr) {
+    if (const char* node_id = std::getenv("SLURM_NODEID")) {
         const int factor = 20;
-        int node_id = std::atoi(std::getenv("SLURM_NODEID"));
-
-        nodepath = std::to_string(node_id/factor) + "/" + std::getenv("SLURM_NODEID");
+        nodepath = std::to_string(std::atoi(node_id)/factor) + "/" + node_id;
+    } else if (const char* hostname = std::getenv("HOSTNAME")) {
+        nodepath = hostname;
     }
-    else if (std::getenv("HOSTNAME") != nullptr) {
-        nodepath = std::getenv("HOSTNAME");
-    }
-
     // Create subfolder for the rank, based on the node
     std::string path = std::string(basepath) + "/" + nodepath;
     if (create_folder && !std::filesystem::exists(path)) {
@@ -452,7 +448,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::ve
 
     // Collect the offsets
     int num_offsets = file_offsets.size();
-    file_offsets.resize(file_offsets.size() * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
     nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
 
     /// Writing the file with task, correspondent number of threads and list of correspondent first

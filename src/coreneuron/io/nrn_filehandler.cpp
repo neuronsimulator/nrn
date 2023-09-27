@@ -14,7 +14,7 @@ namespace coreneuron {
 FileHandler::FileHandler(const std::string& filename)
     : chkpnt(0)
     , stored_chkpnt(0) {
-    this->open(filename, 0);
+    this->open(filename);
 }
 
 bool FileHandler::file_exist(const std::string& filename) {

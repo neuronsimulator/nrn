@@ -43,12 +43,11 @@ extern void allocate_data_in_mechanism_nrn_init();
 extern void nrn_setup_cleanup();
 
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
+extern std::string get_rank_fname(const char* basepath, bool create_folder = true);
 
 size_t memb_list_size(NrnThreadMembList* tml, bool include_data);
 
 size_t model_size(bool detailed_report);
-
-std::string get_rank_fname_2(const char* basepath, bool create_folder = true);
 
 namespace coreneuron {
 
@@ -119,7 +118,7 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
             }
 
             size_t file_offset = userParams.file_offsets[i * userParams.num_offsets + P - 1];
-            const auto& fname = get_rank_fname_2(data_dir);
+            const auto& fname = get_rank_fname(data_dir);
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid.
