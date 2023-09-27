@@ -150,9 +150,6 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGBUS
 
-/* (Define if this signal exists) */
-#undef HAVE_SIGSEGV
-
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
 
