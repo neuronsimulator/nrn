@@ -68,15 +68,13 @@ pi			3.14159265358979323846
 c			2.99792458+8 m/sec fuzz
 g			9.80665 m/sec2
 au			1.49597871+11 m fuzz
-@LegacyY@mole			6.022169+23 fuzz
-@LegacyN@mole			6.02214076+23 fuzz
+mole			6.02214076+23 fuzz
 mol             1
 / mol is explicitly defined as a constant
 / with value 1 to avoid "undefined unit"
 / error with mod files that don't define
 / it themselves
-@LegacyY@e			1.6021917-19 coul fuzz
-@LegacyN@e			1.602176634-19 coul fuzz
+e			1.602176634-19 coul fuzz
 energy			c2
 force			g
 mercury			1.33322+5 kg/m2-sec2
@@ -399,8 +397,7 @@ ev			e-volt
 / faraday			9.652000+04 coul
 / faraday  from  host: physics.nist.gov
 /          	 path: /PhysRefData/fundconst/html/keywords.html
-@LegacyY@faraday		9.6485309+4 coul
-@LegacyN@faraday		e-mole
+faraday		e-mole
 fathom			6 ft
 fermi			1-15 m
 fifth			4|5 qt
@@ -436,8 +433,7 @@ hyl			gm force sec2/m
 hz			/sec
 imaginarycubicfoot	1.4 ft3
 jeroboam		4|5 gal
-@LegacyY@boltzmann		1.38064852-23 joule/K
-@LegacyN@boltzmann		1.380649-23 joule/K
+boltzmann		1.380649-23 joule/K
 k			boltzmann
 karat			1|24
 kcal			kilocal
@@ -506,8 +502,7 @@ quarter			9 in
 quartersection		1|4 mi2
 quintal			100 kg
 quire			25
-@LegacyY@gasconstant		8.3144598 joule/K
-@LegacyN@gasconstant		k-mole
+gasconstant		k-mole
 R			gasconstant
 rad			100 erg/gm
 ream			500
@@ -581,10 +576,8 @@ tex			.001 gram / m
 englishell		45 inch
 scottishell		37.2 inch
 flemishell		27 inch
-@LegacyY@planck			6.626-34 joule-sec
-@LegacyN@planck			6.62607015-34 joule-sec
-@LegacyY@hbar			1.055-34 joule-sec
-@LegacyN@hbar			planck/two-pi
+planck			6.62607015-34 joule-sec
+hbar			planck/two-pi
 electronmass		9.1095-31 kg
 protonmass		1.6726-27 kg
 neutronmass		1.6606-27 kg

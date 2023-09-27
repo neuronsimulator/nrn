@@ -18,11 +18,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # Build options for NMODL
 # =============================================================================
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
-option(NMODL_ENABLE_LEGACY_UNITS "Use original faraday, R, etc. instead of 2019 nist constants" OFF)
 option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
-if(NMODL_ENABLE_LEGACY_UNITS)
-  add_definitions(-DUSE_LEGACY_UNITS)
-endif()
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -221,20 +217,9 @@ include(${PROJECT_SOURCE_DIR}/src/language/code_generator.cmake)
 add_subdirectory(src)
 
 # =============================================================================
-# Prepare units database file from nrnunits.lib.in
-# =============================================================================
-if(NMODL_ENABLE_LEGACY_UNITS)
-  set(LegacyY "")
-  set(LegacyN "/")
-else()
-  set(LegacyY "/")
-  set(LegacyN "")
-endif()
-configure_file(share/nrnunits.lib.in ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib @ONLY)
-
-# =============================================================================
 # Install unit database to share
 # =============================================================================
+configure_file(share/nrnunits.lib ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 
@@ -268,7 +253,6 @@ message(STATUS "--------------------+-------------------------------------------
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
 message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
-message(STATUS "Legacy Units        | ${NMODL_ENABLE_LEGACY_UNITS}")
 message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
 message(STATUS "Bison               | ${BISON_EXECUTABLE}")
