@@ -3,6 +3,9 @@
 :: error variable
 set "errorfound="
 
+:: uninstall mingw from choco as it would interfer with NEURON's compiler toolchain
+choco uninstall -y mingw
+
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
