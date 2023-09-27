@@ -101,11 +101,11 @@ TQueue::~TQueue() {
     if (least_) {
         deleteitem(least_);
     }
-    while ((q = spdeq(&sptree_->root)) != nil) {
+    while ((q = spdeq(&sptree_->root)) != nullptr) {
         deleteitem(q);
     }
     delete sptree_;
-    while ((q = spdeq(&sptree2_->root)) != nil) {
+    while ((q = spdeq(&sptree2_->root)) != nullptr) {
         deleteitem(q);
     }
     delete sptree2_;
@@ -115,16 +115,16 @@ void TQueue::print() {
     if (least_) {
         prnt(least_, 0);
     }
-    spscan(prnt, nil, sptree_);
-    spscan(prnt, nil, sptree2_);
+    spscan(prnt, static_cast<TQItem*>(nullptr), sptree_);
+    spscan(prnt, static_cast<TQItem*>(nullptr), sptree2_);
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     if (least_) {
         f(least_, 0);
     }
-    spscan(f, nil, sptree_);
-    spscan(f, nil, sptree2_);
+    spscan(f, nullptr, sptree_);
+    spscan(f, nullptr, sptree2_);
 }
 
 void TQueue::check(const char* mes) {}
@@ -240,7 +240,7 @@ void TQueue::remove(TQItem* q) {
             } else if (sptree2_->root) {
                 least_ = spdeq(&sptree2_->root);
             } else {
-                least_ = nil;
+                least_ = nullptr;
             }
         } else {
             if (q->cnt_ == -1) {

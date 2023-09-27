@@ -1,6 +1,8 @@
-import os
 from neuron.tests.utils.strtobool import strtobool
 from neuron import h
+import os
+import platform
+import shutil
 import subprocess
 from subprocess import PIPE
 
@@ -132,23 +134,6 @@ class Model:
             cell.update_pointers()
 
 
-def srun(cmd):
-    print("--------------------")
-    print(cmd)
-    r = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    if r.returncode != 0:
-        print(r)
-    r.check_returncode()
-
-
-def runcn(args):
-    import platform
-
-    cpu = platform.machine()
-    cmd = cpu + "/special-core " + args
-    srun(cmd)
-
-
 def test_axial():
     m = Model(5, 5)
     cvode.use_fast_imem(1)
@@ -220,18 +205,33 @@ def run_coreneuron_offline_checkpoint_restore(spikes_std):
     tpnts = [5.0, 10.0]
     for perm in [0, 1]:
         print("\n\ncell_permute ", perm)
-        common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
+        common = [
+            "-d",
+            "coredat",
+            "--voltage",
+            "1000",
+            "--verbose",
+            "0",
+            "--cell-permute",
+            str(perm),
+        ]
+
+        def run(tstop, args):
+            exe = os.path.join(os.getcwd(), platform.machine(), "special-core")
+            subprocess.run(
+                [exe] + ["--tstop", "{:g}".format(tstop)] + common + args,
+                check=True,
+                shell=False,
+            )
+
         # standard full run
-        runcn(common + " --tstop %g" % float(tpnts[-1]) + " -o coredat")
+        run(tpnts[-1], ["-o", "coredat"])
         # sequence of checkpoints
         for i, tpnt in enumerate(tpnts):
-            tend = tpnt
-            restore = " --restore coredat/chkpnt%d" % (i,) if i > 0 else ""
-            checkpoint = " --checkpoint coredat/chkpnt%d" % (i + 1,)
-            outpath = " -o coredat/chkpnt%d" % (i + 1,)
-            runcn(
-                common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint
-            )
+            restore = ["--restore", "coredat/chkpnt{}".format(i)] if i > 0 else []
+            checkpoint = ["--checkpoint", "coredat/chkpnt{}".format(i + 1)]
+            outpath = ["-o", "coredat/chkpnt{}".format(i + 1)]
+            run(tpnt, outpath + restore + checkpoint)
 
         # compare spikes
         cmp_spks(
@@ -244,7 +244,7 @@ def test_checkpoint():
         return
 
     # clear out the old
-    srun("rm -r -f coredat")
+    shutil.rmtree("coredat", ignore_errors=True)
 
     m = Model(5, 5)
     # file mode CoreNEURON real cells need gids
@@ -307,22 +307,39 @@ def test_checkpoint():
 
 def cmp_spks(spikes, dir, chkpntdirs):
     # sorted nrn standard spikes into dir/out.spk
-    f = open(dir + "/temp", "w")
-    for spike in spikes:
-        f.write("%.8g\t%d\n" % (spike[0], int(spike[1])))
-    f.close()
+    with open(os.path.join(dir, "temp"), "w") as f:
+        for spike in spikes:
+            f.write("{:.8g}\t{}\n".format(spike[0], int(spike[1])))
     # sometimes roundoff to %.8g gives different sort.
-    srun("sortspike {}/temp {}/nrn.spk".format(dir, dir))
+    def help(cmd, name_in, name_out):
+        # `cmd` is some generic utility, which does not need to have a
+        # sanitizer runtime pre-loaded. LD_PRELOAD=/path/to/libtsan.so can
+        # cause problems for *nix utilities, so drop it if it was present.
+        env = os.environ.copy()
+        try:
+            del env["LD_PRELOAD"]
+        except KeyError:
+            pass
+        subprocess.run(
+            [
+                shutil.which(cmd),
+                os.path.join(dir, name_in),
+                os.path.join(dir, name_out),
+            ],
+            check=True,
+            env=env,
+            shell=False,
+        )
 
-    srun("sortspike {}/out.dat {}/out.spk".format(dir, dir))
-    srun("cmp {}/out.spk {}/nrn.spk".format(dir, dir))
-
-    cmd = "cat"
-    for i in chkpntdirs:
-        cmd = cmd + " " + i + "/out.dat"
-    srun(cmd + " > " + dir + "/temp")
-    srun("sortspike {}/temp {}/chkptout.spk".format(dir, dir))
-    srun("cmp {}/out.spk {}/chkptout.spk".format(dir, dir))
+    help("sortspike", "temp", "nrn.spk")
+    help("sortspike", "out.dat", "out.spk")
+    help("cmp", "out.spk", "nrn.spk")
+    with open(os.path.join(dir, "temp"), "wb") as ofile:
+        for subdir in chkpntdirs:
+            with open(os.path.join(subdir, "out.dat"), "rb") as ifile:
+                shutil.copyfileobj(ifile, ofile)
+    help("sortspike", "temp", "chkptout.spk")
+    help("cmp", "out.spk", "chkptout.spk")
 
 
 if __name__ == "__main__":

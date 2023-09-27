@@ -1,13 +1,14 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
-#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -83,6 +84,15 @@ struct has_num_variables<T, std::void_t<decltype(std::declval<T>().num_variables
 template <typename T>
 inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
 
+template <class T>
+size_t get_num_variables(T const& t) {
+    if constexpr (has_num_variables_v<T>) {
+        return t.num_variables();
+    } else {
+        return 1;
+    }
+}
+
 // Get the value of a static member variable called optional, or false if it doesn't exist.
 template <typename T, typename = void>
 struct optional: std::false_type {};
@@ -149,15 +159,23 @@ struct index_column_tag {
     using type = non_owning_identifier_without_container;
 };
 
-/** Check if the given range is a permutation of the first N integers.
+/**
+ * @brief Check if the given range is a permutation of the first N integers.
+ * @return true if the permutation is trivial, false otherwise.
+ *
+ * A trivial permutation is one where i == range[i] for all i. An empty range
+ * is classed as trivial.
  */
 template <typename Rng>
-void check_permutation_vector(Rng const& range, std::size_t size) {
+bool check_permutation_vector(Rng const& range, std::size_t size) {
     if (range.size() != size) {
         throw std::runtime_error("invalid permutation vector: wrong size");
     }
+    bool trivial{true};
     std::vector<bool> seen(size, false);
-    for (auto val: range) {
+    for (auto i = 0ul; i < size; ++i) {
+        auto const val = range[i];
+        trivial = trivial && (i == val);
         if (!(val >= 0 && val < size)) {
             throw std::runtime_error("invalid permutation vector: value out of range");
         }
@@ -167,11 +185,20 @@ void check_permutation_vector(Rng const& range, std::size_t size) {
         }
         seen[val] = true;
     }
+    return trivial;
 }
 
 enum struct may_cause_reallocation { Yes, No };
 
+/** @brief Defer deleting pointers to deallocated memory.
+ *
+ *  The address of a pointer to the underlying storage of `field_data` can
+ *  escape the container. When deallocating the container the memory is
+ *  deallocated but the pointer to the storage location is "leaked" into this
+ *  vector.
+ */
 extern std::vector<void*>* defer_delete_storage;
+VectorMemoryUsage compute_defer_delete_storage_size();
 
 /**
  * @brief Storage for safe deletion of soa<...> containers.
@@ -218,28 +245,32 @@ struct field_data {
     }
 
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             m_data_ptr[0] = m_storage.data();
         }
+
+        return callable;
     }
 
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
+
+        return callable;
     }
 
     [[nodiscard]] bool active() const {
@@ -427,23 +458,32 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      * @brief Invoke the given callable for each vector.
      *
      * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
-     * @param callable Callable to invoke.
+     * @param callable A callable to invoke.
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             update_data_ptr_storage();
         }
+
+        return callable;
     }
 
+    /**
+     * @brief Invoke the given callable for each vector.
+     *
+     * @param callable A callable to invoke.
+     */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
+
+        return callable;
     }
 
     // TODO actually use this
@@ -547,25 +587,69 @@ struct storage_info_impl: utils::storage_info {
     std::string m_container{}, m_field{};
     std::size_t m_size{};
 };
+
+class AccumulateMemoryUsage {
+  public:
+    void operator()(detail::index_column_tag const& indices,
+                    std::vector<detail::index_column_tag::type> const& vec,
+                    int field_index,
+                    int array_dim) {
+        auto element_size = sizeof(detail::index_column_tag::type);
+
+        m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
+        m_usage.stable_identifiers.capacity = m_usage.stable_identifiers.size +
+                                              (vec.capacity() - vec.size()) * sizeof(vec[0]);
+    }
+
+    template <class Tag>
+    void operator()(Tag const& tag,
+                    std::vector<typename Tag::type> const& vec,
+                    int field_index,
+                    int array_dim) {
+        m_usage.heavy_data += VectorMemoryUsage(vec);
+    }
+
+    StorageMemoryUsage usage() {
+        return m_usage;
+    }
+
+  private:
+    StorageMemoryUsage m_usage;
+};
+
+
 }  // namespace detail
 
-/** @brief Token whose lifetime manages frozen/sorted state of a container.
+/**
+ * @brief Token whose lifetime manages the frozen state of a container.
+ *
+ * Because this cannot be defaulted constructed or moved, it cannot reach an
+ * empty/invalid state.
  */
 template <typename Container>
 struct state_token {
-    constexpr state_token() = default;
-    constexpr state_token(state_token&& other)
-        : m_container{std::exchange(other.m_container, nullptr)} {}
-    constexpr state_token(state_token const&) = delete;
-    constexpr state_token& operator=(state_token&& other) {
-        m_container = std::exchange(other.m_container, nullptr);
-        return *this;
+    /**
+     * @brief Copy a token, incrementing the frozen count of the underlying container.
+     */
+    constexpr state_token(state_token const& other)
+        : m_container{other.m_container} {
+        assert(m_container);
+        m_container->increase_frozen_count();
     }
+
+    /**
+     * @brief Copy assignment.
+     *
+     * Explicitly deleted to avoid an implicit version with the wrong semantics.
+     */
     constexpr state_token& operator=(state_token const&) = delete;
+
+    /**
+     * @brief Destroy a token, decrementing the frozen count of the underlying container.
+     */
     ~state_token() {
-        if (m_container) {
-            m_container->decrease_frozen_count();
-        }
+        assert(m_container);
+        m_container->decrease_frozen_count();
     }
 
   private:
@@ -646,12 +730,17 @@ struct soa {
 
     /**
      * @brief Get the size of the container.
+     *
+     * Note that this is not thread-safe if the container is not frozen, i.e.
+     * you should either hold a token showing the container is frozen, or you
+     * should ensure that no non-const operations on this container are being
+     * executed concurrently.
      */
     [[nodiscard]] std::size_t size() const {
         // Check our various std::vector members are still the same size as each
         // other. This check could be omitted in release builds...
         auto const check_size = m_indices.size();
-        for_all_vectors(
+        for_each_vector(
             [check_size](auto const& tag, auto const& vec, int field_index, int array_dim) {
                 auto const size = vec.size();
                 assert(size % array_dim == 0);
@@ -662,13 +751,28 @@ struct soa {
 
     /**
      * @brief Test if the container is empty.
+     *
+     * Note that this is not thread-safe if the container is not frozen, i.e.
+     * you should either hold a token showing the container is frozen, or you
+     * should ensure that no non-const operations on this container are being
+     * executed concurrently.
      */
     [[nodiscard]] bool empty() const {
         auto const result = m_indices.empty();
-        for_all_vectors([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
+        for_each_vector([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
             assert(vec.empty() == result);
         });
         return result;
+    }
+
+    void shrink_to_fit() {
+        if (m_frozen_count) {
+            throw_error("shrink() called on a frozen structure");
+        }
+        for_each_vector<detail::may_cause_reallocation::Yes>(
+            [](auto const& tag, auto& vec, int field_index, int array_dim) {
+                vec.shrink_to_fit();
+            });
     }
 
   private:
@@ -681,6 +785,8 @@ struct soa {
      * invalidated.
      */
     void erase(std::size_t i) {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         if (m_frozen_count) {
             throw_error("erase() called on a frozen structure");
         }
@@ -690,7 +796,7 @@ struct soa {
         if (i != old_size - 1) {
             // Swap ranges of size array_dim at logical positions `i` and `old_size - 1` in each
             // vector
-            for_all_vectors<detail::may_cause_reallocation::No>(
+            for_each_vector<detail::may_cause_reallocation::No>(
                 [i](auto const& tag, auto& vec, int field_index, int array_dim) {
                     ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
                                        ::std::next(vec.begin(), (i + 1) * array_dim),
@@ -699,7 +805,7 @@ struct soa {
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        for_all_vectors<detail::may_cause_reallocation::No>(
+        for_each_vector<detail::may_cause_reallocation::No>(
             [new_size = old_size - 1](auto const& tag, auto& vec, int field_index, int array_dim) {
                 vec.resize(new_size * array_dim);
             });
@@ -715,6 +821,15 @@ struct soa {
     /**
      * @brief Apply the given function to non-const versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * @tparam might_reallocate Might the callable trigger reallocation of the vectors?
      * @param callable Callable to invoke on each vector.
      *
@@ -722,24 +837,73 @@ struct soa {
      * updated.
      */
     template <detail::may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         // might_reallocate is not relevant for m_indices because we do not expose the location of
         // its storage, so it doesn't matter whether or not this triggers reallocation
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<might_reallocate>(callable),
-         ...);
+
+        return for_each_tag_vector_impl<might_reallocate, Callable, Tags...>(callable);
+    }
+
+    template <detail::may_cause_reallocation might_reallocate,
+              typename Callable,
+              typename Tag,
+              typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        auto tmp_callable =
+            std::get<tag_index_v<Tag>>(m_data).template for_each_vector<might_reallocate>(callable);
+        return for_each_tag_vector_impl<might_reallocate, Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <detail::may_cause_reallocation, typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        return callable;
     }
 
     /**
      * @brief Apply the given function to const-qualified versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   const std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * Because of the const qualification this cannot cause reallocation and trigger updates of
      * pointers inside m_data, so no might_reallocate parameter is needed.
      */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).for_all_vectors(callable), ...);
+        return for_each_tag_vector_impl<Callable, Tags...>(callable);
+    }
+
+    template <typename Callable, typename Tag, typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector(
+            callable);
+        return for_each_tag_vector_impl<Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        return callable;
+    }
+
+
+    /**
+     * @brief Record that a state_token was copied.
+     *
+     * This should only be called from the copy constructor of a state_token,
+     * so m_frozen_count should already be non-zero.
+     */
+    void increase_frozen_count() {
+        std::lock_guard _{m_mut};
+        assert(m_frozen_count);
+        ++m_frozen_count;
     }
 
     /**
@@ -748,34 +912,50 @@ struct soa {
      * This is called from the destructor of state_token.
      */
     void decrease_frozen_count() {
+        std::lock_guard _{m_mut};
         assert(m_frozen_count);
         --m_frozen_count;
     }
 
   public:
     /**
-     * @brief Return type of get_sorted_token()
+     * @brief Return type of issue_frozen_token()
      */
-    using sorted_token_type = state_token<Storage>;
+    using frozen_token_type = state_token<Storage>;
 
     /**
-     * @brief Mark the container as sorted and return a token guaranteeing that.
+     * @brief Create a token guaranteeing the container is in "frozen" state.
      *
-     * Is is user-defined precisely what "sorted" means, but the soa<...> class
+     * This does *not* modify the "sorted" flag on the container.
+     *
+     * The token type is copy constructible but not default constructible.
+     * There is no need to check if a given instance of the token type is
+     * "valid"; if a token is held then the container is guaranteed to be
+     * frozen.
+     *
+     * The tokens returned by this function are reference counted; the
+     * container will be frozen for as long as any token is alive.
+     *
+     * Methods such as apply_reverse_permutation() take a non-const reference
+     * to one of these tokens. This is because a non-const token referring to a
+     * container with a token reference count of exactly one has an elevated
+     * status: the holder can lend it out to methods such as
+     * apply_reverse_permutation() to authorize specific pointer-invaliding
+     * operations. This is useful for implementing methods such as
+     * nrn_ensure_model_data_are_sorted() in a thread-safe way.
+     *
+     * This method can be called from multiple threads, but note that doing so
+     * can have surprising effects w.r.t. the elevated status mentioned in the
+     * previous paragraph.
+     *
+     * It is user-defined precisely what "sorted" means, but the soa<...> class
      * makes some guarantees:
      * - if the container is frozen, no pointers to elements in the underlying
      *   storage will be invalidated -- attempts to do so will throw or abort.
      * - if the container is not frozen, it will remain flagged as sorted until
-     *   a potentially-pointer-invalidating operation (insertion, deletion,
-     *   permutation) occurs, or mark_as_unsorted() is called.
-     *
-     * The container will be frozen for the lifetime of the token returned from
-     * this function, and therefore also sorted for at least that time. This
-     * token has the semantics of a unique_ptr, i.e. it cannot be copied but
-     * can be moved, and destroying a moved-from token has no effect.
-     *
-     * The tokens returned by this function are reference counted; the
-     * container will be frozen for as long as any token is alive.
+     *   a potentially-pointer-invalidating operation (insertion, deletion)
+     *   occurs, or mark_as_unsorted() is called.
+     * To mark a container as "sorted", apply an explicit permutation to it.
      *
      * Note that "frozen" refers to the storage layout, not to the stored value,
      * meaning that values inside a frozen container can still be modified --
@@ -784,13 +964,33 @@ struct soa {
      * @todo A future extension could be to preserve the sorted flag until
      *       pointers are actually, not potentially, invalidated.
      */
-    [[nodiscard]] sorted_token_type get_sorted_token() {
+    [[nodiscard]] frozen_token_type issue_frozen_token() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         // Increment the reference count, marking the container as frozen.
         ++m_frozen_count;
-        // Mark the container as sorted
-        m_sorted = true;
         // Return a token that calls decrease_frozen_count() at the end of its lifetime
-        return sorted_token_type{static_cast<Storage&>(*this)};
+        return frozen_token_type{static_cast<Storage&>(*this)};
+    }
+
+    /**
+     * @brief Tell the container it is sorted.
+     * @param write_token Non-const token demonstrating the caller is the only
+     *                    token owner.
+     *
+     * The meaning of being sorted is externally defined, so we should give
+     * external code the opportunity to say that the current order is OK. This
+     * probably only makes sense if the external code simply doesn't care about
+     * the ordering at all for some reason. This avoids having to construct a
+     * trivial permutation vector to achieve the same thing.
+     */
+    void mark_as_sorted(frozen_token_type& write_token) {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
+        if (m_frozen_count != 1) {
+            throw_error("mark_as_sorted() given a token that was not the only valid one");
+        }
+        m_sorted = true;
     }
 
     /**
@@ -800,8 +1000,12 @@ struct soa {
      * that some external change to an input of the (external) algorithm
      * defining the sort order can mean that the data are no longer considered
      * sorted, even if nothing has actually changed inside this container.
+     *
+     * This method can only be called if the container is not frozen.
      */
     void mark_as_unsorted() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         mark_as_unsorted_impl<false>();
     }
 
@@ -811,6 +1015,8 @@ struct soa {
      * This is invoked by mark_as_unsorted() and when a container operation
      * (insertion, permutation, deletion) causes the container to transition
      * from being sorted to being unsorted.
+     *
+     * This method is not thread-safe.
      */
     void set_unsorted_callback(std::function<void()> unsorted_callback) {
         m_unsorted_callback = std::move(unsorted_callback);
@@ -819,55 +1025,101 @@ struct soa {
     /**
      * @brief Query if the underlying vectors are still "sorted".
      *
-     * See the documentation of get_sorted_token() for an explanation of what
-     * this means.
+     * See the documentation of issue_frozen_token() for an explanation of what
+     * this means. You most likely only want to call this method while holding
+     * a token guaranteeing that the container is frozen, and therefore that
+     * the sorted-status is fixed.
      */
     [[nodiscard]] bool is_sorted() const {
         return m_sorted;
     }
 
-    /** @brief Permute the SOA-format data using an arbitrary vector.
+    /**
+     * @brief Permute the SoA-format data using an arbitrary range of integers.
+     * @param permutation The reverse permutation vector to apply.
+     * @return A token guaranteeing the frozen + sorted state of the container
+     *         after the permutation was applied.
+     *
+     * This will fail if the container is frozen.
+     */
+    template <typename Arg>
+    frozen_token_type apply_reverse_permutation(Arg&& permutation) {
+        auto token = issue_frozen_token();
+        apply_reverse_permutation(std::forward<Arg>(permutation), token);
+        return token;
+    }
+
+    /**
+     * @brief Permute the SoA-format data using an arbitrary range of integers.
+     * @param permutation The reverse permutation vector to apply.
+     * @param token A non-const token demonstrating that the caller is the only
+     *        party that is forcing the container to be frozen, and (non-const)
+     *        that they are authorised to transfer that status into this method
      */
     template <typename Range>
-    void apply_reverse_permutation(Range permutation) {
+    void apply_reverse_permutation(Range permutation, frozen_token_type& sorted_token) {
         // Check that the given vector is a valid permutation of length size().
+        // The existence of `sorted_token` means that my_size cannot become
+        // invalid, even though we don't hold `m_mut` yet.
         std::size_t const my_size{size()};
-        detail::check_permutation_vector(permutation, my_size);
-        // Applying a permutation in general invalidates indices, so it is forbidden if the
-        // structure is frozen, and it leaves the structure unsorted.
-        if (m_frozen_count) {
-            throw_error("apply_reverse_permutation() called on a frozen structure");
+        bool const is_trivial{detail::check_permutation_vector(permutation, my_size)};
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
+        // Applying a permutation in general invalidates indices, so it is
+        // forbidden if the structure is frozen, and it leaves the structure
+        // unsorted. We therefore require that the frozen count is 1, which
+        // corresponds to the `sorted_token` argument to this function being
+        // the only active token.
+        if (m_frozen_count != 1) {
+            throw_error(
+                "apply_reverse_permutation() given a token that was not the only valid one");
         }
-        mark_as_unsorted_impl<true>();
-        // Now we apply the reverse permutation in `permutation` to all of the columns in the
-        // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
-        for (std::size_t i = 0; i < my_size; ++i) {
-            while (i != permutation[i]) {
-                using ::std::swap;
-                auto const next = permutation[i];
-                for_all_vectors<detail::may_cause_reallocation::No>(
-                    [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
-                        // swap the i-th and next-th array_dim-sized sub-ranges of vec
-                        ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
-                                           ::std::next(vec.begin(), (i + 1) * array_dim),
-                                           ::std::next(vec.begin(), next * array_dim));
-                    });
-                swap(permutation[i], permutation[next]);
+        if (!is_trivial) {
+            // Now we apply the reverse permutation in `permutation` to all of the columns in the
+            // container. This is the algorithm from boost::algorithm::apply_reverse_permutation.
+            for (std::size_t i = 0; i < my_size; ++i) {
+                while (i != permutation[i]) {
+                    using ::std::swap;
+                    auto const next = permutation[i];
+                    for_each_vector<detail::may_cause_reallocation::No>(
+                        [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
+                            // swap the i-th and next-th array_dim-sized sub-ranges of vec
+                            ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
+                                               ::std::next(vec.begin(), (i + 1) * array_dim),
+                                               ::std::next(vec.begin(), next * array_dim));
+                        });
+                    swap(permutation[i], permutation[next]);
+                }
+            }
+            // update the indices in the container
+            for (auto i = 0ul; i < my_size; ++i) {
+                m_indices[i].set_current_row(i);
+            }
+            // If the container was previously marked sorted, and we have just
+            // applied a non-trivial permutation to it, then we need to call the
+            // callback if it exists (to invalidate any caches based on the old
+            // sort order).
+            if (m_sorted && m_unsorted_callback) {
+                m_unsorted_callback();
             }
         }
-        // update the indices in the container
-        for (auto i = 0ul; i < my_size; ++i) {
-            m_indices[i].set_current_row(i);
-        }
+        // In any case, applying a permutation leaves the container in sorted
+        // state. The caller made an explicit choice about which element should
+        // live where, which is as much as we can hope for.
+        m_sorted = true;
     }
 
 
   private:
+    /**
+     * @brief Set m_sorted = false and execute the callback.
+     * @note The *caller* is expected to hold m_mut when this is called.
+     */
     template <bool internal>
     void mark_as_unsorted_impl() {
         if (m_frozen_count) {
             // Currently you can only obtain a frozen container by calling
-            // get_sorted_token(), which explicitly guarantees that the
+            // issue_frozen_token(), which explicitly guarantees that the
             // container will remain sorted for the lifetime of the returned
             // token.
             throw_error("mark_as_unsorted() called on a frozen structure");
@@ -900,6 +1152,8 @@ struct soa {
      * methods (e.g. v(), v_handle() for a Node).
      */
     [[nodiscard]] owning_identifier<Storage> acquire_owning_identifier() {
+        // Lock access to m_frozen_count and m_sorted.
+        std::lock_guard _{m_mut};
         if (m_frozen_count) {
             throw_error("acquire_owning_identifier() called on a frozen structure");
         }
@@ -915,7 +1169,7 @@ struct soa {
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
         auto const old_size = size();
-        for_all_vectors<detail::may_cause_reallocation::Yes>(
+        for_each_vector<detail::may_cause_reallocation::Yes>(
             [](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                 using Tag = ::std::decay_t<decltype(tag)>;
                 if constexpr (detail::has_default_value_v<Tag>) {
@@ -935,6 +1189,9 @@ struct soa {
   public:
     /**
      * @brief Get a non-owning identifier to the offset-th entry.
+     *
+     * This method should only be called if either: there is only one thread,
+     * or if a frozen token is held.
      */
     [[nodiscard]] non_owning_identifier<Storage> at(std::size_t offset) const {
         return {const_cast<Storage*>(static_cast<Storage const*>(this)), m_indices[offset]};
@@ -965,10 +1222,13 @@ struct soa {
     /**
      * @brief Get the offset-th element of the column named by Tag.
      *
-     * Because this is returning a single value, it is permitted even in
-     * read-only mode. The container being in read only mode means that
-     * operations that would invalidate iterators/pointers are forbidden, not
-     * that actual data values cannot change.
+     * Because this is returning a single value, it is permitted even when the
+     * container is frozen. The container being frozen means that operations
+     * that would invalidate iterators/pointers are forbidden, not that actual
+     * data values cannot change. Note that if the container is not frozen then
+     * care should be taken in a multi-threaded environment, as `offset` could
+     * be invalidated by operations performed by other threads (that would fail
+     * if the container were frozen).
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type& get(std::size_t offset) {
@@ -977,6 +1237,7 @@ struct soa {
         auto& field_data = std::get<tag_index_v<Tag>>(m_data);
         if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
             if (!field_data.active()) {
+                std::lock_guard _{m_mut};
                 throw_error("get(offset) called for a disabled optional field");
             }
         }
@@ -985,6 +1246,11 @@ struct soa {
 
     /**
      * @brief Get the offset-th element of the column named by Tag.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
      */
     template <typename Tag>
     [[nodiscard]] typename Tag::type const& get(std::size_t offset) const {
@@ -993,6 +1259,7 @@ struct soa {
         auto const& field_data = std::get<tag_index_v<Tag>>(m_data);
         if constexpr (detail::field_impl_v<Tag> == detail::FieldImplementation::OptionalSingle) {
             if (!field_data.active()) {
+                std::lock_guard _{m_mut};
                 throw_error("get(offset) const called for a disabled optional field");
             }
         }
@@ -1001,6 +1268,10 @@ struct soa {
 
     /**
      * @brief Get a handle to the given element of the column named by Tag.
+     *
+     * This is not intended to be called from multi-threaded code, and might
+     * suffer from race conditions if the status of optional fields was being
+     * modified concurrently.
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_handle(
@@ -1024,6 +1295,8 @@ struct soa {
 
     /**
      * @brief Get a handle to the given element of the field_index-th column named by Tag.
+     *
+     * This is not intended to be called from multi-threaded code.
      */
     template <typename Tag>
     [[nodiscard]] data_handle<typename Tag::type> get_field_instance_handle(
@@ -1047,6 +1320,14 @@ struct soa {
      *  - offset: index of a mechanism instance
      *  - field_index: index of a RANGE variable inside a mechanism
      *  - array_index: offset inside an array RANGE variable
+     *
+     * Because this is returning a single value, it is permitted even when the
+     * container is frozen. The container being frozen means that operations
+     * that would invalidate iterators/pointers are forbidden, not that actual
+     * data values cannot change. Note that if the container is not frozen then
+     * care should be taken in a multi-threaded environment, as `offset` could
+     * be invalidated by operations performed by other threads (that would fail
+     * if the container were frozen).
      */
     template <typename Tag>
     typename Tag::type& get_field_instance(std::size_t offset,
@@ -1060,6 +1341,11 @@ struct soa {
 
     /**
      * @brief Get the offset-th element of the field_index-th instance of the column named by Tag.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
      */
     template <typename Tag>
     typename Tag::type const& get_field_instance(std::size_t offset,
@@ -1071,6 +1357,14 @@ struct soa {
             .data_ptrs()[field_index][offset * array_dim + array_index];
     }
 
+    /**
+     * @brief Get the offset-th identifier.
+     *
+     * If the container is not frozen then care should be taken in a
+     * multi-threaded environment, as `offset` could be invalidated by
+     * operations performed by other threads (that would fail if the container
+     * were frozen).
+     */
     [[nodiscard]] non_owning_identifier_without_container get_identifier(std::size_t offset) const {
         return m_indices.at(offset);
     }
@@ -1080,12 +1374,15 @@ struct soa {
      * @todo Check const-correctness. Presumably a const version would return
      *       data_handle<T const>, which would hold a pointer-to-const for the
      *       container?
+     *
+     * This is not intended to be called from multi-threaded code if the
+     * container is not frozen.
      */
     [[nodiscard]] neuron::container::generic_data_handle find_data_handle(
         neuron::container::generic_data_handle input_handle) const {
         bool done{false};
         neuron::container::generic_data_handle handle{};
-        for_all_vectors([this, &done, &handle, &input_handle](
+        for_each_vector([this, &done, &handle, &input_handle](
                             auto const& tag, auto const& vec, int field_index, int array_dim) {
             using Tag = ::std::decay_t<decltype(tag)>;
             if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
@@ -1125,9 +1422,11 @@ struct soa {
 
     /**
      * @brief Query whether the given pointer-to-vector is the one associated to Tag.
+     * @todo Fix this for tag types with num_variables()?
      *
-     * This is used so that one can ask a data_handle<T> if it refers to a particular field in a
-     * particular container.
+     * This is used so that one can ask a data_handle<T> if it refers to a
+     * particular field in a particular container. It is not intended to be
+     * called from multi-threaded code if the container is not frozen.
      */
     template <typename Tag>
     [[nodiscard]] bool is_storage_pointer(typename Tag::type const* ptr) const {
@@ -1143,12 +1442,18 @@ struct soa {
         return ptr == data_ptrs[0];
     }
 
+    /**
+     * @brief Check if `cont` refers to a field in this container.
+     *
+     * This is not intended to be called from multi-threaded code if the
+     * container is not frozen.
+     */
     [[nodiscard]] std::unique_ptr<utils::storage_info> find_container_info(void const* cont) const {
         std::unique_ptr<utils::storage_info> opt_info;
         if (!cont) {
             return opt_info;
         }
-        for_all_vectors([cont,
+        for_each_vector([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
             if (opt_info) {
@@ -1190,6 +1495,17 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).array_dims();
     }
 
+    template <typename Tag>
+    [[nodiscard]] int get_array_dims(int field_index) const {
+        assert(field_index < get_num_variables<Tag>());
+        return get_array_dims<Tag>()[field_index];
+    }
+
+    template <typename Tag>
+    [[nodiscard]] size_t get_num_variables() const {
+        return detail::get_num_variables(get_tag<Tag>());
+    }
+
     /**
      * @brief Get a pointer to an array holding the prefix sum of array dimensions for this tag.
      */
@@ -1224,7 +1540,18 @@ struct soa {
         (std::get<tag_index_v<TagsToChange>>(m_data).set_active(enabled, size), ...);
     }
 
+    StorageMemoryUsage memory_usage() const {
+        detail::AccumulateMemoryUsage accumulator;
+        auto accumulated = for_each_vector(accumulator);
+
+        return accumulated.usage();
+    }
+
   private:
+    /**
+     * @brief Throw an exception with a pretty prefix.
+     * @note The *caller* is expected to hold m_mut when this is called.
+     */
     [[noreturn]] void throw_error(std::string_view message) const {
         std::ostringstream oss;
         oss << cxx_demangle(typeid(Storage).name()) << "[frozen_count=" << m_frozen_count
@@ -1233,18 +1560,38 @@ struct soa {
     }
 
     /**
-     * @brief Flag for get_sorted_token(), mark_as_unsorted() and is_sorted().
+     * @brief Mutex to protect m_frozen_count and m_sorted.
+     *
+     * The frozen tokens are used to detect, possibly concurrent, use of
+     * incompatible operations, such as sorting while erasing rows. All
+     * operations that modify the structure of the container must happen
+     * sequentially.
+     *
+     * To prevent a different thread from obtaining a frozen token while this
+     * thread is modifying structure of the container, this thread should lock
+     * `m_mut`. Likewise, any thread obtaining a frozen token, should acquire a
+     * lock on `m_mut` to ensure that there are no concurrent operations that
+     * require sequential access to the container.
+     *
+     * By following this pattern the thread knows that the conditions related
+     * to sorted-ness and froze-ness of the container are valid for the entire
+     * duration of the operation (== member function of this class).
+     *
+     * Note, enforcing proper sequencing of operations is left to the calling
+     * code. However, this mutex enforces the required thread-safety to be able
+     * to detect invalid concurrent access patterns.
+     */
+    mutable std::mutex m_mut{};
+
+    /**
+     * @brief Flag for issue_frozen_token(), mark_as_unsorted() and is_sorted().
      */
     bool m_sorted{false};
 
     /**
-     * @brief Reference count for tokens guaranteeing the container is in frozen mode.
-     *
-     * In principle this would be called before multiple worker threads spin up,
-     * but in practice as a transition measure then handles are acquired inside
-     * worker threads.
+     * @brief Reference count for tokens guaranteeing the container is frozen.
      */
-    std::atomic<std::size_t> m_frozen_count{};
+    std::size_t m_frozen_count{};
 
     /**
      * @brief Pointers to identifiers that record the current physical row.
@@ -1267,4 +1614,11 @@ struct soa {
      */
     std::function<void()> m_unsorted_callback{};
 };
+
+
+template <class Storage, class... Tags>
+StorageMemoryUsage memory_usage(const soa<Storage, Tags...>& data) {
+    return data.memory_usage();
+}
+
 }  // namespace neuron::container

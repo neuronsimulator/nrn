@@ -114,7 +114,7 @@ this use the command:
 
     	modlunit file 
 
-leaving off the file extension. For more information about units click here.
+leaving off the file extension. For more information about units `click here <units_within_nmodl>`_.
 
 Rationale
 """""""""

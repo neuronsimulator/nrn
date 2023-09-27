@@ -22,10 +22,10 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python38\python.exe -m pip install numpy==1.17.5 cython || goto :error
-C:\Python39\python.exe -m pip install numpy==1.19.3 cython || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.3 cython || goto :error
-C:\Python311\python.exe -m pip install numpy==1.23.5 cython || goto :error
+C:\Python38\python.exe -m pip install  numpy==1.17.5 "cython < 3" || goto :error
+C:\Python39\python.exe -m pip install  numpy==1.19.3 "cython < 3" || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.3 "cython < 3" || goto :error
+C:\Python311\python.exe -m pip install numpy==1.23.5 "cython < 3" || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
@@ -48,6 +48,14 @@ if "%MSYS2_ROOT%"=="" set MSYS2_ROOT=C:\msys64
 if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
     choco install -y --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 )
+
+:: With upgrade of Azure CI runner image on 21st of Sept 2023,
+:: choco brings mingw 12.2.0 and it's somehow incompatible with
+:: msys+neuron installation. So for now, just use previously working
+:: version of mingw
+choco uninstall -y mingw
+choco install --allow-downgrade -y mingw --version=11.2.0
+
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
 :: update pacman cache (sometimes required when new GH/Azure runner images are deployed)

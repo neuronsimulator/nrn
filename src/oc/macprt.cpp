@@ -178,7 +178,6 @@ hoc_axis() {
 
 
 plt(int mode, double x, double y) {}
-hoc_menu_cleanup() {}
 
 
 initplot() {}

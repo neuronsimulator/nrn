@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/non_owning_soa_identifier.hpp"
 
 #include <cassert>
@@ -18,6 +19,8 @@ namespace detail {
  * This is defined in container.cpp to avoid multiple-definition issues.
  */
 extern std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage;
+VectorMemoryUsage compute_identifier_defer_delete_storage_size();
+
 }  // namespace detail
 
 /**
@@ -149,7 +152,7 @@ struct owning_identifier {
                 // Cannot throw from unique_ptr release/reset/destructor, this
                 // is the best we can do. Most likely what has happened is
                 // something like:
-                //   auto const read_only_token = node_data.get_sorted_token();
+                //   auto const read_only_token = node_data.issue_frozen_token();
                 //   list_of_nodes.pop_back();
                 // which tries to delete a row from a container in read-only mode.
                 std::cerr << "neuron::container::owning_identifier<"

@@ -259,7 +259,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nullptr);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -287,7 +287,7 @@ class PreSyn: public ConditionEvent {
     void disconnect(Observable*);
     void record_stmt(const char*);
     void record_stmt(Object*);
-    void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
+    void record(IvocVect*, IvocVect* idvec = nullptr, int rec_id = 0);
     void record(double t);
     void init();
     double mindelay();
@@ -356,7 +356,7 @@ class HocEvent: public DiscreteEvent {
     HocEvent();
     virtual ~HocEvent();
     virtual void pr(const char*, double t, NetCvode*);
-    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nil);
+    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nullptr);
     void hefree();
     void clear();  // called by hepool_->free_all
     virtual void deliver(double, NetCvode*, NrnThread*);

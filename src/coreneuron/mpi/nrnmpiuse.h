@@ -19,9 +19,6 @@
 #define NRN_MULTISEND 1
 #endif
 
-/* define to 1 if you want parallel distributed cells (and gap junctions) */
-#define PARANEURON 1
-
 /* define to 1 if you want the MUSIC - MUlti SImulation Coordinator */
 #undef NRN_MUSIC
 

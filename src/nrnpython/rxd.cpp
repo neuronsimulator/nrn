@@ -334,6 +334,7 @@ void apply_node_flux(int n,
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
+                Py_DECREF(result);
             }
         } else {
             PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
@@ -483,7 +484,6 @@ extern "C" void set_setup_matrices(fptr setup_matrices) {
 
 extern "C" void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
-    _setup_units();
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
@@ -884,7 +884,7 @@ extern "C" void register_rate(int nspecies,
     } else {
         react->vptrs = NULL;
     }
-    react->state_idx = (int***) malloc(nseg * sizeof(double**));
+    react->state_idx = (int***) malloc(nseg * sizeof(int**));
     for (i = 0, idx = 0; i < nseg; i++) {
         react->state_idx[i] = (int**) malloc((nspecies + nparam) * sizeof(int*));
         for (j = 0; j < nspecies + nparam; j++) {
