@@ -95,8 +95,6 @@ class PlayRecord: public Observer {
     int ith_;  // The thread index
 };
 
-declarePtrList(PlayRecList, PlayRecord)
-
 class PlayRecordSave {
   public:
     PlayRecordSave(PlayRecord*);

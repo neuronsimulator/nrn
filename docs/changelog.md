@@ -1,5 +1,25 @@
 # NEURON 8.2
 
+## 8.2.3
+_Release Date_ : 15-09-2023
+
+### What's New
+
+- The primary purpose of 8.2.3 is to fix the HOC cursor control problems of
+  the wheel and windows installed versions.
+- Many fragments from current master to allow building of installers.
+  with current compiler toolchains and github actions.
+
+
+### Bug Fixes
+
+- Fix MacOS linux wheel HOC backspace.
+- Fix Windows HOC cursor issues.
+- Fix Windows 11 HOC icon.
+- Fix Windows and MacOS segfault on multiline HOC statements input from terminal.
+- Fix build issues with current compiler toolchains and github actions.
+- Deal with .inputrc if missing on Windows
+
 ## 8.2.2
 _Release Date_ : 15-12-2022
 
