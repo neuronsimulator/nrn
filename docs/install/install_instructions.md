@@ -348,6 +348,8 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
   ```
   Feel free to set the number of parallel jobs (i.e. 8) according to your system using the `--parallel` option.
 
+  > :warning: When `NEURON` is installed with `CoreNEURON` option enabled then `NMODL` is also installed with the `NMODL` Python bindings which increase a lot the compilation complexity and memory requirements. For that purpose it's recommended to either disable this option if the Python bindings are not needed using the `CMake` option `-DNMODL_ENABLE_PYTHON_BINDINGS=OFF` or restrict the number of parallel jobs running in parallel in the `cmake` command using `cmake --parallel <number_of_parallel_jobs>`. i.e. in a machine with 8 threads do `cmake -parallel 4`.
+
 5. Set PATH and PYTHONPATH environmental variables to use the installation:
 
   ```
