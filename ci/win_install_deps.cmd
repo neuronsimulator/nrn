@@ -43,13 +43,13 @@ copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll" || goto :error
 :: check if MSYS2_ROOT is set, otherwise set it to C:\msys64 (default)
 if "%MSYS2_ROOT%"=="" set MSYS2_ROOT=C:\msys64
 
-choco list --localonly
+choco list
 :: install msys2 / mingw packages.
 :: NOTE: msys2 is already installed in the CI VM image. We check if msys2 is not installed, then download and install it with choco
 if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
     choco install -y --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 )
-choco list --localonly
+choco list
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
 :: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
