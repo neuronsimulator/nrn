@@ -617,8 +617,10 @@ def _update_node_data(force=False, newspecies=False):
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
                 _setup_units(force=True)
-
-            # end#if
+            else:
+                # don't call _setup_memb_currents if nsegs changed -- because
+                # it is called by change units.
+                _setup_memb_currents()
 
 
 def _matrix_to_rxd_sparse(m):

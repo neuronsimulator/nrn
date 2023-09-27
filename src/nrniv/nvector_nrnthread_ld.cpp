@@ -42,8 +42,8 @@
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    /* argument passing between NrnThreadLD and Serial */
-    static N_Vector x_;
+/* argument passing between NrnThreadLD and Serial */
+static N_Vector x_;
 static N_Vector y_;
 static N_Vector z_;
 static N_Vector w_;

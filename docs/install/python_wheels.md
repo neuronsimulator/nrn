@@ -66,18 +66,18 @@ docker push neuronsimulator/neuron_wheel:<tag>
 
 You can either build the neuron images locally or pull them from DockerHub:
 ```
-$ docker pull neuronsimulator/neuron_wheel
-Using default tag: latest
+$ docker pull neuronsimulator/neuron_wheel:latest-x86_64
+Using default tag: latest-x86_64
 latest: Pulling from neuronsimulator/neuron_wheel
 ....
 Status: Downloaded newer image for neuronsimulator/neuron_wheel:latest
-docker.io/neuronsimulator/neuron_wheel:latest
+docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 ```
 
 We can conveniently mount the local NEURON repository inside docker, by using the `-v` option:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
 This is how you can test your NEURON updates inside the NEURON Docker image.
@@ -89,7 +89,7 @@ The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` a
 For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers and mount them in the docker image:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
 You can download the headers with:
@@ -104,7 +104,7 @@ Note that for macOS there is no docker image needed, but all required dependenci
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
 
-Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
+Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
 For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers.
 For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
 
