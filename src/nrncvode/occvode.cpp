@@ -1038,9 +1038,10 @@ void Cvode::delete_prl() {
 void Cvode::record_add(PlayRecord* pr) {
     CvodeThreadData& z = CTD(pr->ith_);
     if (!z.record_) {
-        z.record_ = new PlayRecList(1);
+        z.record_ = new std::vector<PlayRecord*>();
+        z.record_->reserve(1);
     }
-    z.record_->append(pr);
+    z.record_->push_back(pr);
 }
 
 void Cvode::record_continuous() {
@@ -1055,8 +1056,8 @@ void Cvode::record_continuous() {
                 before_after(sorted_token, z.before_step_, nt);
             }
             if (z.record_) {
-                for (long i = 0; i < z.record_->count(); ++i) {
-                    z.record_->item(i)->continuous(t_);
+                for (auto& item: *(z.record_)) {
+                    item->continuous(t_);
                 }
             }
         }
@@ -1069,8 +1070,8 @@ void Cvode::record_continuous_thread(NrnThread* nt) {
         before_after(nrn_ensure_model_data_are_sorted(), z.before_step_, nt);
     }
     if (z.record_) {
-        for (long i = 0; i < z.record_->count(); ++i) {
-            z.record_->item(i)->continuous(t_);
+        for (auto& item: *(z.record_)) {
+            item->continuous(t_);
         }
     }
 }
@@ -1078,9 +1079,9 @@ void Cvode::record_continuous_thread(NrnThread* nt) {
 void Cvode::play_add(PlayRecord* pr) {
     CvodeThreadData& z = CTD(pr->ith_);
     if (!z.play_) {
-        z.play_ = new PlayRecList(1);
+        z.play_ = new std::vector<PlayRecord*>();
     }
-    z.play_->append(pr);
+    z.play_->push_back(pr);
 }
 
 void Cvode::play_continuous(double tt) {
@@ -1090,8 +1091,8 @@ void Cvode::play_continuous(double tt) {
         for (int i = 0; i < nrn_nthread; ++i) {
             CvodeThreadData& z = ctd_[i];
             if (z.play_) {
-                for (long i = 0; i < z.play_->count(); ++i) {
-                    z.play_->item(i)->continuous(tt);
+                for (auto& item: *(z.play_)) {
+                    item->continuous(tt);
                 }
             }
         }
@@ -1100,8 +1101,8 @@ void Cvode::play_continuous(double tt) {
 void Cvode::play_continuous_thread(double tt, NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
     if (z.play_) {
-        for (long i = 0; i < z.play_->count(); ++i) {
-            z.play_->item(i)->continuous(tt);
+        for (auto& item: *(z.play_)) {
+            item->continuous(tt);
         }
     }
 }

@@ -59,7 +59,7 @@ extern int mkdir_p(const char*);
 
 extern int vectorize;
 extern int numlist;
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 extern int usederivstatearray;
 
 /*SUPPRESS 763*/
