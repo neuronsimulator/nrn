@@ -326,6 +326,12 @@ class Rate(GeneralizedReaction):
         else:
             self._update_jac_cache()
 
+    def _evaluate(self, location, instruction):
+        return rxdmath._ensure_arithmeticed(self._original_rate)._evaluate(
+            location, instruction
+        )
+
+    """
     def _do_memb_scales(self):
         # TODO: does anyone still call this?
         # TODO: update self._memb_scales (this is just a dummy value to make things run)
@@ -339,3 +345,4 @@ class Rate(GeneralizedReaction):
             return self._memb_scales * rates
         else:
             return []
+    """
