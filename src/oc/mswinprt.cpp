@@ -9,6 +9,7 @@
 #ifdef _MSC_VER
 #include <process.h>  // _getpid
 #endif
+#include <filesystem>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -35,25 +36,10 @@ void setneuronhome(const char* p) {
     // if the program lives in .../bin/neuron.exe
     // and .../lib exists then use ... as the
     // NEURONHOME
-    char buf[256];
-    char* s;
-    int i, j;
-    //	printf("p=|%s|\n", p);
-    bad_install_ok = 1;
-    GetModuleFileName(NULL, buf, 256);
-    for (i = strlen(buf); i >= 0 && buf[i] != '\\'; --i) {
-        ;
-    }
-    buf[i] = '\0';  // /neuron.exe gone
-                    //	printf("setneuronhome |%s|\n", buf);
-    for (j = strlen(buf); j >= 0 && buf[j] != '\\'; --j) {
-        ;
-    }
-    buf[j] = '\0';  // /bin gone
-    neuron_home_dos = static_cast<char*>(emalloc(strlen(buf) + 1));
-    strcpy(neuron_home_dos, buf);
-    neuron_home = hoc_dos2unixpath(buf);
-    return;
+    const auto executable = std::filesystem::path(p);
+    std::cout << executable << std::endl;
+    // Windows defaults to wchar for paths
+    neuron_home = strdup(executable.parent_path().parent_path().string().c_str());
 }
 void HandleOutput(char* s) {
     printf("%s", s);
