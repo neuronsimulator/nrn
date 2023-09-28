@@ -36,13 +36,15 @@ def test_NetStim_noise():
         #print ("GID " , gid, "\n")
         # cell.noiseFromRandom123(gid, 2, 3)
 
-        #cell.r1.init_rng(1,2,3)
-        #cell.r2.init_rng(1,2,3)
+        # everyone likes that
+        #cell.r1.init_rng(1,2,3) # gid, mechtype, random_var_index
+        #cell.r2.init_rng(4,5,6)
         #cell.r1.set_seq(1,0)
         #cell.r2.set_seq(1,0)
-
+        #cell.r1.sample()
         #cell.init_rng()
 
+        # let's not do that
         #cell.init_rng(cell.r1, 1, 2)
         #cell.init_rng(cell.r2, 1, 2)
         #cell.init_rng(cell.r3, 1, 2)

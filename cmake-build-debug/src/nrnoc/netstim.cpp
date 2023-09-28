@@ -662,7 +662,7 @@ static double sample_rng_NetStim(_internalthreadargsproto_) {
     auto& r123state = get_random_var_by_name(name, _threadargs_);
    
     if(strcmp(name, "rng_donotuse") == 0) {
-        return nrnran123_negexp(r123state); // "1.0" from RANDOM declaration
+        return nrnran123_negexp(r123state, 1.0); // "1.0" from RANDOM declaration
     }   
 
     return 0;
