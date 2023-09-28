@@ -2389,6 +2389,16 @@ static char* double_array_interface(PyObject* po, long& stride) {
     return static_cast<char*>(data);
 }
 
+
+inline double pyobj_to_double_or_fail(PyObject* obj, long obj_id) {
+    if (!PyNumber_Check(obj)) {
+        char buf[50];
+        Sprintf(buf, "item %d is not a valid number", obj_id);
+        hoc_execerror(buf, 0);
+    }
+    return PyFloat_AsDouble(obj);
+}
+
 static IvocVect* nrnpy_vec_from_python(void* v) {
     Vect* hv = (Vect*) v;
     //	printf("%s.from_array\n", hoc_object_name(hv->obj_));
@@ -2404,33 +2414,31 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
             hoc_execerror(hoc_object_name(ho),
                           " does not support the Python Sequence or Iterator protocol");
         }
+        long i = 0;
         for (nb::handle item: po) {
-            if (!PyNumber_Check(item.ptr())) {
-                char buf[50];
-                Sprintf(buf, "Some list items are not a number");
-                hoc_execerror(buf, 0);
-            }
-            hv->push_back(PyFloat_AsDouble(item.ptr()));
+            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i++));
         }
     } else {
         int size = nb::len(po);
         hv->resize(size);
         double* x = vector_vec(hv);
         long stride;
-        char* y = double_array_interface(po.ptr(), stride);
-        if (y) {
+        char* array_interface_ptr = double_array_interface(po.ptr(), stride);
+        if (array_interface_ptr) {
             for (int i = 0, j = 0; i < size; ++i, j += stride) {
-                x[i] = *(double*) (y + j);
+                x[i] = *(double*) (array_interface_ptr + j);
             }
         } else {
-            for (long i = 0; i < size; ++i) {
-                auto item = po[i];
-                if (!PyNumber_Check(item.ptr())) {
-                    char buf[50];
-                    Sprintf(buf, "item %d not a number", i);
-                    hoc_execerror(buf, 0);
+            if (PyList_Check(po.ptr())) {
+                // If it's a list, convert to the good type so operator[] is more efficient
+                nb::list list_obj{std::move(po)};
+                for (long i = 0; i < size; ++i) {
+                    x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
                 }
-                x[i] = PyFloat_AsDouble(item.ptr());
+            } else {
+                for (long i = 0; i < size; ++i) {
+                    x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
+                }
             }
         }
     }
