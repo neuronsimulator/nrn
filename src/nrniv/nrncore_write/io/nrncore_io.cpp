@@ -417,6 +417,7 @@ void write_nrnthread_task(const char* path,
 
     // total number of datasets across all ranks
     int iSumThread = 0;
+    int num_offsets = file_offsets.size();
 
     // calculate mpi displacements
     if (nrnmpi_myid == 0) {
@@ -443,16 +444,15 @@ void write_nrnthread_task(const char* path,
             iRecvVec[iInt] = iSend[iInt];
         }
     }
+
+    // Collect the offsets
+    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
 #else
     for (int iInt = 0; iInt < num_datasets; ++iInt) {
         iRecvVec[iInt] = iSend[iInt];
     }
 #endif
-
-    // Collect the offsets
-    int num_offsets = file_offsets.size();
-    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
-    nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
 
     /// Writing the file with task, correspondent number of threads and list of correspondent first
     /// gids
