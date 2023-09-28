@@ -326,9 +326,9 @@ class Rate(GeneralizedReaction):
         else:
             self._update_jac_cache()
 
-    def _evaluate(self, location, instruaction):
+    def _evaluate(self, location, instruction):
         return rxdmath._ensure_arithmeticed(self._original_rate)._evaluate(
-            location, instruaction
+            location, instruction
         )
 
     """

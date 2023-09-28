@@ -91,6 +91,7 @@ for node in ip3.nodes:
 
 
 h.CVode().re_init()
+print(serca._evaluate(location=(cyt, sec, 0.5), instruction="do_1d", units='mM/ms'))
 h.continuerun(1000)
 
 if __name__ == "__main__":

@@ -279,5 +279,5 @@ class Reaction(GeneralizedReaction):
         # nothing to do since NEVER a membrane flux
         pass
 
-    def _evaluate(self, location, instruaction):
-        return self._rate_arithmeticed._evaluate(location, instruaction)
+    def _evaluate(self, location, instruction):
+        return self._rate_arithmeticed._evaluate(location, instruction)
