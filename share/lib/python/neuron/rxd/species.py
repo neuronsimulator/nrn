@@ -1576,7 +1576,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     self._states[i] = getattr(seg, stateo)
 
     def _semi_compile(self, reg, instruction):
-
         self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
@@ -2360,7 +2359,8 @@ class Species(_SpeciesMathable):
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
 
-        This can then be further restricted using the callable property of NodeList objects."""
+        This can then be further restricted using the callable property of NodeList objects.
+        """
 
         from . import rxd
 

@@ -197,7 +197,6 @@ class _Function:
         self._obj._involved_species(the_dict)
 
     def _ensure_extracellular(self, extracellular=None):
-
         if extracellular:
             from . import species
 
@@ -724,7 +723,6 @@ class _Arithmeticed:
         return new_arith
 
     def _short_repr(self):
-
         items = []
         counts = []
         for item, count in self._items.items():
