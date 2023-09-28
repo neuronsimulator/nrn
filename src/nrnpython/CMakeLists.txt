@@ -32,13 +32,17 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ${PROJECT_BINARY_DIR}/src/ivos
       ${PROJECT_BINARY_DIR}/src/oc
       ${IV_INCLUDE_DIR})
+
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    make_nanobind_target(nanobind ${pyinc})
+
     add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY} nanobind)
+    target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
+    target_link_libraries(nrnpython${pyver} PRIVATE ${Readline_LIBRARY} nanobind)
     if(NRN_LINK_AGAINST_PYTHON)
       target_link_libraries(nrnpython${pyver} ${pylib})
     endif()
