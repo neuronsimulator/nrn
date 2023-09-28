@@ -30,9 +30,7 @@
 
 #include <getopt.h>
 
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #include "modl.h"
 
 #include <cstring>
@@ -61,7 +59,7 @@ extern int mkdir_p(const char*);
 
 extern int vectorize;
 extern int numlist;
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 extern int usederivstatearray;
 
 /*SUPPRESS 763*/

@@ -16,9 +16,7 @@ Jenkins, R.J. (1996) ISAAC, in Fast Software Encryption, vol. 1039,
 #define ISAAC64_H
 
 #include <nrnconf.h>
-#if defined(HAVE_STDINT_H)
 #include <stdint.h>
-#endif
 
 #define RANDSIZL (4) /* I recommend 8 for crypto, 4 for simulations */
 #define RANDSIZ  (1 << RANDSIZL)

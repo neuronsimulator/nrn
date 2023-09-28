@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <cstdlib>
 #include <memory>
 
 #include "coreneuron/utils/nrn_assert.h"
