@@ -5,7 +5,7 @@
 #include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "ivocvect.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include "spmatrix.h"
 

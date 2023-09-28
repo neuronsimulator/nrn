@@ -9,7 +9,7 @@
 #include "parse.hpp"
 #include "membdef.h"
 #include "nrniv_mf.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include <array>
 #include <string>

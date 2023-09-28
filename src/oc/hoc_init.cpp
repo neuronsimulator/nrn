@@ -5,7 +5,7 @@
 #include "parse.hpp"
 #include <math.h>
 #include "equation.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include "nrn_ansi.h"
 #include "ocfunc.h"
