@@ -473,7 +473,6 @@ bool CodegenCppVisitor::need_semicolon(const Statement& node) {
         || node.is_else_statement()
         || node.is_from_statement()
         || node.is_verbatim()
-        || node.is_from_statement()
         || node.is_conductance_hint()
         || node.is_while_statement()
         || node.is_protect_statement()

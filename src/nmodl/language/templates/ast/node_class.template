@@ -2,19 +2,16 @@
    this Jinja template is not used to directly generate
    a file but included by other templates.
 #}
-
 {# add virtual qualifier if node is an abstract class #}
 {% macro virtual(node) -%}
     {% if node.is_abstract %} virtual {% endif %}
 {% endmacro %}
-
-namespace nmodl {
-namespace ast {
+namespace nmodl::ast {
 
 /**
- * @addtogroup ast_class
- * @ingroup ast
- * @{
+ * \addtogroup ast_class
+ * \ingroup ast
+ * \{
  */
 
 /**
@@ -28,61 +25,52 @@ class {{ node.class_name }} : public {{ node.base_class }} {
   {% for member in node.private_members() %}
     {{ '/// ' + member[3] }}
     {% if member[2] is none %}
-      {{ member[0] }} {{ member[1] }};
+    {{ member[0] }} {{ member[1] }};
     {% else %}
-      {{ member[0] }} {{ member[1] }} = {{ member[2] }};
+    {{ member[0] }} {{ member[1] }} = {{ member[2] }};
     {% endif %}
   {% endfor %}
 {% endif %}
 
   public:
-  {% for member in node.public_members() %}
+  {%- for member in node.public_members() %}
     {{ '/// ' + member[3] }}
     {% if member[2] is none %}
-      {{ member[0] }} {{ member[1] }};
+    {{ member[0] }} {{ member[1] }};
     {% else %}
-      {{ member[0] }} {{ member[1] }} = {{ member[2] }};
+    {{ member[0] }} {{ member[1] }} = {{ member[2] }};
     {% endif %}
-  {% endfor %}
+  {%- endfor %}
 
   /// \name Ctor & dtor
   /// \{
-
   {% if node.children %}
     {{ node.ctor_declaration() }}
     {% if node.has_ptr_children() %}
-      {{ node.ctor_shrptr_declaration() }}
+    {{ node.ctor_shrptr_declaration() }}
     {% endif %}
     {{ node.class_name }}(const {{ node.class_name }}& obj);
   {% endif %}
-
   {% if node.requires_default_constructor %}
     {{ node.class_name}}() = default;
   {% endif %}
-
-  virtual ~{{ node.class_name }}() = default;
-
+    virtual ~{{ node.class_name }}() = default;
   /// \}
-
   {% if node.is_base_block_node or node.is_number_node %}
   /// \name Not implemented
   /// \{
   {% endif %}
-
   {% if node.is_base_block_node %}
     virtual const ArgumentVector& get_parameters() const {
       throw std::runtime_error("get_parameters not implemented");
     }
   {% endif %}
-
   {% if node.is_number_node %}
     {{ virtual(node) }}double to_double() {
       throw std::runtime_error("to_double not implemented");
     }
   {% endif %}
-
   {{ "/// \}" if node.is_base_block_node or node.is_number_node else "" }}
-
   /**
    * \brief Check if the ast node is an instance of ast::{{ node.class_name }}
    * \return true as object is of type ast::{{ node.class_name }}
@@ -99,7 +87,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    * passes like nmodl::visitor::InlineVisitor where nodes are cloned in the
    * ast.
    *
-   * @return pointer to the clone/copy of the current node
+   * \return pointer to the clone/copy of the current node
    */
   // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
   {{ virtual(node) }} {{ node.class_name }}* clone() const override {
@@ -171,120 +159,105 @@ class {{ node.class_name }} : public {{ node.base_class }} {
   }
 
   {% if node.has_token %}
-    /**
-     * \brief Return associated token for the current ast node
-     *
-     * Not all ast nodes have token information. For example, nmodl::visitor::NeuronSolveVisitor
-     * can insert new nodes in the ast as a solution of ODEs. In this case, we return
-     * nullptr to store in the nmodl::symtab::SymbolTable.
-     *
-     * \return pointer to token if exist otherwise nullptr
-     */
-    const {{ virtual(node) }}ModToken* get_token() const noexcept override {
-      return token.get();
-    }
-  {% endif %}
-
-  {% if node.is_symtab_needed %}
-    /**
-     * \brief Return associated symbol table for the current ast node
-     *
-     * Only certain ast nodes (e.g. inherited from ast::Block) have associated
-     * symbol table. These nodes have nmodl::symtab::SymbolTable as member
-     * and it can be accessed using this method.
-     *
-     * \return pointer to the symbol table
-     *
-     * \sa nmodl::symtab::SymbolTable nmodl::visitor::SymtabVisitor
-     */
-    symtab::SymbolTable* get_symbol_table() const override {
-      return symtab;
-    }
-
-  {% endif %}
-
-  {% if node.is_program_node %}
-    /**
-     * \brief Return global symbol table for the mod file
-     */
-    symtab::ModelSymbolTable* get_model_symbol_table() {
-      return &model_symtab;
-    }
-  {% endif %}
-
-  {# doxygen for these methods is handled by nodes.py #}
-  {% for child in node.children %}
-    {{ child.get_add_methods_declaration() }}
-
-    {{ child.get_node_name_method_declaration() }}
-
-    {{ child.get_getter_method(node.class_name) }}
-
-  {% endfor %}
-
+  /**
+   * \brief Return associated token for the current ast node
+   *
+   * Not all ast nodes have token information. For example, nmodl::visitor::NeuronSolveVisitor
+   * can insert new nodes in the ast as a solution of ODEs. In this case, we return
+   * nullptr to store in the nmodl::symtab::SymbolTable.
+   *
+   * \return pointer to token if exist otherwise nullptr
+   */
+  const {{ virtual(node) }}ModToken* get_token() const noexcept override {
+    return token.get();
+  }
+{% endif %}
+{%- if node.is_symtab_needed %}
+  /**
+   * \brief Return associated symbol table for the current ast node
+   *
+   * Only certain ast nodes (e.g. inherited from ast::Block) have associated
+   * symbol table. These nodes have nmodl::symtab::SymbolTable as member
+   * and it can be accessed using this method.
+   *
+   * \return pointer to the symbol table
+   *
+   * \sa nmodl::symtab::SymbolTable nmodl::visitor::SymtabVisitor
+   */
+  symtab::SymbolTable* get_symbol_table() const override {
+    return symtab;
+  }
+{% endif %}
+{% if node.is_program_node %}
+  /**
+   * \brief Return global symbol table for the mod file
+   */
+  symtab::ModelSymbolTable* get_model_symbol_table() {
+    return &model_symtab;
+  }
+{% endif %}
+{# doxygen for these methods is handled by nodes.py #}
+{% for child in node.children %}
+  {{ child.get_add_methods_declaration() }}
+  {{ child.get_node_name_method_declaration() }}
+  {{ child.get_getter_method(node.class_name) }}
+{%- endfor %}
   /// \}
 
-  {% if node.has_setters %}
+{% if node.has_setters %}
   /// \name Setters
   /// \{
-  {% endif %}
-
-  {% if node.is_name_node %}
-    /**
-     * \brief Set name for the current ast node
-     *
-     * Some ast nodes have a member marked designated as node name (e.g. nodes
-     * derived from ast::Identifier). This method is used to set new name for those
-     * nodes. This useful for passes like nmodl::visitor::RenameVisitor.
-     *
-     * \sa Ast::get_node_type_name Ast::get_node_name
-     */
-    {{ virtual(node) }}void set_name(const std::string& name) override;
-  {% endif %}
-
-  {% if node.has_token %}
-    /**
-     * \brief Set token for the current ast node
-     */
-    void set_token(const ModToken& tok) { token = std::make_shared<ModToken>(tok); }
-  {% endif %}
-
-  {% if node.is_symtab_needed %}
-    /**
-     * \brief Set symbol table for the current ast node
-     *
-     * Top level, block scoped nodes store symbol table in the ast node.
-     * nmodl::visitor::SymtabVisitor then used this method to setup symbol table
-     * for every node in the ast.
-     *
-     * \sa nmodl::visitor::SymtabVisitor
-     */
-    void set_symbol_table(symtab::SymbolTable* newsymtab) override {
-      symtab = newsymtab;
-    }
-  {% endif %}
-
-  {# if node is base data type but not enum then add set method #}
-  {% if node.is_data_type_node and not node.is_enum_node %}
-    /**
-     * \brief Set new value to the current ast node
-     * \sa {{ node.class_name }}::eval
-     */
-    void set({{ node.get_data_type_name() }} _value) {
-      value = _value;
-    }
-  {% endif %}
-
-  {# doxygen for these methods is handled by nodes.py #}
-  {% for child in node.children %}
-    {{ child.get_setter_method_declaration(node.class_name) }}
-  {% endfor %}
-
-  {{ "/// \}" if node.has_setters else "" }}
+{% endif %}
+{% if node.is_name_node %}
+  /**
+   * \brief Set name for the current ast node
+   *
+   * Some ast nodes have a member marked designated as node name (e.g. nodes
+   * derived from ast::Identifier). This method is used to set new name for those
+   * nodes. This useful for passes like nmodl::visitor::RenameVisitor.
+   *
+   * \sa Ast::get_node_type_name Ast::get_node_name
+   */
+  {{ virtual(node) }}void set_name(const std::string& name) override;
+{% endif %}
+{% if node.has_token %}
+  /**
+   * \brief Set token for the current ast node
+   */
+  void set_token(const ModToken& tok) { token = std::make_shared<ModToken>(tok); }
+{% endif %}
+{% if node.is_symtab_needed %}
+  /**
+   * \brief Set symbol table for the current ast node
+   *
+   * Top level, block scoped nodes store symbol table in the ast node.
+   * nmodl::visitor::SymtabVisitor then used this method to setup symbol table
+   * for every node in the ast.
+   *
+   * \sa nmodl::visitor::SymtabVisitor
+   */
+  void set_symbol_table(symtab::SymbolTable* newsymtab) override {
+    symtab = newsymtab;
+  }
+{% endif %}
+{# if node is base data type but not enum then add set method #}
+{% if node.is_data_type_node and not node.is_enum_node %}
+  /**
+   * \brief Set new value to the current ast node
+   * \sa {{ node.class_name }}::eval
+   */
+  void set({{ node.get_data_type_name() }} _value) {
+    value = _value;
+  }
+{% endif %}
+{# doxygen for these methods is handled by nodes.py #}
+{% for child in node.children %}
+  {{ child.get_setter_method_declaration(node.class_name) }}
+{% endfor %}
+{{ "  /// \}" if node.has_setters else "" }}
 
   /// \name Visitor
   /// \{
-
   /**
    * \brief visit children i.e. member variables of current node using provided visitor
    *
@@ -326,7 +299,6 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    * \copydoc accept(visitor::Visitor&)
    */
   {{ virtual(node) }} void accept(visitor::ConstVisitor& v) const override;
-
   /// \}
 
   {% if node.is_base_class_number_node %}
@@ -356,7 +328,6 @@ class {{ node.class_name }} : public {{ node.base_class }} {
       {% endif %}
     }
   {% endif %}
-
   {% if node.is_data_type_node %}
   {# if node is of enum type then return enum value #}
     {% if node.is_enum_node %}
@@ -387,7 +358,6 @@ class {{ node.class_name }} : public {{ node.base_class }} {
       }
     {% endif %}
   {% endif %}
-
   {% if node.children %}
   private:
     /**
@@ -401,11 +371,10 @@ class {{ node.class_name }} : public {{ node.base_class }} {
   {% endif %}
 };
 
-/** @} */  // end of ast_class
+/** \} */  // end of ast_class
 
 {% for child in node.children %}
   {{ child.get_add_methods_inline_definition(node) }}
 {% endfor %}
 
-}  // namespace ast
-}  // namespace nmodl
+}  // namespace nmodl::ast

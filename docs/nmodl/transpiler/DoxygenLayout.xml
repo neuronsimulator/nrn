@@ -4,7 +4,6 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title="Overview"/>
-    <!-- <tab type="pages" visible="yes" title="Tutorials" intro=""/> -->
     <tab type="modules" visible="yes" title="Components" intro=""/>
     <tab type="namespaces" visible="yes" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>

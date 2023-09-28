@@ -29,8 +29,7 @@
 #include "utils/common_utils.hpp"
 #include "visitors/visitor.hpp"
 
-namespace nmodl {
-namespace ast {
+namespace nmodl::ast {
 
 /**
  * \page ast_design Design of Abstract Syntax Tree (AST)
@@ -50,10 +49,10 @@ namespace ast {
  */
 
 /**
- * @defgroup ast_class AST Classes
- * @ingroup ast
- * @brief Classes for implementing Abstract Syntax Tree (AST)
- * @{
+ * \defgroup ast_class AST Classes
+ * \ingroup ast
+ * \brief Classes for implementing Abstract Syntax Tree (AST)
+ * \{
  */
 
 /**
@@ -122,7 +121,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * This type name can be returned as a std::string for printing
    * ast to text/json form.
    *
-   * @return name of the node type as a string
+   * \return name of the node type as a string
    *
    * \sa Ast::get_node_name
    */
@@ -273,7 +272,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    *
    * \sa ast::StatementBlock
    */
-  virtual std::shared_ptr<StatementBlock> get_statement_block() const;
+  virtual const std::shared_ptr<StatementBlock>& get_statement_block() const;
 
   /**
    * \brief Set symbol table for the AST node
@@ -342,7 +341,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
   /**
    *\brief Parent setter
    *
-   * Usually, the parent parent pointer cannot be set in the constructor
+   * Usually, the parent pointer cannot be set in the constructor
    * because children are generally build BEFORE the parent. Conversely,
    * we set children parents directly in the parent constructor using
    * set_parent_in_children()
@@ -352,5 +351,4 @@ struct Ast: public std::enable_shared_from_this<Ast> {
   virtual void set_parent(Ast* p);
 };
 
-}  // namespace ast
-}  // namespace nmodl
+}  // namespace nmodl::ast

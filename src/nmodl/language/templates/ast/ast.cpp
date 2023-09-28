@@ -17,8 +17,7 @@
  * \brief Auto generated AST classes implementations
  */
 
-namespace nmodl {
-namespace ast {
+namespace nmodl::ast {
 
 ///
 ///  Ast member function definition
@@ -30,7 +29,7 @@ std::string Ast::get_node_name() const {
   throw std::logic_error("get_node_name() not implemented");
 }
 
-std::shared_ptr<StatementBlock> Ast::get_statement_block() const {
+const std::shared_ptr<StatementBlock>& Ast::get_statement_block() const {
   throw std::runtime_error("get_statement_block not implemented");
 }
 
@@ -219,7 +218,5 @@ void Ast::set_parent(Ast* p) {
   {% endfor %}
 
   {% endfor %}
-
-}  // namespace ast
-}  // namespace nmodl
+}  // namespace nmodl::ast
 

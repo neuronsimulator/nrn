@@ -199,6 +199,8 @@ class ChildNode(BaseNode):
     def get_rvalue_typename(self):
         """returns rvalue reference type of the node"""
         typename = self.get_typename()
+        if self.is_vector:
+            return "const " + typename + "&"
         if self.is_base_type_node and not self.is_integral_type_node or self.is_ptr_excluded_node:
             return "const " + typename + "&"
         return typename
@@ -242,7 +244,7 @@ class ChildNode(BaseNode):
     def member_rvalue_typename(self):
         """returns rvalue reference type when used as returned or parameter type"""
         typename = self.member_typename
-        if not self.is_integral_type_node and not self._is_member_type_wrapped_as_shared_pointer:
+        if not self.is_integral_type_node:
             return "const " + typename + "&"
         return typename
 
@@ -250,55 +252,55 @@ class ChildNode(BaseNode):
         s = ''
         if self.add_method:
             method = f"""
-                         /**
-                          * \\brief Add member to {self.varname} by raw pointer
-                          */
-                         void emplace_back_{to_snake_case(self.class_name)}({self.class_name} *n);
+              /**
+               * \\brief Add member to {self.varname} by raw pointer
+               */
+              void emplace_back_{to_snake_case(self.class_name)}({self.class_name} *n);
 
-                         /**
-                          * \\brief Add member to {self.varname} by shared_ptr
-                          */
-                         void emplace_back_{to_snake_case(self.class_name)}(std::shared_ptr<{self.class_name}> n);
+              /**
+               * \\brief Add member to {self.varname} by shared_ptr
+               */
+              void emplace_back_{to_snake_case(self.class_name)}(std::shared_ptr<{self.class_name}> n);
 
-                         /**
-                          * \\brief Erase member to {self.varname}
-                          */
-                         {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first);
+              /**
+               * \\brief Erase member to {self.varname}
+               */
+              {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first);
 
-                         /**
-                          * \\brief Erase members to {self.varname}
-                          */
-                         {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first, {self.class_name}Vector::const_iterator last);
+              /**
+               * \\brief Erase members to {self.varname}
+               */
+              {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first, {self.class_name}Vector::const_iterator last);
 
-                         /**
-                          * \\brief Erase non-consecutive members to {self.varname}
-                          *
-                          * loosely following the cpp reference of remove_if
-                          */
-                         size_t erase_{to_snake_case(self.class_name)}(std::unordered_set<{self.class_name}*>& to_be_erased);
+              /**
+               * \\brief Erase non-consecutive members to {self.varname}
+               *
+               * loosely following the cpp reference of remove_if
+               */
+              size_t erase_{to_snake_case(self.class_name)}(std::unordered_set<{self.class_name}*>& to_be_erased);
 
-                         /**
-                          * \\brief Insert member to {self.varname}
-                          */
-                         {self.class_name}Vector::const_iterator insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n);
+              /**
+               * \\brief Insert member to {self.varname}
+               */
+              {self.class_name}Vector::const_iterator insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n);
 
-                         /**
-                          * \\brief Insert members to {self.varname}
-                          */
-                         template <class NodeType, class InputIterator>
-                         void insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, NodeType& to, InputIterator first, InputIterator last);
+              /**
+               * \\brief Insert members to {self.varname}
+               */
+              template <class NodeType, class InputIterator>
+              void insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, NodeType& to, InputIterator first, InputIterator last);
 
-                         /**
-                          * \\brief Reset member to {self.varname}
-                          */
-                         void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, {self.class_name}* n);
+              /**
+               * \\brief Reset member to {self.varname}
+               */
+              void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, {self.class_name}* n);
 
-                         /**
-                          * \\brief Reset member to {self.varname}
-                          */
-                         void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, std::shared_ptr<{self.class_name}> n);
-                    """
-            s = textwrap.dedent(method)
+              /**
+               * \\brief Reset member to {self.varname}
+               */
+              void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, std::shared_ptr<{self.class_name}> n);
+            """
+            s = textwrap.indent(textwrap.dedent(method), '  ')
         return s
 
     def get_add_methods_definition(self, parent):
@@ -440,12 +442,12 @@ class ChildNode(BaseNode):
                   * in case of this ast::{self.class_name} has {self.varname} designated as a
                   * node name.
                   *
-                  * @return name of the node as std::string
+                  * \\return name of the node as std::string
                   *
                   * \\sa Ast::get_node_type_name
                   */
                  std::string get_node_name() const override;"""
-            s = textwrap.dedent(method)
+            s = textwrap.indent(textwrap.dedent(method), '  ')
         return s
 
     def get_node_name_method_definition(self, parent):
@@ -461,42 +463,40 @@ class ChildNode(BaseNode):
 
     def get_getter_method(self, class_name):
         getter_method = self.getter_method if self.getter_method else "get_" + to_snake_case(self.varname)
-        getter_override = " override" if self.getter_override else ""
+        getter_override = "override" if self.getter_override else ""
         return_type = self.member_rvalue_typename
-        return f"""
-                   /**
-                    * \\brief Getter for member variable \\ref {class_name}.{self.varname}
-                    */
-                   {return_type} {getter_method}() const noexcept {getter_override} {{
-                       return {self.varname};
-                   }}
-                """
+        return textwrap.indent(textwrap.dedent(f"""
+          /**
+           * \\brief Getter for member variable \\ref {class_name}.{self.varname}
+           */
+          {return_type} {getter_method}() const noexcept {getter_override} {{
+            return {self.varname};
+          }}
+        """), '  ')
 
     def get_setter_method_declaration(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
         reference = "" if self.is_base_type_node else "&&"
         if self.is_base_type_node:
-            return f"""
-                       /**
-                        * \\brief Setter for member variable \\ref {class_name}.{self.varname}
-                        */
-                       void {setter_method}({setter_type} {self.varname});
-                    """
+            return textwrap.indent(textwrap.dedent(f"""
+              /**
+               * \\brief Setter for member variable \\ref {class_name}.{self.varname}
+               */
+              void {setter_method}({setter_type} {self.varname});
+            """), '  ')
         else:
-            return f"""
-                       /**
-                        * \\brief Setter for member variable \\ref {class_name}.{self.varname} (rvalue reference)
-                        */
-                       void {setter_method}({setter_type}&& {self.varname});
+            return textwrap.indent(textwrap.dedent(f"""
+              /**
+               * \\brief Setter for member variable \\ref {class_name}.{self.varname} (rvalue reference)
+               */
+              void {setter_method}({setter_type}&& {self.varname});
 
-                       /**
-                        * \\brief Setter for member variable \\ref {class_name}.{self.varname}
-                        */
-                       void {setter_method}(const {setter_type}& {self.varname});
-                    """
-
-
+              /**
+               * \\brief Setter for member variable \\ref {class_name}.{self.varname}
+               */
+              void {setter_method}(const {setter_type}& {self.varname});
+            """), '  ')
 
     def get_setter_method_definition(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)

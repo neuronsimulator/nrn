@@ -21,7 +21,8 @@ void CodegenTransformVisitor::visit_function_block(FunctionBlock& node) {
     auto table_statements = collect_nodes(node, {AstNodeType::TABLE_STATEMENT});
     for (auto t: table_statements) {
         auto t_ = std::dynamic_pointer_cast<TableStatement>(t);
-        t_->set_table_vars({std::make_shared<Name>(new String(node.get_node_name()))});
+        t_->set_table_vars(
+            {std::make_shared<Name>(std::make_shared<String>(node.get_node_name()))});
     }
 }
 }  // namespace nmodl

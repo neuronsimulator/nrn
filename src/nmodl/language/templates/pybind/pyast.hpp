@@ -114,8 +114,8 @@ struct PyAst: public Ast {
         PYBIND11_OVERRIDE(symtab::SymbolTable*, Ast, get_symbol_table, );
     }
 
-    std::shared_ptr<StatementBlock> get_statement_block() const override {
-        PYBIND11_OVERRIDE(std::shared_ptr<StatementBlock>, Ast, get_statement_block, );
+    const std::shared_ptr<StatementBlock>& get_statement_block() const override {
+        PYBIND11_OVERRIDE(const std::shared_ptr<StatementBlock>&, Ast, get_statement_block, );
     }
 
     void set_symbol_table(symtab::SymbolTable* newsymtab) override {

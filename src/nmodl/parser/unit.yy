@@ -107,7 +107,7 @@ table_insertion
         try {
           $1->insert($2);
         }
-        catch (std::runtime_error e) {
+        catch (const std::runtime_error& e) {
           error(scanner.loc, e.what());
         }
         $$ = $1;
