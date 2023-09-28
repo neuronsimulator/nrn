@@ -393,7 +393,7 @@ void nrn_threads_free() {
             tml2 = tml->next;
             free((char*) ml->nodelist);
             free((char*) ml->nodeindices);
-            free((char*) ml->prop);
+            delete[] ml->prop;
             if (!memb_func[tml->index].hoc_mech) {
                 free((char*) ml->pdata);
             }
