@@ -8,9 +8,10 @@
 
 #include <iostream>
 #include <filesystem>
-#include <mpi.h>
 #include "coreneuron/io/nrn_filehandler.hpp"
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 
 namespace coreneuron {
 FileHandler::FileHandler(const std::string& filename)
@@ -38,9 +39,6 @@ std::string FileHandler::get_rank_fname(const char* basepath, bool create_folder
     if (create_folder && !std::filesystem::exists(path)) {
         std::filesystem::create_directories(path);
     }
-
-    int nrnmpi_myid = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &nrnmpi_myid);
 
     return (path + "/" + std::to_string(nrnmpi_myid) + ".dat");
 }

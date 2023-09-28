@@ -16,7 +16,6 @@
 #include "coreneuron/io/user_params.hpp"
 #include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
-#include "coreneuron/mpi/lib/nrnmpi.hpp"
 
 
 namespace coreneuron {
