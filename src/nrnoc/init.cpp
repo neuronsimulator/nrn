@@ -22,6 +22,7 @@
 #include "membdef.h"
 #include "multicore.h"
 #include "nrnmpi.h"
+#include "../mswin/dlfcn.h"
 
 #include <vector>
 

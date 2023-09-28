@@ -7,7 +7,7 @@
 #include <string.h>
 
 extern int ivocmain(int, const char**, const char**);
-extern int nrn_main_launch;
+extern NRN_DLLIMPORT int nrn_main_launch;
 extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 void nrnmpi_stubs();

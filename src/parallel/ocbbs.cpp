@@ -28,8 +28,8 @@ void bbs_done();
 extern double t;
 extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
 extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
-extern int nrnmpi_splitcell_connect(int that_host);
-extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
+extern void nrnmpi_splitcell_connect(int that_host);
+extern void nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 extern int nrn_set_timeout(int timeout);
 extern void nrnmpi_gid_clear(int);
 double nrnmpi_rtcomp_time_;
@@ -54,7 +54,7 @@ extern Object** nrn_get_thread_partition(int);
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
-extern size_t nrnbbcore_register_mapping();
+extern void nrnbbcore_register_mapping();
 extern int nrncore_run(const char*);
 extern bool nrn_trajectory_request_per_time_step_;
 extern int nrncore_is_enabled();
@@ -1027,7 +1027,10 @@ static double nrncorerun(void*) {
 }
 
 static double nrnbbcore_register_mapping(void*) {
-    return double(nrnbbcore_register_mapping());
+    // FIXME this is declared as void nrnbbcore...!!!!!!
+    // return double(nrnbbcore_register_mapping());
+    nrnbbcore_register_mapping();  // this does something in HOC
+    return 13.37;  // hand-picked
 }
 
 static Object** gid2obj(void* v) {

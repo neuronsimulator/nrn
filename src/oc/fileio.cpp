@@ -753,7 +753,7 @@ void hoc_Chdir(void) {
     pushx((double) i);
 }
 
-int nrn_is_python_extension;
+NRN_API int nrn_is_python_extension;
 static int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 

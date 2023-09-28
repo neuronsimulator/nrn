@@ -165,9 +165,7 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(MINGW)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
-endif()
+list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 
 # NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
@@ -412,6 +410,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_compile_definitions(nrniv_lib PUBLIC NRN_DLL PRIVATE NRN_DLL_EXPORTS)
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)

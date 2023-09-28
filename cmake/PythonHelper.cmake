@@ -207,7 +207,7 @@ foreach(pyexe ${python_executables})
       message(FATAL_ERROR "Cannot handle multiple Python include dirs: ${nrnpy_INCLUDES}")
     endif()
     if(NOT num_lib_dirs EQUAL 1)
-      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${Python3_LIBRARIES}")
+      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${nrnpy_LIBRARIES} === ${Python3_LIBRARIES}")
     endif()
     if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
       # We cannot build against multiple copies of the same pythonX.Y version.

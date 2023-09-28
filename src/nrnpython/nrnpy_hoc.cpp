@@ -30,7 +30,7 @@ extern void (*nrnpy_decref)(void* pyobj);
 extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
-extern double* hoc_evalpointer();
+extern void hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
 extern void nrn_change_nseg(Section*, int);
 extern Symlist* hoc_top_level_symlist;
@@ -3152,7 +3152,7 @@ static char* nrncore_arg(double tstop) {
     return NULL;
 }
 
-PyObject* nrnpy_hoc() {
+NRN_API PyObject* nrnpy_hoc() {
     PyObject* m;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;

@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     int err;
     char* args;
 
-#ifndef MINGW
+#ifndef WIN32
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
     setneuronhome();

@@ -4,10 +4,6 @@
 
 #include <../../nmodlconf.h>
 
-#ifdef WIN32
-#define YY_NO_UNISTD_H 1
-#endif
-
 #undef output
 #undef unput
 

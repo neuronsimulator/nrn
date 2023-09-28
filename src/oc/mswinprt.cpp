@@ -1,9 +1,14 @@
 #include <../../nrnconf.h>
 
-#ifdef MINGW
+#ifdef WIN32
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <windows.h>
+#ifdef _MSC_VER
+#include <process.h>  // _getpid
+#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -127,7 +132,11 @@ void hoc_win32_cleanup() {
 #endif
     path = getenv("TEMP");
     if (path) {
+#ifdef _MSC_VER
+        Sprintf(buf, "%s/oc%d.hl", path, _getpid());
+#else
         Sprintf(buf, "%s/oc%d.hl", path, getpid());
+#endif
         unlink(buf);
         //      DebugMessage("unlinked %s\n", buf);
     }
@@ -167,4 +176,4 @@ void hoc_Lw() {
     pushx(0.);
 }
 
-#endif  // MINGW
+#endif  // WIN32

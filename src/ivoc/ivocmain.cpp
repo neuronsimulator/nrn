@@ -60,7 +60,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#ifdef MINGW
+#ifdef WIN32
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -178,7 +178,7 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW)
+#if !defined(WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -221,7 +221,7 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-int ivocmain(int, const char**, const char**);
+NRN_API int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 int (*p_neosim_main)(int, const char**, const char**);
 extern int nrn_global_argc;
@@ -242,9 +242,12 @@ static void force_load() {
     }
 }
 
-#ifdef MINGW
+#ifdef WIN32
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
 static bool isdir(const char* p) {
     struct stat st;
     bool b = stat(p, &st) == 0 && S_ISDIR(st.st_mode);
@@ -495,7 +498,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW) && !defined(_MSC_VER)
+#if !defined(WIN32)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -571,7 +574,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             fclose(f);
             session->style()->load_file(String(nrn_props), -5);
         } else {
-#ifdef MINGW
+#ifdef WIN32
             std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
 #else
             std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
