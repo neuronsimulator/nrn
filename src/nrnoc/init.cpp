@@ -135,7 +135,7 @@ extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
-Memb_func* memb_func;
+std::vector<Memb_func> memb_func;
 std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
@@ -324,9 +324,9 @@ void hoc_last_init(void) {
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
         }
-    memb_func_size_ = 30;
+    memb_func_size_ = 30; // initial allocation size
     memb_list.reserve(memb_func_size_);
-    memb_func = (Memb_func*) ecalloc(memb_func_size_, sizeof(Memb_func));
+    memb_func.reserve(memb_func_size_); 
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));
@@ -460,16 +460,17 @@ void nrn_register_mech_common(const char** m,
                               nrn_init_t initialize,
                               int nrnpointerindex, /* if -1 then there are none */
                               int vectorized) {
+    // initialize at first entry, it will be incremented at exit of the function
     static int type = 2; /* 0 unused, 1 for cable section */
     int j, k, modltype, pindx, modltypemax;
     Symbol* s;
     const char** m2;
 
     nrn_load_name_check(m[1]);
-
     if (type >= memb_func_size_) {
+        // we exhausted the allocated space in the tables for the mechanism type data
+        // so reallocate
         memb_func_size_ += 20;
-        memb_func = (Memb_func*) erealloc(memb_func, memb_func_size_ * sizeof(Memb_func));
         pointsym = (Symbol**) erealloc(pointsym, memb_func_size_ * sizeof(Symbol*));
         point_process = (Point_process**) erealloc(point_process,
                                                    memb_func_size_ * sizeof(Point_process*));
@@ -524,6 +525,7 @@ void nrn_register_mech_common(const char** m,
     }
 
     assert(type >= memb_list.size());
+    memb_func.resize(type + 1);
     memb_list.resize(type + 1);
     nrn_prop_param_size_[type] = 0;  /* fill in later */
     nrn_prop_dparam_size_[type] = 0; /* fill in later */

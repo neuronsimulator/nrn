@@ -1599,10 +1599,10 @@ bool NetCvode::init_global() {
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount && (i == CAP || mf->current || mf->ode_count || mf->ode_matsol ||
-                                      mf->ode_spec || mf->state)) {
+                if (ml->nodecount && (i == CAP || mf.current || mf.ode_count || mf.ode_matsol ||
+                                      mf.ode_spec || mf.state)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
                     cml = new CvMembList{i};
@@ -1624,7 +1624,7 @@ bool NetCvode::init_global() {
                     cml->ml[0].nodeindices = ml->nodeindices;
                     assert(ml->prop);
                     cml->ml[0].prop = ml->prop;  // used for ode_map even when hoc_mech = false
-                    if (!mf->hoc_mech) {
+                    if (!mf.hoc_mech) {
                         cml->ml[0].pdata = ml->pdata;
                     }
                     cml->ml[0]._thread = ml->_thread;
@@ -1638,12 +1638,12 @@ bool NetCvode::init_global() {
             // have the global cvode as its nvi field
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
-                if (mf->is_point && !nrn_is_artificial_[i]) {
+                Memb_func& mf = memb_func[i];
+                if (mf.is_point && !nrn_is_artificial_[i]) {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto& datum = mf.hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
                         auto* pp = datum.get<Point_process*>();
                         pp->nvi_ = gcv_;
                     }
@@ -1722,10 +1722,10 @@ bool NetCvode::init_global() {
 
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount &&
-                    (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
+                    (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec || mf.state ||
                      i == CAP || ba_candidate.count(i) == 1)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
@@ -1772,10 +1772,10 @@ bool NetCvode::init_global() {
             // now list order is from 0 to n_memb_func
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount &&
-                    (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
+                    (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec || mf.state ||
                      i == CAP || ba_candidate.count(i) == 1)) {
                     for (int j = 0; j < ml->nodecount; ++j) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
@@ -1790,7 +1790,7 @@ bool NetCvode::init_global() {
                         newml.nodelist[0] = ml->nodelist[j];
                         newml.nodeindices = new int[1]{ml->nodeindices[j]};
                         newml.prop = new Prop* [1] { ml->prop[j] };
-                        if (!mf->hoc_mech) {
+                        if (!mf.hoc_mech) {
                             newml.set_storage_offset(ml->get_storage_offset() + j);
                             newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
@@ -1806,12 +1806,12 @@ bool NetCvode::init_global() {
             // artifical cells have no integrator
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
-                if (mf->is_point) {
+                Memb_func& mf = memb_func[i];
+                if (mf.is_point) {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto& datum = mf.hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
                         auto* pp = datum.get<Point_process*>();
                         if (nrn_is_artificial_[i] == 0) {
                             int inode = ml->nodelist[j]->v_node_index;
