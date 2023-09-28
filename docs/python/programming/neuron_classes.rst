@@ -1,7 +1,7 @@
 NEURON Python Classes and Objects
 =================================
 
-Neuron exposes its internal objects and hoc templates as Python objects via an automatic
+NEURON exposes its internal objects and hoc templates as Python objects via an automatic
 conversion layer, effectively making all entities from the HOC stack available to a Python program.
 
 There are basically two main objects which expose most Neuron entities. The first is `hoc` which
@@ -18,7 +18,7 @@ exposes a number of internal established classes and functions.
     hoc.Vector(
         ...
 
-However, for *dynamic* entities Neuron provides the `h` gateway object. It gives access to internal
+However, for *dynamic* entities NEURON provides the `h` gateway object. It gives access to internal
 classes (templates) and objects, even if they were just created. E.g.:
 
 .. code-block::
@@ -37,12 +37,12 @@ classes (templates) and objects, even if they were just created. E.g.:
     >>> vv.as_numpy()
     array([1., 1., 1., 1., 1.])
 
-This is particularly useful as Neuron can dynamically load libraries with more functions and classes.
+This is particularly useful as NEURON can dynamically load libraries with more functions and classes.
 
 Class Hierarchy
 ---------------
 
-All NEURON's internal interpreter objects are instances of a global top-level type: HocObject.
+All NEURON's internal interpreter objects are instances of a global top-level type: `HocObject`.
 Until very recently they were considered direct instances, without any intermediate hierarchy.
 
 With #1858 Hoc classes are now associated with actual Python types, created dynamically. Such
