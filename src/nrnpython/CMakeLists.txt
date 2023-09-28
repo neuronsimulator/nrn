@@ -11,21 +11,6 @@ add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
-# minimal nanobind interface
-# =============================================================================
-add_library(nanobind INTERFACE)
-target_sources(
-  nanobind
-  INTERFACE ${NB_DIR}/src/common.cpp
-            ${NB_DIR}/src/error.cpp
-            ${NB_DIR}/src/nb_internals.cpp
-            ${NB_DIR}/src/nb_static_property.cpp
-            ${NB_DIR}/src/nb_type.cpp
-            ${NB_DIR}/src/nb_func.cpp
-            ${NB_DIR}/src/implicit.cpp)
-target_include_directories(nanobind INTERFACE "${NB_DIR}/include" "${NB_DIR}/ext/robin_map/include")
-
-# =============================================================================
 # nrnpython libraries (one lib per python)
 # =============================================================================
 set(nrnpython_lib_list)
