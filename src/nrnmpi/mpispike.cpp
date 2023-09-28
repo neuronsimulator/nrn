@@ -620,9 +620,9 @@ void nrnmpi_barrier() {
 static MPI_Op type2OP(int type) {
     if (type == 1) {
         return MPI_SUM;
-    else if (type == 2) {
+    } else if (type == 2) {
         return MPI_MAX;
-    else {
+    } else {
         return MPI_MIN;
     }
 }
