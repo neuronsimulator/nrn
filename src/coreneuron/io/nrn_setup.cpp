@@ -168,7 +168,11 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int& ngrp, int*& grp, int& num_offsets, size_t*& file_offsets, const char* filesdat) {
+void nrn_read_filesdat(int& ngrp,
+                       int*& grp,
+                       int& num_offsets,
+                       size_t*& file_offsets,
+                       const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded) {
         ngrp = corenrn_embedded_nthread;

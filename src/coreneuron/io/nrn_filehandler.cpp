@@ -8,9 +8,9 @@
 
 #include <iostream>
 #include <filesystem>
+#include <mpi.h>
 #include "coreneuron/io/nrn_filehandler.hpp"
 #include "coreneuron/nrnconf.h"
-#include "coreneuron/mpi/lib/nrnmpi.hpp"
 
 namespace coreneuron {
 FileHandler::FileHandler(const std::string& filename)
@@ -25,11 +25,11 @@ bool FileHandler::file_exist(const std::string& filename) {
 }
 
 std::string FileHandler::get_rank_fname(const char* basepath, bool create_folder) {
-    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    // TODO: Change this for equivalent MPI functions to get the node ID
     std::string nodepath = "";
     if (const char* node_id = std::getenv("SLURM_NODEID")) {
         const int factor = 20;
-        nodepath = std::to_string(std::atoi(node_id)/factor) + "/" + node_id;
+        nodepath = std::to_string(std::atoi(node_id) / factor) + "/" + node_id;
     } else if (const char* hostname = std::getenv("HOSTNAME")) {
         nodepath = hostname;
     }
@@ -39,7 +39,10 @@ std::string FileHandler::get_rank_fname(const char* basepath, bool create_folder
         std::filesystem::create_directories(path);
     }
 
-    return (path + "/" + std::to_string(nrnmpi_myid_) + ".dat");
+    int nrnmpi_myid = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &nrnmpi_myid);
+
+    return (path + "/" + std::to_string(nrnmpi_myid) + ".dat");
 }
 
 void FileHandler::open(const std::string& filename, size_t offset, std::ios::openmode mode) {
@@ -68,7 +71,7 @@ bool FileHandler::eof() {
         return true;
     }
     int a = F.get();
-    if (F.eof() || (char)a == '\0') {
+    if (F.eof() || (char) a == '\0') {
         return true;
     }
     F.putback(a);

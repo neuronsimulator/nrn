@@ -39,7 +39,10 @@ struct Memb_list;
 using bbcore_write_t =
     void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
 
-void write_nrnthread_task(const char*, CellGroup* cgs, bool append, std::vector<size_t>& file_offsets);
+void write_nrnthread_task(const char*,
+                          CellGroup* cgs,
+                          bool append,
+                          std::vector<size_t>& file_offsets);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 
 size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo);

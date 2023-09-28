@@ -56,11 +56,11 @@ std::string get_filename(const std::string& path, std::string file_name) {
 }
 
 std::string get_rank_fname(const char* basepath, bool create_folder = true) {
-    // TODO: Change this for equivalent MPI functions to get the node ID <<<<<<<<<<<<<<<<<<<<<<<<<<
+    // TODO: Change this for equivalent MPI functions to get the node ID
     std::string nodepath = "";
     if (const char* node_id = std::getenv("SLURM_NODEID")) {
         const int factor = 20;
-        nodepath = std::to_string(std::atoi(node_id)/factor) + "/" + node_id;
+        nodepath = std::to_string(std::atoi(node_id) / factor) + "/" + node_id;
     } else if (const char* hostname = std::getenv("HOSTNAME")) {
         nodepath = hostname;
     }
@@ -133,7 +133,7 @@ void write_globals(const char* fname) {
 }
 
 std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
-    std::array<size_t, 2> offsets = { 0, 0 };
+    std::array<size_t, 2> offsets = {0, 0};
 
     if (cg.n_output <= 0) {
         return offsets;
@@ -163,7 +163,7 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
         cg.netcon_srcgid = NULL;
     }
 
-    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Mark the end of the file with '\0'
     fputc(0, f);
 
     // Set the second offset inside the file
@@ -308,7 +308,7 @@ std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup
 
     nrnbbcore_vecplay_write(f, nt);
 
-    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Mark the end of the file with '\0'
     fputc(0, f);
 
     fclose(f);
@@ -379,7 +379,10 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs, bool append, std::vector<size_t>& file_offsets) {
+void write_nrnthread_task(const char* path,
+                          CellGroup* cgs,
+                          bool append,
+                          std::vector<size_t>& file_offsets) {
     // ids of datasets that will be created
     std::vector<int> iSend;
 
@@ -562,7 +565,7 @@ size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) 
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
-    
+
     // Set the offset inside the file
     offset = ftell(f);
 
@@ -601,7 +604,7 @@ size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) 
         }
     }
 
-    // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Mark the end of the file with '\0'
     fputc(0, f);
 
     fclose(f);

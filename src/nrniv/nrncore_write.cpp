@@ -224,7 +224,7 @@ static void part2(const char* path) {
     CellGroup* cgs = cellgroups_;
     for (int i = 0; i < nrn_nthread; ++i) {
         chkpnt = 0;
-        const auto &nrnthread_offsets = write_nrnthread(path, nrn_threads[i], cgs[i]);
+        const auto& nrnthread_offsets = write_nrnthread(path, nrn_threads[i], cgs[i]);
         if (nrnthread_offsets[1] > 0) {
             offsets[0] = nrnthread_offsets[0];
             offsets[1] = nrnthread_offsets[1];

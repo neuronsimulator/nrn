@@ -974,7 +974,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     }
 
     // print the files
-    for (int tid = 0; tid < nrn_nthread; ++tid) { // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Sometimes more than one has data!!
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& g = gi[tid];
 
         if (g.src_sid.empty() && g.tar_sid.empty()) {  // no file
@@ -987,10 +987,10 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
         if (!f) {
             hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
         }
-        
+
         // Set the offset inside the file
         offset = ftell(f);
-        
+
         fprintf(f, "%s\n", bbcore_write_version);
         fprintf(f, "%d sizeof_sid_t\n", int(sizeof(sgid_t)));
 
@@ -1014,7 +1014,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
             CHKPNT fwrite(g.tar_index.data(), ntar, sizeof(int), f);
         }
 
-        // Mark the end of the file with '\0' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        // Mark the end of the file with '\0'
         fputc(0, f);
 
         fclose(f);
