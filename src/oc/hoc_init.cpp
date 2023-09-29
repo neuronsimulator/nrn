@@ -238,6 +238,17 @@ void hoc_init(void) /* install constants and built-ins table */
 {
     int i;
     Symbol* s;
+
+    {
+        const char* envvar = getenv("NRNUNIT_USE_LEGACY");
+        if (envvar) {
+            hoc_warning("NRNUNIT_USE_LEGACY is deprecated as only modern units are supported.", "If you want to still use legacy unit you can modify the nrnunit.lib with a previous version.");
+            if (strcmp(envvar, "1") == 0) {
+                hoc_execerror("'NRNUNIT_USE_LEGACY=1' have been called but legacy units are no more supported.", nullptr);
+            }
+        }
+    }
+
     use_mcell_ran4_ = 0;
     nrn_xopen_broadcast_ = 255;
     extern void hoc_init_space(void);
