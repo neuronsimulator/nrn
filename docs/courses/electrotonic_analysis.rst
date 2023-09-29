@@ -51,7 +51,7 @@ NEURON's tools for electrotonic analysis are gathered into four different "style
 
 - :ref:`log(A) vs. X <log(A)_vs_x>`
 
-- :ref:`Shape <shape>`
+- :ref:`Shape <the-shape-tool>`
 
 They are accessible through :menuselection:`NEURON Main Menu --> Tools --> Impedance`. In this exercise you will start to learn how to use each of them. To save screen space, close a tool when you are done with it.
 
