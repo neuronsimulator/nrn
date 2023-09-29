@@ -289,46 +289,31 @@ void nrnmpi_barrier_impl() {
     MPI_Barrier(nrnmpi_comm);
 }
 
-double nrnmpi_dbl_allreduce_impl(double x, int type) {
-    double result;
+static MPI_Op type2OP(int type) {
     MPI_Op tt;
     if (type == 1) {
-        tt = MPI_SUM;
+        return MPI_SUM;
     } else if (type == 2) {
-        tt = MPI_MAX;
+        return MPI_MAX;
     } else {
-        tt = MPI_MIN;
+        return MPI_MIN;
     }
-    MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, tt, nrnmpi_comm);
+}
+
+double nrnmpi_dbl_allreduce_impl(double x, int type) {
+    double result;
+    MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, type2OP(type), nrnmpi_comm);
     return result;
 }
 
 void nrnmpi_dbl_allreduce_vec_impl(double* src, double* dest, int cnt, int type) {
-    MPI_Op tt;
     assert(src != dest);
-    if (type == 1) {
-        tt = MPI_SUM;
-    } else if (type == 2) {
-        tt = MPI_MAX;
-    } else {
-        tt = MPI_MIN;
-    }
-    MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, tt, nrnmpi_comm);
-    return;
+    MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, type2OP(type), nrnmpi_comm);
 }
 
 void nrnmpi_long_allreduce_vec_impl(long* src, long* dest, int cnt, int type) {
-    MPI_Op tt;
     assert(src != dest);
-    if (type == 1) {
-        tt = MPI_SUM;
-    } else if (type == 2) {
-        tt = MPI_MAX;
-    } else {
-        tt = MPI_MIN;
-    }
-    MPI_Allreduce(src, dest, cnt, MPI_LONG, tt, nrnmpi_comm);
-    return;
+    MPI_Allreduce(src, dest, cnt, MPI_LONG, type2OP(type), nrnmpi_comm);
 }
 
 #if NRN_MULTISEND
