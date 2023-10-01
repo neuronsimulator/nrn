@@ -7,6 +7,7 @@
 */
 
 #include <iostream>
+#include <regex>
 #include "coreneuron/io/nrn_filehandler.hpp"
 #include "coreneuron/nrnconf.h"
 
@@ -30,6 +31,7 @@ void FileHandler::open(const std::string& filename, std::ios::openmode mode) {
         std::cerr << "cannot open file '" << filename << "'" << std::endl;
     }
     nrn_assert(F.is_open());
+    current_filename = filename;
     current_mode = mode;
     char version[256];
     if (current_mode & std::ios::in) {
@@ -103,5 +105,13 @@ void FileHandler::read_checkpoint_assert() {
 
 void FileHandler::close() {
     F.close();
+
+    // Delete source file if read-mode is enabled and path matches '/dev/shm'
+    const auto& env = getenv("CORENEURON_SHM_DELETESOURCE");
+    if ((env == nullptr || std::string(env) != "OFF") && current_mode == std::ios::in &&
+        std::regex_match(current_filename, std::regex("^/dev/shm/.*_[1-4].dat$"))) {
+        remove(current_filename.c_str());
+        current_filename = "";  // Clear the filename
+    }
 }
 }  // namespace coreneuron
