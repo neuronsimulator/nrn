@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <classreg.h>
+#include <vector>
+
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
@@ -28,8 +30,9 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-int hoc_print_first_instance = 1;
+std::vector<const char*> py_exposed_classes{};
 
+int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
@@ -1560,13 +1563,13 @@ void hoc_endtemplate(Symbol* t) {
     }
 }
 
-void class2oc(const char* name,
-              void* (*cons)(Object*),
-              void (*destruct)(void*),
-              Member_func* m,
-              int (*checkpoint)(void**),
-              Member_ret_obj_func* mobjret,
-              Member_ret_str_func* strret) {
+void class2oc_base(const char* name,
+                   void* (*cons)(Object*),
+                   void (*destruct)(void*),
+                   Member_func* m,
+                   int (*checkpoint)(void**),
+                   Member_ret_obj_func* mobjret,
+                   Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
     Symbol *tsym, *s;
     cTemplate* t;
@@ -1575,6 +1578,7 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
+
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);
@@ -1586,6 +1590,7 @@ void class2oc(const char* name,
     t->destructor = destruct;
     t->steer = 0;
     t->checkpoint = checkpoint;
+
     if (m)
         for (i = 0; m[i].name; ++i) {
             s = hoc_install(m[i].name, FUNCTION, 0.0, &hoc_symlist);
@@ -1607,6 +1612,17 @@ void class2oc(const char* name,
     hoc_endtemplate(tsym);
 }
 
+
+void class2oc(const char* name,
+              void* (*cons)(Object*),
+              void (*destruct)(void*),
+              Member_func* m,
+              int (*checkpoint)(void**),
+              Member_ret_obj_func* mobjret,
+              Member_ret_str_func* strret) {
+    class2oc_base(name, cons, destruct, m, checkpoint, mobjret, strret);
+    py_exposed_classes.push_back(name);
+}
 
 Symbol* hoc_decl(Symbol* s) {
     Symbol* ss;
