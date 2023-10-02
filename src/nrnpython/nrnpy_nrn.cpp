@@ -1163,11 +1163,7 @@ static PyObject* pymech_repr(PyObject* p) {
 
 static PyObject* pymechfunc_repr(PyObject* p) {
     NPyMechFunc* pyfunc = (NPyMechFunc*) p;
-    Section* sec = pyfunc->pymech_->pyseg_->pysec_->sec_;
-    if (sec && sec->prop) {
-        return NPyMechFunc_name(pyfunc);
-    }
-    return PyString_FromString("<mechanism function of deleted section>");
+    return NPyMechFunc_name(pyfunc);
 }
 
 static PyObject* NPyRangeVar_name(NPyRangeVar* self) {

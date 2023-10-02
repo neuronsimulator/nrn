@@ -18,6 +18,10 @@ INITIAL {
   c[1] = 3
 }
 
+PROCEDURE AA() { : prior to A to get some extra lines of coverage
+  A(1,2,3)
+}
+
 PROCEDURE A(x,y,z) {
   a = x
   b = y
@@ -32,6 +36,13 @@ PROCEDURE Aexp2(x) {
   LOCAL a
   a = x
   printf("exp(%g) is %g\n", a, exp(a))
+}
+
+FUNCTION Aexcept(x) { : can test exception
+VERBATIM
+  hoc_execerr_ext("exception in Aexcept, x=%g", _lx);
+ENDVERBATIM
+  Aexcept = x
 }
 
 FUNCTION C(i) {

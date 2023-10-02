@@ -80,6 +80,10 @@ def mech_expect_invalid(mech, Af, aref):
 def test2():
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
+    assert Af.name() == "sdatats.A"  # covers NPyMechObj_name
+    expect_err("mech.Aexcept(5)")  # covers catch
+    assert Af.mech() == mech  # covers NPyMechFunc_mech
+    assert Af.__repr__() == "sdatats.A"  # covers pymechfunc_repr
     # mech uninserted, should invalidate mechs[-1]
     mechs[-1].segment().sec.uninsert(mechs[-1].name())
     mech_expect_invalid(mech, Af, aref)
