@@ -3226,7 +3226,7 @@ void func_needs_setdata() {
         if (q && f.second.need_setdata) {
             // error if not valid id
             Symbol* s = f.first;
-            sprintf(buf,
+            Sprintf(buf,
                     "\n"
                     "  if(!_prop_id) {\n"
                     "    hoc_execerror(\""
