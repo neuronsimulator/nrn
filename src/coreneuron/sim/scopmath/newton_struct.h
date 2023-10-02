@@ -20,6 +20,7 @@ struct NewtonSpace {
     double* high_value;
     double* low_value;
     double* rowmax;
+    bool compact_memory_layout;
 };
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns);

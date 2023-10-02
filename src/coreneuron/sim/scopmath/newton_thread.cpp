@@ -12,16 +12,17 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
-NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
+NewtonSpace* nrn_cons_newtonspace(int n, int n_instance, bool compact_memory_layout) {
     NewtonSpace* ns = (NewtonSpace*) emalloc(sizeof(NewtonSpace));
     ns->n = n;
     ns->n_instance = n_instance;
     ns->delta_x = makevector(n * n_instance * sizeof(double));
-    ns->jacobian = makematrix(n, n * n_instance);
+    ns->jacobian = makematrix(n, compact_memory_layout ? n : n * n_instance);
     ns->perm = (int*) emalloc((unsigned) (n * n_instance * sizeof(int)));
     ns->high_value = makevector(n * n_instance * sizeof(double));
     ns->low_value = makevector(n * n_instance * sizeof(double));
     ns->rowmax = makevector(n * n_instance * sizeof(double));
+    ns->compact_memory_layout = compact_memory_layout;
     nrn_newtonspace_copyto_device(ns);
     return ns;
 }
