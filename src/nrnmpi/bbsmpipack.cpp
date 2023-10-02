@@ -12,9 +12,7 @@
 #include <nrnmpi.h>
 
 #if NRNMPI
-#if HAVE_STRING_H
 #include <string.h>
-#endif
 #include <assert.h>
 #include <errno.h>
 #include <mpi.h>

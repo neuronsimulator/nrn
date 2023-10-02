@@ -63,10 +63,13 @@ directly by hoc.
 #include "parse1.hpp"
 
 #include <algorithm>
+#include <iterator>  // std::back_inserter
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
