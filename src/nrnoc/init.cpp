@@ -326,7 +326,7 @@ void hoc_last_init(void) {
         }
     memb_func_size_ = 30; // initial allocation size
     memb_list.reserve(memb_func_size_);
-    memb_func.reserve(memb_func_size_); 
+    memb_func.resize(memb_func_size_); // we directly resize because it is used below
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));
@@ -525,8 +525,8 @@ void nrn_register_mech_common(const char** m,
     }
 
     assert(type >= memb_list.size());
-    memb_func.resize(type + 1);
     memb_list.resize(type + 1);
+    memb_func.resize(type + 1);
     nrn_prop_param_size_[type] = 0;  /* fill in later */
     nrn_prop_dparam_size_[type] = 0; /* fill in later */
     nrn_dparam_ptr_start_[type] = 0; /* fill in later */
