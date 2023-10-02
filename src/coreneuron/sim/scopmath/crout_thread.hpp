@@ -19,7 +19,7 @@ namespace coreneuron {
 #endif
 #define scopmath_crout_b(arg)  b[scopmath_crout_ix(arg)]
 #define scopmath_crout_ix(arg) CNRN_FLAT_INDEX_IML_ROW(arg)
-#define scopmath_crout_jac_ix(arg) ((compact_memory_layout) ? (arg) : CNRN_FLAT_INDEX_IML_ROW(arg))
+#define scopmath_crout_comp_ix(arg) ((compact_memory_layout) ? (arg) : CNRN_FLAT_INDEX_IML_ROW(arg))
 #define scopmath_crout_y(arg)  _p[CNRN_FLAT_INDEX_IML_ROW(y[arg])]
 
 /**
@@ -45,14 +45,14 @@ inline int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _thre
     /* Initialize permutation and rowmax vectors */
     double* rowmax = ns->rowmax;
     for (int i = 0; i < n; i++) {
-        perm[scopmath_crout_ix(i)] = i;
+        perm[scopmath_crout_comp_ix(i)] = i;
         int k = 0;
         for (int j = 1; j < n; j++) {
-            if (fabs(a[i][scopmath_crout_jac_ix(j)]) > fabs(a[i][scopmath_crout_jac_ix(k)])) {
+            if (fabs(a[i][scopmath_crout_comp_ix(j)]) > fabs(a[i][scopmath_crout_comp_ix(k)])) {
                 k = j;
             }
         }
-        rowmax[scopmath_crout_ix(i)] = a[i][scopmath_crout_jac_ix(k)];
+        rowmax[scopmath_crout_comp_ix(i)] = a[i][scopmath_crout_comp_ix(k)];
     }
 
     /* Loop over rows and columns r */
@@ -64,20 +64,20 @@ inline int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _thre
 
         for (int i = r; i < n; i++) {
             double sum = 0.0;
-            int irow = perm[scopmath_crout_ix(i)];
+            int irow = perm[scopmath_crout_comp_ix(i)];
             for (int k = 0; k < r; k++) {
-                int krow = perm[scopmath_crout_ix(k)];
-                sum += a[irow][scopmath_crout_jac_ix(k)] * a[krow][scopmath_crout_jac_ix(r)];
+                int krow = perm[scopmath_crout_comp_ix(k)];
+                sum += a[irow][scopmath_crout_comp_ix(k)] * a[krow][scopmath_crout_comp_ix(r)];
             }
-            a[irow][scopmath_crout_jac_ix(r)] -= sum;
+            a[irow][scopmath_crout_comp_ix(r)] -= sum;
         }
 
         /* Find row containing the pivot in the rth column */
-        int pivot = perm[scopmath_crout_ix(r)];
-        double equil_1 = fabs(a[pivot][scopmath_crout_jac_ix(r)] / rowmax[scopmath_crout_ix(pivot)]);
+        int pivot = perm[scopmath_crout_comp_ix(r)];
+        double equil_1 = fabs(a[pivot][scopmath_crout_comp_ix(r)] / rowmax[scopmath_crout_comp_ix(pivot)]);
         for (int i = r + 1; i < n; i++) {
             int irow = perm[scopmath_crout_ix(i)];
-            double equil_2 = fabs(a[irow][scopmath_crout_jac_ix(r)] / rowmax[scopmath_crout_ix(irow)]);
+            double equil_2 = fabs(a[irow][scopmath_crout_comp_ix(r)] / rowmax[scopmath_crout_comp_ix(irow)]);
             if (equil_2 > equil_1) {
                 /* make irow the new pivot row */
 
@@ -88,13 +88,13 @@ inline int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _thre
         }
 
         /* Interchange entries in permutation vector if necessary */
-        if (pivot != perm[scopmath_crout_ix(r)]) {
-            perm[scopmath_crout_ix(save_i)] = perm[scopmath_crout_ix(r)];
-            perm[scopmath_crout_ix(r)] = pivot;
+        if (pivot != perm[scopmath_crout_comp_ix(r)]) {
+            perm[scopmath_crout_comp_ix(save_i)] = perm[scopmath_crout_comp_ix(r)];
+            perm[scopmath_crout_comp_ix(r)] = pivot;
         }
 
         /* Check that pivot element is not too small */
-        if (fabs(a[pivot][scopmath_crout_jac_ix(r)]) < ROUNDOFF) {
+        if (fabs(a[pivot][scopmath_crout_comp_ix(r)]) < ROUNDOFF) {
             return SINGULAR;
         }
 
@@ -106,11 +106,11 @@ inline int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _thre
         for (int j = r + 1; j < n; j++) {
             double sum = 0.0;
             for (int k = 0; k < r; k++) {
-                int krow = perm[scopmath_crout_ix(k)];
-                sum += a[pivot][scopmath_crout_jac_ix(k)] * a[krow][scopmath_crout_jac_ix(j)];
+                int krow = perm[scopmath_crout_comp_ix(k)];
+                sum += a[pivot][scopmath_crout_comp_ix(k)] * a[krow][scopmath_crout_comp_ix(j)];
             }
-            a[pivot][scopmath_crout_jac_ix(j)] = (a[pivot][scopmath_crout_jac_ix(j)] - sum) /
-                                             a[pivot][scopmath_crout_jac_ix(r)];
+            a[pivot][scopmath_crout_comp_ix(j)] = (a[pivot][scopmath_crout_comp_ix(j)] - sum) /
+                                             a[pivot][scopmath_crout_comp_ix(r)];
         }
     }
     return SUCCESS;
@@ -141,11 +141,12 @@ inline void nrn_scopmath_solve_thread(bool compact_memory_layout,
     // if (y) { // pgacc bug. nullptr on cpu but not on GPU
     if (0) {
         for (int i = 0; i < n; i++) {
-            int pivot = perm[scopmath_crout_ix(i)];
+            int pivot = perm[scopmath_crout_comp_ix(i)];
             double sum = 0.0;
-            for (int j = 0; j < i; j++)
-                sum += a[pivot][scopmath_crout_jac_ix(j)] * (scopmath_crout_y(j));
-            scopmath_crout_y(i) = (scopmath_crout_b(pivot) - sum) / a[pivot][scopmath_crout_jac_ix(i)];
+            for (int j = 0; j < i; j++) {
+                sum += a[pivot][scopmath_crout_comp_ix(j)] * (scopmath_crout_y(j));
+            }
+            scopmath_crout_y(i) = (scopmath_crout_b(pivot) - sum) / a[pivot][scopmath_crout_comp_ix(i)];
         }
 
         /*
@@ -156,23 +157,23 @@ inline void nrn_scopmath_solve_thread(bool compact_memory_layout,
          */
 
         for (int i = n - 1; i >= 0; i--) {
-            int pivot = perm[scopmath_crout_ix(i)];
+            int pivot = perm[scopmath_crout_comp_ix(i)];
             double sum = 0.0;
             for (int j = i + 1; j < n; j++)
-                sum += a[pivot][scopmath_crout_jac_ix(j)] * (scopmath_crout_y(j));
+                sum += a[pivot][scopmath_crout_comp_ix(j)] * (scopmath_crout_y(j));
             scopmath_crout_y(i) -= sum;
         }
     } else {
         for (int i = 0; i < n; i++) {
-            int pivot = perm[scopmath_crout_ix(i)];
+            int pivot = perm[scopmath_crout_comp_ix(i)];
             double sum = 0.0;
             if (i > 0) {  // pgacc bug. with i==0 the following loop executes once
                 for (int j = 0; j < i; j++) {
-                    sum += a[pivot][scopmath_crout_jac_ix(j)] * (p[scopmath_crout_ix(j)]);
+                    sum += a[pivot][scopmath_crout_comp_ix(j)] * (p[scopmath_crout_comp_ix(j)]);
                 }
             }
-            p[scopmath_crout_ix(i)] = (scopmath_crout_b(pivot) - sum) /
-                                      a[pivot][scopmath_crout_jac_ix(i)];
+            p[scopmath_crout_comp_ix(i)] = (scopmath_crout_b(pivot) - sum) /
+                                      a[pivot][scopmath_crout_comp_ix(i)];
         }
 
         /*
@@ -182,11 +183,12 @@ inline void nrn_scopmath_solve_thread(bool compact_memory_layout,
          * this is assumed to be unity.
          */
         for (int i = n - 1; i >= 0; i--) {
-            int pivot = perm[scopmath_crout_ix(i)];
+            int pivot = perm[scopmath_crout_comp_ix(i)];
             double sum = 0.0;
-            for (int j = i + 1; j < n; j++)
-                sum += a[pivot][scopmath_crout_jac_ix(j)] * (p[scopmath_crout_jac_ix(j)]);
-            p[scopmath_crout_ix(i)] -= sum;
+            for (int j = i + 1; j < n; j++) {
+                sum += a[pivot][scopmath_crout_comp_ix(j)] * (p[scopmath_crout_comp_ix(j)]);
+            }
+            p[scopmath_crout_comp_ix(i)] -= sum;
         }
     }
 }
