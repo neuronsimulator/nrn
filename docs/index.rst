@@ -91,7 +91,8 @@ Installation
 
    .. tab-item:: macOS
 
-      The recommended installation is to:
+      The recommended installation is to open a Terminal (Press `⌘` + `Space` and type "terminal")
+      and type:
 
       .. code::
 
@@ -104,7 +105,7 @@ Installation
 
    .. tab-item:: Linux
 
-      The recommended installation is to:
+      The recommended installation is to open a terminal and type:
 
       .. code::
 
