@@ -1,6 +1,6 @@
 import json
 import math
-from neuron import h
+from neuron import h, hoc
 
 
 class Chk:
@@ -39,7 +39,7 @@ class Chk:
         """
 
         if key in self.d:
-            if type(value) == type(h.Vector):  # actually hoc.HocObject
+            if isinstance(value, hoc.Vector):
                 # Convert to list to keep the `equal` method below simple
                 value = list(value)
             # Hand-rolled comparison that uses `tol` for arithmetic values
@@ -75,7 +75,7 @@ class Chk:
             assert match
         else:
             print("{} added {}".format(self, key))
-            if type(value) == type(h.Vector):  # actually hoc.HocObject
+            if isinstance(value, hoc.Vector):
                 self.d[key] = value.to_python()
             else:
                 self.d[key] = value

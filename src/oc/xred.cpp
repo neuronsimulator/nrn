@@ -132,9 +132,6 @@ void hoc_Sred(void) {
 
 int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     char istr[80], c[2], instring[40], *result;
-#if !defined(HAVE_STRSTR)
-    extern char* strstr();
-#endif
 
     for (;;) {                                              /* cycle until done */
         IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
@@ -169,22 +166,4 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     return 0;
 }
 
-#if !defined(HAVE_STRSTR)
-char* strstr(char* cs, char* ct) {
-    char *strchr_ptr, *cs_ptr;
-    int ct_len;
-
-    ct_len = strlen(ct);
-
-    for (cs_ptr = cs;
-         ((strchr_ptr = (char*) strchr(cs_ptr, ct[0])) && (ct_len <= strlen(strchr_ptr)));
-         cs_ptr = strchr_ptr + 1) {
-        if (memcmp(ct, strchr_ptr, ct_len) == 0) {
-            return strchr_ptr;
-        }
-    }
-
-    return (char*) 0;
-}
-#endif
 #endif
