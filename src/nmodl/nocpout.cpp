@@ -3194,7 +3194,7 @@ void set_inside_func(Symbol* s) {
 static bool check_func(Symbol* s);  // recursive
 
 void func_needs_setdata() {
-    if (!suffix || suffix[0] == '\0') {
+    if (suffix[0] == '\0') {
         return;
     }
     for (auto& f: funcs) {
