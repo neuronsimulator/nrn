@@ -30,9 +30,7 @@
 
 #include <getopt.h>
 
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #include "modl.h"
 
 #include <cstring>
