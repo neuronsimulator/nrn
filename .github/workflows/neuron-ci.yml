@@ -36,11 +36,11 @@ jobs:
       run: |
         if ${{ github.event.pull_request.draft == true }}; then  # 1
           # 2, 3
+          #  {"os": "macOS-12"},
+          #  {"os": "ubuntu-22.04"},
+          #  {"config.build_mode": "setuptools""},
+          #  {"matrix_eval" : "CC=gcc-9 CXX=g++-9"}
           echo 'jobs=[
-            {"os": "macOS-12"},
-            {"os": "ubuntu-22.04"},
-            {"config.build_mode": "setuptools""},
-            {"matrix_eval" : "CC=gcc-9 CXX=g++-9"}
           ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT  # 4
         else
           echo 'jobs=[]' >> $GITHUB_OUTPUT  # 5
