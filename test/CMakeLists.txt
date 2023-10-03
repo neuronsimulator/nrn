@@ -22,6 +22,7 @@ add_executable(
   unit_tests/container/generic_data_handle.cpp
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
+  unit_tests/utils/enumerate.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
