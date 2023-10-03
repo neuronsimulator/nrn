@@ -89,8 +89,8 @@ jobs:
     steps:
       - name: Draft PR check
         run: echo "Checking if we can run this step in draft PR mode"
-        if: github.event.pull_request.draft == false || (startsWith(matrix.os, 'macOS') &&
-          ${{matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON'}})
+        if:  (startsWith(matrix.os, 'macOS') &&
+          ${{matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON'}}) || github.event.pull_request.draft == false
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
         with:
