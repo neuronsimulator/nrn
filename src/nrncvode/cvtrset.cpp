@@ -61,7 +61,7 @@ void Cvode::rhs_memb(neuron::model_sorted_token const& sorted_token,
                      NrnThread* _nt) {
     errno = 0;
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
-        Memb_func& mf = memb_func[cml->index];
+        const Memb_func& mf = memb_func[cml->index];
         if (auto const current = mf.current; current) {
             for (auto& ml: cml->ml) {
                 current(sorted_token, _nt, &ml, cml->index);
@@ -109,7 +109,7 @@ void Cvode::lhs_memb(neuron::model_sorted_token const& sorted_token,
                      NrnThread* _nt) {
     CvMembList* cml;
     for (cml = cmlist; cml; cml = cml->next) {
-        Memb_func& mf = memb_func[cml->index];
+        const Memb_func& mf = memb_func[cml->index];
         if (auto const jacob = mf.jacob; jacob) {
             for (auto& ml: cml->ml) {
                 jacob(sorted_token, _nt, &ml, cml->index);

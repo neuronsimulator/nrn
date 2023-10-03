@@ -1599,7 +1599,7 @@ bool NetCvode::init_global() {
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func& mf = memb_func[i];
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount && (i == CAP || mf.current || mf.ode_count || mf.ode_matsol ||
                                       mf.ode_spec || mf.state)) {
@@ -1638,7 +1638,7 @@ bool NetCvode::init_global() {
             // have the global cvode as its nvi field
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func& mf = memb_func[i];
+                const Memb_func& mf = memb_func[i];
                 if (mf.is_point && !nrn_is_artificial_[i]) {
                     Memb_list* ml = tml->ml;
                     int j;
@@ -1722,7 +1722,7 @@ bool NetCvode::init_global() {
 
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func& mf = memb_func[i];
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
                                       mf.state || i == CAP || ba_candidate.count(i) == 1)) {
@@ -1771,7 +1771,7 @@ bool NetCvode::init_global() {
             // now list order is from 0 to n_memb_func
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func& mf = memb_func[i];
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
                                       mf.state || i == CAP || ba_candidate.count(i) == 1)) {
@@ -1804,7 +1804,7 @@ bool NetCvode::init_global() {
             // artifical cells have no integrator
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func& mf = memb_func[i];
+                const Memb_func& mf = memb_func[i];
                 if (mf.is_point) {
                     Memb_list* ml = tml->ml;
                     int j;

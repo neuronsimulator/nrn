@@ -283,7 +283,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
     z.no_cap_memb_ = nullptr;
     CvMembList* ncm{};
     for (auto* cml = z.cv_memb_list_; cml; cml = cml->next) {
-        Memb_func& mf = memb_func[cml->index];
+        const Memb_func& mf = memb_func[cml->index];
         // only point processes with currents are possibilities
         if (!mf.is_point || !mf.current) {
             continue;
@@ -474,7 +474,7 @@ void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y,
         // printf("%d scatter_y %d %d %g\n", nrnmpi_myid, tid, i,  y[i]);
     }
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
-        Memb_func& mf = memb_func[cml->index];
+        const Memb_func& mf = memb_func[cml->index];
         if (mf.ode_synonym) {
             for (auto& ml: cml->ml) {
                 mf.ode_synonym(sorted_token, nrn_threads[tid], ml, cml->index);
@@ -660,7 +660,7 @@ void Cvode::solvemem(neuron::model_sorted_token const& sorted_token, NrnThread* 
     CvodeThreadData& z = CTD(nt->id);
     CvMembList* cml;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {  // probably can start at 6 or hh
-        Memb_func& mf = memb_func[cml->index];
+        const Memb_func& mf = memb_func[cml->index];
         if (auto const ode_matsol = mf.ode_matsol; ode_matsol) {
             for (auto& ml: cml->ml) {
                 ode_matsol(sorted_token, nt, &ml, cml->index);
@@ -961,14 +961,15 @@ void Cvode::do_nonode(neuron::model_sorted_token const& sorted_token, NrnThread*
     CvodeThreadData& z = CTD(_nt->id);
     CvMembList* cml;
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-        Memb_func& mf = memb_func[cml->index];
-        if (mf.state) {
-            for (auto& ml: cml->ml) {
-                if (!mf.ode_spec) {
-                    mf.state(sorted_token, _nt, &ml, cml->index);
-                } else if (mf.singchan_) {
-                    mf.singchan_(_nt, &ml, cml->index);
-                }
+        const Memb_func& mf = memb_func[cml->index];
+        if (!mf.state) {
+            continue;
+        }
+        for (auto& ml: cml->ml) {
+            if (!mf.ode_spec) {
+                mf.state(sorted_token, _nt, &ml, cml->index);
+            } else if (mf.singchan_) {
+                mf.singchan_(_nt, &ml, cml->index);
             }
         }
     }
