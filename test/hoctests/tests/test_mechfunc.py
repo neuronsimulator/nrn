@@ -84,6 +84,7 @@ def test2():
     expect_err("mech.Aexcept(5)")  # covers catch
     assert Af.mech() == mech  # covers NPyMechFunc_mech
     assert Af.__repr__() == "sdatats.A"  # covers pymechfunc_repr
+    assert "A" in mech.__dict__
     # mech uninserted, should invalidate mechs[-1]
     mechs[-1].segment().sec.uninsert(mechs[-1].name())
     mech_expect_invalid(mech, Af, aref)

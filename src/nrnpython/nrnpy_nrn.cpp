@@ -2137,6 +2137,13 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             int err = PyDict_SetItemString(result, buf, Py_None);
             assert(err == 0);
         }
+        // FUNCTION and PROCEDURE
+        for (Symbol* s = hoc_built_in_symlist->first; s; s = s->next) {
+            if (s->type == FUN_BLTIN && striptrail(buf, bufsz, s->name, mname)) {
+                int err = PyDict_SetItemString(result, buf, Py_None);
+                assert(err == 0);
+            }
+        }
     } else {
         bool found_func{false};
         if (self->prop_) {
