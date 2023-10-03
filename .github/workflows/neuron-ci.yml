@@ -34,8 +34,7 @@ jobs:
       # 4. make sure to output as single line
       # 5. the default case is: exclude nothing
       run: |
-        echo "${{ github.event.pull_request.draft }}"
-        if ${{ github.event.pull_request.draft == 'true' }}; then  # 1
+        if ${{ github.event.pull_request.draft == true }}; then  # 1
           # 2, 3
           echo 'jobs=[
             {"os": "macOS-12"},
