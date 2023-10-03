@@ -142,14 +142,13 @@ void depinstall(int type,
                 Item* qs,
                 int makeconst,
                 const char* abstol) {
-    char buf[NRN_BUFSIZE], *pstr;
+    char buf[NRN_BUFSIZE];
     int c;
 
     if (!type && strlen(abstol) > 0) {
         printf("abstol = |%s|\n", abstol);
         diag(n->name, "tolerance can be specified only for a STATE");
     }
-    pstr = n->u.str; /* make it work even if recursive */
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     if (type) {
@@ -218,8 +217,7 @@ static int func_arg_examine(Item* qpar, Item* qend) {
 }
 
 void vectorize_scan_for_func(Item* q1, Item* q2) {
-    Item *q, *qq;
-    int b;
+    Item* q;
     return;
     for (q = q1; q != q2; q = q->next) {
         if (q->itemtype == SYMBOL) {
@@ -240,7 +238,7 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
 
 void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
 {
-    Item *q3, *q;
+    Item* q;
 
     if (q1->next == q2) {
         vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_");

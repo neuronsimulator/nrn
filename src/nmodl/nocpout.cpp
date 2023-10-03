@@ -153,10 +153,8 @@ static List* ba_list_;
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
-static int cond_index;
 static int tqitem_index;
 static int watch_index;
-static int cvode_index;
 static List* ion_synonym;
 int debugging_;
 int net_receive_;
@@ -198,7 +196,7 @@ void nrninit() {
 }
 
 void parout() {
-    int i, j, ioncount, pointercount, gind, emit_check_table_thread;
+    int i, ioncount, pointercount, gind, emit_check_table_thread;
     Item *q, *q1;
     Symbol *s, *sion;
     double d1, d2;
@@ -1597,7 +1595,6 @@ void ldifusreg() {
 
 int decode_limits(Symbol* sym, double* pg1, double* pg2) {
     int i;
-    double d1;
     if (sym->subtype & PARM) {
         char* cp;
         int n;
@@ -1621,7 +1618,6 @@ int decode_limits(Symbol* sym, double* pg1, double* pg2) {
 
 int decode_tolerance(Symbol* sym, double* pg1) {
     int i;
-    double d1;
     if (sym->subtype & STAT) {
         char* cp;
         int n;
@@ -2893,10 +2889,8 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
        since it may compute some aspect of the current */
     Item *q, *q1;
     int type;
-    Symbol* sion;
     b[0] = '\0';
     ITERATE(q, useion) {
-        sion = SYM(q);
         q = q->next;
         ITERATE(q1, LST(q)) {
             type = SYM(q1)->nrntype;
@@ -2919,7 +2913,7 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;
     Symbol* s;
-    int i, b;
+    int i;
     char snew[256];
     if (net_receive_) {
         diag("Only one NET_RECEIVE block allowed", (char*) 0);
@@ -3120,7 +3114,6 @@ void chk_global_state() {
 }
 
 void conductance_hint(int blocktype, Item* q1, Item* q2) {
-    Item* q;
     if (blocktype != BREAKPOINT) {
         diag("CONDUCTANCE can only appear in BREAKPOINT block", (char*) 0);
     }
