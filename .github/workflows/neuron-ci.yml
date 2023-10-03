@@ -86,7 +86,7 @@ jobs:
               sanitizer: address
       fail-fast: false
 
-    if:  (startsWith(matrix.os, 'macOS') && ${{matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON'}}) || github.event.pull_request.draft == false
+    if:  ${{(matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON')}} || github.event.pull_request.draft == false
     steps:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
