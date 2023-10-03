@@ -1724,9 +1724,8 @@ bool NetCvode::init_global() {
                 i = tml->index;
                 Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount &&
-                    (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec || mf.state ||
-                     i == CAP || ba_candidate.count(i) == 1)) {
+                if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
+                                      mf.state || i == CAP || ba_candidate.count(i) == 1)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
                     int j;
@@ -1774,9 +1773,8 @@ bool NetCvode::init_global() {
                 i = tml->index;
                 Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount &&
-                    (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec || mf.state ||
-                     i == CAP || ba_candidate.count(i) == 1)) {
+                if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
+                                      mf.state || i == CAP || ba_candidate.count(i) == 1)) {
                     for (int j = 0; j < ml->nodecount; ++j) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
                         if (cvml[icell]->index != i) {

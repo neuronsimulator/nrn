@@ -263,11 +263,11 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     // with Apple M1.
                     for (j = 0; j < ml.nodecount; ++j) {
                         mf.ode_map(ml.prop[j],
-                                    ieq,
-                                    z.pv_.data() + ieq,
-                                    z.pvdot_.data() + ieq,
-                                    atv + ieq,
-                                    cml->index);
+                                   ieq,
+                                   z.pv_.data() + ieq,
+                                   z.pvdot_.data() + ieq,
+                                   atv + ieq,
+                                   cml->index);
                         ieq += n;
                     }
                 }

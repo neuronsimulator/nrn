@@ -324,9 +324,9 @@ void hoc_last_init(void) {
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
         }
-    memb_func_size_ = 30; // initial allocation size
+    memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
-    memb_func.resize(memb_func_size_); // we directly resize because it is used below
+    memb_func.resize(memb_func_size_);  // we directly resize because it is used below
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));

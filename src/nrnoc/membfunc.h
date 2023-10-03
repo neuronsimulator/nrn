@@ -135,15 +135,16 @@ inline std::size_t vext_pseudoindex() {
 }  // namespace neuron::extracellular
 #endif
 
-#define nrnocCONST 1 // PARAMETER
-#define DEP        2 // ASSIGNED
+#define nrnocCONST 1  // PARAMETER
+#define DEP        2  // ASSIGNED
 #define STATE      3 /* STATE: See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
-#define NRNPOINTER  4 /* added on to list of mechanism variables.These are                    \
+#define NRNPOINTER                                                            \
+    4 /* added on to list of mechanism variables.These are                    \
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
-#define _AMBIGUOUS 5 // for Ions
-#define RAND       6 // RANDOM
+#define _AMBIGUOUS 5  // for Ions
+#define RAND       6  // RANDOM
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
