@@ -20,9 +20,9 @@ void apply_to_first(T&& iterable, value_type&& value, F&& f) {
 
 template <typename T, typename value_type = typename T::value_type>
 void erase_first(T&& iterable, value_type&& value) {
-    apply_to_first(std::forward<T>(iterable), std::forward<value_type>(value), [&](auto&& it) {
-        iterable.erase(it);
-    });
+    apply_to_first(std::forward<T>(iterable),
+                   std::forward<value_type>(value),
+                   [&iterable](const auto& it) { iterable.erase(it); });
 }
 
 template <typename T,

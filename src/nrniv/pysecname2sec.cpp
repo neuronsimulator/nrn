@@ -262,7 +262,7 @@ void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void* v) {
         // in cell items are either OVERLOADCOUNT or SECTYPE
         for (auto&& [symbol, cs]: *static_cast<Name2CellorSec*>(v)) {
             if (cs.first == SECTYPE) {
-                SymbolItem* si = new SymbolItem(symbol.c_str(), 0);
+                auto* si = new SymbolItem(symbol.c_str(), 0);
                 si->pysec_type_ = PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
                 sl.push_back(si);

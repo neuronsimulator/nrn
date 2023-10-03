@@ -5771,7 +5771,6 @@ void nrnthread_get_trajectory_requests(int tid,
             int err = 0;
             if (pr->ith_ == tid) {
                 if (1) {  // buffered or per time step value return
-                    IvocVect* v = NULL;
                     if (pr->type() == TvecRecordType) {
                         IvocVect* v = ((TvecRecord*) pr)->t_;
                         err = trajec_buffered(nt,

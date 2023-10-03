@@ -933,7 +933,7 @@ void SaveState::savenet() {
     int i = 0;
     ITERATE(q, nct->olist) {
         Object* ob = OBJ(q);
-        NetCon* d = (NetCon*) ob->u.this_pointer;
+        const NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
         double* w = ncs_[i].state;
         for (int j = 0; j < n; ++j) {
@@ -943,7 +943,7 @@ void SaveState::savenet() {
     }
     if (int i = 0; net_cvode_instance_psl()) {
         ITERATE(q, net_cvode_instance_psl()) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+            auto* ps = static_cast<Presyn*>(VOIDITM(q));
             ps->hi_index_ = i;
             pss_[i].flag = ps->flag_;
             pss_[i].valthresh = ps->valthresh_;
@@ -982,7 +982,7 @@ void SaveState::restorenet() {
         Object* ob = OBJ(q);
         NetCon* d = (NetCon*) ob->u.this_pointer;
         int n = ncs_[i].nstate;
-        double* w = ncs_[i].state;
+        const double* w = ncs_[i].state;
         for (int j = 0; j < n; ++j) {
             d->weight_[j] = w[j];
         }
@@ -991,7 +991,7 @@ void SaveState::restorenet() {
     // PreSyn's
     if (int i = 0; net_cvode_instance_psl())
         ITERATE(q, net_cvode_instance_psl()) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
             ps->hi_index_ = i;
             ps->flag_ = pss_[i].flag;
             ps->valthresh_ = pss_[i].valthresh;
@@ -1123,7 +1123,7 @@ bool SaveState::checknet(bool warn) {
     int i = 0;
     ITERATE(q, nct->olist) {
         Object* ob = OBJ(q);
-        NetCon* d = (NetCon*) ob->u.this_pointer;
+        const auto* d = static_cast<NetCon*>(ob->u.this_pointer);
         if (ob->index != ncs_[i].object_index) {
             if (warn) {
                 fprintf(stderr,
@@ -1172,7 +1172,7 @@ void SaveState::allocnet() {
     int i = 0;
     ITERATE(q, nct->olist) {
         Object* ob = OBJ(q);
-        NetCon* d = (NetCon*) ob->u.this_pointer;
+        const auto* d = static_cast<NetCon*>(ob->u.this_pointer);
         ncs_[i].object_index = ob->index;
         ncs_[i].nstate = d->cnt_;
         if (d->cnt_) {
@@ -1183,7 +1183,7 @@ void SaveState::allocnet() {
     npss_ = 0;
     if (net_cvode_instance_psl())
         ITERATE(q, net_cvode_instance_psl()) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
             ps->hi_index_ = npss_;
             ++npss_;
         }
