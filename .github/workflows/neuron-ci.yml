@@ -1,12 +1,12 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
   push:
-    branches: 
+    branches:
       # If nothing else, this is important for the ccache logic below...
       - master
       - release/**
@@ -87,6 +87,10 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Draft PR check
+        run: echo "Checking if we can run this step in draft PR mode"
+        if: github.event.pull_request.draft == false || (startsWith(matrix.os, 'macOS') &&
+          ${{matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON'}})
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
         with:
@@ -169,7 +173,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -195,7 +199,7 @@ jobs:
           repository: actions/cache
           ref: v3
           path: tmp/actions/cache
-          
+
       - name: Make actions/cache@v3 run even on failure
         run: |
           sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
