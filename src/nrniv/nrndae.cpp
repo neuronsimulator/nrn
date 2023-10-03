@@ -25,7 +25,7 @@ void nrndae_deregister(NrnDAE* n) {
 
 int nrndae_extra_eqn_count() {
     int neqn = 0;
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         neqn += item->extra_eqn_count();
     }
     return neqn;
@@ -33,7 +33,7 @@ int nrndae_extra_eqn_count() {
 
 void nrndae_update(NrnThread* _nt) {
     update_sp13_rhs_based_on_actual_rhs(_nt);
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->update();
     }
     update_actual_rhs_based_on_sp13_rhs(_nt);
@@ -46,7 +46,7 @@ void nrndae_alloc() {
     if (_nt->_ecell_memb_list) {
         neqn += _nt->_ecell_memb_list->nodecount * nlayer;
     }
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->alloc(neqn + 1);
         neqn += item->extra_eqn_count();
     }
@@ -63,7 +63,7 @@ void nrndae_init() {
         (secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
         hoc_execerror("NrnDAEs only work with secondorder==0 or daspk", 0);
     }
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->init();
     }
     for (int it = 0; it < nrn_nthread; ++it) {
@@ -76,7 +76,7 @@ void nrndae_init() {
 void nrndae_rhs(NrnThread* _nt) {
     update_sp13_mat_based_on_actual_d(_nt);
     update_sp13_rhs_based_on_actual_rhs(_nt);
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->rhs();
     }
     update_actual_d_based_on_sp13_mat(_nt);
@@ -84,14 +84,14 @@ void nrndae_rhs(NrnThread* _nt) {
 }
 
 void nrndae_lhs() {
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->lhs();
     }
 }
 
 void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv,
                   std::vector<neuron::container::data_handle<double>>& pvdot) {
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->dkmap(pv, pvdot);
     }
 }
@@ -99,7 +99,7 @@ void nrndae_dkmap(std::vector<neuron::container::data_handle<double>>& pv,
 void nrndae_dkres(double* y, double* yprime, double* delta) {
     // c*y' = f(y) so
     // delta = c*y' - f(y)
-    for (auto&& item: nrndae_list) {
+    for (NrnDAE* item: nrndae_list) {
         item->dkres(y, yprime, delta);
     }
 }

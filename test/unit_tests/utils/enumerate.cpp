@@ -6,17 +6,17 @@
 
 
 TEST_CASE("apply_to_first", "[Neuron]") {
-    std::vector<double> x{1.0, 2.0, 3.0};
+    std::vector<double> x{1.0, 2.0, 2.0, 3.0};
 
     apply_to_first(x, 2.0, [](auto it) { *it = 5.0; });
-    REQUIRE(x == std::vector<double>({1.0, 5.0, 3.0}));
+    REQUIRE(x == std::vector<double>({1.0, 5.0, 2.0, 3.0}));
 }
 
 TEST_CASE("erase_first", "[Neuron]") {
-    std::vector<double> x{1.0, 2.0, 3.0};
+    std::vector<double> x{1.0, 2.0, 2.0, 3.0};
 
     erase_first(x, 2.0);
-    REQUIRE(x == std::vector<double>({1.0, 3.0}));
+    REQUIRE(x == std::vector<double>({1.0, 2.0, 3.0}));
 }
 
 TEST_CASE("reverse", "[Neuron]") {

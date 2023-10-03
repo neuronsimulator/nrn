@@ -3051,19 +3051,17 @@ static OcList* event_info_list_;  // netcon or point_process
 static void event_info_callback(const TQItem*, int);
 static void event_info_callback(const TQItem* q, int) {
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
-    PreSyn* ps;
-    SelfEvent* se;
     switch (d->type()) {
     case NetConType:
         if (event_info_type_ == NetConType) {
-            NetCon* nc = (NetCon*) d;
+            auto* nc = static_cast<NetCon*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_list_->append(nc->obj_);
         }
         break;
     case SelfEventType:
         if (event_info_type_ == SelfEventType) {
-            se = (SelfEvent*) d;
+            auto* se = static_cast<SelfEvent*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_flagvec_->push_back(se->flag_);
             event_info_list_->append(se->target_->ob);
@@ -3071,7 +3069,7 @@ static void event_info_callback(const TQItem* q, int) {
         break;
     case PreSynType:
         if (event_info_type_ == NetConType) {
-            ps = (PreSyn*) d;
+            auto* ps = static_cast<PreSyn*>(d);
             for (const auto& nc: reverse(ps->dil_)) {
                 double td = nc->delay_ - ps->delay_;
                 event_info_tvec_->push_back(q->t_ + td);

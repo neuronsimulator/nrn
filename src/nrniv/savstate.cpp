@@ -943,7 +943,7 @@ void SaveState::savenet() {
     }
     if (int i = 0; net_cvode_instance_psl()) {
         ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<Presyn*>(VOIDITM(q));
+            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
             ps->hi_index_ = i;
             pss_[i].flag = ps->flag_;
             pss_[i].valthresh = ps->valthresh_;

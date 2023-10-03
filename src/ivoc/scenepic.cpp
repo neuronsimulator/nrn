@@ -409,8 +409,8 @@ ScenePickerImpl::ScenePickerImpl(Scene* scene)
 ScenePickerImpl::~ScenePickerImpl() {
     Resource::unref(menu_);
     Resource::unref(tg_);
-    for (auto& elem: *bil_) {
-        delete elem;
+    for (ButtonItemInfo* bii: *bil_) {
+        delete bii;
     }
     delete bil_;
 }
