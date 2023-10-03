@@ -63,7 +63,7 @@ jobs:
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
       MUSIC_VERSION: 1.2.0
-
+    needs: draft-pr-job-limiter
     strategy:
       matrix:
         os: [ macOS-11, ubuntu-20.04]
@@ -107,7 +107,7 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
-        exclude: ${{ fromJSON(needs.exclude-jobs.outputs.jobs) }}
+        exclude: ${{ fromJSON(needs.draft-pr-job-limiter.outputs.jobs) }}
       fail-fast: false
 
     steps:
