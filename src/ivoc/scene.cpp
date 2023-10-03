@@ -532,7 +532,7 @@ void Scene::request(Requisition& req) const {
 
 void Scene::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     // printf("Scene::allocate\n");
-    for (const auto&& [index, _]: enumerate(*info_)) {
+    for (std::size_t index: range(*info_)) {
         check_allocation(index);
     }
     ext.set(c, a);
