@@ -22,6 +22,29 @@ on:
 
 
 jobs:
+  draft-pr-job-limiter:
+    runs-on: ubuntu-latest
+    outputs:
+      jobs: ${{ steps.exclude-jobs.outputs.jobs }}
+    steps:
+    - id: draft-pr-job-limiter
+      # 1. use any other condition(s) that fits your requirements
+      # 2. each item in the JSON array will be matched against your matrix later
+      # 3. here I exclude everything except ubuntu-latest + python3.7 (see matrix below)
+      # 4. make sure to output as single line
+      # 5. the default case is: exclude nothing
+      run: |
+        if ${{ github.event.pull_request.draft == 'true' }}; then  # 1
+          # 2, 3
+          echo 'jobs=[
+            {"os": "macOS-12"},
+            {"os": "ubuntu-22.04"},
+            {"config.build_mode": "setuptools""},
+            {"matrix_eval" : "CC=gcc-9 CXX=g++-9"}
+          ]' | tr -d '[:space:]' >> $GITHUB_OUTPUT  # 4
+        else
+          echo 'jobs=[]' >> $GITHUB_OUTPUT  # 5
+        fi
   ci:
     runs-on: ${{ matrix.os }}
 
@@ -84,9 +107,9 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
+        exclude: ${{ fromJSON(needs.exclude-jobs.outputs.jobs) }}
       fail-fast: false
 
-    if:  (matrix.config.matrix_eval == 'CC=gcc-10 CXX=g++-10' &&  matrix.config.build_mode ==  'cmake' &&  matrix.config.python_dynamic == 'ON') || github.event.pull_request.draft == false
     steps:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1
