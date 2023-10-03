@@ -25,7 +25,7 @@ jobs:
   draft-pr-job-limiter:
     runs-on: ubuntu-latest
     outputs:
-      jobs: ${{ steps.exclude-jobs.outputs.jobs }}
+      jobs: ${{ steps.draft-pr-job-limiter.outputs.jobs }}
     steps:
     - id: draft-pr-job-limiter
       # 1. use any other condition(s) that fits your requirements
