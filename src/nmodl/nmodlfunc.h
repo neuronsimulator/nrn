@@ -138,4 +138,4 @@ void netrec_asgn(Item* varname, Item* equal, Item* expr, Item* lastok);
 void netrec_discon();
 char* items_as_string(Item* begin, Item* last); /* does not include last */
 int slist_search(int listnum, Symbol* s);
-void nrnunit_str(char (&buf)[NRN_BUFSIZE], const char* name, char* unit1, char* unit2);
+void nrnunit_str(char (&buf)[NRN_BUFSIZE], const char* name, const char* unit1, const char* unit2);

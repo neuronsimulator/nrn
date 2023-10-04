@@ -262,10 +262,7 @@ at least one model using this ion\n",
         }
 }
 
-static double FARADAY = _faraday_codata2018;
-static double gasconstant = _gasconstant_codata2018;
-
-#define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
+#define ktf (1000. * _gasconstant_codata2018 * (celsius + 273.15) / _faraday_codata2018)
 double nrn_nernst(double ci, double co, double z) {
     /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/
     if (z == 0) {
@@ -341,7 +338,7 @@ double nrn_ghk(double v, double ci, double co, double z) {
     temp = z * v / ktf;
     eco = co * efun(temp);
     eci = ci * efun(-temp);
-    return (.001) * z * FARADAY * (eci - eco);
+    return (.001) * z * _faraday_codata2018 * (eci - eco);
 }
 
 void ghk(void) {

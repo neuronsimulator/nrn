@@ -95,8 +95,7 @@ class KSChanSigmoid: public KSChanFunction {
 };
 
 
-static double _e_over_k = _e_over_k_codata2018; /* K/mV */
-#define ebykt (_e_over_k / (273.15 + celsius))
+#define ebykt (_e_over_k_codata2018 / (273.15 + celsius))
 
 // from MODELING NEURONAL BIOPHYSICS Lyle J Graham
 // A Chapter in the Handbook of Brain Theory and Neural Networks, Volume 2

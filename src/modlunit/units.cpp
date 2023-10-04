@@ -36,11 +36,11 @@ extern void diag(const char*, const char*);
 
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if defined(NEURON_DATA_DIR)
-static const char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib";
+static char const* const dfile = NEURON_DATA_DIR "/lib/nrnunits.lib";
 #else
-static const char* dfile = "/usr/lib/units";
+static char const* const dfile = "/usr/lib/units";
 #endif
-static const char* dfilealt = "../../share/lib/nrnunits.lib";
+static char const* const dfilealt = "../../share/lib/nrnunits.lib";
 static char* unames[NDIM];
 double getflt();
 void fperr(int);
@@ -603,11 +603,11 @@ int pu(int u, int i, int f) {
         }
         if (u > 1)
             *ucp++ = (u + '0');
-        return (2);
+        return 2;
     }
     if (u < 0)
-        return (1);
-    return (0);
+        return 1;
+    return 0;
 }
 
 int convr(unit* up) {
@@ -652,7 +652,7 @@ loop:
         if (c == '/')
             den++;
         if (c == '\n')
-            return (err);
+            return err;
         goto loop;
     }
     *cp++ = c;
@@ -685,7 +685,7 @@ loop:
             c--;
             goto l1;
         }
-        return (0);
+        return 0;
     }
     {
         const char* cp1{};
@@ -717,14 +717,14 @@ loop:
             name);
     diag("Cannot recognize the units: ", name);
     /*	printf("cannot recognize %s\n", name);*/
-    return (1);
+    return 1;
 }
 
 static int equal(const char* c1, const char* c2) {
     while (*c1++ == *c2)
         if (*c2++ == 0)
-            return (1);
-    return (0);
+            return 1;
+    return 0;
 }
 
 void units_cpp_init() {
@@ -859,7 +859,7 @@ l1:
         return d_modern;
     }
     peekc = c;
-    return (d_modern);
+    return d_modern;
 }
 
 int get() {
@@ -868,7 +868,7 @@ int get() {
     /*SUPPRESS 560*/
     if ((c = peekc) != 0) {
         peekc = 0;
-        return (c);
+        return c;
     }
     c = Getc(inpfile);
     if (c == '\r') {
@@ -879,9 +879,9 @@ int get() {
             printf("\n");
             exit(0);
         }
-        return (0);
+        return 0;
     }
-    return (c);
+    return c;
 }
 
 struct table* hash_table(const char* name) {
@@ -899,9 +899,9 @@ struct table* hash_table(const char* name) {
     tp = &table[h];
 l0:
     if (tp->name == 0)
-        return (tp);
+        return tp;
     if (equal(name, tp->name))
-        return (tp);
+        return tp;
     tp++;
     if (tp >= table + NTAB)
         tp = table;
@@ -913,7 +913,7 @@ void fperr(int sig) {
     fperrc++;
 }
 
-void nrnunit_str(char (&buf)[NRN_BUFSIZE], const char* name, char* u1, char* u2) {
+void nrnunit_str(char (&buf)[NRN_BUFSIZE], const char* name, const char* u1, const char* u2) {
     Unit_push(u1);
     Unit_push(u2);
     unit_div();
