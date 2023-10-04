@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <nrnmpi.h>
 #include "nrnfilewrap.h"
+#include "utils/enumerate.h"
 
 
 #include "options.h"
@@ -398,15 +399,13 @@ static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
 static void stack_obtmp_recover_on_err(int tcnt) {
     if (tobj_count > tcnt) {
         // unref tmpobjects from the top of the stack until we have the right number left
-        for (auto stkp = stack.rbegin(); stkp != stack.rend(); ++stkp) {
-            // What is the index in `stack` of `stkp`?
-            auto const index = stack.size() - 1 - std::distance(stack.rbegin(), stkp);
-            if (stack_entry_is_tmpobject(*stkp)) {
-                hoc_stkobj_unref(std::get<Object*>(*stkp), index);
+        for (const auto&& [index, stkp]: renumerate(stack)) {
+            if (stack_entry_is_tmpobject(stkp)) {
+                hoc_stkobj_unref(std::get<Object*>(stkp), index);
                 if (tobj_count == tcnt) {
                     return;
                 }
-            } else if (std::holds_alternative<std::nullptr_t>(*stkp)) {
+            } else if (std::holds_alternative<std::nullptr_t>(stkp)) {
                 printf("OBJECTTMP at stack index %ld already unreffed\n", index);
             }
         }
@@ -439,7 +438,7 @@ void hoc_prstack() {
     std::size_t i{};
     std::ostringstream oss;
     oss << "interpreter stack: " << stack.size() << '\n';
-    for (auto stkp = stack.rbegin(); stkp != stack.rend(); ++stkp, ++i) {
+    for (auto&& stkp: reverse(stack)) {
         if (i > 10) {
             oss << " ...\n";
             break;
@@ -454,7 +453,8 @@ void hoc_prstack() {
                 }
                 oss << ' ' << cxx_demangle(typeid(decltype(value)).name()) << '\n';
             },
-            *stkp);
+            stkp);
+        ++i;
     }
     Printf(oss.str().c_str());
 }
