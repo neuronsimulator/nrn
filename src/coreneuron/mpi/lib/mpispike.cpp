@@ -290,7 +290,6 @@ void nrnmpi_barrier_impl() {
 }
 
 static MPI_Op type2OP(int type) {
-    MPI_Op tt;
     if (type == 1) {
         return MPI_SUM;
     } else if (type == 2) {

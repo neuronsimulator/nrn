@@ -349,7 +349,7 @@ void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
         assert(r->buf && r->keypos <= r->size);
         nrn_mpi_assert(MPI_Send(r->buf, r->size, MPI_PACKED, dest, tag, nrn_bbs_comm));
     } else {
-        nrn_mpi_assert(MPI_Send(NULL, 0, MPI_PACKED, dest, tag, nrn_bbs_comm));
+        nrn_mpi_assert(MPI_Send(nullptr, 0, MPI_PACKED, dest, tag, nrn_bbs_comm));
     }
     errno = 0;
 #if debug
