@@ -55,14 +55,14 @@ typedef struct {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
-} NPyMechOfSegIter;
+    neuron::container::non_owning_identifier_without_container prop_id_{};
+    int type_;
+} NPyMechObj;
 
 typedef struct {
     PyObject_HEAD
-    NPySegObj* pyseg_;
-    Prop* prop_;
-    neuron::container::non_owning_identifier_without_container prop_id_{};
-} NPyMechObj;
+    NPyMechObj* pymech_{};
+} NPyMechOfSegIter;
 
 typedef struct {
     PyObject_HEAD
@@ -260,6 +260,20 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+// Only call if p is valid
+static NPyMechObj* new_pymechobj(NPySegObj* pyseg, Prop* p) {
+    NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
+    if (!m) {
+        return NULL;
+    }
+    m->pyseg_ = pyseg;
+    Py_INCREF(m->pyseg_);
+    m->prop_ = p;
+    m->prop_id_ = p->id();
+    m->type_ = p->_type;
+    return m;
+}
+
 static void NPyMechFunc_dealloc(NPyMechFunc* self) {
     // printf("NPyMechFunc_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
@@ -268,7 +282,7 @@ static void NPyMechFunc_dealloc(NPyMechFunc* self) {
 
 static void NPyMechOfSegIter_dealloc(NPyMechOfSegIter* self) {
     // printf("NPyMechOfSegIter_dealloc %p %s\n", self, self->ob_type->tp_name);
-    Py_XDECREF(self->pyseg_);
+    Py_XDECREF(self->pymech_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
@@ -1087,15 +1101,22 @@ static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
-    CHECK_PROP_INVALID(self->prop_id_);
-    PyObject* result = PyString_FromString(memb_func[self->prop_->_type].sym->name);
+    std::string s = memb_func[self->type_].sym->name;
+    if (!self->prop_id_) {
+        Section* sec = self->pyseg_->pysec_->sec_;
+        if (!sec || !sec->prop) {
+            s = "<mechanism of deleted section>";  // legacy message
+        } else {
+            s = "<segment invalid or or mechanism uninserted>";
+        }
+    }
+    PyObject* result = PyString_FromString(s.c_str());
     return result;
 }
 
 static PyObject* NPyMechFunc_name(NPyMechFunc* self) {
-    CHECK_PROP_INVALID(self->pymech_->prop_id_);
     PyObject* result = NULL;
-    std::string s = memb_func[self->pymech_->prop_->_type].sym->name;
+    std::string s = memb_func[self->pymech_->type_].sym->name;
     s += ".";
     s += self->f_->name;
     result = PyString_FromString(s.c_str());
@@ -1129,15 +1150,15 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
 }
 
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
-    CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
-    if (self->prop_ && nrn_is_ion(self->prop_->_type)) {
+    CHECK_PROP_INVALID(self->prop_id_);
+    if (nrn_is_ion(self->type_)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
-    CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
+    CHECK_PROP_INVALID(self->prop_id_);
     PyObject* result = NULL;
     if (self->pyseg_) {
         result = (PyObject*) (self->pyseg_);
@@ -1149,7 +1170,7 @@ static PyObject* NPyMechObj_segment(NPyMechObj* self) {
 static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
     PyObject* result = NULL;
     if (self->pymech_) {
-        CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
+        CHECK_PROP_INVALID(self->pymech_->prop_id_);
         result = (PyObject*) (self->pymech_);
         Py_INCREF(result);
     }
@@ -1561,6 +1582,7 @@ static Prop* mech_of_segment_prop(Prop* p) {
             break;
         }
         // printf("segment_iter %d %s\n", p->_type, memb_func[p->_type].sym->name);
+        // Only return density mechanisms (skip POINT_PROCESS)
         if (PyDict_GetItemString(pmech_types, memb_func[p->_type].sym->name)) {
             // printf("segment_iter found\n");
             break;
@@ -1579,11 +1601,17 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
     // printf("mech_of_segment_iter\n");
     Node* nd = node_exact(sec, self->x_);
     Prop* p = mech_of_segment_prop(nd->prop);
-    NPyMechOfSegIter* m = PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type);
-    m->pyseg_ = self;
-    Py_INCREF(m->pyseg_);
-    m->prop_ = p;
-    return (PyObject*) m;
+    NPyMechOfSegIter* mi = PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type);
+    if (!mi) {
+        return NULL;
+    }
+    NPyMechObj* m = new_pymechobj(self, p);
+    if (!m) {
+        Py_XDECREF(mi);
+        return NULL;
+    }
+    mi->pymech_ = m;
+    return (PyObject*) mi;
 }
 
 static Object* seg_from_sec_x(Section* sec, double x) {
@@ -1638,6 +1666,9 @@ static void rv_noexist(Section* sec, const char* n, double x, int err) {
 
 static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+    if (!r) {
+        return NULL;
+    }
     r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
     r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
     r->pymech_->pyseg_->pysec_ = sec;
@@ -1794,19 +1825,24 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
 
 static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
     // printf("mech_of_seg_next\n");
-    Prop* p = mech_of_segment_prop(self->prop_);
-    NPyMechObj* m = NULL;
-    if (p) {
-        m = PyObject_New(NPyMechObj, pmech_generic_type);
-    }
-    if (m == NULL) {
+    NPyMechObj* m = self->pymech_;
+    if (!m->prop_id_) {
+        PyErr_SetString(PyExc_ReferenceError,
+                        "mechanism instance became invalid in middle of the mechanism iterator");
         return NULL;
     }
-    m->pyseg_ = self->pyseg_;
-    Py_INCREF(m->pyseg_);
-    m->prop_ = p;
-    self->prop_ = p->next;
-    return (PyObject*) m;
+    Prop* pnext = mech_of_segment_prop(m->prop_);
+    if (!pnext) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    NPyMechObj* mnext = new_pymechobj(m->pyseg_, pnext);
+    Py_DECREF(m);
+    if (!mnext) {
+        return NULL;
+    }
+    self->pymech_ = mnext;
+    return (PyObject*) mnext;
 }
 
 static PyObject* var_of_mech_iter(NPyMechObj* self) {
@@ -1875,16 +1911,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             rv_noexist(sec, n, self->x_, 1);
             result = NULL;
         } else {
-            NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
-            if (m == NULL) {
-                result = NULL;
-            } else {
-                m->pyseg_ = self;
-                m->prop_ = p;
-                m->prop_id_ = p->id();
-                Py_INCREF(m->pyseg_);
-                result = (PyObject*) m;
-            }
+            result = (PyObject*) new_pymechobj(self, p);
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
@@ -2111,9 +2138,8 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (ISARRAY(sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-            r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
-            r->pymech_->pyseg_ = self->pyseg_;
-            Py_INCREF(self->pyseg_);
+            r->pymech_ = self;
+            Py_INCREF(self);
             r->sym_ = sym;
             r->isptr_ = isptr;
             r->attr_from_sec_ = 0;
@@ -2138,11 +2164,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             assert(err == 0);
         }
         // FUNCTION and PROCEDURE
-        for (Symbol* s = hoc_built_in_symlist->first; s; s = s->next) {
-            if (s->type == FUN_BLTIN && striptrail(buf, bufsz, s->name, mname)) {
-                int err = PyDict_SetItemString(result, buf, Py_None);
-                assert(err == 0);
-            }
+        for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
+            int err = PyDict_SetItemString(result, it.first.c_str(), Py_None);
+            assert(err == 0);
         }
     } else {
         bool found_func{false};

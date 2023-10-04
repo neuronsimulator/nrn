@@ -71,7 +71,10 @@ def mech_expect_invalid(mech, Af, aref):
     expect_err("Af(0, 0, 0)")
     expect_err("aref[0] = 1.0")
     assert "died" in str(aref)
-    expect_err("print(mech)")
+    assert str(mech) in [
+        "<segment invalid or or mechanism uninserted>",
+        "<mechanism of deleted section>",
+    ]
     expect_err("print(mech.name())")
     del mech, Af, aref
     locals()
