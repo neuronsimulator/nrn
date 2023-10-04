@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbslocal.h"

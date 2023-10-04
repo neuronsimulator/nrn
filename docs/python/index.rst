@@ -55,6 +55,7 @@ Basic Programming
     programming/dynamiccode.rst
     programming/projectmanagement.rst
     programming/internals.rst
+    programming/neuron_classes.rst
     programming/hoc-from-python.rst
 
 Model Specification
