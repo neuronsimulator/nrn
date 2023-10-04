@@ -24,7 +24,7 @@ class OcMatrix {
 
     virtual double* mep(int i, int j) {
         unimp();
-        return NULL;
+        return nullptr;
     }  // matrix element pointer
     inline double& operator()(int i, int j) {
         return *mep(i, j);
@@ -139,13 +139,12 @@ class OcMatrix {
     }
 
     void unimp();
-    Object** temp_objvar();
 
   protected:
     OcMatrix(int type);
 
   public:
-    Object* obj_;
+    Object* obj_{};
 
   private:
     int type_;
@@ -202,7 +201,7 @@ class OcSparseMatrix: public OcMatrix {  // type 2
     virtual ~OcSparseMatrix();
 
     virtual double* mep(int, int);
-    virtual double* pelm(int, int);  // NULL if element does not exist
+    virtual double* pelm(int, int);  // nullptr if element does not exist
     virtual int nrow();
     virtual int ncol();
     virtual double getval(int, int);

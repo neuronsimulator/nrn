@@ -1,25 +1,72 @@
 Introduction
 ============
-The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
+The NEURON build system now uses CMake as of version 7.8 circa Nov 2019.
 The previous autotools (./configure) build system has been removed after
 8.0 release.
 
+The NEURON simulator as well as Interviews, CoreNEURON and NMODL can be installed
+together using the following instructions:
+
+1. Clone the latest version or specific release:
+
 .. code-block:: shell
 
-  git clone https://github.com/neuronsimulator/nrn nrn
-  cd nrn
-  mkdir build
-  cd build
-  cmake .. # default install to /usr/local
-  make -j
-  sudo make -j install
+   git clone https://github.com/neuronsimulator/nrn           # latest development branch
+   git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
+   cd nrn
 
-The ``-j`` option to make invokes a parallel make using all available cores.
-This is often very much faster than a single process make. One can add a number
-after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
-to use. This can be useful if there is the possibility of running out of memory.
+..
 
-The make targets that are made available by cmake can be listed with
+   .. warning:: To build NEURON from source you either need to clone the
+   NEURON Git repository or download a source code archive that includes
+   Git submodules, such as the ``full-src-package-X.Y.Z.tar.gz`` file in
+   the `NEURON
+   releases <https://github.com/neuronsimulator/nrn/releases>`__ on
+   GitHub. The tarballs like ``Source code (tar.gz)`` or
+   ``Source code (zip)`` created by GitHub are incomplete.
+
+2. Create a build directory:
+
+.. code-block:: shell
+
+   mkdir build
+   cd build
+
+3. Run ``cmake`` with the appropriate options (see below for a list of
+   common options). A full list of options can be found in
+   ``nrn/CMakeLists.txt`` and defaults are shown in
+   ``nrn/cmake/BuildOptionDefaults.cmake``. e.g. a bare-bones
+   installation:
+
+.. code-block:: shell
+
+   cmake .. \
+    -DNRN_ENABLE_INTERVIEWS=OFF \
+    -DNRN_ENABLE_MPI=OFF \
+    -DNRN_ENABLE_RX3D=OFF \
+    -DPYTHON_EXECUTABLE=$(which python3) \
+    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+
+4. Build the code:
+
+.. code-block:: shell
+
+   cmake --build . --parallel 8 --target install
+
+Feel free to set the number of parallel jobs (i.e. 8) according to your
+system using the ``--parallel`` option.
+
+   .. warning:: When ``NEURON`` is installed with ``CoreNEURON`` option enabled then ``NMODL`` is also installed with the ``NMODL`` Python bindings which increase a lot the compilation complexity and memory requirements. For that purpose it’s recommended to either disable this option if the Python bindings are not needed using the ``CMake`` option ``-DNMODL_ENABLE_PYTHON_BINDINGS=OFF`` or restrict the number of parallel jobs running in parallel in the ``cmake`` command using ``cmake --parallel <number_of_parallel_jobs>``. i.e. in a machine with 8 threads do ``cmake -parallel 4``.
+
+5. Set PATH and PYTHONPATH environmental variables to use the
+   installation:
+
+.. code-block:: shell
+
+   export PATH=/path/to/install/directory/bin:$PATH
+   export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+
+The make targets that are made available by CMake can be listed with
 
 .. code-block:: shell
 
@@ -190,8 +237,8 @@ IV_ENABLE_X11_DYNAMIC_MAKE_HEADERS:BOOL=OFF
   If it is ever necessary to remake the X11 dynamic .h files, I will
   do so and push them to the https://github.com/neuronsimulator/iv respository.
 
-MPI options:
-============
+MPI options
+===========
 
 NRN_ENABLE_MPI:BOOL=ON
 ----------------------
@@ -248,8 +295,8 @@ NRN_ENABLE_MUSIC:BOOL=OFF
   only for binary distributions of NEURON (e.g. wheels) where NEURON may
   be installed and used prior to installing music.)
 
-Python options:
-===============
+Python options
+==============
 
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
@@ -326,8 +373,8 @@ NRN_RX3D_OPT_LEVEL:STRING=0
 
     -DNRN_RX3D_OPT_LEVEL=2
 
-CoreNEURON options:
-===================
+CoreNEURON options
+==================
 
 NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
@@ -348,9 +395,22 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
-  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
   The ones of particular interest that can be used on the NEURON
   CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+
+NMODL options
+=============
+
+To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
+
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
+------------------------------------
+  Enable pybind11 based python bindings
+
+  Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
+  the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
+
 
 Occasionally useful advanced options:
 =====================================
@@ -521,10 +581,10 @@ NRN_COVERAGE_FILES:STRING=
 
 NRN_SANITIZERS:STRING=
 ----------------------
-  Enable some combination of AddressSanitizer, LeakSanitizer and
-  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
-  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
-  information.
+  Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
+  and UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak``, ``thread`` and ``undefined``.
+  See the "Diagnosis and Debugging" section for more information.
   Note that on macOS it can be a little intricate to combine
   ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
   you attempt this then the CMake code should recommend a solution.

@@ -77,23 +77,7 @@ void set_openmp_threads(int nthread) {
  * Convert char* containing arguments from neuron to char* argv[] for
  * coreneuron command line argument parser.
  */
-char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, const char* arg) {
-    // first construct all arguments as string
-    std::string args(arg);
-    args.insert(0, " coreneuron ");
-    args.append(" --skip-mpi-finalize ");
-    if (use_mpi) {
-        args.append(" --mpi ");
-    }
-
-    // if neuron has passed name of MPI library then add it to CLI
-    std::string corenrn_mpi_lib{mpi_lib};
-    if (!corenrn_mpi_lib.empty()) {
-        args.append(" --mpi-lib ");
-        corenrn_mpi_lib += " ";
-        args.append(corenrn_mpi_lib);
-    }
-
+char* prepare_args(int& argc, char**& argv, std::string& args) {
     // we can't modify string with strtok, make copy
     char* first = strdup(args.c_str());
     const char* sep = " ";
@@ -637,7 +621,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     // copy weights back to NEURON NetCon
-    if (nrn2core_all_weights_return_) {
+    if (nrn2core_all_weights_return_ && corenrn_embedded) {
         // first update weights from gpu
         update_weights_from_gpu(nrn_threads, nrn_nthread);
 
@@ -651,7 +635,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
         (*nrn2core_all_weights_return_)(weights);
     }
 
-    core2nrn_data_return();
+    if (corenrn_embedded) {
+        core2nrn_data_return();
+    }
 
     {
         Instrumentor::phase p("checkpoint");

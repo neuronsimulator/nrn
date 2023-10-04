@@ -27,7 +27,7 @@ extern Symlist* hoc_built_in_symlist;
 #include "spmatrix.h"
 extern double* sp13mat;
 
-#if 1 || PARANEURON
+#if 1 || NRNMPI
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 #endif
@@ -41,7 +41,7 @@ extern void nrn_multisplit_nocap_v_part1(NrnThread*);
 extern void nrn_multisplit_nocap_v_part2(NrnThread*);
 extern void nrn_multisplit_nocap_v_part3(NrnThread*);
 extern void nrn_multisplit_adjust_rhs(NrnThread*);
-#if PARANEURON
+#if NRNMPI
 extern void (*nrn_multisplit_solve_)();
 #endif
 
@@ -80,7 +80,7 @@ The variable step method for these cases is handled by daspk.
 // as well as algebraic nodes (no_cap)
 
 bool Cvode::init_global() {
-#if PARANEURON
+#if NRNMPI
     if (!use_partrans_ && nrnmpi_numprocs > 1 && (nrnmpi_v_transfer_ || nrn_multisplit_solve_)) {
         assert(nrn_nthread == 1);  // we lack an NVector class for both
         // threads and mpi together
@@ -91,7 +91,7 @@ bool Cvode::init_global() {
         if (!structure_change_) {
         return false;
     }
-    if (ctd_[0].cv_memb_list_ == nil) {
+    if (ctd_[0].cv_memb_list_ == nullptr) {
         neq_ = 0;
         if (use_daspk_) {
             return true;
@@ -119,8 +119,8 @@ void Cvode::init_eqn() {
     neq_ = 0;
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
-        z.cmlcap_ = nil;
-        z.cmlext_ = nil;
+        z.cmlcap_ = nullptr;
+        z.cmlext_ = nullptr;
         for (cml = z.cv_memb_list_; cml; cml = cml->next) {
             if (cml->index == CAP) {
                 z.cmlcap_ = cml;
@@ -172,7 +172,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             break;
         }  // lvardt
     }
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         global_neq_ = nrnmpi_int_sum_reduce(neq_);
         // printf("%d global_neq_=%d neq=%d\n", nrnmpi_myid, global_neq_, neq_);
@@ -310,7 +310,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
             ncm->next = new CvMembList{cml->index};
             ncm = ncm->next;
         }
-        ncm->next = nil;
+        ncm->next = nullptr;
         ncm->index = cml->index;
         // ncm is in non-contiguous mode
         ncm->ml.reserve(n);
@@ -586,7 +586,7 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
         NODERHS(z.no_cap_node_[i]) = 0.;
     }
     // solve it
-#if PARANEURON
+#if NRNMPI
     if (nrn_multisplit_solve_) {
         (*nrn_multisplit_solve_)();
     } else
@@ -704,7 +704,7 @@ void Cvode::fun_thread_transfer_part1(neuron::model_sorted_token const& sorted_t
         return;
     }
     scatter_y(sorted_token, y, nt->id);
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         nrnmpi_assert_opstep(opmode_, nt->_t);
     }
@@ -719,14 +719,14 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
     if (z.nvsize_ == 0) {
         return;
     }
-#if 1 || PARANEURON
+#if 1 || NRNMPI
     if (nrnthread_v_transfer_) {
         (*nrnthread_v_transfer_)(nt);
     }
 #endif
     before_after(sorted_token, z.before_breakpoint_, nt);
     rhs(sorted_token, nt);  // similar to nrn_rhs in treeset.cpp
-#if PARANEURON
+#if NRNMPI
     if (nrn_multisplit_solve_) {  // non-zero area nodes need an adjustment
         nrn_multisplit_adjust_rhs(nt);
     }
@@ -762,7 +762,7 @@ void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt) {
     // printf("%p fun %d %.15g %g\n", this, neq_, _t, _dt);
     play_continuous_thread(tt, nt);
     scatter_y(nrn_ensure_model_data_are_sorted(), y, nt->id);
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         nrnmpi_assert_opstep(opmode_, nt->_t);
     }
@@ -781,7 +781,7 @@ void Cvode::fun_thread_ms_part3(NrnThread* nt) {
                         // following is true and a gap is in 0 area node
 }
 void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
-#if 1 || PARANEURON
+#if 1 || NRNMPI
     if (nrnthread_v_transfer_) {
         (*nrnthread_v_transfer_)(nt);
     }
@@ -865,7 +865,7 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
         NODED(pnd) -= NODEA(nd);
     }
 
-#if PARANEURON
+#if NRNMPI
     if (nrn_multisplit_solve_) {  // add up the multisplit equations
         nrn_multisplit_nocap_v();
     }
@@ -1027,20 +1027,21 @@ void Cvode::delete_prl() {
         if (z.play_) {
             delete z.play_;
         }
-        z.play_ = nil;
+        z.play_ = nullptr;
         if (z.record_) {
             delete z.record_;
         }
-        z.record_ = nil;
+        z.record_ = nullptr;
     }
 }
 
 void Cvode::record_add(PlayRecord* pr) {
     CvodeThreadData& z = CTD(pr->ith_);
     if (!z.record_) {
-        z.record_ = new PlayRecList(1);
+        z.record_ = new std::vector<PlayRecord*>();
+        z.record_->reserve(1);
     }
-    z.record_->append(pr);
+    z.record_->push_back(pr);
 }
 
 void Cvode::record_continuous() {
@@ -1055,8 +1056,8 @@ void Cvode::record_continuous() {
                 before_after(sorted_token, z.before_step_, nt);
             }
             if (z.record_) {
-                for (long i = 0; i < z.record_->count(); ++i) {
-                    z.record_->item(i)->continuous(t_);
+                for (auto& item: *(z.record_)) {
+                    item->continuous(t_);
                 }
             }
         }
@@ -1069,8 +1070,8 @@ void Cvode::record_continuous_thread(NrnThread* nt) {
         before_after(nrn_ensure_model_data_are_sorted(), z.before_step_, nt);
     }
     if (z.record_) {
-        for (long i = 0; i < z.record_->count(); ++i) {
-            z.record_->item(i)->continuous(t_);
+        for (auto& item: *(z.record_)) {
+            item->continuous(t_);
         }
     }
 }
@@ -1078,9 +1079,9 @@ void Cvode::record_continuous_thread(NrnThread* nt) {
 void Cvode::play_add(PlayRecord* pr) {
     CvodeThreadData& z = CTD(pr->ith_);
     if (!z.play_) {
-        z.play_ = new PlayRecList(1);
+        z.play_ = new std::vector<PlayRecord*>();
     }
-    z.play_->append(pr);
+    z.play_->push_back(pr);
 }
 
 void Cvode::play_continuous(double tt) {
@@ -1090,8 +1091,8 @@ void Cvode::play_continuous(double tt) {
         for (int i = 0; i < nrn_nthread; ++i) {
             CvodeThreadData& z = ctd_[i];
             if (z.play_) {
-                for (long i = 0; i < z.play_->count(); ++i) {
-                    z.play_->item(i)->continuous(tt);
+                for (auto& item: *(z.play_)) {
+                    item->continuous(tt);
                 }
             }
         }
@@ -1100,8 +1101,8 @@ void Cvode::play_continuous(double tt) {
 void Cvode::play_continuous_thread(double tt, NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
     if (z.play_) {
-        for (long i = 0; i < z.play_->count(); ++i) {
-            z.play_->item(i)->continuous(tt);
+        for (auto& item: *(z.play_)) {
+            item->continuous(tt);
         }
     }
 }

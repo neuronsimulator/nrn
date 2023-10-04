@@ -5,7 +5,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 
 #define P(arg) fputs(arg, fcout)
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
@@ -85,10 +85,12 @@ void c_out() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format on\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format off\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
 
@@ -481,10 +483,12 @@ void c_out_vectorize() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format off\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     printlist(defs_list);
     printlist(firstlist);

@@ -658,10 +658,10 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     }
 
     /* free the old concentration list */
-    free(g->concentration_list);
+    delete[] g->concentration_list;
 
     /* allocate space for the new list */
-    g->concentration_list = (Concentration_Pair*) malloc(sizeof(Concentration_Pair) * n);
+    g->concentration_list = new Concentration_Pair[n];
     g->num_concentrations = n;
 
     /* populate the list */
@@ -702,10 +702,10 @@ extern "C" void set_grid_currents(int grid_list_index,
     }
 
     /* free the old current list */
-    free(g->current_list);
+    delete[] g->current_list;
 
     /* allocate space for the new list */
-    g->current_list = (Current_Triple*) malloc(sizeof(Current_Triple) * n);
+    g->current_list = new Current_Triple[n];
     g->num_currents = n;
 
     /* populate the list */
@@ -1169,7 +1169,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                                     proc_induced_current_count[nrnmpi_numprocs - 1];
 
             all_scales = (double*) malloc(induced_current_count * sizeof(double));
-            all_indices = (int*) malloc(induced_current_count * sizeof(double));
+            all_indices = (int*) malloc(induced_current_count * sizeof(int));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]],
                    induced_currents_scale,
                    sizeof(double) * proc_induced_current_count[nrnmpi_myid]);
@@ -1246,8 +1246,8 @@ ECS_Grid_node::~ECS_Grid_node() {
     free(states_x);
     free(states_y);
     free(states_cur);
-    free(concentration_list);
-    free(current_list);
+    delete[] concentration_list;
+    delete[] current_list;
     free(bc);
     free(current_dest);
 #if NRNMPI
@@ -1742,8 +1742,8 @@ ICS_Grid_node::~ICS_Grid_node() {
     free(states_y);
     free(states_z);
     free(states_cur);
-    free(concentration_list);
-    free(current_list);
+    delete[] concentration_list;
+    delete[] current_list;
     free(current_dest);
 #if NRNMPI
     if (nrnmpi_use) {

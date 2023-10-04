@@ -72,7 +72,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
 
 TQueue::~TQueue() {
     TQItem *q, *q2;
-    while ((q = spdeq(&sptree_->root)) != nil) {
+    while ((q = spdeq(&sptree_->root)) != nullptr) {
         deleteitem(q);
     }
     delete sptree_;
@@ -93,7 +93,7 @@ void TQueue::print() {
     if (least_) {
         prnt(least_, 0);
     }
-    spscan(prnt, static_cast<TQItem*>(nil), sptree_);
+    spscan(prnt, static_cast<TQItem*>(nullptr), sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         prnt(q, 0);
     }
@@ -105,7 +105,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     if (least_) {
         f(least_, 0);
     }
-    spscan(f, static_cast<TQItem*>(nil), sptree_);
+    spscan(f, static_cast<TQItem*>(nullptr), sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         f(q, 0);
     }
@@ -230,7 +230,7 @@ void TQueue::remove(TQItem* q) {
             if (sptree_->root) {
                 least_ = spdeq(&sptree_->root);
             } else {
-                least_ = nil;
+                least_ = nullptr;
             }
         } else if (q->cnt_ >= 0) {
             binq_->remove(q);
@@ -251,7 +251,7 @@ TQItem* TQueue::atomic_dq(double tt) {
         if (sptree_->root) {
             least_ = spdeq(&sptree_->root);
         } else {
-            least_ = nil;
+            least_ = nullptr;
         }
     }
     MUTUNLOCK

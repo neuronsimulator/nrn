@@ -1,6 +1,7 @@
 # =============================================================================
 # Build nrniv binary and corresponding library
 # =============================================================================
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
@@ -152,7 +153,6 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
-    ${NRN_SPARSE13_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
 
 if(NRN_ENABLE_MPI)
@@ -383,6 +383,8 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/memory_usage.cpp
+                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp
                               PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
@@ -411,6 +413,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
+target_link_libraries(nrniv_lib sparse13)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
@@ -441,7 +444,7 @@ if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(NRN_ENABLE_PROFILING)
-  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
+  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
@@ -502,7 +505,7 @@ if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
   target_link_libraries(nrniv_lib interviews)
 else()
-  include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)
@@ -582,11 +585,14 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
-file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
-file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-     DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
-file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h)
+cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)

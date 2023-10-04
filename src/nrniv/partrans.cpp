@@ -11,16 +11,14 @@
 #include <nrniv_mf.h>
 #include <nrnmpi.h>
 #include <mymath.h>
-#if defined(HAVE_STDINT_H)
 #include <stdint.h>
-#endif
 
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
 #include <utility>
 #include <vector>
 
 #if NRNLONGSGID
-#if PARANEURON
+#if NRNMPI
 static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
     if (nrn_sparse_partrans > 0) {
         nrnmpi_long_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
@@ -28,9 +26,9 @@ static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rc
         nrnmpi_long_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     }
 }
-#endif  // PARANEURON
+#endif  // NRNMPI
 #else   // not NRNLONGSGID
-#if PARANEURON
+#if NRNMPI
 static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
     if (nrn_sparse_partrans > 0) {
         nrnmpi_int_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
@@ -38,7 +36,7 @@ static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rc
         nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     }
 }
-#endif  // PARANEURON
+#endif  // NRNMPI
 #endif  // not NRNLONGSGID
 
 extern const char* bbcore_write_version;
@@ -119,7 +117,7 @@ extern void (*nrnthread_vi_compute_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();  // before nrnthread_v_transfer and after update. Called by
                                       // thread 0.
 extern void (*nrn_mk_transfer_thread_data_)();
-#if PARANEURON
+#if NRNMPI
 extern double nrnmpi_transfer_wait_;
 #endif
 
@@ -520,7 +518,7 @@ static void mpi_transfer() {
     for (i = 0; i < n; ++i) {
         outsrc_buf_[i] = *poutsrc_[i];
     }
-#if PARANEURON
+#if NRNMPI
     if (nrnmpi_numprocs > 1) {
         double wt = nrnmpi_wtime();
         if (nrn_sparse_partrans > 0) {
@@ -584,12 +582,12 @@ static void thread_transfer(NrnThread* _nt) {
 #define HAVEWANT_t         sgid_t
 #define HAVEWANT_alltoallv sgid_alltoallv
 #define HAVEWANT2Int       MapSgid2Int
-#if PARANEURON
+#if NRNMPI
 #include "have2want.cpp"
 #endif
 
 void nrnmpi_setup_transfer() {
-#if !PARANEURON
+#if !NRNMPI
     if (nrnmpi_numprocs > 1) {
         hoc_execerror(
             "To use ParallelContext.setup_transfer when nhost > 1, NEURON must be configured with "
@@ -606,7 +604,7 @@ void nrnmpi_setup_transfer() {
     sid2insrc_.clear();
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
-#if PARANEURON
+#if NRNMPI
     // if there are no targets anywhere, we do not need to do anything
     max_targets_ = nrnmpi_int_allmax(targets_.size());
     if (max_targets_ == 0) {
@@ -750,7 +748,7 @@ void nrnmpi_setup_transfer() {
 
         nrnmpi_v_transfer_ = mpi_transfer;
     }
-#endif  // PARANEURON
+#endif  // NRNMPI
     nrn_mk_transfer_thread_data_ = mk_ttd;
     if (!v_structure_change) {
         mk_ttd();
