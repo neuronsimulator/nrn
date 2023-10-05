@@ -3216,7 +3216,7 @@ void set_inside_func(Symbol* s) {
 static bool check_func(Symbol* s);  // recursive
 
 void func_needs_setdata() {
-    if (!suffix || suffix[0] == '\0') {
+    if (suffix[0] == '\0') {
         return;
     }
     for (auto& f: funcs) {
@@ -3248,7 +3248,7 @@ void func_needs_setdata() {
         if (q && f.second.need_setdata) {
             // error if not valid id
             Symbol* s = f.first;
-            sprintf(buf,
+            Sprintf(buf,
                     "\n"
                     "  if(!_prop_id) {\n"
                     "    hoc_execerror(\""
