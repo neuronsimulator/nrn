@@ -780,7 +780,6 @@ RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
     execerror("Floating point exception.", (char*) 0);
 }
 
-#if HAVE_SIGSEGV
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -791,7 +790,6 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
     }
     execerror("Aborting.", (char*) 0);
 }
-#endif
 
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig) {
@@ -1211,9 +1209,7 @@ static SignalType signals[4];
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
     signals[1] = signal(SIGFPE, fpecatch);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, sigsegvcatch);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
 #endif
@@ -1222,9 +1218,7 @@ static void set_signals(void) {
 static void restore_signals(void) {
     signals[0] = signal(SIGINT, signals[0]);
     signals[1] = signal(SIGFPE, signals[1]);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, signals[2]);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
 #endif

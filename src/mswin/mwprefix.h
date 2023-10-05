@@ -4,7 +4,6 @@
 #else
 #include <Win32Headers.mch>
 #endif
-#define HAVE_LIMITS_H 1
 #pragma once off
 #ifndef __WIN32__
 #define __WIN32__ 1

@@ -15,7 +15,6 @@ class TQueue;
 typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;
 struct NrnThread;
-class PlayRecList;
 class PlayRecord;
 class STEList;
 class HTList;
@@ -81,8 +80,8 @@ class CvodeThreadData {
     int neq_v_;                 // for daspk, number of voltage states for this thread
     int nonvint_offset_;        // synonym for neq_v_. Beginning of this threads nonvint variables.
     int nonvint_extra_offset_;  // extra states (probably Python). Not scattered or gathered.
-    PlayRecList* record_;
-    PlayRecList* play_;
+    std::vector<PlayRecord*>* play_;
+    std::vector<PlayRecord*>* record_;
 };
 
 class Cvode {
