@@ -30,6 +30,7 @@ def model():  # 3 cables each with nseg=3
 
 
 def test1():
+    print("test1")
     s = h.Section()  # so we can delete later and verify mechs is still ok
     s.nseg = 10
     mechs = model()
@@ -81,6 +82,7 @@ def mech_expect_invalid(mech, Af, aref):
 
 
 def test2():
+    print("test2")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     assert Af.name() == "sdatats.A"  # covers NPyMechObj_name
@@ -96,6 +98,7 @@ def test2():
 
 
 def test3():
+    print("test3")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     # internal segment destroyed, should invalidate mechs[-1]
@@ -110,6 +113,7 @@ def test3():
 
 
 def test4():
+    print("test4")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     # section deleted, should invalidate mechs[-1]
@@ -119,9 +123,22 @@ def test4():
     locals()
 
 
+def test5():
+    print("test5")
+    mechs = model()
+    for sec in h.allsec():
+        for seg in sec:
+            for mech in seg:
+                for rv in mech:
+                    assert rv.mech() == mech
+                    assert rv.mech().segment() == seg
+                    assert rv.mech().segment().sec == sec
+
+
 if __name__ == "__main__":
     test1()
     test2()
     test3()
     test4()
+    test5()
     h.topology()

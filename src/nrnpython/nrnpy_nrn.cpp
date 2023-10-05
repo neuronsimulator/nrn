@@ -1825,24 +1825,23 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
 
 static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
     // printf("mech_of_seg_next\n");
+    // The return on this iteration is self->pymech_. NULL means it's over.
     NPyMechObj* m = self->pymech_;
+    if (!m) {
+        return NULL;
+    }
     if (!m->prop_id_) {
         PyErr_SetString(PyExc_ReferenceError,
                         "mechanism instance became invalid in middle of the mechanism iterator");
         return NULL;
     }
-    Prop* pnext = mech_of_segment_prop(m->prop_);
-    if (!pnext) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    NPyMechObj* mnext = new_pymechobj(m->pyseg_, pnext);
-    Py_DECREF(m);
-    if (!mnext) {
-        return NULL;
+    Prop* pnext = mech_of_segment_prop(m->prop_->next);
+    NPyMechObj* mnext{};
+    if (pnext) {
+        mnext = new_pymechobj(m->pyseg_, pnext);
     }
     self->pymech_ = mnext;
-    return (PyObject*) mnext;
+    return (PyObject*) m;
 }
 
 static PyObject* var_of_mech_iter(NPyMechObj* self) {
