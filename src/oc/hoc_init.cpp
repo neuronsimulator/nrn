@@ -243,8 +243,7 @@ void hoc_init(void) /* install constants and built-ins table */
         const char* envvar = getenv("NRNUNIT_USE_LEGACY");
         if (envvar) {
             hoc_warning("NRNUNIT_USE_LEGACY is deprecated as only modern units are supported.",
-                        "If you want to still use legacy unit you can modify the nrnunit.lib with "
-                        "a previous version.");
+                        "If you want to still use legacy unit you can use a version of nrn < 9.");
             if (strcmp(envvar, "1") == 0) {
                 hoc_execerror(
                     "'NRNUNIT_USE_LEGACY=1' have been called but legacy units are no more "
