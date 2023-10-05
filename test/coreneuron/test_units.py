@@ -7,6 +7,11 @@ pc = h.ParallelContext()
 
 
 def test_units():
+    # The first one should only return the warning
+    # The second one should crash
+    h.nrnunit_use_legacy(0)
+    expect_err(h.nrnunit_use_legacy(1))
+
     s = h.Section()
     pp = h.UnitsTest(s(0.5))
     h.ion_style("na_ion", 1, 2, 1, 1, 0, sec=s)
