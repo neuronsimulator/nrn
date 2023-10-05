@@ -1940,6 +1940,31 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     return result;
 }
 
+static PyObject* hocobj_sliceitem(PyObject* self, PyObject *slice) {
+    if (PySlice_Check(slice)) {
+        auto* po = (PyHocObject *) self;
+        if (po->type_ != PyHoc::HocObject) {
+            PyErr_SetString(PyExc_TypeError, "unsliceable object");
+            return NULL;
+        }
+        auto *v = (Vect*) po->ho_->u.this_pointer;
+        Py_ssize_t start = 0;
+        Py_ssize_t end = 0;
+        Py_ssize_t step = 0;
+        Py_ssize_t slicelen = 0;
+        size_t cap = vector_capacity(v);
+        PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
+        if (start >= cap || end > cap) {
+            PyErr_SetString(PyExc_IndexError, "Index is out of range.");
+            return NULL;
+        }
+        Object **obj = new_vect(v, start, end);
+        return nrnpy_ho2po(*obj);
+    } else {
+        return hocobj_getitem(self, PyLong_AsLong(slice));
+    }
+}
+
 static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
     // printf("hocobj_setitem %d\n", i);
     int err = -1;

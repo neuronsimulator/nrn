@@ -398,6 +398,17 @@ int is_vector_arg(int i) {
     return 1;
 }
 
+Object **new_vect(void *v, std::size_t start, std::size_t end) {
+    auto *x = static_cast<Vect *>(v);
+    std::size_t size{end - start};
+    auto *y = new Vect(size);
+    // ZFM: fixed bug -- i<size, not i<=size
+    for (std::size_t i = 0; i < size; ++i) {
+        y->elem(i) = x->elem(i + start);
+    }
+    return y->temp_objvar();
+}
+
 int vector_arg_px(int i, double** px) {
     Vect* x = vector_arg(i);
     *px = x->data();
@@ -1565,7 +1576,6 @@ static Object** v_copy(void* v) {
     return y->temp_objvar();
 }
 
-
 static Object** v_at(void* v) {
     auto* x = static_cast<Vect*>(v);
     std::size_t start{};
@@ -1576,14 +1586,9 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    std::size_t size{end - start};
-    auto* y = new Vect(size);
-    // ZFM: fixed bug -- i<size, not i<=size
-    for (std::size_t i = 0; i < size; ++i) {
-        y->elem(i) = x->elem(i + start);
-    }
-    return y->temp_objvar();
+    return new_vect(v, start, end);
 }
+
 
 typedef struct {
     double x;
@@ -1679,7 +1684,6 @@ static Object** v_interpolate(void* v) {
     if (flag) {
         delete ys;
     }
-
     return yd->temp_objvar();
 }
 
