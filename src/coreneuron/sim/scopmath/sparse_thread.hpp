@@ -436,7 +436,7 @@ inline void init_coef_list(SparseObj* so, int _iml) {
     defined(scopmath_sparse_x)
 #error "naming clash on sparse_thread.hpp-internal macros"
 #endif
-#define scopmath_sparse_ix(arg) ((arg) *_STRIDE)
+#define scopmath_sparse_ix(arg) CNRN_FLAT_INDEX_IML_ROW(arg)
 inline void subrow(SparseObj* so, Elm* pivot, Elm* rowsub, int _iml) {
     unsigned int const _cntml_padded{so->_cntml_padded};
     double const r{rowsub->value[_iml] / pivot->value[_iml]};
@@ -602,7 +602,7 @@ int sparse_thread(SparseObj* so,
 #undef scopmath_sparse_d
 #undef scopmath_sparse_ix
 #undef scopmath_sparse_s
-#define scopmath_sparse_x(arg) _p[x[arg] * _STRIDE]
+#define scopmath_sparse_x(arg) _p[CNRN_FLAT_INDEX_IML_ROW(x[arg])]
 /* for solving ax=b */
 template <typename SPFUN>
 int _cvode_sparse_thread(void** vpr, int n, int* x, SPFUN fun, _threadargsproto_) {

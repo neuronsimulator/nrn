@@ -1,3 +1,5 @@
+.. _cell_builder:
+
 Using the Cell Builder GUI
 ==========================
 

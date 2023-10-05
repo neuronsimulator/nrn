@@ -202,7 +202,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         {
             IvocVect v(3);
             m.getdiag(-2, &v);
-            REQUIRE(v.vec()[2] == Catch::Detail::Approx({1.}));
+            REQUIRE(v.vec()[2] == Catch::Detail::Approx(1.0));
             v.vec() = {1., 0., 0.};
             m.setdiag(2, &v);
             REQUIRE(compareMatrix(m, {{42., 72., 1.}, {72., 114., 114.}, {1., 114., 2.}}));
