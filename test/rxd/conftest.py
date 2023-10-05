@@ -76,7 +76,6 @@ def neuron_nosave_instance(neuron_import):
     rxd.section1d._purge_cptrs()
     rxd.initializer.has_initialized = False
     rxd.initializer.is_initializing = False
-    rxd.rxd.last_nrn_legacy_units = False
     rxd.rxd.free_conc_ptrs()
     rxd.rxd.free_curr_ptrs()
     rxd.rxd.rxd_include_node_flux1D(0, None, None, None)

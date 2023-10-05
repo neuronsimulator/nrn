@@ -579,6 +579,14 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/coreneuron/test_datareturn.py)
     nrn_add_test(
       GROUP coreneuron_modtests
+      NAME test_units_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_units.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_units_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_units.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
       NAME test_netmove_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_netmove.py

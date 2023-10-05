@@ -283,7 +283,7 @@ Description:
     the UNIX units database. This can increase legibility and convenience, and is helpful both as a
     reminder to the user and as a means for automating the process of checking for consistency of
     units.
-    The UNIX units database taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib>`_.
+    The UNIX units database (based on the 2019 updated NIST constants) taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib>`_.
 
     New units can be defined in terms of default units and previously defined units by placing
     definitions in the UNITS block. e.g.
