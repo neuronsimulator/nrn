@@ -1322,9 +1322,9 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
         char buf1[NRN_BUFSIZE];
         char* pf{};
 #if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+        pf = realpath(finname.c_str(), NULL);
 #endif
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname);
+        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname.c_str());
         if (pf) {
             free(pf);
         }
