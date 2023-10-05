@@ -1,4 +1,5 @@
 from neuron.tests.utils.strtobool import strtobool
+from neuron.expect_hocerr import expect_err
 import os
 
 from neuron import h
