@@ -22,6 +22,7 @@
 #include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
+#include "utils/enumerate.h"
 #if HAVE_IV
 #include "ivoc.h"
 #include "glinerec.h"
@@ -3050,21 +3051,17 @@ static OcList* event_info_list_;  // netcon or point_process
 static void event_info_callback(const TQItem*, int);
 static void event_info_callback(const TQItem* q, int) {
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
-    NetCon* nc;
-    PreSyn* ps;
-    SelfEvent* se;
-    int n = event_info_tvec_->size();
     switch (d->type()) {
     case NetConType:
         if (event_info_type_ == NetConType) {
-            nc = (NetCon*) d;
+            auto* nc = static_cast<NetCon*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_list_->append(nc->obj_);
         }
         break;
     case SelfEventType:
         if (event_info_type_ == SelfEventType) {
-            se = (SelfEvent*) d;
+            auto* se = static_cast<SelfEvent*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_flagvec_->push_back(se->flag_);
             event_info_list_->append(se->target_->ob);
@@ -3072,13 +3069,11 @@ static void event_info_callback(const TQItem* q, int) {
         break;
     case PreSynType:
         if (event_info_type_ == NetConType) {
-            ps = (PreSyn*) d;
-            for (auto it = ps->dil_.rbegin(); it != ps->dil_.rend(); ++it) {
-                nc = *it;
+            auto* ps = static_cast<PreSyn*>(d);
+            for (const auto& nc: reverse(ps->dil_)) {
                 double td = nc->delay_ - ps->delay_;
                 event_info_tvec_->push_back(q->t_ + td);
                 event_info_list_->append(nc->obj_);
-                ++n;
             }
         }
         break;
@@ -5774,9 +5769,8 @@ void nrnthread_get_trajectory_requests(int tid,
             int err = 0;
             if (pr->ith_ == tid) {
                 if (1) {  // buffered or per time step value return
-                    IvocVect* v = NULL;
                     if (pr->type() == TvecRecordType) {
-                        v = ((TvecRecord*) pr)->t_;
+                        IvocVect* v = ((TvecRecord*) pr)->t_;
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
@@ -5795,7 +5789,7 @@ void nrnthread_get_trajectory_requests(int tid,
                             n_trajec--;
                         }
                     } else if (pr->type() == YvecRecordType) {
-                        v = ((YvecRecord*) pr)->y_;
+                        IvocVect* v = ((YvecRecord*) pr)->y_;
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
@@ -5819,7 +5813,7 @@ void nrnthread_get_trajectory_requests(int tid,
                             if (bsize && !glr->v_) {
                                 glr->v_ = new IvocVect(bsize);
                             }
-                            v = glr->v_;
+                            IvocVect* v = glr->v_;
                             err = trajec_buffered(nt,
                                                   bsize,
                                                   v,
@@ -5837,14 +5831,11 @@ void nrnthread_get_trajectory_requests(int tid,
                                 n_trajec--;
                             }
                         } else {  // glr->gl_->name expression involves several range variables
-                            GLineRecordEData& ed = glr->pd_and_vec_;
                             int n = n_trajec;
-                            for (GLineRecordEData::iterator it = ed.begin(); it != ed.end(); ++it) {
-                                double* pd = (*it).first;
+                            for (auto&& [pd, v]: glr->pd_and_vec_) {
                                 assert(pd);
-                                v = (*it).second;
-                                if (bsize && v == NULL) {
-                                    v = (*it).second = new IvocVect(bsize);
+                                if (bsize && v == nullptr) {
+                                    v = new IvocVect(bsize);
                                 }
                                 // TODO avoid the conversion?
                                 err = trajec_buffered(nt,
@@ -6124,22 +6115,14 @@ void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructo
 void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destructor
                                                  // printf("NetCvode::playrec_remove %p\n", pr);
     playrec_change_cnt_ = 0;
-    if (auto it = std::find(prl_->begin(), prl_->end(), pr); it != prl_->end()) {
-        prl_->erase(it);
-    }
-    if (auto it = std::find(fixed_play_->begin(), fixed_play_->end(), pr);
-        it != fixed_play_->end()) {
-        fixed_play_->erase(it);
-    }
-    if (auto it = std::find(fixed_record_->begin(), fixed_record_->end(), pr);
-        it != fixed_record_->end()) {
-        fixed_record_->erase(it);
-    }
+    erase_first(*prl_, pr);
+    erase_first(*fixed_play_, pr);
+    erase_first(*fixed_record_, pr);
 }
 
 int NetCvode::playrec_item(PlayRecord* pr) {
-    for (std::size_t i = 0; i < prl_->size(); ++i) {
-        if ((*prl_)[i] == pr) {
+    for (const auto&& [i, e]: enumerate(*prl_)) {
+        if (e == pr) {
             return i;
         }
     }
