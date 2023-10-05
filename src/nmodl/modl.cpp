@@ -96,7 +96,8 @@ int main(int argc, char** argv) {
              * lists, etc. */
 
     std::strncpy(finname, inputfile.c_str(), NRN_BUFSIZE);
-    openfiles(inputfile.c_str(), output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
+    openfiles(inputfile.c_str(),
+              output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
