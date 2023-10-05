@@ -135,9 +135,16 @@ inline std::size_t vext_pseudoindex() {
 }  // namespace neuron::extracellular
 #endif
 
-#define nrnocCONST 1
-#define DEP        2
-#define STATE      3 /*See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define nrnocCONST 1  // PARAMETER
+#define DEP        2  // ASSIGNED
+#define STATE      3 /* STATE: See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define NRNPOINTER                                                            \
+    4 /* added on to list of mechanism variables.These are                    \
+pointers which connect variables  from other mechanisms via the _ppval array. \
+*/
+
+#define _AMBIGUOUS 5  // for Ions
+#define RAND       6  // RANDOM
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
@@ -152,7 +159,7 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
-extern Memb_func* memb_func;
+extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
@@ -161,12 +168,6 @@ extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;
-#define NRNPOINTER                                                            \
-    4 /* added on to list of mechanism variables.These are                    \
-pointers which connect variables  from other mechanisms via the _ppval array. \
-*/
-
-#define _AMBIGUOUS 5
 
 namespace neuron::mechanism {
 template <typename T>
