@@ -1944,7 +1944,7 @@ static PyObject* hocobj_sliceitem(PyObject* self, PyObject *slice) {
     if (PySlice_Check(slice)) {
         auto* po = (PyHocObject *) self;
         if (po->type_ != PyHoc::HocObject) {
-            PyErr_SetString(PyExc_TypeError, "unsliceable object");
+            PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
             return NULL;
         }
         auto *v = (Vect*) po->ho_->u.this_pointer;
