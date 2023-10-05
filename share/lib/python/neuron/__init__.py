@@ -675,9 +675,10 @@ def nrn_dll_sym_nt(name, type):
     if len(nt_dlls) == 0:
         b = "bin"
         path = os.path.join(h.neuronhome().replace("/", "\\"), b)
+        path = ".."
         for dllname in [
-            "libnrniv.dll",
-            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
+            "nrniv.dll",
+            "nrnpython{}.{}.dll".format(*sys.version_info[:2]),
         ]:
             p = os.path.join(path, dllname)
             try:
@@ -1762,6 +1763,7 @@ try:
     nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
 except:
     print("Failed to setup nrnpy_vec_math")
+    raise
 
 try:
     _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym(
@@ -1770,6 +1772,7 @@ try:
     _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
 except:
     print("Failed to setup _nrnpy_rvp_pyobj_callback")
+    raise
 
 try:
     from neuron.psection import psection

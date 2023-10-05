@@ -2924,12 +2924,12 @@ static void add2topdict(PyObject* dict) {
 
 static PyObject* nrnpy_vec_math = NULL;
 
-extern "C" int nrnpy_vec_math_register(PyObject* callback) {
+extern "C" NRN_DLLEXPORT int nrnpy_vec_math_register(PyObject* callback) {
     nrnpy_vec_math = callback;
     return 0;
 }
 
-extern "C" int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+extern "C" NRN_DLLEXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
     nrnpy_rvp_pyobj_callback = callback;
     return 0;
 }

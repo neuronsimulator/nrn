@@ -198,7 +198,7 @@ set(IVOC_FILE_LIST
     utility.cpp
     xmenu.cpp
     xyview.cpp)
-if(MINGW OR WIN32)
+if(MINGW OR MSVC)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
 else()
   list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)
@@ -550,7 +550,7 @@ list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 # =============================================================================
 # Create mswin install lists needed for setup_exe target
 # =============================================================================
-if(MINGW)
+if(MINGW OR MSVC)
   set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
   nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel test0.hoc test0.py)
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)

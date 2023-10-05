@@ -31,15 +31,13 @@ extern int bad_install_ok;
 #else
 int bad_install_ok;
 #endif  // HAVE_IV
-extern FILE* hoc_redir_stdout;
 void setneuronhome(const char* p) {
     // if the program lives in .../bin/neuron.exe
     // and .../lib exists then use ... as the
     // NEURONHOME
     const auto executable = std::filesystem::path(p);
-    std::cout << executable << std::endl;
-    // Windows defaults to wchar for paths
-    neuron_home = strdup(executable.parent_path().parent_path().string().c_str());
+    // Windows defaults to wchar for paths: go through std::string
+    neuron_home = strdup((executable.parent_path().parent_path() / "share" / "nrn").string().c_str());
 }
 void HandleOutput(char* s) {
     printf("%s", s);

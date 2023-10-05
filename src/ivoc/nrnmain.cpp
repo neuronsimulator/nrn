@@ -2,6 +2,7 @@
 #include "nrnmpi.h"
 #include "../nrncvode/nrnneosm.h"
 
+#include <iostream>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
