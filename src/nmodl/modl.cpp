@@ -280,7 +280,8 @@ static void openfiles(char* given_filename, char* output_dir) {
     if (output_dir) {
         try {
             fs::create_directories(output_dir);
-        } except (...) {
+        }
+        except(...) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }
