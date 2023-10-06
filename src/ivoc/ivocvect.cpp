@@ -398,13 +398,13 @@ int is_vector_arg(int i) {
     return 1;
 }
 
-Object **new_vect(void *v, std::size_t start, std::size_t end) {
+Object **new_vect(void *v, std::size_t start, std::size_t end, std::size_t step) {
     auto *x = static_cast<Vect *>(v);
-    std::size_t size{end - start};
+    std::size_t size{(end - start) / step};
     auto *y = new Vect(size);
     // ZFM: fixed bug -- i<size, not i<=size
     for (std::size_t i = 0; i < size; ++i) {
-        y->elem(i) = x->elem(i + start);
+        y->elem(i) = x->elem(i * step + start);
     }
     return y->temp_objvar();
 }
@@ -1586,7 +1586,7 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    return new_vect(v, start, end);
+    return new_vect(v, start, end, 1);
 }
 
 
