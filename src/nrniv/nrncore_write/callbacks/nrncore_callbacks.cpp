@@ -74,8 +74,6 @@ int get_global_int_item(const char* name) {
         return secondorder;
     } else if (strcmp(name, "Random123_global_index") == 0) {
         return nrnran123_get_globalindex();
-    } else if (strcmp(name, "_nrnunit_use_legacy_") == 0) {
-        return _nrnunit_use_legacy_;
     }
     return 0;
 }

@@ -1113,9 +1113,15 @@ double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 }
 
 void nrnunit_use_legacy() {
+    hoc_warning("nrnunit_use_legacy() is deprecated as only modern units are supported.",
+                "If you want to still use legacy unit you can use a version of nrn < 9.");
     if (ifarg(1)) {
         int arg = (int) chkarg(1, 0, 1);
-        _nrnunit_use_legacy_ = arg;
+        if (arg == 1) {
+            hoc_execerror(
+                "'nrnunit_use_legacy(1)' have been called but legacy units are no more supported.",
+                nullptr);
+        }
     }
-    hoc_retpushx((double) _nrnunit_use_legacy_);
+    hoc_retpushx(0.);  // This value means modern unit
 }

@@ -1496,14 +1496,6 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                     return -1;
                 }
                 err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
-                if (!err && sym->subtype == DYNAMICUNITS) {
-                    char mes[100];
-                    Sprintf(mes,
-                            "Assignment to %s value of physical constant %s",
-                            _nrnunit_use_legacy_ ? "legacy" : "modern",
-                            sym->name);
-                    err = PyErr_WarnEx(PyExc_Warning, mes, 1);
-                }
             }
         }
         break;

@@ -42,7 +42,6 @@ option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" O
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC or OpenMP" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
-option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_NMODL_DIR
@@ -243,17 +242,6 @@ if(CORENRN_ENABLE_REPORTING)
 
   include_directories(${sonatareport_INCLUDE_DIR})
 endif()
-
-if(CORENRN_ENABLE_LEGACY_UNITS)
-  set(CORENRN_USE_LEGACY_UNITS 1)
-else()
-  set(CORENRN_USE_LEGACY_UNITS 0)
-endif()
-list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
-# Propagate Legacy Units flag to backends.
-set(NMODL_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
 
 if(CORENRN_ENABLE_PRCELLSTATE)
   set(CORENRN_NRN_PRCELLSTATE 1)
@@ -800,7 +788,6 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
-message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
 message(STATUS "NMODL PATH          | ${CORENRN_NMODL_BINARY}")
 message(STATUS "NMODL FLAGS         | ${CORENRN_NMODL_FLAGS}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
