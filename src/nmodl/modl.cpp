@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    std::strncpy(finname, inputfile.c_str(), NRN_BUFSIZE);
+    std::strcpy(finname, inputfile.c_str());
     openfiles(inputfile.c_str(),
               output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
