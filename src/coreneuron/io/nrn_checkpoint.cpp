@@ -39,7 +39,7 @@ CheckPoints::CheckPoints(const std::string& save, const std::string& restore)
     , restored(false) {
     if (!save.empty()) {
         if (nrnmpi_myid == 0) {
-            fs::create_directoires(save);
+            fs::create_directories(save);
         }
     }
 }
