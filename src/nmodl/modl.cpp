@@ -44,7 +44,7 @@ FILE *fin,    /* input file descriptor for filename.mod */
 
 char* modprefix;
 
-std::string finname;
+char finname[NRN_BUFSIZE];
 
 #if LINT
 char* clint;
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    finname = inputfile;
+    std::strncpy(finname, inputfile.c_str(), NRN_BUFSIZE);
     openfiles(inputfile.c_str(),
               output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
@@ -151,12 +151,12 @@ int main(int argc, char** argv) {
         Item* q;
         char* pf{nullptr};
 #if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname.c_str(), nullptr);
+        pf = realpath(finname, nullptr);
 #endif
         fprintf(
             fcout,
             "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname.c_str());
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
         if (pf) {
             free(pf);
         }
@@ -234,7 +234,8 @@ static void openfiles(const char* given_filename, const char* output_dir) {
     if ((fin = fopen(input_filename, "r")) == (FILE*) 0) {  // first try to open given_filename
         Sprintf(input_filename, "%s.mod", given_filename);  // if it dont work try to add ".mod"
                                                             // extension and retry
-        finname = std::string(given_filename) + ".mod"; // finname is still a global variable, so we need to update it
+        Sprintf(finname, "%s.mod", given_filename);  // finname is still a global variable, so we
+                                                     // need to update it
         if ((fin = fopen(input_filename, "r")) == (FILE*) 0) {
             diag("Can't open input file: ", input_filename);
         }

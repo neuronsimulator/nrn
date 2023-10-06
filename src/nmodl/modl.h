@@ -255,7 +255,7 @@ extern Symbol *install(const char*, int), /* Install token in symbol table */
                                             * not already done. */
 #include "nmodlfunc.h"
 
-extern std::string finname; /* the input file prefix */
+extern char finname[NRN_BUFSIZE]; /* the input file prefix */
 extern char buf[NRN_BUFSIZE];     /* general purpose temporary buffer */
 extern char* modprefix;
 

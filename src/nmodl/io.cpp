@@ -215,7 +215,7 @@ char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
     Sprintf(
-        buf, "at line %d in file %s:\\n%s", linenum - 1, finname.c_str(), inlinebuf[whichbuf ? 0 : 1] + 30);
+        buf, "at line %d in file %s:\\n%s", linenum - 1, finname, inlinebuf[whichbuf ? 0 : 1] + 30);
     for (p = buf; *p; ++p) {
         if (*p == '\n') {
             *p = '\0';
@@ -235,7 +235,7 @@ void diag(const char* s1, const char* s2) {
         Fprintf(stderr, "%s", s2);
     }
     if (fin) {
-        Fprintf(stderr, " at line %d in file %s\n", linenum, finname.c_str());
+        Fprintf(stderr, " at line %d in file %s\n", linenum, finname);
         Fprintf(stderr, "%s", inlinep);
         if (ctp >= inlinep) {
             for (cp = inlinep; cp < ctp - 1; cp++) {
@@ -251,6 +251,41 @@ void diag(const char* s1, const char* s2) {
     Fprintf(stderr, "\n");
     exit(1);
 }
+
+#if 0
+static Symbol  *symq[20], **symhead = symq, **symtail = symq;
+
+/*
+ * the following is a nonsensical implementation of heirarchical model
+ * building. Disregard. It assumes .mod files can be concatenated to produce
+ * meaningful models.  It was this insanity which prompted us to allow use of
+ * variables before declaration 
+ */
+void enquextern(Symbol* sym)
+{
+	*symtail++ = sym;
+}
+
+FILE *dequextern()
+{
+	char            fname[256];
+	FILE           *f;
+	Symbol         *s;
+
+	if (symhead >= symtail)
+		return (FILE *) 0;
+	s = *symhead++;
+	Sprintf(fname, "%s.mod", s->name);
+	f = fopen(fname, "r");
+	if (f == (FILE *) 0) {
+		diag("Can't open", fname);
+	}
+	Fclose(fin);
+	linenum = 0;
+	Strcpy(finname, fname);
+	return f;
+}
+#endif
 
 typedef struct FileStackItem {
     char* inlinep;
@@ -366,9 +401,9 @@ void include_file(Item* q) {
     fsi->ctp = ctp;
     fsi->linenum = linenum;
     fsi->fp = fin;
-    strcpy(fsi->finname, finname.c_str());
+    strcpy(fsi->finname, finname);
 
-    finname = fname;
+    strcpy(finname, fname);
     if ((fin = include_open(fname, 0)) == (FILE*) 0) {
         include_open(fname, 1);
         diag("Couldn't open ", fname);
@@ -391,7 +426,7 @@ void include_file(Item* q) {
 }
 
 static void pop_file_stack() {
-    Sprintf(buf, ":::end INCLUDE %s\n", finname.c_str());
+    Sprintf(buf, ":::end INCLUDE %s\n", finname);
     lappendstr(filetxtlist, buf);
     FileStackItem* fsi;
     fsi = (FileStackItem*) (SYM(filestack->prev));
@@ -400,7 +435,7 @@ static void pop_file_stack() {
     inlinep = fsi->inlinep;
     fclose(fin);
     fin = fsi->fp;
-    finname = fsi->finname;
+    strcpy(finname, fsi->finname);
     free(fsi);
 }
 
