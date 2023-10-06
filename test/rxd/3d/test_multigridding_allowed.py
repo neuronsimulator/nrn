@@ -71,21 +71,21 @@ def should_work2(h, rxd):
     h.fadvance()
 
 
-def test_no_overlap(neuron_instance):
-    h, rxd, data, save_path = neuron_instance
+def test_no_overlap(neuron_nosave_instance):
+    h, rxd, save_path = neuron_nosave_instance
     should_work(h, rxd)
 
 
-def test_neighbors_with_different_dx_fails(neuron_instance):
-    h, rxd, data, save_path = neuron_instance
+def test_neighbors_with_different_dx_fails(neuron_nosave_instance):
+    h, rxd, save_path = neuron_nosave_instance
     expect_hocerr(should_not_work, (h, rxd))
 
 
-def test_overlapping_dx_fails(neuron_instance):
-    h, rxd, data, save_path = neuron_instance
+def test_overlapping_dx_fails(neuron_nosave_instance):
+    h, rxd, save_path = neuron_nosave_instance
     expect_hocerr(should_not_work2, (h, rxd))
 
 
-def test_overlap_same_dx(neuron_instance):
-    h, rxd, data, save_path = neuron_instance
+def test_overlap_same_dx(neuron_nosave_instance):
+    h, rxd, save_path = neuron_nosave_instance
     should_work2(h, rxd)
