@@ -15,6 +15,7 @@
 #include <cstring>
 #include <climits>
 #include <dlfcn.h>
+#include <filesystem>
 #include <memory>
 #include <vector>
 
@@ -40,10 +41,11 @@
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
-#include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/core2nrn_data_return.hpp"
 #include "coreneuron/utils/utils.hpp"
+
+namespace fs = std::filesystem;
 
 extern "C" {
 const char* corenrn_version() {
@@ -496,7 +498,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // Create outpath if it does not exist
     if (nrnmpi_myid == 0) {
-        mkdir_p(corenrn_param.outpath.c_str());
+        fs::create_directories(corenrn_param.outpath);
     }
 
     if (!corenrn_param.reportfilepath.empty()) {
@@ -517,7 +519,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     std::string output_dir = corenrn_param.outpath;
 
     if (nrnmpi_myid == 0) {
-        mkdir_p(output_dir.c_str());
+        fs::create_directories(output_dir);
     }
 #if NRNMPI
     if (corenrn_param.mpi_enable) {

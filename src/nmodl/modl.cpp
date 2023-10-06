@@ -34,6 +34,9 @@
 #include "modl.h"
 
 #include <cstring>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
@@ -55,7 +58,6 @@ int nmodl_text = 1;
 List* filetxtlist;
 
 extern int yyparse();
-extern int mkdir_p(const char*);
 
 extern int vectorize;
 extern int numlist;
@@ -276,7 +278,9 @@ static void openfiles(char* given_filename, char* output_dir) {
         }
     }
     if (output_dir) {
-        if (mkdir_p(output_dir) != 0) {
+        try {
+            fs::create_directories(output_dir);
+        } catch (...) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }
