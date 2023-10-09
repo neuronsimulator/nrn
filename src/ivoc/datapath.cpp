@@ -32,7 +32,6 @@ PathValue::PathValue() {
     str = NULL;
     sym = NULL;
 }
-using StringList = std::vector<char*>;
 
 class HocDataPathImpl {
   private:
@@ -55,7 +54,7 @@ class HocDataPathImpl {
 
   private:
     std::map<void*, PathValue*> table_;
-    StringList strlist_;
+    std::vector<std::string> strlist_;
     int size_, count_, found_so_far_;
     int pathstyle_;
 };
@@ -200,7 +199,7 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
         char path[500];
         std::string cs{};
         for (const auto& str: strlist_) {
-            Sprintf(path, "%s%s.", cs.c_str(), str);
+            Sprintf(path, "%s%s.", cs.c_str(), str.c_str());
             cs = path;
         }
         Sprintf(path, "%s%s", cs.c_str(), buf);
@@ -297,7 +296,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                 if (obp[i]->u.dataspace != od) {
                                     Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.push_back((char*) cs.c_str());
+                                    strlist_.push_back(cs);
                                     obp[i]->recurse = 1;
                                     search(obp[i]->u.dataspace, obp[i]->ctemplate->symtable);
                                     obp[i]->recurse = 0;
@@ -308,7 +307,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                 if (t->is_point_) {
                                     Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.push_back((char*) cs.c_str());
+                                    strlist_.push_back(cs);
                                     search((Point_process*) obp[i]->u.this_pointer, sym);
                                     strlist_.pop_back();
                                 }
@@ -323,7 +322,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         if (pitm[i]) {
                             Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
-                            strlist_.push_back((char*) cs.c_str());
+                            strlist_.push_back(cs);
                             search(hocSEC(pitm[i]));
                             strlist_.pop_back();
                         }
@@ -336,7 +335,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         Object* obj = OBJ(q);
                         Sprintf(buf, "%s[%d]", sym->name, obj->index);
                         cs = buf;
-                        strlist_.push_back((char*) cs.c_str());
+                        strlist_.push_back(cs);
                         if (!t->constructor) {
                             search(obj->u.dataspace, t->symtable);
                         } else {
@@ -354,14 +353,14 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
 
 void HocDataPathImpl::search_vectors() {
     char buf[200];
-    CopyString cs("");
+    std::string cs{};
     cTemplate* t = sym_vec->u.ctemplate;
     hoc_Item* q;
     ITERATE(q, t->olist) {
         Object* obj = OBJ(q);
         Sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
         cs = buf;
-        strlist_.push_back((char*) cs.string());
+        strlist_.push_back(cs);
         Vect* vec = (Vect*) obj->u.this_pointer;
         int size = vec->size();
         double* pd = vector_vec(vec);
@@ -377,14 +376,14 @@ void HocDataPathImpl::search_vectors() {
 
 void HocDataPathImpl::search_pysec() {
 #if USE_PYTHON
-    CopyString cs("");
+    std::string cs{};
     hoc_Item* qsec;
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
             cs = secname(sec);
-            strlist_.push_back((char*) cs.string());
+            strlist_.push_back(cs);
             search(sec);
             strlist_.pop_back();
         }
