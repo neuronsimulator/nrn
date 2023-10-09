@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <OS/string.h>
 #include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,10 +20,6 @@ extern int nrn_is_artificial(int);
 
 extern int hoc_return_type_code;
 
-inline unsigned long key_to_hash(String& s) {
-    return s.hash();
-}
-
 static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);
@@ -43,15 +38,15 @@ static double l_len(void*) {
 }
 
 static double l_head(void*) {
-    String text(gargstr(1));
+    std::string text(gargstr(1));
     Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
+    r.Search(text.c_str(), text.size(), 0, text.size());
     int i = r.BeginningOfMatch();
     //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
     if (i > 0) {
         char* buf = new char[i + 1];
-        strncpy(buf, text.string(), i);
+        strncpy(buf, text.c_str(), i);
         buf[i] = '\0';
         hoc_assign_str(head, buf);
         delete[] buf;
@@ -358,8 +353,7 @@ IvocAliases::~IvocAliases() {
     }
 }
 Symbol* IvocAliases::lookup(const char* name) {
-    String s(name);
-    const auto& it = symtab_.find(s.string());
+    const auto& it = symtab_.find(name);
     if (it != symtab_.end()) {
         return it->second;
     }
@@ -374,14 +368,12 @@ Symbol* IvocAliases::install(const char* name) {
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
     sp->extra = 0;
     sp->arayinfo = 0;
-    String s(sp->name);
-    symtab_.emplace(s.string(), sp);
+    symtab_.emplace(sp->name, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
-    String s(sym->name);
-    auto it = symtab_.find(s.string());
+    auto it = symtab_.find(sym->name);
     symtab_.erase(it);
     free(sym->name);
     free(sym);
