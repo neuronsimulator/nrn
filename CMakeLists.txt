@@ -481,6 +481,9 @@ if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
   set(NRN_INCLUDE_MPI_HEADERS ON)
 endif()
 
+# initialize CLI11 submodule
+cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -505,9 +508,6 @@ if(NRN_ENABLE_CORENEURON)
     endif()
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
-
-  # initialize CLI11 submodule
-  cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
