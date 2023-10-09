@@ -45,11 +45,7 @@ static double l_head(void*) {
     //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
     if (i > 0) {
-        char* buf = new char[i + 1];
-        strncpy(buf, text.c_str(), i);
-        buf[i] = '\0';
-        hoc_assign_str(head, buf);
-        delete[] buf;
+        hoc_assign_str(head, text.substr(0, i).c_str());
     } else {
         hoc_assign_str(head, "");
     }
