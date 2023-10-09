@@ -170,7 +170,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
     bool extension_flushed_;
     SymChooser* sc_;
     static SymChooser* fsc_;
-    CopyString* var_name_;
+    std::string var_name_;
     GPolyLine* current_polyline_;
 
     const Color* color_;

@@ -1369,7 +1369,6 @@ Graph::Graph(bool b)
     loc_ = 0;
     x_expr_ = NULL;
     x_pval_ = {};
-    var_name_ = NULL;
     rvp_ = NULL;
     cross_action_ = NULL;
     vector_copy_ = false;
@@ -1463,20 +1462,13 @@ Graph::~Graph() {
     Resource::unref(sc_);
     Resource::unref(current_polyline_);
     Resource::unref(family_label_);
-    if (var_name_) {
-        delete var_name_;
-    }
     if (cross_action_) {
         delete cross_action_;
     }
 }
 
 void Graph::name(char* s) {
-    if (var_name_) {
-        *var_name_ = s;
-    } else {
-        var_name_ = new CopyString(s);
-    }
+    var_name_ = s;
 }
 
 void Graph::help() {
@@ -2363,14 +2355,14 @@ void Graph::save_phase2(std::ostream& o) {
         Sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
         o << buf << std::endl;
     }
-    if (var_name_) {
-        if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            Sprintf(buf, "%sappend(save_window_)", var_name_->string());
+    if (!var_name_.empty()) {
+        if (var_name_.back() == '.') {
+            Sprintf(buf, "%sappend(save_window_)", var_name_.c_str());
         } else {
-            Sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_.c_str());
         }
         o << buf << std::endl;
-        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
+        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_.c_str());
         o << buf << std::endl;
     }
     if (x_expr_) {
