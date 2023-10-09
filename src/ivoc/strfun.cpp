@@ -364,7 +364,7 @@ Symbol* IvocAliases::install(const char* name) {
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
     sp->extra = 0;
     sp->arayinfo = 0;
-    symtab_.emplace(sp->name, sp);
+    symtab_.try_emplace(sp->name, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
