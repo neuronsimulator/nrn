@@ -113,6 +113,7 @@ set(OC_FILE_LIST
     settext.cpp
     symbol.cpp
     version.cpp
+    x.cpp
     xred.cpp)
 
 # =============================================================================
