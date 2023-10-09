@@ -2326,9 +2326,9 @@ void HocValEditor::data_path(HocDataPaths* hdp, bool append) {
         if (append) {
             hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_raw);
-            if (s) {
-                variable_ = new CopyString(s->string());
+            std::string s = hdp->retrieve(pval_raw);
+            if (!s.empty()) {
+                variable_ = new CopyString(s.c_str());
             }
         }
     }
@@ -2339,9 +2339,9 @@ void HocVarLabel::data_path(HocDataPaths* hdp, bool append) {
         if (append) {
             hdp->append(cpp_);
         } else {
-            String* s = hdp->retrieve(cpp_);
-            if (s) {
-                variable_ = new CopyString(s->string());
+            std::string s = hdp->retrieve(cpp_).c_str();
+            if (!s.empty()) {
+                variable_ = new CopyString(s.c_str());
             }
         }
     }
@@ -2765,9 +2765,9 @@ void OcSlider::data_path(HocDataPaths* hdp, bool append) {
         if (append) {
             hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_raw);
-            if (s) {
-                variable_ = new CopyString(s->string());
+            std::string s = hdp->retrieve(pval_raw);
+            if (!s.empty()) {
+                variable_ = new CopyString(s.c_str());
             }
         }
     }
@@ -2939,9 +2939,9 @@ void HocStateButton::data_path(HocDataPaths* hdp, bool append) {
         if (append) {
             hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_raw);
-            if (s) {
-                variable_ = new CopyString(s->string());
+            std::string s = hdp->retrieve(pval_raw);
+            if (!s.empty()) {
+                variable_ = new CopyString(s.c_str());
             }
         }
     }
@@ -3103,9 +3103,9 @@ void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
         if (append) {
             hdp->append(pval_raw);
         } else {
-            String* s = hdp->retrieve(pval_raw);
-            if (s) {
-                variable_ = new CopyString(s->string());
+            std::string s = hdp->retrieve(pval_raw);
+            if (!s.empty()) {
+                variable_ = new CopyString(s.c_str());
             }
         }
     }
