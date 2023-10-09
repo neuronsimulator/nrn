@@ -20,6 +20,10 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -1750,6 +1754,26 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
         }
 #else  // READLINE
+#if _MSC_VER
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
+	DWORD n;
+	std::vector<char> line(8192);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+	ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+            if (n >= hoc_cbufstr->size - 3) {
+                hocstr_resize(hoc_cbufstr, n + 100);
+                ctp = cbuf = hoc_cbufstr->buf;
+            }
+	    std::cout << __LINE__ << " <-> " << std::string(line.data()) << " <-" << std::endl;
+            strcpy(cbuf, line.data());
+            cbuf[n] = '\n';
+            cbuf[n + 1] = '\0';
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+            hoc_audit_command(cbuf);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+#else
 #if INTERVIEWS
         if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin();
@@ -1769,7 +1793,9 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 return EOF;
             }
         }
+#endif  // _MSC_VER
 #endif  // READLINE
+	    std::cout << __LINE__ << " <-- here" << std::endl;
     }
     errno = 0;
     lineno++;

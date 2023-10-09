@@ -207,7 +207,6 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_cpp modfile_basename)
-  message(WARNING "rsoat ${RUNTIME_OUTPUT_DIRECTORY}")
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
