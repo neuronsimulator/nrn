@@ -878,7 +878,6 @@ ShapeScene::ShapeScene(SectionList* sl)
     r3b_ = new Rotate3Band(NULL, new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
     r3b_->ref();
     observe(sl);
-    var_name_ = NULL;
     wk.style()->find_attribute("shape_beveljoin", beveljoin_);
 
     MenuItem* mi;
@@ -961,9 +960,6 @@ ShapeScene::~ShapeScene() {
     Resource::unref(sg_);
     Resource::unref(r3b_);
     delete shape_changed_;
-    if (var_name_) {
-        delete var_name_;
-    }
 }
 
 void ShapeScene::erase_all() {
@@ -1040,23 +1036,19 @@ PolyGlyph* ShapeScene::shape_section_list() {
 }
 
 void ShapeScene::name(const char* s) {
-    if (!var_name_) {
-        var_name_ = new CopyString(s);
-    } else {
-        *var_name_ = s;
-    }
+    var_name_ = s;
 }
 
 void ShapeScene::save_phase2(std::ostream& o) {
     char buf[256];
-    if (var_name_) {
-        if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            Sprintf(buf, "%sappend(save_window_)", var_name_->string());
+    if (!var_name_.empty()) {
+        if (var_name_.back() == '.') {
+            Sprintf(buf, "%sappend(save_window_)", var_name_.c_str());
         } else {
-            Sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_.c_str());
         }
         o << buf << std::endl;
-        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
+        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_.c_str());
         o << buf << std::endl;
     }
     Graph::save_phase2(o);
