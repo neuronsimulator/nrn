@@ -63,13 +63,13 @@ static double l_head(void*) {
 }
 
 static double l_tail(void*) {
-    CopyString text(gargstr(1));
+    std::string text(gargstr(1));
     Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
+    r.Search(text.c_str(), text.size(), 0, text.size());
     int i = r.EndOfMatch();
     char** tail = hoc_pgargstr(3);
     if (i >= 0) {
-        hoc_assign_str(tail, text.string() + i);
+        hoc_assign_str(tail, text.c_str() + i);
     } else {
         hoc_assign_str(tail, "");
     }
@@ -78,16 +78,16 @@ static double l_tail(void*) {
 }
 
 static double l_left(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.left(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(0, int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
 static double l_right(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.right(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
@@ -359,7 +359,7 @@ IvocAliases::~IvocAliases() {
 }
 Symbol* IvocAliases::lookup(const char* name) {
     String s(name);
-    const auto& it = symtab_.find(s);
+    const auto& it = symtab_.find(s.string());
     if (it != symtab_.end()) {
         return it->second;
     }
@@ -375,13 +375,13 @@ Symbol* IvocAliases::install(const char* name) {
     sp->extra = 0;
     sp->arayinfo = 0;
     String s(sp->name);
-    symtab_.emplace(s, sp);
+    symtab_.emplace(s.string(), sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
     String s(sym->name);
-    auto it = symtab_.find(s);
+    auto it = symtab_.find(s.string());
     symtab_.erase(it);
     free(sym->name);
     free(sym);

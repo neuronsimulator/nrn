@@ -280,69 +280,6 @@ bool String::convert(double& value) const {
     return ptr != str;
 }
 
-/* class CopyString */
-
-CopyString::CopyString() : String() { }
-
-CopyString::CopyString(const char* s) : String() {
-    set_value(s);
-}
-
-CopyString::CopyString(const char* s, int length) : String() {
-    set_value(s, length);
-}
-
-CopyString::CopyString(const String& s) : String() {
-    set_value(s.string(), s.length());
-}
-
-CopyString::CopyString(const CopyString& s) : String() {
-    set_value(s.string(), s.length());
-}
-
-CopyString::~CopyString() {
-    strfree();
-}
-
-String& CopyString::operator =(const CopyString& s) {
-    strfree();
-    set_value(s.string(), s.length());
-    return *this;
-}
-
-String& CopyString::operator =(const String& s) {
-    strfree();
-    set_value(s.string(), s.length());
-    return *this;
-}
-
-String& CopyString::operator =(const char* s) {
-    strfree();
-    set_value(s);
-    return *this;
-}
-
-bool CopyString::null_terminated() const { return true; }
-
-void CopyString::set_value(const char* s) {
-    set_value(s, strlen(s));
-}
-
-/*
- * Guarantee null-terminated string for compatibility with printf et al.
- */
-
-void CopyString::set_value(const char* s, int len) {
-    char* ns = new char[len + 1];
-    ns[len] = '\0';
-    String::set_value(strncpy(ns, s, len), len);
-}
-
-void CopyString::strfree() {
-    char* s = (char*)(string());
-    delete [] s;
-}
-
 /*
  * class NullTerminatedString
  */

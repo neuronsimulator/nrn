@@ -1,6 +1,8 @@
 #ifndef objcmd_h
 #define objcmd_h
 
+#include <memory>
+
 #include <OS/string.h>
 #include <InterViews/observe.h>
 #if HAVE_IV
@@ -39,7 +41,7 @@ class HocCommand: public Observer {
 
   private:
     Object* obj_;
-    CopyString* s_;
+    std::unique_ptr<std::string> s_{};
     Object* po_;
 };
 

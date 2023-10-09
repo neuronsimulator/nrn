@@ -763,7 +763,7 @@ void MechanismStandard::panel(const char* label) {
                 hoc_pushx(0.0);
                 pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
             } else {
-                Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
+                Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.c_str());
             }
             hoc_ivvaluerun_ex(sym->name,
                               NULL,
@@ -788,7 +788,7 @@ void MechanismStandard::panel(const char* label) {
                     hoc_pushx(double(j));
                     pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
                 } else {
-                    Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+                    Sprintf(buf, "hoc_ac_ = %d %s", i, action_.c_str());
                 }
                 char buf2[200];
                 Sprintf(buf2, "%s[%d]", sym->name, j);
@@ -1139,7 +1139,7 @@ void MechanismType_reg() {
     int* type_;
     int count_;
     int select_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Section* sec_iter_;
     int inode_iter_;
@@ -1316,11 +1316,8 @@ void MechanismType::menu() {
                 hoc_ivbutton(s->name, NULL, pyactval);
                 hoc_obj_unref(pyactval);
             } else {
-                Sprintf(buf,
-                        "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
-                        s->name,
-                        i,
-                        mti_->action_.string());
+                Sprintf(
+                    buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n", s->name, i, mti_->action_.c_str());
                 oc.run(buf);
             }
         }
