@@ -73,10 +73,9 @@ struct owning_identifier {
         : owning_identifier(storage.acquire_owning_identifier()) {}
 
     owning_identifier(const owning_identifier&) = delete;
-    owning_identifier(owning_identifier&& other) {
-        m_ptr = std::move(other.m_ptr);
-
-        m_data_ptr = other.m_data_ptr;
+    owning_identifier(owning_identifier&& other) noexcept
+        : m_ptr(std::move(other.m_ptr))
+        , m_data_ptr(other.m_data_ptr) {
         other.m_data_ptr = nullptr;
     }
 

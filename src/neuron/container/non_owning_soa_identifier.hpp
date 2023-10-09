@@ -119,14 +119,14 @@ struct non_owning_identifier_without_container {
     template <typename, typename...>
     friend struct soa;
     friend struct std::hash<non_owning_identifier_without_container>;
-    non_owning_identifier_without_container(std::shared_ptr<std::size_t> ptr)
+    explicit non_owning_identifier_without_container(std::shared_ptr<std::size_t> ptr)
         : m_ptr{std::move(ptr)} {}
     void set_current_row(std::size_t row) {
         assert(m_ptr);
         *m_ptr = row;
     }
 
-    non_owning_identifier_without_container(size_t row)
+    explicit non_owning_identifier_without_container(size_t row)
         : m_ptr(std::make_shared<size_t>(row)) {}
 
   private:
