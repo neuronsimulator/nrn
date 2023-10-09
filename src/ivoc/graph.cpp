@@ -2421,7 +2421,7 @@ void Graph::choose_sym() {
         neuron::container::data_handle<double> pd_handle{pd};
 
         if (sc_->selected_vector_count()) {
-            Sprintf(buf, "%s", sc_->selected()->string());
+            Sprintf(buf, "%s", sc_->selected().c_str());
             GraphVector* gv = new GraphVector(buf);
             gv->color(color());
             gv->brush(brush());
@@ -2436,19 +2436,19 @@ void Graph::choose_sym() {
             flush();
             break;
         } else if (pd) {
-            add_var(sc_->selected()->string(), color(), brush(), 1, 2);
+            add_var(sc_->selected().c_str(), color(), brush(), 1, 2);
             break;
         } else {
-            CopyString s(*sc_->selected());
+            auto s = sc_->selected();
             // above required due to bug in mswindows version in which
             // sc_->selected seems volatile under some kinds of hoc
             // executions.
-            Sprintf(buf, "hoc_ac_ = %s\n", s.string());
+            Sprintf(buf, "hoc_ac_ = %s\n", s.c_str());
             if (oc.run(buf) == 0) {
-                add_var(s.string(), color(), brush(), 0, 2);
+                add_var(s.c_str(), color(), brush(), 0, 2);
                 break;
             }
-            hoc_warning(s.string(), "is not an expression.");
+            hoc_warning(s.c_str(), "is not an expression.");
         }
     }
     //	sc_->unref();
@@ -2467,12 +2467,12 @@ void Graph::family_label_chooser() {
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
         char buf[256];
-        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected()->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected().c_str());
         if (oc.run(buf) == 0) {
-            family(fsc_->selected()->string());
+            family(fsc_->selected().c_str());
             break;
         }
-        hoc_warning(sc_->selected()->string(), "is not an expression.");
+        hoc_warning(sc_->selected().c_str(), "is not an expression.");
     }
 }
 
@@ -3002,7 +3002,7 @@ GLabel::~GLabel() {
 }
 
 Glyph* GLabel::clone() const {
-    return new GLabel(text_.string(), color_, fixtype_, scale_, x_align_, y_align_);
+    return new GLabel(text_.c_str(), color_, fixtype_, scale_, x_align_, y_align_);
 }
 
 void GLabel::save(std::ostream& o, Coord x, Coord y) {
@@ -3014,7 +3014,7 @@ void GLabel::save(std::ostream& o, Coord x, Coord y) {
             "save_window_.label(%g, %g, \"%s\", %d, %g, %g, %g, %d)",
             x,
             y,
-            text_.string(),
+            text_.c_str(),
             fixtype_,
             scale_,
             x_align_,
@@ -3042,7 +3042,7 @@ void GLabel::align(float x, float y) {
 void GLabel::color(const Color* c) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
-    label_ = new Label(text_, kit.font(), c);
+    label_ = new Label(text_.c_str(), kit.font(), c);
     label_->ref();
     Resource::ref(c);
     Resource::unref(color_);
@@ -3056,7 +3056,7 @@ void GLabel::text(const char* t) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
     text_ = t;
-    label_ = new Label(text_, kit.font(), color_);
+    label_ = new Label(text_.c_str(), kit.font(), color_);
     label_->ref();
 }
 
@@ -3098,7 +3098,7 @@ void GLabel::draw(Canvas* c, const Allocation& a1) const {
     // printf("transformer %g %g %g %g %g %g\n", a00, a01, a10, a11, a20, a21);
     label_->draw(c, a2);
     c->pop_transform();
-    IfIdraw(text(c, text_.string(), t, NULL, color()));
+    IfIdraw(text(c, text_.c_str(), t, NULL, color()));
 }
 
 // DataVec------------------
@@ -3280,7 +3280,7 @@ GraphVector::~GraphVector() {
 }
 
 const char* GraphVector::name() const {
-    return name_.string();
+    return name_.c_str();
 }
 
 void GraphVector::save(std::ostream&) {}
