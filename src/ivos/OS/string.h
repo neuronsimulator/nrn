@@ -91,30 +91,6 @@ private:
     int length_;
 };
 
-class CopyString : public String {
-public:
-#ifdef _DELTA_EXTENSIONS
-#pragma __static_class
-#endif
-    CopyString();
-    CopyString(const char*);
-    CopyString(const char*, int length);
-    CopyString(const String&);
-    CopyString(const CopyString&);
-    virtual ~CopyString();
-
-    virtual String& operator =(const CopyString&);
-    virtual String& operator =(const String&);
-    virtual String& operator =(const char*);
-
-    virtual bool null_terminated() const;
-protected:
-    virtual void set_value(const char*);
-    virtual void set_value(const char*, int);
-private:
-    void strfree();
-};
-
 class NullTerminatedString : public String {
 public:
 #ifdef _DELTA_EXTENSIONS

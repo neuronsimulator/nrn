@@ -39,7 +39,7 @@ class MechanismStandard: public Resource {
     int name_cnt_;
     int offset_;
     int vartype_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Symbol** glosym_;
     void mschk(const char*);
