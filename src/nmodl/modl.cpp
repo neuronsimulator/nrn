@@ -30,13 +30,14 @@
 
 #include <CLI/CLI.hpp>
 
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #include "modl.h"
 
 #include <cstring>
 #include <string>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
@@ -58,7 +59,6 @@ int nmodl_text = 1;
 List* filetxtlist;
 
 extern int yyparse();
-extern int mkdir_p(const char*);
 
 extern int vectorize;
 extern int numlist;
@@ -97,8 +97,9 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    std::strncpy(finname, inputfile.c_str(), NRN_BUFSIZE);
-    openfiles(inputfile.c_str(), output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
+    std::strcpy(finname, inputfile.c_str());
+    openfiles(inputfile.c_str(),
+              output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
@@ -242,7 +243,9 @@ static void openfiles(const char* given_filename, const char* output_dir) {
         }
     }
     if (output_dir) {
-        if (mkdir_p(output_dir) != 0) {
+        try {
+            fs::create_directories(output_dir);
+        } catch (...) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }

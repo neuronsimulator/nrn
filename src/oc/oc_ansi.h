@@ -431,7 +431,6 @@ int nrn_is_cable();
 void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
 Symbol* hoc_get_symbol(const char* var);
 
-extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);

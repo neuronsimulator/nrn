@@ -91,14 +91,15 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
-target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1 NRN_DYNAMIC_UNITS=1)
+target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
-# directory.
-# TODO: (see also coreneuron) fix adding a dependency on CLI11::CLI11 when CLI11 is a submodule. Right
-# now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
+# directory. TODO: (see also coreneuron) fix adding a dependency on CLI11::CLI11 when CLI11 is a
+# submodule. Right now this doesn't work because the CLI11 targets are not exported/installed but
+# coreneuron-core is.
 get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(nocmodl PRIVATE "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}" "${CLI11_HEADER_DIRECTORY}")
+target_include_directories(nocmodl PRIVATE "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}"
+                                           "${CLI11_HEADER_DIRECTORY}")
 if(NRN_NMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()

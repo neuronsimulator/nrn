@@ -11,9 +11,7 @@
 #include <nrniv_mf.h>
 #include <nrnmpi.h>
 #include <mymath.h>
-#if defined(HAVE_STDINT_H)
 #include <stdint.h>
-#endif
 
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
 #include <utility>

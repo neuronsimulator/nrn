@@ -10,6 +10,7 @@
 #include "classreg.h"
 #include "oc2iv.h"
 #include "nrnisaac.h"
+#include "utils/enumerate.h"
 
 #include <vector>
 #include <ocnotify.h>
@@ -183,13 +184,11 @@ void RandomPlay::play() {
     *px_ = (*(r_->rand))();
 }
 void RandomPlay::list_remove() {
-    for (auto it = random_play_list_->begin(); it != random_play_list_->end(); ++it) {
-        if (*it == (RandomPlay*) this) {
-            // printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
-            random_play_list_->erase(it);
-            unref_deferred();
-            break;
-        }
+    if (auto it = std::find(random_play_list_->begin(), random_play_list_->end(), this);
+        it != random_play_list_->end()) {
+        // printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
+        random_play_list_->erase(it);
+        unref_deferred();
     }
 }
 void RandomPlay::update(Observable*) {

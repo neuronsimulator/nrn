@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #include "nrnmpi.h"
-#include "bbsconf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
