@@ -1040,16 +1040,13 @@ void ShapeScene::name(const char* s) {
 }
 
 void ShapeScene::save_phase2(std::ostream& o) {
-    char buf[256];
     if (!var_name_.empty()) {
         if (var_name_.back() == '.') {
-            Sprintf(buf, "%sappend(save_window_)", var_name_.c_str());
+            o << var_name_ << "append(save_window_)" << std::endl;
         } else {
-            Sprintf(buf, "%s = save_window_", var_name_.c_str());
+            o << var_name_ << " = save_window_" << std::endl;
         }
-        o << buf << std::endl;
-        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_.c_str());
-        o << buf << std::endl;
+        o << "save_window_.save_name(\"" << var_name_ << "\")" << std::endl;
     }
     Graph::save_phase2(o);
 }
