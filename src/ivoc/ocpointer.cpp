@@ -118,8 +118,7 @@ void OcPointer_reg() {
 }
 
 StmtInfo::StmtInfo(const char* s)
-: stmt_(s)
-{
+    : stmt_(s) {
     parse();
 }
 
