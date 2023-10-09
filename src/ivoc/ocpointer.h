@@ -24,7 +24,7 @@ class StmtInfo {
     virtual ~StmtInfo();
     void play_one(double);
     void parse();
-    CopyString* stmt_;
+    std::string stmt_{};
     Symlist* symlist_;
     Symbol* symstmt_;
 };
