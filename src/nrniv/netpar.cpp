@@ -242,10 +242,7 @@ void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt) {
 }
 
 
-
-
-
-void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt)           {
+void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     int seq;
     if (nrn_use_selfqueue_) {  // first handle pending flag=1 self events
         nrn_pending_selfqueue(tt, nt);
