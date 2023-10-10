@@ -2223,8 +2223,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    // Bug that ix is not passed as the last argument?
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, 0 /* idx */);
+    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
@@ -2244,7 +2243,6 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                        neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
                        0);
     } else {
-        assert(ix == 0);  // d += ix;
         if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
@@ -2601,11 +2599,11 @@ void remake_pmech_types() {
 void nrnpy_reg_mech(int type) {
     int i;
     char* s;
-    Memb_func* mf = memb_func + type;
+    Memb_func& mf = memb_func[type];
     if (!nrnmodule_) {
         return;
     }
-    if (mf->is_point) {
+    if (mf.is_point) {
         if (nrn_is_artificial_[type] == 0) {
             Symlist* sl = nrn_pnt_template_[type]->symtable;
             Symbol* s = hoc_table_lookup("get_segment", sl);
@@ -2617,7 +2615,7 @@ void nrnpy_reg_mech(int type) {
         }
         return;
     }
-    s = mf->sym->name;
+    s = mf.sym->name;
     // printf("nrnpy_reg_mech %s %d\n", s, type);
     if (PyDict_GetItemString(pmech_types, s)) {
         hoc_execerror(s, "mechanism already exists");
@@ -2625,8 +2623,8 @@ void nrnpy_reg_mech(int type) {
     Py_INCREF(pmech_generic_type);
     PyModule_AddObject(nrnmodule_, s, (PyObject*) pmech_generic_type);
     PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
-    for (i = 0; i < mf->sym->s_varn; ++i) {
-        Symbol* sym = mf->sym->u.ppsym[i];
+    for (i = 0; i < mf.sym->s_varn; ++i) {
+        Symbol* sym = mf.sym->u.ppsym[i];
         rangevars_add(sym);
     }
 }

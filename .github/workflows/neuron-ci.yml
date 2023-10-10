@@ -1,12 +1,13 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
+  merge_group:
   push:
-    branches: 
+    branches:
       # If nothing else, this is important for the ccache logic below...
       - master
       - release/**
@@ -27,14 +28,14 @@ jobs:
 
     name: ${{ matrix.os }} - ${{ matrix.config.build_mode }} (${{ matrix.config.cmake_option }}${{ matrix.config.config_options }}${{ matrix.config.matrix_eval }}${{ matrix.config.sanitizer }})
 
-    timeout-minutes: 45
+    timeout-minutes: 75
 
     env:
       INSTALL_DIR: install
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.15
+      DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
@@ -55,27 +56,34 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              # TODO: -DNMODL_SANITIZERS=address,leak
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # Cannot use a non-instrumented OpenMP with TSan, and we don't
+              # have a TSan-instrumented OpenMP runtime available.
+              # TODO: debug RX3D + TSan
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
+                -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
+              sanitizer: thread
           - os: macOS-12
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
       fail-fast: false
 
@@ -153,7 +161,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py cython numpy
+          python3 -m pip install mpi4py "cython<3" numpy
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
@@ -162,7 +170,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -188,7 +196,7 @@ jobs:
           repository: actions/cache
           ref: v3
           path: tmp/actions/cache
-          
+
       - name: Make actions/cache@v3 run even on failure
         run: |
           sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
@@ -252,10 +260,18 @@ jobs:
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
                 if [ "$RUNNER_OS" == "Linux" ]; then
-                  CC=$(command -v clang-14)
-                  CXX=$(command -v clang++-14)
-                  symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
-                  cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                  if [[ "${{matrix.config.sanitizer}}" == "thread" ]]; then
+                    # GitHub/ubuntu-22.04 + clang-14 seems to have problems with TSan.
+                    # Vanilla 22.04 + clang-16 from apt.llvm.org seemed to work.
+                    # Use gcc-12 instead, as GitHub/ubuntu-22.04 already has it.
+                    CC=$(command -v gcc-12)
+                    CXX=$(command -v g++-12)
+                  else
+                    CC=$(command -v clang-14)
+                    CXX=$(command -v clang++-14)
+                    symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                    cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
+                  fi
                 fi
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
                              -DCMAKE_C_FLAGS="-O1 -g" \

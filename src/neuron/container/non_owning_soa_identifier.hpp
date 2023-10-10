@@ -13,6 +13,7 @@ namespace neuron::container {
 struct field_index {
     int field{}, array_index{};
 };
+
 inline constexpr std::size_t invalid_row = std::numeric_limits<std::size_t>::max();
 
 /**
@@ -26,6 +27,19 @@ struct non_owning_identifier_without_container {
      * @brief Create a null identifier.
      */
     non_owning_identifier_without_container() = default;
+
+    non_owning_identifier_without_container(const non_owning_identifier_without_container& other) =
+        default;
+    non_owning_identifier_without_container(non_owning_identifier_without_container&& other) =
+        default;
+
+    non_owning_identifier_without_container& operator=(
+        const non_owning_identifier_without_container&) = default;
+    non_owning_identifier_without_container& operator=(non_owning_identifier_without_container&&) =
+        default;
+
+    ~non_owning_identifier_without_container() = default;
+
 
     /**
      * @brief Does the identifier refer to a valid entry?
@@ -69,13 +83,6 @@ struct non_owning_identifier_without_container {
         return !m_ptr;
     }
 
-    /**
-     * @brief Get the underlying pointer value.
-     */
-    [[nodiscard]] std::size_t* get_raw_pointer() const {
-        return m_ptr;
-    }
-
     friend std::ostream& operator<<(std::ostream& os,
                                     non_owning_identifier_without_container const& id) {
         if (!id.m_ptr) {
@@ -112,21 +119,24 @@ struct non_owning_identifier_without_container {
     template <typename, typename...>
     friend struct soa;
     friend struct std::hash<non_owning_identifier_without_container>;
-    non_owning_identifier_without_container(std::size_t* ptr)
-        : m_ptr{ptr} {}
+    explicit non_owning_identifier_without_container(std::shared_ptr<std::size_t> ptr)
+        : m_ptr{std::move(ptr)} {}
     void set_current_row(std::size_t row) {
         assert(m_ptr);
         *m_ptr = row;
     }
 
+    explicit non_owning_identifier_without_container(size_t row)
+        : m_ptr(std::make_shared<size_t>(row)) {}
+
   private:
-    std::size_t* m_ptr{};
+    std::shared_ptr<std::size_t> m_ptr{};
 };
 }  // namespace neuron::container
 template <>
 struct std::hash<neuron::container::non_owning_identifier_without_container> {
     std::size_t operator()(
         neuron::container::non_owning_identifier_without_container const& h) noexcept {
-        return reinterpret_cast<std::size_t>(h.m_ptr);
+        return reinterpret_cast<std::size_t>(h.m_ptr.get());
     }
 };

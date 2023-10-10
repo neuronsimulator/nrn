@@ -1,12 +1,21 @@
 name: Windows Installer
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
+  merge_group:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release version (tag name)'
+        default: ''
+        required: true
+        type: string
   push:
-    branches: 
+    branches:
+      - master
       - release/**
   pull_request:
     branches:
@@ -28,7 +37,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        ref: ${{ inputs.tag }}
 
     - name: Retrieve rxd test data
       run: |
@@ -46,12 +55,12 @@ jobs:
         .\nrn\ci\win_download_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-       
+
     - name: Install Dependencies
       run: .\nrn\ci\win_install_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-      
+
     - name: Build and Create Installer
       run: |
         rm.exe C:\WINDOWS\system32\bash.EXE
@@ -84,3 +93,11 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
+
+    - name: Publish Release Installer
+      working-directory: ${{runner.workspace}}\nrn
+      if: inputs.tag != ''
+      run: |
+        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

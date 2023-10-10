@@ -64,8 +64,8 @@ struct Section {
     short npt3d{};               // number of 3-d points
     short pt3d_bsize{};          // amount of allocated space for 3-d points
     Pt3d* pt3d{};                // list of 3d points with diameter
-    Pt3d* logical_connection{};  // nil for legacy, otherwise specifies logical connection position
-                                 // (for translation)
+    Pt3d* logical_connection{};  // nullptr for legacy, otherwise specifies logical connection
+                                 // position (for translation)
 #endif
     Prop* prop{};  // eg. length, etc.
 };
@@ -106,6 +106,7 @@ struct Node {
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
     neuron::container::Node::owning_handle _node_handle{neuron::model().node_data()};
+
     [[nodiscard]] auto id() {
         return _node_handle.id();
     }
@@ -189,7 +190,7 @@ struct Node {
     Section* child;                 /* section connected to this node */
                                     /* 0 means no other section connected */
     Section* sec;                   /* section this node is in */
-                                    /* #if PARANEURON */
+                                    /* #if NRNMPI */
     struct Node* _classical_parent; /* needed for multisplit */
     struct NrnThread* _nt;
 /* #endif */
@@ -244,7 +245,7 @@ struct Prop {
                 for example one cable section property is a
                 symbol */
     long _alloc_seq; /* for cache efficiency */
-    Object* ob;      /* nil if normal property, otherwise the object containing the data*/
+    Object* ob;      /* nullptr if normal property, otherwise the object containing the data*/
 
     /** @brief Get the identifier of this instance.
      */

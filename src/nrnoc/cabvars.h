@@ -73,6 +73,6 @@ extern void morph_alloc(Prop*);
 #endif
 
 
-extern Memb_func* memb_func;
+extern std::vector<Memb_func> memb_func;
 
 #endif  // NRN_CABVARS_H

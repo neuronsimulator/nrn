@@ -210,8 +210,17 @@ In the example above, we used a simple tag type:
 to define a scalar field.
 There are several additional features in ``neuron::container::soa<...>`` that are not enabled in
 the example above.
-Additional features are generally enabled by using tag types that have additional member functions
-and variables; these will be summarised now.
+Additional features are generally enabled by using tag types that have
+additional member functions and variables. There are three advanced tag types:
+optional fields; array-valued fields, i.e. fields for which each row has
+multiple values; and tags which contain multiple, possibly array-valued,
+fields. All three are shown schematically in the figure below; and described in
+detail in the following subsections. In the figure fields with the same color
+must have the same scalar type. The zigzag line represents the memory layout
+for array-valued fields.
+
+.. image:: soa-advanced-tag-types.svg
+
 
 Runtime-variable field counts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -487,9 +496,8 @@ This is done using a token type:
 
     void whatever(my_soa_container& data) { // assume `data` was not already "frozen"
         owning_handle foo{data}; // adding an element is OK
-        // in reality you would probably apply a permutation here before marking data sorted
-        auto token = data.get_sorted_token(); // mark container "frozen" so it remains sorted
-        owning_handle disappointing_foo{data}; // this will throw
+        auto token = data.issue_frozen_token(); // mark container "frozen"
+        owning_handle disappointing_foo{data};  // this will throw
     } // `token`` is destroyed here; `data` ceases to be "frozen"
 
 The container maintains a count of how many tokens are controlling it and is "frozen" whenever that
@@ -752,6 +760,7 @@ a similar order to ``nrn_sort_node_data``.
     This can, presumably, be addressed with a more sophisticated sort order in this case.
     The relevant code can be identified by searching for cases where the ``CvMembList::ml`` vector
     has a size greater than one.
+    ModelDB entries 156120 and 267666 are some fairly arbitrary examples that follow this codepath.
 
 Transient cache
 ^^^^^^^^^^^^^^^
@@ -889,6 +898,8 @@ The current implementation allows an unnecessary amount of freedom, namely that 
     could be benchmarked + optimised using the knowledge that all the data handles will(?) be
     pointing into the same container.
 
+See also: `#2312 <https://github.com/neuronsimulator/nrn/issues/2312>`_.
+
 Eliminating ``pdata`` in a less invasive way
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The previous sub-section is the "ideal" way of removing the old ``pdata`` structure, which is
@@ -897,3 +908,49 @@ the other Mechanism data.
 
 An alternative stepping stone would be to retain ``generic_data_handle`` for the moment, but to
 transpose ``pdata`` from AoS to SoA.
+
+Reduce indirection when MOD files use ``diam``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MOD files can access the section diameter using the special ``diam`` variable name.
+Examples of this include ``share/examples/nrniv/nmodl/nadifl.mod`` and ModelDB entry 184054.
+This is handled explicitly in the codebase, and the underlying storage for ``diam`` values is
+managed via a special pseudomechanism called ``MORPHOLOGY``.
+When ``diam`` is used in the generated code, the values are indirectly looked up using
+``data_handle<double>`` during the simulation, which is rather slow and indirect.
+There are (at least?) two possibilities for how the situation can be improved:
+
+* Adopt the same caching technique that is used for ion variables, *i.e.* don't change the data
+  layout but do reduce the indirection down to loading a pointer and dereferencing it.
+  To pursue this, look at ``neuron::cache::indices_to_cache`` and modify the code generation to use
+  the cached pointer.
+* Revisit whether the ``MORPHOLOGY`` pseudomechanism is still needed, or whether the diameter could
+  be stored directly as a ``Node`` data field? See `#2312
+  <https://github.com/neuronsimulator/nrn/issues/2312>`_ for more information.
+
+Similarly, usage of ``area`` in generated code may be able to be simplified.
+Most likely, the best approach is to uniformly handle ``area`` and ``diam`` in the same way as Node
+voltages, both in terms of the underlying data structure and how they are accessed in the generated
+code.
+
+Analyze the bookkeeping overhead
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There a crude printf-based tool to access memory usage of the datastructures
+``print_local_memory_usage`` and ``print_memory_stats``.
+This provides some kind of breakdown between the actual data, the "active" bookkeeping costs
+(the currently-used index columns, as explained above), and also the "wasted" overhead of values
+that have their deletion deferred in order to avoid leaving any data handles "in the wild" from
+accidentally dereferencing freed pointers.
+
+The need to "leak" the stable identifiers could be avoided by replacing the
+"raw pointer to integer" idea with a reference counted integer, with bitpacking
+and all.
+
+Alternatively, this "wasted" storage could, be recovered after a full traversal of all data
+structures that hold ``data_handle<T>`` or ``generic_data_handle`` that collapses handles that are
+in previously-valid-but-not-any-more (once valid?) state into "null" (never valid?) state.
+
+Reporting and monitoring the scale of this "waste" is much easier than recovering it, which should
+only be done **if** this is **shown** to be a real problem.
+
+Measurements at BBP have shown that under certain conditions the amount of
+"leaked" stable identifiers adds up.

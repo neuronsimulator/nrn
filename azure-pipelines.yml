@@ -132,7 +132,7 @@ stages:
         name: readlineSF
         displayName: 'Download readline secure file'
         inputs:
-          secureFile: 'readline7.0.tar.gz'
+          secureFile: 'readline7.0-ncurses6.4.tar.gz'
 
       # 10.14 is required for full C++17 support according to
       # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
@@ -149,42 +149,6 @@ stages:
 
       - template: ci/azure-wheel-test-upload.yml
 
-
-    # Jobs to build NEURON installer natively
-    - job: 'WindowsInstaller'
-      timeoutInMinutes: 45
-      pool:
-        vmImage: windows-latest
-      variables:
-        MSYS2_ROOT: C:\msys64
-
-      steps:
-      - checkout: self
-        submodules: 'true'
-        clean: 'true'
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_download_deps.cmd
-        displayName: "Download Dependencies"
-        condition: succeeded()
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_install_deps.cmd
-        displayName: "Install Dependencies"
-        condition: succeeded()
-
-      # WSL is enabled by default in the image, with no installed linux distribution.
-      # WSL creates an unusable `bash.EXE` that can be resolved first from the environment.
-      # This is why we remove that file.
-      - script: |
-          rm.exe "C:/WINDOWS/system32/bash.EXE"
-          %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
-        displayName: "Build and Create Installer"
-        condition: succeeded()
-
-      - template: ci/azure-win-installer-upload.yml
 
   - stage: Final
     jobs:

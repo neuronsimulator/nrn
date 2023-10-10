@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
@@ -36,7 +35,7 @@ double nrnmpi_rtcomp_time_;
 extern double nrn_multisend_receive_time(int);
 extern void nrn_prcellstate(int gid, const char* suffix);
 double nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
 double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
@@ -471,7 +470,7 @@ static double vtransfer_time(void* v) {
     int mode = ifarg(1) ? int(chkarg(1, 0., 2.)) : 0;
     if (mode == 2) {
         return nrnmpi_rtcomp_time_;
-#if PARANEURON
+#if NRNMPI
     } else if (mode == 1) {
         return nrnmpi_splitcell_wait_;
     } else {
@@ -512,7 +511,7 @@ static double wait_time(void* v) {
 
 static double step_time(void* v) {
     double w = ((OcBBS*) v)->integ_time();
-#if PARANEURON
+#if NRNMPI
     w -= nrnmpi_transfer_wait_ + nrnmpi_splitcell_wait_;
 #endif
     return w;
@@ -523,7 +522,7 @@ static double step_wait(void* v) {
         nrnmpi_step_wait_ = chkarg(1, -1.0, 0.0);
     }
     double w = nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
     // sadly, no calculation of transfer and multisplit barrier times.
 #endif
     if (w < 0.) {
@@ -700,7 +699,7 @@ static double spike_stat(void* v) {
 
 static double maxhist(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    IvocVect* vec = ifarg(1) ? vector_arg(1) : nil;
+    IvocVect* vec = ifarg(1) ? vector_arg(1) : nullptr;
     if (vec) {
         hoc_obj_ref(vec->obj_);
     }
@@ -997,6 +996,20 @@ static double nrncorewrite_argvec(void*) {
     return double(nrncore_write());
 }
 
+static double print_memory_stats(void*) {
+    neuron::container::MemoryUsage local_memory_usage = neuron::container::local_memory_usage();
+
+#if NRNMPI
+    neuron::container::MemoryStats memory_stats;
+    nrnmpi_memory_stats(memory_stats, local_memory_usage);
+    nrnmpi_print_memory_stats(memory_stats);
+#else
+    print_memory_usage(local_memory_usage);
+#endif
+
+    return 1.0;
+}
+
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
@@ -1107,6 +1120,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"nrncore_write", nrncorewrite_argappend},
                                 {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
                                 {"nrncore_run", nrncorerun},
+                                {"print_memory_stats", print_memory_stats},
 
                                 {0, 0}};
 
@@ -1143,7 +1157,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nil, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
 }
 
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
@@ -1167,7 +1181,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             nrnmpi_int_broadcast(&size, 1, 0);
             nrnmpi_char_broadcast(s, size, 0);
         }
-        hoc_obj_run(s, nil);
+        hoc_obj_run(s, nullptr);
         delete[] s;
         break;
     default: {
@@ -1175,7 +1189,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         int i, j;
         size_t npickle;
         Symbol* fname = 0;
-        Object* ob = nil;
+        Object* ob = nullptr;
         char* sarg[20];    // upto 20 argument may be strings
         int ns = 0;        // number of args that are strings
         int narg = 0;      // total number of args
@@ -1197,7 +1211,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 if (ob->index == i) {
                     break;
                 }
-                ob = nil;
+                ob = nullptr;
             }
             if (!ob) {
                 fprintf(stderr, "%s[%d] is not an Object in this process\n", s, i);

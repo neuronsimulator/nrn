@@ -56,7 +56,7 @@ def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, reject_
     if d <= r_inner: return True
     if d >= r_outer and reject_if_outside:
         if print_reject_reason:
-            print 'would normally reject because at (%g, %g, %g): d = %g, r_outer = %g     (dx = %g)' % (xbar, ybar, zbar, d, r_outer, dx)
+            print('would normally reject because at (%g, %g, %g): d = %g, r_outer = %g     (dx = %g)' % (xbar, ybar, zbar, d, r_outer, dx))
         else:
             return False
 
@@ -70,7 +70,7 @@ def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, reject_
             for z in zs[k : k + 2]:
                 d = objdist(x, y, z)
                 if print_reject_reason:
-                    print 'at (%g, %g, %g): d = %g' % (x, y, z, d)
+                    print('at (%g, %g, %g): d = %g' % (x, y, z, d))
                 if d <= 0:
                     has_neg = True
                 if d >= 0:
@@ -103,13 +103,13 @@ def process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t,
     cdef double value0, value1, value2, value3, value4, value5, value6, value7
     value0, value1, value2, value3, value4, value5, value6, value7 = [min([objdist(*p) for objdist in objects]) for p in position]
     if print_values:
-        print '(x, y, z) = (%7f, %7f, %7f); (x1, y1, z1) = (%7f, %7f, %7f)' % (x, y, z, x1, y1, z1)
-        print '%7f %7f %7f %7f %7f %7f %7f %7f' % (value0, value1, value2, value3, value4, value5, value6, value7)
-        print 'last obj distance to position[4]: ', objects[len(objects)-1](*position[4])
-        print 'distance to position[4] with everything but the last object:', min([objdist(*position[4]) for objdist in objects[:len(objects)-1]])
-        print 'distance to position[4] with everything:', min([objdist(*position[4]) for objdist in objects[:]])
-        print 'last object:', objects[len(objects) - 1]
-        print 'position[4]:', position[4]
+        print('(x, y, z) = (%7f, %7f, %7f); (x1, y1, z1) = (%7f, %7f, %7f)' % (x, y, z, x1, y1, z1))
+        print('%7f %7f %7f %7f %7f %7f %7f %7f' % (value0, value1, value2, value3, value4, value5, value6, value7))
+        print('last obj distance to position[4]: ', objects[len(objects)-1](*position[4]))
+        print('distance to position[4] with everything but the last object:', min([objdist(*position[4]) for objdist in objects[:len(objects)-1]]))
+        print('distance to position[4] with everything:', min([objdist(*position[4]) for objdist in objects[:]]))
+        print('last object:', objects[len(objects) - 1])
+        print('position[4]:', position[4])
 
     new_index = start + 9 * find_triangles(value0, value1, value2, value3, value4, value5, value6, value7, x, x1, y, y1, z, z1, &tridata[start])
     if store_areas:
@@ -137,7 +137,7 @@ def volume_inside_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.fl
     cdef double x, y, z
     cdef int i1, j1, k1
     if not objects:
-        print 'grr... it thinks there is surface when no nearby objects.'
+        print('grr... it thinks there is surface when no nearby objects.')
     for i, x in zip([1, 2], [x0, x1]):
         for j, y in zip([1, 2], [y0, y1]):
             for k, z in zip([1, 2], [z0, z1]):
@@ -388,18 +388,18 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
                     # this an the two-above commented-out lines are for debugging to detect discrepancies between the
                     # chunked partitioning and using all the nodes
                     if starti - last_starti != len(tri_data) or any(tri_data != triangles[last_starti : starti]):
-                        print 'discrepancy in grid (%d, %d, %d) -- chunk_size = %d' % (i, j, k, chunk_size)
+                        print('discrepancy in grid (%d, %d, %d) -- chunk_size = %d' % (i, j, k, chunk_size))
                         # identify which object(s)... grr...
                         """
                         for m in xrange(len(objects)):
                             tri_data2 = list(triangles[last_starti : starti])
                             starti = process_cell(i, j, k, objs + objects_distances[: m], xs, ys, zs, triangles, last_starti) #was objs
                             if starti - last_starti != len(tri_data2) or any(tri_data2 != triangles[last_starti : starti]):
-                                print '   missed object %d: %r' % (m, objects[m - 1])
+                                print()'   missed object %d: %r' % (m, objects[m - 1]))
                             if starti - last_starti == len(tri_data) and all(tri_data == triangles[last_starti : starti]):
                                 break
                         else:
-                            print '    *** should never get here ***'"""
+                            print('    *** should never get here ***'""")
                     '''
 
     # some regions of the surface may yet be missing
@@ -468,10 +468,10 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
             if local_objs:
                 for m, objdist in enumerate(local_objs):
                     if contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, False):
-                        print 'item %d in grid(%d, %d, %d) contains previously undetected surface' % (m, i, j, k)
+                        print('item %d in grid(%d, %d, %d) contains previously undetected surface' % (m, i, j, k))
                         for n, obj in enumerate(objects):
                             if obj.distance == objdist:
-                                print '    (i.e. global item %d: %r)' % (n, obj)
+                                print('    (i.e. global item %d: %r)' % (n, obj))
                                 break
                 #starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti) # was objects_distances
                 starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti, store_areas=store_areas, areas=areas)
@@ -500,7 +500,7 @@ cpdef double _tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles, int lo, i
         local_area = llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
         doublearea += local_area
         if numpy.isnan(local_area):
-            print 'tri_area exception: ', ', '.join([str(v) for v in triangles[i : i + 9]])
+            print('tri_area exception: ', ', '.join([str(v) for v in triangles[i : i + 9]]))
     return doublearea * 0.5
 
 @cython.boundscheck(False)
@@ -512,8 +512,8 @@ cpdef double tri_volume(numpy.ndarray[numpy.float_t, ndim=1] triangles):
         local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])
         sixtimesvolume += local_vol
         if numpy.isnan(local_vol):
-            print 'tri_volume exception:',
+            print('tri_volume exception:',)
             for j in range(i, i + 9):
-                print triangles[j],
-                print
+                print(triangles[j]),
+                
     return abs(sixtimesvolume / 6.)

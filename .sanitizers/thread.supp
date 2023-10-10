@@ -1,0 +1,4 @@
+deadlock:mca_btl_tcp_add_procs
+deadlock:mca_btl_tcp_proc_remove
+race:pmix_ptl_base_start_listening
+race:pmix_ptl_base_stop_listening

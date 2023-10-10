@@ -174,20 +174,6 @@ macro(nrn_create_file_list list_name prefix)
 endmacro()
 
 # =============================================================================
-# Copy file from source to destination in noclobber mode (i.e. no overwrite)
-# =============================================================================
-macro(nrn_copy_file_without_overwrite source destination)
-  execute_process(COMMAND cp -n ${source} ${destination})
-endmacro()
-
-# =============================================================================
-# Copy file from source to destination only if different
-# =============================================================================
-macro(nrn_copy_file_if_different source destination)
-  configure_file(${source} ${destination} COPYONLY)
-endmacro()
-
-# =============================================================================
 # Set string with double quotes
 # =============================================================================
 macro(nrn_set_string variable value)
@@ -225,11 +211,11 @@ macro(nocmodl_mod_to_cpp modfile_basename)
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/nocmodl
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
       ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     COMMAND sed "'s/_reg()/_reg_()/'" ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
+    COMMAND ${CMAKE_COMMAND} -E rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
     DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

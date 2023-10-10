@@ -1,6 +1,8 @@
 #ifndef dismiswin_h
 #define dismiswin_h
 
+#include <string>
+
 #include <InterViews/window.h>
 
 #include <InterViews/action.h>
@@ -103,7 +105,7 @@ class PrintableWindow: public DismissableWindow, public Observable {
     virtual void default_geometry();
 
   private:
-    CopyString type_;
+    std::string type_;
     static OcGlyphContainer* intercept_;
     bool mappable_;
     bool xplace_;

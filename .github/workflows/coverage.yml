@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  merge_group:
   push:
     branches:
       - master
@@ -30,7 +31,7 @@ jobs:
 
     name: Code Coverage
 
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       DISPLAY: ${{ ':0' }}
@@ -56,7 +57,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py cython numpy
+          python3 -m pip install mpi4py "cython<3" numpy
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
@@ -65,7 +66,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Setup Xvfb
         run: |
@@ -153,7 +154,7 @@ jobs:
           # By default we get a modern version of CMake that understands --parallel.
           cmake --build . --parallel 2
           cmake --build . --target cover_baseline
-          xvfb-run ctest -VV --output-on-failure;
+          xvfb-run ctest --rerun-failed --output-on-failure;
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"

@@ -94,7 +94,6 @@ set(OC_FILE_LIST
     code2.cpp
     debug.cpp
     fileio.cpp
-    fmenu.cpp
     ftime.cpp
     functabl.cpp
     getsym.cpp
@@ -232,6 +231,7 @@ set(NRNIV_FILE_LIST
     linmod.cpp
     linmod1.cpp
     matrixmap.cpp
+    memory_usage.cpp
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp
@@ -388,21 +388,6 @@ set(MESCH_FILES_LIST
 
 set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
-# sparse13 matrix sources
-set(SPARSE13_FILES_LIST
-    spalloc.cpp
-    spbuild.cpp
-    spfactor.cpp
-    spoutput.cpp
-    spsolve.cpp
-    sputils.cpp
-    cspalloc.cpp
-    cspbuild.cpp
-    cspfactor.cpp
-    cspoutput.cpp
-    cspsolve.cpp
-    csputils.cpp)
-
 # scopmath sources
 set(SCOPMATH_FILES_LIST
     abort.cpp
@@ -442,25 +427,7 @@ set(SCOPMATH_FILES_LIST
     threshol.cpp
     tridiag.cpp)
 
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
-
-set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
-    HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
-    RNG.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -565,12 +532,9 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/s
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
-                     ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})

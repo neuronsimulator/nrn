@@ -8,8 +8,8 @@ using HocEventPool = MutexPool<HocEvent>;
 HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
-    stmt_ = nil;
-    ppobj_ = nil;
+    stmt_ = nullptr;
+    ppobj_ = nullptr;
     reinit_ = 0;
 }
 
@@ -32,7 +32,7 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
         nrn_hoc_unlock();
     }
     HocEvent* he = hepool_->alloc();
-    he->stmt_ = nil;
+    he->stmt_ = nullptr;
     he->ppobj_ = ppobj;
     he->reinit_ = reinit;
     if (pyact) {
@@ -46,7 +46,7 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
 void HocEvent::hefree() {
     if (stmt_) {
         delete stmt_;
-        stmt_ = nil;
+        stmt_ = nullptr;
     }
     hepool_->hpfree(this);
 }
@@ -54,7 +54,7 @@ void HocEvent::hefree() {
 void HocEvent::clear() {
     if (stmt_) {
         delete stmt_;
-        stmt_ = nil;
+        stmt_ = nullptr;
     }
 }
 
@@ -135,7 +135,7 @@ DiscreteEvent* HocEvent::savestate_save() {
 
 void HocEvent::savestate_restore(double tt, NetCvode* nc) {
     //	pr("HocEvent::savestate_restore", tt, nc);
-    HocEvent* he = alloc(nil, nil, 0);
+    HocEvent* he = alloc(nullptr, nullptr, 0);
     NrnThread* nt = nrn_threads;
     if (stmt_) {
         if (stmt_->pyobject()) {
@@ -156,7 +156,7 @@ DiscreteEvent* HocEvent::savestate_read(FILE* f) {
     HocEvent* he = new HocEvent();
     int have_stmt, have_obj, index;
     char stmt[256], objname[100], buf[200];
-    Object* obj = nil;
+    Object* obj = nullptr;
     //	nrn_assert(fscanf(f, "%d %d\n", &have_stmt, &have_obj) == 2);
     nrn_assert(fgets(buf, 200, f));
     nrn_assert(sscanf(buf, "%d %d\n", &have_stmt, &have_obj) == 2);

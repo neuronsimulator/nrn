@@ -112,7 +112,7 @@ class RangeVarPlot: public NoIVGraphVector {
     Section *begin_section_, *end_section_;
     float x_begin_, x_end_, origin_;
     SecPosList* sec_list_;
-    CopyString expr_;
+    std::string expr_;
     int shape_changed_;
     int struc_changed_;
     double d2root_;  // distance to root of closest point to root
@@ -441,7 +441,7 @@ void RangeVarPlot::request(Requisition& req) const {
 void RangeVarPlot::save(std::ostream& o) {
     char buf[256];
     o << "objectvar rvp_" << std::endl;
-    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
+    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.c_str());
     o << buf << std::endl;
     Sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
     o << buf << std::endl;
@@ -515,12 +515,12 @@ void RangeVarPlot::fill_pointers() {
         if (rexp_) {
             rexp_->fill();
         } else {
-            sscanf(expr_.string(), "%[^[]", buf);
+            sscanf(expr_.c_str(), "%[^[]", buf);
             sym = hoc_lookup(buf);
             if (!sym) {
                 return;
             }
-            Sprintf(buf, "%s(hoc_ac_)", expr_.string());
+            Sprintf(buf, "%s(hoc_ac_)", expr_.c_str());
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;

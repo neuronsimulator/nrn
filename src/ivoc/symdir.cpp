@@ -5,6 +5,7 @@
 #include <OS/string.h>
 #include <stdio.h>
 #include "ocobserv.h"
+#include "utils/enumerate.h"
 
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
@@ -19,7 +20,6 @@ extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
 #include "symdir.h"
 
 #include "nrnsymdiritem.h"
-implementPtrList(SymbolList, SymbolItem);
 
 const char* concat(const char* s1, const char* s2) {
     static char* tmp = 0;
@@ -43,8 +43,8 @@ class SymDirectoryImpl: public Observer {
     Object* obj_;
     cTemplate* t_;
 
-    SymbolList symbol_list_;
-    CopyString path_;
+    std::vector<SymbolItem*> symbol_lists_;
+    std::string path_;
 
     void load(int type);
     void load(int type, Symlist*);
@@ -61,37 +61,20 @@ class SymDirectoryImpl: public Observer {
     void sort();
 };
 
-static int compare_entries(const void* k1, const void* k2) {
-    SymbolItem* e1 = *((SymbolItem**) k1);
-    SymbolItem* e2 = *((SymbolItem**) k2);
-    int i = strcmp(e1->name().string(), e2->name().string());
+static int compare_entries(const SymbolItem* e1, const SymbolItem* e2) {
+    int i = strcmp(e1->name().c_str(), e2->name().c_str());
     if (i == 0) {
-        if (e1->array_index() > e2->array_index()) {
-            i = 1;
-        } else {
-            i = -1;
-        }
+        return e1->array_index() > e2->array_index();
     }
-    return i;
+    return i > 0;
 };
 
 void SymDirectoryImpl::sort() {
-    long cnt, i;
-    cnt = symbol_list_.count();
-    SymbolItem** slist = new SymbolItem*[cnt];
-    for (i = 0; i < cnt; ++i) {
-        slist[i] = symbol_list_.item(i);
-    }
-    qsort(slist, cnt, sizeof(SymbolItem*), compare_entries);
-    symbol_list_.remove_all();
-    for (i = 0; i < cnt; ++i) {
-        symbol_list_.append(slist[i]);
-    }
-    delete[] slist;
+    std::sort(symbol_lists_.begin(), symbol_lists_.end(), compare_entries);
 }
 
 // SymDirectory
-SymDirectory::SymDirectory(const String& parent_path,
+SymDirectory::SymDirectory(const std::string& parent_path,
                            Object* parent_obj,
                            Symbol* sym,
                            int array_index,
@@ -111,7 +94,7 @@ SymDirectory::SymDirectory(const String& parent_path,
     if (sym->type == TEMPLATE) {
         suffix = '_';
     }
-    impl_->make_pathname(parent_path.string(),
+    impl_->make_pathname(parent_path.c_str(),
                          sym->name,
                          hoc_araystr(sym, array_index, obd),
                          suffix);
@@ -143,7 +126,7 @@ SymDirectory::SymDirectory(const String& parent_path,
         }
         break;
     default:
-        hoc_execerror("Don't know how to make a directory out of", path().string());
+        hoc_execerror("Don't know how to make a directory out of", path().c_str());
         break;
     }
     impl_->sort();
@@ -161,21 +144,21 @@ SymDirectory::SymDirectory(Object* ob) {
 }
 
 bool SymDirectory::is_pysec(int index) const {
-    SymbolItem* si = impl_->symbol_list_.item(index);
+    SymbolItem* si = impl_->symbol_lists_.at(index);
     return si->pysec_ ? true : false;
 }
 SymDirectory* SymDirectory::newsymdir(int index) {
-    SymbolItem* si = impl_->symbol_list_.item(index);
+    SymbolItem* si = impl_->symbol_lists_.at(index);
     SymDirectory* d = new SymDirectory();
     if (si->pysec_type_ == PYSECOBJ) {
-        nrn_symdir_load_pysec(d->impl_->symbol_list_, si->pysec_);
+        nrn_symdir_load_pysec(d->impl_->symbol_lists_, si->pysec_);
     } else {
         d->impl_->sec_ = (Section*) si->pysec_;
         section_ref(d->impl_->sec_);
         d->impl_->load_section();
     }
-    d->impl_->path_ = concat(path().string(), si->name().string());
-    d->impl_->path_ = concat(d->impl_->path_.string(), ".");
+    d->impl_->path_ = concat(path().c_str(), si->name().c_str());
+    d->impl_->path_ = concat(d->impl_->path_.c_str(), ".");
     d->impl_->sort();
     return d;
 }
@@ -201,11 +184,11 @@ SymDirectory::SymDirectory(int type) {
 }
 
 SymDirectory::~SymDirectory() {
-    long cnt = count();
-    for (long i = 0; i < cnt; ++i) {
-        delete impl_->symbol_list_.item(i);
+    for (auto& item: impl_->symbol_lists_) {
+        delete item;
     }
-    impl_->symbol_list_.remove_all();
+    impl_->symbol_lists_.clear();
+    impl_->symbol_lists_.shrink_to_fit();
     if (impl_->obj_) {
         ObjObservable::Detach(impl_->obj_, impl_);
     }
@@ -218,11 +201,11 @@ SymDirectory::~SymDirectory() {
     delete impl_;
 }
 void SymDirectoryImpl::disconnect(Observable*) {
-    long cnt = symbol_list_.count();
-    for (long i = 0; i < cnt; ++i) {
-        delete symbol_list_.item(i);
+    for (auto& item: symbol_lists_) {
+        delete item;
     }
-    symbol_list_.remove_all();
+    symbol_lists_.clear();
+    symbol_lists_.shrink_to_fit();
     obj_ = NULL;
 }
 
@@ -275,7 +258,7 @@ double* SymDirectory::variable(int index) {
         }
     else {
         char buf[256], *cp;
-        Sprintf(buf, "%s%s", path().string(), name(index).string());
+        Sprintf(buf, "%s%s", path().c_str(), name(index).c_str());
         if (whole_vector(index)) {  // rangevar case for [all]
             // replace [all] with [0]
             cp = strstr(buf, "[all]");
@@ -292,51 +275,50 @@ double* SymDirectory::variable(int index) {
 }
 
 int SymDirectory::whole_vector(int index) {
-    return impl_->symbol_list_.item(index)->whole_vector();
+    return impl_->symbol_lists_.at(index)->whole_vector();
 }
 
-const String& SymDirectory::path() const {
+const std::string& SymDirectory::path() const {
     return impl_->path_;
 }
 int SymDirectory::count() const {
-    return impl_->symbol_list_.count();
+    return impl_->symbol_lists_.size();
 }
-const String& SymDirectory::name(int index) const {
-    return impl_->symbol_list_.item(index)->name();
+const std::string& SymDirectory::name(int index) const {
+    return impl_->symbol_lists_.at(index)->name();
 }
 int SymDirectory::array_index(int i) const {
-    return impl_->symbol_list_.item(i)->array_index();
+    return impl_->symbol_lists_.at(i)->array_index();
 }
 
-int SymDirectory::index(const String& name) const {
-    long cnt = count();
-    for (long i = 0; i < cnt; ++i) {
-        if (name == impl_->symbol_list_.item(i)->name()) {
+int SymDirectory::index(const std::string& name) const {
+    for (const auto&& [i, symbol]: enumerate(impl_->symbol_lists_)) {
+        if (name == symbol->name()) {
             return i;
         }
     }
     return -1;
 }
-void SymDirectory::whole_name(int index, CopyString& s) const {
-    const String& s1 = impl_->path_;
-    const String& s2 = name(index);
-    s = concat(s1.string(), s2.string());
+void SymDirectory::whole_name(int index, std::string& s) const {
+    auto s1 = impl_->path_;
+    auto s2 = name(index);
+    s = s1 + s2;
 }
 bool SymDirectory::is_directory(int index) const {
-    return impl_->symbol_list_.item(index)->is_directory();
+    return impl_->symbol_lists_.at(index)->is_directory();
 }
-bool SymDirectory::match(const String&, const String&) {
+bool SymDirectory::match(const std::string&, const std::string&) {
     return true;
 }
 Symbol* SymDirectory::symbol(int index) const {
-    return impl_->symbol_list_.item(index)->symbol();
+    return impl_->symbol_lists_.at(index)->symbol();
 }
 Object* SymDirectory::object() const {
     return impl_->obj_;
 }
 
 Object* SymDirectory::obj(int index) {
-    return impl_->symbol_list_.item(index)->object();
+    return impl_->symbol_lists_.at(index)->object();
 }
 
 // SymbolItem
@@ -436,7 +418,7 @@ void SymDirectoryImpl::load(int type) {
         break;
     case PYSEC:
         path_ = "_pysec.";
-        nrn_symdir_load_pysec(symbol_list_, NULL);
+        nrn_symdir_load_pysec(symbol_lists_, NULL);
         break;
     default:
         load(type, hoc_symlist);
@@ -453,8 +435,7 @@ void SymDirectoryImpl::load(int type) {
 }
 
 void SymDirectoryImpl::load(int type, Symlist* sl) {
-    Symbol* sym;
-    for (sym = sl->first; sym; sym = sym->next) {
+    for (Symbol* sym = sl->first; sym; sym = sym->next) {
         if (type == -1) {
             switch (sym->type) {
             case SECTION:
@@ -492,9 +473,8 @@ void SymDirectoryImpl::load_aliases() {
     IvocAliases* a = (IvocAliases*) obj_->aliases;
     if (!a)
         return;
-    for (const auto& kv: a->symtab_) {
-        Symbol* s = kv.second;
-        append(s, NULL, obj_);
+    for (const auto& [_, s]: a->symtab_) {
+        append(s, nullptr, obj_);
     }
 }
 
@@ -515,7 +495,7 @@ void SymDirectoryImpl::load_section() {
     double x = nrn_arc_position(sec, sec->pnode[0]);
     Sprintf(xarg, "( %g )", x);
     Sprintf(buf, "v%s", xarg);
-    symbol_list_.append(new SymbolItem(buf));
+    symbol_lists_.push_back(new SymbolItem(buf));
     nrn_pushsec(sec);
     Node* nd = sec->pnode[i];
     for (Prop* p = nd->prop; p; p = p->next) {
@@ -536,15 +516,15 @@ void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
                     Sprintf(buf, "%s[all]%s", sym->name, xarg);
-                    symbol_list_.append(new SymbolItem(buf, n));
+                    symbol_lists_.push_back(new SymbolItem(buf, n));
                 }
                 Sprintf(buf, "%s[%d]%s", sym->name, 0, xarg);
-                symbol_list_.append(new SymbolItem(buf));
+                symbol_lists_.push_back(new SymbolItem(buf));
                 Sprintf(buf, "%s[%d]%s", sym->name, n - 1, xarg);
-                symbol_list_.append(new SymbolItem(buf));
+                symbol_lists_.push_back(new SymbolItem(buf));
             } else {
                 Sprintf(buf, "%s%s", sym->name, xarg);
-                symbol_list_.append(new SymbolItem(buf));
+                symbol_lists_.push_back(new SymbolItem(buf));
             }
         }
     }
@@ -562,30 +542,29 @@ void SymDirectoryImpl::append(Symbol* sym, Objectdata* od, Object* o) {
             }
         }
         if (n > 5 && sym->type == VAR) {
-            symbol_list_.append(new SymbolItem(sym, od, 0, n));
+            symbol_lists_.push_back(new SymbolItem(sym, od, 0, n));
         }
         for (i = 0; i < n; ++i) {
-            symbol_list_.append(new SymbolItem(sym, od, i));
+            symbol_lists_.push_back(new SymbolItem(sym, od, i));
             if (i > 5) {
                 break;
             }
         }
         if (i < n - 1) {
-            symbol_list_.append(new SymbolItem(sym, od, n - 1));
+            symbol_lists_.push_back(new SymbolItem(sym, od, n - 1));
         }
     } else {
-        symbol_list_.append(new SymbolItem(sym, od, 0));
+        symbol_lists_.push_back(new SymbolItem(sym, od, 0));
     }
 }
 
 void SymDirectoryImpl::append(Object* ob) {
-    symbol_list_.append(new SymbolItem(ob));
+    symbol_lists_.push_back(new SymbolItem(ob));
 }
 void SymDirectoryImpl::un_append(Object* ob) {
-    long i, cnt = symbol_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        if (symbol_list_.item(i)->object() == ob) {
-            symbol_list_.item(i)->no_object();
+    for (auto& symbol: symbol_lists_) {
+        if (symbol->object() == ob) {
+            symbol->no_object();
             break;
         }
     }

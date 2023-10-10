@@ -5,23 +5,5 @@ int nrnmpi_numprocs_world = 1;
 int nrnmpi_myid_world = 0;
 int nrnmpi_numprocs_bbs = 1;
 int nrnmpi_myid_bbs = 0;
-// increment from within void nrnmpi_subworld_size(int n)
-int nrnmpi_subworld_change_cnt = 0;
-int nrnmpi_subworld_id = -1;
-int nrnmpi_numprocs_subworld = 1;
 
-int nrnmpi_nout_;
-int* nrnmpi_nin_;
-int nrnmpi_i_capacity_;
-NRNMPI_Spike* nrnmpi_spikeout_;
-NRNMPI_Spike* nrnmpi_spikein_;
-
-int nrnmpi_localgid_size_;
-int nrnmpi_ag_send_size_;
-int nrnmpi_send_nspike_;
-int nrnmpi_ovfl_capacity_;
-int nrnmpi_ovfl_;
-unsigned char* nrnmpi_spikeout_fixed_;
-unsigned char* nrnmpi_spikein_fixed_;
-unsigned char* nrnmpi_spikein_fixed_ovfl_;
-int nrn_cannot_use_threads_and_mpi;
+int nrn_cannot_use_threads_and_mpi = 0;

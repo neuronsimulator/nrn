@@ -1,6 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <../../nrnconf.h>
-#endif
 /*
  *  MATRIX UTILITY MODULE
  *
@@ -69,6 +66,7 @@ static char RCSid[] = "@(#)$Header$";
 #include "spconfig.h"
 #include "spdefs.h"
 #include "spmatrix.h"
+#include <cfloat>
 
 extern void spcLinkRows(MatrixPtr);
 extern void spcRowExchange(MatrixPtr, int row1, int row2);
@@ -1985,8 +1983,8 @@ RealNumber spRoundoff(char* eMatrix, RealNumber Rho)
     Reid = 3.01 * Matrix->Size;
 
     if (Gear < Reid)
-        return (MACHINE_RESOLUTION * Rho * Gear);
+        return (DBL_EPSILON * Rho * Gear);
     else
-        return (MACHINE_RESOLUTION * Rho * Reid);
+        return (DBL_EPSILON * Rho * Reid);
 }
 #endif
