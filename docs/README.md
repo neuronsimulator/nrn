@@ -42,7 +42,7 @@ This will install all dependencies needed to build the documentation locally, in
 
 #### Confguring the build
 
-With all dependencies installed, configure project with CMake as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
+With all dependencies installed, configure project with CMake (>= v3.17) as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
 
 e.g. in your CMake build folder:
 
