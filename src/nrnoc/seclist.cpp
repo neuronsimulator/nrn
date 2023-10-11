@@ -244,14 +244,14 @@ return 1.;
 }
 
 static const Member_func members{{"append", append},
-                                {"remove", seclist_remove},
-                                {"wholetree", wholetree},
-                                {"subtree", subtree},
-                                {"children", children},
-                                {"unique", unique},
-                                {"printnames", printnames},
-                                {"contains", contains},
-                                {"allroots", allroots}};
+                                 {"remove", seclist_remove},
+                                 {"wholetree", wholetree},
+                                 {"subtree", subtree},
+                                 {"children", children},
+                                 {"unique", unique},
+                                 {"printnames", printnames},
+                                 {"contains", contains},
+                                 {"allroots", allroots}};
 
 
 void SectionList_reg(void) {

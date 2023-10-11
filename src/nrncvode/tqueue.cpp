@@ -78,13 +78,13 @@ static double stats(void* v) {
 }
 
 static const Member_func members{{"insrt", insert},
-                                {"least", least},
-                                {"move_least", mvleast},
-                                {"remove_least", rmleast},
-                                {"remove", remove},
-                                {"find", find},
-                                {"stats", stats},
-                                {"printf", print}};
+                                 {"least", least},
+                                 {"move_least", mvleast},
+                                 {"remove_least", rmleast},
+                                 {"remove", remove},
+                                 {"find", find},
+                                 {"stats", stats},
+                                 {"printf", print}};
 
 static void* cons(Object*) {
     assert(0);

@@ -1276,9 +1276,9 @@ static double sswrite(void* v) {
 }
 
 static const Member_func members{{"save", save},
-                                {"restore", restore},
-                                {"fread", ssread},
-                                {"fwrite", sswrite}};
+                                 {"restore", restore},
+                                 {"fread", ssread},
+                                 {"fwrite", sswrite}};
 
 void SaveState_reg() {
     class2oc("SaveState", cons, destruct, members, nullptr, {}, {});

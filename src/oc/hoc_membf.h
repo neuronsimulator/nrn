@@ -7,11 +7,11 @@
 
 class Object;
 
-using MemberPtr = double(*)(void*);
+using MemberPtr = double (*)(void*);
 using Member_func = std::map<const char*, MemberPtr>;
-using MemberRetObjPtr = Object**(*)(void*);
+using MemberRetObjPtr = Object** (*) (void*);
 using Member_ret_obj_func = std::map<const char*, MemberRetObjPtr>;
-using MemberRetStrPtr = const char**(*)(void*);
+using MemberRetStrPtr = const char** (*) (void*);
 using Member_ret_str_func = std::map<const char*, MemberRetStrPtr>;
 
 void class2oc_base(const char* name,

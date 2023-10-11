@@ -199,13 +199,13 @@ static double ptr_plot(void* v) {
 
 
 static const Member_func members{{"size", get_size},
-                                {"resize", resize},
-                                {"pset", pset},
-                                {"setval", setval},
-                                {"getval", getval},
-                                {"scatter", scatter},
-                                {"gather", gather},
-                                {"plot", ptr_plot}};
+                                 {"resize", resize},
+                                 {"pset", pset},
+                                 {"setval", setval},
+                                 {"getval", getval},
+                                 {"scatter", scatter},
+                                 {"gather", gather},
+                                 {"plot", ptr_plot}};
 
 static const Member_ret_str_func retstr_members{{"label", ptr_label}};
 

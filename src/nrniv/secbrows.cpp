@@ -65,8 +65,8 @@ static double sb_accept_action(void* v) {
     return 1.;
 }
 static const Member_func sb_members{{"select", sb_select},
-                                   {"select_action", sb_select_action},
-                                   {"accept_action", sb_accept_action}};
+                                    {"select_action", sb_select_action},
+                                    {"accept_action", sb_accept_action}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;

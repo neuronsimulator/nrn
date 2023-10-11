@@ -309,16 +309,16 @@ static double l_is_artificial(void*) {
 }
 
 static const Member_func l_members{{"substr", l_substr},
-                                  {"len", l_len},
-                                  {"head", l_head},
-                                  {"tail", l_tail},
-                                  {"right", l_right},
-                                  {"left", l_left},
-                                  {"is_name", l_is_name},
-                                  {"alias", l_alias},
-                                  {"references", l_ref},
-                                  {"is_point_process", l_is_point},
-                                  {"is_artificial", l_is_artificial}};
+                                   {"len", l_len},
+                                   {"head", l_head},
+                                   {"tail", l_tail},
+                                   {"right", l_right},
+                                   {"left", l_left},
+                                   {"is_name", l_is_name},
+                                   {"alias", l_alias},
+                                   {"references", l_ref},
+                                   {"is_point_process", l_is_point},
+                                   {"is_artificial", l_is_artificial}};
 
 static const Member_ret_obj_func l_obj_members{{"alias_list", l_alias_list}};
 

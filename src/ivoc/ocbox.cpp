@@ -411,18 +411,18 @@ static double dismiss_action(void* v) {
 }
 
 static const Member_func members{{"intercept", intercept},            // #if HAVE_IV ok
-                                {"adjuster", adjuster},              // #if HAVE_IV ok
-                                {"adjust", adjust},                  // #if HAVE_IV ok
-                                {"full_request", full_request},      // #if HAVE_IV ok
-                                {"save", save},                      // #if HAVE_IV ok
-                                {"map", map},                        // #if HAVE_IV ok
-                                {"unmap", unmap},                    // #if HAVE_IV ok
-                                {"ismapped", ismapped},              // #if HAVE_IV ok
-                                {"ref", ref},                        // #if HAVE_IV ok
-                                {"dismiss_action", dismiss_action},  // #if HAVE_IV ok
-                                {"dialog", dialog},                  // #if HAVE_IV ok
-                                {"priority", ses_pri},
-                                {"size", b_size}};
+                                 {"adjuster", adjuster},              // #if HAVE_IV ok
+                                 {"adjust", adjust},                  // #if HAVE_IV ok
+                                 {"full_request", full_request},      // #if HAVE_IV ok
+                                 {"save", save},                      // #if HAVE_IV ok
+                                 {"map", map},                        // #if HAVE_IV ok
+                                 {"unmap", unmap},                    // #if HAVE_IV ok
+                                 {"ismapped", ismapped},              // #if HAVE_IV ok
+                                 {"ref", ref},                        // #if HAVE_IV ok
+                                 {"dismiss_action", dismiss_action},  // #if HAVE_IV ok
+                                 {"dialog", dialog},                  // #if HAVE_IV ok
+                                 {"priority", ses_pri},
+                                 {"size", b_size}};
 
 void HBox_reg() {
     class2oc("HBox", hcons, destruct, members, nullptr, {}, {});

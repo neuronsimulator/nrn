@@ -1591,7 +1591,7 @@ void class2oc_base(const char* name,
     if (cons) {
         t->constructor = cons;
     } else {
-        t->constructor = [](Object*) -> void* {return nullptr;};
+        t->constructor = [](Object*) -> void* { return nullptr; };
     }
     if (destruct) {
         t->destructor = destruct;
@@ -1601,17 +1601,17 @@ void class2oc_base(const char* name,
     t->steer = 0;
     t->checkpoint = checkpoint;
 
-    for (const auto&[name, member]: m) {
+    for (const auto& [name, member]: m) {
         s = hoc_install(name, FUNCTION, 0.0, &hoc_symlist);
         s->u.u_proc->defn.pfd_vp = member;
         hoc_add_publiclist(s);
     }
-    for (const auto&[name, member]: mobjret) {
+    for (const auto& [name, member]: mobjret) {
         s = hoc_install(name, OBFUNCTION, 0.0, &hoc_symlist);
         s->u.u_proc->defn.pfo_vp = member;
         hoc_add_publiclist(s);
     }
-    for (const auto&[name, member]: strret) {
+    for (const auto& [name, member]: strret) {
         s = hoc_install(name, STRFUNCTION, 0.0, &hoc_symlist);
         s->u.u_proc->defn.pfs_vp = member;
         hoc_add_publiclist(s);

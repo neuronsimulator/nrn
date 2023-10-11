@@ -168,9 +168,9 @@ static double hoc_nsingle(void* v) {
     return (double) c->nsingle(pp);
 }
 static const Member_func member_func{{"loc", hoc_loc_pnt},
-                                    {"has_loc", hoc_has_loc},
-                                    {"get_loc", hoc_get_loc_pnt},
-                                    {"nsingle", hoc_nsingle}};
+                                     {"has_loc", hoc_has_loc},
+                                     {"get_loc", hoc_get_loc_pnt},
+                                     {"nsingle", hoc_nsingle}};
 
 void kschan_cvode_single_update() {}
 
@@ -687,38 +687,35 @@ static double ks_pr(void* v) {
     return 1;
 }
 
-static const Member_func ks_dmem{
-    // keeping c++ consistent with java
-    {"setstructure", ks_setstructure},
+static const Member_func ks_dmem{// keeping c++ consistent with java
+                                 {"setstructure", ks_setstructure},
 
-    {"remove_state", ks_remove_state},
-    {"remove_transition", ks_remove_transition},
+                                 {"remove_state", ks_remove_state},
+                                 {"remove_transition", ks_remove_transition},
 
-    {"ngate", ks_ngate},
-    {"nstate", ks_nstate},
-    {"ntrans", ks_ntrans},
-    {"nligand", ks_nligand},
-    {"is_point", ks_is_point},
-    {"single", ks_single},
-    {"pr", ks_pr},
+                                 {"ngate", ks_ngate},
+                                 {"nstate", ks_nstate},
+                                 {"ntrans", ks_ntrans},
+                                 {"nligand", ks_nligand},
+                                 {"is_point", ks_is_point},
+                                 {"single", ks_single},
+                                 {"pr", ks_pr},
 
-    {"iv_type", ks_iv_type},
-    {"gmax", ks_gmax},
-    {"erev", ks_erev},
-    {"vres", ks_vres},
-    {"rseed", ks_rseed},
-    {"usetable", ks_usetable}};
+                                 {"iv_type", ks_iv_type},
+                                 {"gmax", ks_gmax},
+                                 {"erev", ks_erev},
+                                 {"vres", ks_vres},
+                                 {"rseed", ks_rseed},
+                                 {"usetable", ks_usetable}};
 
 static const Member_ret_obj_func ks_omem{{"add_hhstate", ks_add_hhstate},
-                                        {"add_ksstate", ks_add_ksstate},
-                                        {"add_transition", ks_add_transition},
-                                        {"trans", ks_trans},
-                                        {"state", ks_state},
-                                        {"gate", ks_gate}};
+                                         {"add_ksstate", ks_add_ksstate},
+                                         {"add_transition", ks_add_transition},
+                                         {"trans", ks_trans},
+                                         {"state", ks_state},
+                                         {"gate", ks_gate}};
 
-static const Member_ret_str_func ks_smem{{"name", ks_name},
-                                        {"ion", ks_ion},
-                                        {"ligand", ks_ligand}};
+static const Member_ret_str_func ks_smem{{"name", ks_name}, {"ion", ks_ion}, {"ligand", ks_ligand}};
 
 static const Member_func kss_dmem{{"frac", kss_frac}, {"index", kss_index}};
 
@@ -727,22 +724,22 @@ static const Member_ret_obj_func kss_omem{{"gate", kss_gate}};
 static const Member_ret_str_func kss_smem{{"name", kss_name}};
 
 static const Member_func ksg_dmem{{"nstate", ksg_nstate},
-                                 {"power", ksg_power},
-                                 {"sindex", ksg_sindex},
-                                 {"index", ksg_index}};
+                                  {"power", ksg_power},
+                                  {"sindex", ksg_sindex},
+                                  {"index", ksg_index}};
 
 static const Member_func kst_dmem{{"set_f", kst_set_f},
-                                 {"index", kst_index},
-                                 {"type", kst_type},
-                                 {"ftype", kst_ftype},
-                                 {"ab", kst_ab},
-                                 {"inftau", kst_inftau},
-                                 {"f", kst_f},
-                                 {"stoichiometry", kst_stoichiometry}};
+                                  {"index", kst_index},
+                                  {"type", kst_type},
+                                  {"ftype", kst_ftype},
+                                  {"ab", kst_ab},
+                                  {"inftau", kst_inftau},
+                                  {"f", kst_f},
+                                  {"stoichiometry", kst_stoichiometry}};
 
 static const Member_ret_obj_func kst_omem{{"src", kst_src},
-                                         {"target", kst_target},
-                                         {"parm", kst_parm}};
+                                          {"target", kst_target},
+                                          {"parm", kst_parm}};
 
 static const Member_ret_str_func kst_smem{{"ligand", kst_ligand}};
 

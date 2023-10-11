@@ -657,15 +657,15 @@ static void ms_destruct(void* v) {
 }
 
 static const Member_func ms_members{{"panel", ms_panel},
-                                   {"action", ms_action},
-                                   {"in", ms_in},
-                                   {"_in", ms_in},
-                                   {"out", ms_out},
-                                   {"set", ms_set},
-                                   {"get", ms_get},
-                                   {"count", ms_count},
-                                   {"name", ms_name},
-                                   {"save", ms_save}};
+                                    {"action", ms_action},
+                                    {"in", ms_in},
+                                    {"_in", ms_in},
+                                    {"out", ms_out},
+                                    {"set", ms_set},
+                                    {"get", ms_get},
+                                    {"count", ms_count},
+                                    {"name", ms_name},
+                                    {"save", ms_save}};
 
 void MechanismStandard_reg() {
     class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, {}, {});
@@ -1108,23 +1108,28 @@ static void mt_destruct(void* v) {
     mt->unref();
 }
 static const Member_func mt_members{{"select", mt_select},
-                                   {"selected", mt_selected},
-                                   {"make", mt_make},
-                                   {"remove", mt_remove},
-                                   {"count", mt_count},
-                                   {"menu", mt_menu},
-                                   {"action", mt_action},
-                                   {"is_netcon_target", mt_is_target},
-                                   {"has_net_event", mt_has_net_event},
-                                   {"is_artificial", mt_is_artificial},
-                                   {"is_ion", mt_is_ion},
-                                   {"internal_type", mt_internal_type}};
+                                    {"selected", mt_selected},
+                                    {"make", mt_make},
+                                    {"remove", mt_remove},
+                                    {"count", mt_count},
+                                    {"menu", mt_menu},
+                                    {"action", mt_action},
+                                    {"is_netcon_target", mt_is_target},
+                                    {"has_net_event", mt_has_net_event},
+                                    {"is_artificial", mt_is_artificial},
+                                    {"is_ion", mt_is_ion},
+                                    {"internal_type", mt_internal_type}};
 static const Member_ret_obj_func mt_retobj_members{{"pp_begin", mt_pp_begin},
-                                                  {"pp_next", mt_pp_next}};
+                                                   {"pp_next", mt_pp_next}};
 static const Member_ret_str_func mt_retstr_func{{"code", mt_code}, {"file", mt_file}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, nullptr, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType",
+             mt_cons,
+             mt_destruct,
+             mt_members,
+             nullptr,
+             mt_retobj_members,
+             mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 

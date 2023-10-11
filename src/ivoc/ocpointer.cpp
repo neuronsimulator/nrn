@@ -66,8 +66,8 @@ static const char** pname(void* v) {
     return (const char**) &ocp->s_;
 }
 
-static const Member_func members{{"val", 0},          // will be changed below
-                                {"assign", assign}}; // will call assign_stmt if it exists
+static const Member_func members{{"val", 0},           // will be changed below
+                                 {"assign", assign}};  // will call assign_stmt if it exists
 
 static const Member_ret_str_func s_memb{{"s", pname}};
 

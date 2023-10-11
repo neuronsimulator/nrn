@@ -775,22 +775,22 @@ static double pwman_deco(void* v) {
 }
 
 static const Member_func members{{"count", pwman_count},
-                                {"is_mapped", pwman_is_mapped},
-                                {"map", pwman_map},
-                                {"hide", pwman_hide},
-                                {"close", pwman_close},
-                                {"iconify", pwman_iconify},
-                                {"deiconify", pwman_deiconify},
-                                {"leader", pwman_leader},
-                                {"manager", pwman_manager},
-                                {"save", pwman_save},
-                                {"snap", pwman_snap},
-                                {"scale", pwman_scale},
-                                {"window_place", pwman_window_place},
-                                {"paper_place", pwman_paper_place},
-                                {"printfile", pwman_printfile},
-                                {"landscape", pwman_landscape},
-                                {"deco", pwman_deco}};
+                                 {"is_mapped", pwman_is_mapped},
+                                 {"map", pwman_map},
+                                 {"hide", pwman_hide},
+                                 {"close", pwman_close},
+                                 {"iconify", pwman_iconify},
+                                 {"deiconify", pwman_deiconify},
+                                 {"leader", pwman_leader},
+                                 {"manager", pwman_manager},
+                                 {"save", pwman_save},
+                                 {"snap", pwman_snap},
+                                 {"scale", pwman_scale},
+                                 {"window_place", pwman_window_place},
+                                 {"paper_place", pwman_paper_place},
+                                 {"printfile", pwman_printfile},
+                                 {"landscape", pwman_landscape},
+                                 {"deco", pwman_deco}};
 
 static const Member_ret_obj_func retobj_members{{"group", pwman_group}};
 

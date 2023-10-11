@@ -99,8 +99,8 @@ const char** throwing_util_member_throw_error_str_func(void* ob_void) {
     ob->throw_error();
 }
 static const Member_func throwing_util_members{{"call_execerror",
-                                               throwing_util_member_call_execerror},
-                                              {"throw_error", throwing_util_member_throw_error}};
+                                                throwing_util_member_call_execerror},
+                                               {"throw_error", throwing_util_member_throw_error}};
 static const Member_ret_obj_func throwing_util_ret_obj_members{
     {"call_execerror_obj_func", throwing_util_member_call_execerror_obj_func},
     {"throw_error_obj_func", throwing_util_member_throw_error_obj_func}};

@@ -277,23 +277,23 @@ static void f_destruct(void* v) {
 }
 
 static const Member_func f_members{{"ropen", f_ropen},
-                           {"wopen", f_wopen},
-                           {"aopen", f_aopen},
-                           {"printf", f_printf},
-                           {"scanvar", f_scanvar},
-                           {"scanstr", f_scanstr},
-                           {"gets", f_gets},
-                           {"eof", f_eof},
-                           {"isopen", f_is_open},
-                           {"chooser", f_chooser},
-                           {"close", f_close},
-                           {"vwrite", f_vwrite},
-                           {"vread", f_vread},
-                           {"seek", f_seek},
-                           {"tell", f_tell},
-                           {"mktemp", f_mktemp},
-                           {"unlink", f_unlink},
-                           {"flush", f_flush}};
+                                   {"wopen", f_wopen},
+                                   {"aopen", f_aopen},
+                                   {"printf", f_printf},
+                                   {"scanvar", f_scanvar},
+                                   {"scanstr", f_scanstr},
+                                   {"gets", f_gets},
+                                   {"eof", f_eof},
+                                   {"isopen", f_is_open},
+                                   {"chooser", f_chooser},
+                                   {"close", f_close},
+                                   {"vwrite", f_vwrite},
+                                   {"vread", f_vread},
+                                   {"seek", f_seek},
+                                   {"tell", f_tell},
+                                   {"mktemp", f_mktemp},
+                                   {"unlink", f_unlink},
+                                   {"flush", f_flush}};
 
 static const Member_ret_str_func f_retstr_members{{"getname", f_get_name}, {"dir", f_dir}};
 

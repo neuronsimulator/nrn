@@ -64,9 +64,9 @@ static double feround(void*) {
 }
 
 static const Member_func members{{"d2line", distance_to_line},
-                                {"d2line_seg", distance_to_line_segment},
-                                {"inside", inside},
-                                {"feround", feround}};
+                                 {"d2line_seg", distance_to_line_segment},
+                                 {"inside", inside},
+                                 {"feround", feround}};
 
 static void* cons(Object*) {
     return NULL;

@@ -775,30 +775,30 @@ static double nc_wcnt(void* v) {
 }
 
 static const Member_func members{{"active", nc_active},
-                                {"valid", nc_valid},
-                                {"preloc", nc_preloc},
-                                {"postloc", nc_postloc},
-                                {"setpost", nc_setpost},
-                                {"event", nc_event},
-                                {"record", nc_record},
-                                {"srcgid", nc_srcgid},
-                                {"wcnt", nc_wcnt},
-                                {"delay", 0},  // these four changed below
-                                {"weight", 0},
-                                {"threshold", 0},
-                                {"x", 0}};
+                                 {"valid", nc_valid},
+                                 {"preloc", nc_preloc},
+                                 {"postloc", nc_postloc},
+                                 {"setpost", nc_setpost},
+                                 {"event", nc_event},
+                                 {"record", nc_record},
+                                 {"srcgid", nc_srcgid},
+                                 {"wcnt", nc_wcnt},
+                                 {"delay", 0},  // these four changed below
+                                 {"weight", 0},
+                                 {"threshold", 0},
+                                 {"x", 0}};
 
 static const Member_ret_obj_func omembers{{"syn", nc_syn},
-                                         {"pre", nc_pre},
-                                         {"precell", nc_precell},
-                                         {"postcell", nc_postcell},
-                                         {"preseg", nc_preseg},
-                                         {"postseg", nc_postseg},
-                                         {"prelist", nc_prelist},
-                                         {"synlist", nc_synlist},
-                                         {"precelllist", nc_precelllist},
-                                         {"postcelllist", nc_postcelllist},
-                                         {"get_recordvec", nc_get_recordvec}};
+                                          {"pre", nc_pre},
+                                          {"precell", nc_precell},
+                                          {"postcell", nc_postcell},
+                                          {"preseg", nc_preseg},
+                                          {"postseg", nc_postseg},
+                                          {"prelist", nc_prelist},
+                                          {"synlist", nc_synlist},
+                                          {"precelllist", nc_precelllist},
+                                          {"postcelllist", nc_postcelllist},
+                                          {"get_recordvec", nc_get_recordvec}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
