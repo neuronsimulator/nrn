@@ -68,14 +68,8 @@ static const Member_func members{{"d2line", distance_to_line},
                                  {"inside", inside},
                                  {"feround", feround}};
 
-static void* cons(Object*) {
-    return NULL;
-}
-
-static void destruct(void*) {}
-
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, nullptr, {}, {});
+    class2oc("GUIMath", nullptr, nullptr, members, nullptr, {}, {});
 }
 
 double MyMath::anint(double x) {

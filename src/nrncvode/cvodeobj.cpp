@@ -642,29 +642,11 @@ static const Member_func members{{"solve", solve},
 static const Member_ret_obj_func omembers{{"netconlist", netconlist}};
 
 static void* cons(Object*) {
-#if 0
-	NetCvode* d;
-	if (net_cvode_instance) {
-		hoc_execerror("Only one CVode instance allowed", 0);
-	}else{
-		d = new NetCvode(1);
-		net_cvode_instance = d;
-	}
-	active(nullptr);
-	return (void*) d;
-#else
     return (void*) net_cvode_instance;
-#endif
 }
-static void destruct(void* v) {
-#if 0
-	NetCvode* d = (NetCvode*)v;
-	cvode_active_ = 0;
-	delete d;
-#endif
-}
+
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, nullptr, omembers, {});
+    class2oc("CVode", cons, nullptr, members, nullptr, omembers, {});
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }
