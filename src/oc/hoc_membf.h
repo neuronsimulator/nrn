@@ -5,7 +5,7 @@
 // Give Symbol
 #include <hocdec.h>
 
-class Object;
+struct Object;
 
 using MemberPtr = double (*)(void*);
 using Member_func = std::map<const char*, MemberPtr>;

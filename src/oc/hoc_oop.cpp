@@ -1588,16 +1588,8 @@ void class2oc_base(const char* name,
     if (!hoc_main1_inited_ && t->id > hoc_max_builtin_class_id) {
         hoc_max_builtin_class_id = t->id;
     }
-    if (cons) {
-        t->constructor = cons;
-    } else {
-        t->constructor = [](Object*) -> void* { return nullptr; };
-    }
-    if (destruct) {
-        t->destructor = destruct;
-    } else {
-        t->destructor = [](void*) -> void {};
-    }
+    t->constructor = cons;
+    t->destructor = destruct;
     t->steer = 0;
     t->checkpoint = checkpoint;
 
@@ -1697,8 +1689,7 @@ void hoc_external_var(Symbol* s) {
 }
 
 void hoc_ob_check(int type) {
-    int t;
-    t = ipop();
+    int t = ipop();
     if (type == -1) {
         if (t == OBJECTVAR) { /* don't bother to check */
             Code(hoc_cmp_otype);
@@ -1725,18 +1716,13 @@ void hoc_ob_check(int type) {
 void hoc_free_allobjects(cTemplate* ctemplate, Symlist* sl, Objectdata* data) {
     /* look in all object variables that point to
         objects with this template and null them */
-    Symbol* s;
-    int total, i;
-    Object** obp;
-
     if (sl)
-        for (s = sl->first; s; s = s->next) {
+        for (Symbol* s = sl->first; s; s = s->next) {
             if (s->type == OBJECTVAR && s->cpublic != 2) {
-                total = hoc_total_array_data(s, data);
-                for (i = 0; i < total; i++) {
-                    obp = data[s->u.oboff].pobj + i;
+                int total = hoc_total_array_data(s, data);
+                for (int i = 0; i < total; i++) {
+                    Object** obp = data[s->u.oboff].pobj + i;
                     if (*obp) {
-#if 1
                         if ((*obp)->ctemplate == ctemplate) {
                             hoc_dec_refcount(obp);
                         } else if (s->subtype != CPLUSOBJECT) {
@@ -1745,17 +1731,6 @@ void hoc_free_allobjects(cTemplate* ctemplate, Symlist* sl, Objectdata* data) {
                                                 (*obp)->ctemplate->symtable,
                                                 (*obp)->u.dataspace);
                         }
-#else
-                        if (s->subtype != CPLUSOBJECT) {
-                            /* descend to look for more */
-                            hoc_free_allobjects(ctemplate,
-                                                (*obp)->ctemplate->symtable,
-                                                (*obp)->u.dataspace);
-                        }
-                        if ((*obp)->ctemplate == ctemplate) {
-                            hoc_dec_refcount(obp);
-                        }
-#endif
                     }
                 }
             }
