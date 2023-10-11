@@ -454,7 +454,7 @@ extern void nrn_promote(Prop*, int, int);\n\
     Lappendstr(defs_list, "static VoidFunc hoc_intfunc[] = {\n");
     if (point_process) {
         Lappendstr(defs_list, "{0, 0}\n};\n");
-        Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
+        Lappendstr(defs_list, "static Member_func _member_func{\n");
         Sprintf(buf, "{\"loc\", _hoc_loc_pnt},\n");
         Lappendstr(defs_list, buf);
         Sprintf(buf, "{\"has_loc\", _hoc_has_loc},\n");
@@ -472,7 +472,7 @@ extern void nrn_promote(Prop*, int, int);\n\
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "{0, 0}\n};\n");
+    Lappendstr(defs_list, "\n};\n");
 
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except

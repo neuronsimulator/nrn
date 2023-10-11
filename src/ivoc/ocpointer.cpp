@@ -11,7 +11,7 @@
 */
 #include <InterViews/observe.h>
 #include <string.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc_ansi.h"
 #include "oc2iv.h"
 #include "ocpointer.h"
@@ -66,11 +66,10 @@ static const char** pname(void* v) {
     return (const char**) &ocp->s_;
 }
 
-static Member_func members[] = {{"val", 0},          // will be changed below
-                                {"assign", assign},  // will call assign_stmt if it exists
-                                {0, 0}};
+static const Member_func members{{"val", 0},          // will be changed below
+                                {"assign", assign}}; // will call assign_stmt if it exists
 
-static Member_ret_str_func s_memb[] = {{"s", pname}, {nullptr, nullptr}};
+static const Member_ret_str_func s_memb{{"s", pname}};
 
 
 static void* cons(Object*) {
@@ -108,7 +107,7 @@ static void steer_val(void* v) {
 }
 
 void OcPointer_reg() {
-    class2oc("Pointer", cons, destruct, members, NULL, NULL, s_memb);
+    class2oc("Pointer", cons, destruct, members, nullptr, {}, s_memb);
     // now make the val variable an actual double
     Symbol* sv = hoc_lookup("Pointer");
     Symbol* sx = hoc_table_lookup("val", sv->u.ctemplate->symtable);

@@ -23,7 +23,7 @@ extern int hoc_return_type_code;
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "ocfile.h"
 #include "nrnfilewrap.h"
 
@@ -276,7 +276,7 @@ static void f_destruct(void* v) {
     delete (OcFile*) v;
 }
 
-Member_func f_members[] = {{"ropen", f_ropen},
+static const Member_func f_members{{"ropen", f_ropen},
                            {"wopen", f_wopen},
                            {"aopen", f_aopen},
                            {"printf", f_printf},
@@ -293,13 +293,12 @@ Member_func f_members[] = {{"ropen", f_ropen},
                            {"tell", f_tell},
                            {"mktemp", f_mktemp},
                            {"unlink", f_unlink},
-                           {"flush", f_flush},
-                           {0, 0}};
+                           {"flush", f_flush}};
 
-static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {0, 0}};
+static const Member_ret_str_func f_retstr_members{{"getname", f_get_name}, {"dir", f_dir}};
 
 void OcFile_reg() {
-    class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
+    class2oc("File", f_cons, f_destruct, f_members, nullptr, {}, f_retstr_members);
     file_class_sym_ = hoc_lookup("File");
 }
 

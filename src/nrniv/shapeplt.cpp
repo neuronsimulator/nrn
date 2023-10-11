@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 #include "ocnotify.h"
 
@@ -312,7 +312,7 @@ extern double nrniv_len_scale(void*);
 extern Object** nrniv_sh_nearest_seg(void*);
 extern Object** nrniv_sh_selected_seg(void*);
 
-static Member_func sh_members[] = {{"hinton", sh_hinton},
+static const Member_func sh_members{{"hinton", sh_hinton},
                                    {"nearest", nrniv_sh_nearest},
                                    {"push_selected", nrniv_sh_push},
                                    {"scale", sh_scale},
@@ -343,12 +343,10 @@ static Member_func sh_members[] = {{"hinton", sh_hinton},
                                    {"erase", ivoc_gr_erase},
                                    {"erase_all", ivoc_erase_all},
                                    {"len_scale", nrniv_len_scale},
-                                   {"gif", ivoc_gr_gif},
-                                   {0, 0}};
+                                   {"gif", ivoc_gr_gif}};
 
-static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
-                                               {"selected_seg", nrniv_sh_selected_seg},
-                                               {NULL, NULL}};
+static const Member_ret_obj_func retobj_members{{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg}};
 
 static void* sh_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PlotShape", NULL);
@@ -425,7 +423,7 @@ else {
 }
 void PlotShape_reg() {
     //	printf("PlotShape_reg\n");
-    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, nullptr, retobj_members, {});
 }
 
 void* ShapePlotData::varobj() const {

@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV  // to end of file
@@ -521,7 +521,7 @@ extern double ivoc_gr_erase(void*);
 extern double ivoc_gr_gif(void*);
 extern double ivoc_erase_all(void*);
 
-static Member_func sh_members[] = {{"nearest", nrniv_sh_nearest},
+static const Member_func sh_members{{"nearest", nrniv_sh_nearest},
                                    {"push_selected", nrniv_sh_push},
                                    {"view", sh_view},
                                    {"size", ivoc_gr_size},
@@ -552,12 +552,10 @@ static Member_func sh_members[] = {{"nearest", nrniv_sh_nearest},
                                    {"erase", ivoc_gr_erase},
                                    {"erase_all", ivoc_erase_all},
                                    {"len_scale", nrniv_len_scale},
-                                   {"gif", ivoc_gr_gif},
-                                   {0, 0}};
+                                   {"gif", ivoc_gr_gif}};
 
-static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
-                                               {"selected_seg", nrniv_sh_selected_seg},
-                                               {NULL, NULL}};
+static const Member_ret_obj_func retobj_members{{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg}};
 
 
 static void* sh_cons(Object* ho) {
@@ -601,7 +599,7 @@ static void sh_destruct(void* v) {
 }
 void Shape_reg() {
     //	printf("Shape_reg\n");
-    class2oc("Shape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("Shape", sh_cons, sh_destruct, sh_members, nullptr, retobj_members, {});
 }
 
 #if HAVE_IV

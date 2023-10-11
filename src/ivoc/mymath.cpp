@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <InterViews/geometry.h>
 #include "mymath.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include <cmath>
 #include <cstdio>
@@ -63,11 +63,10 @@ static double feround(void*) {
     return (double) nrn_feround(arg);
 }
 
-static Member_func members[] = {{"d2line", distance_to_line},
+static const Member_func members{{"d2line", distance_to_line},
                                 {"d2line_seg", distance_to_line_segment},
                                 {"inside", inside},
-                                {"feround", feround},
-                                {0, 0}};
+                                {"feround", feround}};
 
 static void* cons(Object*) {
     return NULL;
@@ -76,7 +75,7 @@ static void* cons(Object*) {
 static void destruct(void*) {}
 
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("GUIMath", cons, destruct, members, nullptr, {}, {});
 }
 
 double MyMath::anint(double x) {

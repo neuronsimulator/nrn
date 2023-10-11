@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 // hoc level Glyph implementation for graphing
 #include <stdio.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #if HAVE_IV
 #include "ivoc.h"
@@ -184,9 +184,7 @@ static Object** g_gif(void* v) {
 
 static Symbol* sggl_;
 
-Member_func members[] = {{0, 0}};
-
-Member_ret_obj_func objmembers[] = {{"path", g_new_path},
+static const Member_ret_obj_func objmembers{{"path", g_new_path},
                                     {"m", g_move_to},
                                     {"l", g_line_to},
                                     {"s", g_stroke},
@@ -196,8 +194,7 @@ Member_ret_obj_func objmembers[] = {{"path", g_new_path},
                                     {"cpt", g_control_point},
                                     {"erase", g_erase},
                                     {"gif", g_gif},
-                                    {"circle", g_circle},
-                                    {0, 0}};
+                                    {"circle", g_circle}};
 
 static void* cons(Object* o) {
     TRY_GUI_REDIRECT_OBJ("Glyph", NULL);
@@ -213,7 +210,7 @@ static void destruct(void* v) {
 }
 
 void GrGlyph_reg() {
-    class2oc("Glyph", cons, destruct, members, NULL, objmembers, NULL);
+    class2oc("Glyph", cons, destruct, {}, nullptr, objmembers, {});
     sggl_ = hoc_lookup("Glyph");
 }
 

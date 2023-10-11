@@ -34,7 +34,7 @@
 extern void exit(int status);
 #endif
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #if HAVE_IV
 #include "apwindow.h"
 #include "ivoc.h"
@@ -3704,7 +3704,7 @@ Object** v_as_numpy(void* v) {
 }
 
 
-static Member_func v_members[] = {
+static const Member_func v_members{
 
     {"x", v_size},  // will be changed below
     {"size", v_size},
@@ -3743,11 +3743,9 @@ static Member_func v_members[] = {
     {"trigavg", v_trigavg},
     {"indwhere", v_indwhere},
 
-    {"scale", v_scale},
+    {"scale", v_scale}};
 
-    {0, 0}};
-
-static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
+static const Member_ret_obj_func v_retobj_members{{"c", v_c},
                                                  {"cl", v_cl},
                                                  {"at", v_at},
                                                  {"ind", v_ind},
@@ -3819,13 +3817,9 @@ static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
 
                                                  {"from_python", v_from_python},
                                                  {"to_python", v_to_python},
-                                                 {"as_numpy", v_as_numpy},
+                                                 {"as_numpy", v_as_numpy}};
 
-                                                 {0, 0}};
-
-static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
-
-                                                 {0, 0}};
+static const Member_ret_str_func v_retstr_members{{"label", v_label}};
 
 extern int hoc_araypt(Symbol*, int);
 
@@ -3851,7 +3845,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-    class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
+    class2oc("Vector", v_cons, v_destruct, v_members, nullptr, v_retobj_members, v_retstr_members);
     svec_ = hoc_lookup("Vector");
     // now make the x variable an actual double
     Symbol* sv = hoc_lookup("Vector");

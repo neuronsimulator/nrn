@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "oclist.h"
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 
 #if HAVE_IV
 #include "ppshape.h"
@@ -22,10 +22,9 @@ static double pp_append(void* v) {
     return 1.;
 }
 
-static Member_func pp_members[] = {
+static const Member_func pp_members{
     //	{"view", pp_view},
-    {"append", pp_append},
-    {0, 0}};
+    {"append", pp_append}};
 
 static void* pp_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PPShape", NULL);
@@ -54,7 +53,7 @@ static void pp_destruct(void* v) {
 
 void PPShape_reg() {
     //	printf("PPShape_reg\n");
-    class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL, NULL);
+    class2oc("PPShape", pp_cons, pp_destruct, pp_members, nullptr, {}, {});
 }
 
 #if HAVE_IV  // to end of file

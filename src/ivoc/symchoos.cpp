@@ -58,7 +58,7 @@
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV
@@ -207,9 +207,9 @@ static double text(void* v) {
     return 0.;
 #endif /* HAVE_IV */
 }
-static Member_func members[] = {{"run", srun}, {"text", text}, {0, 0}};
+static const Member_func members{{"run", srun}, {"text", text}};
 void SymChooser_reg() {
-    class2oc("SymChooser", scons, sdestruct, members, NULL, NULL, NULL);
+    class2oc("SymChooser", scons, sdestruct, members, nullptr, {}, {});
 }
 #if HAVE_IV
 

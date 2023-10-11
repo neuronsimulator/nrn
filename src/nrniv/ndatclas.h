@@ -6,6 +6,7 @@
 class NrnPropertyImpl;
 class SectionListImpl;
 class NrnNodeImpl;
+class Symbol;
 
 class NrnProperty {
   public:

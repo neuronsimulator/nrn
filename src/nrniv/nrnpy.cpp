@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "nonvintblock.h"
 #include "nrnmpi.h"
 
@@ -46,13 +46,6 @@ void nrnpython() {
         hoc_retpushx(0.);
     }
 }
-
-// Stub class for when Python does not exist
-static void* p_cons(Object*) {
-    return nullptr;
-}
-static void p_destruct(void*) {}
-static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
 static std::string nrnpy_pylib{}, nrnpy_pyversion{};
@@ -248,7 +241,7 @@ void nrnpython_reg() {
 #endif
     // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
     // could not be loaded.
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", nullptr, nullptr, {}, nullptr, {}, {});
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file

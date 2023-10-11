@@ -10,7 +10,7 @@ extern int hoc_return_type_code;
 
 #include <cmath>
 #include <cstdlib>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
@@ -587,7 +587,7 @@ static double free_event_queues(void*) {
     return 0;
 }
 
-static Member_func members[] = {{"solve", solve},
+static const Member_func members{{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
                                 {"re_init", re_init},
@@ -636,10 +636,10 @@ static Member_func members[] = {{"solve", solve},
                                 {"extra_scatter_gather_remove", extra_scatter_gather_remove},
                                 {"use_fast_imem", use_fast_imem},
                                 {"poolshrink", poolshrink},
-                                {"free_event_queues", free_event_queues},
-                                {nullptr, nullptr}};
+                                {"free_event_queues", free_event_queues}};
+                                
 
-static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
+static const Member_ret_obj_func omembers{{"netconlist", netconlist}};
 
 static void* cons(Object*) {
 #if 0
@@ -664,7 +664,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("CVode", cons, destruct, members, nullptr, omembers, {});
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }

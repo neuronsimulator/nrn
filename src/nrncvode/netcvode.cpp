@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <time.h>
 #include <InterViews/regexp.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "nrnoc2iv.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
@@ -774,7 +774,7 @@ static double nc_wcnt(void* v) {
     return d->cnt_;
 }
 
-static Member_func members[] = {{"active", nc_active},
+static const Member_func members{{"active", nc_active},
                                 {"valid", nc_valid},
                                 {"preloc", nc_preloc},
                                 {"postloc", nc_postloc},
@@ -786,10 +786,9 @@ static Member_func members[] = {{"active", nc_active},
                                 {"delay", 0},  // these four changed below
                                 {"weight", 0},
                                 {"threshold", 0},
-                                {"x", 0},
-                                {0, 0}};
+                                {"x", 0}};
 
-static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
+static const Member_ret_obj_func omembers{{"syn", nc_syn},
                                          {"pre", nc_pre},
                                          {"precell", nc_precell},
                                          {"postcell", nc_postcell},
@@ -799,8 +798,7 @@ static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"synlist", nc_synlist},
                                          {"precelllist", nc_precelllist},
                                          {"postcelllist", nc_postcelllist},
-                                         {"get_recordvec", nc_get_recordvec},
-                                         {0, 0}};
+                                         {"get_recordvec", nc_get_recordvec}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -872,7 +870,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, nullptr, omembers, {});
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;

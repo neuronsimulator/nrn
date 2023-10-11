@@ -8,7 +8,7 @@
 #include "oc2iv.h"
 #include "objcmd.h"
 #endif /* HAVE_IV */
-#include "classreg.h"
+#include "hoc_membf.h"
 
 #ifdef MINGW
 #include <windows.h>
@@ -96,10 +96,10 @@ static void t_destruct(void* v) {
 #endif /* HAVE_IV */
 }
 
-Member_func t_members[] = {{"seconds", t_seconds}, {"start", t_start}, {"end", t_stop}, {0, 0}};
+static const Member_func t_members{{"seconds", t_seconds}, {"start", t_start}, {"end", t_stop}};
 
 void OcTimer_reg() {
-    class2oc("Timer", t_cons, t_destruct, t_members, NULL, NULL, NULL);
+    class2oc("Timer", t_cons, t_destruct, t_members, nullptr, {}, {});
 }
 #if HAVE_IV
 OcTimer::OcTimer(const char* cmd) {

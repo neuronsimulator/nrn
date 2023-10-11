@@ -2,7 +2,7 @@
 #include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include <string.h>
 // for alias
@@ -308,7 +308,7 @@ static double l_is_artificial(void*) {
     return nrn_is_artificial(type) ? type : 0;
 }
 
-static Member_func l_members[] = {{"substr", l_substr},
+static const Member_func l_members{{"substr", l_substr},
                                   {"len", l_len},
                                   {"head", l_head},
                                   {"tail", l_tail},
@@ -318,10 +318,9 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"alias", l_alias},
                                   {"references", l_ref},
                                   {"is_point_process", l_is_point},
-                                  {"is_artificial", l_is_artificial},
-                                  {0, 0}};
+                                  {"is_artificial", l_is_artificial}};
 
-static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
+static const Member_ret_obj_func l_obj_members{{"alias_list", l_alias_list}};
 
 static void* l_cons(Object*) {
     return NULL;
@@ -330,7 +329,7 @@ static void* l_cons(Object*) {
 static void l_destruct(void*) {}
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, l_destruct, l_members, nullptr, l_obj_members, {});
 }
 
 

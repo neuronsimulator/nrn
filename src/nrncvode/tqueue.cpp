@@ -2,7 +2,7 @@
 #include "tqueue.h"
 #include "pool.h"
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "nrnoc2iv.h"
 
 #define PROFILE 0
@@ -77,15 +77,14 @@ static double stats(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {{"insrt", insert},
+static const Member_func members{{"insrt", insert},
                                 {"least", least},
                                 {"move_least", mvleast},
                                 {"remove_least", rmleast},
                                 {"remove", remove},
                                 {"find", find},
                                 {"stats", stats},
-                                {"printf", print},
-                                {0, 0}};
+                                {"printf", print}};
 
 static void* cons(Object*) {
     assert(0);
@@ -99,7 +98,7 @@ static void destruct(void* v) {
 }
 
 void TQueue_reg() {
-    class2oc("TQueue", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("TQueue", cons, destruct, members, nullptr, {}, {});
 }
 
 //----------------

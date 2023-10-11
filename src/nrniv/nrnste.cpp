@@ -4,7 +4,7 @@
 #include <string.h>
 #include <nrnoc2iv.h>
 #include <nrniv_mf.h>
-#include <classreg.h>
+#include <hoc_membf.h>
 #include <objcmd.h>
 #include <nrnste.h>
 #include <netcon.h>
@@ -46,7 +46,7 @@ static double ste_state(void* v) {
     return (double) state;
 }
 
-static Member_func members[] = {{"transition", ste_transition}, {"state", ste_state}, {0, 0}};
+static const Member_func members{{"transition", ste_transition}, {"state", ste_state}};
 
 static void* ste_cons(Object*) {
     int nstate = (int) chkarg(1, 1, 1e6);
@@ -65,7 +65,7 @@ static void ste_destruct(void* v) {
 }
 
 void StateTransitionEvent_reg() {
-    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL, NULL);
+    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, nullptr, {}, {});
 }
 
 StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt)

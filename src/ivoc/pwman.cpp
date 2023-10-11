@@ -24,7 +24,7 @@ extern int hoc_return_type_code;
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include <cmath>
 
@@ -774,7 +774,7 @@ static double pwman_deco(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {{"count", pwman_count},
+static const Member_func members{{"count", pwman_count},
                                 {"is_mapped", pwman_is_mapped},
                                 {"map", pwman_map},
                                 {"hide", pwman_hide},
@@ -790,15 +790,14 @@ static Member_func members[] = {{"count", pwman_count},
                                 {"paper_place", pwman_paper_place},
                                 {"printfile", pwman_printfile},
                                 {"landscape", pwman_landscape},
-                                {"deco", pwman_deco},
-                                {0, 0}};
+                                {"deco", pwman_deco}};
 
-static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
+static const Member_ret_obj_func retobj_members{{"group", pwman_group}};
 
-static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
+static const Member_ret_str_func s_memb{{"name", pwman_name}};
 
 void PWManager_reg() {
-    class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
+    class2oc("PWManager", pwman_cons, pwman_destruct, members, nullptr, retobj_members, s_memb);
 }
 
 #if HAVE_IV  // almost to end of file

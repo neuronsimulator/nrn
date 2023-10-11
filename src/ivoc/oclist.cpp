@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oclist.h"
 #include "oc2iv.h"
 #include "hoclist.h"
@@ -361,7 +361,7 @@ static double l_scroll_pos(void* v) {
 }
 
 
-static Member_func l_members[] = {{"append", l_append},
+static const Member_func l_members{{"append", l_append},
                                   {"prepend", l_prepend},
                                   {"insrt", l_insert},
                                   {"remove", l_remove},
@@ -373,12 +373,10 @@ static Member_func l_members[] = {{"append", l_append},
                                   {"select", l_select},
                                   {"select_action", l_select_action},
                                   {"accept_action", l_accept_action},
-                                  {"scroll_pos", l_scroll_pos},
-                                  {nullptr, nullptr}};
+                                  {"scroll_pos", l_scroll_pos}};
 
-static Member_ret_obj_func l_retobj_members[] = {{"object", l_object},
-                                                 {"o", l_object},
-                                                 {nullptr, nullptr}};
+static const Member_ret_obj_func l_retobj_members{{"object", l_object},
+                                                 {"o", l_object}};
 
 static void* l_cons(Object*) {
     OcList* o;
@@ -484,7 +482,7 @@ static int l_chkpt(void** vp) {
 
 void OcList_reg() {
     // printf("Oclist_reg\n");
-    class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members, NULL);
+    class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members, {});
     list_class_sym_ = hoc_lookup("List");
 }
 

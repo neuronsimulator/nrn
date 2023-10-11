@@ -17,7 +17,7 @@ Type 3 are at the very beginning of finitialize. ie structure changes
 #include <cstdio>
 #include <OS/list.h>
 #include <nrnoc2iv.h>
-#include <classreg.h>
+#include <hoc_membf.h>
 #include <objcmd.h>
 #include "utils/enumerate.h"
 
@@ -56,7 +56,7 @@ static double allprint(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {{"allprint", allprint}, {nullptr, nullptr}};
+static const Member_func members{{"allprint", allprint}};
 
 static void* finithnd_cons(Object*) {
     int type = 1;  // default is after INITIAL blocks are called
@@ -90,7 +90,7 @@ static void finithnd_destruct(void* v) {
 }
 
 void FInitializeHandler_reg() {
-    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, NULL, NULL, NULL);
+    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, nullptr, {}, {});
 }
 
 std::vector<FInitialHandler*> FInitialHandler::fihlist_[4];

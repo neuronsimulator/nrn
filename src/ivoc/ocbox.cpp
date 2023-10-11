@@ -19,7 +19,7 @@
 #endif /* HAVE_IV */
 
 #include "oc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 
 #include "gui-redirect.h"
 
@@ -410,7 +410,7 @@ static double dismiss_action(void* v) {
 #endif /* HAVE_IV  */
 }
 
-static Member_func members[] = {{"intercept", intercept},            // #if HAVE_IV ok
+static const Member_func members{{"intercept", intercept},            // #if HAVE_IV ok
                                 {"adjuster", adjuster},              // #if HAVE_IV ok
                                 {"adjust", adjust},                  // #if HAVE_IV ok
                                 {"full_request", full_request},      // #if HAVE_IV ok
@@ -422,15 +422,14 @@ static Member_func members[] = {{"intercept", intercept},            // #if HAVE
                                 {"dismiss_action", dismiss_action},  // #if HAVE_IV ok
                                 {"dialog", dialog},                  // #if HAVE_IV ok
                                 {"priority", ses_pri},
-                                {"size", b_size},
-                                {0, 0}};
+                                {"size", b_size}};
 
 void HBox_reg() {
-    class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);
+    class2oc("HBox", hcons, destruct, members, nullptr, {}, {});
 }
 
 void VBox_reg() {
-    class2oc("VBox", vcons, destruct, members, NULL, NULL, NULL);
+    class2oc("VBox", vcons, destruct, members, nullptr, {}, {});
 }
 #if HAVE_IV
 OcGlyphContainer::OcGlyphContainer()

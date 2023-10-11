@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
-#include <classreg.h>
+#include <hoc_membf.h>
 #include <nrnpython.h>
 #include <hoccontext.h>
 #include "nrnpy.h"
@@ -34,8 +34,6 @@ static void* p_cons(Object*) {
 static void p_destruct(void* v) {
     delete static_cast<Py2Nrn*>(v);
 }
-
-Member_func p_members[] = {{nullptr, nullptr}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
     PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
@@ -1130,7 +1128,7 @@ void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
  */
 extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, {}, nullptr, {}, {});
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
     ptrs->callable_with_args = callable_with_args;

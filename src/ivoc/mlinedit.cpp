@@ -13,7 +13,7 @@ extern int hoc_return_type_code;
 #include "ocglyph.h"
 #endif
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #if HAVE_IV
 #include "oc2iv.h"
 #include "apwindow.h"
@@ -101,9 +101,9 @@ static const char** v_text(void* v) {
 }
 
 
-static Member_func members[] = {{"readonly", readonly}, {"map", map}, {0, 0}};
+static const Member_func members{{"readonly", readonly}, {"map", map}};
 
-static Member_ret_str_func retstr_members[] = {{"text", v_text}, {0, 0}};
+static const Member_ret_str_func retstr_members{{"text", v_text}};
 
 static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
@@ -141,7 +141,7 @@ static void destruct(void* v) {
 }
 
 void TextEditor_reg() {
-    class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
+    class2oc("TextEditor", cons, destruct, members, nullptr, {}, retstr_members);
 }
 
 #if HAVE_IV

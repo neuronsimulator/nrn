@@ -168,7 +168,7 @@ callback to bbss_early when needed.
 */
 
 #include "bbsavestate.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "ndatclas.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
@@ -991,7 +991,7 @@ static double vector_play_init(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {{"save", save},
+static const Member_func members{{"save", save},
                                 {"restore", restore},
                                 {"save_test", save_test},
                                 {"restore_test", restore_test},
@@ -1005,11 +1005,10 @@ static Member_func members[] = {{"save", save},
                                 // indicate which point processes are to be ignored
                                 {"ignore", ppignore},
                                 // allow Vector.play to work
-                                {"vector_play_init", vector_play_init},
-                                {0, 0}};
+                                {"vector_play_init", vector_play_init}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, nullptr, {}, {});
 }
 
 // from savstate.cpp

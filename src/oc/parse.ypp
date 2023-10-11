@@ -16,6 +16,8 @@
 #include "code.h"
 #include "equation.h"
 #include "nrnfilewrap.h"
+union Inst;
+class Symbol;
 
 void* nrn_parsing_pysec_;
 

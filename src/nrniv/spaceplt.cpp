@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 
 
 #include <vector>
@@ -245,7 +245,7 @@ static double from_vector(void* v) {
     return double(cnt);
 }
 
-static Member_func s_members[] = {{"begin", s_begin},
+static const Member_func s_members{{"begin", s_begin},
                                   {"end", s_end},
                                   {"origin", s_origin},
                                   {"d2root", s_d2root},
@@ -254,10 +254,9 @@ static Member_func s_members[] = {{"begin", s_begin},
                                   {"list", s_list},
                                   {"color", s_color},
                                   {"to_vector", to_vector},
-                                  {"from_vector", from_vector},
-                                  {0, 0}};
+                                  {"from_vector", from_vector}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
+static const Member_ret_obj_func rvp_retobj_members{{"vector", rvp_vector}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -292,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, nullptr, rvp_retobj_members, {});
 }
 
 #if HAVE_IV

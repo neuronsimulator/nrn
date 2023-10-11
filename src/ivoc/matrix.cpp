@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -659,7 +659,7 @@ static Object** m_from_vector(void* v) {
     return temp_objvar(m);
 }
 
-static Member_func m_members[] = {
+static const Member_func m_members{
     // returns double scalar
     {"x", m_nrow},  // will be changed below
     {"nrow", m_nrow},
@@ -672,10 +672,9 @@ static Member_func m_members[] = {
 
     {"printf", m_printf},
     {"fprint", m_fprint},
-    {"scanf", m_scanf},
-    {0, 0}};
+    {"scanf", m_scanf}};
 
-static Member_ret_obj_func m_retobj_members[] = {
+static const Member_ret_obj_func m_retobj_members{
     // returns Vector
     {"mulv", m_mulv},
     {"getrow", m_getrow},
@@ -702,8 +701,7 @@ static Member_ret_obj_func m_retobj_members[] = {
     {"transpose", m_transpose},
     {"set", m_set},
     {"to_vector", m_to_vector},
-    {"from_vector", m_from_vector},
-    {0, 0}};
+    {"from_vector", m_from_vector}};
 
 static void* m_cons(Object* o) {
     int i = 1, j = 1, storage_type = Matrix::MFULL;
@@ -745,7 +743,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, nullptr, m_retobj_members, {});
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);

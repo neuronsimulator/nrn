@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include "ivocvect.h"
 #include "hoclist.h"
@@ -1044,7 +1044,7 @@ static Object** gid_connect(void* v) {
     return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
-static Member_func members[] = {{"submit", submit},
+static const Member_func members{{"submit", submit},
                                 {"working", working},
                                 {"retval", retval},
                                 {"userid", userid},
@@ -1120,13 +1120,11 @@ static Member_func members[] = {{"submit", submit},
                                 {"nrncore_write", nrncorewrite_argappend},
                                 {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
                                 {"nrncore_run", nrncorerun},
-                                {"print_memory_stats", print_memory_stats},
+                                {"print_memory_stats", print_memory_stats}};
 
-                                {0, 0}};
+static const Member_ret_str_func retstr_members{{"upkstr", upkstr}};
 
-static Member_ret_str_func retstr_members[] = {{"upkstr", upkstr}, {0, 0}};
-
-static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
+static const Member_ret_obj_func retobj_members{{"upkvec", upkvec},
                                                {"gid2obj", gid2obj},
                                                {"gid2cell", gid2cell},
                                                {"gid_connect", gid_connect},
@@ -1137,8 +1135,7 @@ static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
                                                {"py_allgather", py_allgather},
                                                {"py_gather", py_gather},
                                                {"py_broadcast", py_broadcast},
-                                               {"py_scatter", py_scatter},
-                                               {0, 0}};
+                                               {"py_scatter", py_scatter}};
 
 static void* cons(Object*) {
     // not clear at moment what is best way to handle nested context

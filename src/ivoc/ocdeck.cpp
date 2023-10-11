@@ -12,7 +12,7 @@
 #include "apwindow.h"
 #include "oc2iv.h"
 #endif /* HAVE_IV */
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV
@@ -226,18 +226,17 @@ static double move_last(void* v) {
 #endif /* HAVE_IV  */
 }
 
-static Member_func members[] = {{"flip_to", flip_to},
+static const Member_func members{{"flip_to", flip_to},
                                 {"intercept", intercept},
                                 {"save", save},
                                 {"map", map},
                                 {"unmap", unmap},
                                 {"remove_last", remove_last},
                                 {"remove", remove},
-                                {"move_last", move_last},
-                                {0, 0}};
+                                {"move_last", move_last}};
 
 void OcDeck_reg() {
-    class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("Deck", cons, destruct, members, nullptr, {}, {});
 }
 #if HAVE_IV
 OcDeck::OcDeck()

@@ -6,7 +6,7 @@
 #include "ocfile.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "ndatclas.h"
 #include "nrniv_mf.h"
 
@@ -1275,12 +1275,11 @@ static double sswrite(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {{"save", save},
+static const Member_func members{{"save", save},
                                 {"restore", restore},
                                 {"fread", ssread},
-                                {"fwrite", sswrite},
-                                {0, 0}};
+                                {"fwrite", sswrite}};
 
 void SaveState_reg() {
-    class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("SaveState", cons, destruct, members, nullptr, {}, {});
 }

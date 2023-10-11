@@ -9,7 +9,7 @@
     p.scatter(Vector)
     p.gather(Vector)
 */
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include "ocptrvector.h"
 #include "objcmd.h"
@@ -198,17 +198,16 @@ static double ptr_plot(void* v) {
 }
 
 
-static Member_func members[] = {{"size", get_size},
+static const Member_func members{{"size", get_size},
                                 {"resize", resize},
                                 {"pset", pset},
                                 {"setval", setval},
                                 {"getval", getval},
                                 {"scatter", scatter},
                                 {"gather", gather},
-                                {"plot", ptr_plot},
-                                {0, 0}};
+                                {"plot", ptr_plot}};
 
-static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {0, 0}};
+static const Member_ret_str_func retstr_members{{"label", ptr_label}};
 
 static void* cons(Object*) {
     int sz;
@@ -222,6 +221,6 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-    class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+    class2oc("PtrVector", cons, destruct, members, nullptr, {}, retstr_members);
     pv_class_sym_ = hoc_lookup("PtrVector");
 }

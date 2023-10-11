@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "code.h"
 #include "hocdec.h"
 #include "hoc_membf.h"
@@ -98,18 +98,15 @@ const char** throwing_util_member_throw_error_str_func(void* ob_void) {
     auto* const ob = static_cast<UtilityThatLikesThrowing*>(ob_void);
     ob->throw_error();
 }
-static Member_func throwing_util_members[] = {{"call_execerror",
+static const Member_func throwing_util_members{{"call_execerror",
                                                throwing_util_member_call_execerror},
-                                              {"throw_error", throwing_util_member_throw_error},
-                                              {nullptr, nullptr}};
-static Member_ret_obj_func throwing_util_ret_obj_members[] = {
+                                              {"throw_error", throwing_util_member_throw_error}};
+static const Member_ret_obj_func throwing_util_ret_obj_members{
     {"call_execerror_obj_func", throwing_util_member_call_execerror_obj_func},
-    {"throw_error_obj_func", throwing_util_member_throw_error_obj_func},
-    {nullptr, nullptr}};
-static Member_ret_str_func throwing_util_ret_str_members[] = {
+    {"throw_error_obj_func", throwing_util_member_throw_error_obj_func}};
+static const Member_ret_str_func throwing_util_ret_str_members{
     {"call_execerror_str_func", throwing_util_member_call_execerror_str_func},
-    {"throw_error_str_func", throwing_util_member_throw_error_str_func},
-    {nullptr, nullptr}};
+    {"throw_error_str_func", throwing_util_member_throw_error_str_func}};
 void* throwing_util_constructor(Object*) {
     if (!ifarg(1)) {
         throw std::runtime_error("need at least one argument");

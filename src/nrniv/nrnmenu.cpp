@@ -12,7 +12,7 @@
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
 #include "nrnmenu.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
@@ -656,7 +656,7 @@ static void ms_destruct(void* v) {
     Resource::unref((MechanismStandard*) v);
 }
 
-static Member_func ms_members[] = {{"panel", ms_panel},
+static const Member_func ms_members{{"panel", ms_panel},
                                    {"action", ms_action},
                                    {"in", ms_in},
                                    {"_in", ms_in},
@@ -665,11 +665,10 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"get", ms_get},
                                    {"count", ms_count},
                                    {"name", ms_name},
-                                   {"save", ms_save},
-                                   {0, 0}};
+                                   {"save", ms_save}};
 
 void MechanismStandard_reg() {
-    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
+    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, {}, {});
     ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
@@ -1108,7 +1107,7 @@ static void mt_destruct(void* v) {
     MechanismType* mt = (MechanismType*) v;
     mt->unref();
 }
-static Member_func mt_members[] = {{"select", mt_select},
+static const Member_func mt_members{{"select", mt_select},
                                    {"selected", mt_selected},
                                    {"make", mt_make},
                                    {"remove", mt_remove},
@@ -1119,15 +1118,13 @@ static Member_func mt_members[] = {{"select", mt_select},
                                    {"has_net_event", mt_has_net_event},
                                    {"is_artificial", mt_is_artificial},
                                    {"is_ion", mt_is_ion},
-                                   {"internal_type", mt_internal_type},
-                                   {0, 0}};
-static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
-                                                  {"pp_next", mt_pp_next},
-                                                  {0, 0}};
-static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
+                                   {"internal_type", mt_internal_type}};
+static const Member_ret_obj_func mt_retobj_members{{"pp_begin", mt_pp_begin},
+                                                  {"pp_next", mt_pp_next}};
+static const Member_ret_str_func mt_retstr_func{{"code", mt_code}, {"file", mt_file}};
 void MechanismType_reg() {
     class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, NULL, mt_retobj_members, mt_retstr_func);
+        "MechanismType", mt_cons, mt_destruct, mt_members, nullptr, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 

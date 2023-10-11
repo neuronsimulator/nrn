@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV
@@ -64,10 +64,9 @@ static double sb_accept_action(void* v) {
 #endif
     return 1.;
 }
-static Member_func sb_members[] = {{"select", sb_select},
+static const Member_func sb_members{{"select", sb_select},
                                    {"select_action", sb_select_action},
-                                   {"accept_action", sb_accept_action},
-                                   {0, 0}};
+                                   {"accept_action", sb_accept_action}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;
@@ -96,7 +95,7 @@ static void sb_destruct(void* v) {
 #endif
 }
 void SectionBrowser_reg() {
-    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL, NULL);
+    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, nullptr, {}, {});
 }
 
 #if HAVE_IV

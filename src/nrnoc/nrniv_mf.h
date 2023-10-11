@@ -54,7 +54,7 @@ int point_register_mech(const char**,
                         int,
                         void* (*) (Object*),
                         void (*)(void*),
-                        Member_func*);
+                        const Member_func&);
 extern int nrn_get_mechtype(const char*);
 extern void nrn_writes_conc(int, int);
 extern void add_nrn_has_net_event(int);

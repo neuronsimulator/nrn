@@ -4,7 +4,7 @@
 #include <OS/list.h>
 #include <math.h>
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "kschan.h"
 #include "kssingle.h"
 #include "ocnotify.h"
@@ -167,11 +167,10 @@ static double hoc_nsingle(void* v) {
     }
     return (double) c->nsingle(pp);
 }
-static Member_func member_func[] = {{"loc", hoc_loc_pnt},
+static const Member_func member_func{{"loc", hoc_loc_pnt},
                                     {"has_loc", hoc_has_loc},
                                     {"get_loc", hoc_get_loc_pnt},
-                                    {"nsingle", hoc_nsingle},
-                                    {nullptr, nullptr}};
+                                    {"nsingle", hoc_nsingle}};
 
 void kschan_cvode_single_update() {}
 
@@ -688,7 +687,7 @@ static double ks_pr(void* v) {
     return 1;
 }
 
-static Member_func ks_dmem[] = {
+static const Member_func ks_dmem{
     // keeping c++ consistent with java
     {"setstructure", ks_setstructure},
 
@@ -708,54 +707,44 @@ static Member_func ks_dmem[] = {
     {"erev", ks_erev},
     {"vres", ks_vres},
     {"rseed", ks_rseed},
-    {"usetable", ks_usetable},
-    {nullptr, nullptr}};
+    {"usetable", ks_usetable}};
 
-static Member_ret_obj_func ks_omem[] = {{"add_hhstate", ks_add_hhstate},
+static const Member_ret_obj_func ks_omem{{"add_hhstate", ks_add_hhstate},
                                         {"add_ksstate", ks_add_ksstate},
                                         {"add_transition", ks_add_transition},
                                         {"trans", ks_trans},
                                         {"state", ks_state},
-                                        {"gate", ks_gate},
-                                        {nullptr, nullptr}};
+                                        {"gate", ks_gate}};
 
-static Member_ret_str_func ks_smem[] = {{"name", ks_name},
+static const Member_ret_str_func ks_smem{{"name", ks_name},
                                         {"ion", ks_ion},
-                                        {"ligand", ks_ligand},
-                                        {nullptr, nullptr}};
+                                        {"ligand", ks_ligand}};
 
-static Member_func kss_dmem[] = {{"frac", kss_frac}, {"index", kss_index}, {nullptr, nullptr}};
+static const Member_func kss_dmem{{"frac", kss_frac}, {"index", kss_index}};
 
-static Member_ret_obj_func kss_omem[] = {{"gate", kss_gate}, {nullptr, nullptr}};
+static const Member_ret_obj_func kss_omem{{"gate", kss_gate}};
 
-static Member_ret_str_func kss_smem[] = {{"name", kss_name}, {nullptr, nullptr}};
+static const Member_ret_str_func kss_smem{{"name", kss_name}};
 
-static Member_func ksg_dmem[] = {{"nstate", ksg_nstate},
+static const Member_func ksg_dmem{{"nstate", ksg_nstate},
                                  {"power", ksg_power},
                                  {"sindex", ksg_sindex},
-                                 {"index", ksg_index},
-                                 {nullptr, nullptr}};
+                                 {"index", ksg_index}};
 
-static Member_ret_obj_func ksg_omem[] = {{nullptr, nullptr}};
-
-static Member_ret_str_func ksg_smem[] = {{nullptr, nullptr}};
-
-static Member_func kst_dmem[] = {{"set_f", kst_set_f},
+static const Member_func kst_dmem{{"set_f", kst_set_f},
                                  {"index", kst_index},
                                  {"type", kst_type},
                                  {"ftype", kst_ftype},
                                  {"ab", kst_ab},
                                  {"inftau", kst_inftau},
                                  {"f", kst_f},
-                                 {"stoichiometry", kst_stoichiometry},
-                                 {nullptr, nullptr}};
+                                 {"stoichiometry", kst_stoichiometry}};
 
-static Member_ret_obj_func kst_omem[] = {{"src", kst_src},
+static const Member_ret_obj_func kst_omem{{"src", kst_src},
                                          {"target", kst_target},
-                                         {"parm", kst_parm},
-                                         {nullptr, nullptr}};
+                                         {"parm", kst_parm}};
 
-static Member_ret_str_func kst_smem[] = {{"ligand", kst_ligand}, {nullptr, nullptr}};
+static const Member_ret_str_func kst_smem{{"ligand", kst_ligand}};
 
 static void* ks_cons(Object* o) {
     /*
@@ -801,10 +790,10 @@ static void* kst_cons(Object* o) {
 static void kst_destruct(void*) {}
 
 void KSChan_reg() {
-    class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, NULL, ks_omem, ks_smem);
-    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, NULL, ksg_omem, ksg_smem);
-    class2oc("KSState", kss_cons, kss_destruct, kss_dmem, NULL, kss_omem, kss_smem);
-    class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, NULL, kst_omem, kst_smem);
+    class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, nullptr, ks_omem, ks_smem);
+    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, nullptr, {}, {});
+    class2oc("KSState", kss_cons, kss_destruct, kss_dmem, nullptr, kss_omem, kss_smem);
+    class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, nullptr, kst_omem, kst_smem);
     ksstate_sym = hoc_lookup("KSState");
     ksgate_sym = hoc_lookup("KSGate");
     kstrans_sym = hoc_lookup("KSTrans");

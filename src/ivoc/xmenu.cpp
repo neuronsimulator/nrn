@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 
 #include "oc2iv.h"
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 #include "utils/enumerate.h"
 
@@ -3131,7 +3131,7 @@ static double vfe_default(void* v) {
 #endif
     return x;
 }
-static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
+static const Member_func vfe_members{{"default", vfe_default}};
 void ValueFieldEditor_reg() {
-    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
+    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, nullptr, {}, {});
 }

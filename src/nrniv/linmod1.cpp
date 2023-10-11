@@ -5,7 +5,7 @@
 #if HAVE_IV
 #include "ivoc.h"
 #endif
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "linmod.h"
 #include "nrnoc2iv.h"
 
@@ -47,7 +47,7 @@ static double valid(void* v) {
     return double(((LinearMechanism*) v)->valid());
 }
 
-static Member_func members[] = {{"valid", valid}, {0, 0}};
+static const Member_func members{{"valid", valid}};
 
 static void* cons(Object*) {
     LinearMechanism* m = new LinearMechanism();
@@ -61,7 +61,7 @@ static void destruct(void* v) {
 }
 
 void LinearMechanism_reg() {
-    class2oc("LinearMechanism", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("LinearMechanism", cons, destruct, members, nullptr, {}, {});
 }
 
 LinearMechanism::LinearMechanism() {

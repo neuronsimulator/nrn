@@ -7,7 +7,7 @@
 #include "random1.h"
 
 #include <InterViews/resource.h>
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "oc2iv.h"
 #include "nrnisaac.h"
 #include "utils/enumerate.h"
@@ -607,7 +607,7 @@ extern "C" void nrn_random_play() {
 }
 
 
-static Member_func r_members[] = {{"ACG", r_ACG},
+static const Member_func r_members{{"ACG", r_ACG},
                                   {"MLCG", r_MLCG},
                                   {"Isaac64", r_Isaac64},
                                   {"MCellRan4", r_MCellRan4},
@@ -626,11 +626,10 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"negexp", r_negexp},
                                   {"erlang", r_erlang},
                                   {"weibull", r_weibull},
-                                  {"play", r_play},
-                                  {nullptr, nullptr}};
+                                  {"play", r_play}};
 
 void Random_reg() {
-    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
+    class2oc("Random", r_cons, r_destruct, r_members, nullptr, {}, {});
     random_play_list_ = new RandomPlayList;
 }
 

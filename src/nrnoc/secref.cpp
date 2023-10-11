@@ -276,7 +276,7 @@ static double s_cas(void* v) { /* return 1 if currently accessed section */
     return 0.;
 }
 
-static Member_func members[] = {{"sec", s_rename}, /* will actually become a SECTIONREF below */
+static const Member_func members{{"sec", s_rename}, /* will actually become a SECTIONREF below */
                                 {"parent", s_rename},
                                 {"trueparent", s_rename},
                                 {"root", s_rename},
@@ -287,8 +287,7 @@ static Member_func members[] = {{"sec", s_rename}, /* will actually become a SEC
                                 {"exists", s_exists},
                                 {"rename", s_rename},
                                 {"unname", s_unname},
-                                {"is_cas", s_cas},
-                                {0, 0}};
+                                {"is_cas", s_cas}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;
@@ -353,19 +352,10 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
 }
 
 
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     int (*checkpoint)(void**),
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
-
-
 void SectionRef_reg(void) {
     Symbol *s, *sr;
 
-    class2oc("SectionRef", cons, destruct, members, nullptr, nullptr, nullptr);
+    class2oc("SectionRef", cons, destruct, members, nullptr, {}, {});
     /* now make the sec variable an actual SECTIONREF */
     sr = hoc_lookup("SectionRef");
     s = hoc_table_lookup("sec", sr->u.ctemplate->symtable);

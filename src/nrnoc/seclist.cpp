@@ -243,7 +243,7 @@ static double printnames(void* v) {
 return 1.;
 }
 
-static Member_func members[] = {{"append", append},
+static const Member_func members{{"append", append},
                                 {"remove", seclist_remove},
                                 {"wholetree", wholetree},
                                 {"subtree", subtree},
@@ -251,22 +251,12 @@ static Member_func members[] = {{"append", append},
                                 {"unique", unique},
                                 {"printnames", printnames},
                                 {"contains", contains},
-                                {"allroots", allroots},
-                                {0, 0}};
-
-
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     int (*checkpoint)(void**),
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
+                                {"allroots", allroots}};
 
 
 void SectionList_reg(void) {
     /*	printf("SectionList_reg\n");*/
-    class2oc("SectionList", constructor, destructor, members, nullptr, nullptr, nullptr);
+    class2oc("SectionList", constructor, destructor, members, nullptr, {}, {});
 }
 
 #define relative(pc) (pc + (pc)->i)

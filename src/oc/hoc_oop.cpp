@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
-#include <classreg.h>
+#include <hoc_membf.h>
 #include <vector>
 
 #include "hocstr.h"
@@ -17,6 +17,8 @@
 
 
 #define PDEBUG 0
+
+class Symbol;
 
 Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
@@ -1566,10 +1568,10 @@ void hoc_endtemplate(Symbol* t) {
 void class2oc_base(const char* name,
                    void* (*cons)(Object*),
                    void (*destruct)(void*),
-                   Member_func* m,
+                   const Member_func& m,
                    int (*checkpoint)(void**),
-                   Member_ret_obj_func* mobjret,
-                   Member_ret_str_func* strret) {
+                   const Member_ret_obj_func& mobjret,
+                   const Member_ret_str_func& strret) {
     extern int hoc_main1_inited_;
     Symbol *tsym, *s;
     cTemplate* t;
@@ -1586,29 +1588,34 @@ void class2oc_base(const char* name,
     if (!hoc_main1_inited_ && t->id > hoc_max_builtin_class_id) {
         hoc_max_builtin_class_id = t->id;
     }
-    t->constructor = cons;
-    t->destructor = destruct;
+    if (cons) {
+        t->constructor = cons;
+    } else {
+        t->constructor = [](Object*) -> void* {return nullptr;};
+    }
+    if (destruct) {
+        t->destructor = destruct;
+    } else {
+        t->destructor = [](void*) -> void {};
+    }
     t->steer = 0;
     t->checkpoint = checkpoint;
 
-    if (m)
-        for (i = 0; m[i].name; ++i) {
-            s = hoc_install(m[i].name, FUNCTION, 0.0, &hoc_symlist);
-            s->u.u_proc->defn.pfd_vp = m[i].member;
-            hoc_add_publiclist(s);
-        }
-    if (mobjret)
-        for (i = 0; mobjret[i].name; ++i) {
-            s = hoc_install(mobjret[i].name, OBFUNCTION, 0.0, &hoc_symlist);
-            s->u.u_proc->defn.pfo_vp = mobjret[i].member;
-            hoc_add_publiclist(s);
-        }
-    if (strret)
-        for (i = 0; strret[i].name; ++i) {
-            s = hoc_install(strret[i].name, STRFUNCTION, 0.0, &hoc_symlist);
-            s->u.u_proc->defn.pfs_vp = strret[i].member;
-            hoc_add_publiclist(s);
-        }
+    for (const auto&[name, member]: m) {
+        s = hoc_install(name, FUNCTION, 0.0, &hoc_symlist);
+        s->u.u_proc->defn.pfd_vp = member;
+        hoc_add_publiclist(s);
+    }
+    for (const auto&[name, member]: mobjret) {
+        s = hoc_install(name, OBFUNCTION, 0.0, &hoc_symlist);
+        s->u.u_proc->defn.pfo_vp = member;
+        hoc_add_publiclist(s);
+    }
+    for (const auto&[name, member]: strret) {
+        s = hoc_install(name, STRFUNCTION, 0.0, &hoc_symlist);
+        s->u.u_proc->defn.pfs_vp = member;
+        hoc_add_publiclist(s);
+    }
     hoc_endtemplate(tsym);
 }
 
@@ -1616,10 +1623,10 @@ void class2oc_base(const char* name,
 void class2oc(const char* name,
               void* (*cons)(Object*),
               void (*destruct)(void*),
-              Member_func* m,
+              const Member_func& m,
               int (*checkpoint)(void**),
-              Member_ret_obj_func* mobjret,
-              Member_ret_str_func* strret) {
+              const Member_ret_obj_func& mobjret,
+              const Member_ret_str_func& strret) {
     class2oc_base(name, cons, destruct, m, checkpoint, mobjret, strret);
     py_exposed_classes.push_back(name);
 }

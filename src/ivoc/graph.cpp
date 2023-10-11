@@ -46,7 +46,7 @@ extern Image* gif_image(const char*);
 #include "ivocvect.h"
 #endif /* HAVE_IV */
 
-#include "classreg.h"
+#include "hoc_membf.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV
@@ -1140,7 +1140,7 @@ extern double gr_getline(void*);
 #endif
 extern double gr_addglyph(void*);
 
-static Member_func gr_members[] = {{"plot", gr_plot},
+static const Member_func gr_members{{"plot", gr_plot},
                                    {"fastflush", gr_fast_flush},
                                    {"flush", gr_flush},
                                    {"xaxis", gr_xaxis},
@@ -1183,8 +1183,7 @@ static Member_func gr_members[] = {{"plot", gr_plot},
                                    {"exec_menu", exec_menu},
                                    {"gif", ivoc_gr_gif},
                                    {"menu_remove", ivoc_gr_menu_remove},
-                                   {"line_info", gr_line_info},
-                                   {0, 0}};
+                                   {"line_info", gr_line_info}};
 
 static void* gr_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("Graph", NULL);
@@ -1216,7 +1215,7 @@ static void gr_destruct(void* v) {
 }
 void Graph_reg() {
     // printf("Graph_reg\n");
-    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
+    class2oc("Graph", gr_cons, gr_destruct, gr_members, nullptr, {}, {});
 #if HAVE_IV
     IFGUI
     colors = new ColorPalette();
