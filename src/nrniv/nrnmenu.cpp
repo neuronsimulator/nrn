@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <OS/string.h>
 
 #if HAVE_IV
 #include "secbrows.h"

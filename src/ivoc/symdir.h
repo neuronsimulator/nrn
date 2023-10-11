@@ -3,7 +3,6 @@
 
 #include <InterViews/resource.h>
 #include <map>
-#include <OS/string.h>
 
 struct Object;
 class SymDirectoryImpl;
