@@ -114,7 +114,8 @@ extern void vector_delete(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
 
 extern int is_vector_arg(int);
-extern Object **new_vect(void *v, std::size_t start, std::size_t end, std::size_t step);
+extern Object **new_vect(void *v, ssize_t start, ssize_t end, ssize_t step);
+
 extern char* vector_get_label(IvocVect*);
 extern void vector_set_label(IvocVect*, char*);
 

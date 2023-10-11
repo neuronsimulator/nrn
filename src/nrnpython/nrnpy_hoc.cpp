@@ -1945,18 +1945,22 @@ static PyObject* hocobj_slice_getitem(PyObject* self, PyObject *slice) {
         auto* po = (PyHocObject *) self;
         if (po->type_ != PyHoc::HocObject || po->ho_->ctemplate != hoc_vec_template_) {
             PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
-            return NULL;
+            return nullptr;
         }
         auto *v = (Vect*) po->ho_->u.this_pointer;
         Py_ssize_t start = 0;
         Py_ssize_t end = 0;
         Py_ssize_t step = 0;
         Py_ssize_t slicelen = 0;
-        size_t cap = vector_capacity(v);
-        PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
-        if (start >= cap || end > cap || start >= end) {
+        Py_ssize_t len = vector_capacity(v);
+        PySlice_GetIndicesEx(slice, len, &start, &end, &step, &slicelen);
+        if (step == 0) {
+            PyErr_SetString(PyExc_ValueError, "slice step cannot be zero");
+            return nullptr;
+        }
+        if (start > len || end > len) {
             PyErr_SetString(PyExc_IndexError, "index out of bounds");
-            return NULL;
+            return nullptr;
         }
         Object **obj = new_vect(v, start, end, step);
         return nrnpy_ho2po(*obj);
@@ -2116,7 +2120,7 @@ static int hocobj_slice_setitem(PyObject* self, PyObject *slice, PyObject* arg)
     if (end < 0) {
         end += cap;
     }
-    if (start >= cap || start < 0 || end > cap || end < 0 || start >= end) {
+    if (start >= cap || start < 0 || end > cap || end < 0) {
         PyErr_SetString(PyExc_IndexError, "index out of bounds");
         return -1;
     }
