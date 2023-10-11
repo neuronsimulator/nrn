@@ -1962,7 +1962,7 @@ static PyObject* hocobj_slice_getitem(PyObject* self, PyObject *slice) {
             PyErr_SetString(PyExc_IndexError, "index out of bounds");
             return nullptr;
         }
-        Object **obj = new_vect(v, start, end, step);
+        Object **obj = new_vect(v, slicelen, start, step);
         return nrnpy_ho2po(*obj);
     } else {
         return hocobj_getitem(self, PyLong_AsLong(slice));
@@ -2120,24 +2120,18 @@ static int hocobj_slice_setitem(PyObject* self, PyObject *slice, PyObject* arg)
     if (end < 0) {
         end += cap;
     }
-    if (start >= cap || start < 0 || end > cap || end < 0) {
-        PyErr_SetString(PyExc_IndexError, "index out of bounds");
-        return -1;
-    }
     if (PyList_Check(arg)) {
-        Py_ssize_t sz = PyList_Size(arg);
-        if (sz != slicelen) {
+        Py_ssize_t arg_sz = PyList_Size(arg);
+        if (arg_sz != slicelen) {
             PyErr_SetString(PyExc_IndexError, "list must be same size as slice");
             return -1;
         }
-        Py_ssize_t arg_idx = 0;
-        for (ssize_t i = start; i < end; i += step) {
-            PyArg_Parse(PyList_GetItem(arg, arg_idx++), "d", vector_vec(v) + i);
-        }
     } else {
-        for (ssize_t i = start; i < end; ++i) {
-            PyArg_Parse(arg, "d", vector_vec(v) + i);
-        }
+        PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
+        return -1;
+    }
+    for (ssize_t i = 0; i < slicelen; ++i) {
+        PyArg_Parse(PyList_GetItem(arg, i), "d", vector_vec(v) + (i * step + start));
     }
     return 0;
 }

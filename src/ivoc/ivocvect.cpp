@@ -398,22 +398,11 @@ int is_vector_arg(int i) {
     return 1;
 }
 
-Object **new_vect(void *v, ssize_t start, ssize_t end, ssize_t step) {
+Object **new_vect(void *v, ssize_t delta, ssize_t start, ssize_t step) {
     auto *x = static_cast<Vect *>(v);
-    ssize_t delta = end - start;
-    ssize_t sz = delta / step;
-    if ((delta < 0 && step > 0) || (delta > 0 && step < 0)) {
-        return (new Vect(0))->temp_objvar();
-    }
-    if (delta % step != 0) {
-        ++sz;
-    }
-    if (sz < 0) {
-        sz = 0;
-    }
-    std::size_t size{(size_t) sz};
+    std::size_t size{(size_t) delta};
     auto *y = new Vect(size);
-    for (std::size_t i = 0; i < sz ; ++i) {
+    for (std::size_t i = 0; i < delta ; ++i) {
         y->elem(i) = x->elem(i * step + start);
     }
     return y->temp_objvar();
@@ -1596,7 +1585,8 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    return new_vect(v, start, end, 1);
+    ssize_t delta = end - start;
+    return new_vect(v, delta, start, 1);
 }
 
 

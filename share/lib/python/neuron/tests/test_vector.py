@@ -108,19 +108,17 @@ class VectorTestCase(unittest.TestCase):
         assert(list(v[-3:-1]) == l[-3:-1]), "v[-3:-1] Failed"
         assert(list(v[::2]) == l[::2]), "v[::2] Failed"
         assert(list(v[::-2]) == l[::-2]), "v[::-2] Failed"
-        v[3:6] = 99
-        l[3:6] =[99, 99, 99]
-        assert(list(v[3:6]) == l[3:6]), "v[3:6] Failed"
-        v[2:4] = [12, 13]
-        l[2:4] = [12, 13]
-        assert(list(v[2:4]) == l[2:4]), "v[2:4] Failed"
+        assert(list(v[3:6:2]) == l[3:6:2]), "v[3:6] Failed"
         assert(list(v[7:-9:-2]) == l[7:-9:-2]), "v[7:-9:-2] Failed"
         assert(list(v[-1::-3]) == l[-1::-3]), "v[-1::-3] Failed"
         assert(list(v[-2::-6]) == l[-2::-6]), "v[-2::-6] Failed"
         assert(list(v[7:-1:-2]) == l[7:-1:-2]), "v[-2::-6] Failed"
-        assert(list(v[3:2:-2]) == l[3:2:-1]), "v[3:2:-2] Failed"
+        assert(list(v[3:2:-2]) == l[3:2:-2]), "v[3:2:-2] Failed"
+
+    def testRandomSlicing(self):
         import numpy as np
         sample_size = 10000000
+        # sample_size = 10
         n = np.random.randint((-1 * sample_size), sample_size, size=sample_size).tolist()
         v = h.Vector(n)
         for _ in range(sample_size):
@@ -136,6 +134,24 @@ class VectorTestCase(unittest.TestCase):
                 else:
                     raise ValueError(f"{e}")
 
+    def testAssignmentSlicing(self):
+        l = [i for i in range(10)]
+        v = h.Vector(l)
+        v[2:4] = [12, 13]
+        l[2:4] = [12, 13]
+        assert(list(v[2:4]) == l[2:4]), "v[2:4] Failed"
+        v[-3:-1] = [-9, -9]
+        l[-3:-1] = [-9, -9]
+        assert(list(v[-3:-1]) == l[-3:-1]), "v[-3:-1] Failed"
+        v[::2] = [_ for _ in range(277, 282)]
+        l[::2] = [_ for _ in range(277, 282)]
+        assert(list(v[::2]) == l[::2]), "v[::2] Failed"
+        v[::-2] = [_ for _ in range(-377, -372)]
+        l[::-2] = [_ for _ in range(-377, -372)]
+        assert(list(v[::-2]) == l[::-2]), "v[::-2] Failed"
+        v[3:6:2] = [-123, -456]
+        l[3:6:2] = [-123, -456]
+        assert(list(v[3:6:2]) == l[3:6:2]), "v[3:6] Failed"
 
 def suite():
     suite = unittest.makeSuite(VectorTestCase, "test")
