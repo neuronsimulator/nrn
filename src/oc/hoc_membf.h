@@ -1,21 +1,17 @@
-#ifndef hoc_membf_h
-#define hoc_membf_h
+#pragma once
 
-struct Object;
+#include <map>
 
-typedef struct Member_func {
-    const char* name;
-    double (*member)(void*);
-} Member_func;
+class Object;
 
-typedef struct Member_ret_obj_func {
-    const char* name;
-    struct Object** (*member)(void*);
-} Member_ret_obj_func;
+using MemberPtr = double(void*);
+using MemberRetObjPtr = Object**(void*);
+using MemberRetStrPtr = const char**(void*);
 
-typedef struct Member_ret_str_func {
-    const char* name;
-    const char** (*member)(void*);
-} Member_ret_str_func;
-
-#endif
+void class2oc(const char* name,
+              void* (*cons)(Object*),
+              void (*destruct)(void*),
+              std::map<const char*, MemberPtr> members,
+              int (*checkpoint)(void**),
+              std::map<const char*, MemberRetObjPtr> mobjret,
+              std::map<const char*, MemberRetStrPtr> strret);
