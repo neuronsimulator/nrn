@@ -323,7 +323,7 @@ static const Member_func l_members{{"substr", l_substr},
 static const Member_ret_obj_func l_obj_members{{"alias_list", l_alias_list}};
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", nullptr,  nullptr, l_members, nullptr, l_obj_members, {});
+    class2oc("StringFunctions", nullptr, nullptr, l_members, nullptr, l_obj_members, {});
 }
 
 
