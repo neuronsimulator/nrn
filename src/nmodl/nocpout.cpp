@@ -472,7 +472,11 @@ extern void nrn_promote(Prop*, int, int);\n\
             Lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "\n};\n");
+    if (point_process) {
+        Lappendstr(defs_list, "\n};\n");
+    } else {
+        Lappendstr(defs_list, "{0, 0}\n};\n");
+    }
 
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except

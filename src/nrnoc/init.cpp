@@ -89,13 +89,14 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #include "nrnwrap_dlfcn.h"
 
-#define CHECK(name)                            \
-    if (hoc_lookup(name) != (Symbol*) 0) {     \
-        IGNORE(fprintf(stderr, CHKmes, name)); \
-        nrn_exit(1);                           \
-    }
-
 static char CHKmes[] = "The user defined name, %s, already exists\n";
+
+static void CHECK(const char* name) {
+    if (hoc_lookup(name) != (Symbol*) 0) {
+        IGNORE(fprintf(stderr, CHKmes, name));
+        nrn_exit(1);
+    }
+}
 
 void (*nrnpy_reg_mech_p_)(int);
 
