@@ -20,6 +20,7 @@ add_executable(
   unit_tests/matrix.cpp
   unit_tests/container/container.cpp
   unit_tests/container/generic_data_handle.cpp
+  unit_tests/container/data_handle.cpp
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
   unit_tests/utils/enumerate.cpp
