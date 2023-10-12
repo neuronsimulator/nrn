@@ -20,9 +20,7 @@ static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
-extern int _nrnunit_use_legacy_;
 int prev_structure_change_cnt = 0;
-int prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
 unsigned char initialized = FALSE;
 
 /*
@@ -774,10 +772,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
             /*Needed for node.include_flux*/
             _setup_matrices();
-        }
-        if (prev_nrnunit_use_legacy != _nrnunit_use_legacy_) {
-            _setup_units();
-            prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
         }
     }
     switch (method) {

@@ -285,12 +285,7 @@ Description:
     the UNIX units database. This can increase legibility and convenience, and is helpful both as a
     reminder to the user and as a means for automating the process of checking for consistency of
     units.
-    The UNIX units database taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib.in>`_.
-    This file includes two versions of the units due to the updates in the values of their base
-    units. Currently there are legacy and modern units that contain the changes after the updates
-    introduced on 2019 to the nist constants. The selection between those two versions can be done
-    using the ``NRN_DYNAMIC_UNITS_USE_LEGACY`` CMake variable or a call to
-    ``h.nrnunit_use_legacy(bool)`` during runtime.
+    The UNIX units database (based on the 2019 updated NIST constants) taken into account is defined in the `nrnunits.lib file <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrnunits.lib>`_.
 
     New units can be defined in terms of default units and previously defined units by placing
     definitions in the UNITS block. e.g.
