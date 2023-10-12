@@ -122,7 +122,7 @@ class VectorTestCase(unittest.TestCase):
         n = np.random.randint((-1 * sample_size), sample_size, size=sample_size).tolist()
         v = h.Vector(n)
         for _ in range(sample_size):
-            idx = np.random.randint(sample_size, size=3)
+            idx = np.random.randint((-1 * sample_size), sample_size, size=3)
             try:
                 result = list(v[idx[0]:idx[1]:idx[2]])
                 expected = n[idx[0]:idx[1]:idx[2]]
