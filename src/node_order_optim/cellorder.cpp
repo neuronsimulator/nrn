@@ -14,7 +14,9 @@
 #include "node_order_optim/lpt.hpp"
 #include "node_order_optim/memory.h"
 #include "nrnoc/multicore.h"
-//#include "coreneuron/utils/offload.hpp"
+#include "nrnoc/nrn_ansi.h"
+#include "nrnoc/nrniv_mf.h"
+#include "coreneuron/utils/offload.hpp"
 //#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "node_order_optim/node_permute.h"  // for print_quality
@@ -109,6 +111,11 @@ void destroy_interleave_info() {
 // more precise visualization of the warp quality
 // can be called after admin2
 static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
+    // '.' p[i] = p[i-1] + 1 (but first of cacheline is 'o')
+    // 'o' p[i] != p[i-1] + 1 and not a child race
+    // 'r' p[i] = p[i-1] + 1 and race
+    // 'R' p[1] != p[i-1] + 1 and race
+    // 'X' core is unused
     int pc = (iwarp == 0);  // print warp 0
     pc = 0;                 // turn off printing
     int nodebegin = ii.lastnode[iwarp];
@@ -117,12 +124,11 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
 
     int inode = nodebegin;
 
-    size_t nn = 0;  // number of nodes in warp. '.'
-    size_t nx = 0;  // number of idle cores on all cycles. 'X'
-    size_t ncacheline = 0;
-    ;                // number of parent memory cacheline accesses.
-                     //   assmue warpsize is max number in a cachline so all o
-    size_t ncr = 0;  // number of child race. nchild-1 of same parent in same cycle
+    size_t nn = 0;          // number of nodes in warp. '.oRr'
+    size_t nx = 0;          // number of idle cores on all cycles. 'X'
+    size_t ncacheline = 0;  // number of parent memory cacheline accesses.
+                            //   assume warpsize is max number in a cacheline so all o
+    size_t ncr = 0;         // number of child race. nchild-1 of same parent in same cycle
 
     for (int icycle = 0; icycle < ncycle; ++icycle) {
         int s = stride[icycle];
@@ -286,6 +292,29 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 #endif
 }
 
+int nrn_optimize_node_order(int type) {
+    if (type != interleave_permute_type) {
+        tree_changed = 1;  // calls setup_topology. v_stucture_change = 1 may be better.
+    }
+    interleave_permute_type = type;
+    return type;
+}
+
+void nrn_permute_node_order() {
+    if (!interleave_permute_type) {
+        return;
+    }
+    printf("enter nrn_permute_node_order\n");
+    destroy_interleave_info();
+    create_interleave_info();
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        auto& nt = nrn_threads[tid];
+        int* perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
+        delete[] perm;
+    }
+    printf("leave nrn_permute_node_order\n");
+}
+
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     // return if there are no nodes to permute
     if (nnode <= 0)
@@ -423,12 +452,11 @@ void mk_cell_indices() {
 }
 #endif  // INTERLEAVE_DEBUG
 
-#if 0
-#define GPU_V(i)      nt->_actual_v[i]
-#define GPU_A(i)      nt->_actual_a[i]
-#define GPU_B(i)      nt->_actual_b[i]
-#define GPU_D(i)      nt->_actual_d[i]
-#define GPU_RHS(i)    nt->_actual_rhs[i]
+#define GPU_V(i)      vec_v[i]
+#define GPU_A(i)      vec_a[i]
+#define GPU_B(i)      vec_b[i]
+#define GPU_D(i)      vec_d[i]
+#define GPU_RHS(i)    vec_rhs[i]
 #define GPU_PARENT(i) nt->_v_parent_index[i]
 
 // How does the interleaved permutation with stride get used in
@@ -441,6 +469,10 @@ static void triang_interleaved(NrnThread* nt,
                                int nstride,
                                int* stride,
                                int* lastnode) {
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
     int i = lastnode[icell];
     for (int istride = nstride - 1; istride >= 0; --istride) {
         if (istride < icellsize) {  // only first icellsize strides matter
@@ -464,6 +496,10 @@ static void bksub_interleaved(NrnThread* nt,
                               int /* nstride */,
                               int* stride,
                               int* firstnode) {
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
     int i = firstnode[icell];
     GPU_RHS(icell) /= GPU_D(icell);  // the root
     for (int istride = 0; istride < icellsize; ++istride) {
@@ -485,6 +521,10 @@ static void solve_interleaved2_loop_body(NrnThread* nt,
                                          int* stridedispl,
                                          int* rootbegin,
                                          int* nodebegin) {
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
     int iwarp = icore / warpsize;     // figure out the >> value
     int ic = icore & (warpsize - 1);  // figure out the & mask
     int ncycle = ncycles[iwarp];
@@ -566,7 +606,7 @@ static void solve_interleaved2_loop_body(NrnThread* nt,
 /**
  * \brief Solve Hines matrices/cells with compartment-based granularity.
  *
- * The node ordering/permuation guarantees cell interleaving (as much coalesced memory access as
+ * The node ordering/permutation guarantees cell interleaving (as much coalesced memory access as
  * possible) and balanced warps (through the use of lpt algorithm to define the groups/warps). Every
  * warp deals with a group of cells, therefore multiple compartments (finer level of parallelism).
  */
@@ -595,7 +635,7 @@ void solve_interleaved2(int ith) {
         int nstride = stridedispl[nwarp];
 #endif
         // nvc++/22.3 does not respect an if clause inside nrn_pragma_omp...
-        if (nt->compute_gpu) {
+        if (0) {  // nt->compute_gpu) {
             /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
              * understand that the parallelism here is exposed in steps, while in the CUDA version
              * all the parallelism is exposed from the very beginning of the loop. In more details,
@@ -682,5 +722,4 @@ void solve_interleaved(int ith) {
         solve_interleaved1(ith);
     }
 }
-#endif  // 0
 }  // namespace neuron

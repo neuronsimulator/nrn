@@ -28,16 +28,6 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent);
 void create_interleave_info();
 void destroy_interleave_info();
 
-/**
- *
- * \brief Solve the Hines matrices based on the interleave_permute_type (1 or 2).
- *
- * For interleave_permute_type == 1 : Naive interleaving -> Each execution thread deals with one
- * Hines matrix (cell) For interleave_permute_type == 2 : Advanced interleaving -> Each Hines matrix
- * is solved by multiple execution threads (with coalesced memory access as well)
- */
-extern void solve_interleaved(int ith);
-
 class InterleaveInfo;  // forward declaration
 /**
  *

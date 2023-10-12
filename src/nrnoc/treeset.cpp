@@ -9,6 +9,7 @@
 #include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container.hpp"
+#include "node_order_optim/node_order_optim.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
@@ -1754,6 +1755,7 @@ void v_setup_vectors(void) {
         }
     }
     neuron::model().node_data().mark_as_unsorted();
+    neuron::nrn_permute_node_order();
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
