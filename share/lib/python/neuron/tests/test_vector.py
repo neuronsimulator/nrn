@@ -137,6 +137,20 @@ class VectorTestCase(unittest.TestCase):
         v[3:8] = v2[3:8]
         assert list(v[3:8]) == list(v2[3:8]), "v[3:8] = v2[3:8] Failed"
 
+    def testErrorHandeling(self):
+        l = [i for i in range(10)]
+        v = h.Vector(l)
+        # Input that is too short or long should raise an IndexError
+        try:
+            v[0:3] = [55]
+        except IndexError:
+            pass
+        try:
+            v[3:7] = (x for x in range(100, 120))
+        except IndexError:
+            pass
+        assert list(v) == l
+
 
 def suite():
     suite = unittest.makeSuite(VectorTestCase, "test")
