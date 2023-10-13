@@ -1832,6 +1832,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     if (po->type_ == PyHoc::HocObject) {  // might be in an iterator context
         if (po->ho_->ctemplate == hoc_vec_template_) {
             Vect* hv = (Vect*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += vector_capacity(hv);
+            }
             if (ix < 0 || ix >= vector_capacity(hv)) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
@@ -1842,6 +1845,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             }
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             OcList* hl = (OcList*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += hl->count();
+            }
             if (ix < 0 || ix >= hl->count()) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
