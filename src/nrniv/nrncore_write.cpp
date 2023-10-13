@@ -200,8 +200,8 @@ static part1_ret part1() {
     for (int i = 0; i < n_memb_func; ++i) {
         int sz = nrn_prop_dparam_size_[i];
         bbcore_dparam_size[i] = sz;
-        Memb_func* mf = memb_func + i;
-        if (mf && mf->dparam_semantics && sz && mf->dparam_semantics[sz - 1] == -3) {
+        const Memb_func& mf = memb_func[i];
+        if (mf.dparam_semantics && sz && mf.dparam_semantics[sz - 1] == -3) {
             // cvode_ieq in NEURON but not CoreNEURON
             bbcore_dparam_size[i] = sz - 1;
         }

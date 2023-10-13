@@ -51,7 +51,7 @@ NEURON's tools for electrotonic analysis are gathered into four different "style
 
 - :ref:`log(A) vs. X <log(A)_vs_x>`
 
-- :ref:`Shape <shape>`
+- :ref:`Shape <electrotonic_shape_tool>`
 
 They are accessible through :menuselection:`NEURON Main Menu --> Tools --> Impedance`. In this exercise you will start to learn how to use each of them. To save screen space, close a tool when you are done with it.
 
@@ -217,7 +217,7 @@ But synapses aren't voltage sources. They're much more like current sources. In 
 So just click on the *Vout* radio button and you see that a synapse attached to a basilar dendrite will produce nearly the same somatic PSP no matter how far it is from the soma! This is the phenomenon that David Jaffe and I call passive normalization : variation of somatic PSP amplitude with synaptic distance is reduced ("normalization"), and it doesn't require active currents to happen ("passive"). For more information, see our :ref:`paper <citations>`.
 
 
-.. _shape:
+.. _electrotonic_shape_tool:
 
 The Shape Tool
 ++++++++++++++

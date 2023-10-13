@@ -23,7 +23,6 @@ def do_test(test_to_run, results_location, num_record=10):
 
     import itertools
 
-    h.nrnunit_use_legacy(True)
     data = {"record_count": 0, "data": []}
     do_test.data = data
     record_count = 0

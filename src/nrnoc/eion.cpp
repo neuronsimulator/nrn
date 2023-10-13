@@ -9,7 +9,7 @@
 #include "parse.hpp"
 #include "membdef.h"
 #include "nrniv_mf.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include <array>
 #include <string>
@@ -262,12 +262,7 @@ at least one model using this ion\n",
         }
 }
 
-#define FARADAY _faraday_[_nrnunit_use_legacy_]
-static double _faraday_[2] = {_faraday_codata2018, 96485.309};
-#define gasconstant _gasconstant_[_nrnunit_use_legacy_]
-static double _gasconstant_[2] = {_gasconstant_codata2018, 8.3134};
-
-#define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
+#define ktf (1000. * _gasconstant_codata2018 * (celsius + 273.15) / _faraday_codata2018)
 double nrn_nernst(double ci, double co, double z) {
     /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/
     if (z == 0) {
@@ -343,7 +338,7 @@ double nrn_ghk(double v, double ci, double co, double z) {
     temp = z * v / ktf;
     eco = co * efun(temp);
     eci = ci * efun(-temp);
-    return (.001) * z * FARADAY * (eci - eco);
+    return (.001) * z * _faraday_codata2018 * (eci - eco);
 }
 
 void ghk(void) {
