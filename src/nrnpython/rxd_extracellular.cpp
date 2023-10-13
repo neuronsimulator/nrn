@@ -6,6 +6,8 @@
 #include "rxd.h"
 #include <nrnwrap_Python.h>
 #include <cmath>
+#include <ocmatrix.h>
+#include <cfloat>
 
 #define loc(x, y, z) ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 
@@ -288,10 +290,9 @@ void* ecs_do_reactions(void* dataptr) {
     double* mc_mults_array = NULL;
     double dx = FLT_EPSILON;
     double pd;
-    MAT* jacobian;
-    VEC* x;
-    VEC* b;
-    PERM* pivot;
+    std::unique_ptr<OcFullMatrix> jacobian;
+    std::vector<double> x{};
+    std::vector<double> b{};
 
     for (react = ecs_reactions; react != NULL; react = react->next) {
         // TODO: This is bad. Need to refactor
@@ -315,10 +316,10 @@ void* ecs_do_reactions(void* dataptr) {
                 if (react->num_species_involved == 0)
                     continue;
                 /*allocate data structures*/
-                jacobian = m_get(react->num_species_involved, react->num_species_involved);
-                b = v_get(react->num_species_involved);
-                x = v_get(react->num_species_involved);
-                pivot = px_get(jacobian->m);
+                jacobian = std::make_unique<OcFullMatrix>(react->num_species_involved,
+                                                          react->num_species_involved);
+                b.resize(react->num_species_involved);
+                x.resize(react->num_species_involved);
                 states_cache = (double*) malloc(sizeof(double) * react->num_species_involved);
                 params_cache = (double*) malloc(sizeof(double) * react->num_params_involved);
                 states_cache_dx = (double*) malloc(sizeof(double) * react->num_species_involved);
@@ -335,7 +336,7 @@ void* ecs_do_reactions(void* dataptr) {
                             states_cache_dx[j] = react->species_states[j][offset_idx];
                             mc_mults_array[j] = react->mc3d_mults[j][i];
                         }
-                        MEM_ZERO(results_array, react->num_species_involved * sizeof(double));
+                        memset(results_array, 0, react->num_species_involved * sizeof(double));
                         for (k = 0; j < react->num_species_involved + react->num_params_involved;
                              k++, j++) {
                             offset_idx = i + react->mc3d_indices_offsets[j];
@@ -346,35 +347,34 @@ void* ecs_do_reactions(void* dataptr) {
 
                         for (j = 0; j < react->num_species_involved; j++) {
                             states_cache_dx[j] += dx;
-                            MEM_ZERO(results_array_dx,
-                                     react->num_species_involved * sizeof(double));
+                            memset(results_array_dx,
+                                   0,
+                                   react->num_species_involved * sizeof(double));
                             react->reaction(states_cache_dx,
                                             params_cache,
                                             results_array_dx,
                                             mc_mults_array);
-                            v_set_val(b, j, dt * results_array[j]);
+                            b[j] = dt * results_array[j];
 
                             for (k = 0; k < react->num_species_involved; k++) {
                                 pd = (results_array_dx[k] - results_array[k]) / dx;
-                                m_set_val(jacobian, k, j, (j == k) - dt * pd);
+                                *jacobian->mep(k, j) = (j == k) - dt * pd;
                             }
                             states_cache_dx[j] -= dx;
                         }
                         // solve for x
                         if (react->num_species_involved == 1) {
-                            react->species_states[0][i] += v_get_val(b, 0) /
-                                                           m_get_val(jacobian, 0, 0);
+                            react->species_states[0][i] += b[0] / jacobian->getval(0, 0);
                         } else {
                             // find entry in leftmost column with largest absolute value
                             // Pivot
                             for (j = 0; j < react->num_species_involved; j++) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
-                                    if (abs(m_get_val(jacobian, j, j)) <
-                                        abs(m_get_val(jacobian, k, j))) {
+                                    if (abs(jacobian->getval(j, j)) < abs(jacobian->getval(k, j))) {
                                         for (n = 0; n < react->num_species_involved; n++) {
-                                            temp = m_get_val(jacobian, j, n);
-                                            m_set_val(jacobian, j, n, m_get_val(jacobian, k, n));
-                                            m_set_val(jacobian, k, n, temp);
+                                            temp = jacobian->getval(j, n);
+                                            *jacobian->mep(j, n) = jacobian->getval(k, n);
+                                            *jacobian->mep(k, n) = temp;
                                         }
                                     }
                                 }
@@ -382,28 +382,24 @@ void* ecs_do_reactions(void* dataptr) {
 
                             for (j = 0; j < react->num_species_involved - 1; j++) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
-                                    ge_value = m_get_val(jacobian, k, j) /
-                                               m_get_val(jacobian, j, j);
+                                    ge_value = jacobian->getval(k, j) / jacobian->getval(j, j);
                                     for (n = 0; n < react->num_species_involved; n++) {
-                                        val_to_set = m_get_val(jacobian, k, n) -
-                                                     ge_value * m_get_val(jacobian, j, n);
-                                        m_set_val(jacobian, k, n, val_to_set);
+                                        val_to_set = jacobian->getval(k, n) -
+                                                     ge_value * jacobian->getval(j, n);
+                                        *jacobian->mep(k, n) = val_to_set;
                                     }
-                                    v_set_val(b, k, v_get_val(b, k) - ge_value * v_get_val(b, j));
+                                    b[k] = b[k] - ge_value * b[j];
                                 }
                             }
 
                             for (j = react->num_species_involved - 1; j + 1 > 0; j--) {
-                                v_set_val(x, j, v_get_val(b, j));
+                                x[j] = b[j];
                                 for (k = j + 1; k < react->num_species_involved; k++) {
                                     if (k != j) {
-                                        v_set_val(x,
-                                                  j,
-                                                  v_get_val(x, j) -
-                                                      m_get_val(jacobian, j, k) * v_get_val(x, k));
+                                        x[j] = x[j] - jacobian->getval(j, k) * x[k];
                                     }
                                 }
-                                v_set_val(x, j, v_get_val(x, j) / m_get_val(jacobian, j, j));
+                                x[j] = x[j] / jacobian->getval(j, j);
                             }
                             for (j = 0; j < react->num_species_involved; j++) {
                                 // I think this should be something like
@@ -414,15 +410,11 @@ void* ecs_do_reactions(void* dataptr) {
                                 // react->species_indices[j][i] react->species_states[j][index] +=
                                 // v_get_val(x,j);
                                 offset_idx = i + react->mc3d_indices_offsets[j];
-                                react->species_states[j][offset_idx] += v_get_val(x, j);
+                                react->species_states[j][offset_idx] += x[j];
                             }
                         }
                     }
                 }
-                m_free(jacobian);
-                v_free(b);
-                v_free(x);
-                px_free(pivot);
 
                 SAFE_FREE(states_cache);
                 SAFE_FREE(states_cache_dx);
@@ -454,10 +446,10 @@ void* ecs_do_reactions(void* dataptr) {
                 if (react->num_species_involved == 0)
                     continue;
                 /*allocate data structures*/
-                jacobian = m_get(react->num_species_involved, react->num_species_involved);
-                b = v_get(react->num_species_involved);
-                x = v_get(react->num_species_involved);
-                pivot = px_get(jacobian->m);
+                jacobian = std::make_unique<OcFullMatrix>(react->num_species_involved,
+                                                          react->num_species_involved);
+                b.resize(react->num_species_involved);
+                x.resize(react->num_species_involved);
                 states_cache = (double*) malloc(sizeof(double) * react->num_species_involved);
                 params_cache = (double*) malloc(sizeof(double) * react->num_params_involved);
                 states_cache_dx = (double*) malloc(sizeof(double) * react->num_species_involved);
@@ -471,7 +463,7 @@ void* ecs_do_reactions(void* dataptr) {
                             states_cache[j] = react->species_states[j][i];
                             states_cache_dx[j] = react->species_states[j][i];
                         }
-                        MEM_ZERO(results_array, react->num_species_involved * sizeof(double));
+                        memset(results_array, 0, react->num_species_involved * sizeof(double));
                         for (k = 0; j < react->num_species_involved + react->num_params_involved;
                              k++, j++) {
                             params_cache[k] = react->species_states[j][i];
@@ -480,32 +472,31 @@ void* ecs_do_reactions(void* dataptr) {
 
                         for (j = 0; j < react->num_species_involved; j++) {
                             states_cache_dx[j] += dx;
-                            MEM_ZERO(results_array_dx,
-                                     react->num_species_involved * sizeof(double));
+                            memset(results_array_dx,
+                                   0,
+                                   react->num_species_involved * sizeof(double));
                             react->reaction(states_cache_dx, params_cache, results_array_dx, NULL);
-                            v_set_val(b, j, dt * results_array[j]);
+                            b[j] = dt * results_array[j];
 
                             for (k = 0; k < react->num_species_involved; k++) {
                                 pd = (results_array_dx[k] - results_array[k]) / dx;
-                                m_set_val(jacobian, k, j, (j == k) - dt * pd);
+                                *jacobian->mep(k, j) = (j == k) - dt * pd;
                             }
                             states_cache_dx[j] -= dx;
                         }
                         // solve for x
                         if (react->num_species_involved == 1) {
-                            react->species_states[0][i] += v_get_val(b, 0) /
-                                                           m_get_val(jacobian, 0, 0);
+                            react->species_states[0][i] += b[0] / jacobian->getval(0, 0);
                         } else {
                             // find entry in leftmost column with largest absolute value
                             // Pivot
                             for (j = 0; j < react->num_species_involved; j++) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
-                                    if (abs(m_get_val(jacobian, j, j)) <
-                                        abs(m_get_val(jacobian, k, j))) {
+                                    if (abs(jacobian->getval(j, j)) < abs(jacobian->getval(k, j))) {
                                         for (n = 0; n < react->num_species_involved; n++) {
-                                            temp = m_get_val(jacobian, j, n);
-                                            m_set_val(jacobian, j, n, m_get_val(jacobian, k, n));
-                                            m_set_val(jacobian, k, n, temp);
+                                            temp = jacobian->getval(j, n);
+                                            *jacobian->mep(j, n) = jacobian->getval(k, n);
+                                            *jacobian->mep(k, n) = temp;
                                         }
                                     }
                                 }
@@ -513,46 +504,38 @@ void* ecs_do_reactions(void* dataptr) {
 
                             for (j = 0; j < react->num_species_involved - 1; j++) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
-                                    ge_value = m_get_val(jacobian, k, j) /
-                                               m_get_val(jacobian, j, j);
+                                    ge_value = jacobian->getval(k, j) / jacobian->getval(j, j);
                                     for (n = 0; n < react->num_species_involved; n++) {
-                                        val_to_set = m_get_val(jacobian, k, n) -
-                                                     ge_value * m_get_val(jacobian, j, n);
-                                        m_set_val(jacobian, k, n, val_to_set);
+                                        val_to_set = jacobian->getval(k, n) -
+                                                     ge_value * jacobian->getval(j, n);
+                                        *jacobian->mep(k, n) = val_to_set;
                                     }
-                                    v_set_val(b, k, v_get_val(b, k) - ge_value * v_get_val(b, j));
+                                    b[k] = b[k] - ge_value * b[j];
                                 }
                             }
 
                             for (j = react->num_species_involved - 1; j + 1 > 0; j--) {
-                                v_set_val(x, j, v_get_val(b, j));
+                                x[j] = b[j];
                                 for (k = j + 1; k < react->num_species_involved; k++) {
                                     if (k != j) {
-                                        v_set_val(x,
-                                                  j,
-                                                  v_get_val(x, j) -
-                                                      m_get_val(jacobian, j, k) * v_get_val(x, k));
+                                        x[j] = x[j] - jacobian->getval(j, k) * x[k];
                                     }
                                 }
-                                v_set_val(x, j, v_get_val(x, j) / m_get_val(jacobian, j, j));
+                                x[j] = x[j] / jacobian->getval(j, j);
                             }
                             for (j = 0; j < react->num_species_involved; j++) {
                                 // I think this should be something like
-                                // react->species_states[j][mc3d_indices[i]] += v_get_val(x,j);
+                                // react->species_states[j][mc3d_indices[i]] += x[j];
                                 // Since the grid has a uniform discretization, the mc3d_indices
                                 // should be the same length. So just need to access the correct
                                 // mc3d_indices[i] maybe do two lines?: index =
                                 // react->species_indices[j][i] react->species_states[j][index] +=
-                                // v_get_val(x,j);
-                                react->species_states[j][i] += v_get_val(x, j);
+                                // x[j];
+                                react->species_states[j][i] += x[j];
                             }
                         }
                     }
                 }
-                m_free(jacobian);
-                v_free(b);
-                v_free(x);
-                px_free(pivot);
 
                 SAFE_FREE(states_cache);
                 SAFE_FREE(states_cache_dx);
@@ -599,7 +582,7 @@ void _fadvance_fixed_step_3D(void) {
         run_threaded_reactions(threaded_reactions_tasks);
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, id++) {
-        MEM_ZERO(grid->states_cur, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
+        memset(grid->states_cur, 0, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
         g = dynamic_cast<ECS_Grid_node*>(grid);
         if (g)
             g->do_multicompartment_reactions(NULL);

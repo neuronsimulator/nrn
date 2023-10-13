@@ -449,7 +449,7 @@ void PrintableWindow::type(const char* s) {
     type_ = s;
 }
 const char* PrintableWindow::type() const {
-    return type_.string();
+    return type_.c_str();
 }
 
 // StandardWindow
