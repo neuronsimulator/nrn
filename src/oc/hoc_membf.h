@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 
 // Give Symbol
 #include <hocdec.h>
@@ -9,11 +9,11 @@
 struct Object;
 
 using MemberPtr = double (*)(void*);
-using Member_func = std::map<const char*, std::function<double(void*)>>;
+using Member_func = std::unordered_map<const char*, std::function<double(void*)>>;
 using MemberRetObjPtr = Object** (*) (void*);
-using Member_ret_obj_func = std::map<const char*, MemberRetObjPtr>;
+using Member_ret_obj_func = std::unordered_map<const char*, MemberRetObjPtr>;
 using MemberRetStrPtr = const char** (*) (void*);
-using Member_ret_str_func = std::map<const char*, MemberRetStrPtr>;
+using Member_ret_str_func = std::unordered_map<const char*, MemberRetStrPtr>;
 
 void class2oc_base(const char* name,
                    void* (*cons)(Object*),
