@@ -2123,8 +2123,7 @@ static int hocobj_slice_setitem(PyObject* self, PyObject *slice, PyObject* arg)
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
         PyObject * val = PyIter_Next(iter);
         if (!val) {
-            PyErr_SetString(PyExc_IndexError, "iterable object must be at lest as long as slice");
-            return -1;
+            return 0;
         }
         PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
     }
