@@ -500,10 +500,6 @@ Matrix
 
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
-
 ----
 
 
@@ -660,9 +656,6 @@ Matrix
             print()
             m.solv(b,1).printf("%8.3f", 475, 535) 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -790,9 +783,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -813,9 +803,6 @@ Matrix
          
         Otherwise fill the matrix row with a constant. 
 
-    .. warning::
-        Implemented only for full matrices and sparse. 
-
 
 ----
 
@@ -835,9 +822,6 @@ Matrix
         The vector must have size msrcdest.mrow 
          
         Otherwise fill the matrix column with a constant. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -883,9 +867,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -900,9 +881,6 @@ Matrix
 
     Description:
         Fills the matrix with 0. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -927,10 +905,6 @@ Matrix
             m = h.Matrix(4, 6) 
             m.ident() 
             m.printf() 
-
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
