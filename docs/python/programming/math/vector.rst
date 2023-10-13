@@ -49,7 +49,7 @@ Vector
         (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
         all Python-supporting versions of NEURON.
 
-        Beginning with NEURON 8.0 Vectors now support slice indexing; e.g.:
+        Beginning with NEURON 9.0 Vectors now support slice indexing; e.g.:
         .. code-block::
             python
             vec = h.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
