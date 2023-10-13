@@ -47,7 +47,7 @@ union Inst { /* machine instruction list type */
     Pfro pfo;
     Pfrs pfs;
     Pfrv_vp pfv_vp;
-    Pfrd_vp pfd_vp;
+    std::function<double(void*)> pfd_vp;
     Pfro_vp pfo_vp;
     Pfrs_vp pfs_vp;
     Inst* in;

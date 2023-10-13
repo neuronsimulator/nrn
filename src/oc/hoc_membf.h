@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 
 // Give Symbol
@@ -8,7 +9,7 @@
 struct Object;
 
 using MemberPtr = double (*)(void*);
-using Member_func = std::map<const char*, MemberPtr>;
+using Member_func = std::map<const char*, std::function<double(void*)>>;
 using MemberRetObjPtr = Object** (*) (void*);
 using Member_ret_obj_func = std::map<const char*, MemberRetObjPtr>;
 using MemberRetStrPtr = const char** (*) (void*);
