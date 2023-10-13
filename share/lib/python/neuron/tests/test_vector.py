@@ -152,6 +152,9 @@ class VectorTestCase(unittest.TestCase):
         v[3:6:2] = [-123, -456]
         l[3:6:2] = [-123, -456]
         assert(list(v[3:6:2]) == l[3:6:2]), "v[3:6] Failed"
+        v2 = h.Vector(x for x in range(10, 20))
+        v[3:8] = v2[3:8]
+        assert(list(v[3:8]) == list(v2[3:8])), "v[3:8] = v2[3:8] Failed"
 
 def suite():
     suite = unittest.makeSuite(VectorTestCase, "test")

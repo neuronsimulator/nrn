@@ -2115,18 +2115,18 @@ static int hocobj_slice_setitem(PyObject* self, PyObject *slice, PyObject* arg)
     Py_ssize_t cap = vector_capacity(v);
     PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
     // Slice index assignment requires a list of the same size as the slice
-    if (PyList_Check(arg)) {
-        Py_ssize_t arg_sz = PyList_Size(arg);
-        if (arg_sz != slicelen) {
-            PyErr_SetString(PyExc_IndexError, "list must be same size as slice");
-            return -1;
-        }
-    } else {
+    PyObject *iter = PyObject_GetIter(arg);
+    if (!iter) {
         PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
         return -1;
     }
-    for (ssize_t i = 0; i < slicelen; ++i) {
-        PyArg_Parse(PyList_GetItem(arg, i), "d", vector_vec(v) + (i * step + start));
+    for (Py_ssize_t i = 0; i < slicelen; ++i) {
+        PyObject * val = PyIter_Next(iter);
+        if (!val) {
+            PyErr_SetString(PyExc_IndexError, "iterable object must be at lest as long as slice");
+            return -1;
+        }
+        PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
     }
     return 0;
 }
