@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <unordered_map>
 
 // Give Symbol
@@ -9,7 +8,7 @@
 struct Object;
 
 using MemberPtr = double (*)(void*);
-using Member_func = std::unordered_map<const char*, std::function<double(void*)>>;
+using Member_func = std::unordered_map<const char*, MemberPtr>;
 using MemberRetObjPtr = Object** (*) (void*);
 using Member_ret_obj_func = std::unordered_map<const char*, MemberRetObjPtr>;
 using MemberRetStrPtr = const char** (*) (void*);
