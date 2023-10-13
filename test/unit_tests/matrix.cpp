@@ -166,21 +166,21 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             m.pow(2, &m);
             REQUIRE(compareMatrix(m, {{42., 72., 72.}, {42., 114., 114.}, {42., 72., 72.}}));
         }
-        {  // Mescach computing of det has an error
-           // int e{};
-           // double det = m.det(&e);
-           // REQUIRE(det == 0.);
-           // REQUIRE(e == 0);
+        {
+            int e{};
+            double det = m.det(&e);
+            REQUIRE(det == 0.);
+            REQUIRE(e == 0);
         }
         *m.mep(2, 0) = 1;
         *m.mep(2, 2) = 2;
         {
-            // Mescach computing of det has an error
-            // int e{};
-            // double det = m.det(&e);
-            // REQUIRE(det == -1.2348_a);
-            // REQUIRE(e == 5);
-        } {
+            int e{};
+            double det = m.det(&e);
+            REQUIRE(det == -1.2348_a);
+            REQUIRE(e == 5);
+        }
+        {
             OcFullMatrix n(4, 3);
             m.inverse(&n);
             n.resize(3, 3);  // ???
@@ -303,6 +303,18 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             c.vec() = {0., 0., v(2, 0), v(2, 1), v(2, 2)};
             CHECK_THAT(c.vec(), ApproxOrOpposite({0., 0., 0.66666, -0.66666, -0.3333333}));
         }
+        {  // Try with vectors too short
+            IvocVect s(2);
+            s.vec() = {1., 2.};
+            m.setrow(0, &s);
+            REQUIRE(compareMatrix(m, {{1., 2., 2.}, {2., 3., -2.}}));
+            m.setcol(0, &s);
+            REQUIRE(compareMatrix(m, {{1., 2., 2.}, {2., 3., -2.}}));
+            IvocVect d(1);
+            d.vec() = {1.};
+            m.setdiag(0, &d);
+            REQUIRE(compareMatrix(m, {{1., 2., 2.}, {2., 3., -2.}}));
+        }
     }
     GIVEN("A 3x3 Sparse matrix") {
         OcSparseMatrix m{3, 3};
@@ -324,8 +336,6 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(*pmep == 1);
             pmep = m.mep(1, 0);
             REQUIRE(*pmep == 0);
-            pmep = m.pelm(0, 1);
-            REQUIRE(pmep == nullptr);
         }
         {
             int col{};

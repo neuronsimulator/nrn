@@ -8,14 +8,10 @@
 #pragma once
 namespace coreneuron {
 namespace units {
-#if CORENEURON_USE_LEGACY_UNITS == 1
-constexpr double faraday{96485.309};
-constexpr double gasconstant{8.3134};
-#else
 /* NMODL translated MOD files get unit constants typically from
- * share/lib/nrnunits.lib.in. But there were other source files that hardcode
+ * share/lib/nrnunits.lib. But there were other source files that hardcode
  * some of the constants. Here we gather a few modern units into a single place
- * (but, unfortunately, also in nrnunits.lib.in). Legacy units cannot be
+ * (but, unfortunately, also in nrnunits.lib). Legacy units cannot be
  * gathered here because they can differ slightly from place to place.
  *
  * These come from https://physics.nist.gov/cuu/Constants/index.html.
@@ -33,6 +29,5 @@ constexpr double faraday{detail::electron_charge * detail::avogadro_number};  //
                                                                               // coulomb/mol
 constexpr double gasconstant{detail::boltzmann * detail::avogadro_number};    // 8.314462618...
                                                                               // joule/mol-K
-#endif
 }  // namespace units
 }  // namespace coreneuron
