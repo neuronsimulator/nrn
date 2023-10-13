@@ -398,12 +398,12 @@ int is_vector_arg(int i) {
     return 1;
 }
 
-Object **new_vect(void *v, ssize_t delta, ssize_t start, ssize_t step) {
+Object** new_vect(void* v, ssize_t delta, ssize_t start, ssize_t step) {
     // Creates a new vector of values delta steps from start
-    auto *x = static_cast<Vect *>(v);
+    auto* x = static_cast<Vect*>(v);
     std::size_t size{(size_t) delta};
-    auto *y = new Vect(size);
-    for (std::size_t i = 0; i < delta ; ++i) {
+    auto* y = new Vect(size);
+    for (std::size_t i = 0; i < delta; ++i) {
         y->elem(i) = x->elem(i * step + start);
     }
     return y->temp_objvar();

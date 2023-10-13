@@ -104,29 +104,34 @@ class VectorTestCase(unittest.TestCase):
     def testSlicing(self):
         l = [i for i in range(10)]
         v = h.Vector(l)
-        assert(list(v[2:6]) == l[2:6]), "v[2:6] Failed"
-        assert(list(v[-3:-1]) == l[-3:-1]), "v[-3:-1] Failed"
-        assert(list(v[::2]) == l[::2]), "v[::2] Failed"
-        assert(list(v[::-2]) == l[::-2]), "v[::-2] Failed"
-        assert(list(v[3:6:2]) == l[3:6:2]), "v[3:6] Failed"
-        assert(list(v[7:-9:-2]) == l[7:-9:-2]), "v[7:-9:-2] Failed"
-        assert(list(v[-1::-3]) == l[-1::-3]), "v[-1::-3] Failed"
-        assert(list(v[-2::-6]) == l[-2::-6]), "v[-2::-6] Failed"
-        assert(list(v[7:-1:-2]) == l[7:-1:-2]), "v[-2::-6] Failed"
-        assert(list(v[3:2:-2]) == l[3:2:-2]), "v[3:2:-2] Failed"
+        assert list(v[2:6]) == l[2:6], "v[2:6] Failed"
+        assert list(v[-3:-1]) == l[-3:-1], "v[-3:-1] Failed"
+        assert list(v[::2]) == l[::2], "v[::2] Failed"
+        assert list(v[::-2]) == l[::-2], "v[::-2] Failed"
+        assert list(v[3:6:2]) == l[3:6:2], "v[3:6] Failed"
+        assert list(v[7:-9:-2]) == l[7:-9:-2], "v[7:-9:-2] Failed"
+        assert list(v[-1::-3]) == l[-1::-3], "v[-1::-3] Failed"
+        assert list(v[-2::-6]) == l[-2::-6], "v[-2::-6] Failed"
+        assert list(v[7:-1:-2]) == l[7:-1:-2], "v[-2::-6] Failed"
+        assert list(v[3:2:-2]) == l[3:2:-2], "v[3:2:-2] Failed"
 
     def testRandomSlicing(self):
         import numpy as np
+
         sample_size = 10000000
         # sample_size = 10
-        n = np.random.randint((-1 * sample_size), sample_size, size=sample_size).tolist()
+        n = np.random.randint(
+            (-1 * sample_size), sample_size, size=sample_size
+        ).tolist()
         v = h.Vector(n)
         for _ in range(sample_size):
             idx = np.random.randint((-1 * sample_size), sample_size, size=3)
             try:
-                result = list(v[idx[0]:idx[1]:idx[2]])
-                expected = n[idx[0]:idx[1]:idx[2]]
-                assert(result == expected), f"v[{idx[0]}][{idx[1]}][{idx[2]}] {result} != {expected}"
+                result = list(v[idx[0] : idx[1] : idx[2]])
+                expected = n[idx[0] : idx[1] : idx[2]]
+                assert (
+                    result == expected
+                ), f"v[{idx[0]}][{idx[1]}][{idx[2]}] {result} != {expected}"
             except ValueError as e:
                 # If the slice value stored in idx[2] = 0 both result and expected will raise a ValueError
                 if idx[2] == 0:
@@ -139,22 +144,23 @@ class VectorTestCase(unittest.TestCase):
         v = h.Vector(l)
         v[2:4] = [12, 13]
         l[2:4] = [12, 13]
-        assert(list(v[2:4]) == l[2:4]), "v[2:4] Failed"
+        assert list(v[2:4]) == l[2:4], "v[2:4] Failed"
         v[-3:-1] = [-9, -9]
         l[-3:-1] = [-9, -9]
-        assert(list(v[-3:-1]) == l[-3:-1]), "v[-3:-1] Failed"
+        assert list(v[-3:-1]) == l[-3:-1], "v[-3:-1] Failed"
         v[::2] = [_ for _ in range(277, 282)]
         l[::2] = [_ for _ in range(277, 282)]
-        assert(list(v[::2]) == l[::2]), "v[::2] Failed"
+        assert list(v[::2]) == l[::2], "v[::2] Failed"
         v[::-2] = [_ for _ in range(-377, -372)]
         l[::-2] = [_ for _ in range(-377, -372)]
-        assert(list(v[::-2]) == l[::-2]), "v[::-2] Failed"
+        assert list(v[::-2]) == l[::-2], "v[::-2] Failed"
         v[3:6:2] = [-123, -456]
         l[3:6:2] = [-123, -456]
-        assert(list(v[3:6:2]) == l[3:6:2]), "v[3:6] Failed"
+        assert list(v[3:6:2]) == l[3:6:2], "v[3:6] Failed"
         v2 = h.Vector(x for x in range(10, 20))
         v[3:8] = v2[3:8]
-        assert(list(v[3:8]) == list(v2[3:8])), "v[3:8] = v2[3:8] Failed"
+        assert list(v[3:8]) == list(v2[3:8]), "v[3:8] = v2[3:8] Failed"
+
 
 def suite():
     suite = unittest.makeSuite(VectorTestCase, "test")
