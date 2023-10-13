@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  merge_group:
   push:
     branches:
       - master
@@ -65,7 +66,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Setup Xvfb
         run: |

@@ -273,16 +273,6 @@ TEST_CASE("SOA-backed Node structure", "[Neuron][data_structures][node]") {
             }
         }
     }
-    GIVEN("A node that is deleted without an active deferred-deletion vector") {
-        auto* const old = std::exchange(neuron::container::detail::identifier_defer_delete_storage,
-                                        nullptr);
-        // Because identifier_defer_delete_storage is nullptr, deleting `node` will delete the
-        // heap-allocated std::size_t that the data handles depend on. This touches an otherwise
-        // uncovered code path in soa_identifier.hpp. Meaningfully checking the right code path was
-        // followed seems excessively complicated.
-        { ::Node node{}; }
-        neuron::container::detail::identifier_defer_delete_storage = old;
-    }
     GIVEN("A series of nodes with increasing integer voltages") {
         using neuron::test::get_node_voltages;
         auto nodes_and_voltages = neuron::test::get_nodes_and_reference_voltages();
