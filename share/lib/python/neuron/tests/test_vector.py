@@ -4,7 +4,6 @@ UnitTests of the python interface to the hoc.Vector class.
 $Id$
 """
 
-import pytest
 import unittest
 from neuron import h
 
@@ -138,13 +137,13 @@ class VectorTestCase(unittest.TestCase):
         v[3:8] = v2[3:8]
         assert list(v[3:8]) == list(v2[3:8]), "v[3:8] = v2[3:8] Failed"
 
-    def testErrorHandeling(self):
+    def testErrorHandling(self):
         l = [i for i in range(10)]
         v = h.Vector(l)
         # Input that is too short or long should raise an IndexError
-        with pytest.raises(IndexError):
+        with self.assertRaises(IndexError):
             v[0:3] = [55]
-        with pytest.raises(IndexError):
+        with self.assertRaises(IndexError):
             v[3:7] = (x for x in range(100, 120))
 
 
