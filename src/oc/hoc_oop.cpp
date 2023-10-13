@@ -615,6 +615,10 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     Objectdata* obdsav;
     Object* obsav;
 
+    if (!ob->ctemplate->constructor) {
+        return;
+    }
+
     slsav = hoc_symlist;
     obdsav = hoc_objectdata_save();
     obsav = hoc_thisobject;
@@ -1877,15 +1881,17 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
         // make sure that dereffing happens even if the destructor throws
         helper_in_case_dtor_throws _{obj};
         if (obj->ctemplate->sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
-            if (auto* const tp = obj->u.this_pointer; tp) {
-                neuron::oc::invoke_method_that_may_throw(
-                    [obj]() {
-                        std::string rval{hoc_object_name(obj)};
-                        rval.append(" destructor");
-                        return rval;
-                    },
-                    obj->ctemplate->destructor,
-                    tp);
+            if (obj->ctemplate->destructor) {
+                if (auto* const tp = obj->u.this_pointer; tp) {
+                    neuron::oc::invoke_method_that_may_throw(
+                        [obj]() {
+                            std::string rval{hoc_object_name(obj)};
+                            rval.append(" destructor");
+                            return rval;
+                        },
+                        obj->ctemplate->destructor,
+                        tp);
+                }
             }
         } else {
             obsav = hoc_thisobject;
