@@ -1,12 +1,13 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
+  merge_group:
   push:
-    branches: 
+    branches:
       # If nothing else, this is important for the ccache logic below...
       - master
       - release/**
@@ -34,7 +35,7 @@ jobs:
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.15
+      DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
@@ -169,7 +170,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -195,7 +196,7 @@ jobs:
           repository: actions/cache
           ref: v3
           path: tmp/actions/cache
-          
+
       - name: Make actions/cache@v3 run even on failure
         run: |
           sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml

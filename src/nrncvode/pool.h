@@ -47,9 +47,8 @@ MutexPool<T>::MutexPool(long count, int mkmut) {
     pool_ = new T[count_];
     pool_size_ = count;
     items_ = new T*[count_];
-    {
-        for (long i = 0; i < count_; ++i)
-            items_[i] = pool_ + i;
+    for (long i = 0; i < count_; ++i) {
+        items_[i] = pool_ + i;
     }
     MUTCONSTRUCT(mkmut)
 }
@@ -62,22 +61,15 @@ void MutexPool<T>::grow() {
     chain_ = p;
     long newcnt = 2 * count_;
     T** itms = new T*[newcnt];
-    long i, j;
     put_ += count_;
-    {
-        for (i = 0; i < get_; ++i) {
-            itms[i] = items_[i];
-        }
+    for (long i = 0; i < get_; ++i) {
+        itms[i] = items_[i];
     }
-    {
-        for (i = get_, j = 0; j < count_; ++i, ++j) {
-            itms[i] = p->items_[j];
-        }
+    for (long i = get_, j = 0; j < count_; ++i, ++j) {
+        itms[i] = p->items_[j];
     }
-    {
-        for (i = put_, j = get_; j < count_; ++i, ++j) {
-            itms[i] = items_[j];
-        }
+    for (long i = put_, j = get_; j < count_; ++i, ++j) {
+        itms[i] = items_[j];
     }
     delete[] items_;
     delete[] p->items_;
@@ -88,35 +80,24 @@ void MutexPool<T>::grow() {
 
 template <typename T>
 MutexPool<T>::~MutexPool() {
-    {
-        if (chain_) {
-            delete chain_;
-        }
-    }
+    delete chain_;
     delete[] pool_;
-    {
-        if (items_) {
-            delete[] items_;
-        }
-    }
+    delete[] items_;
     MUTDESTRUCT
 }
 
 template <typename T>
 T* MutexPool<T>::alloc() {
-    MUTLOCK {
-        if (nget_ >= count_) {
-            grow();
-        }
+    MUTLOCK
+    if (nget_ >= count_) {
+        grow();
     }
     T* item = items_[get_];
     get_ = (get_ + 1) % count_;
     ++nget_;
-    {
-        if (nget_ > maxget_) {
-            maxget_ = nget_;
-        }
-    }
+
+    maxget_ = std::max(nget_, maxget_);
+
     MUTUNLOCK
     return item;
 }
@@ -139,12 +120,10 @@ void MutexPool<T>::free_all() {
     nget_ = 0;
     get_ = 0;
     put_ = 0;
-    {
-        for (pp = this; pp; pp = pp->chain_) {
-            for (i = 0; i < pp->pool_size_; ++i) {
-                items_[put_++] = pp->pool_ + i;
-                pp->pool_[i].clear();
-            }
+    for (pp = this; pp; pp = pp->chain_) {
+        for (i = 0; i < pp->pool_size_; ++i) {
+            items_[put_++] = pp->pool_ + i;
+            pp->pool_[i].clear();
         }
     }
     assert(put_ == count_);

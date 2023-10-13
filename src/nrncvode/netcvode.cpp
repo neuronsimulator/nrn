@@ -22,6 +22,7 @@
 #include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
+#include "utils/enumerate.h"
 #if HAVE_IV
 #include "ivoc.h"
 #include "glinerec.h"
@@ -1599,10 +1600,10 @@ bool NetCvode::init_global() {
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount && (i == CAP || mf->current || mf->ode_count || mf->ode_matsol ||
-                                      mf->ode_spec || mf->state)) {
+                if (ml->nodecount && (i == CAP || mf.current || mf.ode_count || mf.ode_matsol ||
+                                      mf.ode_spec || mf.state)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
                     cml = new CvMembList{i};
@@ -1624,7 +1625,7 @@ bool NetCvode::init_global() {
                     cml->ml[0].nodeindices = ml->nodeindices;
                     assert(ml->prop);
                     cml->ml[0].prop = ml->prop;  // used for ode_map even when hoc_mech = false
-                    if (!mf->hoc_mech) {
+                    if (!mf.hoc_mech) {
                         cml->ml[0].pdata = ml->pdata;
                     }
                     cml->ml[0]._thread = ml->_thread;
@@ -1638,12 +1639,12 @@ bool NetCvode::init_global() {
             // have the global cvode as its nvi field
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
-                if (mf->is_point && !nrn_is_artificial_[i]) {
+                const Memb_func& mf = memb_func[i];
+                if (mf.is_point && !nrn_is_artificial_[i]) {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto& datum = mf.hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
                         auto* pp = datum.get<Point_process*>();
                         pp->nvi_ = gcv_;
                     }
@@ -1722,11 +1723,10 @@ bool NetCvode::init_global() {
 
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount &&
-                    (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
-                     i == CAP || ba_candidate.count(i) == 1)) {
+                if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
+                                      mf.state || i == CAP || ba_candidate.count(i) == 1)) {
                     // maintain same order (not reversed) for
                     // singly linked list built below
                     int j;
@@ -1772,11 +1772,10 @@ bool NetCvode::init_global() {
             // now list order is from 0 to n_memb_func
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
+                const Memb_func& mf = memb_func[i];
                 Memb_list* ml = tml->ml;
-                if (ml->nodecount &&
-                    (mf->current || mf->ode_count || mf->ode_matsol || mf->ode_spec || mf->state ||
-                     i == CAP || ba_candidate.count(i) == 1)) {
+                if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
+                                      mf.state || i == CAP || ba_candidate.count(i) == 1)) {
                     for (int j = 0; j < ml->nodecount; ++j) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
                         if (cvml[icell]->index != i) {
@@ -1790,7 +1789,7 @@ bool NetCvode::init_global() {
                         newml.nodelist[0] = ml->nodelist[j];
                         newml.nodeindices = new int[1]{ml->nodeindices[j]};
                         newml.prop = new Prop* [1] { ml->prop[j] };
-                        if (!mf->hoc_mech) {
+                        if (!mf.hoc_mech) {
                             newml.set_storage_offset(ml->get_storage_offset() + j);
                             newml.pdata = new Datum* [1] { ml->pdata[j] };
                         }
@@ -1806,12 +1805,12 @@ bool NetCvode::init_global() {
             // artifical cells have no integrator
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
-                Memb_func* mf = memb_func + i;
-                if (mf->is_point) {
+                const Memb_func& mf = memb_func[i];
+                if (mf.is_point) {
                     Memb_list* ml = tml->ml;
                     int j;
                     for (j = 0; j < ml->nodecount; ++j) {
-                        auto& datum = mf->hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
+                        auto& datum = mf.hoc_mech ? ml->prop[j]->dparam[1] : ml->pdata[j][1];
                         auto* pp = datum.get<Point_process*>();
                         if (nrn_is_artificial_[i] == 0) {
                             int inode = ml->nodelist[j]->v_node_index;
@@ -3050,21 +3049,17 @@ static OcList* event_info_list_;  // netcon or point_process
 static void event_info_callback(const TQItem*, int);
 static void event_info_callback(const TQItem* q, int) {
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
-    NetCon* nc;
-    PreSyn* ps;
-    SelfEvent* se;
-    int n = event_info_tvec_->size();
     switch (d->type()) {
     case NetConType:
         if (event_info_type_ == NetConType) {
-            nc = (NetCon*) d;
+            auto* nc = static_cast<NetCon*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_list_->append(nc->obj_);
         }
         break;
     case SelfEventType:
         if (event_info_type_ == SelfEventType) {
-            se = (SelfEvent*) d;
+            auto* se = static_cast<SelfEvent*>(d);
             event_info_tvec_->push_back(q->t_);
             event_info_flagvec_->push_back(se->flag_);
             event_info_list_->append(se->target_->ob);
@@ -3072,13 +3067,11 @@ static void event_info_callback(const TQItem* q, int) {
         break;
     case PreSynType:
         if (event_info_type_ == NetConType) {
-            ps = (PreSyn*) d;
-            for (auto it = ps->dil_.rbegin(); it != ps->dil_.rend(); ++it) {
-                nc = *it;
+            auto* ps = static_cast<PreSyn*>(d);
+            for (const auto& nc: reverse(ps->dil_)) {
                 double td = nc->delay_ - ps->delay_;
                 event_info_tvec_->push_back(q->t_ + td);
                 event_info_list_->append(nc->obj_);
-                ++n;
             }
         }
         break;
@@ -4470,8 +4463,8 @@ std::string NetCvode::statename(int is, int style) {
             assert(sym);
             return sym2name(sym);
         } else {
-            auto* s = hdp.retrieve(raw_ptr);
-            return s ? s->string() : "unknown";
+            std::string s = hdp.retrieve(raw_ptr);
+            return !s.empty() ? s.c_str() : "unknown";
         }
     };
     int j{};
@@ -5774,9 +5767,8 @@ void nrnthread_get_trajectory_requests(int tid,
             int err = 0;
             if (pr->ith_ == tid) {
                 if (1) {  // buffered or per time step value return
-                    IvocVect* v = NULL;
                     if (pr->type() == TvecRecordType) {
-                        v = ((TvecRecord*) pr)->t_;
+                        IvocVect* v = ((TvecRecord*) pr)->t_;
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
@@ -5795,7 +5787,7 @@ void nrnthread_get_trajectory_requests(int tid,
                             n_trajec--;
                         }
                     } else if (pr->type() == YvecRecordType) {
-                        v = ((YvecRecord*) pr)->y_;
+                        IvocVect* v = ((YvecRecord*) pr)->y_;
                         err = trajec_buffered(nt,
                                               bsize,
                                               v,
@@ -5819,7 +5811,7 @@ void nrnthread_get_trajectory_requests(int tid,
                             if (bsize && !glr->v_) {
                                 glr->v_ = new IvocVect(bsize);
                             }
-                            v = glr->v_;
+                            IvocVect* v = glr->v_;
                             err = trajec_buffered(nt,
                                                   bsize,
                                                   v,
@@ -5837,14 +5829,11 @@ void nrnthread_get_trajectory_requests(int tid,
                                 n_trajec--;
                             }
                         } else {  // glr->gl_->name expression involves several range variables
-                            GLineRecordEData& ed = glr->pd_and_vec_;
                             int n = n_trajec;
-                            for (GLineRecordEData::iterator it = ed.begin(); it != ed.end(); ++it) {
-                                double* pd = (*it).first;
+                            for (auto&& [pd, v]: glr->pd_and_vec_) {
                                 assert(pd);
-                                v = (*it).second;
-                                if (bsize && v == NULL) {
-                                    v = (*it).second = new IvocVect(bsize);
+                                if (bsize && v == nullptr) {
+                                    v = new IvocVect(bsize);
                                 }
                                 // TODO avoid the conversion?
                                 err = trajec_buffered(nt,
@@ -6124,22 +6113,14 @@ void NetCvode::playrec_add(PlayRecord* pr) {  // called by PlayRecord constructo
 void NetCvode::playrec_remove(PlayRecord* pr) {  // called by PlayRecord destructor
                                                  // printf("NetCvode::playrec_remove %p\n", pr);
     playrec_change_cnt_ = 0;
-    if (auto it = std::find(prl_->begin(), prl_->end(), pr); it != prl_->end()) {
-        prl_->erase(it);
-    }
-    if (auto it = std::find(fixed_play_->begin(), fixed_play_->end(), pr);
-        it != fixed_play_->end()) {
-        fixed_play_->erase(it);
-    }
-    if (auto it = std::find(fixed_record_->begin(), fixed_record_->end(), pr);
-        it != fixed_record_->end()) {
-        fixed_record_->erase(it);
-    }
+    erase_first(*prl_, pr);
+    erase_first(*fixed_play_, pr);
+    erase_first(*fixed_record_, pr);
 }
 
 int NetCvode::playrec_item(PlayRecord* pr) {
-    for (std::size_t i = 0; i < prl_->size(); ++i) {
-        if ((*prl_)[i] == pr) {
+    for (const auto&& [i, e]: enumerate(*prl_)) {
+        if (e == pr) {
             return i;
         }
     }

@@ -63,10 +63,13 @@ directly by hoc.
 #include "parse1.hpp"
 
 #include <algorithm>
+#include <iterator>  // std::back_inserter
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
@@ -386,7 +389,6 @@ extern void _nrn_cacheloop_reg(int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
 extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
-extern Memb_func* memb_func;\n\
 ");
 
     if (nmodl_text) {

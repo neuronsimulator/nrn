@@ -2599,11 +2599,11 @@ void remake_pmech_types() {
 void nrnpy_reg_mech(int type) {
     int i;
     char* s;
-    Memb_func* mf = memb_func + type;
+    Memb_func& mf = memb_func[type];
     if (!nrnmodule_) {
         return;
     }
-    if (mf->is_point) {
+    if (mf.is_point) {
         if (nrn_is_artificial_[type] == 0) {
             Symlist* sl = nrn_pnt_template_[type]->symtable;
             Symbol* s = hoc_table_lookup("get_segment", sl);
@@ -2615,7 +2615,7 @@ void nrnpy_reg_mech(int type) {
         }
         return;
     }
-    s = mf->sym->name;
+    s = mf.sym->name;
     // printf("nrnpy_reg_mech %s %d\n", s, type);
     if (PyDict_GetItemString(pmech_types, s)) {
         hoc_execerror(s, "mechanism already exists");
@@ -2623,8 +2623,8 @@ void nrnpy_reg_mech(int type) {
     Py_INCREF(pmech_generic_type);
     PyModule_AddObject(nrnmodule_, s, (PyObject*) pmech_generic_type);
     PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
-    for (i = 0; i < mf->sym->s_varn; ++i) {
-        Symbol* sym = mf->sym->u.ppsym[i];
+    for (i = 0; i < mf.sym->s_varn; ++i) {
+        Symbol* sym = mf.sym->u.ppsym[i];
         rangevars_add(sym);
     }
 }

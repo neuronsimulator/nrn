@@ -1,7 +1,7 @@
 CoreNEURON
 ##########
 
-`CoreNEURON <https://github.com/BlueBrain/CoreNeuron>`_ is a compute engine for the NEURON simulator optimised for both memory usage and computational speed on modern CPU/GPU architectures.
+`CoreNEURON <https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron>`_ is a compute engine for the NEURON simulator optimised for both memory usage and computational speed on modern CPU/GPU architectures.
 Some of its key goals are to:
 
 * Efficiently simulate large network models

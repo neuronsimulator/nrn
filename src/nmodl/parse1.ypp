@@ -924,13 +924,13 @@ factordef: NAME '=' real unit
 	| NAME '=' unit unit
 		{
 		    SYM($1)->subtype |= nmodlCONST;
-		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $4);
+		    nrnunit_str(buf, SYM($1)->name, $3, $4);
 		    Lappendstr(firstlist, buf);
 		}
 	| NAME '=' unit '-' GT unit 
 		{
 		    SYM($1)->subtype |= nmodlCONST;
-		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $6);
+		    nrnunit_str(buf, SYM($1)->name, $3, $6);
 		    Lappendstr(firstlist, buf);
 		}
 	| error {myerr("Unit factor syntax: examples:\n\
