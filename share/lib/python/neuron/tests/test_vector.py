@@ -143,13 +143,12 @@ class VectorTestCase(unittest.TestCase):
         # Input that is too short or long should raise an IndexError
         try:
             v[0:3] = [55]
-        except IndexError:
-            pass
+        except Exception as e:
+            assert isinstance(e, IndexError)
         try:
             v[3:7] = (x for x in range(100, 120))
-        except IndexError:
-            pass
-        assert list(v) == l
+        except Exception as e:
+            assert isinstance(e, IndexError)
 
 
 def suite():
