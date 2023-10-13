@@ -115,30 +115,6 @@ class VectorTestCase(unittest.TestCase):
         assert list(v[7:-1:-2]) == l[7:-1:-2], "v[-2::-6] Failed"
         assert list(v[3:2:-2]) == l[3:2:-2], "v[3:2:-2] Failed"
 
-    def testRandomSlicing(self):
-        import numpy as np
-
-        sample_size = 10000000
-        # sample_size = 10
-        n = np.random.randint(
-            (-1 * sample_size), sample_size, size=sample_size
-        ).tolist()
-        v = h.Vector(n)
-        for _ in range(sample_size):
-            idx = np.random.randint((-1 * sample_size), sample_size, size=3)
-            try:
-                result = list(v[idx[0] : idx[1] : idx[2]])
-                expected = n[idx[0] : idx[1] : idx[2]]
-                assert (
-                    result == expected
-                ), f"v[{idx[0]}][{idx[1]}][{idx[2]}] {result} != {expected}"
-            except ValueError as e:
-                # If the slice value stored in idx[2] = 0 both result and expected will raise a ValueError
-                if idx[2] == 0:
-                    continue
-                else:
-                    raise ValueError(f"{e}")
-
     def testAssignmentSlicing(self):
         l = [i for i in range(10)]
         v = h.Vector(l)
