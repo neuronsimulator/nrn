@@ -2120,13 +2120,21 @@ static int hocobj_slice_setitem(PyObject* self, PyObject *slice, PyObject* arg)
         PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
         return -1;
     }
+    PyObject *val = NULL;
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
-        PyObject * val = PyIter_Next(iter);
+         val = PyIter_Next(iter);
         if (!val) {
-            return 0;
+            PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+            return -1;
         }
         PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
     }
+    val = PyIter_Next(iter);
+    if (val) {
+        PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+        return -1;
+    }
+
     return 0;
 }
 
