@@ -101,6 +101,14 @@ class VectorTestCase(unittest.TestCase):
         except:
             pass
 
+    def testNegativeIndex(self):
+        l = [i for i in range(10)]
+        v = h.Vector(l)
+        assert v[-3] == l[-3], "v[-3] Failed"
+        v[-3] = 42
+        l[-3] = 42
+        assert v[-3] == l[-3], "Setting v[-3] Failed"
+    
     def testSlicing(self):
         l = [i for i in range(10)]
         v = h.Vector(l)
