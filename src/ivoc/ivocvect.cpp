@@ -398,13 +398,12 @@ int is_vector_arg(int i) {
     return 1;
 }
 
-Object** new_vect(void* v, ssize_t delta, ssize_t start, ssize_t step) {
+Object** new_vect(Vect* v, ssize_t delta, ssize_t start, ssize_t step) {
     // Creates a new vector of values delta steps from start
-    auto* x = static_cast<Vect*>(v);
     std::size_t size{(size_t) delta};
     auto* y = new Vect(size);
     for (std::size_t i = 0; i < delta; ++i) {
-        y->elem(i) = x->elem(i * step + start);
+        y->elem(i) = v->elem(i * step + start);
     }
     return y->temp_objvar();
 }
@@ -1588,7 +1587,7 @@ static Object** v_at(void* v) {
     }
     // Creation of a new vector has been moved to new_vect to allow slicing
     ssize_t delta = end - start;
-    return new_vect(v, delta, start, 1);
+    return new_vect(x, delta, start, 1);
 }
 
 
