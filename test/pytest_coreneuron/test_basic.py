@@ -263,7 +263,13 @@ def test_deleted_sec():
             # for valid section first.
             words = str(m).split()
             print("m is " + words[4] + "." + words[2])
-            expect_err("m()")
+            if "name" != words[2]:
+                expect_err("m()")
+
+    # Mere printing of an invalid object is not supposed to be an error.
+    print(s)
+    print(seg)
+    print(mech)
 
     assert str(s) == "<deleted section>"
     assert str(seg) == "<segment of deleted section>"
