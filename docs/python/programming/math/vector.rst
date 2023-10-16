@@ -49,15 +49,22 @@ Vector
         (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
         all Python-supporting versions of NEURON.
 
-        Beginning with NEURON 9.0 Vectors now support slice indexing; e.g.:
+        Beginning with NEURON 9.0 Vectors support slicing; e.g.:
+
         .. code-block::
             python
+
             vec = h.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
             new_vec = v[2:6]
+
         will assign new_vec as a vector containing the values [2, 3, 4, 5]
+
         .. code-block::
+            python
+
             vec[5:7] = [1, 2]
-        will update the values at indices 5,6 resulting in vec = [0, 1, 2, 3, 4, 1, 2, 7, 8]
+
+        will update the values at indices 5,6 resulting in ``vec = [0, 1, 2, 3, 4, 1, 2, 7, 8]``
 
         A vector can be created with length *size* and with each element set to the value of *init* or can be created using
         a Python iterable.
