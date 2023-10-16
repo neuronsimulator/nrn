@@ -2146,7 +2146,7 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
         PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
         return -1;
     }
-    Vect* v = (Vect*) po->ho_->u.this_pointer;
+    auto v = (Vect*) po->ho_->u.this_pointer;
     Py_ssize_t start = 0;
     Py_ssize_t end = 0;
     Py_ssize_t step = 0;
@@ -2159,7 +2159,7 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
         PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
         return -1;
     }
-    PyObject* val = NULL;
+    PyObject* val = nullptr;
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
         val = PyIter_Next(iter);
         if (!val) {
