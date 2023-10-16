@@ -86,3 +86,13 @@ FUNCTION k(x) {
 PROCEDURE P() {
   a = p
 }
+
+FUNCTION foo(x) {
+  foo = ft(x)
+}
+
+FUNCTION bar() {
+  bar = ft(a)
+}
+
+FUNCTION_TABLE ft(arg)

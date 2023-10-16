@@ -120,8 +120,6 @@ static PyType_Slot nrnpy_MechFuncType_slots[] = {
     {Py_tp_repr, (void*) pymechfunc_repr},
     {Py_tp_methods, (void*) NPyMechFunc_methods},
     {Py_tp_call, (void*) NPyMechFunc_call},
-    //    {Py_tp_init, (void*) NPyMechFunc_init},
-    //    {Py_tp_new, (void*) NPyMechFunc_new},
     {Py_tp_doc, (void*) "Mechanism Function"},
     {0, 0},
 };

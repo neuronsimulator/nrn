@@ -2,6 +2,7 @@
 
 from neuron import h
 from neuron.expect_hocerr import expect_err, set_quiet
+from math import isclose
 
 set_quiet(False)
 
@@ -135,10 +136,32 @@ def test5():
                     assert rv.mech().segment().sec == sec
 
 
+def test6():
+    print("test6")
+    mechs = model()
+    m = mechs[0]
+    expect_err("m.ft(1)")
+    m.table_ft(5)
+    assert m.ft(8) == 5.0
+
+    vx = h.Vector([-100, 100])
+    vy = vx.c().mul(2)
+    m.table_ft(vy, vx)
+    assert isclose(m.ft(5), 10.0)
+    assert isclose(m.ft(10), 20.0)
+    assert isclose(m.foo(10), m.ft(10))
+    m.a = 3
+    assert isclose(m.bar(), 2 * m.a)
+
+    del mechs, m
+    locals()
+
+
 if __name__ == "__main__":
     test1()
     test2()
     test3()
     test4()
     test5()
+    test6()
     h.topology()
