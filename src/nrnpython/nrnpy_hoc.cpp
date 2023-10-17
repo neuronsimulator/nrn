@@ -351,7 +351,8 @@ static Inst* save_pc(Inst* newpc) {
     return savpc;
 }
 
-static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
+// also called from nrnpy_nrn.cpp
+int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     int i, narg = PyTuple_Size(args);
     for (i = 0; i < narg; ++i) {
         PyObject* po = PyTuple_GetItem(args, i);
@@ -423,7 +424,7 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     return narg;
 }
 
-static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
+void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
     std::vector<char*>::iterator it = s2free.begin();
     for (; it != s2free.end(); ++it) {
         if (*it) {
@@ -3116,7 +3117,6 @@ static PyObject* py_hocobj_mul(PyObject* obj1, PyObject* obj2) {
 static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
     return py_hocobj_math("div", obj1, obj2);
 }
-static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
 #include "nrnpy_hoc.h"
 
