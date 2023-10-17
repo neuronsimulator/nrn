@@ -1867,6 +1867,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     if (po->type_ == PyHoc::HocObject) {  // might be in an iterator context
         if (po->ho_->ctemplate == hoc_vec_template_) {
             Vect* hv = (Vect*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += vector_capacity(hv);
+            }
             if (ix < 0 || ix >= vector_capacity(hv)) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
@@ -1877,6 +1880,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             }
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             OcList* hl = (OcList*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += hl->count();
+            }
             if (ix < 0 || ix >= hl->count()) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
@@ -1975,8 +1981,36 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     return result;
 }
 
+static PyObject* hocobj_slice_getitem(PyObject* self, PyObject* slice) {
+    // Non slice indexing still uses original function
+    if (!PySlice_Check(slice)) {
+        return hocobj_getitem(self, PyLong_AsLong(slice));
+    }
+    auto* po = (PyHocObject*) self;
+    if (!po->ho_) {
+        PyErr_SetString(PyExc_TypeError, "Obj is NULL");
+        return nullptr;
+    }
+    if (po->type_ != PyHoc::HocObject || po->ho_->ctemplate != hoc_vec_template_) {
+        PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
+        return nullptr;
+    }
+    auto* v = (Vect*) po->ho_->u.this_pointer;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    Py_ssize_t step = 0;
+    Py_ssize_t slicelen = 0;
+    Py_ssize_t len = vector_capacity(v);
+    PySlice_GetIndicesEx(slice, len, &start, &end, &step, &slicelen);
+    if (step == 0) {
+        PyErr_SetString(PyExc_ValueError, "slice step cannot be zero");
+        return nullptr;
+    }
+    Object** obj = new_vect(v, slicelen, start, step);
+    return nrnpy_ho2po(*obj);
+}
+
 static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
-    // printf("hocobj_setitem %d\n", i);
     int err = -1;
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ > PyHoc::HocArray) {
@@ -2097,6 +2131,54 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
         HocContextRestore;
     }
     return err;
+}
+
+static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) {
+    // Non slice indexing still uses original function
+    if (!PySlice_Check(slice)) {
+        return hocobj_setitem(self, PyLong_AsLong(slice), arg);
+    }
+    auto* po = (PyHocObject*) self;
+    if (!po->ho_) {
+        PyErr_SetString(PyExc_TypeError, "Obj is NULL");
+        return -1;
+    }
+    if (po->type_ != PyHoc::HocObject || po->ho_->ctemplate != hoc_vec_template_) {
+        PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
+        return -1;
+    }
+    auto v = (Vect*) po->ho_->u.this_pointer;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    Py_ssize_t step = 0;
+    Py_ssize_t slicelen = 0;
+    Py_ssize_t cap = vector_capacity(v);
+    PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
+    // Slice index assignment requires a list of the same size as the slice
+    PyObject* iter = PyObject_GetIter(arg);
+    if (!iter) {
+        PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
+        return -1;
+    }
+    PyObject* val = nullptr;
+    for (Py_ssize_t i = 0; i < slicelen; ++i) {
+        val = PyIter_Next(iter);
+        if (!val) {
+            Py_DECREF(iter);
+            PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+            return -1;
+        }
+        PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
+        Py_DECREF(val);
+    }
+    val = PyIter_Next(iter);
+    Py_DECREF(iter);
+    if (val) {
+        Py_DECREF(val);
+        PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+        return -1;
+    }
+    return 0;
 }
 
 static PyObject* mkref(PyObject* self, PyObject* args) {
