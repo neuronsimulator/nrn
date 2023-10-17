@@ -69,11 +69,6 @@ c			2.99792458+8 m/sec fuzz
 g			9.80665 m/sec2
 au			1.49597871+11 m fuzz
 mole			6.02214076+23 fuzz
-mol             1
-/ mol is explicitly defined as a constant
-/ with value 1 to avoid "undefined unit"
-/ error with mod files that don't define
-/ it themselves
 e			1.602176634-19 coul fuzz
 energy			c2
 force			g
