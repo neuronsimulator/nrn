@@ -402,7 +402,7 @@ Object** new_vect(Vect* v, ssize_t delta, ssize_t start, ssize_t step) {
     // Creates a new vector of values delta steps from start
     std::size_t size{(size_t) delta};
     auto* y = new Vect(size);
-    for (std::size_t i = 0; i < delta; ++i) {
+    for (int i = 0; i < delta; ++i) {
         y->elem(i) = v->elem(int(i * step + start));
     }
     return y->temp_objvar();
