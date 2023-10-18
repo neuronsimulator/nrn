@@ -2598,7 +2598,15 @@ void CodegenCppVisitor::print_mechanism_global_var_structure(bool print_initiali
     }
 
     if (info.primes_size != 0) {
-        if (info.primes_size != info.prime_variables_by_order.size()) {
+        const auto count_prime_variables = [](auto size, const SymbolType& symbol) {
+            return size += symbol->get_length();
+        };
+        const auto prime_variables_by_order_size =
+            std::accumulate(info.prime_variables_by_order.begin(),
+                            info.prime_variables_by_order.end(),
+                            0,
+                            count_prime_variables);
+        if (info.primes_size != prime_variables_by_order_size) {
             throw std::runtime_error{
                 fmt::format("primes_size = {} differs from prime_variables_by_order.size() = {}, "
                             "this should not happen.",
