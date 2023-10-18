@@ -947,7 +947,10 @@ Mechanisms
     Syntax:
         ``h.setdata_suffix(section(x))``
 
-
+    Deprecated for Python:
+        In Python one can use the syntax ``section(x).suffix.fname(args)`` to call a FUNCTION
+        or PROCEDURE regardless of whether the function uses RANGE variables.
+        
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 

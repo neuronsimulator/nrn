@@ -120,8 +120,6 @@ struct Model {
     void shrink_to_fit() {
         m_node_data.shrink_to_fit();
         apply_to_mechanisms([](auto& mech_data) { mech_data.shrink_to_fit(); });
-
-        m_identifier_ptrs_for_deferred_deletion.shrink_to_fit();
     }
 
   private:
@@ -157,11 +155,6 @@ struct Model {
      * @brief Backing storage for defer_delete helper.
      */
     std::vector<void*> m_ptrs_for_deferred_deletion{};
-
-    /**
-     * @brief Backing storage for global identifier_defer_delete_storage.
-     */
-    std::vector<std::unique_ptr<std::size_t>> m_identifier_ptrs_for_deferred_deletion{};
 };
 
 struct model_sorted_token {
