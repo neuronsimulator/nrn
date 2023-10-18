@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include "nrn_ansi.h"
 
+#include "../utils/profile/profiler_interface.h"
+
 long hoc_nframe, hoc_nstack;
 
 #if !HAVE_IV
@@ -31,7 +33,6 @@ void iv_display_scale(float);
 #include "idraw.h"
 #include <InterViews/style.h>
 #endif
-#include <OS/string.h>
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
@@ -372,6 +373,8 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    nrn::Instrumentor::init_profile();
+
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
@@ -650,8 +653,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     nrn_optarg_on("-mpi", &our_argc, our_argv);
 
 #if (defined(NRNMECH_DLL_STYLE) || defined(WIN32))
-    String str;
 #if HAVE_IV
+    String str;
     if (session) {
         if (session->style()->find_attribute("nrnmechdll", str)) {
             nrn_mech_dll = str.string();
@@ -771,6 +774,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
     hoc_final_exit();
     ivoc_final_exit();
+    nrn::Instrumentor::finalize_profile();
+
     return exit_status;
 }
 

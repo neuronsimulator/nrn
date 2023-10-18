@@ -1,6 +1,4 @@
-![CoreNEURON CI](https://github.com/BlueBrain/CoreNeuron/workflows/CoreNEURON%20CI/badge.svg) [![codecov](https://codecov.io/gh/BlueBrain/CoreNeuron/branch/master/graph/badge.svg?token=mguTdBx93p)](https://codecov.io/gh/BlueBrain/CoreNeuron)
-
-![CoreNEURON](docs/_static/bluebrain_coreneuron.jpg)
+![CoreNEURON](docs/coreneuron/_static/bluebrain_coreneuron.jpg)
 
 # CoreNEURON
 > Optimised simulator engine for [NEURON](https://github.com/neuronsimulator/nrn)
@@ -118,7 +116,7 @@ In order to enable CoreNEURON support, you must set the  `-coreneuron` flag. Mak
 nrnivmodl -coreneuron mod_directory
 ```
 
-If you see any compilation error then one of the mod files might be incompatible with CoreNEURON. Please [open an issue](https://github.com/BlueBrain/CoreNeuron/issues) with an example and we can help to fix it.
+If you see any compilation error then one of the mod files might be incompatible with CoreNEURON. Please [open an issue](https://github.com/neuronsimulator/nrn/issues) with an example and we can help to fix it.
 
 
 ## Running Simulations
@@ -244,7 +242,7 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -g" \
 
 By default, OpenMP threading is enabled. You can disable it with `-DCORENRN_ENABLE_OPENMP=OFF`
 
-For other errors, please [open an issue](https://github.com/BlueBrain/CoreNeuron/issues).
+For other errors, please [open an issue](https://github.com/neuronsimulator/nrn/issues).
 
 ## Developer Build
 
@@ -273,25 +271,6 @@ cmake .. \
 cmake --build . --parallel 8
 ctest # use --parallel for speed, -R to run specific tests
 ```
-
-#### Building standalone CoreNEURON without NEURON
-
-If you want to build the standalone CoreNEURON version, first download the repository as:
-
-```
-git clone https://github.com/BlueBrain/CoreNeuron.git
-
-```
-
-Once the appropriate modules for compiler, MPI, CMake are loaded, you can build CoreNEURON with:
-
-```bash
-mkdir CoreNeuron/build && cd CoreNeuron/build
-cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
-cmake --build . --parallel 8 --target install
-```
-
-If you don't have MPI, you can disable the MPI dependency using the CMake option `-DNRN_ENABLE_MPI=OFF`.
 
 #### Compiling MOD files
 
@@ -344,25 +323,6 @@ cmake .. -CORENRN_ENABLE_UNIT_TESTS=OFF
 
 To see all CLI options for CoreNEURON, see `./bin/nrniv-core -h`.
 
-#### Formatting CMake and C++ Code
-
-Format code with `black`, `cmake-format`, and `clang-format` tools, before creating a PR.
-It should suffice within the build folder to ...
-```
-make format-pr
-```
-
-## Run CI
-
-CoreNeuron run several CI:
-
-- Github Action: defined [here](https://github.com/BlueBrain/CoreNeuron/tree/master/.github/workflows) and is self contained
-
-- Gitlab CI: defined [here](https://github.com/BlueBrain/CoreNeuron/blob/master/.gitlab-ci.yml) and depends on [gitlab pipelines](https://bbpgitlab.epfl.ch/hpc/gitlab-pipelines) and [blueconfigs](https://bbpgitlab.epfl.ch/hpc/sim/blueconfigs)
-
-### Configure gitlab CI
-
-See the [README](https://bbpgitlab.epfl.ch/hpc/gitlab-pipelines/-/blob/main/README.md) of `gitlab pipelines` to configure build.
 
 ## Citation
 
@@ -373,9 +333,7 @@ If you would like to know more about CoreNEURON or would like to cite it, then u
 
 ## Support / Contribuition
 
-If you see any issue, feel free to [raise a ticket](https://github.com/BlueBrain/CoreNeuron/issues/new). If you would like to improve this library, see [open issues](https://github.com/BlueBrain/CoreNeuron/issues).
-
-You can see current [contributors here](https://github.com/BlueBrain/CoreNeuron/graphs/contributors).
+If you see any issue, feel free to [raise a ticket](https://github.com/neuronsimulator/nrn/issues/new). If you would like to improve this library, see [open issues](https://github.com/neuronsimulator/nrn/issues).
 
 
 ## License

@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
-#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <errno.h>
 #include <stdio.h>
@@ -30,8 +29,8 @@ class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
 int BBSClient::sid_;
 
 BBSClient::BBSClient() {
-    sendbuf_ = nil;
-    recvbuf_ = nil;
+    sendbuf_ = nullptr;
+    recvbuf_ = nullptr;
     request_ = nrnmpi_newbuf(100);
     nrnmpi_ref(request_);
     keepargs_ = new KeepArgs();
@@ -118,7 +117,7 @@ void BBSClient::post(const char* key) {
     nrnmpi_pkstr(key, sendbuf_);
     nrnmpi_bbssend(sid_, POST, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 void BBSClient::post_todo(int parentid) {
@@ -130,7 +129,7 @@ void BBSClient::post_todo(int parentid) {
     nrnmpi_pkint(parentid, sendbuf_);
     nrnmpi_bbssend(sid_, POST_TODO, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 void BBSClient::post_result(int id) {
@@ -142,7 +141,7 @@ void BBSClient::post_result(int id) {
     nrnmpi_pkint(id, sendbuf_);
     nrnmpi_bbssend(sid_, POST_RESULT, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 int BBSClient::get(const char* key, int type) {
@@ -263,7 +262,7 @@ void BBSClient::save_args(int userid) {
 void BBSClient::return_args(int userid) {
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
-    recvbuf_ = nil;
+    recvbuf_ = nullptr;
     if (i != keepargs_->end()) {
         recvbuf_ = (*i).second;
         nrnmpi_ref(recvbuf_);

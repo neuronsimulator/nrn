@@ -1,6 +1,6 @@
 name: External CIs
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
   cancel-in-progress: true
 
@@ -10,7 +10,7 @@ on:
 env:
   PR_URL: ${{ github.event.pull_request.html_url }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+
 jobs:
   get-last-azure-url:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
       pr_azure_sha:  ${{ steps.drop.outputs.pr_azure_sha }}
     steps:
-      - id: drop 
+      - id: drop
         run: |
           # use jq to get the last Azure drop URL from the PR and the SHA1 from the same body
           export pr_json=$(gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<pr_azure_sha>[0-9a-f]{40}).*?(?<azure_drop_url>https://dev.azure.com/neuronsimulator/.*=zip)"))')
@@ -32,7 +32,7 @@ jobs:
           export pr_azure_sha=$(echo $pr_json | jq -r .pr_azure_sha)
           echo azure_drop_url=$azure_drop_url >> $GITHUB_OUTPUT
           echo pr_azure_sha=$pr_azure_sha >> $GITHUB_OUTPUT
-          
+
       - id: remove-label
         if: always()
         run: |
@@ -47,7 +47,7 @@ jobs:
         env:
           pr_azure_sha: ${{ steps.drop.outputs.pr_azure_sha }}
           azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
-          
+
   nrn-modeldb-ci:
     needs: get-last-azure-url
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
@@ -56,7 +56,7 @@ jobs:
       neuron_v2: neuron-nightly
 
   pr-update:
-    needs: 
+    needs:
       - nrn-modeldb-ci
       - get-last-azure-url
     runs-on: ubuntu-latest
@@ -68,4 +68,3 @@ jobs:
       env:
         ARTIFACTS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         pr_azure_sha: ${{ needs.get-last-azure-url.outputs.pr_azure_sha }}
-

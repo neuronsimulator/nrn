@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <stdio.h>
 #include <string.h>
 #include "bbslsrv.h"
@@ -60,7 +59,7 @@ WorkItem::WorkItem(int id, MessageValue* m) {
     id_ = id;
     val_ = m;
     val_->ref();
-    parent_ = nil;
+    parent_ = nullptr;
 }
 
 WorkItem::~WorkItem() {
@@ -92,7 +91,7 @@ class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
 
 MessageItem::MessageItem() {
-    next_ = nil;
+    next_ = nullptr;
     type_ = 0;
 }
 
@@ -111,9 +110,9 @@ MessageItem::~MessageItem() {
 }
 
 MessageValue::MessageValue() {
-    first_ = nil;
-    last_ = nil;
-    unpack_ = nil;
+    first_ = nullptr;
+    last_ = nullptr;
+    unpack_ = nullptr;
 }
 
 MessageValue::~MessageValue() {
@@ -277,7 +276,7 @@ bool BBSLocalServer::look(const char* key, MessageValue** val) {
 #endif
         return true;
     } else {
-        val = nil;
+        val = nullptr;
     }
 #if debug
     printf("srvr_look false |%s|\n", key);

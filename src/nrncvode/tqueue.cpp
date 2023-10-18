@@ -117,7 +117,7 @@ void TQueue_reg() {
 SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
     MUTCONSTRUCT(mkmut)
     tpool_ = tp;
-    head_ = nil;
+    head_ = nullptr;
 }
 SelfQueue::~SelfQueue() {
     remove_all();
@@ -126,7 +126,7 @@ SelfQueue::~SelfQueue() {
 TQItem* SelfQueue::insert(void* d) {
     MUTLOCK
     TQItem* q = tpool_->alloc();
-    q->left_ = nil;
+    q->left_ = nullptr;
     q->right_ = head_;
     if (head_) {
         head_->left_ = q;
@@ -156,6 +156,6 @@ void SelfQueue::remove_all() {
     for (TQItem* q = first(); q; q = next(q)) {
         tpool_->hpfree(q);
     }
-    head_ = nil;
+    head_ = nullptr;
     MUTUNLOCK
 }

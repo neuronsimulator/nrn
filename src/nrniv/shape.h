@@ -80,7 +80,7 @@ class ShapeScene: public Graph {  // entire neuron
     SectionHandler* section_handler_;
     PolyGlyph* sg_;
     Rotate3Band* r3b_;
-    CopyString* var_name_;
+    std::string var_name_;
     ShapeChangeObserver* shape_changed_;
 };
 

@@ -5,6 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <cassert>
@@ -19,12 +20,13 @@
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
-#include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
+
+namespace fs = std::filesystem;
 
 namespace coreneuron {
 // Those functions comes from mod file directly
@@ -37,7 +39,7 @@ CheckPoints::CheckPoints(const std::string& save, const std::string& restore)
     , restored(false) {
     if (!save.empty()) {
         if (nrnmpi_myid == 0) {
-            mkdir_p(save.c_str());
+            fs::create_directories(save);
         }
     }
 }

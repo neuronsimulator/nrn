@@ -9,6 +9,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <unordered_map>
 
 typedef struct NrnThread NrnThread;
 struct Extnode;
@@ -88,6 +89,22 @@ struct Memb_func {
     nrn_init_t m_initialize{};
 };
 
+/* Direct call Python wrappers to density mechanism functions */
+struct NPyDirectMechFunc {
+    const char* name;
+    double (*func)(Prop*);
+};
+/* Above struct in translated mod files are elements of a {nullptr, nullptr}
+   terminated list. The translator could easily create an unordered map instead,
+   and that would be nicer.
+   However there is some question (as with std::string) that an unordered_map
+   is ABI compatible across codes compiled by different toolchains.
+   So we will build our per mechanism map in NEURON world from the null
+   terminated list in NMODL world.
+*/
+using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
+extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
+extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
 
 #define IMEMFAST     -2
 #define VINDEX       -1
@@ -135,9 +152,16 @@ inline std::size_t vext_pseudoindex() {
 }  // namespace neuron::extracellular
 #endif
 
-#define nrnocCONST 1
-#define DEP        2
-#define STATE      3 /*See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define nrnocCONST 1  // PARAMETER
+#define DEP        2  // ASSIGNED
+#define STATE      3 /* STATE: See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define NRNPOINTER                                                            \
+    4 /* added on to list of mechanism variables.These are                    \
+pointers which connect variables  from other mechanisms via the _ppval array. \
+*/
+
+#define _AMBIGUOUS 5  // for Ions
+#define RAND       6  // RANDOM
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
@@ -152,7 +176,7 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
-extern Memb_func* memb_func;
+extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
@@ -161,12 +185,6 @@ extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;
-#define NRNPOINTER                                                            \
-    4 /* added on to list of mechanism variables.These are                    \
-pointers which connect variables  from other mechanisms via the _ppval array. \
-*/
-
-#define _AMBIGUOUS 5
 
 namespace neuron::mechanism {
 template <typename T>

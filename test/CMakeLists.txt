@@ -15,8 +15,13 @@ include(NeuronTestHelper)
 # =============================================================================
 add_executable(
   testneuron
-  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/container.cpp
-  unit_tests/container/mechanism.cpp unit_tests/container/node.cpp
+  common/catch2_main.cpp
+  unit_tests/basic.cpp
+  unit_tests/container/container.cpp
+  unit_tests/container/generic_data_handle.cpp
+  unit_tests/container/mechanism.cpp
+  unit_tests/container/node.cpp
+  unit_tests/utils/enumerate.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -277,7 +282,7 @@ if(NRN_ENABLE_PYTHON)
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
     NAME hoctests
-    MODFILE_PATTERNS *.mod
+    MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY test/hoctests)
   set(hoctest_utils expect_err.hoc)
   foreach(ext hoc py)
