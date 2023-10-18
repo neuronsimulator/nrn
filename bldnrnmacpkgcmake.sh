@@ -97,7 +97,7 @@ cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
-  -DNRN_RX3D_OPT_LEVEL=0 \
+  -DNRN_RX3D_OPT_LEVEL=2 \
   $archs_cmake \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
@@ -129,6 +129,11 @@ chk () {
   )
 }
 
+# test basic functionality
+for i in $args ; do
+  chk $i
+done
+
 #/Applications/Packages.app from
 # http://s.sudre.free.fr/Software/Packages/about.html
 # For mac to do a productsign, need my developerID_installer.cer
@@ -137,11 +142,6 @@ chk () {
 ninja macpkg # will sign the binaries, construct below
             # mentioned PACKAGE_FILE_NAME, request notarization from
             # Apple, and staple the package.
-
-# test basic functionality
-for i in $args ; do
-  chk $i
-done
 
 # Copy the package to $HOME/$PACKAGE_FULL_NAME
 # You should then manually upload that to github.
