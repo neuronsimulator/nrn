@@ -1020,6 +1020,7 @@ class _PlotShapePlot(_WrapperPlot):
 
         def _get_pyplot_axis3d(fig):
             """requires matplotlib"""
+            from . import rxd
             from matplotlib.pyplot import cm
             import matplotlib.pyplot as plt
             from mpl_toolkits.mplot3d import Axes3D
