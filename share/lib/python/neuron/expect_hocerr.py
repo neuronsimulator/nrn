@@ -41,7 +41,7 @@ def expect_hocerr(callable, args, sec=None):
 
     original_stderr = sys.stderr
     sys.stderr = my_stderr = StringIO()
-    err = 0
+    err = False
     pyerrmes = False
     try:
         if sec:
@@ -50,7 +50,7 @@ def expect_hocerr(callable, args, sec=None):
             callable(*args)
             printerr("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
     except Exception as e:
-        err = 1
+        err = True
         errmes = my_stderr.getvalue()
         if errmes:
             errmes = errmes.splitlines()[0]
@@ -70,12 +70,12 @@ def expect_err(stmt):
     """
     here = inspect.currentframe()
     caller = here.f_back
-    err = 0
+    err = False
     checking(stmt)
     try:
         exec(stmt, caller.f_globals, caller.f_locals)
         printerr("expect_err: no err for-- " + stmt)
     except Exception as e:
-        err = 1
+        err = True
         printerr(e)
     assert err

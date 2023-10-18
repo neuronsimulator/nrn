@@ -91,9 +91,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* 1 for legacy, undef for NIST (as of 2017), for FARADAY and R */
-#undef LegacyFR
-
 /* define if using mingw */
 #undef MINGW
 

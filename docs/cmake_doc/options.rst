@@ -597,20 +597,6 @@ NRN_ENABLE_DISCRETE_EVENT_OBSERVER:BOOL=ON
   Enable Observer to be a subclass of DiscreteEvent
   Can save space but a lot of component destruction may not notify other components that are watching it to no longer use that component. Useful only if one builds a model without needing to eliminate pieces of the model.
 
-NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
-----------------------------
-  Default is to use modern faraday, R, etc. from 2019 nist constants.
-  When Off or ON, and in the absence of the ``NRNUNIT_USE_LEGACY=0or1``
-  environment variable, the default dynamic value of ``h.nrnunit_use_legacy()``
-  will be 0 or 1 respectively.
-
-  At launch time (or import neuron),
-  use of legacy or modern units can be specified with the
-  ``NRNUNIT_USE_LEGACY=0or1`` environment variable. The use of legacy or
-  modern units can be dynamically specified after launch with the
-  ``h.nrnunit_use_legacy(0or1)`` function (with no args, returns the
-  current use flag).
-
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
   Dynamically load nrnmech shared library

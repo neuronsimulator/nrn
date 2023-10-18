@@ -768,7 +768,7 @@ void ShapePlotImpl::select_variable() {
     sc->ref();
     while (sc->post_for(XYView::current_pick_view()->canvas()->window())) {
         Symbol* s;
-        s = hoc_table_lookup(sc->selected()->string(), hoc_built_in_symlist);
+        s = hoc_table_lookup(sc->selected().c_str(), hoc_built_in_symlist);
         if (s) {
             sp_->variable(s);
             break;

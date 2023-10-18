@@ -186,4 +186,13 @@ extern void nrnpy_sec_referr();
         }                       \
     }
 
+extern void nrnpy_prop_referr();
+#define CHECK_PROP_INVALID(propid) \
+    {                              \
+        if (!propid) {             \
+            nrnpy_prop_referr();   \
+            return NULL;           \
+        }                          \
+    }
+
 #endif /* end of include guard: nrnpy_utils_h */
