@@ -15,8 +15,8 @@ set(NB_SOURCE_FILES
 
 function(make_nanobind_target TARGET_NAME PYINC)
   add_library(${TARGET_NAME} OBJECT ${NB_SOURCE_FILES})
-  target_include_directories(${TARGET_NAME} PUBLIC ${NB_DIR}/include)
-  target_include_directories(${TARGET_NAME} PRIVATE ${NB_DIR}/ext/robin_map/include ${PYINC})
+  target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${NB_DIR}/include)
+  target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${NB_DIR}/ext/robin_map/include ${PYINC})
   target_compile_options(${TARGET_NAME} PRIVATE -fno-strict-aliasing)
   target_compile_definitions(${TARGET_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)
   target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)
