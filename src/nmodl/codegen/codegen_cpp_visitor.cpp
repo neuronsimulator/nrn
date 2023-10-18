@@ -3338,7 +3338,13 @@ void CodegenCppVisitor::print_initial_block(const InitialBlock* node) {
         if (!info.is_ionic_conc(name)) {
             auto lhs = get_variable_name(name);
             auto rhs = get_variable_name(name + "0");
-            printer->fmt_line("{} = {};", lhs, rhs);
+            if (var->is_array()) {
+                for (int i = 0; i < var->get_length(); ++i) {
+                    printer->fmt_line("{}[{}] = {};", lhs, i, rhs);
+                }
+            } else {
+                printer->fmt_line("{} = {};", lhs, rhs);
+            }
         }
     }
 
