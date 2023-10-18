@@ -1987,7 +1987,6 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 }
 
 static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
-    // printf("hocobj_setitem %d\n", i);
     int err = -1;
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ > PyHoc::HocArray) {
@@ -2409,6 +2408,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
     // We borrow the list, so there's an INCREF and all items are alive
     nb::object po = nb::borrow(nrnpy_hoc2pyobject(ho));
 
+    // If it's not a sequence, try iterating over it
     if (!PySequence_Check(po.ptr())) {
         if (!PyIter_Check(po.ptr())) {
             hoc_execerror(hoc_object_name(ho),
@@ -2416,30 +2416,35 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         }
         long i = 0;
         for (nb::handle item: po) {
-            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i++));
+            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i));
+            i++;
+        }
+        return hv;
+    }
+
+    int size = nb::len(po);
+    hv->resize(size);
+    double* x = vector_vec(hv);
+
+    // If sequence provides __array_interface__ use it
+    long stride;
+    char* array_interface_ptr = double_array_interface(po.ptr(), stride);
+    if (array_interface_ptr) {
+        for (int i = 0, j = 0; i < size; ++i, j += stride) {
+            x[i] = *(double*) (array_interface_ptr + j);
+        }
+        return hv;
+    }
+
+    // If it's a normal list, convert to the good type so operator[] is more efficient
+    if (PyList_Check(po.ptr())) {
+        nb::list list_obj{std::move(po)};
+        for (long i = 0; i < size; ++i) {
+            x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
         }
     } else {
-        int size = nb::len(po);
-        hv->resize(size);
-        double* x = vector_vec(hv);
-        long stride;
-        char* array_interface_ptr = double_array_interface(po.ptr(), stride);
-        if (array_interface_ptr) {
-            for (int i = 0, j = 0; i < size; ++i, j += stride) {
-                x[i] = *(double*) (array_interface_ptr + j);
-            }
-        } else {
-            if (PyList_Check(po.ptr())) {
-                // If it's a list, convert to the good type so operator[] is more efficient
-                nb::list list_obj{std::move(po)};
-                for (long i = 0; i < size; ++i) {
-                    x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
-                }
-            } else {
-                for (long i = 0; i < size; ++i) {
-                    x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
-                }
-            }
+        for (long i = 0; i < size; ++i) {
+            x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
         }
     }
     return hv;
@@ -3045,7 +3050,7 @@ static PyObject* py_hocobj_mul(PyObject* obj1, PyObject* obj2) {
 static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
     return py_hocobj_math("div", obj1, obj2);
 }
-static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
+static PyMemberDef hocobj_members[] = {{nullptr, 0, 0, 0, nullptr}};
 
 #include "nrnpy_hoc.h"
 
