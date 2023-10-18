@@ -49,8 +49,11 @@ if test "$archs" != "universal2" ; then
   universal=no
 fi
 
+# Arrgh. Recent changes to nrn source require at least 10.15!
+macosver=10.15
+mac_platform=macosx-$macosver-$archs
+
 export MACOSX_DEPLOYMENT_TARGET=$macosver
-export MACOSX_DEPLOYMENT_TARGET=10.15
 echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
 if test "$NRN_SRC" == "" ; then
