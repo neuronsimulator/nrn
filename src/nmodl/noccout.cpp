@@ -38,6 +38,9 @@ static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern int electrode_current;        /* 1 means we should watch out for extracellular
                            and handle it correctly */
 
+extern std::vector<RandomVar> random_vars;
+extern char* mechname;
+
 #if SYSV
 #define index strchr
 #endif
@@ -64,6 +67,99 @@ static void ext_vdef() {
     }
 }
 
+void print_random_construct_functions() {
+
+    // if no random variables used in MOD file then
+    // nothing is needed from code generation side
+    if (random_vars.empty()) {
+        return;
+    }
+
+    P("// return random123 object pointer for a given variable name\n");
+    P("nrnran123_State*& _get_random_var_by_name(const char* name, _internalthreadargsproto_) {\n");
+
+    for (const auto& var: random_vars) {
+        Fprintf(fcout, "    if (strcmp(name, \"%s\") == 0) {\n", var.name.c_str());
+        Fprintf(fcout, "        return reinterpret_cast<nrnran123_State*&>(_p_%s);\n", var.name.c_str());
+        P("    }\n");
+    }
+
+    P("    // abort if name doesn't match\n");
+    P("    hoc_execerror(\"Invalid RANDOM variable name \", name);\n");
+    P("    abort();");
+    P("}\n\n");
+
+    P("// initialize random variable\n");
+    Fprintf(fcout, "static int _init_rng_%s(_internalthreadargsproto_) {\n", mechname);
+    P("    const char *name = gargstr(1);\n");
+    P("    uint32_t id1 = uint32_t(*getarg(2));\n");
+    P("    uint32_t id2 = uint32_t(*getarg(3));\n");
+    P("    uint32_t id3 = uint32_t(*getarg(4));\n");
+    P("    \n");
+    P("    auto& r123state = _get_random_var_by_name(name, _threadargs_);\n");
+    P("    if (r123state) {\n");
+    P("        nrnran123_deletestream(r123state);\n");
+    P("        r123state = nullptr;\n");
+    P("    }\n");
+    P("    r123state = nrnran123_newstream3(id1, id2, id3);\n");
+    P("    return 0;\n");
+    P("}\n\n");
+
+    P("// hoc wrapper for init_rng function\n");
+    Fprintf(fcout, "static double _hoc_init_rng_%s(void* _vptr) {", mechname);
+    P("    auto* const _pnt = static_cast<Point_process*>(_vptr);");
+    P("    auto* const _p = _pnt->_prop;");
+    P("    _nrn_mechanism_cache_instance _ml_real{_p};");
+    P("    auto* const _ml = &_ml_real;");
+    P("    size_t const _iml{};");
+    P("    auto* _ppvar = _nrn_mechanism_access_dparam(_p);");
+    P("    auto* _thread = _extcall_thread.data();");
+    P("    auto* _nt = static_cast<NrnThread*>(_pnt->_vnt);");
+    Fprintf(fcout, "    auto _r = _init_rng_%s(_threadargs_);", mechname);
+    P("    return (_r);");
+    P("}\n\n");
+
+    P("// sample random variable\n");
+    Fprintf(fcout, "static double _sample_rng_%s(_internalthreadargsproto_) {\n", mechname);
+    P("    const char *name = gargstr(1);\n");
+    P("    auto& r123state = _get_random_var_by_name(name, _threadargs_);\n");
+
+    // todo: argument size check shouldn't be necessary here if parsing
+    // checks the semantics already
+    for(const auto& var: random_vars) {
+        Fprintf(fcout, "    if(strcmp(name, \"%s\") == 0) {\n", var.name.c_str());
+        if (var.distribution == "UNIFORM") {
+            assert(var.arguments.size() == 2);
+            Fprintf(fcout, "        return nrnran123_uniform(r123state, %s, %s);\n", var.arguments[0].c_str(), var.arguments[1].c_str());
+        } else if (var.distribution == "NEGEXP") {
+            assert(var.arguments.size() == 1);
+            Fprintf(fcout, "        return nrnran123_negexp(r123state, %s);\n", var.arguments[0].c_str());
+        } else if (var.distribution == "NORMAL") {
+            assert(var.arguments.size() == 2);
+            Fprintf(fcout, "        return nrnran123_normal(r123state, %s, %s);\n", var.arguments[0].c_str(), var.arguments[1].c_str());
+        } else {
+            std::cerr << "Error: Invalid distribution " << var.distribution << " specified for RANDOM variable " << var.name << std::endl;
+        }
+        P("    }\n");
+    }
+    P("}\n\n");
+
+    P("// hoc wrapper for sample rng function\n");
+    Fprintf(fcout, "static double _hoc_sample_rng_%s(void* _vptr) {", mechname);
+    P("    auto* const _pnt = static_cast<Point_process*>(_vptr);");
+    P("    auto* const _p = _pnt->_prop;");
+    P("    _nrn_mechanism_cache_instance _ml_real{_p};");
+    P("    auto* const _ml = &_ml_real;");
+    P("    size_t const _iml{};");
+    P("    auto* _ppvar = _nrn_mechanism_access_dparam(_p);");
+    P("    auto* _thread = _extcall_thread.data();");
+    P("    auto* _nt = static_cast<NrnThread*>(_pnt->_vnt);");
+    Fprintf(fcout, "    auto _r = _sample_rng_%s(_threadargs_);", mechname);
+    P("    return (_r);");
+    P("}\n\n");
+
+    Fflush(fcout);
+}
 
 /* when vectorize = 0 */
 void c_out() {
@@ -131,6 +227,9 @@ void c_out() {
      * some special declarations used by some blocks
      */
     printlist(procfunc);
+    Fflush(fcout);
+
+    print_random_construct_functions();
     Fflush(fcout);
 
     /* Initialization function must always be present */
@@ -513,6 +612,9 @@ void c_out_vectorize() {
      * some special declarations used by some blocks
      */
     printlist(procfunc);
+    Fflush(fcout);
+
+    print_random_construct_functions();
     Fflush(fcout);
 
     /* Initialization function must always be present */

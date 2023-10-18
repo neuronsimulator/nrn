@@ -337,7 +337,7 @@ struct RandomVar {
 
     void print() {
         std::cout << "RNG: " << distribution << " DISTR ";
-        for(const auto arg: arguments) {
+        for (const auto& arg: arguments) {
             std::cout << arg << " ";
         }
         std::cout << "NAME " << name << std::endl;

@@ -502,6 +502,14 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/nmodl/test_kinetic.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_random
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_random.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_random.py)
+
   nrn_add_test_group(
     CORENEURON
     NAME coreneuron_modtests

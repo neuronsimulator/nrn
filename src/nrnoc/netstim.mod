@@ -21,6 +21,7 @@ NEURON	{
     RANGE noise
     THREADSAFE : only true if every instance has its own distinct Random
     BBCOREPOINTER donotuse
+    RANDOM UNIFORM(1.0, 10.0) rng_use
     RANDOM NEGEXP(1.0) rng_donotuse
 }
 
@@ -89,7 +90,7 @@ FUNCTION invl(mean (ms)) (ms) {
 FUNCTION erand() {
 VERBATIM
         if (_p_donotuse) {
-            double rng = nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
+            return nrnran123_negexp(reinterpret_cast<nrnran123_State*>(_p_donotuse));
         }
 ENDVERBATIM
 }

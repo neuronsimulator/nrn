@@ -131,7 +131,7 @@ static List* rangestate;
 static List* nrnpointers;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
-static char* mechname;
+char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0; /*1 if diam is declared*/
@@ -387,6 +387,14 @@ void parout() {
         }
     }
 
+    if (random_vars.size()) {
+        Lappendstr(defs_list, "/* declaration of RANDOM related functions */\n");
+        Sprintf(buf, "static double _hoc_init_rng_%s(void*);\n", mechname);
+        Lappendstr(defs_list, buf);
+        Sprintf(buf, "static double _hoc_sample_rng_%s(void*);\n", mechname);
+        Lappendstr(defs_list, buf);
+    }
+
     Lappendstr(defs_list,
                "static int _mechtype;\n\
 extern void _nrn_cacheloop_reg(int, int);\n\
@@ -479,6 +487,18 @@ extern void nrn_promote(Prop*, int, int);\n\
             Lappendstr(defs_list, buf);
         }
     }
+
+    if (random_vars.size()) {
+        if (!point_process) {
+            Lappendstr(defs_list, "{0, 0}\n};\n");
+            Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
+        }
+        Sprintf(buf, "{\"init_rng\", _hoc_init_rng_%s},\n", mechname);
+        Lappendstr(defs_list, buf);
+        Sprintf(buf, "{\"sample_rng\", _hoc_sample_rng_%s},\n", mechname);
+        Lappendstr(defs_list, buf);
+    }
+
     Lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* Direct Python call wrappers to density mechanism functions. */
@@ -765,7 +785,7 @@ extern void nrn_promote(Prop*, int, int);\n\
             "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
-    ppvar_cnt = ioncount + diamdec + pointercount + areadec;
+    ppvar_cnt = ioncount + diamdec + pointercount + random_vars.size() + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(
@@ -883,6 +903,15 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
+        Lappendstr(defs_list, buf);
+    }
+
+    /*
+     * random variables names
+     * TODO: we are registering those with pointers. Does this need to be changed?
+     */
+    for(const auto& var: random_vars) {
+        Sprintf(buf, "\"%s\",\n", var.name.c_str(), rsuffix);
         Lappendstr(defs_list, buf);
     }
 
@@ -1789,16 +1818,16 @@ void defs_h(Symbol* s) {
     q->itemtype = VERBATIM;
 }
 
-void nrnlist_print(Item*begin, Item* qlist) {
-    for (Item *q = begin->next; q != qlist->next; q = q->next) {
+void nrnlist_print(Item* begin, Item* qlist) {
+    for (Item* q = begin->next; q != qlist->next; q = q->next) {
         std::cout << SYM(q)->name << ' ';
     }
     std::cout << "\n";
 }
 
-std::vector<std::string> nrnlist_to_string(Item*begin, Item* qlist) {
+std::vector<std::string> nrnlist_to_string(Item* begin, Item* qlist) {
     std::vector<std::string> names;
-    for (Item *q = begin->next; q != qlist->next; q = q->next) {
+    for (Item* q = begin->next; q != qlist->next; q = q->next) {
         names.emplace_back(SYM(q)->name);
     }
     return names;
@@ -2418,8 +2447,38 @@ int iondef(int* p_pointercount) {
         (*p_pointercount)++;
     }
 
+    int num_random_vars = random_vars.size();
+
+    if (num_random_vars) {
+        Sprintf(buf, "\n //RANDOM variables \n");
+        lappendstr(defs_list, buf);
+
+        int index = 0;
+        for (const auto& var: random_vars) {
+            Sprintf(buf,
+                    "#define %s	*_ppvar[%d].get<double*>()\n",
+                    var.name.c_str(),
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            Sprintf(buf,
+                    "#define _p_%s _ppvar[%d].literal_value<void*>()\n",
+                    var.name.c_str(),
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            // TODO: should be "random" or some other semantic name?
+            ppvar_semantics(ioncount + *p_pointercount + index,
+                            "pointer",
+                            var.name.c_str(),
+                            "double*");
+            index++;
+        }
+        lappendstr(defs_list, "\n");
+    }
+
     if (diamdec) { /* must be last */
-        Sprintf(buf, "#define diam	*_ppvar[%d].get<double*>()\n", ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define diam	*_ppvar[%d].get<double*>()\n",
+                ioncount + *p_pointercount + num_random_vars);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
@@ -2427,13 +2486,13 @@ int iondef(int* p_pointercount) {
             procedures must be redone */
         Sprintf(buf,
                 "#define area	*_ppvar[%d].get<double*>()\n",
-                ioncount + *p_pointercount + diamdec);
+                ioncount + *p_pointercount + num_random_vars + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
     Sprintf(buf,
             "static constexpr auto number_of_datum_variables = %d;\n",
-            ioncount + *p_pointercount + diamdec + areadec);
+            ioncount + *p_pointercount + num_random_vars + diamdec + areadec);
     linsertstr(defs_list, buf)->itemtype = VERBATIM;
     return ioncount;
 }

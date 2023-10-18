@@ -46,7 +46,7 @@ extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
 extern void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 
-extern double nrnran123_negexp(nrnran123_State*);  /* mean 1.0 */
+extern double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
 extern double nrnran123_negexp(nrnran123_State*, double);
 extern uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
@@ -56,7 +56,7 @@ extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1
 extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 extern double nrnran123_normal(nrnran123_State*, double, double);
 
-extern double nrnran123_uniform(nrnran123_State, double, double);
+extern double nrnran123_uniform(nrnran123_State*, double, double);
 
 /* more fundamental (stateless) (though the global index is still used) */
 extern nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
