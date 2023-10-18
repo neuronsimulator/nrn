@@ -1231,6 +1231,7 @@ class _PlotShapePlot(_WrapperPlot):
         def _do_plot_on_plotly(width=2, color=None, cmap=None):
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
+            from . import rxd
             import plotly.graph_objects as go
 
             class FigureWidgetWithNEURON(go.FigureWidget):
