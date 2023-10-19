@@ -92,8 +92,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r plotly ipywidgets>=7.0.0
-          
+          python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Set up Python@${{ env.PY_MID_VERSION }}
         uses: actions/setup-python@v4
@@ -110,7 +109,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r plotly ipywidgets>=7.0.0
+          python -m pip install --upgrade -r ci_requirements.txt
           
 
       - name: Build & Test
