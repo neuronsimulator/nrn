@@ -158,6 +158,7 @@ import _neuron_section
 h = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
+_userrxd = False
 
 # Initialise neuron.config.arguments
 from neuron import config
