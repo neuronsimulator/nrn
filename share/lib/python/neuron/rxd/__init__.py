@@ -29,7 +29,7 @@ from .geometry import (
 from .plugins import set_solver
 import neuron
 
-neuron._userrxd = 1
+neuron._userrxd = True
 
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
