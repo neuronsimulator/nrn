@@ -96,10 +96,11 @@ Shape
             from neuron import h, gui
             from neuron.units import mV, ms
             import matplotlib
-            h.load_file('c91662.ses')
+
+            h.load_file("c91662.ses")
 
             for sec in h.allsec():
-                sec.nseg = int(1 + 2 * (sec.L // 40 ))
+                sec.nseg = int(1 + 2 * (sec.L // 40))
                 sec.insert(h.hh)
 
             ic = h.IClamp(h.soma(0.5))
@@ -110,16 +111,14 @@ Shape
             h.finitialize(-65 * mV)
             h.continuerun(2 * ms)
 
-            from matplotlib import cm
             ps = h.PlotShape(False)
             ps.variable("v")
-            print(ps.show()) # prints the current mode
-            ps.show(0) # alters the mode to 0 that displays diameters for each segment
+            print(ps.show())  # prints the current mode
+            ps.show(0)  # alters the mode to 0 that displays diameters for each segment
             print(ps.show())  # should print 0 as the mode set
             ps.plot(plotly, width=7, cmap=matplotlib.colormaps["viridis"]).show()
-        
-    
 
+        
 
 
 ----
