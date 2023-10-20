@@ -1762,6 +1762,18 @@ void v_setup_vectors(void) {
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
+
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        printf("nrnthread %d node info\n", tid);
+        auto& nt = nrn_threads[tid];
+        for (int i=0; i < nt.end; ++i) {
+            printf(" _v_node[%2d]->v_node_index=%2d"  
+                   " _v_parent[%2d]->v_node_index=%2d v=%g\n",
+                   i, nt._v_node[i]->v_node_index, 
+                   i, nt._v_parent[i] ? nt._v_parent[i]->v_node_index:-1,
+                   (*nt._v_node[i]).v());
+        }
+    }
 }
 
 

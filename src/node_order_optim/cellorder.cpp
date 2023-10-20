@@ -17,6 +17,7 @@
 #include "nrnoc/nrn_ansi.h"
 #include "nrnoc/nrniv_mf.h"
 #include "coreneuron/utils/offload.hpp"
+#include "nrnoc/section.h"
 //#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "node_order_optim/node_permute.h"  // for print_quality
@@ -310,6 +311,21 @@ void nrn_permute_node_order() {
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
         int* perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
+        auto p = inverse_permute(perm, nt.end);
+        for (int i=0; i < nt.end; ++i) {
+            int x = nt._v_parent_index[p[i]];
+            int par = x >= 0 ? perm[x] : -1;
+            printf("%2d <- %2d  parent=%2d\n", i, p[i], par );
+        }
+
+        printf("nrnthread %d node info\n", tid);
+        for (int i=0; i < nt.end; ++i) {
+            printf(" _v_node[%2d]->v_node_index=%2d"
+                   " _v_parent[%2d]->v_node_index=%2d\n",
+                   i, nt._v_node[i]->v_node_index,
+                   i, nt._v_parent[i] ? nt._v_parent[i]->v_node_index:-1);
+        }
+
         delete[] perm;
     }
     printf("leave nrn_permute_node_order\n");
