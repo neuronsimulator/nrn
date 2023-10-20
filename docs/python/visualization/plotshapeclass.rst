@@ -252,6 +252,44 @@ PlotShape
     Description:
     Range variable (v, m_hh, etc.) to be used for time, space, and
     shape plots.
+    
+    Additionally, the variable can also be identified by species or specific region to show the corresponding voltage across.
+
+    Example:
+
+        .. code-block::
+            python
+            
+            from neuron import h, rxd
+            from neuron.units import mM, µm, ms, mV
+            import plotly
+            h.load_file("stdrun.hoc")
+
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
+            dend2.connect(dend1(1))
+
+            dend1.nseg = dend1.L = dend2.nseg = dend2.L = 11
+            dend1.diam = dend2.diam = 2 * µm
+
+            cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
+            cyt2 = rxd.Region(dend2.wholetree(), nrn_region="i")
+
+            ca = rxd.Species([cyt,cyt2], name="ca", charge=2, initial=0 * mM, d=1 * µm ** 2 / ms)
+
+            ca.nodes(dend1(0.5))[0].include_flux(1e-13, units="mmol/ms")
+
+            h.finitialize(-65 * mV)
+            h.continuerun(50 * ms)
+
+            ps = h.PlotShape(False)
+
+            ps.variable(ca[cyt])
+
+            ps.plot(plotly).show()
+
+
+
 
 
 ----

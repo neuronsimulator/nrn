@@ -12,13 +12,14 @@ Contents:
 
 ### Local build
 
-#### Setup
+#### Virtual environment
 It is recommended to use a Python virtual environment, for example:
 
-```
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
+
 
 In order to build documentation locally, you need to pip install the ``docs_requirements.txt`` :
 ```
@@ -26,9 +27,22 @@ pip3 install -r docs/docs_requirements.txt --upgrade
 ```
 
 Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
-Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
+Note that this conda environment file is tailored to the online ReadTheDocs setup (but it lists out all desired requirements, so make sure to check it out).
 
-With all dependencies installed, configure project with CMake as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
+#### Anaconda environment
+
+After installing Anaconda, create a new environment with the following command:
+
+```bash
+conda env create --quiet --name rtd --file docs/conda_environment.yml
+conda activate rtd
+```
+
+This will install all dependencies needed to build the documentation locally, in a similar way as on ReadTheDocs. However ReadTheDocs has a different setup, so it is of interest to head over and check the build logs for additional information.
+
+#### Confguring the build
+
+With all dependencies installed, configure project with CMake (>= v3.17) as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
 
 e.g. in your CMake build folder:
 

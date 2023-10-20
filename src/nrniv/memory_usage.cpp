@@ -43,8 +43,7 @@ cache::ModelMemoryUsage memory_usage(const neuron::cache::Model& model) {
 MemoryUsage local_memory_usage() {
     return MemoryUsage{memory_usage(model()),
                        memory_usage(neuron::cache::model),
-                       detail::compute_defer_delete_storage_size(),
-                       detail::compute_identifier_defer_delete_storage_size()};
+                       detail::compute_defer_delete_storage_size()};
 }
 
 namespace detail {
@@ -61,10 +60,6 @@ VectorMemoryUsage compute_defer_delete_storage_size(std::vector<T> const* const 
     return {0ul, 0ul};
 }
 
-
-VectorMemoryUsage compute_identifier_defer_delete_storage_size() {
-    return compute_defer_delete_storage_size(identifier_defer_delete_storage, sizeof(std::size_t));
-}
 
 VectorMemoryUsage compute_defer_delete_storage_size() {
     return compute_defer_delete_storage_size(defer_delete_storage, sizeof(void*));
@@ -105,7 +100,6 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     const auto& model = usage.model;
     const auto& cache_model = usage.cache_model;
     const auto& stable_pointers = usage.stable_pointers;
-    const auto& stable_identifiers = usage.stable_identifiers;
     const auto& total = usage.compute_total();
     const auto& summary = MemoryUsageSummary(usage);
 
@@ -124,7 +118,6 @@ std::string format_memory_usage(const MemoryUsage& usage) {
     os << "  threads               " << format_memory_usage(cache_model.threads) << "\n";
     os << "  mechanisms            " << format_memory_usage(cache_model.mechanisms) << "\n";
     os << "deferred deletion \n";
-    os << "  stable_identifiers    " << format_memory_usage(stable_identifiers) << "\n";
     os << "  stable_pointers       " << format_memory_usage(stable_pointers) << "\n";
     os << "\n";
     os << "total                   " << format_memory_usage(total) << "\n";

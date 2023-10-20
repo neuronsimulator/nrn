@@ -1,7 +1,6 @@
 #ifndef ocfile_h
 #define ocfile_h
 
-#include <OS/string.h>
 #include <string>
 class File;
 class FileChooser;
@@ -13,7 +12,7 @@ class OcFile {
     bool open(const char* filename, const char* type);
     void set_name(const char* s);
     const char* get_name() {
-        return filename_.string();
+        return filename_.c_str();
     }
     const char* dir();
     void close();
@@ -48,8 +47,8 @@ class OcFile {
 #if HAVE_IV
     int chooser_type_;
 #endif
-    CopyString filename_;
-    CopyString dirname_;
+    std::string filename_;
+    std::string dirname_;
     FILE* file_;
 #ifdef WIN32
     bool binary_;
