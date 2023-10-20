@@ -422,10 +422,13 @@ DUChain DefUseAnalyzeVisitor::analyze(const ast::Ast& node, const std::string& n
     visiting_lhs = false;
     current_symtab = global_symtab;
     unsupported_node = false;
+
+    // variable types that we try to localise: RANGE, GLOBAL and ASSIGNED
+    auto global_symbol_properties = NmodlType::global_var | NmodlType::range_var |
+                                    NmodlType::assigned_definition;
     auto global_symbol = global_symtab->lookup_in_scope(variable_name);
     // If global_symbol exists in the global_symtab then search for a global variable. Otherwise the
     // variable can only be local if it exists
-    auto global_symbol_properties = NmodlType::global_var | NmodlType::range_var;
     if (global_symbol != nullptr && global_symbol->has_any_property(global_symbol_properties)) {
         variable_type = DUVariableType::Global;
     } else {

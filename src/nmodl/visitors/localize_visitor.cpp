@@ -77,7 +77,8 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
                                      | NmodlType::nonspecific_cur_var
                                      | NmodlType::pointer_var
                                      | NmodlType::bbcore_pointer_var
-                                     | NmodlType::electrode_cur_var;
+                                     | NmodlType::electrode_cur_var
+                                     | NmodlType::state_var;
 
     const NmodlType global_var_properties = NmodlType::range_var
                                      | NmodlType::assigned_definition
@@ -112,6 +113,8 @@ void LocalizeVisitor::visit_program(const ast::Program& node) {
         const auto& blocks = node.get_blocks();
         std::map<DUState, std::vector<std::shared_ptr<ast::Node>>> block_usage;
 
+        logger->debug("LocalizeVisitor: Checking DU chains for {}", varname);
+
         /// compute def use chains
         for (const auto& block: blocks) {
             if (node_for_def_use_analysis(*block)) {
@@ -119,6 +122,9 @@ void LocalizeVisitor::visit_program(const ast::Program& node) {
                 const auto& usages = v.analyze(*block, varname);
                 auto result = usages.eval();
                 block_usage[result].push_back(block);
+                logger->debug("\tDU chain in block {} is {}",
+                              block->get_node_type_name(),
+                              usages.to_string());
             }
         }
 

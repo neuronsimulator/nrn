@@ -445,6 +445,35 @@ SCENARIO("Perform DefUse analysis on NMODL constructs") {
         }
     }
 
+    GIVEN("Simple check of assigned variables") {
+        const std::string nmodl_text = R"(
+            NEURON {
+                SUFFIX foo
+            }
+
+            ASSIGNED {
+                y
+            }
+
+            DERIVATIVE states {
+                y = 1
+                y = y + 2
+            }
+        )";
+
+        const std::string expected_text_y =
+            R"({"DerivativeBlock":[{"name":"D"},{"name":"U"},{"name":"D"}]})";
+
+        THEN("assigned variables are correctly analyzed") {
+            const std::string input = reindent_text(nmodl_text);
+            // Assigned variable "y" should be DU as it's defined and used as well
+            const auto& chains_y = run_defuse_visitor(input, "y");
+            REQUIRE(chains_y[0].to_string() == expected_text_y);
+            REQUIRE(chains_y[0].eval() == DUState::D);
+        }
+    }
+
+
     GIVEN("global variable definition in if-else block") {
         std::string nmodl_text = R"(
             NEURON {
