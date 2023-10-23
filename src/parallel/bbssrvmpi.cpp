@@ -2,7 +2,9 @@
 #include <nrnmpi.h>
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
