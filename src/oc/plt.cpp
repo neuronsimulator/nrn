@@ -9,7 +9,7 @@ added plots in fig format      \
 
 extern void Fig_file(const char*, int);
 
-#ifndef MINGW
+#ifndef WIN32
 
 void Plt(void) {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);

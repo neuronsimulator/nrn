@@ -45,8 +45,8 @@ if "--cmake-build-dir" in sys.argv:
     # check for libnrniv.{so,dylib, dll.a} depending on platform
     check_suffix = "so" if sys.platform != "darwin" else "dylib"
     if sys.platform == "win32":
-        check_suffix = "dll.a"
-    if not os.path.exists(
+        check_suffix = "dll"
+    if False and not os.path.exists(
         os.path.join(
             cmake_build_dir,
             "lib",
@@ -377,7 +377,7 @@ def setup_package():
 
     extension_common_params = defaultdict(
         list,
-        library_dirs=[os.path.join(cmake_build_dir, "lib")],
+        library_dirs=[os.path.join(cmake_build_dir, "lib/Release")],
         libraries=ext_common_libraries,
         language="c++",
     )
@@ -419,12 +419,12 @@ def setup_package():
                 "src/nrnpython",
                 "src/nrnmpi",
             ],
-            extra_compile_args=extra_compile_args + ["-std=c++17"],
+            extra_compile_args=extra_compile_args + ["/std:c++17"],
             extra_link_args=extra_link_args
             + [
-                "-Wl,-rpath,{}{}".format(
-                    REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
-                )
+                # "-Wl,-rpath,{}{}".format(
+                #     REL_RPATH, "/../../" if just_extensions else "/.data/lib/"
+                # )
             ],
             **extension_common_params,
         )

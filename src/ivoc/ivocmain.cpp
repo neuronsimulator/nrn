@@ -11,6 +11,7 @@ int hoc_main1(int, const char**, const char**);
 void hoc_main1_init(const char*, const char**);
 #endif
 
+#include <filesystem>
 #include <stdio.h>
 #include <stdlib.h>
 #if HAVE_UNISTD_H
@@ -42,6 +43,8 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
+namespace fs = std::filesystem;
+
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
@@ -59,7 +62,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#ifdef MINGW
+#ifdef WIN32
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -170,14 +173,14 @@ extern HWND hCurrWnd;
 
 
 extern void setneuronhome(const char*);
-extern const char* neuron_home;
+extern char* neuron_home;
 int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW)
+#if !defined(WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -220,7 +223,7 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-int ivocmain(int, const char**, const char**);
+NRN_API int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 int (*p_neosim_main)(int, const char**, const char**);
 extern int nrn_global_argc;
@@ -241,9 +244,12 @@ static void force_load() {
     }
 }
 
-#ifdef MINGW
+#ifdef WIN32
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
 static bool isdir(const char* p) {
     struct stat st;
     bool b = stat(p, &st) == 0 && S_ISDIR(st.st_mode);
@@ -494,7 +500,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW)
+#if !defined(WIN32)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -521,7 +527,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         setneuronhome((argc > 0) ? argv[0] : 0);
     }
     if (!neuron_home) {
-#if defined(WIN32) && HAVE_IV
+#if defined(_WIN32) && HAVE_IV
         MessageBox(0,
                    "No NEURONHOME environment variable.",
                    "NEURON Incomplete Installation",
@@ -560,40 +566,31 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     }
     ENDGUI
 #endif
-    auto const nrn_props_size = strlen(neuron_home) + 20;
-    char* nrn_props = new char[nrn_props_size];
     if (session) {
-        std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.defaults");
-#ifdef WIN32
-        FILE* f;
-        if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-            fclose(f);
-            session->style()->load_file(String(nrn_props), -5);
-        } else {
-#ifdef MINGW
-            std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
-#else
-            std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
-#endif
-            if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-                fclose(f);
-                session->style()->load_file(String(nrn_props), -5);
-            } else {
-                char buf[256];
-                Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
-                printf("%s\n", buf);
+        // FIXME inserted a `share` and a `nrn` here that seems superfluous?
+        // This should _really_ be in sync with CMake
+        auto neuron_path = fs::path(neuron_home);
+        auto candidates = std::vector<fs::path>{
+            neuron_path / "lib" / "nrn.def",
+            neuron_path / "lib" / "nrn.defaults",
+        };
+        bool found = false;
+        for (const auto& props_path: candidates) {
+            if (fs::is_regular_file(props_path)) {
+                session->style()->load_file(String(props_path.string().c_str()), -5);
+                found = true;
+                break;
             }
         }
-#else
-        session->style()->load_file(String(nrn_props), -5);
-#endif
-        char* h = getenv("HOME");
-        if (h) {
-            std::snprintf(nrn_props, nrn_props_size, "%s/%s", h, ".nrn.defaults");
-            session->style()->load_file(String(nrn_props), -5);
+        if (!found) {
+            std::cout << "Can't load NEURON resources from " << candidates.front() << "[aults]" << std::endl;
+        }
+
+        char* user_home = getenv("HOME");
+        if (user_home) {
+            session->style()->load_file(String((fs::path(user_home) / ".nrn.defaults").string().c_str()), -5);
         }
     }
-    delete[] nrn_props;
 
 #endif /*OCSMALL*/
 

@@ -5,6 +5,27 @@
 #define H_nrnconf_included 1
 
 
+#if defined(_WIN32)
+#define YY_NO_UNISTD_H
+
+#define NRN_DLLEXPORT __declspec(dllexport)
+#define NRN_DLLIMPORT __declspec(dllimport)
+#else
+#define NRN_DLLEXPORT __attribute__((visibility("default")))
+#define NRN_DLLIMPORT
+#endif
+
+#if defined(NRN_DLL)
+#if defined(NRN_DLL_EXPORTS)
+#define NRN_API NRN_DLLEXPORT
+#else
+#define NRN_API NRN_DLLIMPORT
+#endif
+#else
+#define NRN_API
+#endif
+
+
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
@@ -195,7 +216,7 @@
 #undef off_t
 
 /* Define to `int' if <sys/types.h> does not define. */
-#undef pid_t
+typedef @pid_t@ pid_t;
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t

@@ -20,8 +20,8 @@
 #include <stdlib.h>
 
 #include <nrnmpiuse.h>
-extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
+extern "C" void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
+extern "C" void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
 
 #include "nvector_parallel.h"

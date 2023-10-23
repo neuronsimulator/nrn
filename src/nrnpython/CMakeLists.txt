@@ -1,7 +1,7 @@
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
-add_compile_definitions(${NRN_COMPILE_DEFS})
+add_compile_definitions(${NRN_COMPILE_DEFS} PUBLIC NRN_DLL)
 add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
@@ -95,7 +95,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_custom_command(
     OUTPUT ${binary_dir_filename}
-    COMMAND cp ${source_dir_filename} ${binary_dir_filename}
+    COMMAND ${CMAKE_COMMAND} -E copy ${source_dir_filename} ${binary_dir_filename}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${source_dir_filename} ${inithoc_hdeps})
 

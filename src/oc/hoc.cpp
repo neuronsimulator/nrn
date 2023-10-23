@@ -4,7 +4,9 @@
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -18,6 +20,10 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -29,11 +35,11 @@ int nrnignore;
 
 /* only set  in ivoc */
 int nrn_global_argc;
-char** nrn_global_argv;
+NRN_API const char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_finalize)();
+NRN_API void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
@@ -128,7 +134,7 @@ void pr_profile(void) {}
 #endif
 
 #ifndef READLINE
-#define READLINE 1
+// #define READLINE 1
 #endif
 
 #if READLINE
@@ -139,7 +145,7 @@ extern void add_history(const char*);
 }
 #endif
 
-int nrn_nobanner_;
+NRN_API int nrn_nobanner_;
 int pipeflag;
 int hoc_usegui;
 #if 1
@@ -891,7 +897,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
+#ifdef WIN32
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -944,7 +950,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef MINGW
+#ifdef WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;
@@ -1008,7 +1014,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     hoc_close_plot();
-#if READLINE && !defined(MINGW)
+#if READLINE && !defined(WIN32)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1742,14 +1748,34 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
         }
 #else  // READLINE
+#if _MSC_VER
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
+	DWORD n;
+	std::vector<char> line(8192);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+	ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+            if (n >= hoc_cbufstr->size - 3) {
+                hocstr_resize(hoc_cbufstr, n + 100);
+                ctp = cbuf = hoc_cbufstr->buf;
+            }
+	    std::cout << __LINE__ << " <-> " << std::string(line.data()) << " <-" << std::endl;
+            strcpy(cbuf, line.data());
+            cbuf[n] = '\n';
+            cbuf[n + 1] = '\0';
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+            hoc_audit_command(cbuf);
+	    std::cout << __LINE__ << " <-- here" << std::endl;
+#else
 #if INTERVIEWS
         if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
-            run_til_stdin());
+            run_til_stdin();
         }
 #endif  // INTERVIEWS
 #if defined(WIN32)
         if (nrn_fw_eq(fin, stdin)) {
-            if (gets(cbuf) == (char*) 0) {
+            if (gets_s(cbuf, hoc_cbufstr->size) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
                 return EOF;
             }
@@ -1761,7 +1787,9 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 return EOF;
             }
         }
+#endif  // _MSC_VER
 #endif  // READLINE
+	    std::cout << __LINE__ << " <-- here" << std::endl;
     }
     errno = 0;
     lineno++;

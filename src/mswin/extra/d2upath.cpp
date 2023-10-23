@@ -14,11 +14,10 @@ char* hoc_dos2unixpath(const char* d) {
     /* and all backslashes to forward slashes */
     /* or, for mingw, just backslashes to forward slashes */
     char* cp;
-    auto* const u = static_cast<char*>(malloc(strlen(d) + 12));
+    auto* const u = static_cast<char*>(calloc(0, strlen(d) + 12));
     assert(u);
     int i{}, j{};
     if (d[0] && d[1] == ':') {
-        strcpy(u, "/cygdrive/");
         i = strlen(u);
         u[i++] = d[0];
         j += 2;

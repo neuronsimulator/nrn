@@ -20,7 +20,7 @@
 extern int hoc_return_type_code;
 Section* (*nrnpy_o2sec_p_)(Object* o);
 
-void (*nrnpy_sectionlist_helper_)(List*, Object*) = 0;
+void (*nrnpy_sectionlist_helper_)(void*, Object*) = 0;
 
 void lvappendsec_and_ref(void* sl, Section* sec) {
     lappendsec((List*) sl, sec);
