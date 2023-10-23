@@ -941,7 +941,7 @@ Object** NetCvode::netconlist() {
         } else {
             try {
                 spre = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error& e) {
+            } catch (std::regex_error&) {
                 hoc_execerror(gargstr(1), "not a valid regular expression");
             }
         }
@@ -955,7 +955,7 @@ Object** NetCvode::netconlist() {
         } else {
             try {
                 spost = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error& e) {
+            } catch (std::regex_error&) {
                 hoc_execerror(gargstr(2), "not a valid regular expression");
             }
         }
@@ -969,7 +969,7 @@ Object** NetCvode::netconlist() {
         } else {
             try {
                 star = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error& e) {
+            } catch (std::regex_error&) {
                 hoc_execerror(gargstr(3), "not a valid regular expression");
             }
         }
