@@ -9,6 +9,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <unordered_map>
 
 typedef struct NrnThread NrnThread;
 struct Extnode;
@@ -88,6 +89,22 @@ struct Memb_func {
     nrn_init_t m_initialize{};
 };
 
+/* Direct call Python wrappers to density mechanism functions */
+struct NPyDirectMechFunc {
+    const char* name;
+    double (*func)(Prop*);
+};
+/* Above struct in translated mod files are elements of a {nullptr, nullptr}
+   terminated list. The translator could easily create an unordered map instead,
+   and that would be nicer.
+   However there is some question (as with std::string) that an unordered_map
+   is ABI compatible across codes compiled by different toolchains.
+   So we will build our per mechanism map in NEURON world from the null
+   terminated list in NMODL world.
+*/
+using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
+extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
+extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
 
 #define IMEMFAST     -2
 #define VINDEX       -1

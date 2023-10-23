@@ -1,0 +1,2 @@
+plotly
+ipywidgets>=7.0.0
