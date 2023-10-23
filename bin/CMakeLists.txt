@@ -2,6 +2,8 @@
 # Set various variables used in template files
 # =============================================================================
 # TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
+
 set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
 
 set(nrndef_unix "//")
@@ -35,7 +37,8 @@ include(CMakeListsNrnMech)
 # nrnmech_makefile (based on coreneuron Configure templates)
 # =============================================================================
 nrn_configure_file(nrngui bin)
-configure_file(sortspike sortspike COPYONLY)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
+                       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sortspike)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 string(JOIN " " NRN_PYTHON_VERSIONS_STRING ${NRN_PYTHON_VERSIONS})

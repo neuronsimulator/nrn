@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <OS/string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
@@ -20,10 +19,6 @@ extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
 
 extern int hoc_return_type_code;
-
-inline unsigned long key_to_hash(String& s) {
-    return s.hash();
-}
 
 static double l_substr(void*) {
     char* s1 = gargstr(1);
@@ -91,16 +86,16 @@ static double l_tail(void*) {
 }
 
 static double l_left(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.left(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(0, int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
 static double l_right(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.right(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
@@ -371,8 +366,7 @@ IvocAliases::~IvocAliases() {
     }
 }
 Symbol* IvocAliases::lookup(const char* name) {
-    String s(name);
-    const auto& it = symtab_.find(s);
+    const auto& it = symtab_.find(name);
     if (it != symtab_.end()) {
         return it->second;
     }
@@ -387,14 +381,12 @@ Symbol* IvocAliases::install(const char* name) {
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
     sp->extra = 0;
     sp->arayinfo = 0;
-    String s(sp->name);
-    symtab_.emplace(s, sp);
+    symtab_.try_emplace(sp->name, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
-    String s(sym->name);
-    auto it = symtab_.find(s);
+    auto it = symtab_.find(sym->name);
     symtab_.erase(it);
     free(sym->name);
     free(sym);

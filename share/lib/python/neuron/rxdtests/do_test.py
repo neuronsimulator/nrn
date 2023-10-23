@@ -23,7 +23,6 @@ def do_test(test_to_run, results_location, num_record=10):
 
     import itertools
 
-    h.nrnunit_use_legacy(True)
     data = {"record_count": 0, "data": []}
     do_test.data = data
     record_count = 0
@@ -60,9 +59,14 @@ def do_test(test_to_run, results_location, num_record=10):
             data["data"] = []
             data["record_count"] = 1
         # remove previous record if h.t is the same
-        if data["record_count"] > 1 and h.t == data["data"][-len(local_data)]:
-            data["record_count"] -= 1
-            del data["data"][-len(local_data) :]
+        if data["record_count"] > 1:
+            if len(local_data) > len(data["data"]):
+                # model changed -- reset data collection
+                data["data"] = []
+                data["record_count"] = 1
+            elif h.t == data["data"][-len(local_data)]:
+                data["record_count"] -= 1
+                del data["data"][-len(local_data) :]
         # add new data record
         data["data"].extend(local_data)
         # print correct record length

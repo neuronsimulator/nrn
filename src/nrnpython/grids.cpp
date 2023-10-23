@@ -658,10 +658,10 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     }
 
     /* free the old concentration list */
-    free(g->concentration_list);
+    delete[] g->concentration_list;
 
     /* allocate space for the new list */
-    g->concentration_list = (Concentration_Pair*) malloc(sizeof(Concentration_Pair) * n);
+    g->concentration_list = new Concentration_Pair[n];
     g->num_concentrations = n;
 
     /* populate the list */
@@ -702,10 +702,10 @@ extern "C" void set_grid_currents(int grid_list_index,
     }
 
     /* free the old current list */
-    free(g->current_list);
+    delete[] g->current_list;
 
     /* allocate space for the new list */
-    g->current_list = (Current_Triple*) malloc(sizeof(Current_Triple) * n);
+    g->current_list = new Current_Triple[n];
     g->num_currents = n;
 
     /* populate the list */
@@ -875,7 +875,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id) {
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
     double* val;
-    // MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+    // memset(output, 0, sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = num_all_currents;
     m = num_currents;
@@ -924,7 +924,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id) {
     /*Remove the contribution from membrane currents*/
     for (i = 0; i < induced_current_count; i++)
         output[induced_currents_index[i]] -= dt * (induced_currents[i] * induced_currents_scale[i]);
-    MEM_ZERO(induced_currents, induced_current_count * sizeof(double));
+    memset(induced_currents, 0, induced_current_count * sizeof(double));
 }
 
 double* ECS_Grid_node::set_rxd_currents(int current_count,
@@ -1169,7 +1169,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                                     proc_induced_current_count[nrnmpi_numprocs - 1];
 
             all_scales = (double*) malloc(induced_current_count * sizeof(double));
-            all_indices = (int*) malloc(induced_current_count * sizeof(double));
+            all_indices = (int*) malloc(induced_current_count * sizeof(int));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]],
                    induced_currents_scale,
                    sizeof(double) * proc_induced_current_count[nrnmpi_myid]);
@@ -1234,7 +1234,7 @@ void ECS_Grid_node::do_multicompartment_reactions(double* result) {
         for (i = 0; i < total_reaction_states; i++)
             result[all_reaction_indices[i]] += all_reaction_states[i];
     }
-    MEM_ZERO(all_reaction_states, total_reaction_states * sizeof(int));
+    memset(all_reaction_states, 0, total_reaction_states * sizeof(int));
 }
 
 // TODO: Implement this
@@ -1246,8 +1246,8 @@ ECS_Grid_node::~ECS_Grid_node() {
     free(states_x);
     free(states_y);
     free(states_cur);
-    free(concentration_list);
-    free(current_list);
+    delete[] concentration_list;
+    delete[] current_list;
     free(bc);
     free(current_dest);
 #if NRNMPI
@@ -1640,7 +1640,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot) {
 }
 
 void ICS_Grid_node::do_grid_currents(double* output, double dt, int) {
-    MEM_ZERO(states_cur, sizeof(double) * _num_nodes);
+    memset(states_cur, 0, sizeof(double) * _num_nodes);
     if (ics_current_seg_ptrs != NULL) {
         ssize_t i, j;
         int seg_start_index, seg_stop_index;
@@ -1742,8 +1742,8 @@ ICS_Grid_node::~ICS_Grid_node() {
     free(states_y);
     free(states_z);
     free(states_cur);
-    free(concentration_list);
-    free(current_list);
+    delete[] concentration_list;
+    delete[] current_list;
     free(current_dest);
 #if NRNMPI
     if (nrnmpi_use) {

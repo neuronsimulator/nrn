@@ -1279,7 +1279,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
     return dprop(s, indx, sec, i);
 }
 
-/* return nil if failure instead of hoc_execerror
+/* return nullptr if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
 neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
@@ -1583,7 +1583,7 @@ void nrn_parent_info(Section* s) {
     }
     if (true_parent == (Section*) 0) {
         if (sec->parentnode) {
-            /* non nil parent node in section without a parent is
+            /* non nullptr parent node in section without a parent is
                 definitely valid
             */
             pnode = sec->parentnode;
@@ -1883,7 +1883,7 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
     }
 }
 
-/* return nil instead of hoc_execerror. */
+/* return nullptr instead of hoc_execerror. */
 /* returns location of property symbol */
 neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
                                                    int indx,

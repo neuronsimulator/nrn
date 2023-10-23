@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
@@ -82,6 +83,15 @@ struct has_num_variables<T, std::void_t<decltype(std::declval<T>().num_variables
     : std::true_type {};
 template <typename T>
 inline constexpr bool has_num_variables_v = has_num_variables<T>::value;
+
+template <class T>
+size_t get_num_variables(T const& t) {
+    if constexpr (has_num_variables_v<T>) {
+        return t.num_variables();
+    } else {
+        return 1;
+    }
+}
 
 // Get the value of a static member variable called optional, or false if it doesn't exist.
 template <typename T, typename = void>
@@ -180,7 +190,15 @@ bool check_permutation_vector(Rng const& range, std::size_t size) {
 
 enum struct may_cause_reallocation { Yes, No };
 
+/** @brief Defer deleting pointers to deallocated memory.
+ *
+ *  The address of a pointer to the underlying storage of `field_data` can
+ *  escape the container. When deallocating the container the memory is
+ *  deallocated but the pointer to the storage location is "leaked" into this
+ *  vector.
+ */
 extern std::vector<void*>* defer_delete_storage;
+VectorMemoryUsage compute_defer_delete_storage_size();
 
 /**
  * @brief Storage for safe deletion of soa<...> containers.
@@ -227,28 +245,32 @@ struct field_data {
     }
 
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             m_data_ptr[0] = m_storage.data();
         }
+
+        return callable;
     }
 
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         if constexpr (impl == FieldImplementation::OptionalSingle) {
             if (!m_data_ptr) {
                 // inactive, optional field
-                return;
+                return callable;
             }
         }
         callable(m_tag, m_storage, -1, m_array_dim);
+
+        return callable;
     }
 
     [[nodiscard]] bool active() const {
@@ -436,23 +458,32 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      * @brief Invoke the given callable for each vector.
      *
      * @tparam might_reallocate Might the callable cause reallocation of the vector it is given?
-     * @param callable Callable to invoke.
+     * @param callable A callable to invoke.
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
             update_data_ptr_storage();
         }
+
+        return callable;
     }
 
+    /**
+     * @brief Invoke the given callable for each vector.
+     *
+     * @param callable A callable to invoke.
+     */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         for (auto i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
+
+        return callable;
     }
 
     // TODO actually use this
@@ -556,6 +587,37 @@ struct storage_info_impl: utils::storage_info {
     std::string m_container{}, m_field{};
     std::size_t m_size{};
 };
+
+class AccumulateMemoryUsage {
+  public:
+    void operator()(detail::index_column_tag const& indices,
+                    std::vector<detail::index_column_tag::type> const& vec,
+                    int field_index,
+                    int array_dim) {
+        auto element_size = sizeof(detail::index_column_tag::type);
+
+        m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
+        m_usage.stable_identifiers.capacity = m_usage.stable_identifiers.size +
+                                              (vec.capacity() - vec.size()) * sizeof(vec[0]);
+    }
+
+    template <class Tag>
+    void operator()(Tag const& tag,
+                    std::vector<typename Tag::type> const& vec,
+                    int field_index,
+                    int array_dim) {
+        m_usage.heavy_data += VectorMemoryUsage(vec);
+    }
+
+    StorageMemoryUsage usage() {
+        return m_usage;
+    }
+
+  private:
+    StorageMemoryUsage m_usage;
+};
+
+
 }  // namespace detail
 
 /**
@@ -678,7 +740,7 @@ struct soa {
         // Check our various std::vector members are still the same size as each
         // other. This check could be omitted in release builds...
         auto const check_size = m_indices.size();
-        for_all_vectors(
+        for_each_vector(
             [check_size](auto const& tag, auto const& vec, int field_index, int array_dim) {
                 auto const size = vec.size();
                 assert(size % array_dim == 0);
@@ -697,10 +759,20 @@ struct soa {
      */
     [[nodiscard]] bool empty() const {
         auto const result = m_indices.empty();
-        for_all_vectors([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
+        for_each_vector([result](auto const& tag, auto const& vec, int field_index, int array_dim) {
             assert(vec.empty() == result);
         });
         return result;
+    }
+
+    void shrink_to_fit() {
+        if (m_frozen_count) {
+            throw_error("shrink() called on a frozen structure");
+        }
+        for_each_vector<detail::may_cause_reallocation::Yes>(
+            [](auto const& tag, auto& vec, int field_index, int array_dim) {
+                vec.shrink_to_fit();
+            });
     }
 
   private:
@@ -724,7 +796,7 @@ struct soa {
         if (i != old_size - 1) {
             // Swap ranges of size array_dim at logical positions `i` and `old_size - 1` in each
             // vector
-            for_all_vectors<detail::may_cause_reallocation::No>(
+            for_each_vector<detail::may_cause_reallocation::No>(
                 [i](auto const& tag, auto& vec, int field_index, int array_dim) {
                     ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
                                        ::std::next(vec.begin(), (i + 1) * array_dim),
@@ -733,7 +805,7 @@ struct soa {
             // Tell the new entry at `i` that its index is `i` now.
             m_indices[i].set_current_row(i);
         }
-        for_all_vectors<detail::may_cause_reallocation::No>(
+        for_each_vector<detail::may_cause_reallocation::No>(
             [new_size = old_size - 1](auto const& tag, auto& vec, int field_index, int array_dim) {
                 vec.resize(new_size * array_dim);
             });
@@ -749,6 +821,15 @@ struct soa {
     /**
      * @brief Apply the given function to non-const versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * @tparam might_reallocate Might the callable trigger reallocation of the vectors?
      * @param callable Callable to invoke on each vector.
      *
@@ -756,25 +837,62 @@ struct soa {
      * updated.
      */
     template <detail::may_cause_reallocation might_reallocate, typename Callable>
-    void for_all_vectors(Callable const& callable) {
+    Callable for_each_vector(Callable callable) {
         // might_reallocate is not relevant for m_indices because we do not expose the location of
         // its storage, so it doesn't matter whether or not this triggers reallocation
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).template for_all_vectors<might_reallocate>(callable),
-         ...);
+
+        return for_each_tag_vector_impl<might_reallocate, Callable, Tags...>(callable);
+    }
+
+    template <detail::may_cause_reallocation might_reallocate,
+              typename Callable,
+              typename Tag,
+              typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        auto tmp_callable =
+            std::get<tag_index_v<Tag>>(m_data).template for_each_vector<might_reallocate>(callable);
+        return for_each_tag_vector_impl<might_reallocate, Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <detail::may_cause_reallocation, typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) {
+        return callable;
     }
 
     /**
      * @brief Apply the given function to const-qualified versions of all vectors.
      *
+     * The callable has a signature compatible with:
+     *
+     *     void callable(const Tag& tag,
+     *                   const std::vector<Tag::data_type, Allocator>& v,
+     *                   int field_index,
+     *                   int array_dim)
+     *
+     * where `array_dim` is the array dimensions of the field `field_index`.
+     *
      * Because of the const qualification this cannot cause reallocation and trigger updates of
      * pointers inside m_data, so no might_reallocate parameter is needed.
      */
     template <typename Callable>
-    void for_all_vectors(Callable const& callable) const {
+    Callable for_each_vector(Callable callable) const {
         callable(detail::index_column_tag{}, m_indices, -1, 1);
-        (std::get<tag_index_v<Tags>>(m_data).for_all_vectors(callable), ...);
+        return for_each_tag_vector_impl<Callable, Tags...>(callable);
     }
+
+    template <typename Callable, typename Tag, typename... RemainingTags>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector(
+            callable);
+        return for_each_tag_vector_impl<Callable, RemainingTags...>(tmp_callable);
+    }
+
+    template <typename Callable>
+    Callable for_each_tag_vector_impl(Callable callable) const {
+        return callable;
+    }
+
 
     /**
      * @brief Record that a state_token was copied.
@@ -963,7 +1081,7 @@ struct soa {
                 while (i != permutation[i]) {
                     using ::std::swap;
                     auto const next = permutation[i];
-                    for_all_vectors<detail::may_cause_reallocation::No>(
+                    for_each_vector<detail::may_cause_reallocation::No>(
                         [i, next](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                             // swap the i-th and next-th array_dim-sized sub-ranges of vec
                             ::std::swap_ranges(::std::next(vec.begin(), i * array_dim),
@@ -1051,7 +1169,7 @@ struct soa {
         mark_as_unsorted_impl<true>();
         // Append to all of the vectors
         auto const old_size = size();
-        for_all_vectors<detail::may_cause_reallocation::Yes>(
+        for_each_vector<detail::may_cause_reallocation::Yes>(
             [](auto const& tag, auto& vec, auto field_index, auto array_dim) {
                 using Tag = ::std::decay_t<decltype(tag)>;
                 if constexpr (detail::has_default_value_v<Tag>) {
@@ -1264,7 +1382,7 @@ struct soa {
         neuron::container::generic_data_handle input_handle) const {
         bool done{false};
         neuron::container::generic_data_handle handle{};
-        for_all_vectors([this, &done, &handle, &input_handle](
+        for_each_vector([this, &done, &handle, &input_handle](
                             auto const& tag, auto const& vec, int field_index, int array_dim) {
             using Tag = ::std::decay_t<decltype(tag)>;
             if constexpr (!std::is_same_v<Tag, detail::index_column_tag>) {
@@ -1335,7 +1453,7 @@ struct soa {
         if (!cont) {
             return opt_info;
         }
-        for_all_vectors([cont,
+        for_each_vector([cont,
                          &opt_info,
                          this](auto const& tag, auto const& vec, int field_index, int array_dim) {
             if (opt_info) {
@@ -1377,6 +1495,17 @@ struct soa {
         return std::get<tag_index_v<Tag>>(m_data).array_dims();
     }
 
+    template <typename Tag>
+    [[nodiscard]] int get_array_dims(int field_index) const {
+        assert(field_index < get_num_variables<Tag>());
+        return get_array_dims<Tag>()[field_index];
+    }
+
+    template <typename Tag>
+    [[nodiscard]] size_t get_num_variables() const {
+        return detail::get_num_variables(get_tag<Tag>());
+    }
+
     /**
      * @brief Get a pointer to an array holding the prefix sum of array dimensions for this tag.
      */
@@ -1409,6 +1538,13 @@ struct soa {
                       "set_field_status can only be called with tag types for optional fields");
         auto const size = m_indices.size();
         (std::get<tag_index_v<TagsToChange>>(m_data).set_active(enabled, size), ...);
+    }
+
+    StorageMemoryUsage memory_usage() const {
+        detail::AccumulateMemoryUsage accumulator;
+        auto accumulated = for_each_vector(accumulator);
+
+        return accumulated.usage();
     }
 
   private:
@@ -1478,4 +1614,11 @@ struct soa {
      */
     std::function<void()> m_unsorted_callback{};
 };
+
+
+template <class Storage, class... Tags>
+StorageMemoryUsage memory_usage(const soa<Storage, Tags...>& data) {
+    return data.memory_usage();
+}
+
 }  // namespace neuron::container

@@ -254,8 +254,6 @@ _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
-last_nrn_legacy_units = h.nrnunit_use_legacy()
-
 
 _all_reactions = []
 
@@ -570,10 +568,8 @@ _diam_change_count = nrn_dll_sym("diam_change_cnt", _ctypes_c_int)
 
 
 def _setup_units(force=False):
-    global last_nrn_legacy_units
     if initializer.is_initialized():
-        if force or last_nrn_legacy_units != h.nrnunit_use_legacy():
-            last_nrn_legacy_units = h.nrnunit_use_legacy()
+        if force:
             clear_rates()
             _setup_memb_currents()
             _compile_reactions()
@@ -617,8 +613,10 @@ def _update_node_data(force=False, newspecies=False):
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
                 _setup_units(force=True)
-
-            # end#if
+            else:
+                # don't call _setup_memb_currents if nsegs changed -- because
+                # it is called by change units.
+                _setup_memb_currents()
 
 
 def _matrix_to_rxd_sparse(m):

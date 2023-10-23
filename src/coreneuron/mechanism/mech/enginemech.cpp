@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <coreneuron/engine.h>
 #include <string>
+#include <iostream>
 
 namespace coreneuron {
 
@@ -107,8 +108,21 @@ int corenrn_embedded_run(int nthread,
                          int use_fast_imem,
                          const char* mpi_lib,
                          const char* nrn_arg) {
+    bool corenrn_skip_write_model_to_disk = false;
+    const std::string corenrn_skip_write_model_to_disk_arg{"--skip-write-model-to-disk"};
+    // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON
+    // and CoreNEURON Instead run the CoreNEURON simulation only with the coredat files provided
+    // "only_simulate_str" is an internal string and shouldn't be made public to the CoreNEURON CLI
+    // options so it is removed from "nrn_arg" first construct all arguments as string
+    std::string filtered_nrn_arg{nrn_arg};
+    const auto ind =
+        static_cast<std::string>(filtered_nrn_arg).find(corenrn_skip_write_model_to_disk_arg);
+    if (ind != std::string::npos) {
+        corenrn_skip_write_model_to_disk = true;
+        filtered_nrn_arg.erase(ind, corenrn_skip_write_model_to_disk_arg.size());
+    }
     // set coreneuron's internal variable based on neuron arguments
-    corenrn_embedded = true;
+    corenrn_embedded = !corenrn_skip_write_model_to_disk;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps != 0;
     coreneuron::nrn_use_fast_imem = use_fast_imem != 0;
@@ -116,23 +130,20 @@ int corenrn_embedded_run(int nthread,
     // set number of openmp threads
     set_openmp_threads(nthread);
 
-    // first construct all arguments as string
-    std::string args(nrn_arg);
-
-    args.insert(0, " coreneuron ");
-    args.append(" --skip-mpi-finalize ");
+    filtered_nrn_arg.insert(0, " coreneuron ");
+    filtered_nrn_arg.append(" --skip-mpi-finalize ");
 
     if (use_mpi) {
-        args.append(" --mpi ");
+        filtered_nrn_arg.append(" --mpi ");
     }
 
-    add_mpi_library_arg(mpi_lib, args);
+    add_mpi_library_arg(mpi_lib, filtered_nrn_arg);
 
     // pre-process argumnets from neuron and prepare new for coreneuron
     int argc;
     char** argv;
 
-    char* new_arg = prepare_args(argc, argv, args);
+    char* new_arg = prepare_args(argc, argv, filtered_nrn_arg);
 
     // initialize internal arguments
     mk_mech_init(argc, argv);
