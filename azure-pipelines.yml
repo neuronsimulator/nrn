@@ -13,6 +13,7 @@ schedules:
 # Auto cancel old PR builds
 pr:
   autoCancel: true
+  drafts: false
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #  paths:
 #    exclude:
