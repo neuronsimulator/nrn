@@ -280,6 +280,12 @@ endif()
 find_package(BISON REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
 
+# FIXME CMake 3.18 introduced a REQUIRED parameter
+find_program(BASH_EXECUTABLE NAMES bash bash.exe)
+if(BASH_EXECUTABLE-NOTFOUND)
+  message(FATAL_ERROR "Could not find Bash")
+endif()
+
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
   # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
