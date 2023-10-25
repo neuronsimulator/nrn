@@ -24,7 +24,6 @@ nrn_set_string(DLL_DEFAULT_FNAME "${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so"
 add_definitions(-DHAVE_CONFIG_H)
 
 set(YYTEXT_POINTER 1)
-set(TIME_WITH_SYS_TIME 1)
 # below two are universal nowadays
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
