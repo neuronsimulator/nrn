@@ -2,7 +2,7 @@ from neuron.units import mM, mV
 
 
 def test_nodelist_include_flux(neuron_instance):
-    h, rxd = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
     diff = 1e-15
     cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
