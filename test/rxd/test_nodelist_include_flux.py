@@ -1,8 +1,9 @@
 from neuron.units import mM, mV
 
-def test_nodelist_include_flux(neuron_instance)
+
+def test_nodelist_include_flux(neuron_instance):
     h, rxd = neuron_instance
-    dend1 = h.Section('dend1')
+    dend1 = h.Section("dend1")
     diff = 1e-15
     cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
     ca1 = rxd.Species(cyt, name="ca1", charge=2, initial=0 * mM)
