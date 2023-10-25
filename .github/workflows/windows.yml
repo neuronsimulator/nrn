@@ -106,7 +106,8 @@ jobs:
           -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
           -DNRN_RX3D_OPT_LEVEL=2 `
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
-          -DPYTHON_EXECUTABLE="${env:firstPython}" `
+          -DPYTHON_EXECUTABLE="${env:firstPython}"
+        cmake --build build --config Release
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
       env:
