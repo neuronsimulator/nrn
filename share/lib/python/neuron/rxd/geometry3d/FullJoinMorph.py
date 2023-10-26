@@ -1,8 +1,6 @@
 import numpy
 import math
 
-import numpy as np
-
 from .ctng import constructive_neuronal_geometry
 from .graphicsPrimitives import (
     Sphere,
@@ -26,7 +24,7 @@ from neuron import h, _sec_db
 def find_parent_seg(join, sdict, objects):
     root = None
     pseg = None
-    closest = np.inf
+    closest = float("inf")
     for item in join:
         if item not in objects:
             s = sdict[(item._x0, item._y0, item._z0, item._x1, item._y1, item._z1)]
