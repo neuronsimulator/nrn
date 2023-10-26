@@ -1,5 +1,5 @@
-def test_nodelist_include_flux(neuron_instance):
-    h, rxd, _, _ = neuron_instance
+def test_nodelist_include_flux(neuron_nosave_instance):
+    h, rxd, _ = neuron_nosave_instance
     dend1 = h.Section("dend1")
     diff = 1e-15
     cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
@@ -13,7 +13,6 @@ def test_nodelist_include_flux(neuron_instance):
 
     h.finitialize(-65)
     h.fadvance()
-
     assert abs(node1.concentration - 1.2732395447351626e-10) < diff
     assert abs(node2.concentration - 1.2732395447351626e-10) < diff
     h.fadvance()
