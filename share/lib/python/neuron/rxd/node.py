@@ -112,7 +112,7 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for i, (idx, typ) in enumerate(_node_fluxes["index"], _node_fluxes["type"]):
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
         if typ == -1 and idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j
