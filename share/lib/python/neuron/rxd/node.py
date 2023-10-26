@@ -71,8 +71,8 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx not in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ != -1 or idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
     newflux["index"] = [
