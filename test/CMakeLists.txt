@@ -210,6 +210,15 @@ if(NRN_ENABLE_PYTHON)
     list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
   set(pytest -m pytest ${pytest_args})
+
+  nrn_add_test(
+      GROUP unit_tests
+      NAME python_unit_tests
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
+      PRELOAD_SANITIZER
+      SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py"
+  )
+    
   # In brief:
   #
   # * tests and mod files under pytest/ are only compatible with NEURON
