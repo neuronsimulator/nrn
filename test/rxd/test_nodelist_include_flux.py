@@ -19,6 +19,6 @@ def test_nodelist_include_flux(neuron_nosave_instance):
     assert abs(node1.concentration - 2.546479089470325e-10) < diff
     assert abs(node2.concentration - 2.546479089470325e-10) < diff
     h.fadvance()
-    assert abs(node2.concentration - 3.819718634205488e-10) < diff
+    assert abs(node1.concentration - 3.819718634205488e-10) < diff
     assert abs(node2.concentration - 3.819718634205488e-10) < diff
     h.fadvance()
