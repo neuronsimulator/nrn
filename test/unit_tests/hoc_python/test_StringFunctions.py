@@ -77,14 +77,19 @@ def test_is_name():
     assert(not sf.is_name("xfoo"))
 
 def test_alias():
-    sf.alias(h.xvalue, "xv")
-    sf.is_name(h.xv)
-    pass
+    v = h.Vector()
+    sf.alias(v, "xv", h.xvalue)
+    assert(v.xv == h.xvalue)
 
 def test_alias_list():
-    pass
+    h.load_file('stdrun.hoc')
+    v = h.Vector()
+    assert(len(sf.alias_list(v)) == 0)
+    sf.alias(v, "xv", h.xvalue)
+    assert(len(sf.alias_list(v)) == 1)
 
 def test_references():
+    # This function print the number of references
     pass
 
 def test_is_point_process():

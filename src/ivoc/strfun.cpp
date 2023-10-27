@@ -157,7 +157,6 @@ static Object** l_alias_list(void*) {
     (*po)->refcount++;
     int id = (*po)->index;
     if (a) {
-        char buf[256];
         for (auto& kv: a->symtab_) {
             Symbol* sym = kv.second;
             hoc_pushstr(&sym->name);
