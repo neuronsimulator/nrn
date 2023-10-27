@@ -16,6 +16,9 @@ class Cell:
 
         pc.set_gid2node(id, pc.id())
         pc.cell(id, h.NetCon(d(1)._ref_v, None, sec=d))
+        syns = self.syns = [h.ExpSyn(d(0)) for i in range(3)]
+        for i, syn in enumerate(syns):
+            syn.tau = i + 10 * id
 
     def __str__(self):
         return "Cell_%d" % self.id

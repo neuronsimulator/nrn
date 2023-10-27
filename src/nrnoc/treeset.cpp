@@ -1755,7 +1755,20 @@ void v_setup_vectors(void) {
         }
     }
     neuron::model().node_data().mark_as_unsorted();
+    // The assumption here is that one can arbitrarily permute the
+    // NrnThread node order (within the constraint that
+    // parent index < node index). A NrnThread node order permutation
+    // involves modifying NrnThread fields: _v_node, _v_parent, v_parent_index,
+    // and Node.v_node_index.
+    // Additionally, there appears to be a Memb_list node_indices ordering
+    // presumption embodied in nrn_sort_mech_data. I.e. Preexisting Memb_list node
+    // order is the order that results by iterating over Nrnthread nodes
+    // asserted by ml->nodelist[nt_mech_count] == nd.
+    // We <satisfy?> this by monotonically ordering the Memb_list with
+    // sort_ml(Memb_list*) but there is a question whether the sort preserves
+    // the order when there are many POINT_PROCESS instances in the same node.
     neuron::nrn_permute_node_order();
+
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;

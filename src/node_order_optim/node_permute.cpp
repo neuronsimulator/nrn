@@ -466,6 +466,7 @@ void sort_ml(Memb_list* ml) {
     sort_ml_field<int>(ml->nodeindices, isrt, ml->nodecount);
     sort_ml_field<Node*>(ml->nodelist, isrt, ml->nodecount);
     sort_ml_field<Prop*>(ml->prop, isrt, ml->nodecount);
+    sort_ml_field<Datum*>(ml->pdata, isrt, ml->nodecount);
     delete[] isrt;
 }
 
