@@ -21,12 +21,12 @@ class Cell:
         return "Cell_%d" % self.id
 
 
-cells = [Cell(4-id) for id in range(1, 4)]
+cells = [Cell(4 - id) for id in range(1, 4)]
 
 
 def printv():
     h.psection()  # call to v_setup_vectors side effect
-    s = {} # associate root sections with thread id.
+    s = {}  # associate root sections with thread id.
     for i in range(pc.nthread()):
         for sec in pc.get_partition(i):
             s[sec] = i
@@ -36,7 +36,7 @@ def printv():
             print(seg, seg.v, seg.node_index(), str(s[sec] if sec in s else ""))
 
 
-#printv()
+# printv()
 
 # Iteration order (sec,seg) is associated with construction order
 # (provided nseg set after each section construction?)
@@ -66,13 +66,14 @@ def set_nthread(n):
     print("nthread %d" % pc.nthread())
     printv()
 
-'''
+
+"""
 set_nthread(2)  # this one is a puzzle as cell 1 and 2 are in thread 0
 # By round robin, I expected that 1 and 3 would be in
 # thread 0.
 set_nthread(3)
 set_nthread(1)
-'''
+"""
 
 pc.optimize_node_order(1)
 set_nthread(1)

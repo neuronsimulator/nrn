@@ -14,6 +14,9 @@ namespace neuron {
 // determine ml->_permute and permute the ml->nodeindices accordingly
 void permute_nodeindices(Memb_list* ml, int* permute);
 
+// sort ml fields in increasing node index order
+void sort_ml(Memb_list* ml);
+
 // vec values >= 0 updated according to permutation
 void node_permute(int* vec, int n, int* permute);
 

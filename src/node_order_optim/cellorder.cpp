@@ -293,6 +293,48 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 #endif
 }
 
+template <typename T>
+static void forward_permute(T* data, int* perm, int n) {
+    // Move data[perm[i]] to data[i]
+    T* data_orig = new T[n];  // Should use an inplace algorithm
+    for (int i = 0; i < n; ++i) {
+        data_orig[i] = data[i];
+    }
+    for (int i = 0; i < n; ++i) {
+        data[i] = data_orig[perm[i]];
+    }
+    delete[] data_orig;
+}
+
+static void prnode(const char* mes, NrnThread& nt) {
+    printf("%s nrnthread %d node info\n", mes, nt.id);
+    for (int i = 0; i < nt.end; ++i) {
+        printf(
+            " _v_node[%2d]->v_node_index=%2d %p"
+            " _v_parent[%2d]->v_node_index=%2d  parent[%2d]=%2d\n",
+            i,
+            nt._v_node[i]->v_node_index,
+            nt._v_node[i],
+            i,
+            nt._v_parent[i] ? nt._v_parent[i]->v_node_index : -1,
+            i,
+            nt._v_parent_index[i]);
+    }
+    for (auto tml = nt.tml; tml; tml = tml->next) {
+        Memb_list* ml = tml->ml;
+        printf("  %s %d\n", memb_func[tml->index].sym->name, ml->nodecount);
+        for (int i = 0; i < ml->nodecount; ++i) {
+            printf("   %2d ndindex=%2d nd=%p [%2d] pdata=%p prop=%p\n",
+                   i,
+                   ml->nodeindices[i],
+                   ml->nodelist[i],
+                   ml->nodelist[i]->v_node_index,
+                   ml->pdata[i],
+                   ml->prop[i]);
+        }
+    }
+}
+
 int nrn_optimize_node_order(int type) {
     if (type != interleave_permute_type) {
         tree_changed = 1;  // calls setup_topology. v_stucture_change = 1 may be better.
@@ -312,19 +354,28 @@ void nrn_permute_node_order() {
         auto& nt = nrn_threads[tid];
         int* perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
         auto p = inverse_permute(perm, nt.end);
-        for (int i=0; i < nt.end; ++i) {
+        for (int i = 0; i < nt.end; ++i) {
             int x = nt._v_parent_index[p[i]];
             int par = x >= 0 ? perm[x] : -1;
-            printf("%2d <- %2d  parent=%2d\n", i, p[i], par );
+            printf("%2d <- %2d  parent=%2d\n", i, p[i], par);
         }
 
-        printf("nrnthread %d node info\n", tid);
-        for (int i=0; i < nt.end; ++i) {
-            printf(" _v_node[%2d]->v_node_index=%2d"
-                   " _v_parent[%2d]->v_node_index=%2d\n",
-                   i, nt._v_node[i]->v_node_index,
-                   i, nt._v_parent[i] ? nt._v_parent[i]->v_node_index:-1);
+        prnode("before perm", nt);
+        forward_permute<Node*>(nt._v_node, p, nt.end);
+        forward_permute<Node*>(nt._v_parent, p, nt.end);
+        forward_permute<int>(nt._v_parent_index, p, nt.end);
+        node_permute(nt._v_parent_index, nt.end, perm);
+        for (int i = 0; i < nt.end; ++i) {
+            nt._v_node[i]->v_node_index = i;
         }
+        for (auto tml = nt.tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            for (int i = 0; i < ml->nodecount; ++i) {
+                ml->nodeindices[i] = perm[ml->nodeindices[i]];
+            }
+            sort_ml(ml);  // all fields in increasing nodeindex order
+        }
+        prnode("after perm", nt);
 
         delete[] perm;
     }

@@ -448,6 +448,27 @@ static int* nrn_index_sort(int* values, int n) {
     return sort_indices;
 }
 
+template <typename T>
+static void sort_ml_field(T* data, int* isrt, int n) {
+    // Move data[isrt[i]] to data[i]
+    T* data_orig = new T[n];  // Should use an inplace algorithm
+    for (int i = 0; i < n; ++i) {
+        data_orig[i] = data[i];
+    }
+    for (int i = 0; i < n; ++i) {
+        data[i] = data_orig[isrt[i]];
+    }
+    delete[] data_orig;
+}
+
+void sort_ml(Memb_list* ml) {
+    auto isrt = nrn_index_sort(ml->nodeindices, ml->nodecount);
+    sort_ml_field<int>(ml->nodeindices, isrt, ml->nodecount);
+    sort_ml_field<Node*>(ml->nodelist, isrt, ml->nodecount);
+    sort_ml_field<Prop*>(ml->prop, isrt, ml->nodecount);
+    delete[] isrt;
+}
+
 void permute_nodeindices(Memb_list* ml, int* p) {
     assert(0);
 #if 0
