@@ -85,8 +85,14 @@ def test_alias_list():
     h.load_file('stdrun.hoc')
     v = h.Vector()
     assert(len(sf.alias_list(v)) == 0)
-    sf.alias(v, "xv", h.xvalue)
+    sf.alias(v, "xv1", h.xvalue) # Add alias
     assert(len(sf.alias_list(v)) == 1)
+    sf.alias(v, "xv2", h.xvalue) # Add alias
+    assert(len(sf.alias_list(v)) == 2)
+    sf.alias(v, "xv1") # Remove 1 alias
+    assert(len(sf.alias_list(v)) == 1)
+    sf.alias(v) # Remove all
+    assert(len(sf.alias_list(v)) == 0)
 
 def test_references():
     # This function print the number of references
