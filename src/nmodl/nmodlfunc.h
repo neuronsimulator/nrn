@@ -71,7 +71,6 @@ void ldifusreg();
 void decode_ustr(Symbol* sym, double* pg1, double* pg2, char* s);
 void units_reg();
 void nrn_list(Item*, Item*);
-void nrnlist_print(Item*, Item*);
 std::vector<std::string> nrnlist_to_string(Item*, Item*);
 
 void bablk(int ba, int type, Item* q1, Item* q2);

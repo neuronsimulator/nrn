@@ -5,6 +5,8 @@
 #include "modl.h"
 #include <stdlib.h>
 
+#include "random_construct.hpp"
+
 #if defined(__STDC__)
 #define sdebug(arg1,arg2) {}
 #define qdebug(arg1,arg2) {}
@@ -65,8 +67,9 @@ static Item* astmt_end_;	/* see kinetic.c vectorizing */
 static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 				 and FOR_NETCONS */
 
-extern std::vector<RandomVar> random_vars;
-std::vector<std::string> numbers;
+// TODO: keep track of arguments for RANDOM
+// could be removed by fixing production rules?
+static std::vector<std::string> numbers;
 
 %}
 
@@ -254,12 +257,9 @@ numlist: number
     {
         numbers.clear();
         numbers.push_back(STR($1));
-        //$$ = $1;
     }
 	| numlist ',' number {
         numbers.push_back(STR($3));
-        //remove($2);
-        //$$ = $3;
 	}
 	;
 
@@ -1034,10 +1034,8 @@ nrnstmt: /*nothing*/
 		{ assert_threadsafe = 1; }
 	| nrnstmt RANDOM name '(' numlist ')' nrnlist
 	    {
-	        for(const auto& name: nrnlist_to_string($6, $7)) {
-	            RandomVar r({SYM($3)->name, numbers, name.c_str()});
-	            r.print();
-                random_vars.emplace_back(r);
+            for(const auto& variable: nrnlist_to_string($6, $7)) {
+                add_random_variable({variable, SYM($3)->name, numbers});
             }
 	    }
 	;

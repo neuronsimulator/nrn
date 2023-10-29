@@ -5,9 +5,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include <string>
-#include <vector>
-
 /**
  * \dir
  * \brief NMODL NMODL Translator (NOCMODL) Implementation
@@ -178,34 +175,34 @@ typedef struct Symbol {
  */
 
 /* subtypes */
-#define KEYWORD       01
-#define PARM          02
-#define INDEP         04
-#define DEP           010 /* also in usage field */
-#define STAT          020
-#define ARRAY         040
-#define FUNCT         0100 /* also in usage field */
-#define PROCED        0200
-#define NEGATIVE      0400
-#define SEMI          01 /* ";" */
-#define BEGINBLK      02 /* "{" */
-#define ENDBLK        04 /* "}" */
-#define DERF          01000
-#define KINF          02000
-#define NLINF         04000
-#define DISCF         010000
-#define PARF          040000
-#define EXTDEF        0100000
-#define LINF          0200000
-#define UNITDEF       0400000L
-#define EXTDEF2       01000000L   /* functions that can take array or function name arguments */
-#define nmodlCONST    02000000L   /* constants that do not appear in .var file */
-#define EXTDEF3       04000000L   /* get two extra reset arguments at beginning */
-#define INTGER        010000000L  /* must be cast to double in expr */
-#define EXTDEF4       020000000L  /* get extra NrnThread* arg at beginning */
-#define EXTDEF5       040000000L  /* not threadsafe from the extdef list */
-#define EXTDEF6       0600000000L /* functions that can be used with RANDOM type */
-#define EXPLICIT_DECL 01          /* usage field, variable occurs in input file */
+#define KEYWORD        01
+#define PARM           02
+#define INDEP          04
+#define DEP            010 /* also in usage field */
+#define STAT           020
+#define ARRAY          040
+#define FUNCT          0100 /* also in usage field */
+#define PROCED         0200
+#define NEGATIVE       0400
+#define SEMI           01 /* ";" */
+#define BEGINBLK       02 /* "{" */
+#define ENDBLK         04 /* "}" */
+#define DERF           01000
+#define KINF           02000
+#define NLINF          04000
+#define DISCF          010000
+#define PARF           040000
+#define EXTDEF         0100000
+#define LINF           0200000
+#define UNITDEF        0400000L
+#define EXTDEF2        01000000L   /* functions that can take array or function name arguments */
+#define nmodlCONST     02000000L   /* constants that do not appear in .var file */
+#define EXTDEF3        04000000L   /* get two extra reset arguments at beginning */
+#define INTGER         010000000L  /* must be cast to double in expr */
+#define EXTDEF4        020000000L  /* get extra NrnThread* arg at beginning */
+#define EXTDEF5        040000000L  /* not threadsafe from the extdef list */
+#define EXT_DEF_RANDOM 0600000000L /* functions that can be used with RANDOM type */
+#define EXPLICIT_DECL  01          /* usage field, variable occurs in input file */
 
 
 #define NRNEXTRN     01 /* t, dt, celsius, etc. */
@@ -328,22 +325,6 @@ extern Item* qlint;
 #define Free(arg)   free((void*) (arg))
 #endif
 using neuron::Sprintf;
-
-#include <iostream>
-
-struct RandomVar {
-    std::string distribution;
-    std::vector<std::string> arguments;
-    std::string name;
-
-    void print() {
-        std::cout << "RNG: " << distribution << " DISTR ";
-        for (const auto& arg: arguments) {
-            std::cout << arg << " ";
-        }
-        std::cout << "NAME " << name << std::endl;
-    }
-};
 
 void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions

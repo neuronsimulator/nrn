@@ -5,6 +5,7 @@ from neuron import h, gui
 
 pc = h.ParallelContext()
 
+
 def model():
     pc.gid_clear()
     for s in h.allsec():
@@ -22,6 +23,7 @@ def model():
     nc.weight[0] = 0.001
     return {"s": s, "ic": ic, "syn": syn, "nc": nc}
 
+
 def test_NetStim_noise():
     # Can use noiseFromRandom
 
@@ -30,33 +32,30 @@ def test_NetStim_noise():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, h.NetCon(cell, None))
 
-
-   
-
-        #print ("GID " , gid, "\n")
+        # print ("GID " , gid, "\n")
         # cell.noiseFromRandom123(gid, 2, 3)
 
         # everyone likes that
-        #cell.r1.init_rng(1,2,3) # gid, mechtype, random_var_index
-        #cell.r2.init_rng(4,5,6)
-        #cell.r1.set_seq(1,0)
-        #cell.r2.set_seq(1,0)
-        #cell.r1.sample()
-        #cell.init_rng()
+        # cell.r1.init_rng(1,2,3) # gid, mechtype, random_var_index
+        # cell.r2.init_rng(4,5,6)
+        # cell.r1.set_seq(1,0)
+        # cell.r2.set_seq(1,0)
+        # cell.r1.sample()
+        # cell.init_rng()
 
         # let's not do that
-        #cell.init_rng(cell.r1, 1, 2)
-        #cell.init_rng(cell.r2, 1, 2)
-        #cell.init_rng(cell.r3, 1, 2)
-        #cell.set_seq(cell.r, 10, 1)
+        # cell.init_rng(cell.r1, 1, 2)
+        # cell.init_rng(cell.r2, 1, 2)
+        # cell.init_rng(cell.r3, 1, 2)
+        # cell.set_seq(cell.r, 10, 1)
 
         cell.interval = gid + 1
         cell.number = 100
         cell.start = 0
         cell.noise = 1
 
-        cell.init_rng("rng_donotuse", gid, 11, 12);
-        print(cell.sample_rng("rng_donotuse"));
+        cell.init_rng("rng_donotuse", gid, 11, 12)
+        print(cell.sample_rng("rng_donotuse"))
 
     spiketime = h.Vector()
     spikegid = h.Vector()
@@ -65,7 +64,7 @@ def test_NetStim_noise():
     pc.set_maxstep(10)
     tstop = 100
 
-    #for cell in cells.values():
+    # for cell in cells.values():
     #    cell.seq(0)  # only _ran_compat==2 initializes the streams
 
     h.finitialize()
@@ -81,7 +80,7 @@ def test_NetStim_noise():
     coreneuron.verbose = 0
     coreneuron.enable = False
 
-    #for cell in cells.values():
+    # for cell in cells.values():
     #    cell.set_seq(0)
 
     h.finitialize()

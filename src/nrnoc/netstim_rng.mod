@@ -1,3 +1,13 @@
+COMMENT
+This is a copy of netstim.mod and created to demonstrate
+the API of new RANDOM construct support in NMODL. All the
+VERBATIM blocks, save-state feature and compatibility mode
+with old hocRandom is removed.
+
+Once all the futures are implemented in NEURON, the idea is
+that this MOD file should replace netstim.mod.
+ENDCOMMENT
+
 NEURON {
     ARTIFICIAL_CELL NetStimRNG
     RANGE interval, number, start

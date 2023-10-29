@@ -1,4 +1,5 @@
 #include <../../nmodlconf.h>
+#include "random_construct.hpp"
 
 #include <iostream>
 
@@ -185,8 +186,6 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 static int varcount, parraycount;
 static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
 static std::vector<std::string> data_field_strings;
-
-std::vector<RandomVar> random_vars;
 
 void nrninit() {
     currents = newlist();
@@ -387,12 +386,11 @@ void parout() {
         }
     }
 
-    if (random_vars.size()) {
+    // forward declaration of RANDOM related functions
+    if (get_num_random_variables() > 0) {
         Lappendstr(defs_list, "/* declaration of RANDOM related functions */\n");
-        Sprintf(buf, "static double _hoc_init_rng_%s(void*);\n", mechname);
-        Lappendstr(defs_list, buf);
-        Sprintf(buf, "static double _hoc_sample_rng_%s(void*);\n", mechname);
-        Lappendstr(defs_list, buf);
+        Lappendstr(defs_list, "static double _hoc_init_rng(void*);\n");
+        Lappendstr(defs_list, "static double _hoc_sample_rng(void*);\n");
     }
 
     Lappendstr(defs_list,
@@ -488,15 +486,16 @@ extern void nrn_promote(Prop*, int, int);\n\
         }
     }
 
-    if (random_vars.size()) {
+    // Register RANDOM related functions with the NEURON so that they are available
+    // at the interpreter level.
+    // TODO: these methods don't seem to be accessible for density channel?
+    if (get_num_random_variables() > 0) {
         if (!point_process) {
             Lappendstr(defs_list, "{0, 0}\n};\n");
             Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
         }
-        Sprintf(buf, "{\"init_rng\", _hoc_init_rng_%s},\n", mechname);
-        Lappendstr(defs_list, buf);
-        Sprintf(buf, "{\"sample_rng\", _hoc_sample_rng_%s},\n", mechname);
-        Lappendstr(defs_list, buf);
+        Lappendstr(defs_list, "{\"init_rng\", _hoc_init_rng},\n");
+        Lappendstr(defs_list, "{\"sample_rng\", _hoc_sample_rng},\n");
     }
 
     Lappendstr(defs_list, "{0, 0}\n};\n");
@@ -785,7 +784,7 @@ extern void nrn_promote(Prop*, int, int);\n\
             "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
-    ppvar_cnt = ioncount + diamdec + pointercount + random_vars.size() + areadec;
+    ppvar_cnt = ioncount + diamdec + pointercount + get_num_random_variables() + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(
@@ -908,9 +907,10 @@ static const char *_mechanism[] = {\n\
 
     /*
      * random variables names
-     * TODO: we are registering those with pointers. Does this need to be changed?
+     * TODO: Note that we are registering them with POINTER variables.
+     *       This might need to be changed.
      */
-    for (const auto& var: random_vars) {
+    for (const auto& var: get_random_variables()) {
         Sprintf(buf, "\"%s\",\n", var.name.c_str(), rsuffix);
         Lappendstr(defs_list, buf);
     }
@@ -1818,21 +1818,6 @@ void defs_h(Symbol* s) {
     q->itemtype = VERBATIM;
 }
 
-void nrnlist_print(Item* begin, Item* qlist) {
-    for (Item* q = begin->next; q != qlist->next; q = q->next) {
-        std::cout << SYM(q)->name << ' ';
-    }
-    std::cout << "\n";
-}
-
-std::vector<std::string> nrnlist_to_string(Item* begin, Item* qlist) {
-    std::vector<std::string> names;
-    for (Item* q = begin->next; q != qlist->next; q = q->next) {
-        names.emplace_back(SYM(q)->name);
-    }
-    return names;
-}
-
 void nrn_list(Item* q1, Item* q2) {
     List** plist = (List**) 0;
     Item* q;
@@ -2447,8 +2432,10 @@ int iondef(int* p_pointercount) {
         (*p_pointercount)++;
     }
 
-    int num_random_vars = random_vars.size();
+    const auto& random_vars = get_random_variables();
+    const auto num_random_vars = get_num_random_variables();
 
+    // print all RANDOM variables
     if (num_random_vars) {
         Sprintf(buf, "\n //RANDOM variables \n");
         lappendstr(defs_list, buf);
@@ -2465,7 +2452,6 @@ int iondef(int* p_pointercount) {
                     var.name.c_str(),
                     ioncount + *p_pointercount + index);
             lappendstr(defs_list, buf);
-            // TODO: should be "random" or some other semantic name?
             ppvar_semantics(ioncount + *p_pointercount + index,
                             "random",
                             var.name.c_str(),

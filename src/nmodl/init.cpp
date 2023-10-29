@@ -3,6 +3,7 @@
 
 #include "modl.h"
 #include "parse1.hpp"
+#include "random_construct.hpp"
 
 extern List* firstlist;
 extern List* syminorder;
@@ -154,9 +155,6 @@ static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 #include "extdef5.h"
                                 0};
 
-// methods that can be used with RANDOM type variables
-static const char* extdef6[] = {"setseq", "init", "sample", 0};
-
 List *constructorfunc, *destructorfunc;
 
 void init() {
@@ -201,9 +199,9 @@ void init() {
         assert(s);
         s->subtype |= EXTDEF5;
     }
-    for (i = 0; extdef6[i]; i++) {
-        s = install(extdef6[i], NAME);
-        s->subtype = EXTDEF6;
+    for (const auto& method: get_ext_random_methods()) {
+        s = install(method.c_str(), NAME);
+        s->subtype = EXT_DEF_RANDOM;
     }
     intoken = newlist();
     initfunc = newlist();
