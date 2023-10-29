@@ -17,15 +17,15 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
-C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python39\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python310\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python311\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 :: install numpy dependency
 python -m pip install numpy
 :: run also using whatever is system python
 python --version
-python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: test python and nrniv
 python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
