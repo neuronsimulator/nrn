@@ -347,20 +347,21 @@ void nrn_permute_node_order() {
     if (!interleave_permute_type) {
         return;
     }
-    printf("enter nrn_permute_node_order\n");
+    //    printf("enter nrn_permute_node_order\n");
     destroy_interleave_info();
     create_interleave_info();
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
         int* perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
         auto p = inverse_permute(perm, nt.end);
+#if 0
         for (int i = 0; i < nt.end; ++i) {
             int x = nt._v_parent_index[p[i]];
             int par = x >= 0 ? perm[x] : -1;
             printf("%2d <- %2d  parent=%2d\n", i, p[i], par);
         }
-
-        prnode("before perm", nt);
+#endif
+        //        prnode("before perm", nt);
         forward_permute<Node*>(nt._v_node, p, nt.end);
         forward_permute<Node*>(nt._v_parent, p, nt.end);
         forward_permute<int>(nt._v_parent_index, p, nt.end);
@@ -375,11 +376,11 @@ void nrn_permute_node_order() {
             }
             sort_ml(ml);  // all fields in increasing nodeindex order
         }
-        prnode("after perm", nt);
+        //        prnode("after perm", nt);
 
         delete[] perm;
     }
-    printf("leave nrn_permute_node_order\n");
+    //    printf("leave nrn_permute_node_order\n");
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {

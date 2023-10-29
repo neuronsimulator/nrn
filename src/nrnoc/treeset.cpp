@@ -1776,6 +1776,7 @@ void v_setup_vectors(void) {
     nrn_nonvint_block_setup();
     diam_changed = 1;
 
+#if 0
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         printf("nrnthread %d node info\n", tid);
         auto& nt = nrn_threads[tid];
@@ -1790,6 +1791,7 @@ void v_setup_vectors(void) {
                 (*nt._v_node[i]).v());
         }
     }
+#endif  // 0
 }
 
 
