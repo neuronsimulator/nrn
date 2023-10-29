@@ -322,76 +322,6 @@ nrn_create_file_list(
   sundialsmath.c)
 set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
 
-# meschach matrix sources
-set(MESCH_FILES_LIST
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    conjgrad.c
-    copy.c
-    dmacheps.c
-    err.c
-    extras.c
-    fft.c
-    givens.c
-    hessen.c
-    hsehldr.c
-    init.c
-    iter0.c
-    iternsym.c
-    itersym.c
-    ivecop.c
-    lanczos.c
-    lufactor.c
-    machine.c
-    matlab.c
-    matop.c
-    matrixio.c
-    meminfo.c
-    memory.c
-    memstat.c
-    mfunc.c
-    norm.c
-    otherio.c
-    pxop.c
-    qrfactor.c
-    schur.c
-    solve.c
-    sparse.c
-    sparseio.c
-    spbkp.c
-    spchfctr.c
-    splufctr.c
-    sprow.c
-    spswap.c
-    submat.c
-    svd.c
-    symmeig.c
-    update.c
-    vecop.c
-    version.c
-    zcopy.c
-    zfunc.c
-    zgivens.c
-    zhessen.c
-    zhsehldr.c
-    zlufctr.c
-    zmachine.c
-    zmatio.c
-    zmatlab.c
-    zmatop.c
-    zmemory.c
-    znorm.c
-    zqrfctr.c
-    zschur.c
-    zsolve.c
-    zvecop.c)
-
 set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # scopmath sources
@@ -503,7 +433,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
@@ -539,7 +469,6 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
-nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})

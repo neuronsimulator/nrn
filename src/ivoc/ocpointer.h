@@ -2,7 +2,6 @@
 #define ocpointer_h
 
 #include <InterViews/observe.h>
-#include <OS/string.h>
 #include "oc2iv.h"
 class StmtInfo;
 
@@ -24,7 +23,7 @@ class StmtInfo {
     virtual ~StmtInfo();
     void play_one(double);
     void parse();
-    CopyString* stmt_;
+    std::string stmt_{};
     Symlist* symlist_;
     Symbol* symstmt_;
 };

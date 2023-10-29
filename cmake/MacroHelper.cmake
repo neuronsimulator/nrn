@@ -207,15 +207,24 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_cpp modfile_basename)
+  set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
+  if(NOT MSVC)
+    set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
+  endif()
+  set(REMOVE_CMAKE_COMMAND "rm")
+  if(CMAKE_VERSION VERSION_LESS "3.17")
+    set(REMOVE_CMAKE_COMMAND "remove")
+  endif()
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/nocmodl
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
       ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-    COMMAND sed "'s/_reg()/_reg_()/'" ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
+    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
+    COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
+            ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
     DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

@@ -115,6 +115,22 @@ static PyType_Spec nrnpy_MechanismType_spec = {
     nrnpy_MechanismType_slots,
 };
 
+static PyType_Slot nrnpy_MechFuncType_slots[] = {
+    {Py_tp_dealloc, (void*) NPyMechFunc_dealloc},
+    {Py_tp_repr, (void*) pymechfunc_repr},
+    {Py_tp_methods, (void*) NPyMechFunc_methods},
+    {Py_tp_call, (void*) NPyMechFunc_call},
+    {Py_tp_doc, (void*) "Mechanism Function"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_MechFuncType_spec = {
+    "nrn.MechFunc",
+    sizeof(NPyMechFunc),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_MechFuncType_slots,
+};
+
 static PyType_Slot nrnpy_VarOfMechIterType_slots[] = {
     {Py_tp_dealloc, (void*) NPyVarOfMechIter_dealloc},
     {Py_tp_iter, (void*) PyObject_SelfIter},

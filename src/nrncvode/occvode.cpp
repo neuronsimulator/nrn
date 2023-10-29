@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #include <errno.h>
-#include <OS/string.h>
 #include "nrn_ansi.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"

@@ -55,7 +55,7 @@ class SymChooser: public Dialog {
     SymChooser(SymDirectory*, WidgetKit*, Style*, SymChooserAction* = NULL, int nbrowser = 3);
     virtual ~SymChooser();
 
-    virtual const String* selected() const;
+    virtual const std::string& selected() const;
     virtual double* selected_var();
     virtual int selected_vector_count();
     virtual void reread();

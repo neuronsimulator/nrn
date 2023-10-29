@@ -150,20 +150,6 @@ TEST_CASE("soa::get_num_variables", "[Neuron][data_structures]") {
     CHECK(data.get_num_variables<field::DOn>() == 1ul);
 }
 
-TEST_CASE("Identifier defer delete ", "[Neuron][internal][data_structures]") {
-    storage data;
-
-    REQUIRE(detail::identifier_defer_delete_storage != nullptr);
-    auto usage_before = detail::compute_identifier_defer_delete_storage_size();
-    { owning_handle instance{data}; }
-    auto usage_after = detail::compute_identifier_defer_delete_storage_size();
-
-    CHECK(usage_after.size - usage_before.size > 0);
-    CHECK(usage_after.capacity > 0);
-    CHECK(usage_before.size <= usage_before.capacity);
-    CHECK(usage_after.size <= usage_after.capacity);
-}
-
 TEST_CASE("defer delete storage pointer", "[Neuron][internal][data_structures]") {
     REQUIRE(detail::defer_delete_storage != nullptr);
 
@@ -279,7 +265,7 @@ neuron::container::MemoryUsage dummy_memory_usage() {
     auto stable_pointers = neuron::container::VectorMemoryUsage(7, 17);
     auto stable_identifiers = neuron::container::VectorMemoryUsage(8, 18);
 
-    auto memory_usage = MemoryUsage{model, cache_model, stable_pointers, stable_identifiers};
+    auto memory_usage = MemoryUsage{model, cache_model, stable_pointers};
 
     return memory_usage;
 }
@@ -288,8 +274,8 @@ neuron::container::MemoryUsage dummy_memory_usage() {
 TEST_CASE("total memory usage", "[Neuron][internal][data_structures]") {
     auto memory_usage = dummy_memory_usage();
     auto total = memory_usage.compute_total();
-    CHECK(total.size == (8 * 9) / 2);
-    CHECK(total.capacity == total.size + 8 * 10);
+    CHECK(total.size == (7 * 8) / 2);
+    CHECK(total.capacity == total.size + 7 * 10);
 }
 
 TEST_CASE("memory usage summary", "[Neuron][data_structures]") {

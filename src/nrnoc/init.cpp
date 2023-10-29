@@ -821,6 +821,21 @@ int get_field_count<double>(int mech_type) {
 }  // namespace neuron::mechanism
 
 /**
+ * @brief Support mechanism FUNCTION/PROCEDURE python syntax seg.mech.f()
+ *
+ * Python (density) mechanism registration uses nrn_mechs2func_map to
+ * create a per mechanism map of f members that can be called directly
+ * without prior call to setmech.
+ */
+void hoc_register_npy_direct(int type, NPyDirectMechFunc* f) {
+    auto& fmap = nrn_mech2funcs_map[type] = {};
+    for (int i = 0; f[i].name; ++i) {
+        fmap[f[i].name] = &f[i];
+    }
+}
+std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+/**
  * @brief Legacy way of registering mechanism data/pdata size.
  *
  * Superseded by neuron::mechanism::register_data_fields.
