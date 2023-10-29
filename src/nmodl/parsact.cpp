@@ -1,5 +1,7 @@
 #include <../../nmodlconf.h>
 
+#include "map"
+
 /*
  * some parse actions to reduce size of parse.ypp the installation routines can
  * also be used, e.g. in sens to automattically construct variables
@@ -842,10 +844,62 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
     npyfunc(n, 0);  // shares most of hocfunchack code (factored out).
 }
 
+std::map<std::string, std::string> sample_method_mapping = {{"NEGEXP", "nrnran123_negexp"},
+                                                            {"NORMAL", "nrnran123_normal"},
+                                                            {"UNIFORM", "nrnran123_uniform"}};
+
+extern std::vector<RandomVar> random_vars;
+extern char* mechname;
+
+void check_is_a_random_variable(Symbol* sym) {
+    for (const auto& var: random_vars) {
+        if (strcmp(sym->name, var.name.c_str()) == 0) {
+            return;
+        }
+    }
+    diag(sym->name, " is not a RANDOM variable declared in the NEURON block");
+}
+
+std::string get_sample_method(Symbol* sym) {
+    std::string distribution;
+    for (const auto& var: random_vars) {
+        if (strcmp(sym->name, var.name.c_str()) == 0) {
+            distribution = var.distribution;
+            break;
+        }
+    }
+    return sample_method_mapping[distribution];
+}
+
+
 /* ARGSUSED */
 void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int blocktype) {
     Item* q;
-    if (SYM(qname)->subtype & EXTDEF) {
+    if (SYM(qname)->subtype & EXTDEF6) {
+
+        check_is_a_random_variable(SYM(qexpr));
+
+        // TODO: check if qexpr is a RANDOM variable
+
+        std::string replaced_name;
+
+        if (strcmp(SYM(qname)->name, "setseq") == 0) {
+            replaced_name = "nrnran123_setseq";
+        } else if (strcmp(SYM(qname)->name, "sample") == 0) {
+            replaced_name = get_sample_method(SYM(qexpr));
+        } else if (strcmp(SYM(qname)->name, "init") == 0) {
+            sprintf(buf, "_init_rng_%s", mechname);
+            replaced_name = buf;
+        } else {
+            diag(SYM(qname)->name, " invalid function name used with RANDOM variable");
+        }
+
+        replacstr(qname, replaced_name.c_str());
+        sprintf(buf, "reinterpret_cast<nrnran123_State*&>(_p_%s)", SYM(qexpr)->name);
+        replacstr(qexpr, buf);
+        return;
+
+    } else if (SYM(qname)->subtype & EXTDEF) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
             // TODO: this relies on undefined behaviour in C++. &*foo is not
             // guaranteed to be equivalent to foo if foo is null. See

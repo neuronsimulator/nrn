@@ -796,6 +796,9 @@ int dparam_semantics_to_int(std::string_view name) {
         return -9;
     } else if (name == "fornetcon") {
         return -10;
+    } else if (name == "random") {
+        // TODO: treat random as a pointer for now
+        return -5;
     } else {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());

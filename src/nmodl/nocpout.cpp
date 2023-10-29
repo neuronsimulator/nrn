@@ -910,7 +910,7 @@ static const char *_mechanism[] = {\n\
      * random variables names
      * TODO: we are registering those with pointers. Does this need to be changed?
      */
-    for(const auto& var: random_vars) {
+    for (const auto& var: random_vars) {
         Sprintf(buf, "\"%s\",\n", var.name.c_str(), rsuffix);
         Lappendstr(defs_list, buf);
     }
@@ -2467,7 +2467,7 @@ int iondef(int* p_pointercount) {
             lappendstr(defs_list, buf);
             // TODO: should be "random" or some other semantic name?
             ppvar_semantics(ioncount + *p_pointercount + index,
-                            "pointer",
+                            "random",
                             var.name.c_str(),
                             "double*");
             index++;

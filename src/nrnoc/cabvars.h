@@ -16,8 +16,8 @@ void capac_reg_(), passive0_reg_(), _passive_reg_(),
     extracell_reg_(),
 #endif
     _stim_reg_(), _syn_reg_(), _expsyn_reg_(), _exp2syn_reg_(), _svclmp_reg_(), _vclmp_reg_(),
-    _oclmp_reg_(), _apcount_reg_(), _netstim_reg_(), _intfire1_reg_(), _intfire2_reg_(),
-    _intfire4_reg_(), _ppmark_reg_(), _pattern_reg_(),
+    _oclmp_reg_(), _apcount_reg_(), _netstim_reg_(), _netstim_rng_reg_(), _intfire1_reg_(),
+    _intfire2_reg_(), _intfire4_reg_(), _ppmark_reg_(), _pattern_reg_(),
 #if XMECH
     _xmech_reg_(),
 #endif
@@ -42,6 +42,7 @@ static Pfrv mechanism[] = {/* type will start at 3 */
                            _hh_reg_,
                            _feature_reg_,
                            _netstim_reg_,
+                           _netstim_rng_reg_,
                            _intfire1_reg_,
                            _intfire2_reg_,
                            _intfire4_reg_,

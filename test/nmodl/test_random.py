@@ -3,7 +3,6 @@ from math import isclose
 from neuron import h
 pc = h.ParallelContext()
 
-
 def model():
     pc.gid_clear()
     for s in h.allsec():
@@ -21,18 +20,19 @@ def model():
     nc.weight[0] = 0.001
     return {"s": s, "ic": ic, "syn": syn, "nc": nc}
 
-
-def test_NetStim_noise():
-    cells = {gid: (h.NetStim()) for gid in range(pc.id(), 5, pc.nhost())}
-
+def test_netstim_noise():
+    cells = {gid: (h.NetStimRNG()) for gid in range(pc.id(), 5, pc.nhost())}
     for gid, cell in cells.items():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, h.NetCon(cell, None))
-        cell.noiseFromRandom123(gid, 2, 3)
+
         cell.interval = gid + 1
         cell.number = 100
         cell.start = 0
         cell.noise = 1
+
+        cell.id = gid
+        #cell.init_rng("r", gid, 2, 3)
 
     spiketime = h.Vector()
     spikegid = h.Vector()
@@ -58,24 +58,22 @@ def test_random():
     ncell = 10
     cells = []
     gids = range(pc.id(), ncell, pc.nhost())
+    rng = []
     for gid in gids:
         pc.set_gid2node(gid, pc.id())
-        cell = h.NetStim()
+        cell = h.NetStimRNG()
 
-        cell.init_rng("rng_use", gid, 1, 2)
-        cell.init_rng("rng_donotuse", gid, 2, 3)
+        cell.id = gid
+        cell.init_rng("r", gid, 2, 3)
 
-        r1 = cell.sample_rng("rng_use")
-        r2 = cell.sample_rng("rng_donotuse")
+        r = cell.sample_rng("r")
+        rng.append(r)
 
-        assert r1 != 0 and r2 != 0 and r1 != r2
+    rng_ref = [0.08268113588796304,0.019323606745855152,0.19773286424545394,0.4370988039434747,0.26952897197790865,0.27785183823847076,1.4834024918566038,1.1439786359830195,0.13094521398166833,0.3743746759204156]
 
-        print(" sample rng_use:: ", r1)
-        print(" sample rng_donotuse:: ", r2)
-
-        cells.append(cell)
-
+    for x, y in zip(rng, rng_ref):
+        assert isclose(x, y)
 
 if __name__ == "__main__":
-    test_NetStim_noise()
+    test_netstim_noise()
     test_random()

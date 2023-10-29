@@ -198,13 +198,14 @@ typedef struct Symbol {
 #define EXTDEF        0100000
 #define LINF          0200000
 #define UNITDEF       0400000L
-#define EXTDEF2       01000000L  /* functions that can take array or function name arguments */
-#define nmodlCONST    02000000L  /* constants that do not appear in .var file */
-#define EXTDEF3       04000000L  /* get two extra reset arguments at beginning */
-#define INTGER        010000000L /* must be cast to double in expr */
-#define EXTDEF4       020000000L /* get extra NrnThread* arg at beginning */
-#define EXTDEF5       040000000L /* not threadsafe from the extdef list */
-#define EXPLICIT_DECL 01         /* usage field, variable occurs in input file */
+#define EXTDEF2       01000000L   /* functions that can take array or function name arguments */
+#define nmodlCONST    02000000L   /* constants that do not appear in .var file */
+#define EXTDEF3       04000000L   /* get two extra reset arguments at beginning */
+#define INTGER        010000000L  /* must be cast to double in expr */
+#define EXTDEF4       020000000L  /* get extra NrnThread* arg at beginning */
+#define EXTDEF5       040000000L  /* not threadsafe from the extdef list */
+#define EXTDEF6       0600000000L /* functions that can be used with RANDOM type */
+#define EXPLICIT_DECL 01          /* usage field, variable occurs in input file */
 
 
 #define NRNEXTRN     01 /* t, dt, celsius, etc. */

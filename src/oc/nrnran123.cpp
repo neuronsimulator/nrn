@@ -133,9 +133,8 @@ double nrnran123_normal(nrnran123_State* s, double mu, double sigma) {
 
     y = sqrt((-2. * log(w)) / w);
     x = u1 * y;
-    return mu + x*sigma;
+    return mu + x * sigma;
 }
-
 
 
 nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2) {

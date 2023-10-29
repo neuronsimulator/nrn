@@ -154,6 +154,9 @@ static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 #include "extdef5.h"
                                 0};
 
+// methods that can be used with RANDOM type variables
+static const char* extdef6[] = {"setseq", "init", "sample", 0};
+
 List *constructorfunc, *destructorfunc;
 
 void init() {
@@ -197,6 +200,10 @@ void init() {
         s = lookup(extdef5[i]);
         assert(s);
         s->subtype |= EXTDEF5;
+    }
+    for (i = 0; extdef6[i]; i++) {
+        s = install(extdef6[i], NAME);
+        s->subtype = EXTDEF6;
     }
     intoken = newlist();
     initfunc = newlist();

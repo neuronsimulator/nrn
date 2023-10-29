@@ -384,6 +384,7 @@ set(MODFILE_BASE_NAMES
     intfire2
     intfire4
     netstim
+    netstim_rng
     oclmp
     passive
     pattern
