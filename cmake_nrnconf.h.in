@@ -6,8 +6,6 @@
 
 
 #if defined(_WIN32)
-#define YY_NO_UNISTD_H
-
 #define NRN_DLLEXPORT __declspec(dllexport)
 #define NRN_DLLIMPORT __declspec(dllimport)
 #else

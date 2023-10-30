@@ -282,7 +282,7 @@ find_package(FLEX 2.6 REQUIRED)
 
 # FIXME CMake 3.18 introduced a REQUIRED parameter
 find_program(BASH_EXECUTABLE NAMES bash bash.exe)
-if(BASH_EXECUTABLE-NOTFOUND)
+if(NOT BASH_EXECUTABLE)
   message(FATAL_ERROR "Could not find Bash")
 endif()
 
@@ -558,7 +558,7 @@ include(ConfigFileSetting)
 # by ctypes in the neuron module.) So for now we keep that distinction as
 # well. Setting these here as setup.py.in needs it.
 # ~~~
-if(MINGW)
+if(MINGW OR MSVC)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)

@@ -13,6 +13,11 @@ if(NRN_AVOID_ABSOLUTE_PATHS)
   add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
 endif()
 
+set(FLEX_COMPATIBILITY_FLAGS "")
+if(MSVC)
+  set(FLEX_COMPATIBILITY_FLAGS "--wincompat")
+endif()
+
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -28,7 +33,7 @@ file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLU
 add_custom_command(
   OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
           "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
@@ -65,7 +70,7 @@ file(RELATIVE_PATH NRN_NMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_SR
 add_custom_command(
   OUTPUT "${NRN_NMODL_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NMODL_GEN_REL}/lex.cpp" "${NRN_NMODL_SRC_REL}/lex.lpp"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_NMODL_GEN_REL}/lex.cpp" "${NRN_NMODL_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_NMODL_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
 add_custom_command(

@@ -199,12 +199,10 @@ const char** gargv; /* global argument list */
 int gargc;
 static int c = '\n'; /* global for use by warning() */
 
-#if defined(WIN32)
+#if defined(_WIN32)
 void set_intset() {
     hoc_intset++;
 }
-#endif
-#ifdef WIN32
 extern void hoc_win32_cleanup();
 #endif
 
@@ -214,14 +212,14 @@ static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
 [[noreturn]] void nrn_exit(int i) {
-#if defined(WIN32)
+#if defined(_WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
 #endif
     exit(i);
 }
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #define HAS_SIGPIPE 0
 #else
 #define HAS_SIGPIPE 1
@@ -897,7 +895,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -906,7 +904,7 @@ static int hoc_run1();
 // hoc6
 int hoc_main1(int argc, const char** argv, const char** envp) {
     int exit_status = EXIT_SUCCESS;
-#ifdef WIN32
+#ifdef _WIN32
     extern void hoc_set_unhandled_exception_filter();
     hoc_set_unhandled_exception_filter();
 #endif
@@ -950,7 +948,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef WIN32
+#ifdef _WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;
@@ -1014,11 +1012,11 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     hoc_close_plot();
-#if READLINE && !defined(WIN32)
+#if READLINE && !defined(_WIN32)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
-#ifdef WIN32
+#ifdef _WIN32
     hoc_win32_cleanup();
 #else
     std::string cmd{neuron_home};
@@ -1079,7 +1077,7 @@ int hoc_moreinput() {
         pipeflag = 0;
         return 1;
     }
-#if defined(WIN32)
+#if defined(_WIN32)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
@@ -1092,7 +1090,7 @@ int hoc_moreinput() {
         return 1;
 #endif
     }
-#endif  // WIN32
+#endif  // _WIN32
     if (fin && !nrn_fw_eq(fin, stdin)) {
         IGNORE(nrn_fw_fclose(fin));
     }
@@ -1103,7 +1101,7 @@ int hoc_moreinput() {
         return 0;
     }
     infile = *gargv++;
-#if defined(WIN32)
+#if defined(_WIN32)
     if (infile[0] == '"') {
         char* cp = strdup(infile + 1);
         for (++cp; *cp; ++cp) {
@@ -1525,7 +1523,7 @@ int hoc_yyparse(void) {
     return i;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #define INTERVIEWS 1
 #endif
 
@@ -1773,7 +1771,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             run_til_stdin();
         }
 #endif  // INTERVIEWS
-#if defined(WIN32)
+#if defined(_WIN32)
         if (nrn_fw_eq(fin, stdin)) {
             if (gets_s(cbuf, hoc_cbufstr->size) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
@@ -1781,7 +1779,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
             strcat(cbuf, "\n");
         } else
-#endif  // WIN32
+#endif  // _WIN32
         {
             if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (char*) 0) {
                 return EOF;

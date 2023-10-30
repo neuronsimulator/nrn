@@ -47,7 +47,7 @@ extern int nrn_feenableexcept_;
 #if DOS
 extern void hoc_settext(void);
 #endif
-#if defined(WIN32)
+#if defined(_WIN32)
 extern void hoc_win_exec();
 #endif
 

@@ -19,10 +19,10 @@ extern int numprocs(), myproc(), psync();
 #if 0
 extern int	hoc_co();
 #endif
-#if DOS || defined(WIN32)
+#if DOS || defined(_WIN32)
 extern double erf(), erfc(); /* supplied by unix */
 #endif
-#if defined(WIN32)
+#if defined(_WIN32)
 extern void hoc_winio_show(int b);
 #endif
 
@@ -200,7 +200,7 @@ static struct { /* Builtin functions with multiple or variable args */
 #if DOS
                  {"settext", hoc_settext},
 #endif
-#if defined(WIN32)
+#if defined(_WIN32)
                  {"WinExec", hoc_win_exec},
 #endif
                  {0, 0}};
@@ -319,7 +319,7 @@ void hoc_unix_mac_pc(void) {
 #if defined(DARWIN)
     hoc_pushx(4.);
 #else
-#if defined(WIN32)
+#if defined(_WIN32)
     hoc_pushx(3.);
 #else
     hoc_pushx(1.);
@@ -329,7 +329,7 @@ void hoc_unix_mac_pc(void) {
 void hoc_show_winio(void) {
     int b;
     b = (int) chkarg(1, 0., 1.);
-#if defined(WIN32)
+#if defined(_WIN32)
     hoc_winio_show(b);
 #endif
     hoc_ret();

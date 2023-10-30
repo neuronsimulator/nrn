@@ -2553,7 +2553,7 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32)
+#if defined(DOS)
 static int ntimes;
 #endif
 
