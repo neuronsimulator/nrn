@@ -93,7 +93,7 @@ def test_alias():
     h("""double x[2]""")
     sf.alias(v, "xy", h._ref_x[0])
     v.xy = 3.14
-    assert h.x[0] == 3.14
+    assert h.x[0] == v.xy
 
 
 def test_alias_list():
@@ -101,7 +101,7 @@ def test_alias_list():
     expect_err("sf.alias_list(v)")  # no hoc String template
     # after an expect error, must manually delete
     del v
-    locals()
+    assert len(locals()) == 0  #  sonarcloud says return value must be used
 
     v = h.Vector()
     h.load_file("stdrun.hoc")
