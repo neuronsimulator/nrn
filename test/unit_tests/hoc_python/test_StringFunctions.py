@@ -1,4 +1,5 @@
 from neuron import h
+from neuron.expect_hocerr import expect_err
 
 sf = h.StringFunctions()
 
@@ -89,11 +90,21 @@ def test_alias():
     v = h.Vector()
     sf.alias(v, "xv", h.xvalue)
     assert v.xv == h.xvalue
+    h("""double x[2]""")
+    sf.alias(v, "xy", h._ref_x[0])
+    v.xy = 3.14
+    assert h.x[0] == 3.14
 
 
 def test_alias_list():
-    h.load_file("stdrun.hoc")
     v = h.Vector()
+    expect_err("sf.alias_list(v)")  # no hoc String template
+    # after an expect error, must manually delete
+    del v
+    locals()
+
+    v = h.Vector()
+    h.load_file("stdrun.hoc")
     assert len(sf.alias_list(v)) == 0
     sf.alias(v, "xv1", h.xvalue)  # Add alias
     assert len(sf.alias_list(v)) == 1
@@ -106,13 +117,46 @@ def test_alias_list():
 
 
 def test_references():
-    # This function print the number of references
-    pass
+    # This function prints the number of references
+    sf.references(None)
+    v = h.Vector()
+
+    # different ways a hoc object can be referenced
+    h.hoc_obj_[0] = v
+    l = h.List()
+    l.append(v)
+    h(
+        """
+objref o
+begintemplate Foo
+public o, o2
+objref o, o2[2]
+proc init() {
+    o = $o1
+    o2[0] = o
+}
+endtemplate Foo
+    """
+    )
+    foo = h.Foo(v)
+    h.o = v
+    box = h.VBox()
+    box.ref(v)
+
+    sf.references(foo.o)
+    box.ref(None)  # without this, then assert error when box is destroyed
 
 
 def test_is_point_process():
-    pass
+    sf = h.StringFunctions()  # no destructor (removed a non-coverable line)
+    s = h.Section()
+    assert not sf.is_artificial(h.List())
+    assert sf.is_point_process(h.IClamp(s(0.5)))
+    assert sf.is_point_process(h.NetStim())
 
 
 def test_is_artificial():
-    pass
+    s = h.Section()
+    assert not sf.is_artificial(h.List())
+    assert not sf.is_artificial(h.IClamp(s(0.5)))
+    assert sf.is_artificial(h.NetStim())

@@ -93,11 +93,12 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_top_level_symlist;
 
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob) {
+    Symbol* s{};
     IvocAliases* a = (IvocAliases*) ob->aliases;
     if (a) {
-        return a->lookup(name);
+        s = a->lookup(name);
     }
-    return NULL;
+    return s;
 }
 
 extern void ivoc_free_alias(Object* ob) {
@@ -150,8 +151,7 @@ static Object** l_alias_list(void*) {
     Symbol* sl = hoc_lookup("List");
     Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
     if (!st || st->type != TEMPLATE) {
-        printf("st=%p %s %d\n", st, st ? st->name : "NULL", st ? st->type : 0);
-        hoc_execerror("String is not a template", 0);
+        hoc_execerror("String is not a HOC template", 0);
     }
     Object** po = hoc_temp_objvar(sl, list);
     (*po)->refcount++;
@@ -326,10 +326,8 @@ static void* l_cons(Object*) {
     return NULL;
 }
 
-static void l_destruct(void*) {}
-
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, NULL, l_members, NULL, l_obj_members, NULL);
 }
 
 
