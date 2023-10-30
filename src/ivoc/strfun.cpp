@@ -323,11 +323,11 @@ static Member_func l_members[] = {{"substr", l_substr},
 static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
 
 static void* l_cons(Object*) {
-    return NULL;
+    return nullptr;
 }
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, NULL, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
 }
 
 
@@ -337,7 +337,7 @@ IvocAliases::IvocAliases(Object* ob) {
 }
 
 IvocAliases::~IvocAliases() {
-    ob_->aliases = NULL;
+    ob_->aliases = nullptr;
     for (auto& kv: symtab_) {
         Symbol* sym = kv.second;
         hoc_free_symspace(sym);
@@ -359,8 +359,8 @@ Symbol* IvocAliases::install(const char* name) {
     strcpy(sp->name, name);
     sp->type = VARALIAS;
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
-    sp->extra = 0;
-    sp->arayinfo = 0;
+    sp->extra = nullptr;
+    sp->arayinfo = nullptr;
     symtab_.try_emplace(sp->name, sp);
     return sp;
 }
