@@ -399,11 +399,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             k = int((z - e._zlo) / e._dx[2])
             return self.node_by_ijk(i, j, k)
         raise RxDException(
-            "Location (%1.2f %1.2f, %1.2f) is not in extracellular region %r",
-            x,
-            y,
-            z,
-            self._extracellular()._region,
+            f"Location ({x:1.2f} {y:1.2f}, {z:1.2f}) is not in extracellular region {self._extracellular()._region!r}"
         )
 
     def alpha_by_location(self, locs):
