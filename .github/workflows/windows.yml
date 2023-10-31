@@ -99,11 +99,11 @@ jobs:
           -B build -S . `
           -DCMAKE_BUILD_TYPE=Release `
           -DNRN_ENABLE_INTERVIEWS=ON `
-          -DNRN_ENABLE_MPI=ON `
+          -DNRN_ENABLE_MPI=OFF `
           -DNRN_ENABLE_MPI_DYNAMIC=OFF `
-          -DNRN_ENABLE_PYTHON=ON `
+          -DNRN_ENABLE_PYTHON=OFF `
           -DNRN_ENABLE_PYTHON_DYNAMIC=OFF `
-          -DNRN_ENABLE_RX3D=ON `
+          -DNRN_ENABLE_RX3D=OFF `
           -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
           -DNRN_RX3D_OPT_LEVEL=2 `
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
