@@ -214,7 +214,11 @@
 #undef off_t
 
 /* Define to `int' if <sys/types.h> does not define. */
+#ifdef _WIN32
 typedef @pid_t@ pid_t;
+#else
+#undef pid_t
+#endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
