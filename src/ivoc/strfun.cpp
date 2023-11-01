@@ -110,11 +110,12 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_top_level_symlist;
 
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob) {
+    Symbol* s{};
     IvocAliases* a = (IvocAliases*) ob->aliases;
     if (a) {
-        return a->lookup(name);
+        s = a->lookup(name);
     }
-    return NULL;
+    return s;
 }
 
 extern void ivoc_free_alias(Object* ob) {
@@ -167,14 +168,12 @@ static Object** l_alias_list(void*) {
     Symbol* sl = hoc_lookup("List");
     Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
     if (!st || st->type != TEMPLATE) {
-        printf("st=%p %s %d\n", st, st ? st->name : "NULL", st ? st->type : 0);
-        hoc_execerror("String is not a template", 0);
+        hoc_execerror("String is not a HOC template", 0);
     }
     Object** po = hoc_temp_objvar(sl, list);
     (*po)->refcount++;
     int id = (*po)->index;
     if (a) {
-        char buf[256];
         for (auto& kv: a->symtab_) {
             Symbol* sym = kv.second;
             hoc_pushstr(&sym->name);
@@ -341,13 +340,11 @@ static Member_func l_members[] = {{"substr", l_substr},
 static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
 
 static void* l_cons(Object*) {
-    return NULL;
+    return nullptr;
 }
 
-static void l_destruct(void*) {}
-
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
 }
 
 
@@ -357,7 +354,7 @@ IvocAliases::IvocAliases(Object* ob) {
 }
 
 IvocAliases::~IvocAliases() {
-    ob_->aliases = NULL;
+    ob_->aliases = nullptr;
     for (auto& kv: symtab_) {
         Symbol* sym = kv.second;
         hoc_free_symspace(sym);
@@ -379,8 +376,8 @@ Symbol* IvocAliases::install(const char* name) {
     strcpy(sp->name, name);
     sp->type = VARALIAS;
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
-    sp->extra = 0;
-    sp->arayinfo = 0;
+    sp->extra = nullptr;
+    sp->arayinfo = nullptr;
     symtab_.try_emplace(sp->name, sp);
     return sp;
 }
