@@ -151,7 +151,7 @@ int Regexp::Search (const char* text, int length, int index, int range) {
 
     frontAnchored = pattern_[0] == '^';
     endAnchored = pattern_[strlen(pattern_)-1] == '$';
-    if (frontAnchored && (searchStart != text || searchStart[-1] == '\n')) {
+    if (frontAnchored && (searchStart != text && searchStart[-1] != '\n')) {
 	searchStart = NextLine(searchStart);
     }
 
