@@ -41,7 +41,9 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 char* hoc_back2forward(char*);
 #endif
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define IOS_OUT std::ios::out
 
 #include <IV-look/kit.h>
