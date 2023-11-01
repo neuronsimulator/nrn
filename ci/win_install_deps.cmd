@@ -48,14 +48,6 @@ if "%MSYS2_ROOT%"=="" set MSYS2_ROOT=C:\msys64
 if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
     choco install -y --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 )
-
-:: With upgrade of Azure CI runner image on 21st of Sept 2023,
-:: choco brings mingw 12.2.0 and it's somehow incompatible with
-:: msys+neuron installation. So for now, just use previously working
-:: version of mingw
-choco uninstall -y mingw
-choco install --allow-downgrade -y mingw --version=11.2.0
-
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
 :: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
@@ -72,7 +64,6 @@ mingw-w64-x86_64-ninja ^
 mingw-w64-x86_64-ncurses ^
 mingw-w64-x86_64-readline ^
 mingw-w64-x86_64-python3 ^
-mingw64/mingw-w64-x86_64-cython ^
 mingw-w64-x86_64-python3-setuptools ^
 mingw-w64-x86_64-python3-packaging ^
 mingw-w64-x86_64-python3-pip ^
