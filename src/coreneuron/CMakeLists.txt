@@ -180,11 +180,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
-  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
-  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
-  if(CMAKE_VERSION VERSION_LESS 3.19)
-    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
-  endif()
 endif()
 
 if(CORENRN_ENABLE_SHARED)
