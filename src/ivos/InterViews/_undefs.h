@@ -217,6 +217,7 @@
 #undef Raster
 #undef RasterRep
 #undef Reducer
+#undef Regexp
 #undef ReqErr
 #undef Requirement
 #undef Requisition

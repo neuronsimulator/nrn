@@ -7,7 +7,7 @@
 #include <nrnmpi.h>
 #include <errno.h>
 #include <time.h>
-#include <regex>
+#include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
 #include "parse.hpp"
@@ -930,74 +930,98 @@ Object** NetCvode::netconlist() {
     Object** po = newoclist(4, o);
 
     Object *opre = nullptr, *opost = nullptr, *otar = nullptr;
-    std::regex spre, spost, star;
+    Regexp *spre = nullptr, *spost = nullptr, *star = nullptr;
+    char* s;
+    int n;
 
     if (hoc_is_object_arg(1)) {
         opre = *hoc_objgetarg(1);
     } else {
-        std::string s(gargstr(1));
-        if (s.empty()) {
-            spre = std::regex(".*");
+        s = gargstr(1);
+        if (s[0] == '\0') {
+            spre = new Regexp(".*");
         } else {
-            try {
-                spre = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
-            }
+            spre = new Regexp(escape_bracket(s));
+        }
+        if (!spre->pattern()) {
+            delete std::exchange(spre, nullptr);
+            hoc_execerror(gargstr(1), "not a valid regular expression");
         }
     }
     if (hoc_is_object_arg(2)) {
         opost = *hoc_objgetarg(2);
     } else {
-        std::string s(gargstr(2));
-        if (s.empty()) {
-            spost = std::regex(".*");
+        s = gargstr(2);
+        if (s[0] == '\0') {
+            spost = new Regexp(".*");
         } else {
-            try {
-                spost = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(2), "not a valid regular expression");
-            }
+            spost = new Regexp(escape_bracket(s));
+        }
+        if (!spost->pattern()) {
+            delete std::exchange(spost, nullptr);
+            delete std::exchange(spre, nullptr);
+            hoc_execerror(gargstr(2), "not a valid regular expression");
         }
     }
     if (hoc_is_object_arg(3)) {
         otar = *hoc_objgetarg(3);
     } else {
-        std::string s(gargstr(3));
-        if (s.empty()) {
-            star = std::regex(".*");
+        s = gargstr(3);
+        if (s[0] == '\0') {
+            star = new Regexp(".*");
         } else {
-            try {
-                star = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(3), "not a valid regular expression");
-            }
+            star = new Regexp(escape_bracket(s));
+        }
+        if (!star->pattern()) {
+            delete std::exchange(star, nullptr);
+            delete std::exchange(spre, nullptr);
+            delete std::exchange(spost, nullptr);
+            hoc_execerror(gargstr(3), "not a valid regular expression");
         }
     }
 
+    bool b;
     hoc_Item* q;
     if (psl_) {
         ITERATE(q, psl_) {
             PreSyn* ps = (PreSyn*) VOIDITM(q);
-            bool b = false;
+            b = false;
             if (ps->ssrc_) {
                 Object* precell = nrn_sec2cell(ps->ssrc_);
                 if (opre) {
-                    b = precell == opre;
+                    if (precell == opre) {
+                        b = true;
+                    } else {
+                        b = false;
+                    }
                 } else {
-                    std::string s(hoc_object_name(precell));
-                    b = std::regex_search(s, spre);
+                    s = hoc_object_name(precell);
+                    n = strlen(s);
+                    if (spre->Match(s, n, 0) > 0) {
+                        b = true;
+                    } else {
+                        b = false;
+                    }
                 }
             } else if (ps->osrc_) {
                 Object* presyn = ps->osrc_;
                 if (opre) {
-                    b = presyn == opre;
+                    if (presyn == opre) {
+                        b = true;
+                    } else {
+                        b = false;
+                    }
                 } else {
-                    std::string s(hoc_object_name(presyn));
-                    b = std::regex_search(s, spre);
+                    s = hoc_object_name(presyn);
+                    n = strlen(s);
+                    if (spre->Match(s, n, 0) > 0) {
+                        b = true;
+                    } else {
+                        b = false;
+                    }
                 }
             }
-            if (b) {
+            if (b == true) {
                 for (const auto& d: ps->dil_) {
                     Object* postcell = nullptr;
                     Object* target = nullptr;
@@ -1009,19 +1033,37 @@ Object** NetCvode::netconlist() {
                         }
                     }
                     if (opost) {
-                        b = postcell == opost;
-                    } else {
-                        std::string s(hoc_object_name(postcell));
-                        b = std::regex_search(s, spost);
-                    }
-                    if (b) {
-                        if (otar) {
-                            b = target == otar;
+                        if (postcell == opost) {
+                            b = true;
                         } else {
-                            std::string s(hoc_object_name(target));
-                            b = std::regex_search(s, star);
+                            b = false;
                         }
-                        if (b) {
+                    } else {
+                        s = hoc_object_name(postcell);
+                        n = strlen(s);
+                        if (spost->Match(s, n, 0) > 0) {
+                            b = true;
+                        } else {
+                            b = false;
+                        }
+                    }
+                    if (b == true) {
+                        if (otar) {
+                            if (target == otar) {
+                                b = true;
+                            } else {
+                                b = false;
+                            }
+                        } else {
+                            s = hoc_object_name(target);
+                            n = strlen(s);
+                            if (star->Match(s, n, 0) > 0) {
+                                b = true;
+                            } else {
+                                b = false;
+                            }
+                        }
+                        if (b == true) {
                             o->append(d->obj_);
                         }
                     }
@@ -1029,6 +1071,9 @@ Object** NetCvode::netconlist() {
             }
         }
     }
+    delete std::exchange(spre, nullptr);
+    delete std::exchange(spost, nullptr);
+    delete std::exchange(star, nullptr);
     return po;
 }
 

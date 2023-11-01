@@ -217,6 +217,7 @@
 #define Raster _lib_iv(Raster)
 #define RasterRep _lib_iv(RasterRep)
 #define Reducer _lib_iv(Reducer)
+#define Regexp _lib_iv(Regexp)
 #define ReqErr _lib_iv(ReqErr)
 #define Requirement _lib_iv(Requirement)
 #define Requisition _lib_iv(Requisition)
