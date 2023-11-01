@@ -39,16 +39,11 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
-    while (!text.empty() && text.back() == '\n') {
-        text.pop_back();
-    }
     int i = -1;
     std::string result{};
     try {
         std::regex r(gargstr(2));
-        std::smatch sm;
-        bool found = std::regex_search(text, sm, r);
-        if (found) {
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
             i = sm.position();
             result = sm.prefix().str();
         }
@@ -63,16 +58,11 @@ static double l_head(void*) {
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
-    while (!text.empty() && text.back() == '\n') {
-        text.pop_back();
-    }
     int i = -1;
     std::string result{};
     try {
         std::regex r(gargstr(2));
-        std::smatch sm;
-        bool found = std::regex_search(text, sm, r);
-        if (found) {
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
             i = sm.position() + sm.length();
             result = sm.suffix().str();
         }
