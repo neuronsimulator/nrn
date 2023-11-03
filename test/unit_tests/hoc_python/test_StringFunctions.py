@@ -35,6 +35,14 @@ def test_head():
     assert head[0] == ""
 
 
+def text_head_multiline():
+    pattern = " *$"
+    text = "foo  \nbar  \n"
+    head = h.ref("")
+    assert sf.head(text, pattern, head) == 3
+    assert head[0] = "foo"
+
+
 def test_tail():
     pattern = "s.i$"
     text = "foobarshi"
@@ -53,6 +61,14 @@ def test_tail():
     tail = h.ref("")
     assert sf.tail(text, pattern, tail) == -1
     assert tail[0] == ""
+
+
+def text_tail_multiline():
+    pattern = " *$"
+    text = "foo  \nbar  \n"
+    tail = h.ref("")
+    assert sf.tail(text, pattern, tail) == 5
+    assert tail[0] = "\nbar  \n"
 
 
 def test_right():
