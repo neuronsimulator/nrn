@@ -464,9 +464,9 @@ void initialize_memb_func(int mechtype,
                           int vectorized);
 void check_mech_version(const char** m);
 std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax);
-void register_mech_vars(const char** m2,
+void register_mech_vars(const char** var_buffers,
                         int modltypemax,
-                        Symbol* s,
+                        Symbol* mech_symbol,
                         int mechtype,
                         int nrnpointerindex);
 
@@ -482,7 +482,7 @@ void nrn_register_mech_common(const char** m,
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
     int modltype, modltypemax;
-    Symbol* s;
+    Symbol* mech_symbol;
     const char** m2;
 
     nrn_load_name_check(m[1]);
@@ -493,9 +493,9 @@ void nrn_register_mech_common(const char** m,
 
     check_mech_version(m);
 
-    s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
-    s->subtype = mechtype;
-    memb_func[mechtype].sym = s;
+    mech_symbol = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
+    mech_symbol->subtype = mechtype;
+    memb_func[mechtype].sym = mech_symbol;
     m2 = m + 2;
     if (nrnpointerindex == -1) {
         modltypemax = STATE;
@@ -503,10 +503,10 @@ void nrn_register_mech_common(const char** m,
         modltypemax = NRNPOINTER;
     }
     auto [nvartypes, nvars] = count_variables_in_mechanism(m2, modltypemax);
-    s->s_varn = nvars;
-    s->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
+    mech_symbol->s_varn = nvars;
+    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
 
-    register_mech_vars(m2, modltypemax, s, mechtype, nrnpointerindex);
+    register_mech_vars(m2, modltypemax, mech_symbol, mechtype, nrnpointerindex);
     ++mechtype;
     n_memb_func = mechtype;
     // n_memb_func has changed, so any existing NrnThread do not know about the
@@ -514,9 +514,9 @@ void nrn_register_mech_common(const char** m,
     v_structure_change = 1;
 }
 
-void register_mech_vars(const char** m2,
+void register_mech_vars(const char** var_buffers,
                         int modltypemax,
-                        Symbol* s,
+                        Symbol* mech_symbol,
                         int mechtype,
                         int nrnpointerindex) {
     /* this is set up for the possiblility of overloading range variables.
@@ -533,64 +533,63 @@ void register_mech_vars(const char** m2,
     int modltype;
     int j, k;
     for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++, j++) {
-        for (; m2[j]; j++, k++) {
-            Symbol* s2;
-            char buf[200], *subscript;
-            int indx;
+        for (; var_buffers[j]; j++, k++) {
+            Symbol* var_symbol;
+            std::string varname(var_buffers[j]);  // copy out the varname to allow modifying it
+            int index = 1;
             unsigned nsub = 0;
-            strcpy(buf, m2[j]); /* not allowed to change constant string */
-            indx = 1;
-            subscript = strchr(buf, '[');
-            if (subscript) {
+            auto subscript = varname.find('[');
+            if (subscript != varname.npos) {
 #if EXTRACELLULAR
-                if (subscript[1] == 'N') {
-                    indx = nlayer;
+                if (varname[subscript + 1] == 'N') {
+                    index = nlayer;
                 } else
 #endif  // EXTRACELLULAR
                 {
-                    sscanf(subscript + 1, "%d", &indx);
+                    index = std::stoi(varname.substr(subscript + 1));
                 }
                 nsub = 1;
-                *subscript = '\0';
+                varname.erase(subscript);
             }
             /*SUPPRESS 624*/
-            if ((s2 = hoc_lookup(buf))) {
+            if ((var_symbol = hoc_lookup(varname.c_str()))) {
 #if 0
-                if (s2->subtype != RANGEVAR) {
+                if (var_symbol->subtype != RANGEVAR) {
                     IGNORE(fprintf(stderr, CHKmes,
-                    buf));
+                    varname.c_str()));
                 }
 #else   // not 0
-                IGNORE(fprintf(stderr, CHKmes, buf));
+                IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
 #endif  // not 0
             } else {
-                s2 = hoc_install(buf, RANGEVAR, 0.0, &hoc_symlist);
-                s2->subtype = modltype;
-                s2->u.rng.type = mechtype;
-                s2->cpublic = 1;
+                var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
+                var_symbol->subtype = modltype;
+                var_symbol->u.rng.type = mechtype;
+                var_symbol->cpublic = 1;
                 if (modltype == NRNPOINTER) { /* not in p array */
-                    s2->u.rng.index = nrnpointerindex;
+                    var_symbol->u.rng.index = nrnpointerindex;
                 } else {
-                    s2->u.rng.index = pindx;
+                    var_symbol->u.rng.index = pindx;
                 }
                 if (nsub) {
-                    s2->arayinfo = (Arrayinfo*) emalloc(sizeof(Arrayinfo) + nsub * sizeof(int));
-                    s2->arayinfo->a_varn = (unsigned*) 0;
-                    s2->arayinfo->refcount = 1;
-                    s2->arayinfo->nsub = nsub;
-                    s2->arayinfo->sub[0] = indx;
+                    var_symbol->arayinfo = (Arrayinfo*) emalloc(sizeof(Arrayinfo) +
+                                                                nsub * sizeof(int));
+                    var_symbol->arayinfo->a_varn = (unsigned*) 0;
+                    var_symbol->arayinfo->refcount = 1;
+                    var_symbol->arayinfo->nsub = nsub;
+                    var_symbol->arayinfo->sub[0] = index;
                 }
                 if (modltype == NRNPOINTER) {
                     if (nrn_dparam_ptr_end_[mechtype] == 0) {
                         nrn_dparam_ptr_start_[mechtype] = nrnpointerindex;
                     }
-                    nrnpointerindex += indx;
+                    nrnpointerindex += index;
                     nrn_dparam_ptr_end_[mechtype] = nrnpointerindex;
                 } else {
-                    pindx += indx;
+                    pindx += index;
                 }
             }
-            s->u.ppsym[k] = s2;
+            mech_symbol->u.ppsym[k] = var_symbol;
         }
     }
 }
