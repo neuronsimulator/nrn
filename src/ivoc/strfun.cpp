@@ -49,7 +49,7 @@ static double l_head(void*) {
     int i = -1;
     std::string result{};
     try {
-        std::regex r(gargstr(2), std::regex::egrep | std::regex::multiline);
+        std::regex r(gargstr(2), std::regex::egrep);
         if (std::smatch sm; std::regex_search(text, sm, r)) {
             i = sm.position();
             result = sm.prefix().str();
@@ -75,7 +75,7 @@ static double l_tail(void*) {
     int i = -1;
     std::string result{};
     try {
-        std::regex r(gargstr(2), std::regex::egrep | std::regex::multiline);
+        std::regex r(gargstr(2), std::regex::egrep);
         if (std::smatch sm; std::regex_search(text, sm, r)) {
             i = sm.position() + sm.length();
             result = sm.suffix().str();
