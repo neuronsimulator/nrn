@@ -70,9 +70,9 @@ static double l_tail(void*) {
 
 static double l_rtrim(void*) {
     std::string s(gargstr(1));
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-                return !std::isspace(ch);
-                }).base(), s.end());
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); })
+                .base(),
+            s.end());
 
     char** ret = hoc_pgargstr(2);
     hoc_assign_str(ret, s.c_str());
