@@ -39,6 +39,13 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
+    }
     int i = -1;
     std::string result{};
     try {
@@ -58,6 +65,13 @@ static double l_head(void*) {
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
+    }
     int i = -1;
     std::string result{};
     try {
