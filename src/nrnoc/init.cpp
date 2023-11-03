@@ -481,7 +481,8 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype, modltypemax;
+    int modltype;
+    int modltypemax;
     Symbol* mech_symbol;
     const char** m2;
 
@@ -574,7 +575,7 @@ void register_mech_vars(const char** var_buffers,
                 if (nsub) {
                     var_symbol->arayinfo = (Arrayinfo*) emalloc(sizeof(Arrayinfo) +
                                                                 nsub * sizeof(int));
-                    var_symbol->arayinfo->a_varn = (unsigned*) 0;
+                    var_symbol->arayinfo->a_varn = nullptr;
                     var_symbol->arayinfo->refcount = 1;
                     var_symbol->arayinfo->nsub = nsub;
                     var_symbol->arayinfo->sub[0] = index;
