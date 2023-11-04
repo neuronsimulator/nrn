@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
@@ -473,7 +475,7 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
 }
 
 #if defined(WIN32)
-static FILE* oc_popen(char* cmd, char* type) {
+static FILE* oc_popen(char const* const cmd, char const* const type) {
     FILE* fp;
     char buf[1024];
     assert(strlen(cmd) + 20 < 1024);

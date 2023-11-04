@@ -42,7 +42,6 @@ option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" O
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC or OpenMP" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
-option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_NMODL_DIR
@@ -181,11 +180,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
-  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
-  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
-  if(CMAKE_VERSION VERSION_LESS 3.19)
-    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
-  endif()
 endif()
 
 if(CORENRN_ENABLE_SHARED)
@@ -243,17 +237,6 @@ if(CORENRN_ENABLE_REPORTING)
 
   include_directories(${sonatareport_INCLUDE_DIR})
 endif()
-
-if(CORENRN_ENABLE_LEGACY_UNITS)
-  set(CORENRN_USE_LEGACY_UNITS 1)
-else()
-  set(CORENRN_USE_LEGACY_UNITS 0)
-endif()
-list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
-# Propagate Legacy Units flag to backends.
-set(NMODL_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
 
 if(CORENRN_ENABLE_PRCELLSTATE)
   set(CORENRN_NRN_PRCELLSTATE 1)
@@ -313,15 +296,15 @@ set(CORENRN_NMODL_FLAGS
 # =============================================================================
 if(CORENRN_ENABLE_CALIPER_PROFILING)
   find_package(caliper REQUIRED)
-  list(APPEND CORENRN_COMPILE_DEFS CORENEURON_CALIPER)
+  list(APPEND CORENRN_COMPILE_DEFS NRN_CALIPER)
   set(CORENRN_CALIPER_LIB caliper)
 endif()
 
 if(CORENRN_ENABLE_LIKWID_PROFILING)
-  find_package(likwid REQUIRED)
+  include(GetLIKWID)
+
   list(APPEND CORENRN_COMPILE_DEFS LIKWID_PERFMON)
-  # TODO: avoid this part, probably by using some likwid CMake target
-  include_directories(${likwid_INCLUDE_DIRS})
+  set(CORENRN_LIKWID_LIB nrn_likwid)
 endif()
 
 # enable debugging code with extra logs to stdout
@@ -479,7 +462,7 @@ if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_include_directories(
     ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src
                                     ${CMAKE_BINARY_DIR}/generated)
-  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB})
+  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
@@ -553,7 +536,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
     add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB})
+    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
     target_include_directories(
       core${libname}_lib
       PUBLIC ${include}
@@ -582,7 +565,7 @@ endif()
 # Suppress some compiler warnings.
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}
-                                             ${likwid_LIBRARIES})
+                                             ${CORENRN_LIKWID_LIB})
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
@@ -669,17 +652,19 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-configure_file("${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp"
-               "${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp" COPYONLY)
+cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
 foreach(header ${main_headers})
-  configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
+  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
 endforeach()
 
-configure_file("utils/profile/profiler_interface.h"
-               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
 
 # main program required for building special-core
-file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
@@ -798,7 +783,6 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
-message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
 message(STATUS "NMODL PATH          | ${CORENRN_NMODL_BINARY}")
 message(STATUS "NMODL FLAGS         | ${CORENRN_NMODL_FLAGS}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
@@ -819,5 +803,5 @@ if(CORENRN_ENABLE_REPORTING)
   message(STATUS "  sonatareport_INC  | ${sonatareport_INCLUDE_DIR}")
   message(STATUS "  sonatareport_LIB  | ${sonatareport_LIBRARY}")
 endif()
-message(STATUS "--------------+--------------------------------------------------------------")
+message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "")

@@ -7,7 +7,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
@@ -135,7 +137,7 @@ extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
-Memb_func* memb_func;
+std::vector<Memb_func> memb_func;
 std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
@@ -324,9 +326,9 @@ void hoc_last_init(void) {
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
         }
-    memb_func_size_ = 30;
+    memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
-    memb_func = (Memb_func*) ecalloc(memb_func_size_, sizeof(Memb_func));
+    memb_func.resize(memb_func_size_);  // we directly resize because it is used below
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));
@@ -460,16 +462,17 @@ void nrn_register_mech_common(const char** m,
                               nrn_init_t initialize,
                               int nrnpointerindex, /* if -1 then there are none */
                               int vectorized) {
+    // initialize at first entry, it will be incremented at exit of the function
     static int type = 2; /* 0 unused, 1 for cable section */
     int j, k, modltype, pindx, modltypemax;
     Symbol* s;
     const char** m2;
 
     nrn_load_name_check(m[1]);
-
     if (type >= memb_func_size_) {
+        // we exhausted the allocated space in the tables for the mechanism type data
+        // so reallocate
         memb_func_size_ += 20;
-        memb_func = (Memb_func*) erealloc(memb_func, memb_func_size_ * sizeof(Memb_func));
         pointsym = (Symbol**) erealloc(pointsym, memb_func_size_ * sizeof(Symbol*));
         point_process = (Point_process**) erealloc(point_process,
                                                    memb_func_size_ * sizeof(Point_process*));
@@ -525,6 +528,7 @@ void nrn_register_mech_common(const char** m,
 
     assert(type >= memb_list.size());
     memb_list.resize(type + 1);
+    memb_func.resize(type + 1);
     nrn_prop_param_size_[type] = 0;  /* fill in later */
     nrn_prop_dparam_size_[type] = 0; /* fill in later */
     nrn_dparam_ptr_start_[type] = 0; /* fill in later */
@@ -819,6 +823,21 @@ int get_field_count<double>(int mech_type) {
 }  // namespace neuron::mechanism
 
 /**
+ * @brief Support mechanism FUNCTION/PROCEDURE python syntax seg.mech.f()
+ *
+ * Python (density) mechanism registration uses nrn_mechs2func_map to
+ * create a per mechanism map of f members that can be called directly
+ * without prior call to setmech.
+ */
+void hoc_register_npy_direct(int type, NPyDirectMechFunc* f) {
+    auto& fmap = nrn_mech2funcs_map[type] = {};
+    for (int i = 0; f[i].name; ++i) {
+        fmap[f[i].name] = &f[i];
+    }
+}
+std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+/**
  * @brief Legacy way of registering mechanism data/pdata size.
  *
  * Superseded by neuron::mechanism::register_data_fields.
@@ -866,13 +885,13 @@ int point_reg_helper(Symbol* s2) {
     return pointtype++;
 }
 
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     int (*checkpoint)(void**),
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
+extern void class2oc_base(const char*,
+                          void* (*cons)(Object*),
+                          void (*destruct)(void*),
+                          Member_func*,
+                          int (*checkpoint)(void**),
+                          Member_ret_obj_func*,
+                          Member_ret_str_func*);
 
 
 int point_register_mech(const char** m,
@@ -890,7 +909,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -1111,9 +1130,15 @@ double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 }
 
 void nrnunit_use_legacy() {
+    hoc_warning("nrnunit_use_legacy() is deprecated as only modern units are supported.",
+                "If you want to still use legacy unit you can use a version of nrn < 9.");
     if (ifarg(1)) {
         int arg = (int) chkarg(1, 0, 1);
-        _nrnunit_use_legacy_ = arg;
+        if (arg == 1) {
+            hoc_execerror(
+                "'nrnunit_use_legacy(1)' have been called but legacy units are no more supported.",
+                nullptr);
+        }
     }
-    hoc_retpushx((double) _nrnunit_use_legacy_);
+    hoc_retpushx(0.);  // This value means modern unit
 }

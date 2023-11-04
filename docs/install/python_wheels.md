@@ -9,7 +9,7 @@ Current NEURON Linux image is based on `manylinux2014`.
 ### Setting up Docker
 
 [Docker](https://en.wikipedia.org/wiki/Docker_(software)) is required for building Linux wheels.
-You can find instructions on how to setup Docker on Linux [here](https://docs.docker.com/engine/install/). 
+You can find instructions on how to setup Docker on Linux [here](https://docs.docker.com/engine/install/).
 
 
 ### NEURON Docker Image Workflow
@@ -31,7 +31,7 @@ All wheels built on Azure are:
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
 
-Refer to the following image for the NEURON Docker Image workflow: 
+Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
@@ -43,7 +43,7 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel:<tag> .
 ```
 where `<tag>` is:
-* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms. For `master`, we are using `latest-gcc9-x86_64` and `latest-gcc9-aarch64` (see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)). 
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms. For `master`, we are using `latest-gcc9-x86_64` and `latest-gcc9-aarch64` (see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)).
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
@@ -66,21 +66,21 @@ docker push neuronsimulator/neuron_wheel:<tag>
 
 You can either build the neuron images locally or pull them from DockerHub:
 ```
-$ docker pull neuronsimulator/neuron_wheel
-Using default tag: latest
+$ docker pull neuronsimulator/neuron_wheel:latest-x86_64
+Using default tag: latest-x86_64
 latest: Pulling from neuronsimulator/neuron_wheel
 ....
 Status: Downloaded newer image for neuronsimulator/neuron_wheel:latest
-docker.io/neuronsimulator/neuron_wheel:latest
+docker.io/neuronsimulator/neuron_wheel:latest-x86_64
 ```
 
 We can conveniently mount the local NEURON repository inside docker, by using the `-v` option:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
-This is how you can test your NEURON updates inside the NEURON Docker image. 
+This is how you can test your NEURON updates inside the NEURON Docker image.
 Note that `-w` sets the working directory inside the container.
 
 ### MPI support
@@ -89,7 +89,7 @@ The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` a
 For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers and mount them in the docker image:
 
 ```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
+docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
 You can download the headers with:
@@ -104,28 +104,47 @@ Note that for macOS there is no docker image needed, but all required dependenci
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
 
-Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers. 
+Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
+For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers.
 For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
 
 
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
-You can have a look at the script for requirements and usage. 
+You can have a look at the script for requirements and usage.
+
+### Installing macOS prerequisites
+
+Install the necessary Python versions by downloading the universal2 installers from https://www.python.org/downloads/macos/
+You'll need several other packages installed as well (brew is fine):
+
+```
+brew install --cask xquartz
+brew install flex bison mpich cmake
+brew unlink mpich && brew install openmpi
+brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+```
+
+Bison and flex installed through brew will not be symlinked into /opt/homebrew (installing it next to the version provided by OSX can cause problems). To ensure the installed versions will actually be picked up:
+
+```
+export BREW_PREFIX=$(brew --prefix)
+export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
+```
 
 ## Launch the wheel building
 
 ### Linux
-Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building. 
+Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building.
 There is a build script which loops over available pythons in the Docker image under `/opt/python`, and then builds and audits the generated wheels.
 Wheels are generated under `/root/nrn/wheelhouse` and also accessible in the mounted NEURON folder from outside the Docker image.
 
 ```
 # Working directory is /root/nrn
-bash packaging/python/build_wheels.bash linux 
+bash packaging/python/build_wheels.bash linux
 ls -la wheelhouse
 ```
 
-You can build the wheel for a specific python version: 
+You can build the wheel for a specific python version:
 ```
 bash packaging/python/build_wheels.bash linux 38    # 38 for Python v3.8
 ```
@@ -144,6 +163,14 @@ cd nrn
 bash packaging/python/build_wheels.bash osx
 ```
 
+In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:
+
+```
+export SETUPTOOLS_SCM_PRETEND_VERSION=9.0a
+```
+
+Change the pretend version to whatever is relevant for your case.
+
 ## Testing the wheels
 
 To test the generated wheels, you can do:
@@ -158,7 +185,7 @@ bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/
 
 ### MacOS considerations
 
-On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions. 
+On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions.
 For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
 
 ### Testing on BB5
@@ -244,3 +271,17 @@ The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version 
 ## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
+
+
+## How to test Azure wheels locally
+
+After retrieving the Azure drop URL (i.e. from the GitHub PR comment, or by going to Azure for a specific build):
+
+```bash
+python3 -m pip wheel neuron-gpu-nightly --wheel-dir tmp --find-links 'https://dev.azure.com/neuronsimulator/aa1fb98d-a914-45c3-a215-5e5ef1bd7687/_apis/build/builds/7600/artifacts?artifactName=drop&api-version=7.0&%24format=zip'
+```
+will download the wheel and its dependencies to `tmp/` and then you can test it with:
+
+```bash
+./packaging/python/test_wheels.sh python3 ./tmp/NEURON_gpu_nightly-...whl true
+```

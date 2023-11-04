@@ -28,13 +28,10 @@
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h> /* definition of type realtype*/
 
-/* for NRNMPI_DYNAMICLOAD */
-#include <nrnmpiuse.h>
+#include <nrnmpi.h>
+
 extern "C" {
 #if NRNMPI_DYNAMICLOAD
-extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern void nrnmpi_longdbl_allreduce_vec(long double* src, long double* dest, int cnt, int type);
-extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
 extern void* nrnmpi_p_comm;
 #define nrnmpi_comm *((MPI_Comm*) (nrnmpi_p_comm))
@@ -99,12 +96,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, long int local_length, long in
 
     /* Compute global length as sum of local lengths */
     n = local_length;
-#if NRNMPI_DYNAMICLOAD
     nrnmpi_long_allreduce_vec(&n, &Nsum, 1, 1);
-#else
-    comm = nrnmpi_comm;
-    MPI_Allreduce(&n, &Nsum, 1, MPI_LONG, MPI_SUM, comm);
-#endif
     if (Nsum != global_length) {
         printf(BAD_N);
         return (NULL);
@@ -426,15 +418,9 @@ void N_VDestroy_NrnParallelLD(N_Vector v) {
 }
 
 void N_VSpace_NrnParallelLD(N_Vector v, sunindextype* lrw, sunindextype* liw) {
-    MPI_Comm comm;
     int npes;
 
-#if NRNMPI_DYNAMICLOAD
     npes = nrnmpi_numprocs;
-#else
-    comm = NV_COMM_P_LD(v);
-    MPI_Comm_size(comm, &npes);
-#endif
 
     *lrw = NV_GLOBLENGTH_P_LD(v);
     *liw = 2 * npes;
@@ -907,31 +893,9 @@ static realtype VAllReduce_NrnParallelLD(realtype d, int op, MPI_Comm comm) {
      *   min if op = 3.
      * The operation is over all processors in the communicator
      */
-
     realtype out = 0.0;
-
-#if NRNMPI_DYNAMICLOAD
     nrnmpi_dbl_allreduce_vec(&d, &out, 1, op);
-#else
-    switch (op) {
-    case 1:
-        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_SUM, comm);
-        break;
-
-    case 2:
-        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_MAX, comm);
-        break;
-
-    case 3:
-        MPI_Allreduce(&d, &out, 1, MPI_DOUBLE, MPI_MIN, comm);
-        break;
-
-    default:
-        break;
-    }
-#endif
-
-    return (out);
+    return out;
 }
 
 static realtype VAllReduce_long_NrnParallelLD(realtype d, int op, MPI_Comm comm) {
@@ -944,11 +908,7 @@ static realtype VAllReduce_long_NrnParallelLD(realtype d, int op, MPI_Comm comm)
      */
     assert(op == 1);
     long double ld_in{d}, ld_out{};
-#if NRNMPI_DYNAMICLOAD
     nrnmpi_longdbl_allreduce_vec(&ld_in, &ld_out, 1, op);
-#else
-    MPI_Allreduce(&ld_in, &ld_out, 1, MPI_LONG_DOUBLE, MPI_SUM, comm);
-#endif
     return ld_out;
 }
 

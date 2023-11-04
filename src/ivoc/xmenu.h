@@ -42,9 +42,6 @@ class ValEdLabel;
 class ScenePicker;
 struct HocSymExtension;
 
-declarePtrList(HocUpdateItemList, HocUpdateItem)
-declarePtrList(HocItemList, HocItem)
-declarePtrList(HocPanelList, HocPanel)
 
 class HocPanel: public OcGlyph {
   public:
@@ -122,9 +119,9 @@ class HocPanel: public OcGlyph {
 
   private:
     PolyGlyph* box_;
-    HocUpdateItemList elist_;
-    HocItemList ilist_;
-    static HocUpdateItemList* update_list_;
+    std::vector<HocUpdateItem*> elist_;
+    std::vector<HocItem*> ilist_;
+    static std::vector<HocUpdateItem*>* update_list_;
     bool horizontal_;
     InputHandler* ih_;
 };
@@ -210,7 +207,7 @@ class HocVarLabel: public HocUpdateItem {
     Patch* p_;
     char** cpp_;
     char* cp_;
-    CopyString* variable_;
+    std::string variable_{};
     Object* pyvar_;
 };
 
@@ -335,7 +332,7 @@ class HocValEditor: public HocUpdateItem {
     bool active_;
     bool canrun_;
     HocAction* action_;
-    CopyString* variable_;
+    std::string variable_{};
     neuron::container::data_handle<double> pval_;
     ValEdLabel* prompt_;
     float* domain_limits_;
@@ -448,7 +445,7 @@ class OcSlider: public HocUpdateItem, public Observer {
     HocCommand* send_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;
-    CopyString* variable_;
+    std::string variable_{};
     bool scrolling_;
     bool vert_;
     bool slow_;
@@ -478,7 +475,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
 
   private:
     int style_;
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;
@@ -507,7 +504,7 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     virtual void print(Printer*, const Allocation&) const;
 
   private:
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
     neuron::container::data_handle<double> pval_;
     Object* pyvar_;

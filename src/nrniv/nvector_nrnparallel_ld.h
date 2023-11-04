@@ -65,13 +65,7 @@ mv temp nvector_nrnparallel_ld.cpp
 
 
 #include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
-#define MPI_DOUBLE double
-#define MPI_LONG   long
-#define MPI_Comm   int
-#else
-#include <mpi.h>
-#endif
+#define MPI_Comm int
 
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include <sundials/sundials_types.h> /* definition of type realtype*/

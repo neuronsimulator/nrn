@@ -23,8 +23,6 @@ class LineExtension;
 class TelltaleState;
 struct Object;
 
-declarePtrList(LineList, GraphLine);
-
 // all Glyphs added to Graph must be enclosed in a GraphItem
 class GraphItem: public MonoGlyph {
   public:
@@ -166,13 +164,13 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
 
   private:
     Symlist* symlist_;
-    LineList line_list_;
+    std::vector<GraphLine*> line_list_;
     int loc_;
     DataVec* x_;
     bool extension_flushed_;
     SymChooser* sc_;
     static SymChooser* fsc_;
-    CopyString* var_name_;
+    std::string var_name_;
     GPolyLine* current_polyline_;
 
     const Color* color_;
@@ -398,7 +396,7 @@ class GraphVector: public GPolyLine, public Observer {  // fixed x and vector of
 
   private:
     DataPointers* dp_;
-    CopyString name_;
+    std::string name_;
     bool disconnect_defer_;
 };
 
@@ -449,7 +447,7 @@ class GLabel: public Glyph {
         return scale_;
     }
     const char* text() const {
-        return text_.string();
+        return text_.c_str();
     }
     int fixtype() const {
         return fixtype_;
@@ -482,7 +480,7 @@ class GLabel: public Glyph {
     int fixtype_;
     float scale_;
     float x_align_, y_align_;
-    CopyString text_;
+    std::string text_;
     Glyph* label_;
     const Color* color_;
     GPolyLine* gpl_;

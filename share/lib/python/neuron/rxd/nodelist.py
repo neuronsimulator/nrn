@@ -1,10 +1,19 @@
 from .rxdException import RxDException
+from .node import Node
+import types
+from collections import abc
 
 
 class NodeList(list):
     def __init__(self, items):
         """Constructs a NodeList from items, a python iterable containing Node objects."""
-        list.__init__(self, items)
+        if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
+            items = list(items)
+
+        if items == [] or all(isinstance(item, Node) for item in items):
+            list.__init__(self, items)
+        else:
+            raise TypeError("Items must be nodes.")
 
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
@@ -15,6 +24,30 @@ class NodeList(list):
             return NodeList(list.__getitem__(self, key))
         else:
             return list.__getitem__(self, key)
+
+    def __setitem__(self, index, value):
+        if not isinstance(value, Node):
+            raise TypeError("Only assign a node to the list")
+        super().__setitem__(index, value)
+
+    def append(self, items):
+        if not isinstance(items, Node):
+            raise TypeError("The append item must be a Node.")
+        super().append(items)
+
+    def extend(self, items):
+        if isinstance(items, abc.Generator) or isinstance(items, abc.Iterator):
+            items = list(items)
+
+        for item in items:
+            if not isinstance(item, Node):
+                raise TypeError("The extended items must all be Nodes.")
+        super().extend(items)
+
+    def insert(self, position, items):
+        if not isinstance(items, Node):
+            raise TypeError("The item inserted must be a Node.")
+        super().insert(position, items)
 
     @property
     def value(self):
@@ -88,7 +121,8 @@ class NodeList(list):
 
     def include_flux(self, *args, **kwargs):
         for node in self:
-            node.include_flux(args, kwargs)
+            # Unpack arguments for each individual call
+            node.include_flux(*args, **kwargs)
 
     def value_to_grid(self):
         """Returns a regular grid with the values of the 3d nodes in the list.

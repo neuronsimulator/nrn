@@ -37,11 +37,10 @@ extern int hoc_return_type_code;
 static MUTDEC
 #endif
 
-    // Use of the above static mutex was broken by changeset 7ffd95c in 2014
-    // when a MUTDEC was added explicitly to the NetCvode class namespace to
-    // handle interthread send events.
-    static void
-    static_mutex_for_at_time(bool b) {
+// Use of the above static mutex was broken by changeset 7ffd95c in 2014
+// when a MUTDEC was added explicitly to the NetCvode class namespace to
+// handle interthread send events.
+static void static_mutex_for_at_time(bool b) {
     if (b) {
         MUTCONSTRUCT(1)
     } else {
@@ -91,7 +90,7 @@ extern short* nrn_is_artificial_;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif  // USENCS
-#if PARANEURON
+#if NRNMPI
 extern "C" {
 extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
 extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
@@ -440,7 +439,7 @@ static double tstop_event(void* v) {
         }
     }
     if (ifarg(2)) {
-        Object* ppobj = nil;
+        Object* ppobj = nullptr;
         int reinit = 0;
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
@@ -451,7 +450,7 @@ static double tstop_event(void* v) {
             reinit = int(chkarg(4, 0, 1));
         }
         if (hoc_is_object_arg(2)) {
-            d->hoc_event(x, nil, ppobj, reinit, *hoc_objgetarg(2));
+            d->hoc_event(x, nullptr, ppobj, reinit, *hoc_objgetarg(2));
         } else {
             d->hoc_event(x, gargstr(2), ppobj, reinit);
         }
@@ -510,7 +509,7 @@ static double ncs_netcons(void* v) {
 // for testing when there is actually no pc.transfer or pc.multisplit present
 // forces the global step to be truly global across processors.
 static double use_parallel(void* v) {
-#if PARANEURON
+#if NRNMPI
     // assume single thread and global step
     NetCvode* d = (NetCvode*) v;
     assert(d->gcv_);
@@ -582,13 +581,13 @@ static double extra_scatter_gather_remove(void* v) {
 }
 
 static double use_fast_imem(void* v) {
-    int i = nrn_use_fast_imem;
+    auto i = nrn_use_fast_imem;
     hoc_return_type_code = 2;  // boolean
     if (ifarg(1)) {
-        nrn_use_fast_imem = int(chkarg(1, 0., 1.));
+        nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();
     }
-    return double(i);
+    return i;
 }
 
 static double poolshrink(void*) {
@@ -678,7 +677,7 @@ static void* cons(Object*) {
 		d = new NetCvode(1);
 		net_cvode_instance = d;
 	}
-	active(nil);
+	active(nullptr);
 	return (void*) d;
 #else
     return (void*) net_cvode_instance;
@@ -739,30 +738,30 @@ Cvode::Cvode() {
     cvode_constructor();
 }
 void Cvode::cvode_constructor() {
-    nthsizes_ = nil;
-    nth_ = nil;
-    ncv_ = nil;
-    ctd_ = nil;
-    tqitem_ = nil;
-    mem_ = nil;
+    nthsizes_ = nullptr;
+    nth_ = nullptr;
+    ncv_ = nullptr;
+    ctd_ = nullptr;
+    tqitem_ = nullptr;
+    mem_ = nullptr;
 #if NEOSIMorNCS
-    neosim_self_events_ = nil;
+    neosim_self_events_ = nullptr;
 #endif
     initialize_ = false;
     can_retreat_ = false;
     tstop_begin_ = 0.;
     tstop_end_ = 0.;
     use_daspk_ = false;
-    daspk_ = nil;
+    daspk_ = nullptr;
 
-    mem_ = nil;
-    y_ = nil;
-    atolnvec_ = nil;
-    maxstate_ = nil;
-    maxacor_ = nil;
+    mem_ = nullptr;
+    y_ = nullptr;
+    atolnvec_ = nullptr;
+    maxstate_ = nullptr;
+    maxacor_ = nullptr;
     neq_ = 0;
     structure_change_ = true;
-#if PARANEURON
+#if NRNMPI
     use_partrans_ = false;
     global_neq_ = 0;
     opmode_ = 0;
@@ -829,7 +828,7 @@ void Cvode::set_init_flag() {
 }
 
 N_Vector Cvode::nvnew(long int n) {
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         if (net_cvode_instance->use_long_double_) {
             return N_VNew_NrnParallelLD(0, n, global_neq_);
@@ -914,19 +913,19 @@ void Cvode::init_prepare() {
     if (init_global()) {
         if (y_) {
             N_VDestroy(y_);
-            y_ = nil;
+            y_ = nullptr;
         }
         if (mem_) {
             CVodeFree((void**) (&mem_));
-            mem_ = nil;
+            mem_ = nullptr;
         }
         if (atolnvec_) {
             N_VDestroy_Serial(atolnvec_);
-            atolnvec_ = nil;
+            atolnvec_ = nullptr;
         }
         if (daspk_) {
             delete daspk_;
-            daspk_ = nil;
+            daspk_ = nullptr;
         }
         init_eqn();
         if (neq_ > 0) {
@@ -948,8 +947,8 @@ void Cvode::activate_maxstate(bool on) {
     if (maxstate_) {
         N_VDestroy(maxstate_);
         N_VDestroy(maxacor_);
-        maxstate_ = nil;
-        maxacor_ = nil;
+        maxstate_ = nullptr;
+        maxacor_ = nullptr;
     }
     if (on && neq_ > 0) {
         maxstate_ = nvnew(neq_);
@@ -1083,7 +1082,7 @@ void Cvode::maxstep(double x) {
 void Cvode::free_cvodemem() {
     if (mem_) {
         CVodeFree((void**) (&mem_));
-        mem_ = nil;
+        mem_ = nullptr;
     }
 }
 
@@ -1146,7 +1145,7 @@ int Cvode::cvode_init(double) {
     ((CVodeMem) mem_)->cv_gamma = 0.;
     ((CVodeMem) mem_)->cv_h = 0.;  // fun called before cvode sets this (though fun does not need it
                                    // really)
-    // fun(t_, N_VGetArrayPointer(y_), nil);
+    // fun(t_, N_VGetArrayPointer(y_), nullptr);
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
     pf_(t_, y_, nullptr, &opaque);
@@ -1203,7 +1202,7 @@ int Cvode::advance_tn(neuron::model_sorted_token const& sorted_token) {
             nt_t = t_;
         }
         do_nonode(sorted_token, nth_);
-#if PARANEURON
+#if NRNMPI
         opmode_ = 1;
 #endif
         if (use_daspk_) {
@@ -1251,7 +1250,7 @@ int Cvode::init(double tout) {
     next_at_time_ = t_ + 1e5;
     init_prepare();
     if (neq_) {
-#if PARANEURON
+#if NRNMPI
         opmode_ = 3;
 #endif
         if (use_daspk_) {
@@ -1261,7 +1260,7 @@ int Cvode::init(double tout) {
         }
     }
     tstop_ = next_at_time_ - NetCvode::eps(next_at_time_);
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         tstop_ = nrnmpi_dbl_allmin(tstop_);
     }
@@ -1341,7 +1340,7 @@ int Cvode::interpolate(double tout) {
     assert(tout >= t0() && tout <= tn());
 
     ++interpolate_calls_;
-#if PARANEURON
+#if NRNMPI
     opmode_ = 2;
 #endif
     if (use_daspk_) {
@@ -1411,10 +1410,10 @@ int Cvode::cvode_interpolate(double tout) {
     // is this really necessary anymore. Maybe NORMAL mode ignores tstop
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
-    CVodeSetFdata(mem_, &opaque);
+    CVodeSetUserData(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_ + tstop_);
     int err = CVode(mem_, tout, y_, &t_, CV_NORMAL);
-    CVodeSetFdata(mem_, nullptr);
+    CVodeSetUserData(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("%.20g\n", t_);
@@ -1640,14 +1639,10 @@ static realtype f_t_;
 static N_Vector f_y_;
 static N_Vector f_ydot_;
 static Cvode* f_cv_;
-<<<<<<< HEAD
 static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
-=======
-static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
         f_data);
     f_cv_ = f_typed_data->first;
->>>>>>> origin/master
     // ydot[0] = -y[0];
     //	N_VIth(ydot, 0) = -N_VIth(y, 0);
     // printf("f(%g, %p, %p)\n", t, y, ydot);
@@ -1682,16 +1677,11 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     }
     return CV_SUCCESS;
 }
-<<<<<<< HEAD
-static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* user_data) {
-    Cvode* cv = (Cvode*) user_data;
-=======
-static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
         f_data);
     auto* const cv = f_typed_data->first;
     auto const& sorted_token = f_typed_data->second;
->>>>>>> origin/master
     ++cv->f_calls_;
     cv->nth_->_vcv = cv;
     cv->fun_thread(sorted_token, t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);

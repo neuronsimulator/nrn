@@ -1,5 +1,6 @@
 #pragma once
 #include "backtrace_utils.h"
+#include "memory_usage.hpp"
 #include "neuron/container/non_owning_soa_identifier.hpp"
 
 #include <cassert>
@@ -11,15 +12,6 @@
 #include <vector>
 
 namespace neuron::container {
-namespace detail {
-/**
- * @brief The vector in which dying owning_identifier std::size_t's live.
- *
- * This is defined in container.cpp to avoid multiple-definition issues.
- */
-extern std::vector<std::unique_ptr<std::size_t>>* identifier_defer_delete_storage;
-}  // namespace detail
-
 /**
  * @brief A non-owning permutation-stable identifier for a entry in a container.
  * @tparam Storage The type of the referred-to container. This might be a type
@@ -78,28 +70,47 @@ struct owning_identifier {
      * @brief Create a non-null owning identifier by creating a new entry.
      */
     owning_identifier(Storage& storage)
-        : owning_identifier{} {
-        // The default constructor has finished, so *this is a valid object.
-        auto tmp = storage.acquire_owning_identifier();
-        swap(*this, tmp);
+        : owning_identifier(storage.acquire_owning_identifier()) {}
+
+    owning_identifier(const owning_identifier&) = delete;
+    owning_identifier(owning_identifier&& other) noexcept
+        : m_ptr(std::move(other.m_ptr))
+        , m_data_ptr(other.m_data_ptr) {
+        other.m_data_ptr = nullptr;
+    }
+
+    owning_identifier& operator=(const owning_identifier&) = delete;
+    owning_identifier& operator=(owning_identifier&& other) {
+        destroy();
+
+        m_ptr = std::move(other.m_ptr);
+
+        m_data_ptr = other.m_data_ptr;
+        other.m_data_ptr = nullptr;
+
+        return *this;
+    }
+
+    ~owning_identifier() {
+        destroy();
     }
 
     /**
      * @brief Return a reference to the container in which this entry lives.
      */
     Storage& underlying_storage() {
-        return *m_ptr.get_deleter().m_data_ptr;
+        return *m_data_ptr;
     }
 
     /**
      * @brief Return a const reference to the container in which this entry lives.
      */
     Storage const& underlying_storage() const {
-        return *m_ptr.get_deleter().m_data_ptr;
+        return *m_data_ptr;
     }
 
     [[nodiscard]] operator non_owning_identifier<Storage>() const {
-        return {const_cast<Storage*>(&underlying_storage()), m_ptr.get()};
+        return {m_data_ptr, m_ptr};
     }
 
     [[nodiscard]] operator non_owning_identifier_without_container() const {
@@ -114,11 +125,7 @@ struct owning_identifier {
      */
     [[nodiscard]] std::size_t current_row() const {
         assert(m_ptr);
-        return *m_ptr;
-    }
-
-    friend void swap(owning_identifier& first, owning_identifier& second) {
-        std::swap(first.m_ptr, second.m_ptr);
+        return m_ptr.current_row();
     }
 
     friend std::ostream& operator<<(std::ostream& os, owning_identifier const& oi) {
@@ -129,63 +136,62 @@ struct owning_identifier {
 
   private:
     owning_identifier() = default;
-    struct deleter {
-        deleter() = default;
-        deleter(Storage& data_container)
-            : m_data_ptr{&data_container} {}
-        void operator()(std::size_t* p) const {
-            assert(m_data_ptr);
-            auto& data_container = *m_data_ptr;
-            assert(p);
-            // We should still be a valid reference at this point.
-            assert(*p < data_container.size());
-            // Prove that the bookkeeping works.
-            assert(data_container.at(*p) == p);
-            bool terminate{false};
-            // Delete the corresponding row from `data_container`
-            try {
-                data_container.erase(*p);
-            } catch (std::exception const& e) {
-                // Cannot throw from unique_ptr release/reset/destructor, this
-                // is the best we can do. Most likely what has happened is
-                // something like:
-                //   auto const read_only_token = node_data.get_sorted_token();
-                //   list_of_nodes.pop_back();
-                // which tries to delete a row from a container in read-only mode.
-                std::cerr << "neuron::container::owning_identifier<"
-                          << cxx_demangle(typeid(Storage).name())
-                          << "> destructor could not delete from the underlying storage: "
-                          << e.what() << " [" << cxx_demangle(typeid(e).name())
-                          << "]. This is not recoverable, aborting." << std::endl;
-                terminate = true;
-            }
-            if (terminate) {
-                std::terminate();
-            }
-            // We don't know how many people know the pointer `p`, so write a sentinel
-            // value to it and transfer ownership "elsewhere".
-            *p = invalid_row;
-            // This is to provide compatibility with NEURON's old nrn_notify_when_double_freed and
-            // nrn_notify_when_void_freed methods.
-            detail::notify_handle_dying(p);
-            // This is sort-of formalising a memory leak. In principle we could cleanup
-            // identifier_defer_delete_storage by scanning all our data structures and finding
-            // references to the pointers that it contains. In practice it seems unlikely that
-            // either this, or using std::shared_ptr just to avoid it, would be worth it.
-            if (detail::identifier_defer_delete_storage) {
-                detail::identifier_defer_delete_storage->emplace_back(p);
-            } else {
-                delete p;
-            }
+
+    void destroy() {
+        if (!m_ptr) {
+            // Nothing to be done.
+            return;
         }
-        Storage* m_data_ptr{};
-    };
-    std::unique_ptr<std::size_t, deleter> m_ptr;
+
+        assert(m_data_ptr);
+        auto& data_container = *m_data_ptr;
+
+        // We should still be a valid reference at this point.
+        assert(m_ptr);
+        assert(m_ptr.current_row() < data_container.size());
+
+        // Prove that the bookkeeping works.
+        assert(data_container.at(m_ptr.current_row()) == m_ptr);
+
+        bool terminate = false;
+        // Delete the corresponding row from `data_container`
+        try {
+            data_container.erase(m_ptr.current_row());
+        } catch (std::exception const& e) {
+            // Cannot throw from unique_ptr release/reset/destructor, this
+            // is the best we can do. Most likely what has happened is
+            // something like:
+            //   auto const read_only_token = node_data.issue_frozen_token();
+            //   list_of_nodes.pop_back();
+            // which tries to delete a row from a container in read-only mode.
+            std::cerr << "neuron::container::owning_identifier<"
+                      << cxx_demangle(typeid(Storage).name())
+                      << "> destructor could not delete from the underlying storage: " << e.what()
+                      << " [" << cxx_demangle(typeid(e).name())
+                      << "]. This is not recoverable, aborting." << std::endl;
+            terminate = true;
+        }
+        if (terminate) {
+            std::terminate();
+        }
+        // We don't know how many people know the pointer `p`, so write a sentinel
+        // value to it and transfer ownership "elsewhere".
+        m_ptr.set_current_row(invalid_row);
+
+        // This is to provide compatibility with NEURON's old nrn_notify_when_double_freed and
+        // nrn_notify_when_void_freed methods.
+        detail::notify_handle_dying(m_ptr);
+    }
+
+
+    non_owning_identifier_without_container m_ptr{};
+    Storage* m_data_ptr{};
+
     template <typename, typename...>
     friend struct soa;
     void set_current_row(std::size_t new_row) {
         assert(m_ptr);
-        *m_ptr = new_row;
+        m_ptr.set_current_row(new_row);
     }
     /**
      * @brief Create a non-null owning identifier that owns the given row.
@@ -195,8 +201,7 @@ struct owning_identifier {
      * be used without great care.
      */
     owning_identifier(Storage& storage, std::size_t row)
-        : m_ptr{new std::size_t, storage} {
-        *m_ptr = row;
-    }
+        : m_ptr(row)
+        , m_data_ptr(&storage) {}
 };
 }  // namespace neuron::container

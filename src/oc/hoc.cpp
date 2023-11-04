@@ -4,7 +4,9 @@
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -638,7 +640,6 @@ int yystart;
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
     yystart = 1;
-    hoc_menu_cleanup();
     hoc_errno_check();
     if (debug_message_ || prnt) {
         hoc_warning(s, t);
@@ -781,7 +782,6 @@ RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
     execerror("Floating point exception.", (char*) 0);
 }
 
-#if HAVE_SIGSEGV
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -792,7 +792,6 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
     }
     execerror("Aborting.", (char*) 0);
 }
-#endif
 
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig) {
@@ -1176,9 +1175,6 @@ int hoc_moreinput() {
         }
         return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
-#if OCSMALL
-        hoc_menu_cleanup();
-#endif
         Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {
@@ -1215,9 +1211,7 @@ static SignalType signals[4];
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
     signals[1] = signal(SIGFPE, fpecatch);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, sigsegvcatch);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
 #endif
@@ -1226,9 +1220,7 @@ static void set_signals(void) {
 static void restore_signals(void) {
     signals[0] = signal(SIGINT, signals[0]);
     signals[1] = signal(SIGFPE, signals[1]);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, signals[2]);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
 #endif

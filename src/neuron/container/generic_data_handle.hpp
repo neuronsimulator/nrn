@@ -276,7 +276,7 @@ struct generic_data_handle {
                 throw_error(" does not hold a literal value of type " +
                             cxx_demangle(typeid(T).name()));
             }
-            return *reinterpret_cast<T*>(&m_container);  // Eww
+            return *reinterpret_cast<T*>(&m_container);
         }
     }
 

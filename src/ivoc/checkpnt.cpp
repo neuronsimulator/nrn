@@ -248,9 +248,6 @@ void PortablePointer::set(void* address, int type, unsigned long s) {
 }
 PortablePointer::~PortablePointer() {}
 
-declareList(PPList, PortablePointer)
-implementList(PPList, PortablePointer)
-
 class OcCheckpoint {
   public:
     OcCheckpoint();
@@ -297,7 +294,6 @@ class OcCheckpoint {
     int cnt_;
     int nobj_;
     Objects* otable_;
-    PPList* ppl_;
     bool (OcCheckpoint::*func_)(Symbol*);
     Symbols* stable_;
 #if HAVE_XDR
@@ -413,7 +409,6 @@ int hoc_readcheckpoint(char* fname) {
 }
 
 OcCheckpoint::OcCheckpoint() {
-    ppl_ = NULL;
     func_ = NULL;
     stable_ = NULL;
     otable_ = NULL;
@@ -430,9 +425,6 @@ OcCheckpoint::OcCheckpoint() {
 }
 
 OcCheckpoint::~OcCheckpoint() {
-    if (ppl_) {
-        delete ppl_;
-    }
     if (stable_) {
         delete stable_;
     }

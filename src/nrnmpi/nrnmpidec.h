@@ -1,14 +1,15 @@
 /*
-This file is processed by mkdynam.sh and so it is important that
-the prototypes be of the form "type foo(type arg, ...)"
+This file is processed by mkdynam.sh and so it is important that the prototypes
+be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
+to the type, e.g. `T*` is valid, but `T *` isn't.
 */
 
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
 #include <cstdint>
-typedef long double longdbl;
-typedef long long nrnlonglong; /* see Sundials sunindextype */
+using longdbl = long double;
+using nrnlonglong = long long; /* see Sundials sunindextype */
 #if NRNMPI
 #include <stdlib.h>
 #include <string>
@@ -23,9 +24,15 @@ typedef struct bbsmpibuf {
     int refcount;
 } bbsmpibuf;
 
-/* olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
- redefined) symbol names, so keep C linkage for simplicity
- */
+struct NRNMPI_Spike;
+
+namespace neuron::container {
+struct MemoryStats;
+struct MemoryUsage;
+}  // namespace neuron::container
+
+// olupton 2022-07-06: dynamic MPI needs to dlopen some of these (slightly
+// redefined) symbol names, so keep C linkage for simplicity
 extern "C" {
 /* clang-format off */
 extern bbsmpibuf* nrnmpi_newbuf(int size);
@@ -63,12 +70,16 @@ extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
+extern void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world);
 
+/* from memory_usage.cpp */
+extern void nrnmpi_memory_stats(neuron::container::MemoryStats& stats, neuron::container::MemoryUsage const& usage);
+extern void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& stats);
 
 /* from mpispike.cpp */
 extern void nrnmpi_spike_initialize();
-extern int nrnmpi_spike_exchange();
-extern int nrnmpi_spike_exchange_compressed();
+extern int nrnmpi_spike_exchange(int* ovfl, int* nout, int* nin, NRNMPI_Spike* spikeout, NRNMPI_Spike** spikein, int* icapacity_);
+extern int nrnmpi_spike_exchange_compressed(int localgid_size, int ag_send_size, int ag_send_nspike, int* ovfl_capacity, int* ovfl, unsigned char* spfixout, unsigned char* spfixin, unsigned char** spfixin_ovfl, int* nin_);
 extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);

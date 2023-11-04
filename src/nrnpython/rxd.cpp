@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "grids.h"
+#include <cfloat>
 #include "rxd.h"
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
@@ -12,14 +13,14 @@
 
 #include <thread>
 #include <vector>
+#include "ocmatrix.h"
+#include "ivocvect.h"
 
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
-extern int _nrnunit_use_legacy_;
 int prev_structure_change_cnt = 0;
-int prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
 unsigned char initialized = FALSE;
 
 /*
@@ -334,6 +335,7 @@ void apply_node_flux(int n,
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
+                Py_DECREF(result);
             }
         } else {
             PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
@@ -483,7 +485,6 @@ extern "C" void set_setup_matrices(fptr setup_matrices) {
 
 extern "C" void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
-    _setup_units();
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
@@ -772,10 +773,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             /*Needed for node.include_flux*/
             _setup_matrices();
         }
-        if (prev_nrnunit_use_legacy != _nrnunit_use_legacy_) {
-            _setup_units();
-            prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
-        }
     }
     switch (method) {
     case 0:
@@ -884,7 +881,7 @@ extern "C" void register_rate(int nspecies,
     } else {
         react->vptrs = NULL;
     }
-    react->state_idx = (int***) malloc(nseg * sizeof(double**));
+    react->state_idx = (int***) malloc(nseg * sizeof(int**));
     for (i = 0, idx = 0; i < nseg; i++) {
         react->state_idx[i] = (int**) malloc((nspecies + nparam) * sizeof(int*));
         for (j = 0; j < nspecies + nparam; j++) {
@@ -1319,7 +1316,7 @@ void _rhs_variable_step(const double* p1, double* p2) {
             rhs);
 
     /*reactions*/
-    MEM_ZERO(&ydot[num_states - _rxd_num_zvi], sizeof(double) * _ecs_count);
+    memset(&ydot[num_states - _rxd_num_zvi], 0, sizeof(double) * _ecs_count);
     get_all_reaction_rates(states, rhs, ydot);
 
 
@@ -1405,7 +1402,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                     states_for_reaction[i][j] = NAN;
                 }
             }
-            MEM_ZERO(result_array[i], react->num_regions * sizeof(double));
+            memset(result_array[i], 0, react->num_regions * sizeof(double));
         }
         for (k = 0; i < react->num_species + react->num_params; i++, k++) {
             for (j = 0; j < react->num_regions; j++) {
@@ -1431,7 +1428,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                 ecs_params_for_reaction[k] = NAN;
             }
         }
-        MEM_ZERO(ecs_result, react->num_ecs_species * sizeof(double));
+        memset(ecs_result, 0, react->num_ecs_species * sizeof(double));
 
         for (i = 0; i < react->num_mult; i++) {
             mc_mult[i] = react->mc_multiplier[i][segment];
@@ -1511,10 +1508,9 @@ void solve_reaction(ICSReactions* react,
     double pd;
     double dt = *dt_ptr;
     double dx = FLT_EPSILON;
-    MAT* jacobian = m_get(N, N);
-    VEC* b = v_get(N);
-    VEC* x = v_get(N);
-    PERM* pivot = px_get(N);
+    auto jacobian = std::make_unique<OcFullMatrix>(N, N);
+    auto b = std::make_unique<IvocVect>(N);
+    auto x = std::make_unique<IvocVect>(N);
 
     double** states_for_reaction = (double**) malloc(react->num_species * sizeof(double*));
     double** states_for_reaction_dx = (double**) malloc(react->num_species * sizeof(double*));
@@ -1570,8 +1566,8 @@ void solve_reaction(ICSReactions* react,
                     states_for_reaction_dx[i][j] = states_for_reaction[i][j];
                 }
             }
-            MEM_ZERO(result_array[i], react->num_regions * sizeof(double));
-            MEM_ZERO(result_array_dx[i], react->num_regions * sizeof(double));
+            memset(result_array[i], 0, react->num_regions * sizeof(double));
+            memset(result_array_dx[i], 0, react->num_regions * sizeof(double));
         }
         for (k = 0; i < react->num_species + react->num_params; i++, k++) {
             for (j = 0; j < react->num_regions; j++) {
@@ -1601,8 +1597,8 @@ void solve_reaction(ICSReactions* react,
         }
 
         if (react->num_ecs_species > 0) {
-            MEM_ZERO(ecs_result, react->num_ecs_species * sizeof(double));
-            MEM_ZERO(ecs_result_dx, react->num_ecs_species * sizeof(double));
+            memset(ecs_result, 0, react->num_ecs_species * sizeof(double));
+            memset(ecs_result_dx, 0, react->num_ecs_species * sizeof(double));
         }
 
         for (i = 0; i < react->num_mult; i++) {
@@ -1624,9 +1620,9 @@ void solve_reaction(ICSReactions* react,
             for (j = 0; j < react->num_regions; j++) {
                 if (react->state_idx[segment][i][j] != SPECIES_ABSENT) {
                     if (bval == NULL)
-                        v_set_val(b, idx, dt * result_array[i][j]);
+                        b->elem(idx) = dt * result_array[i][j];
                     else
-                        v_set_val(b, idx, bval[react->state_idx[segment][i][j]]);
+                        b->elem(idx) = bval[react->state_idx[segment][i][j]];
 
 
                     // set up the changed states array
@@ -1651,7 +1647,7 @@ void solve_reaction(ICSReactions* react,
                             if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                                 pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) /
                                      dx;
-                                m_set_val(jacobian, jac_idx, idx, (idx == jac_idx) - dt * pd);
+                                *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                                 jac_idx += 1;
                             }
                             result_array_dx[jac_i][jac_j] = 0;
@@ -1661,7 +1657,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->ecs_state[segment][jac_i] != NULL) {
                             pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                            m_set_val(jacobian, jac_idx, idx, -dt * pd);
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                         ecs_result_dx[jac_i] = 0;
@@ -1677,9 +1673,9 @@ void solve_reaction(ICSReactions* react,
         for (i = 0; i < react->num_ecs_species; i++) {
             if (react->ecs_state[segment][i] != NULL) {
                 if (bval == NULL)
-                    v_set_val(b, idx, dt * ecs_result[i]);
+                    b->elem(idx) = dt * ecs_result[i];
                 else
-                    v_set_val(b, idx, cvode_b[react->ecs_index[segment][i]]);
+                    b->elem(idx) = cvode_b[react->ecs_index[segment][i]];
 
 
                 // set up the changed states array
@@ -1703,7 +1699,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                             pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) / dx;
-                            m_set_val(jacobian, jac_idx, idx, -dt * pd);
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                     }
@@ -1712,10 +1708,10 @@ void solve_reaction(ICSReactions* react,
                     // pd is our Jacobian approximated
                     if (react->ecs_state[segment][jac_i] != NULL) {
                         pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                        m_set_val(jacobian, jac_idx, idx, (idx == jac_idx) - dt * pd);
+                        *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                         jac_idx += 1;
                     } else {
-                        m_set_val(jacobian, idx, idx, 1.0);
+                        *jacobian->mep(idx, idx) = 1.0;
                     }
                     // reset dx array
                     ecs_states_for_reaction_dx[i] -= dx;
@@ -1724,8 +1720,7 @@ void solve_reaction(ICSReactions* react,
             }
         }
         // solve for x, destructively
-        LUfactor(jacobian, pivot);
-        LUsolve(jacobian, pivot, b, x);
+        jacobian->solv(b.get(), x.get(), false);
 
         if (bval != NULL)  // variable-step
         {
@@ -1733,15 +1728,14 @@ void solve_reaction(ICSReactions* react,
                 for (j = 0; j < react->num_regions; j++) {
                     idx = react->state_idx[segment][i][j];
                     if (idx != SPECIES_ABSENT) {
-                        bval[idx] = v_get_val(x, jac_idx++);
+                        bval[idx] = x->elem(jac_idx++);
                     }
                 }
             }
             for (i = 0; i < react->num_ecs_species; i++) {
                 if (react->ecs_state[segment][i] != NULL)
-                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,
-                                                                                       jac_idx++);
-                // cvode_b[react->ecs_index[segment][i]] = v_get_val(x, jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = x->elem(jac_idx++);
+                // cvode_b[react->ecs_index[segment][i]] = x->elem(jac_idx++);
             }
         } else  // fixed-step
         {
@@ -1749,21 +1743,16 @@ void solve_reaction(ICSReactions* react,
                 for (j = 0; j < react->num_regions; j++) {
                     idx = react->state_idx[segment][i][j];
                     if (idx != SPECIES_ABSENT)
-                        states[idx] += v_get_val(x, jac_idx++);
+                        states[idx] += x->elem(jac_idx++);
                 }
             }
             for (i = 0; i < react->num_ecs_species; i++) {
                 if (react->ecs_state[segment][i] != NULL)
-                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,
-                                                                                       jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = x->elem(jac_idx++);
             }
         }
     }
     free(ecsindex);
-    m_free(jacobian);
-    v_free(b);
-    v_free(x);
-    px_free(pivot);
     for (i = 0; i < react->num_species; i++) {
         free(states_for_reaction[i]);
         free(states_for_reaction_dx[i]);
@@ -1800,7 +1789,7 @@ void do_ics_reactions(double* states, double* b, double* cvode_states, double* c
 void get_all_reaction_rates(double* states, double* rates, double* ydot) {
     ICSReactions* react;
     if (_membrane_flux)
-        MEM_ZERO(_rxd_induced_currents, sizeof(double) * _memb_curr_total);
+        memset(_rxd_induced_currents, 0, sizeof(double) * _memb_curr_total);
     for (react = _reactions; react != NULL; react = react->next) {
         if (react->icsN + react->ecsN > 0)
             get_reaction_rates(react, states, rates, ydot);

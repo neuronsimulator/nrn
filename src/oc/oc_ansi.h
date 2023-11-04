@@ -373,7 +373,6 @@ int hoc_arayinfo_install(Symbol*, int);
 void hoc_free_arrayinfo(Arrayinfo*);
 void hoc_free_val_array(double*, std::size_t);
 std::size_t hoc_total_array(Symbol*);
-void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
 void hoc_init();
@@ -432,7 +431,6 @@ int nrn_is_cable();
 void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
 Symbol* hoc_get_symbol(const char* var);
 
-extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);

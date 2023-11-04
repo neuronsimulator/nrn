@@ -80,6 +80,10 @@ int _nrn_mechanism_get_type(Prop* prop) {
 int _nrn_mechanism_get_v_node_index(Node* node) {
     return node->v_node_index;
 }
+neuron::container::non_owning_identifier_without_container _nrn_get_prop_id(Prop* p) {
+    return p->id();
+}
+
 namespace neuron::mechanism::_get {
 std::size_t _current_row(Prop* prop) {
     return prop ? prop->current_row() : container::invalid_row;

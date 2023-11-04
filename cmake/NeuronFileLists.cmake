@@ -94,7 +94,6 @@ set(OC_FILE_LIST
     code2.cpp
     debug.cpp
     fileio.cpp
-    fmenu.cpp
     ftime.cpp
     functabl.cpp
     getsym.cpp
@@ -219,7 +218,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    cachevec.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
@@ -233,6 +231,7 @@ set(NRNIV_FILE_LIST
     linmod.cpp
     linmod1.cpp
     matrixmap.cpp
+    memory_usage.cpp
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp
@@ -278,92 +277,7 @@ set(NRNCVODE_FILE_LIST
     occvode.cpp
     tqueue.cpp)
 
-# meschach matrix sources
-set(MESCH_FILES_LIST
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    conjgrad.c
-    copy.c
-    dmacheps.c
-    err.c
-    extras.c
-    fft.c
-    givens.c
-    hessen.c
-    hsehldr.c
-    init.c
-    iter0.c
-    iternsym.c
-    itersym.c
-    ivecop.c
-    lanczos.c
-    lufactor.c
-    machine.c
-    matlab.c
-    matop.c
-    matrixio.c
-    meminfo.c
-    memory.c
-    memstat.c
-    mfunc.c
-    norm.c
-    otherio.c
-    pxop.c
-    qrfactor.c
-    schur.c
-    solve.c
-    sparse.c
-    sparseio.c
-    spbkp.c
-    spchfctr.c
-    splufctr.c
-    sprow.c
-    spswap.c
-    submat.c
-    svd.c
-    symmeig.c
-    update.c
-    vecop.c
-    version.c
-    zcopy.c
-    zfunc.c
-    zgivens.c
-    zhessen.c
-    zhsehldr.c
-    zlufctr.c
-    zmachine.c
-    zmatio.c
-    zmatlab.c
-    zmatop.c
-    zmemory.c
-    znorm.c
-    zqrfctr.c
-    zschur.c
-    zsolve.c
-    zvecop.c)
-
 set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
-
-# sparse13 matrix sources
-set(SPARSE13_FILES_LIST
-    spalloc.cpp
-    spbuild.cpp
-    spfactor.cpp
-    spoutput.cpp
-    spsolve.cpp
-    sputils.cpp
-    cspalloc.cpp
-    cspbuild.cpp
-    cspfactor.cpp
-    cspoutput.cpp
-    cspsolve.cpp
-    csputils.cpp)
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
@@ -404,25 +318,7 @@ set(SCOPMATH_FILES_LIST
     threshol.cpp
     tridiag.cpp)
 
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
-
-set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
-    HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
-    RNG.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -492,7 +388,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
@@ -523,14 +419,10 @@ nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_F
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp nvector_parallel.c)
-nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
-                     ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})

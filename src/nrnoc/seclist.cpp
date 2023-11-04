@@ -274,7 +274,7 @@ extern int hoc_returning;
 
 static void check(Object* ob) {
     if (!ob) {
-        hoc_execerror("nil object is not a SectionList", (char*) 0);
+        hoc_execerror("nullptr object is not a SectionList", nullptr);
     }
     if (ob->ctemplate->constructor != constructor) {
         hoc_execerror(ob->ctemplate->sym->name, " is not a SectionList");

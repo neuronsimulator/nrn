@@ -15,8 +15,13 @@ include(NeuronTestHelper)
 # =============================================================================
 add_executable(
   testneuron
-  common/catch2_main.cpp unit_tests/basic.cpp unit_tests/container/container.cpp
-  unit_tests/container/mechanism.cpp unit_tests/container/node.cpp
+  common/catch2_main.cpp
+  unit_tests/basic.cpp
+  unit_tests/container/container.cpp
+  unit_tests/container/generic_data_handle.cpp
+  unit_tests/container/mechanism.cpp
+  unit_tests/container/node.cpp
+  unit_tests/utils/enumerate.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -55,7 +60,7 @@ string(
   JOIN " "
   regex "neuron::container::owning_identifier<neuron::container::Node::storage> destructor could"
         "not delete from the underlying storage:"
-        "neuron::container::Node::storage\\[frozen_count=1,sorted=true\\]: erase\\(\\) called on a"
+        "neuron::container::Node::storage\\[frozen_count=1,sorted=false\\]: erase\\(\\) called on a"
         "frozen structure \\[std::runtime_error\\]\\. This is not recoverable, aborting\\.")
 set_tests_properties(unit_tests::testneuron_soa_erase_calls_terminate
                      PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
@@ -205,21 +210,39 @@ if(NRN_ENABLE_PYTHON)
     list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
   set(pytest -m pytest ${pytest_args})
-  # TODO: consider allowing the group-related parts to be dropped here
+
+  nrn_add_test(
+    GROUP unit_tests
+    NAME python_unit_tests
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
+
+  # In brief:
+  #
+  # * tests and mod files under pytest/ are only compatible with NEURON
+  # * tests and mod files under pytest_coreneuron/ are compatible with both NEURON and CoreNEURON
+  #
+  # So, pytest/ should generally be viewed as a staging area en route to pytest_coreneuron. As the
+  # name implies, tests in these directories are executed using pytest.
+  nrn_add_test_group(NAME pytest MODFILE_PATTERNS test/pytest/*.mod)
   nrn_add_test_group(
     CORENEURON
-    NAME pynrn
-    MODFILE_PATTERNS test/pynrn/*.mod)
+    NAME pytest_coreneuron
+    MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
   # In case of multiple Python versions, run these tests with all of them
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    nrn_add_test(
-      GROUP pynrn
-      NAME basic_tests_py${pyver}
-      PRELOAD_SANITIZER
-      COMMAND "${exe}" ${pytest} ./test/pynrn
-      SCRIPT_PATTERNS test/pynrn/*.json test/pynrn/*.py)
+    foreach(group pytest pytest_coreneuron)
+      nrn_add_test(
+        GROUP ${group}
+        NAME basic_tests_py${pyver}
+        PRELOAD_SANITIZER
+        COMMAND "${exe}" ${pytest} "./test/${group}"
+        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+    endforeach()
   endforeach()
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
@@ -268,7 +291,7 @@ if(NRN_ENABLE_PYTHON)
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
     NAME hoctests
-    MODFILE_PATTERNS *.mod
+    MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY test/hoctests)
   set(hoctest_utils expect_err.hoc)
   foreach(ext hoc py)
@@ -321,7 +344,7 @@ if(NRN_ENABLE_PYTHON)
       endif()
     endif()
   endif()
-  nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pynrn/*.mod)
+  nrn_add_test_group(NAME parallel MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
   nrn_add_test(
     GROUP parallel
     NAME subworld
@@ -335,17 +358,17 @@ if(NRN_ENABLE_PYTHON)
     NAME partrans
     PROCESSORS 2
     REQUIRES mpi
-    SCRIPT_PATTERNS test/pynrn/test_partrans.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_partrans.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_partrans.py)
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_partrans.py)
   nrn_add_test(
     GROUP parallel
     NAME netpar
     PROCESSORS 2
     REQUIRES mpi
-    SCRIPT_PATTERNS test/pynrn/test_hoc_po.py test/pynrn/test_netpar.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_hoc_po.py test/pytest_coreneuron/test_netpar.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_netpar.py)
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/test_netpar.py)
   nrn_add_test(
     GROUP parallel
     NAME bas
@@ -363,10 +386,11 @@ if(NRN_ENABLE_PYTHON)
     PROCESSORS 2
     REQUIRES mpi
     ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
-    SCRIPT_PATTERNS test/pynrn/run_pytest.py test/pynrn/test_nrntest_fast.json
-                    test/pynrn/test_nrntest_fast_cv3.json test/pynrn/test_nrntest_fast.py
+    SCRIPT_PATTERNS
+      test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
+      test/pynrn/test_nrntest_fast_cv3.json test/pytest_coreneuron/test_nrntest_fast.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            special ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/run_pytest.py)
+            special ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/run_pytest.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
@@ -429,11 +453,8 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_POSTFLAGS})
   endif()
 
-  # External coreneuron can be used for testing but for simplicity we are testing only submodule
-  # builds (in near future we want to support only internal builds anyway). This test uses the
-  # standard NEURON installation that does not have a `special` statically linked against
-  # CoreNEURON, so we cannot run this in static builds.
-  if(NOT nrn_using_ext_corenrn AND CORENRN_ENABLE_SHARED)
+  # This test uses the standard NEURON installation (without nrnivmodl having been run)
+  if(CORENRN_ENABLE_SHARED)
     nrn_add_test_group(
       CORENEURON
       NAME coreneuron_standalone
@@ -488,15 +509,23 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
       "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
-      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+      test/pytest_coreneuron/unitstest.mod test/pytest_coreneuron/version_macros.mod
+      test/gjtests/natrans.mod)
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME version_macros
     REQUIRES coreneuron ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
+    SCRIPT_PATTERNS test/pytest_coreneuron/test_version_macros.py
     ENVIRONMENT COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
                 ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/pynrn/test_version_macros.py)
+    COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_version_macros.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME inputpresyn_py
+    REQUIRES coreneuron mpi ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/coreneuron/test_inputpresyn.py
+    PROCESSORS 2
+    COMMAND ${modtests_launch_py_mpi} test/coreneuron/test_inputpresyn.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
@@ -521,7 +550,7 @@ if(NRN_ENABLE_PYTHON)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      REQUIRES coreneuron ${processor}
       SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
       ENVIRONMENT ${processor_env}
       COMMAND ${modtests_launch_hoc} test/coreneuron/test_direct.hoc)
@@ -544,10 +573,10 @@ if(NRN_ENABLE_PYTHON)
       GROUP coreneuron_modtests
       NAME fast_imem_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/pynrn/test_fast_imem.py
+      SCRIPT_PATTERNS test/pytest_coreneuron/test_fast_imem.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_fast_imem_py
-      COMMAND ${modtests_launch_py} test/pynrn/test_fast_imem.py)
+      COMMAND ${modtests_launch_py} test/pytest_coreneuron/test_fast_imem.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME datareturn_py_${processor}
@@ -652,15 +681,6 @@ if(NRN_ENABLE_PYTHON)
         COMMAND ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
       nrn_add_test(
         GROUP coreneuron_modtests
-        NAME inputpresyn_py_${processor}
-        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-        PROCESSORS 2
-        COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-          special ${MPIEXEC_POSTFLAGS} -mpi -python
-          ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
-      nrn_add_test(
-        GROUP coreneuron_modtests
         NAME test_subworlds_py_${processor}
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         SCRIPT_PATTERNS test/coreneuron/test_subworlds.py
@@ -735,7 +755,7 @@ function(add_modlunit_test mod_file)
       "${TESTS}"
       PARENT_SCOPE)
 endfunction()
-add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pytest_coreneuron/unitstest.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")

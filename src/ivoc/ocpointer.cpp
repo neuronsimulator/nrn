@@ -117,13 +117,12 @@ void OcPointer_reg() {
     sv->u.ctemplate->steer = steer_val;
 }
 
-StmtInfo::StmtInfo(const char* s) {
-    stmt_ = new CopyString(s);
+StmtInfo::StmtInfo(const char* s)
+    : stmt_(s) {
     parse();
 }
 
 StmtInfo::~StmtInfo() {
-    delete stmt_;
     hoc_free_list(&symlist_);
 }
 
@@ -134,7 +133,7 @@ void StmtInfo::parse() {
     symlist_ = NULL;
     ParseTopLevel ptl;
     bool see_arg = false;
-    for (s = stmt_->string(), d = buf; *s; ++s, ++d) {
+    for (s = stmt_.c_str(), d = buf; *s; ++s, ++d) {
         if (*s == '$' && s[1] == '1') {
             strcpy(d, "hoc_ac_");
             s++;

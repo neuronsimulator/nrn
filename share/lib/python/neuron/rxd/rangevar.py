@@ -6,10 +6,6 @@ _numpy_zeros = numpy.zeros
 _h_ptrvector = h.PtrVector
 
 
-def _donothing():
-    pass
-
-
 class RangeVar:
     def __init__(self, name):
         self._name = name
@@ -31,7 +27,6 @@ class RangeVar:
             locs_append(node._index)
         self._locs = numpy.array(locs)
         pv = _h_ptrvector(len(ptrs))
-        pv.ptr_update_callback(_donothing)
         pv_pset = pv.pset
         for i, ptr in enumerate(ptrs):
             pv_pset(i, ptr)

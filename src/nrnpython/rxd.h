@@ -1,20 +1,11 @@
 #pragma once
-#include "matrix2.h"
-// mesch defines many macros that interact badly with C++ headers
-#undef catch
-#undef max
-#undef min
-
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <vector>
 
-/*borrowed from Meschach Version 1.2b*/
-#define v_get_val(x, i)    ((x)->ve[(i)])
-#define m_get_val(A, i, j) ((A)->me[(i)][(j)])
-#define SPECIES_ABSENT     -1
-#define PREFETCH           4
+#define SPECIES_ABSENT -1
+#define PREFETCH       4
 
 typedef void (*fptr)(void);
 
@@ -73,23 +64,6 @@ typedef struct ICSReactions {
     double** vptrs;
     struct ICSReactions* next;
 } ICSReactions;
-
-typedef struct {
-    /*variables for reactions*/
-    double* states_for_reaction;
-    double* states_for_reaction_dx;
-    double* ecs_states_for_reaction;
-    double* ecs_states_for_reaction_dx;
-    double* result_array;
-    double* result_array_dx;
-    double* result_ecs;
-    double* result_ecs_dx;
-    MAT* jacobian;
-    VEC* x;
-    VEC* b;
-    PERM* pivot;
-
-} ReactionVariables;
 
 typedef struct TaskList {
     void* (*task)(void*);

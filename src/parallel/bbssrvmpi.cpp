@@ -1,9 +1,10 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <nrnmpi.h>
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
@@ -65,7 +66,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
     bbsmpibuf* send;
     char* key;
     int index;
-    send = nil;
+    send = nullptr;
     recv = nrnmpi_newbuf(size);
     nrnmpi_ref(recv);
     tag = nrnmpi_bbsrecv(cid, recv);
@@ -104,7 +105,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
             nrnmpi_bbssend(cid, LOOK_YES, send);
             nrnmpi_unref(send);
         } else {
-            nrnmpi_bbssend(cid, LOOK_NO, nil);
+            nrnmpi_bbssend(cid, LOOK_NO, nullptr);
         }
         break;
     case LOOK_TAKE:
@@ -119,7 +120,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
             nrnmpi_bbssend(cid, LOOK_TAKE_YES, send);
             nrnmpi_unref(send);
         } else {
-            nrnmpi_bbssend(cid, LOOK_TAKE_NO, nil);
+            nrnmpi_bbssend(cid, LOOK_TAKE_NO, nullptr);
         }
         break;
     case TAKE:

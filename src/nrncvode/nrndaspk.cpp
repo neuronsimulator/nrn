@@ -125,8 +125,8 @@ Daspk::Daspk(Cvode* cv, int neq) {
     delta_ = cv->nvnew(neq);
     parasite_ = cv->nvnew(neq);
     use_parasite_ = false;
-    spmat_ = nil;
-    mem_ = nil;
+    spmat_ = nullptr;
+    mem_ = nullptr;
 }
 
 Daspk::~Daspk() {
@@ -484,10 +484,7 @@ for (i=0; i < z.nvsize_; ++i) {
         assert(z.cmlcap_->ml.size() == 1);
         Memb_list* ml = &z.cmlcap_->ml[0];
         int n = ml->nodecount;
-        double* p = NULL;
-        if (nt->_nrn_fast_imem) {
-            p = nt->_nrn_fast_imem->_nrn_sav_rhs;
-        }
+        auto const vec_sav_rhs = nt->node_sav_rhs_storage();
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_ - 1;
@@ -509,10 +506,10 @@ for (i=0; i < z.nvsize_; ++i) {
                 delta[j] -= cdvm;
                 ml->data(i, 1) = cdvm;
             }
-            if (p) {
+            if (vec_sav_rhs) {
                 int i = nd->v_node_index;
-                p[i] += cdvm;
-                p[i] *= NODEAREA(nd) * 0.01;
+                vec_sav_rhs[i] += cdvm;
+                vec_sav_rhs[i] *= NODEAREA(nd) * 0.01;
             }
         }
     }

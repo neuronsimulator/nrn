@@ -29,17 +29,10 @@
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_mpi.h>
 
-/* for NRNMPI_DYNAMICLOAD */
 #include <nrnmpiuse.h>
-#if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
-void* nrnmpi_p_comm;
-#define nrnmpi_comm *((MPI_Comm*)nrnmpi_p_comm)
-#else // not dynamicload
-extern MPI_Comm nrnmpi_comm;
-#endif
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -106,11 +99,7 @@ N_Vector N_VNewEmpty_Parallel(MPI_Comm comm,
 
   /* Compute global length as sum of local lengths */
   n = local_length;
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_longlong_allreduce_vec(&n, &Nsum, 1, 1);
-#else
-  MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, nrnmpi_comm);
-#endif
   if (Nsum != global_length) {
     fprintf(stderr, BAD_N);
     return(NULL);
@@ -184,7 +173,7 @@ N_Vector N_VNew_Parallel(MPI_Comm comm,
   realtype *data;
 
   v = NULL;
-  v = N_VNewEmpty_Parallel(nrnmpi_comm, local_length, global_length);
+  v = N_VNewEmpty_Parallel(comm, local_length, global_length);
   if (v == NULL) return(NULL);
 
   /* Create data */
@@ -466,15 +455,9 @@ void N_VDestroy_Parallel(N_Vector v)
 
 void N_VSpace_Parallel(N_Vector v, sunindextype *lrw, sunindextype *liw)
 {
-  MPI_Comm comm;
   int npes;
 
-#if NRNMPI_DYNAMICLOAD
   npes = nrnmpi_numprocs;
-#else
-  comm = NV_COMM_P(v);
-  MPI_Comm_size(comm, &npes);
-#endif
 
   *lrw = NV_GLOBLENGTH_P(v);
   *liw = 2*npes;
@@ -713,7 +696,6 @@ realtype N_VDotProd_Parallel(N_Vector x, N_Vector y)
 {
   sunindextype i, N;
   realtype sum, *xd, *yd, gsum;
-  MPI_Comm comm;
 
   sum = ZERO;
   xd = yd = NULL;
@@ -721,15 +703,10 @@ realtype N_VDotProd_Parallel(N_Vector x, N_Vector y)
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   yd = NV_DATA_P(y);
-  comm = NV_COMM_P(x);
 
   for (i = 0; i < N; i++) sum += xd[i]*yd[i];
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&sum, &gsum, 1, 1);
-#else
-  gsum = SUNMPI_Allreduce_scalar(sum, 1, nrnmpi_comm);
-#endif
   return(gsum);
 }
 
@@ -737,13 +714,11 @@ realtype N_VMaxNorm_Parallel(N_Vector x)
 {
   sunindextype i, N;
   realtype max, *xd, gmax;
-  MPI_Comm comm;
 
   xd = NULL;
 
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
-  comm = NV_COMM_P(x);
 
   max = ZERO;
 
@@ -751,11 +726,7 @@ realtype N_VMaxNorm_Parallel(N_Vector x)
     if (SUNRabs(xd[i]) > max) max = SUNRabs(xd[i]);
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&max, &gmax, 1, 2);
-#else
-  gmax = SUNMPI_Allreduce_scalar(max, 2, nrnmpi_comm);
-#endif
   return(gmax);
 }
 
@@ -763,7 +734,6 @@ realtype N_VWrmsNorm_Parallel(N_Vector x, N_Vector w)
 {
   sunindextype i, N, N_global;
   realtype sum, prodi, *xd, *wd, gsum;
-  MPI_Comm comm;
 
   sum = ZERO;
   xd = wd = NULL;
@@ -772,18 +742,13 @@ realtype N_VWrmsNorm_Parallel(N_Vector x, N_Vector w)
   N_global = NV_GLOBLENGTH_P(x);
   xd       = NV_DATA_P(x);
   wd       = NV_DATA_P(w);
-  comm     = NV_COMM_P(x);
 
   for (i = 0; i < N; i++) {
     prodi = xd[i]*wd[i];
     sum += SUNSQR(prodi);
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&sum, &gsum, 1, 1);
-#else
-  gsum = SUNMPI_Allreduce_scalar(sum, 1, nrnmpi_comm);
-#endif
 
   return(SUNRsqrt(gsum/N_global));
 }
@@ -792,7 +757,6 @@ realtype N_VWrmsNormMask_Parallel(N_Vector x, N_Vector w, N_Vector id)
 {
   sunindextype i, N, N_global;
   realtype sum, prodi, *xd, *wd, *idd, gsum;
-  MPI_Comm comm;
 
   sum = ZERO;
   xd = wd = idd = NULL;
@@ -802,7 +766,6 @@ realtype N_VWrmsNormMask_Parallel(N_Vector x, N_Vector w, N_Vector id)
   xd       = NV_DATA_P(x);
   wd       = NV_DATA_P(w);
   idd      = NV_DATA_P(id);
-  comm = NV_COMM_P(x);
 
   for (i = 0; i < N; i++) {
     if (idd[i] > ZERO) {
@@ -811,11 +774,7 @@ realtype N_VWrmsNormMask_Parallel(N_Vector x, N_Vector w, N_Vector id)
     }
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&sum, &gsum, 1, 1);
-#else
-  gsum = SUNMPI_Allreduce_scalar(sum, 1, nrnmpi_comm);
-#endif
 
   return(SUNRsqrt(gsum/N_global));
 }
@@ -824,12 +783,10 @@ realtype N_VMin_Parallel(N_Vector x)
 {
   sunindextype i, N;
   realtype min, *xd, gmin;
-  MPI_Comm comm;
 
   xd = NULL;
 
   N  = NV_LOCLENGTH_P(x);
-  comm = NV_COMM_P(x);
 
   min = BIG_REAL;
 
@@ -845,11 +802,7 @@ realtype N_VMin_Parallel(N_Vector x)
 
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&min, &gmin, 1, 3);
-#else
-  gmin = SUNMPI_Allreduce_scalar(min, 3, nrnmpi_comm);
-#endif
 
   return(gmin);
 }
@@ -858,7 +811,6 @@ realtype N_VWL2Norm_Parallel(N_Vector x, N_Vector w)
 {
   sunindextype i, N;
   realtype sum, prodi, *xd, *wd, gsum;
-  MPI_Comm comm;
 
   sum = ZERO;
   xd = wd = NULL;
@@ -866,18 +818,13 @@ realtype N_VWL2Norm_Parallel(N_Vector x, N_Vector w)
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   wd = NV_DATA_P(w);
-  comm = NV_COMM_P(x);
 
   for (i = 0; i < N; i++) {
     prodi = xd[i]*wd[i];
     sum += SUNSQR(prodi);
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&sum, &gsum, 1, 1);
-#else
-  gsum = SUNMPI_Allreduce_scalar(sum, 1, nrnmpi_comm);
-#endif
 
   return(SUNRsqrt(gsum));
 }
@@ -886,23 +833,17 @@ realtype N_VL1Norm_Parallel(N_Vector x)
 {
   sunindextype i, N;
   realtype sum, gsum, *xd;
-  MPI_Comm comm;
 
   sum = ZERO;
   xd = NULL;
 
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
-  comm = NV_COMM_P(x);
 
   for (i = 0; i<N; i++)
     sum += SUNRabs(xd[i]);
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&sum, &gsum, 1, 1);
-#else
-  gsum = SUNMPI_Allreduce_scalar(sum, 1, nrnmpi_comm);
-#endif
 
   return(gsum);
 }
@@ -929,14 +870,12 @@ booleantype N_VInvTest_Parallel(N_Vector x, N_Vector z)
 {
   sunindextype i, N;
   realtype *xd, *zd, val, gval;
-  MPI_Comm comm;
 
   xd = zd = NULL;
 
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
-  comm = NV_COMM_P(x);
 
   val = ONE;
   for (i = 0; i < N; i++) {
@@ -946,11 +885,7 @@ booleantype N_VInvTest_Parallel(N_Vector x, N_Vector z)
       zd[i] = ONE/xd[i];
   }
 
-#if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&val, &gval, 1, 3);
-#else
-  gval = SUNMPI_Allreduce_scalar(val, 3, nrnmpi_comm);
-#endif
 
   if (gval == ZERO)
     return(SUNFALSE);
@@ -964,7 +899,6 @@ booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m)
   realtype temp;
   realtype *cd, *xd, *md;
   booleantype test;
-  MPI_Comm comm;
 
   cd = xd = md = NULL;
 
@@ -972,7 +906,6 @@ booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m)
   xd = NV_DATA_P(x);
   cd = NV_DATA_P(c);
   md = NV_DATA_P(m);
-  comm = NV_COMM_P(x);
 
   temp = ZERO;
 
@@ -992,13 +925,9 @@ booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m)
   }
 
   /* Find max temp across all MPI ranks */
-#if NRNMPI_DYNAMICLOAD
   realtype gtemp;
   nrnmpi_dbl_allreduce_vec(&temp, &gtemp, 1, 2);
   temp = gtemp;
-#else
-  temp = SUNMPI_Allreduce_scalar(temp, 2, nrnmpi_comm);
-#endif
 
   /* Return false if any constraint was violated */
   return (temp == ONE) ? SUNFALSE : SUNTRUE;
@@ -1009,14 +938,12 @@ realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom)
   booleantype notEvenOnce;
   sunindextype i, N;
   realtype *nd, *dd, min;
-  MPI_Comm comm;
 
   nd = dd = NULL;
 
   N  = NV_LOCLENGTH_P(num);
   nd = NV_DATA_P(num);
   dd = NV_DATA_P(denom);
-  comm = NV_COMM_P(num);
 
   notEvenOnce = SUNTRUE;
   min = BIG_REAL;
@@ -1032,13 +959,9 @@ realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom)
     }
   }
 
-#if NRNMPI_DYNAMICLOAD
   realtype gmin;
   nrnmpi_dbl_allreduce_vec(&min, &gmin, 3, 1);
   return gmin;
-#else
-  return(SUNMPI_Allreduce_scalar(min, 3, nrnmpi_comm));
-#endif
 }
 
 /*

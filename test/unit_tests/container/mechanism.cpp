@@ -87,7 +87,7 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                     std::ostringstream oss;
                     oss << gdh;
                     REQUIRE(oss.str() ==
-                            "generic_data_handle{cont=test_mechanism foo row=0/1, type=double*}");
+                            "generic_data_handle{cont=test_mechanism foo row=0/1 type=double*}");
                 }
                 std::ostringstream actual;
                 actual << mech_instance;
@@ -242,11 +242,35 @@ TEST_CASE("SOA-backed Mechanism data structure", "[Neuron][data_structures][mech
                             std::ostringstream oss;
                             oss << generic_foo;
                             REQUIRE(oss.str() ==
-                                    "generic_data_handle{cont=unknown died/unknown, type=double*}");
+                                    "generic_data_handle{cont=unknown died/unknown type=double*}");
                         }
                     }
                 }
             }
         }
     }
+}
+
+TEST_CASE("Model::is_valid_mechanism", "[Neuron][data_structures]") {
+    // Since `neuron::model` is a global we we've no clue what state it's in.
+    // Hence we delete what we want to use and remember that we have to assume
+    // there might be other mechanisms present that we shall ignore.
+
+    auto& model = neuron::model();
+    std::vector<Variable> field_info{{"foo", 1}};  // just a dummy value.
+
+    model.delete_mechanism(0);
+    model.add_mechanism(0, "zero", field_info);
+
+    model.delete_mechanism(1);
+    model.add_mechanism(1, "one", field_info);
+
+    model.delete_mechanism(2);
+    model.add_mechanism(2, "two", field_info);
+
+    model.delete_mechanism(1);
+
+    CHECK(model.is_valid_mechanism(0));
+    CHECK(!model.is_valid_mechanism(1));
+    CHECK(model.is_valid_mechanism(2));
 }

@@ -27,7 +27,7 @@ void BBSImpl::subworld_worker_execute() {
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         char* s = new char[size];
         nrnmpi_char_broadcast(s, size, 0);
-        hoc_obj_run(s, nil);
+        hoc_obj_run(s, nullptr);
         delete[] s;
         // printf("%d leave subworld_worker_execute\n", nrnmpi_myid_world);
         return;
@@ -36,7 +36,7 @@ void BBSImpl::subworld_worker_execute() {
     int npickle;
     char* s;
     Symbol* fname = 0;
-    Object* ob = nil;
+    Object* ob = nullptr;
     char* sarg[20];  // up to 20 arguments may be strings
     int ns = 0;      // number of args that are strings
     int narg = 0;    // total number of args

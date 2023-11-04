@@ -71,10 +71,14 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx not in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ != -1 or idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
+    newflux["index"] = [
+        idx - (stop - start) if typ == -1 and idx > start else idx
+        for idx, typ in zip(newflux["index"], newflux["type"])
+    ]
     _node_fluxes = newflux
     _has_node_fluxes = _node_fluxes["index"] != []
 
@@ -108,8 +112,8 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ == -1 and idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j
 
@@ -625,17 +629,20 @@ class Node3D(Node):
                 and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
+        checked_for_normalized_position = False
         try:
             if 0 <= condition <= 1:
                 # TODO: the trouble here is that you can't do this super-directly based on x
                 #       the way to do this is to find the minimum and maximum x values contained in the grid
                 #       the extra difficulty with that is to handle boundary cases correctly
                 #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
-                raise RxDException(
-                    "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
-                )
+                checked_for_normalized_position = True
         except:
             pass
+        if checked_for_normalized_position:
+            raise RxDException(
+                "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
+            )
         raise RxDException("unrecognized node condition: %r" % condition)
 
     @property

@@ -16,7 +16,9 @@ static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_doc, (void*) hocobj_docstring},
     {Py_nb_bool, (void*) hocobj_nonzero},
     {Py_sq_length, (void*) hocobj_len},
+    {Py_mp_subscript, (void*) hocobj_slice_getitem},
     {Py_sq_item, (void*) hocobj_getitem},
+    {Py_mp_ass_subscript, (void*) hocobj_slice_setitem},
     {Py_sq_ass_item, (void*) hocobj_setitem},
     {Py_nb_add, (PyObject*) py_hocobj_add},
     {Py_nb_subtract, (PyObject*) py_hocobj_sub},
@@ -26,13 +28,6 @@ static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_nb_absolute, (PyObject*) py_hocobj_uabs},
     {Py_nb_true_divide, (PyObject*) py_hocobj_div},
     {0, 0},
-};
-static PyType_Spec nrnpy_HocObjectType_spec = {
-    "hoc.HocObject",
-    sizeof(PyHocObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    nrnpy_HocObjectType_slots,
 };
 
 

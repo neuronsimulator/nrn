@@ -50,7 +50,7 @@ class PlayRecordEvent: public DiscreteEvent {
 // common interface for Play and Record for all integration methods.
 class PlayRecord: public Observer {
   public:
-    PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj = nil);
+    PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj = nullptr);
     virtual ~PlayRecord();
     virtual void install(Cvode* cv) {
         cvode_ = cv;
@@ -61,19 +61,18 @@ class PlayRecord: public Observer {
     }  // play - every f(y, t) or res(y', y, t); record - advance_tn and initialize flag
     virtual void deliver(double t, NetCvode*) {}  // at associated DiscreteEvent
     virtual PlayRecordEvent* event() {
-        return nil;
+        return nullptr;
     }
     virtual void pr();  // print identifying info
     virtual int type() {
         return 0;
     }
 
-    // install normally calls one of these. Cvode may be nil.
+    // install normally calls one of these. Cvode may be nullptr.
     void play_add(Cvode*);
     void record_add(Cvode*);
 
     // administration
-    virtual void update_ptr(neuron::container::data_handle<double> pd);
     virtual void disconnect(Observable*);
     virtual void update(Observable* o) {
         disconnect(o);
@@ -96,8 +95,6 @@ class PlayRecord: public Observer {
     int ith_;  // The thread index
 };
 
-declarePtrList(PlayRecList, PlayRecord)
-
 class PlayRecordSave {
   public:
     PlayRecordSave(PlayRecord*);
@@ -113,7 +110,7 @@ class PlayRecordSave {
 
 class TvecRecord: public PlayRecord {
   public:
-    TvecRecord(Section*, IvocVect* tvec, Object* ppobj = nil);
+    TvecRecord(Section*, IvocVect* tvec, Object* ppobj = nullptr);
     virtual ~TvecRecord();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -133,7 +130,7 @@ class TvecRecord: public PlayRecord {
 
 class YvecRecord: public PlayRecord {
   public:
-    YvecRecord(neuron::container::data_handle<double>, IvocVect* y, Object* ppobj = nil);
+    YvecRecord(neuron::container::data_handle<double>, IvocVect* y, Object* ppobj = nullptr);
     virtual ~YvecRecord();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -155,7 +152,7 @@ class VecRecordDiscrete: public PlayRecord {
     VecRecordDiscrete(neuron::container::data_handle<double>,
                       IvocVect* y,
                       IvocVect* t,
-                      Object* ppobj = nil);
+                      Object* ppobj = nullptr);
     virtual ~VecRecordDiscrete();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -196,7 +193,7 @@ class VecRecordDt: public PlayRecord {
     VecRecordDt(neuron::container::data_handle<double>,
                 IvocVect* y,
                 double dt,
-                Object* ppobj = nil);
+                Object* ppobj = nullptr);
     virtual ~VecRecordDt();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -234,8 +231,8 @@ class VecPlayStep: public PlayRecord {
                 IvocVect* y,
                 IvocVect* t,
                 double dt,
-                Object* ppobj = nil);
-    VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
+                Object* ppobj = nullptr);
+    VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nullptr);
     void init(IvocVect* y, IvocVect* t, double dt);
     virtual ~VecPlayStep();
     virtual void install(Cvode*);
@@ -279,12 +276,12 @@ class VecPlayContinuous: public PlayRecord {
                       IvocVect* y,
                       IvocVect* t,
                       IvocVect* discon,
-                      Object* ppobj = nil);
+                      Object* ppobj = nullptr);
     VecPlayContinuous(const char* s,
                       IvocVect* y,
                       IvocVect* t,
                       IvocVect* discon,
-                      Object* ppobj = nil);
+                      Object* ppobj = nullptr);
     virtual ~VecPlayContinuous();
     void init(IvocVect* y, IvocVect* t, IvocVect* tdiscon);
     virtual void install(Cvode*);

@@ -5,7 +5,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 
 #define P(arg) fputs(arg, fcout)
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
@@ -85,10 +85,12 @@ void c_out() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format on\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format off\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
 
@@ -188,8 +190,9 @@ void c_out() {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type){\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
-        P("auto* const _vec_rhs = _nt->node_rhs_storage();\n");
-        P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+        P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
+        P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
+        P("auto const _vec_v = _nt->node_voltage_storage();\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
         P("_ml = &_lmr;\n");  // update global _ml
         P("_ni = _ml_arg->_nodeindices;\n");
@@ -223,8 +226,9 @@ void c_out() {
             }
             if (electrode_current) {
                 P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
-                P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
-                  "_rhs; }\n");
+                P("  if (_vec_sav_rhs) {\n");
+                P("    _vec_sav_rhs[_ni[_iml]] += _rhs;\n");
+                P("  }\n");
                 P("#if EXTRACELLULAR\n");
                 P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
                 P("   *_extnode->_rhs[0] += _rhs;\n");
@@ -241,7 +245,8 @@ void c_out() {
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
-        P("auto* const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("_ni = _ml_arg->_nodeindices;\n");
@@ -250,7 +255,9 @@ void c_out() {
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
             P("  _vec_d[_ni[_iml]] -= _g;\n");
-            P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
+            P("  if (_vec_sav_d) {\n");
+            P("    _vec_sav_d[_ni[_iml]] -= _g;\n");
+            P("  }\n");
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
             P("   *_extnode->_d[0] += _g;\n");
@@ -476,10 +483,12 @@ void c_out_vectorize() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format off\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     printlist(defs_list);
     printlist(firstlist);
@@ -580,8 +589,9 @@ void c_out_vectorize() {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
-        P("auto* const _vec_rhs = _nt->node_rhs_storage();\n");
-        P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+        P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
+        P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
+        P("auto const _vec_v = _nt->node_voltage_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
@@ -627,8 +637,9 @@ void c_out_vectorize() {
             }
             if (electrode_current) {
                 P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
-                P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
-                  "_rhs; }\n");
+                P("  if (_vec_sav_rhs) {\n");
+                P("    _vec_sav_rhs[_ni[_iml]] += _rhs;\n");
+                P("  }\n");
                 P("#if EXTRACELLULAR\n");
                 P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
                 P("   *_extnode->_rhs[0] += _rhs;\n");
@@ -645,7 +656,8 @@ void c_out_vectorize() {
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
-        P("auto* const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
         P("auto* const _ml = &_lmr;\n");
         P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
@@ -656,7 +668,9 @@ void c_out_vectorize() {
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
             P("  _vec_d[_ni[_iml]] -= _g;\n");
-            P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
+            P("  if (_vec_sav_d) {\n");
+            P("    _vec_sav_d[_ni[_iml]] -= _g;\n");
+            P("  }\n");
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
             P("   *_extnode->_d[0] += _g;\n");

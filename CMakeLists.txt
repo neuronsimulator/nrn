@@ -89,8 +89,6 @@ option(NRN_AVOID_ABSOLUTE_PATHS
        "Avoid embedding absolute paths in generated code (ccache optimisation)"
        ${NRN_AVOID_ABSOLUTE_PATHS_DEFAULT})
 mark_as_advanced(NRN_AVOID_ABSOLUTE_PATHS)
-option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
-       ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files"
        ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
@@ -245,6 +243,7 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
+cpp_cc_git_submodule(eigen)
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -317,6 +316,9 @@ if(NRN_ENABLE_RX3D)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
     find_package(Cython REQUIRED)
+    if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
+      message(FATAL_ERROR "Cython 3+ is not supported")
+    endif()
   endif()
 endif()
 if(MINGW)
@@ -331,7 +333,6 @@ if(NRN_ENABLE_MPI)
   # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
   nrn_mpi_find_package()
   set(NRNMPI 1)
-  set(PARANEURON 1)
 
   # avoid linking to C++ bindings
   add_compile_definitions(MPI_NO_CPPBIND=1 OMPI_SKIP_MPICXX=1 MPICH_SKIP_MPICXX=1)
@@ -359,7 +360,6 @@ if(NRN_ENABLE_MPI)
   endif()
 else()
   set(NRNMPI 0)
-  set(PARANEURON 0)
 endif()
 
 # =============================================================================
@@ -373,8 +373,8 @@ if(NRN_ENABLE_MUSIC)
     message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
   endif()
   find_package(Cython REQUIRED)
-  if(NOT Cython_FOUND)
-    message(FATAL "MUSIC requires Cython")
+  if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
+    message(FATAL_ERROR "Cython 3+ is not supported")
   endif()
   find_package(MUSIC REQUIRED)
   set(NRN_MUSIC 1)
@@ -453,9 +453,9 @@ if(NRN_ENABLE_PROFILING)
     add_definitions("-DNRN_CALIPER")
     set(CALIPER_LIB "caliper")
   elseif(NRN_PROFILER STREQUAL "likwid")
-    find_package(likwid REQUIRED)
-    include_directories(${likwid_INCLUDE_DIRS})
-    add_definitions("-DLIKWID_PERFMON")
+    include(GetLIKWID)
+    set(LIKWID_LIB nrn_likwid)
+
   endif()
 endif()
 
@@ -482,6 +482,9 @@ if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
   set(NRN_INCLUDE_MPI_HEADERS ON)
 endif()
 
+# initialize CLI11 submodule
+cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -494,13 +497,9 @@ if(NRN_ENABLE_CORENEURON)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
        ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
-  set(nrn_using_ext_corenrn FALSE)
   # If NEURON tests are enabled then enable CoreNEURON tests too
   set(CORENRN_ENABLE_UNIT_TESTS
       ${NRN_ENABLE_TESTS}
-      CACHE BOOL "" FORCE)
-  set(CORENRN_ENABLE_LEGACY_UNITS
-      ${NRN_DYNAMIC_UNITS_USE_LEGACY}
       CACHE BOOL "" FORCE)
   if(NRN_ENABLE_PROFILING)
     if(NRN_PROFILER STREQUAL "caliper")
@@ -510,9 +509,6 @@ if(NRN_ENABLE_CORENEURON)
     endif()
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
-
-  # initialize CLI11 submodule
-  cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
@@ -567,6 +563,8 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+add_subdirectory(src/sparse13)
+add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -676,7 +674,7 @@ if(NRN_ENABLE_DOCS)
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
             "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser ${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
@@ -958,11 +956,6 @@ message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
 message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
-if(NRN_DYNAMIC_UNITS_USE_LEGACY)
-  message(STATUS "Default units | legacy units")
-else()
-  message(STATUS "Default units | modern units (2019 nist constants)")
-endif()
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
 if(NRN_ENABLE_MPI)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
@@ -1033,9 +1026,6 @@ message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
-  if(NOT coreneuron_FOUND)
-    message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
-  endif()
 endif()
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")

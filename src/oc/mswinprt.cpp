@@ -2,7 +2,9 @@
 
 #ifdef MINGW
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>

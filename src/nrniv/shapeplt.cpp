@@ -41,6 +41,8 @@
 extern Symlist* hoc_built_in_symlist;
 #endif  // HAVE_IV
 
+extern int hoc_return_type_code;
+
 void* (*nrnpy_get_pyobj)(Object* obj) = 0;
 void (*nrnpy_decref)(void* pyobj) = 0;
 
@@ -211,11 +213,29 @@ static double sh_printfile(void* v) {
 
 static double sh_show(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.show", v);
+    hoc_return_type_code = 1;
 #if HAVE_IV
     IFGUI
     ShapeScene* s = (ShapeScene*) v;
-    s->shape_type(int(chkarg(1, 0., 2.)));
+    if (ifarg(1)) {
+        s->shape_type(int(chkarg(1, 0., 2.)));
+    } else {
+        return s->shape_type();
+    }
+}
+else {
+    if (ifarg(1)) {
+        ((ShapePlotData*) v)->set_mode(int(chkarg(1, 0., 2.)));
+    } else {
+        return ((ShapePlotData*) v)->get_mode();
+    }
     ENDGUI
+#else
+    if (ifarg(1)) {
+        ((ShapePlotData*) v)->set_mode(int(chkarg(1, 0., 2.)));
+    } else {
+        return ((ShapePlotData*) v)->get_mode();
+    }
 #endif
     return 1.;
 }
@@ -748,7 +768,7 @@ void ShapePlotImpl::select_variable() {
     sc->ref();
     while (sc->post_for(XYView::current_pick_view()->canvas()->window())) {
         Symbol* s;
-        s = hoc_table_lookup(sc->selected()->string(), hoc_built_in_symlist);
+        s = hoc_table_lookup(sc->selected().c_str(), hoc_built_in_symlist);
         if (s) {
             sp_->variable(s);
             break;
@@ -1206,6 +1226,7 @@ ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
         ++sl_->refcount;
     }
     varobj(NULL);
+    show_mode = 1;
 }
 
 ShapePlotData::~ShapePlotData() {
@@ -1226,6 +1247,14 @@ float ShapePlotData::high() {
     return hi;
 }
 
+int ShapePlotData::get_mode() {
+    return show_mode;
+}
+
+void ShapePlotData::set_mode(int mode) {
+    show_mode = mode;
+}
+
 void ShapePlotData::scale(float min, float max) {
     lo = min;
     hi = max;
@@ -1238,7 +1267,7 @@ void ShapePlotData::variable(Symbol* sym) {
 
 const char* ShapePlotData::varname() const {
     if (sym_ == NULL) {
-        return "v";
+        return "";
     }
     return sym_->name;
 }
