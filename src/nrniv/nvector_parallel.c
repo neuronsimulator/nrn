@@ -31,7 +31,7 @@
 
 #include <nrnmpiuse.h>
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int type);
+extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
 
 #define ZERO   RCONST(0.0)
@@ -99,7 +99,7 @@ N_Vector N_VNewEmpty_Parallel(MPI_Comm comm,
 
   /* Compute global length as sum of local lengths */
   n = local_length;
-  nrnmpi_longlong_allreduce_vec(&n, &Nsum, 1, 1);
+  nrnmpi_long_allreduce_vec(&n, &Nsum, 1, 1);
   if (Nsum != global_length) {
     fprintf(stderr, BAD_N);
     return(NULL);

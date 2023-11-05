@@ -13,7 +13,11 @@
 #include "netcvode.h"
 #include "nrn_ansi.h"
 #include "ida/ida.h"
+
+#undef MSG_TIME
+#undef MSG_TIME_H
 #include "ida/ida_impl.h"
+
 #include "mymath.h"
 
 // the state of the g - d2/dx2 matrix for voltages
