@@ -89,11 +89,18 @@ static double l_tail(void*) {
     return double(i);
 }
 
+static double l_ltrim(void*) {
+    std::string s(gargstr(1));
+    s.erase(0, s.find_first_not_of(" \r\n\t\f\v"));
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
 static double l_rtrim(void*) {
     std::string s(gargstr(1));
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); })
-                .base(),
-            s.end());
+    s.erase(s.find_last_not_of(" \r\n\t\f\v") + 1);
 
     char** ret = hoc_pgargstr(2);
     hoc_assign_str(ret, s.c_str());
@@ -343,6 +350,7 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"len", l_len},
                                   {"head", l_head},
                                   {"tail", l_tail},
+                                  {"ltrim", l_ltrim},
                                   {"rtrim", l_rtrim},
                                   {"right", l_right},
                                   {"left", l_left},
