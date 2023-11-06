@@ -55,6 +55,26 @@ def test_tail():
     assert tail[0] == ""
 
 
+def text_rtrim():
+    text = "bar\t; \t\n"
+    out = h.ref("")
+    sf.rtrim(text, out)
+    assert out[0] == "bar\t;"
+
+    sf.rtrim(text, out, " \t\n\f\v\r;")
+    assert out[0] == "bar"
+
+
+def test_ltrim():
+    text = "  \t \n# foo"
+    out = h.ref("")
+    sf.ltrim(text, out)
+    assert out[0] == "# foo"
+
+    sf.ltrim(text, out, " \t\n\f\r\v#")
+    assert out[0] == "foo"
+
+
 def test_right():
     s = h.ref("foobarshi")
     sf.right(s, 6)
