@@ -54,6 +54,8 @@ static double l_head(void*) {
             i = sm.position();
             result = sm.prefix().str();
         }
+        std::cout << "head: '" << text << "' : '" << gargstr(2) << "' : '" << result << "'"
+                  << std::endl;
     } catch (const std::regex_error& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -80,6 +82,8 @@ static double l_tail(void*) {
             i = sm.position() + sm.length();
             result = sm.suffix().str();
         }
+        std::cout << "tail: '" << text << "' : '" << gargstr(2) << "' : '" << result << "'"
+                  << std::endl;
     } catch (const std::regex_error& e) {
         std::cerr << e.what() << std::endl;
     }
