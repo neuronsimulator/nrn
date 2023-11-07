@@ -91,7 +91,11 @@ static double l_tail(void*) {
 
 static double l_ltrim(void*) {
     std::string s(gargstr(1));
-    s.erase(0, s.find_first_not_of(" \r\n\t\f\v"));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(0, s.find_first_not_of(chars));
 
     char** ret = hoc_pgargstr(2);
     hoc_assign_str(ret, s.c_str());
@@ -100,7 +104,11 @@ static double l_ltrim(void*) {
 
 static double l_rtrim(void*) {
     std::string s(gargstr(1));
-    s.erase(s.find_last_not_of(" \r\n\t\f\v") + 1);
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(s.find_last_not_of(chars) + 1);
 
     char** ret = hoc_pgargstr(2);
     hoc_assign_str(ret, s.c_str());
