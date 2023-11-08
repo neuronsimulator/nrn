@@ -257,12 +257,22 @@ static void NPyRangeVar_dealloc(NPyRangeVar* self) {
 static void NPyMechObj_dealloc(NPyMechObj* self) {
     // printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pyseg_);
+    self->~NPyMechObj();
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static NPyMechObj* new_pymechobj() {
+    NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
+    if (m) {
+        new (m) NPyMechObj;
+    }
+
+    return m;
 }
 
 // Only call if p is valid
 static NPyMechObj* new_pymechobj(NPySegObj* pyseg, Prop* p) {
-    NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
+    NPyMechObj* m = new_pymechobj();
     if (!m) {
         return NULL;
     }
@@ -436,6 +446,7 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
     // printf("NPyMechObj_new %p %s\n", self,
     // ((PyObject*)self)->ob_type->tp_name);
     if (self != NULL) {
+        new (self) NPyMechObj;
         self->pyseg_ = pyseg;
         Py_INCREF(self->pyseg_);
     }
@@ -1669,7 +1680,7 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     if (!r) {
         return NULL;
     }
-    r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+    r->pymech_ = new_pymechobj();
     r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
     r->pymech_->pyseg_->pysec_ = sec;
     Py_INCREF(sec);
@@ -1910,13 +1921,14 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             rv_noexist(sec, n, self->x_, 1);
             result = NULL;
         } else {
+            std::cout << p->id() << std::endl;
             result = (PyObject*) new_pymechobj(self, p);
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (ISARRAY(sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-            r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+            r->pymech_ = new_pymechobj();
             r->pymech_->pyseg_ = self;
             Py_INCREF(r->pymech_->pyseg_);
             r->sym_ = sym;
@@ -1944,7 +1956,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                    sym->type == RANGEVAR) {
             if (ISARRAY(sym)) {
                 NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-                r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+                r->pymech_ = new_pymechobj();
                 r->pymech_->pyseg_ = self;
                 Py_INCREF(self);
                 r->sym_ = sym;
