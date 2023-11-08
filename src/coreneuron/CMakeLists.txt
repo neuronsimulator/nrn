@@ -672,8 +672,7 @@ file(
 cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
                        OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
 foreach(header ${main_headers})
-  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
+  configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
 endforeach()
 
 cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
