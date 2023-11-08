@@ -257,14 +257,14 @@ static void NPyRangeVar_dealloc(NPyRangeVar* self) {
 static void NPyMechObj_dealloc(NPyMechObj* self) {
     // printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pyseg_);
-    self->~NPyMechObj();
+    self->prop_id_.~non_owning_identifier_without_container();
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
 static NPyMechObj* new_pymechobj() {
     NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
     if (m) {
-        new (m) NPyMechObj;
+        new (&m->prop_id_) neuron::container::non_owning_identifier_without_container;
     }
 
     return m;
