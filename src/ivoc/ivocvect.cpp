@@ -2369,7 +2369,7 @@ static Object** v_mul(void* v1) {
 static Object** v_div(void* v1) {
     Vect* x = (Vect*) v1;
     if (hoc_argtype(1) == NUMBER) {
-        if (*getarg(1) == 0) {
+        if (*getarg(1) == 0.0) {
             hoc_execerror("Vector", "Division by zero");
         } else {
             std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
