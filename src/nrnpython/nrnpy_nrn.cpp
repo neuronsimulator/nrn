@@ -51,23 +51,23 @@ typedef struct {
     double x_;
 } NPySegObj;
 
-typedef struct {
+struct NPyMechObj {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
     neuron::container::non_owning_identifier_without_container prop_id_{};
     int type_;
-} NPyMechObj;
+};
 
 typedef struct {
     PyObject_HEAD
-    NPyMechObj* pymech_{};
+    NPyMechObj* pymech_;
 } NPyMechOfSegIter;
 
 typedef struct {
     PyObject_HEAD
-    NPyMechObj* pymech_{};
-    NPyDirectMechFunc* f_{};
+    NPyMechObj* pymech_;
+    NPyDirectMechFunc* f_;
 } NPyMechFunc;
 
 typedef struct {
