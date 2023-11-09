@@ -1921,7 +1921,6 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             rv_noexist(sec, n, self->x_, 1);
             result = NULL;
         } else {
-            std::cout << p->id() << std::endl;
             result = (PyObject*) new_pymechobj(self, p);
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
