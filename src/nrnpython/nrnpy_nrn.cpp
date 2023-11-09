@@ -55,6 +55,8 @@ struct NPyMechObj {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
+    // Following cannot be initialized when NPyMechObj allocated by Python. See new_pymechobj
+    // wrapper.
     neuron::container::non_owning_identifier_without_container prop_id_{};
     int type_;
 };
@@ -257,6 +259,7 @@ static void NPyRangeVar_dealloc(NPyRangeVar* self) {
 static void NPyMechObj_dealloc(NPyMechObj* self) {
     // printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pyseg_);
+    // Must manually call destructor since it was manually constructed in new_pymechobj wrapper
     self->prop_id_.~non_owning_identifier_without_container();
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
@@ -264,6 +267,9 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 static NPyMechObj* new_pymechobj() {
     NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
     if (m) {
+        // Use "placement new" idiom since Python C allocation cannot call the initializer to start
+        // it as "null". So later `a = b` might segfault because copy constructor decrements the
+        // refcount of `a`s nonsense memory.
         new (&m->prop_id_) neuron::container::non_owning_identifier_without_container;
     }
 
