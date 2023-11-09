@@ -51,15 +51,15 @@ typedef struct {
     double x_;
 } NPySegObj;
 
-struct NPyMechObj {
+typedef struct {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
     // Following cannot be initialized when NPyMechObj allocated by Python. See new_pymechobj
     // wrapper.
-    neuron::container::non_owning_identifier_without_container prop_id_{};
+    neuron::container::non_owning_identifier_without_container prop_id_;
     int type_;
-};
+} NPyMechObj;
 
 typedef struct {
     PyObject_HEAD
