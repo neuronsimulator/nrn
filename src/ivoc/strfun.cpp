@@ -68,6 +68,32 @@ static double l_tail(void*) {
     return double(i);
 }
 
+static double l_ltrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(0, s.find_first_not_of(chars));
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
+static double l_rtrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(s.find_last_not_of(chars) + 1);
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
 static double l_left(void*) {
     std::string text(gargstr(1));
     std::string newtext = text.substr(0, int(chkarg(2, 0, strlen(gargstr(1)))));
@@ -311,6 +337,8 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"len", l_len},
                                   {"head", l_head},
                                   {"tail", l_tail},
+                                  {"ltrim", l_ltrim},
+                                  {"rtrim", l_rtrim},
                                   {"right", l_right},
                                   {"left", l_left},
                                   {"is_name", l_is_name},
