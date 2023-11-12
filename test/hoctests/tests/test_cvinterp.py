@@ -38,6 +38,7 @@ def test():
     for ida in [0, 1]:
         run(ida)
         n = len(freerun[0])
+        std = [v.c() for v in freerun]
         pts = points(freerun)[-3:-1]
         midpnt = [(pts[0][i] + pts[1][i]) / 2 for i in range(2)]
         trec = h.Vector([midpnt[0]])
@@ -47,6 +48,10 @@ def test():
         print(points(rec))
 
         assert len(freerun[0]) == n  # rec does not add to original freerun
+        for i, s in enumerate(std):  # and rec did not affect freerun.
+            for j, v in enumerate(s):
+                assert math.isclose(v, freerun[i][j])
+
         for i in range(2):
             assert math.isclose(midpnt[i], rec[i][0])
 
