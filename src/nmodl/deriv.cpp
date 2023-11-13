@@ -15,7 +15,6 @@ extern Symbol* indepsym;
 extern List* indeplist;
 extern int numlist;
 int dtsav_for_nrn_state;
-void copylist(List*, Item*);
 List* massage_list_;
 List* netrec_cnexp;
 
@@ -704,25 +703,6 @@ if (_deriv%d_advance) {\n",
     freelist(&deriv_state_list);
 }
 
-
-void copylist(List* l, Item* i) /* copy list l before item i */
-{
-    Item* q;
-
-    ITERATE(q, l) {
-        switch (q->itemtype) {
-        case STRING:
-            insertstr(i, STR(q));
-            break;
-        case SYMBOL:
-            insertsym(i, SYM(q));
-            break;
-        default:
-            /*SUPPRESS 622*/
-            assert(0);
-        }
-    }
-}
 
 void copyitems(Item* q1, Item* q2, Item* qdest) /* copy items before item */
 {
