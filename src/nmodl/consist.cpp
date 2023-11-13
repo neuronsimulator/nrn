@@ -18,7 +18,7 @@ extern int vectorize;
 #define con(arg1, arg2, arg3)                               \
     if (t & (arg2))                                         \
         if (t & (~(arg2 | arg3))) {                         \
-            Fprintf(stderr, "%s is a %s\n", s->name, arg1); \
+            fprintf(stderr, "%s is a %s\n", s->name, arg1); \
             err = 1;                                        \
         }
 
@@ -80,7 +80,7 @@ void consistency() {
         // check for conflicting variable declaration with function
         // do not use diag() because line number might be misleading
         if (is_var_declared_as_function(s)) {
-            Fprintf(stderr,
+            fprintf(stderr,
                     "Error: %s used as both variable and function in file %s\n",
                     s->name,
                     finname);
@@ -89,7 +89,7 @@ void consistency() {
         if ((t == 0) && tu) {
             // variable `v` is always defined in data array for vectorized mod files
             if (!(vectorize && strcmp(s->name, "v") == 0)) {
-                Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+                fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
             }
         }
     }

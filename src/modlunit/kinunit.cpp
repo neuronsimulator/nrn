@@ -37,12 +37,12 @@ void kinunits(Item* type, int pass) {
             unit_mul();
         }
         if (unit_diff()) {
-            Fprintf(stderr,
+            fprintf(stderr,
                     "REACTION quantity units for %s is: %s\n",
                     SYM(ITM(q))->name,
                     unit_str());
             unit_pop();
-            Fprintf(stderr, "but the quantity units of the first term is: %s\n", unit_str());
+            fprintf(stderr, "but the quantity units of the first term is: %s\n", unit_str());
             diag("Inconsistent material quantity units\n", "Need a correct COMPARTMENT statement");
         }
     }
@@ -78,8 +78,8 @@ void kinunits(Item* type, int pass) {
         ucopypush(&ux1);
         ucopypush(&uflux);
         if (unit_diff()) {
-            Fprintf(stderr, "Flux units are: %s\n", Unit_str(&uflux));
-            Fprintf(stderr, "But users << flux units are:%s\n", Unit_str(&ux1));
+            fprintf(stderr, "Flux units are: %s\n", Unit_str(&uflux));
+            fprintf(stderr, "But users << flux units are:%s\n", Unit_str(&ux1));
             diag("Inconsistent flux units", (char*) 0);
         }
         unit_pop();
@@ -103,11 +103,11 @@ static void set_flux_units(unit* up) {
 }
 
 static void react_unit_err(const char* s, unit* up) {
-    Fprintf(stderr, "Flux units for this reaction: %s\n", Unit_str(up));
+    fprintf(stderr, "Flux units for this reaction: %s\n", Unit_str(up));
     ucopypop(up);
-    Fprintf(stderr, "This implies %s rate units: %s\n", s, Unit_str(up));
+    fprintf(stderr, "This implies %s rate units: %s\n", s, Unit_str(up));
     ucopypop(up);
-    Fprintf(stderr, "But the users %s rate units are: %s\n", s, Unit_str(up));
+    fprintf(stderr, "But the users %s rate units are: %s\n", s, Unit_str(up));
     diag("inconsistent reaction units", (char*) 0);
 }
 
@@ -170,5 +170,5 @@ void ureactadd(Item* q) {
     if (!reactnames) {
         reactnames = newlist();
     }
-    Lappenditem(reactnames, q);
+    lappenditem(reactnames, q);
 }

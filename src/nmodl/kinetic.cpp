@@ -178,7 +178,7 @@ void massagereaction(Item* qREACTION, Item* qREACT1, Item* qlpar, Item* qcomma, 
     /*SUPPRESS 440*/
     replacstr(qREACTION, "/* ~");
     /*SUPPRESS 440*/
-    Insertstr(qrpar, ")*/\n");
+    insertstr(qrpar, ")*/\n");
     /*SUPPRESS 440*/
     replacstr(qrpar, "/*REACTION*/\n");
     rterm = (Rterm*) 0;
@@ -249,7 +249,7 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
         replacstr(qlast, "/*FLUX*/\n");
     }
     /*SUPPRESS 440*/
-    Insertstr(qlast, ")*/\n");
+    insertstr(qlast, ")*/\n");
     /*SUPPRESS 440*/
     rterm = (Rterm*) 0;
 }
@@ -381,7 +381,7 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4) /*KINETIC NAME stmtl
             numlist,
             count,
             numlist);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     insertstr(q4, "  } return _reset;\n");
     movelist(q1, q4, procfunc);
 
@@ -471,7 +471,7 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
     cvode_kin_remove();
     nstate = number_states(fun, &rlst, &clst);
     if (ncons) {
-        Fprintf(stderr, "%s method ignores conservation\n", meth);
+        fprintf(stderr, "%s method ignores conservation\n", meth);
     }
     ncons = 0;
     Sprintf(buf,
@@ -482,7 +482,7 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
 #if Glass
     fixrlst(rlst);
 #endif
-    Insertstr(rlst->position, buf);
+    insertstr(rlst->position, buf);
     for (r1 = rlst->reaction; r1; r1 = r1->reactnext) {
         genderivterms(r1, 0, 0);
     }
@@ -495,14 +495,14 @@ void kinetic_intmethod(Symbol* fun, const char* meth) {
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->endbrace, buf);
+                insertstr(rlst->endbrace, buf);
             } else {
                 Sprintf(buf,
                         "_ml->data(_iml, _dlist%d[%d]) /= %s;\n",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->endbrace, buf);
+                insertstr(rlst->endbrace, buf);
             }
         }
     }
@@ -522,27 +522,27 @@ void genderivterms(Reaction* r, int type, int n) {
     q = r->position;
     for (j = 0; j < 2; j++) {
         if (j == 0) {
-            Insertstr(q, "f_flux =");
+            insertstr(q, "f_flux =");
         } else {
-            Insertstr(q, ";\n b_flux =");
+            insertstr(q, ";\n b_flux =");
         }
         if (r->krate[j]) {
-            Insertstr(q, r->krate[j]);
+            insertstr(q, r->krate[j]);
         } else {
-            Insertstr(q, "0.");
+            insertstr(q, "0.");
         }
         for (rt = r->rterm[j]; rt; rt = rt->rnext) {
             for (i = 0; i < rt->num; i++) {
-                Insertstr(q, "*");
-                Insertsym(q, rt->sym);
+                insertstr(q, "*");
+                insertsym(q, rt->sym);
                 if (rt->str) {
                     Sprintf(buf, "[%s]", rt->str);
-                    Insertstr(q, buf);
+                    insertstr(q, buf);
                 }
             }
         }
     }
-    Insertstr(q, ";\n");
+    insertstr(q, ";\n");
     for (j = 0; j < 2; j++) {
         for (rt = r->rterm[j]; rt; rt = rt->rnext) {
             if (!(rt->isstate)) {
@@ -555,33 +555,33 @@ void genderivterms(Reaction* r, int type, int n) {
                 continue; /* equation reserved for conservation*/
             if (type) {
                 Sprintf(buf, "_RHS%d(", n);
-                Insertstr(q, buf);
+                insertstr(q, buf);
                 if (rt->str) {
                     Sprintf(buf, "%d + %s)", rt->sym->varnum, rt->str);
                 } else {
                     Sprintf(buf, "%d)", rt->sym->varnum);
                 }
-                Insertstr(q, buf);
+                insertstr(q, buf);
             } else {
-                Insertsym(q, s); /*needs processing in cout*/
+                insertsym(q, s); /*needs processing in cout*/
                 if (rt->str) {
                     Sprintf(buf, "[%s]", rt->str);
-                    Insertstr(q, buf);
+                    insertstr(q, buf);
                 }
             }
             if (j == 0) {
-                Insertstr(q, "-=");
+                insertstr(q, "-=");
             } else {
-                Insertstr(q, "+=");
+                insertstr(q, "+=");
             }
             if (rt->num > 1) {
                 Sprintf(buf, "%d.0 *", rt->num);
-                Insertstr(q, buf);
+                insertstr(q, buf);
             }
-            Insertstr(q, "(f_flux - b_flux);\n");
+            insertstr(q, "(f_flux - b_flux);\n");
         }
     }
-    Insertstr(q, "\n"); /* REACTION comment left in */
+    insertstr(q, "\n"); /* REACTION comment left in */
 }
 
 void genfluxterm(Reaction* r, int type, int n) {
@@ -599,49 +599,49 @@ void genfluxterm(Reaction* r, int type, int n) {
     if (rt->sym->varnum < ncons)
         diag(rt->sym->name, "is conserved and has a flux");
     /* the right hand side */
-    Insertstr(q, "f_flux = b_flux = 0.;\n");
+    insertstr(q, "f_flux = b_flux = 0.;\n");
     if (type) {
         Sprintf(buf, "_RHS%d(", n);
-        Insertstr(q, buf);
+        insertstr(q, buf);
         if (rt->str) {
             Sprintf(buf, "%d + %s)", rt->sym->varnum, rt->str);
         } else {
             Sprintf(buf, "%d)", rt->sym->varnum);
         }
-        Insertstr(q, buf);
+        insertstr(q, buf);
     } else {
-        Insertsym(q, s); /*needs processing in cout*/
+        insertsym(q, s); /*needs processing in cout*/
         if (rt->str) {
             Sprintf(buf, "[%s]", rt->str);
-            Insertstr(q, buf);
+            insertstr(q, buf);
         }
     }
     if (r->krate[0]) {
         Sprintf(buf, " -= (f_flux = (%s) * ", r->krate[0]);
-        Insertstr(q, buf);
-        Insertsym(q, rt->sym);
+        insertstr(q, buf);
+        insertsym(q, rt->sym);
         if (rt->str) {
             Sprintf(buf, "[%s]", rt->str);
-            Insertstr(q, buf);
+            insertstr(q, buf);
         }
     } else {
-        Insertstr(q, "+= (b_flux = ");
-        Insertstr(q, r->krate[1]);
+        insertstr(q, "+= (b_flux = ");
+        insertstr(q, r->krate[1]);
     }
-    Insertstr(q, ");\n");
+    insertstr(q, ");\n");
 
     /* the matrix coefficient */
     if (type && r->krate[0]) {
         Sprintf(buf, " _MATELM%d(", n);
-        Insertstr(q, buf);
+        insertstr(q, buf);
         if (rt->str) {
             Sprintf(buf, "%d + %s, %d + %s", rt->sym->varnum, rt->str, rt->sym->varnum, rt->str);
         } else {
             Sprintf(buf, "%d, %d)", rt->sym->varnum, rt->sym->varnum);
         }
-        Insertstr(q, buf);
+        insertstr(q, buf);
         Sprintf(buf, "+= %s;\n", r->krate[0]);
-        Insertstr(q, buf);
+        insertstr(q, buf);
     }
 }
 
@@ -691,8 +691,8 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
             }
         }
         if (firsttrans1) {
-            Lappendsym(done_list, fun);
-            Lappendsym(done_list1, fun);
+            lappendsym(done_list, fun);
+            lappendsym(done_list1, fun);
             Sprintf(buf, "static void* _sparseobj%d;\n", fun->u.i);
             q = linsertstr(procfunc, buf);
             Sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
@@ -711,7 +711,7 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
     fixrlst(rlst);
 #endif
     CVODE_FLAG {
-        Insertstr(rlst->position, "  b_flux = f_flux = 0.;\n");
+        insertstr(rlst->position, "  b_flux = f_flux = 0.;\n");
     }
     Sprintf(buf,
             "{int _i; double _dt1 = 1.0/%s;\n\
@@ -719,7 +719,7 @@ for(_i=%d;_i<%d;_i++){\n",
             dt,
             ncons,
             nstate);
-    Insertstr(rlst->position, buf);
+    insertstr(rlst->position, buf);
 
     qv = insertstr(rlst->position, "");
 
@@ -746,7 +746,7 @@ for(_i=%d;_i<%d;_i++){\n",
     }
     qv = insertstr(rlst->position, "");
     Sprintf(buf, "    \n}");
-    Insertstr(rlst->position, buf);
+    insertstr(rlst->position, buf);
     /* Modify to take into account compartment sizes */
     /* separate into scalars and vectors */
 
@@ -763,14 +763,14 @@ for(_i=%d;_i<%d;_i++){\n",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->position, buf);
+                insertstr(rlst->position, buf);
                 Sprintf(buf,
                         ";\n_MATELM%d(%d, %d) *= %s;",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->position, buf);
+                insertstr(rlst->position, buf);
             }
         }
     }
@@ -782,7 +782,7 @@ for(_i=%d;_i<%d;_i++){\n",
         if (rlst->capacity[i][0]) {
             if (rlst->symorder[i]->subtype & ARRAY) {
                 Sprintf(buf, "\nfor (_i=0; _i < %d; _i++) {\n", rlst->symorder[i]->araydim);
-                Insertstr(rlst->position, buf);
+                insertstr(rlst->position, buf);
                 qv = insertstr(rlst->position, "");
 
                 Sprintf(buf,
@@ -790,23 +790,23 @@ for(_i=%d;_i<%d;_i++){\n",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->position, buf);
+                insertstr(rlst->position, buf);
                 Sprintf(buf,
                         ";\n_MATELM%d(_i + %d, _i + %d) *= %s;",
                         fun->u.i,
                         rlst->symorder[i]->varnum,
                         rlst->symorder[i]->varnum,
                         rlst->capacity[i]);
-                Insertstr(rlst->position, buf);
+                insertstr(rlst->position, buf);
                 qv = insertstr(rlst->position, "");
 
-                Insertstr(rlst->position, "}");
+                insertstr(rlst->position, "}");
             }
         }
     }
 
     /*----------*/
-    Insertstr(rlst->position, "}\n");
+    insertstr(rlst->position, "}\n");
     linmat = 1;
     for (r1 = rlst->reaction; r1; r1 = r1->reactnext) {
         NOT_CVODE_FLAG {
@@ -820,7 +820,7 @@ for(_i=%d;_i<%d;_i++){\n",
         }
         if (firsttrans1) {
             Sprintf(buf, "\n#define _linmat%d  %d\n", fun->u.i, linmat);
-            Linsertstr(procfunc, buf);
+            linsertstr(procfunc, buf);
         }
         if (firsttrans) {
             kinlist(fun, rlst);
@@ -829,14 +829,14 @@ for(_i=%d;_i<%d;_i++){\n",
             if (strcmp(mname, "_advance") == 0) { /* use for simeq */
                 Sprintf(
                     buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n", fun->u.i, fun->u.i, nstate);
-                Linsertstr(procfunc, buf);
+                linsertstr(procfunc, buf);
                 Sprintf(buf,
                         "\n#define _MATELM%d(arg1,arg2) _coef%d[arg1][arg2]\n",
                         fun->u.i,
                         fun->u.i);
-                Linsertstr(procfunc, buf);
+                linsertstr(procfunc, buf);
                 Sprintf(buf, "static double **_coef%d;\n", fun->u.i);
-                Linsertstr(procfunc, buf);
+                linsertstr(procfunc, buf);
 
             } else { /*for sparse matrix solver*/
                 /* boilerplate for using sparse matrix solver */
@@ -887,10 +887,10 @@ void genmatterms(Reaction* r, int fn) {
             }
             /* construct the term */
             Sprintf(buf, "_term = %s", r->krate[j]);
-            Insertstr(q, buf);
+            insertstr(q, buf);
             if (rt->num != 1) {
                 Sprintf(buf, "* %d", rt->num);
-                Insertstr(q, buf);
+                insertstr(q, buf);
             }
             for (rt1 = r->rterm[j]; rt1; rt1 = rt1->rnext) {
                 n = rt1->num;
@@ -899,15 +899,15 @@ void genmatterms(Reaction* r, int fn) {
                 }
                 for (i = 0; i < n; i++) {
                     linmat = 0;
-                    Insertstr(q, "*");
-                    Insertsym(q, rt1->sym);
+                    insertstr(q, "*");
+                    insertsym(q, rt1->sym);
                     if (rt1->str) {
                         Sprintf(buf, "[%s]", rt1->str);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     }
                 }
             }
-            Insertstr(q, ";\n");
+            insertstr(q, ";\n");
             /* put in each equation (row) */
             for (j1 = 0; j1 < 2; j1++)
                 for (rt1 = r->rterm[j1]; rt1; rt1 = rt1->rnext) {
@@ -918,31 +918,31 @@ void genmatterms(Reaction* r, int fn) {
                     if (s1->varnum < ncons)
                         continue;
                     Sprintf(buf, "_MATELM%d(", fn);
-                    Insertstr(q, buf);
+                    insertstr(q, buf);
                     if (rt1->str) {
                         Sprintf(buf, "%d + %s", s1->varnum, rt1->str);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     } else {
                         Sprintf(buf, "%d", s1->varnum);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     }
                     if (rt->str) {
                         Sprintf(buf, ",%d + %s)", s->varnum, rt->str);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     } else {
                         Sprintf(buf, ",%d)", s->varnum);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     }
                     if (j == j1) {
-                        Insertstr(q, " +=");
+                        insertstr(q, " +=");
                     } else {
-                        Insertstr(q, " -=");
+                        insertstr(q, " -=");
                     }
                     if (rt1->num != 1) {
                         Sprintf(buf, "%d * ", rt1->num);
-                        Insertstr(q, buf);
+                        insertstr(q, buf);
                     }
-                    Insertstr(q, "_term;\n");
+                    insertstr(q, "_term;\n");
                 }
         }
     /* REACTION comment left in */
@@ -965,7 +965,7 @@ void massageconserve(Item* q1, Item* q3, Item* q5) /* CONSERVE react '=' expr */
     replacstr(q1, "/*");
     qv = insertstr(q1, "");
     /*SUPPRESS 440*/
-    Insertstr(q5->next, "*/\n");
+    insertstr(q5->next, "*/\n");
     /*SUPPRESS 440*/
     conslist->position = insertstr(q5->next->next, "/*CONSERVATION*/\n");
     rterm = (Rterm*) 0;
@@ -996,7 +996,7 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
         eqnum++;
     }
     Sprintf(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
-    Insertstr(q, buf);
+    insertstr(q, buf);
     for (rt = r->rterm[0]; rt; rt = rt->rnext) {
         char buf1[NRN_BUFSIZE];
         if (rlst->capacity[rt->sym->used][0]) {
@@ -1010,7 +1010,7 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
         if (rt->str) {
             if (rlst->capacity[rt->sym->used][0]) {
                 Sprintf(buf, "_i = %s;\n", rt->str);
-                Insertstr(q, buf);
+                insertstr(q, buf);
             }
             Sprintf(buf,
                     "_MATELM%s, %d + %s) = %d%s;\n",
@@ -1019,19 +1019,19 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
                     rt->str,
                     rt->num,
                     buf1);
-            Insertstr(q, buf);
+            insertstr(q, buf);
             Sprintf(buf, "_RHS%s) -= %s[%s]%s", eqstr, rt->sym->name, rt->str, buf1);
         } else {
             Sprintf(buf, "_MATELM%s, %d) = %d%s;\n", eqstr, rt->sym->varnum, rt->num, buf1);
-            Insertstr(q, buf);
+            insertstr(q, buf);
             Sprintf(buf, "_RHS%s) -= %s%s", eqstr, rt->sym->name, buf1);
         }
-        Insertstr(q, buf);
+        insertstr(q, buf);
         if (rt->num != 1) {
             Sprintf(buf, " * %d;\n", rt->num);
-            Insertstr(q, buf);
+            insertstr(q, buf);
         } else {
-            Insertstr(q, ";\n");
+            insertstr(q, ";\n");
         }
     }
     return eqnum;
@@ -1142,7 +1142,7 @@ void massagecompart(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
     /* surround the statement with comments so that the expession
        will benignly exist for later use */
     /*SUPPRESS 440*/
-    Insertstr(qb2->next, "*/\n");
+    insertstr(qb2->next, "*/\n");
 
     if (indx) {
         for (q = qexp; q != qb1; q = q->next) {
@@ -1151,10 +1151,10 @@ void massagecompart(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
             }
         }
         /*SUPPRESS 440*/
-        Insertstr(qexp->prev->prev->prev, "/*");
+        insertstr(qexp->prev->prev->prev, "/*");
     } else {
         /*SUPPRESS 440*/
-        Insertstr(qexp->prev, "/*");
+        insertstr(qexp->prev, "/*");
     }
     for (q = qb1->next; q != qb2; q = qs) {
         qs = q->next;
@@ -1168,9 +1168,9 @@ diag(SYM(q)->name, "must be a (solved) STATE in a COMPARTMENT statement");
     if (!compartlist) {
         compartlist = newlist();
     }
-    Lappenditem(compartlist, qexp);
-    Lappenditem(compartlist, qb1);
-    Lappenditem(compartlist, qb2);
+    lappenditem(compartlist, qexp);
+    lappenditem(compartlist, qb1);
+    lappenditem(compartlist, qb2);
 }
 
 void massageldifus(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
@@ -1180,7 +1180,7 @@ void massageldifus(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
     /* surround the statement with comments so that the expession
        will benignly exist for later use */
     /*SUPPRESS 440*/
-    Insertstr(qb2->next, "*/\n");
+    insertstr(qb2->next, "*/\n");
 
     if (indx) {
         for (q = qexp; q != qb1; q = q->next) {
@@ -1189,10 +1189,10 @@ void massageldifus(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
             }
         }
         /*SUPPRESS 440*/
-        Insertstr(qexp->prev->prev->prev, "/*");
+        insertstr(qexp->prev->prev->prev, "/*");
     } else {
         /*SUPPRESS 440*/
-        Insertstr(qexp->prev, "/*");
+        insertstr(qexp->prev, "/*");
     }
     if (!ldifuslist) {
         ldifuslist = newlist();
@@ -1206,8 +1206,8 @@ void massageldifus(Item* qexp, Item* qb1, Item* qb2, Symbol* indx) {
             diag(SYM(q)->name, "must be a (solved) STATE in a LONGITUDINAL_DIFFUSION statement");
         }
         lappendsym(ldifuslist, s);
-        Lappenditem(ldifuslist, qexp);
-        Lappenditem(ldifuslist, qb1);
+        lappenditem(ldifuslist, qexp);
+        lappenditem(ldifuslist, qb1);
         /* store the COMPARTMENT volume expression for this sym */
         q1 = compartlist;
         if (q1)
@@ -1245,9 +1245,9 @@ void kin_vect1(Item* q1, Item* q2, Item* q4) {
     if (!kvect) {
         kvect = newlist();
     }
-    Lappenditem(kvect, q1); /* static .. */
-    Lappenditem(kvect, q2); /* sym */
-    Lappenditem(kvect, q4); /* } */
+    lappenditem(kvect, q1); /* static .. */
+    lappenditem(kvect, q2); /* sym */
+    lappenditem(kvect, q4); /* } */
 }
 
 void kin_vect2() {
@@ -1361,9 +1361,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
             }
         }
     kinetic_intmethod(fun, "NEURON's CVode");
-    Lappendstr(procfunc, "\n/*CVODE ode begin*/\n");
+    lappendstr(procfunc, "\n/*CVODE ode begin*/\n");
     Sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf,
             "static int _ode_spec%d(_internalthreadargsproto_) {\n"
             "  int _reset=0;\n"
@@ -1372,9 +1372,9 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
     vectorize_substitute(procfunc->prev, buf);
     copyitems(cvode_sbegin, cvode_send, procfunc->prev);
 
-    Lappendstr(procfunc, "\n/*CVODE matsol*/\n");
+    lappendstr(procfunc, "\n/*CVODE matsol*/\n");
     Sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf,
             "static int _ode_matsol%d(void* _so, double* _rhs, _internalthreadargsproto_) {int "
             "_reset=0;{\n",
@@ -1424,7 +1424,7 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum) {
         }
     }
 #endif
-    Lappendstr(procfunc, "\n/*CVODE end*/\n");
+    lappendstr(procfunc, "\n/*CVODE end*/\n");
 
 #endif
 }

@@ -242,7 +242,7 @@ void parout() {
         rsuffix = suffix;
     }
 
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\
 \n#if !NRNGPU\
 \n#undef exp\
@@ -250,7 +250,7 @@ void parout() {
 \n#endif\n\
 ");
     if (protect_include_) {
-        Lappendstr(defs_list, "\n#include \"nmodlmutex.h\"");
+        lappendstr(defs_list, "\n#include \"nmodlmutex.h\"");
     }
 
 #if 1
@@ -272,20 +272,20 @@ void parout() {
             suffix,
             suffix,
             suffix);
-    Lappendstr(defs_list, buf);
+    lappendstr(defs_list, buf);
     SYMLISTITER {
         Symbol* s = SYM(q);
         /* note that FUNCT will be redefined anyway */
         if (s->type == NAME && s->subtype & (PROCED | DERF | KINF)) {
             Sprintf(buf, "\n#define %s %s_%s", s->name, s->name, suffix);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "\n");
+    lappendstr(defs_list, "\n");
 #endif /* distinct names for easier profiling */
 
     if (vectorize) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n\
 #define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
 #define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
@@ -295,7 +295,7 @@ void parout() {
 #define _internalthreadargsproto_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
 ");
     } else {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n\
 #define _threadargscomma_ /**/\n\
 #define _threadargsprotocomma_ /**/\n\
@@ -305,14 +305,14 @@ void parout() {
 #define _internalthreadargsproto_ /**/\n\
 ");
     }
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\
 	/*SUPPRESS 761*/\n\
 	/*SUPPRESS 762*/\n\
 	/*SUPPRESS 763*/\n\
 	/*SUPPRESS 765*/\n\
 	");
-    Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
+    lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 
     nrndeclare();
     varcount = parraycount = 0;
@@ -328,28 +328,28 @@ void parout() {
                 "static size_t _iml{0};\n"
                 "static Datum *_ppvar;\n");
     }
-    Lappendstr(defs_list, buf);
-    Lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
+    lappendstr(defs_list, buf);
+    lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
     if (pointercount) {
         q = nrnpointers->next;
         Sprintf(buf, "%d;\n", SYM(q)->used);
     } else {
         Sprintf(buf, "-1;\n");
     }
-    Lappendstr(defs_list, buf);
+    lappendstr(defs_list, buf);
     /*above modified to also count and define pointers*/
 
     if (vectorize) {
-        Lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
+        lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
     }
     if (!point_process) {
-        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
-        Lappendstr(defs_list,
+        lappendstr(defs_list, "static Prop* _extcall_prop;\n");
+        lappendstr(defs_list,
                    "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
-        Lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
+        lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
     }
 
-    Lappendstr(defs_list, "/* external NEURON variables */\n");
+    lappendstr(defs_list, "/* external NEURON variables */\n");
     SYMLISTITER {
         s = SYM(q);
         if (s->nrntype & NRNEXTRN) {
@@ -364,11 +364,11 @@ void parout() {
             } else {
                 Sprintf(buf, "extern double %s;\n", s->name);
             }
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
 
-    Lappendstr(defs_list, "/* declaration of user functions */\n");
+    lappendstr(defs_list, "/* declaration of user functions */\n");
     SYMLISTITER {
         s = SYM(q);
         if (s->subtype & (FUNCT | PROCED) && s->name[0] != '_') {
@@ -377,11 +377,11 @@ void parout() {
             } else {
                 Sprintf(buf, "static void _hoc_%s(void);\n", s->name);
             }
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
 
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "static int _mechtype;\n\
 extern void _nrn_cacheloop_reg(int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
@@ -390,7 +390,7 @@ extern void nrn_promote(Prop*, int, int);\n\
 ");
 
     if (nmodl_text) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n"
                    "#define NMODL_TEXT 1\n"
                    "#if NMODL_TEXT\n"
@@ -400,103 +400,103 @@ extern void nrn_promote(Prop*, int, int);\n\
 
     /**** create special point process functions */
     if (point_process) {
-        Lappendstr(defs_list, "extern Prop* nrn_point_prop_;\n");
-        Lappendstr(defs_list, "static int _pointtype;\n");
-        Lappendstr(defs_list,
+        lappendstr(defs_list, "extern Prop* nrn_point_prop_;\n");
+        lappendstr(defs_list, "static int _pointtype;\n");
+        lappendstr(defs_list,
                    "static void* _hoc_create_pnt(Object* _ho) { void* create_point_process(int, "
                    "Object*);\n");
-        Lappendstr(defs_list, "return create_point_process(_pointtype, _ho);\n}\n");
-        Lappendstr(defs_list, "static void _hoc_destroy_pnt(void*);\n");
-        Lappendstr(
+        lappendstr(defs_list, "return create_point_process(_pointtype, _ho);\n}\n");
+        lappendstr(defs_list, "static void _hoc_destroy_pnt(void*);\n");
+        lappendstr(
             defs_list,
             "static double _hoc_loc_pnt(void* _vptr) {double loc_point_process(int, void*);\n");
-        Lappendstr(defs_list, "return loc_point_process(_pointtype, _vptr);\n}\n");
-        Lappendstr(defs_list,
+        lappendstr(defs_list, "return loc_point_process(_pointtype, _vptr);\n}\n");
+        lappendstr(defs_list,
                    "static double _hoc_has_loc(void* _vptr) {double has_loc_point(void*);\n");
-        Lappendstr(defs_list, "return has_loc_point(_vptr);\n}\n");
-        Lappendstr(defs_list, "static double _hoc_get_loc_pnt(void* _vptr) {\n");
-        Lappendstr(
+        lappendstr(defs_list, "return has_loc_point(_vptr);\n}\n");
+        lappendstr(defs_list, "static double _hoc_get_loc_pnt(void* _vptr) {\n");
+        lappendstr(
             defs_list,
             "double get_loc_point_process(void*); return (get_loc_point_process(_vptr));\n}\n");
     }
     /* function to set up _p and _ppvar */
-    Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
-    Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
+    lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
+    lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
     if (!point_process) {
-        Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
+        lappendstr(defs_list, "_extcall_prop = _prop;\n");
+        lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
     }
     if (!vectorize) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
     }
-    Lappendstr(defs_list, "}\n");
+    lappendstr(defs_list, "}\n");
 
     if (point_process) {
-        Lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
-        Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
+        lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
+        lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
     } else {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "static void _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
         Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
-    Lappendstr(defs_list, "  _setdata(_prop);\n");
+    lappendstr(defs_list, "  _setdata(_prop);\n");
     if (point_process) {
-        Lappendstr(defs_list, "}\n");
+        lappendstr(defs_list, "}\n");
     } else {
-        Lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
+        lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
     }
 
     /* functions */
-    Lappendstr(defs_list, "/* connect user functions to hoc names */\n");
-    Lappendstr(defs_list, "static VoidFunc hoc_intfunc[] = {\n");
+    lappendstr(defs_list, "/* connect user functions to hoc names */\n");
+    lappendstr(defs_list, "static VoidFunc hoc_intfunc[] = {\n");
     if (point_process) {
-        Lappendstr(defs_list, "{0, 0}\n};\n");
-        Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
+        lappendstr(defs_list, "{0, 0}\n};\n");
+        lappendstr(defs_list, "static Member_func _member_func[] = {\n");
         Sprintf(buf, "{\"loc\", _hoc_loc_pnt},\n");
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         Sprintf(buf, "{\"has_loc\", _hoc_has_loc},\n");
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         Sprintf(buf, "{\"get_loc\", _hoc_get_loc_pnt},\n");
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     } else {
         Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
 
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
             Sprintf(buf, "{\"%s%s\", _hoc_%s},\n", s->name, rsuffix, s->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "{0, 0}\n};\n");
+    lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* Direct Python call wrappers to density mechanism functions. */
     if (!point_process) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n/* Direct Python call wrappers to density mechanism functions.*/\n");
         SYMLISTITER {
             s = SYM(q);
             if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
                 Sprintf(buf, "static double _npy_%s(Prop*);\n", s->name, s->name);
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
         }
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n"
                    "static NPyDirectMechFunc npy_direct_func_proc[] = {\n");
         SYMLISTITER {
             s = SYM(q);
             if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
                 Sprintf(buf, "{\"%s\", _npy_%s},\n", s->name, s->name);
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
         }
-        Lappendstr(defs_list, "{0, 0}\n};\n");
+        lappendstr(defs_list, "{0, 0}\n};\n");
     }
 
     /* FUNCTION's are now global so callable from other models */
@@ -508,7 +508,7 @@ extern void nrn_promote(Prop*, int, int);\n\
             s = SYM(q);
             if ((s->subtype & FUNCT)) {
                 Sprintf(buf, "#define %s %s%s\n", s->name, s->name, suffix);
-                q1 = Lappendstr(defs_list, buf);
+                q1 = lappendstr(defs_list, buf);
                 q1->itemtype = VERBATIM;
             }
         }
@@ -517,21 +517,21 @@ extern void nrn_promote(Prop*, int, int);\n\
         s = SYM(q);
         if ((s->subtype & FUNCT)) {
             Sprintf(buf, "extern double %s(", s->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             if (vectorize && !s->no_threadargs) {
                 if (s->varnum) {
-                    Lappendstr(defs_list, "_internalthreadargsprotocomma_");
+                    lappendstr(defs_list, "_internalthreadargsprotocomma_");
                 } else {
-                    Lappendstr(defs_list, "_internalthreadargsproto_");
+                    lappendstr(defs_list, "_internalthreadargsproto_");
                 }
             }
             for (j = 0; j < s->varnum; ++j) {
-                Lappendstr(defs_list, "double");
+                lappendstr(defs_list, "double");
                 if (j + 1 < s->varnum) {
-                    Lappendstr(defs_list, ",");
+                    lappendstr(defs_list, ",");
                 }
             }
-            Lappendstr(defs_list, ");\n");
+            lappendstr(defs_list, ");\n");
         }
     }
 
@@ -604,14 +604,14 @@ extern void nrn_promote(Prop*, int, int);\n\
             }
         }
     /* double scalars declared internally */
-    Lappendstr(defs_list, "/* declare global and static user variables */\n");
+    lappendstr(defs_list, "/* declare global and static user variables */\n");
     if (gind) {
         Sprintf(buf,
                 "static int _thread1data_inuse = 0;\nstatic double _thread1data[%d];\n#define _gth "
                 "%d\n",
                 gind,
                 thread_data_index);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         Sprintf(buf,
                 "if (_thread1data_inuse) {\n"
                 "  _thread[_gth] = {neuron::container::do_not_search, new double[%d]{}};\n"
@@ -651,7 +651,7 @@ extern void nrn_promote(Prop*, int, int);\n\
                             s->name,
                             gind);
                 }
-                q1 = Lappendstr(defs_list, buf);
+                q1 = lappendstr(defs_list, buf);
                 q1->itemtype = VERBATIM;
                 if (s->subtype & ARRAY) {
                     gind += s->araydim;
@@ -662,7 +662,7 @@ extern void nrn_promote(Prop*, int, int);\n\
             }
             if (suffix[0]) {
                 Sprintf(buf, "#define %s %s%s\n", s->name, s->name, suffix);
-                q1 = Lappendstr(defs_list, buf);
+                q1 = lappendstr(defs_list, buf);
                 q1->itemtype = VERBATIM;
             }
             decode_ustr(s, &d1, &d2, buf);
@@ -671,12 +671,12 @@ extern void nrn_promote(Prop*, int, int);\n\
             } else {
                 Sprintf(buf, "double %s = %g;\n", s->name, d1);
             }
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
 
-    Lappendstr(defs_list, "/* some parameters have upper and lower limits */\n");
-    Lappendstr(defs_list, "static HocParmLimits _hoc_parm_limits[] = {\n");
+    lappendstr(defs_list, "/* some parameters have upper and lower limits */\n");
+    lappendstr(defs_list, "static HocParmLimits _hoc_parm_limits[] = {\n");
     SYMLISTITER {
         s = SYM(q);
         if (s->subtype & PARM) {
@@ -687,11 +687,11 @@ extern void nrn_promote(Prop*, int, int);\n\
                 } else {
                     Sprintf(buf, "{\"%s\", %g, %g},\n", s->name, d1, d2);
                 }
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
         }
     }
-    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
+    lappendstr(defs_list, "{0, 0, 0}\n};\n");
 
     units_reg();
 
@@ -704,33 +704,33 @@ extern void nrn_promote(Prop*, int, int);\n\
             } else {
                 Sprintf(buf, "static double %s = %g;\n", s->name, d1);
             }
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "/* connect global user variables to hoc */\n");
-    Lappendstr(defs_list, "static DoubScal hoc_scdoub[] = {\n");
+    lappendstr(defs_list, "/* connect global user variables to hoc */\n");
+    lappendstr(defs_list, "static DoubScal hoc_scdoub[] = {\n");
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && !(s->subtype & ARRAY)) {
             Sprintf(buf, "{\"%s%s\", &%s%s},\n", s->name, suffix, s->name, suffix);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "{0, 0}\n};\n");
+    lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* double vectors */
-    Lappendstr(defs_list, "static DoubVec hoc_vdoub[] = {\n");
+    lappendstr(defs_list, "static DoubVec hoc_vdoub[] = {\n");
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL && (s->subtype & ARRAY)) {
             Sprintf(buf, "{\"%s%s\", %s%s, %d},\n", s->name, suffix, s->name, suffix, s->araydim);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "{0, 0, 0}\n};\n");
-    Lappendstr(defs_list, "static double _sav_indep;\n");
+    lappendstr(defs_list, "{0, 0, 0}\n};\n");
+    lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
                    "Memb_list* _ml, size_t _iml, _nrn_model_sorted_token const&)");
         for (i = 2; i <= ba_index_; ++i) {
@@ -738,21 +738,21 @@ extern void nrn_promote(Prop*, int, int);\n\
                     ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
                     "_ml, size_t _iml, _nrn_model_sorted_token const&)",
                     i);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
-        Lappendstr(defs_list, ";\n");
+        lappendstr(defs_list, ";\n");
     }
 
     /******** what normally goes into cabvars.h structures */
 
     /*declaration of the range variables names to HOC */
-    Lappendstr(
+    lappendstr(
         defs_list,
         "static void nrn_alloc(Prop*);\n"
         "static void nrn_init(_nrn_model_sorted_token const&, NrnThread*, Memb_list*, int);\n"
         "static void nrn_state(_nrn_model_sorted_token const&, NrnThread*, Memb_list*, int);\n");
     if (brkpnt_exists) {
-        Lappendstr(
+        lappendstr(
             defs_list,
             "static void nrn_cur(_nrn_model_sorted_token const&, NrnThread*, Memb_list*, int);\n"
             "static void nrn_jacob(_nrn_model_sorted_token const&, NrnThread*, "
@@ -777,24 +777,24 @@ extern void nrn_promote(Prop*, int, int);\n\
         }
         ppvar_cnt += watch_seen_;
         Sprintf(buf, "\n#define _watch_array _ppvar + %d", watch_index);
-        Lappendstr(defs_list, buf);
-        Lappendstr(defs_list, "\n");
-        Lappendstr(defs_list, "static void _watch_alloc(Datum*);\n");
-        Lappendstr(defs_list, "extern void hoc_reg_watch_allocate(int, void(*)(Datum*));");
-        Lappendstr(watch_alloc, "}\n\n");
+        lappendstr(defs_list, buf);
+        lappendstr(defs_list, "\n");
+        lappendstr(defs_list, "static void _watch_alloc(Datum*);\n");
+        lappendstr(defs_list, "extern void hoc_reg_watch_allocate(int, void(*)(Datum*));");
+        lappendstr(watch_alloc, "}\n\n");
         movelist(watch_alloc->next, watch_alloc->prev, procfunc);
     }
     if (for_netcons_) {
         Sprintf(buf, "\n#define _fnc_index %d\n", ppvar_cnt);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         // TODO: improve type safety by not using void* here
         ppvar_semantics(ppvar_cnt, "fornetcon", "_fnc_index", "void*");
         ppvar_cnt += 1;
     }
     if (point_process) {
-        Lappendstr(defs_list, "static void _hoc_destroy_pnt(void* _vptr) {\n");
+        lappendstr(defs_list, "static void _hoc_destroy_pnt(void* _vptr) {\n");
         if (watch_seen_ || for_netcons_) {
-            Lappendstr(defs_list, "  Prop* _prop = ((Point_process*)_vptr)->_prop;\n");
+            lappendstr(defs_list, "  Prop* _prop = ((Point_process*)_vptr)->_prop;\n");
         }
         if (watch_seen_) {
             Sprintf(buf,
@@ -802,16 +802,16 @@ extern void nrn_promote(Prop*, int, int);\n\
                     "%d, %d);}\n",
                     watch_index,
                     watch_seen_);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         if (for_netcons_) {
             Sprintf(buf,
                     "  if (_prop) { "
                     "_nrn_free_fornetcon(&(_nrn_mechanism_access_dparam(_prop)[_fnc_index]"
                     ".literal_value<void*>()));}\n");
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
-        Lappendstr(defs_list, "  destroy_point_process(_vptr);\n}\n");
+        lappendstr(defs_list, "  destroy_point_process(_vptr);\n}\n");
     }
     if (cvode_emit) {
         cvode_ieq_index = ppvar_cnt;
@@ -823,21 +823,21 @@ extern void nrn_promote(Prop*, int, int);\n\
         if (!point_process) {
             diag("DESTRUCTOR only permitted for POINT_PROCESS", (char*) 0);
         }
-        Lappendstr(defs_list, "static void _destructor(Prop*);\n");
+        lappendstr(defs_list, "static void _destructor(Prop*);\n");
     }
 
     if (constructorfunc->next != constructorfunc) {
-        Lappendstr(defs_list, "static void _constructor(Prop*);\n");
+        lappendstr(defs_list, "static void _constructor(Prop*);\n");
     }
 
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "/* connect range variables in _p that hoc is supposed to know about */\n");
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\
 static const char *_mechanism[] = {\n\
 ");
     Sprintf(buf, "\"%s\",\n\"%s\",\n", nmodl_version_, mechname);
-    Lappendstr(defs_list, buf);
+    lappendstr(defs_list, buf);
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
@@ -845,9 +845,9 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
-    Lappendstr(defs_list, "0,\n");
+    lappendstr(defs_list, "0,\n");
     ITERATE(q, rangedep) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
@@ -855,9 +855,9 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
-    Lappendstr(defs_list, "0,\n");
+    lappendstr(defs_list, "0,\n");
     ITERATE(q, rangestate) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
@@ -865,9 +865,9 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
-    Lappendstr(defs_list, "0,\n");
+    lappendstr(defs_list, "0,\n");
 
     /* pointer variable names */
     ITERATE(q, nrnpointers) {
@@ -877,23 +877,23 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
 
-    Lappendstr(defs_list, "0};\n");
+    lappendstr(defs_list, "0};\n");
 
     /*********Creation of the allocation function*/
 
     if (diamdec) {
-        Lappendstr(defs_list, "static Symbol* _morphology_sym;\n");
+        lappendstr(defs_list, "static Symbol* _morphology_sym;\n");
     }
     if (areadec) {
-        Lappendstr(defs_list, "extern Node* nrn_alloc_node_;\n");
+        lappendstr(defs_list, "extern Node* nrn_alloc_node_;\n");
     }
     ITERATE(q, useion) {
         sion = SYM(q);
         Sprintf(buf, "static Symbol* _%s_sym;\n", sion->name);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         if (ldifuslist) {
             Sprintf(buf, "static int _type_i%s;\n", sion->name);
             lappendstr(defs_list, buf);
@@ -901,14 +901,14 @@ static const char *_mechanism[] = {\n\
         q = q->next->next->next;
     }
 
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\n"
                "extern Prop* need_memb(Symbol*);\n"
                "static void nrn_alloc(Prop* _prop) {\n"
                "  Prop *prop_ion{};\n"
                "  Datum *_ppvar{};\n");
     if (point_process) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    " if (nrn_point_prop_) {\n"
                    "    _nrn_mechanism_access_alloc_seq(_prop) = "
                    "_nrn_mechanism_access_alloc_seq(nrn_point_prop_);\n"
@@ -918,8 +918,8 @@ static const char *_mechanism[] = {\n\
     // need to fill _prop->dparam before calling _nrn_mechanism_cache_range(Prop*)
     if (ppvar_cnt) {
         Sprintf(buf, "  _ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cnt);
-        Lappendstr(defs_list, buf);
-        Lappendstr(defs_list, "   _nrn_mechanism_access_dparam(_prop) = _ppvar;\n");
+        lappendstr(defs_list, buf);
+        lappendstr(defs_list, "   _nrn_mechanism_access_dparam(_prop) = _ppvar;\n");
     }
     // seems that even in the old code and with vectorize == false that the global _p, _ppvar were
     // shadowed, so don't worry about shadowing the global _ml and _iml here
@@ -929,8 +929,8 @@ static const char *_mechanism[] = {\n\
             "    size_t const _iml{};\n"
             "    assert(_nrn_mechanism_get_num_vars(_prop) == %d);\n",
             parraycount);
-    Lappendstr(defs_list, buf);
-    Lappendstr(defs_list, "	/*initialize range parameters*/\n");
+    lappendstr(defs_list, buf);
+    lappendstr(defs_list, "	/*initialize range parameters*/\n");
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
@@ -938,31 +938,31 @@ static const char *_mechanism[] = {\n\
         }
         decode_ustr(s, &d1, &d2, buf);
         Sprintf(buf, "	%s = %g;\n", s->name, d1);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
     if (point_process) {
-        Lappendstr(defs_list, " }\n");
+        lappendstr(defs_list, " }\n");
     }
     Sprintf(buf, "\t assert(_nrn_mechanism_get_num_vars(_prop) == %d);\n", parraycount);
-    Lappendstr(defs_list, buf);
+    lappendstr(defs_list, buf);
     if (ppvar_cnt) {
-        Lappendstr(defs_list, "\t_nrn_mechanism_access_dparam(_prop) = _ppvar;\n");
-        Lappendstr(defs_list, "\t/*connect ionic variables to this model*/\n");
+        lappendstr(defs_list, "\t_nrn_mechanism_access_dparam(_prop) = _ppvar;\n");
+        lappendstr(defs_list, "\t/*connect ionic variables to this model*/\n");
     }
     if (diamdec) {
         Sprintf(buf, "prop_ion = need_memb(_morphology_sym);\n");
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         Sprintf(buf,
                 "\t_ppvar[%d] = _nrn_mechanism_get_param_handle(prop_ion, 0); /* diam */\n",
                 ioncount + pointercount),
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount, "diam", "diam", "double*");
     }
     if (areadec) {
         Sprintf(buf,
                 "\t_ppvar[%d] = _nrn_mechanism_get_area_handle(nrn_alloc_node_);\n",
                 ioncount + pointercount + diamdec),
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         ppvar_semantics(ioncount + pointercount + diamdec, "area", "area", "double*");
     }
 
@@ -976,7 +976,7 @@ static const char *_mechanism[] = {\n\
         int need_style = 0;
         sion = SYM(q);
         Sprintf(buf, "prop_ion = need_memb(_%s_sym);\n", sion->name);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         if (ldifuslist) {
             Sprintf(buf, " _type_i%s = _nrn_mechanism_get_type(prop_ion);\n", sion->name);
             lappendstr(defs_list, buf);
@@ -990,7 +990,7 @@ static const char *_mechanism[] = {\n\
                     ioncount++,
                     iontype(SYM(q1)->name, sion->name),
                     SYM(q1)->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         q = q->next;
         ITERATE(q1, LST(q)) {
@@ -1004,7 +1004,7 @@ static const char *_mechanism[] = {\n\
                         ioncount++,
                         itype,
                         SYM(q1)->name);
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
             if (itype == IONCUR) {
                 dcurdef = 1;
@@ -1014,7 +1014,7 @@ static const char *_mechanism[] = {\n\
                         ioncount++,
                         IONDCUR,
                         sion->name);
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
             if (itype == IONIN || itype == IONOUT) {
                 need_style = 1;
@@ -1026,14 +1026,14 @@ static const char *_mechanism[] = {\n\
                     ioncount++,
                     IONEREV,
                     sion->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             Sprintf(buf,
                     "\t_ppvar[%d] = {neuron::container::do_not_search, "
                     "&(_nrn_mechanism_access_dparam(prop_ion)[0].literal_value<int>())}; /* "
                     "iontype for %s */\n",
                     ioncount++,
                     sion->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         q = q->next;
         if (!dcurdef && ldifuslist) {
@@ -1043,14 +1043,14 @@ static const char *_mechanism[] = {\n\
                 ioncount++,
                 IONDCUR,
                 sion->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
     }
 
     if (constructorfunc->next != constructorfunc) {
-        Lappendstr(defs_list, "if (!nrn_point_prop_) {_constructor(_prop);}\n");
+        lappendstr(defs_list, "if (!nrn_point_prop_) {_constructor(_prop);}\n");
         if (vectorize) {
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
                        "  _nrn_mechanism_cache_instance _ml_real{_prop};\n"
@@ -1059,7 +1059,7 @@ static const char *_mechanism[] = {\n\
                        "  Datum *_ppvar{_nrn_mechanism_access_dparam(_prop)}, *_thread{};\n"
                        "  {\n");
         } else {
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\n"
                        "static void _constructor(Prop* _prop) {\n"
                        "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
@@ -1067,15 +1067,15 @@ static const char *_mechanism[] = {\n\
                        "  {\n");
         }
         movelist(constructorfunc->next, constructorfunc->prev, procfunc);
-        Lappendstr(procfunc, "\n}\n}\n");
+        lappendstr(procfunc, "\n}\n}\n");
     }
-    Lappendstr(defs_list, "\n}\n");
+    lappendstr(defs_list, "\n}\n");
 
-    Lappendstr(defs_list, "static void _initlists();\n");
+    lappendstr(defs_list, "static void _initlists();\n");
     if (cvode_emit) {
-        Lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
-        Lappendstr(defs_list, "static Symbol** _atollist;\n");
-        Lappendstr(defs_list, "static HocStateTolerance _hoc_state_tol[] = {\n");
+        lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
+        lappendstr(defs_list, "static Symbol** _atollist;\n");
+        lappendstr(defs_list, "static HocStateTolerance _hoc_state_tol[] = {\n");
         ITERATE(q, rangestate) {
             double d1;
             s = SYM(q);
@@ -1085,10 +1085,10 @@ static const char *_mechanism[] = {\n\
                 } else {
                     Sprintf(buf, "{\"%s\", %g},\n", s->name, d1);
                 }
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
         }
-        Lappendstr(defs_list, "{0, 0}\n};\n");
+        lappendstr(defs_list, "{0, 0}\n};\n");
     }
 
     if (net_send_seen_) {
@@ -1096,25 +1096,25 @@ static const char *_mechanism[] = {\n\
             diag("can't use net_send if there is no NET_RECEIVE block", (char*) 0);
         }
         Sprintf(buf, "\n#define _tqitem &(_ppvar[%d])\n", tqitem_index);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         if (net_send_delivered_) {
             insertstr(net_send_delivered_, "  if (_lflag == 1. ) {*(_tqitem) = nullptr;}\n");
         }
     }
     if (net_receive_) {
-        Lappendstr(defs_list, "static void _net_receive(Point_process*, double*, double);\n");
+        lappendstr(defs_list, "static void _net_receive(Point_process*, double*, double);\n");
         if (for_netcons_) {
-            Lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
+            lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
         }
         if (net_init_q1_) {
-            Lappendstr(defs_list, "static void _net_init(Point_process*, double*, double);\n");
+            lappendstr(defs_list, "static void _net_init(Point_process*, double*, double);\n");
         }
     }
     if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
-        Lappendstr(defs_list, "static void _thread_mem_init(Datum*);\n");
+        lappendstr(defs_list, "static void _thread_mem_init(Datum*);\n");
     }
     if (vectorize && thread_cleanup_list->next != thread_cleanup_list) {
-        Lappendstr(defs_list, "static void _thread_cleanup(Datum*);\n");
+        lappendstr(defs_list, "static void _thread_cleanup(Datum*);\n");
     }
     if (use_bbcorepointer) {
         lappendstr(defs_list,
@@ -1128,7 +1128,7 @@ static const char *_mechanism[] = {\n\
                    "extern void hoc_reg_bbcore_read(int, void(*)(double*, int*, int*, int*, "
                    "_threadargsproto_));\n");
     }
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\
 extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
@@ -1141,23 +1141,23 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	int _vectorized = %d;\n",
             modbase,
             vectorize);
-    Lappendstr(defs_list, buf);
+    lappendstr(defs_list, buf);
     q = lappendstr(defs_list, "");
-    Lappendstr(defs_list, "_initlists();\n");
+    lappendstr(defs_list, "_initlists();\n");
 
     if (suffix[0]) { /* not "nothing" */
 
         ITERATE(q, useion) {
             Sprintf(buf, "\tion_reg(\"%s\", %s);\n", SYM(q)->name, STR(q->next->next->next));
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             q = q->next->next->next;
         }
         if (diamdec) {
-            Lappendstr(defs_list, "\t_morphology_sym = hoc_lookup(\"morphology\");\n");
+            lappendstr(defs_list, "\t_morphology_sym = hoc_lookup(\"morphology\");\n");
         }
         ITERATE(q, useion) {
             Sprintf(buf, "\t_%s_sym = hoc_lookup(\"%s_ion\");\n", SYM(q)->name, SYM(q)->name);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             q = q->next->next->next;
         }
         if (point_process) {
@@ -1169,9 +1169,9 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	 _hoc_create_pnt, _hoc_destroy_pnt, _member_func);\n",
                     brkpnt_str_,
                     vectorize ? 1 + thread_data_index : 0);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             if (destructorfunc->next != destructorfunc) {
-                Lappendstr(defs_list, "	register_destructor(_destructor);\n");
+                lappendstr(defs_list, "	register_destructor(_destructor);\n");
             }
         } else {
             Sprintf(buf,
@@ -1179,21 +1179,21 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	register_mech(_mechanism, nrn_alloc,%s, nrn_init, hoc_nrnpointerindex, %d);\n",
                     brkpnt_str_,
                     vectorize ? 1 + thread_data_index : 0);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         if (vectorize && thread_data_index) {
             Sprintf(buf, " _extcall_thread.resize(%d);\n", thread_data_index);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             if (thread_mem_init_list->next != thread_mem_init_list) {
-                Lappendstr(defs_list, " _thread_mem_init(_extcall_thread.data());\n");
+                lappendstr(defs_list, " _thread_mem_init(_extcall_thread.data());\n");
                 if (gind) {
-                    Lappendstr(defs_list, " _thread1data_inuse = 0;\n");
+                    lappendstr(defs_list, " _thread1data_inuse = 0;\n");
                 }
             }
         }
-        Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
         if (!point_process) {
-            Lappendstr(defs_list,
+            lappendstr(defs_list,
                        "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");
         }
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
@@ -1231,9 +1231,9 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         register_data_fields.append(");\n");
         lappendstr(defs_list, register_data_fields.c_str());
         Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
         if (watch_seen_) {
-            Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
+            lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
         }
         if (ppvar_semantics_)
             ITERATE(q, ppvar_semantics_) {
@@ -1241,7 +1241,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
                         " hoc_register_dparam_semantics(_mechtype, %d, \"%s\");\n",
                         (int) q->itemtype,
                         q->element.str);
-                Lappendstr(defs_list, buf);
+                lappendstr(defs_list, buf);
             }
         /* Models that write concentration need their INITIAL blocks called
            before those that read the concentration or reversal potential. */
@@ -1257,21 +1257,21 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             q = q->next->next->next;
         }
         if (i) {
-            Lappendstr(defs_list, "\tnrn_writes_conc(_mechtype, 0);\n");
+            lappendstr(defs_list, "\tnrn_writes_conc(_mechtype, 0);\n");
         }
 
         if (cvode_emit) {
-            Lappendstr(defs_list,
+            lappendstr(defs_list,
                        "\
 	hoc_register_cvode(_mechtype, _ode_count, _ode_map, _ode_spec, _ode_matsol);\n");
-            Lappendstr(defs_list,
+            lappendstr(defs_list,
                        "\
 	hoc_register_tolerance(_mechtype, _hoc_state_tol, &_atollist);\n");
             if (ion_synonym) {
-                Lappendstr(defs_list, "	hoc_register_synonym(_mechtype, _ode_synonym);\n");
+                lappendstr(defs_list, "	hoc_register_synonym(_mechtype, _ode_synonym);\n");
             }
         } else if (cvode_not_allowed) {
-            Lappendstr(defs_list,
+            lappendstr(defs_list,
                        "\
 	hoc_register_cvode(_mechtype, _ode_count, 0, 0, 0);\n");
         }
@@ -1284,22 +1284,22 @@ only affects and is affected by discrete events. As such it is not\n\
 located in a section and is not associated with an integrator\n");
             }
             Sprintf(buf, "add_nrn_artcell(_mechtype, %d);\n", tqitem_index);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         if (net_event_seen_) {
-            Lappendstr(defs_list, "add_nrn_has_net_event(_mechtype);\n");
+            lappendstr(defs_list, "add_nrn_has_net_event(_mechtype);\n");
         }
         if (net_receive_) {
-            Lappendstr(defs_list, "pnt_receive[_mechtype] = _net_receive;\n");
+            lappendstr(defs_list, "pnt_receive[_mechtype] = _net_receive;\n");
             if (net_init_q1_) {
-                Lappendstr(defs_list, "pnt_receive_init[_mechtype] = _net_init;\n");
+                lappendstr(defs_list, "pnt_receive_init[_mechtype] = _net_init;\n");
             }
             Sprintf(buf, "pnt_receive_size[_mechtype] = %d;\n", net_receive_);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         if (for_netcons_) {
             Sprintf(buf, "add_nrn_fornetcons(_mechtype, _fnc_index);\n");
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         q = ba_list_;
         for (i = 1; i <= ba_index_; ++i) {
@@ -1332,18 +1332,18 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
             }
             q = q->next;
             Sprintf(buf, "\thoc_reg_ba(_mechtype, _ba%d, %s);\n", i, STR(q));
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
         }
         if (ldifuslist) {
-            Lappendstr(defs_list, "\thoc_register_ldifus1(_difusfunc);\n");
+            lappendstr(defs_list, "\thoc_register_ldifus1(_difusfunc);\n");
             // don't use _nrn_model_sorted_token here because this is being inserted at the start of
             // defs_list, before _nrn_model_sorted_token is defined
-            Linsertstr(defs_list,
+            linsertstr(defs_list,
                        "static void _difusfunc(ldifusfunc2_t, neuron::model_sorted_token const&, "
                        "NrnThread&);\n");
         }
     } /* end of not "nothing" */
-    Lappendstr(defs_list,
+    lappendstr(defs_list,
                "\n"
                "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
@@ -1356,26 +1356,26 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
         if (pf) {
             free(pf);
         }
-        Lappendstr(defs_list, buf1);
+        lappendstr(defs_list, buf1);
     }
     if (suffix[0]) {
-        Lappendstr(defs_list, "hoc_register_limits(_mechtype, _hoc_parm_limits);\n");
-        Lappendstr(defs_list, "hoc_register_units(_mechtype, _hoc_parm_units);\n");
+        lappendstr(defs_list, "hoc_register_limits(_mechtype, _hoc_parm_limits);\n");
+        lappendstr(defs_list, "hoc_register_units(_mechtype, _hoc_parm_units);\n");
     }
-    Lappendstr(defs_list, "}\n"); /* end of _reg */
+    lappendstr(defs_list, "}\n"); /* end of _reg */
     if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
-        Lappendstr(procfunc, "\nstatic void _thread_mem_init(Datum* _thread) {\n");
+        lappendstr(procfunc, "\nstatic void _thread_mem_init(Datum* _thread) {\n");
         move(thread_mem_init_list->next, thread_mem_init_list->prev, procfunc);
-        Lappendstr(procfunc, "}\n");
+        lappendstr(procfunc, "}\n");
     }
     if (vectorize && thread_cleanup_list->next != thread_cleanup_list) {
-        Lappendstr(procfunc, "\nstatic void _thread_cleanup(Datum* _thread) {\n");
+        lappendstr(procfunc, "\nstatic void _thread_cleanup(Datum* _thread) {\n");
         move(thread_cleanup_list->next, thread_cleanup_list->prev, procfunc);
-        Lappendstr(procfunc, "}\n");
+        lappendstr(procfunc, "}\n");
     }
     if (destructorfunc->next != destructorfunc) {
         if (vectorize) {
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
                        "  _nrn_mechanism_cache_instance _ml_real{_prop};\n"
@@ -1384,7 +1384,7 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                        "  Datum *_ppvar{_nrn_mechanism_access_dparam(_prop)}, *_thread{};\n"
                        "  {\n");
         } else {
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\n"
                        "static void _destructor(Prop* _prop) {\n"
                        "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
@@ -1392,7 +1392,7 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                        "  {\n");
         }
         movelist(destructorfunc->next, destructorfunc->prev, procfunc);
-        Lappendstr(procfunc, "\n}\n}\n");
+        lappendstr(procfunc, "\n}\n}\n");
     }
     if (ldifuslist) {
         ldifusreg();
@@ -1691,7 +1691,7 @@ void units_reg() {
     double d1, d2;
     char u[NRN_BUFSIZE];
 
-    Lappendstr(defs_list, "static HocParmUnits _hoc_parm_units[] = {\n");
+    lappendstr(defs_list, "static HocParmUnits _hoc_parm_units[] = {\n");
     ITERATE(q, syminorder) {
         s = SYM(q);
         if (s->nrntype & NRNGLOBAL) {
@@ -1734,7 +1734,7 @@ void units_reg() {
             lappendstr(defs_list, buf);
         }
     }
-    Lappendstr(defs_list, "{0, 0}\n};\n");
+    lappendstr(defs_list, "{0, 0}\n};\n");
 }
 
 static void var_count(Symbol* s) {
@@ -1906,7 +1906,7 @@ void nrn_use(Item* q1, Item* q2, Item* q3, Item* q4) {
     if (used) { /* READ gets promoted to WRITE */
         diag("merging of neuron models not supported", (char*) 0);
     } else { /* create all the ionic variables */
-        Lappendsym(useion, ion);
+        lappendsym(useion, ion);
         readlist = newlist();
         writelist = newlist();
         qr = lappendsym(useion, SYM0);
@@ -1944,7 +1944,7 @@ void nrn_use(Item* q1, Item* q2, Item* q3, Item* q4) {
                 if (!currents) {
                     currents = newlist();
                 }
-                Lappendsym(currents, SYM(q));
+                lappendsym(currents, SYM(q));
                 SYM(q)->nrntype |= NRNCUROUT;
             } else {
                 SYM(q)->nrntype |= NRNPRANGEOUT;
@@ -2040,12 +2040,12 @@ void nrndeclare() {
         s = SYM(q);
         if (s->type == NAME || s->type == PRIME) {
             if (s->subtype & PARM && s->nrntype & NRNRANGE) {
-                Lappendsym(rangeparm, s);
+                lappendsym(rangeparm, s);
             } else if (s->subtype & STAT) {
                 s->nrntype |= NRNRANGE;
-                Lappendsym(rangestate, s);
+                lappendsym(rangestate, s);
             } else if (s->subtype & DEP && s->nrntype & NRNRANGE) {
-                Lappendsym(rangedep, s);
+                lappendsym(rangedep, s);
             }
             if (s != indepsym && !s->nrntype) {
                 if (s->subtype & PARM) {
@@ -2159,7 +2159,7 @@ List* set_ion_variables(int block)
                             " _ion_%s += %s",
                             SYM(q1)->name,
                             breakpoint_current(SYM(q1))->name);
-                    Lappendstr(l, buf);
+                    lappendstr(l, buf);
                     if (point_process) {
                         Sprintf(buf, "* 1.e2/ (_nd_area);\n");
                     } else {
@@ -2174,7 +2174,7 @@ List* set_ion_variables(int block)
                 }
                 Sprintf(buf, " _ion_%s = %s;\n", SYM(q1)->name, SYM(q1)->name);
             }
-            Lappendstr(l, buf);
+            lappendstr(l, buf);
         }
         q = q->next;
         /* when INITIAL block is called, if it modifies the concentrations
@@ -2203,7 +2203,7 @@ List* set_ion_variables(int block)
                     in,
                     in,
                     in);
-            Lappendstr(l, buf);
+            lappendstr(l, buf);
         }
     }
     return l;
@@ -2228,9 +2228,9 @@ List* get_ion_variables(int block)
                 continue;
             }
             Sprintf(buf, " %s = _ion_%s;\n", SYM(q1)->name, SYM(q1)->name);
-            Lappendstr(l, buf);
+            lappendstr(l, buf);
             if (point_process && (SYM(q1)->nrntype & NRNCURIN)) {
-                Fprintf(stderr,
+                fprintf(stderr,
                         "WARNING: Dimensions may be wrong for READ %s with POINT_PROCESS\n",
                         SYM(q1)->name);
             }
@@ -2245,11 +2245,11 @@ List* get_ion_variables(int block)
             }
             if (SYM(q1)->nrntype & IONCONC) {
                 Sprintf(buf, " %s = _ion_%s;\n", SYM(q1)->name, SYM(q1)->name);
-                Lappendstr(l, buf);
+                lappendstr(l, buf);
             }
             if (SYM(q1)->subtype & STAT) {
                 if (SYM(q1)->nrntype & NRNCUROUT) {
-                    Fprintf(stderr,
+                    fprintf(stderr,
                             "WARNING: WRITE %s with it a STATE may not be translated correctly\n",
                             SYM(q1)->name);
                 }
@@ -2422,7 +2422,7 @@ void ppvar_semantics(int i, const char* semantics, const char* name, const char*
     if (!ppvar_semantics_) {
         ppvar_semantics_ = newlist();
     }
-    q = Lappendstr(ppvar_semantics_, const_cast<char*>(semantics));  // TODO - ugly but ok for now
+    q = lappendstr(ppvar_semantics_, const_cast<char*>(semantics));  // TODO - ugly but ok for now
     q->itemtype = (short) i;
     std::string field{"_nrn_mechanism_field<"};
     field.append(type);
@@ -2451,9 +2451,9 @@ List* begin_dion_stmt() {
         ITERATE(q1, LST(q)) {
             if (SYM(q1)->nrntype & NRNCUROUT) {
                 Sprintf(buf, " _di%s = %s;\n", strion, SYM(q1)->name);
-                Lappendstr(l, buf);
+                lappendstr(l, buf);
                 Sprintf(buf, "double _di%s;\n", strion);
-                Insertstr(qbrak->next, buf);
+                insertstr(qbrak->next, buf);
             }
         }
         q = q->next;
@@ -2475,17 +2475,17 @@ List* end_dion_stmt(const char* strdel) {
             if (SYM(q1)->nrntype & NRNCUROUT) {
                 Sprintf(
                     buf, " _ion_di%sdv += (_di%s - %s)/%s", strion, strion, SYM(q1)->name, strdel);
-                Lappendstr(l, buf);
+                lappendstr(l, buf);
                 if (point_process) {
-                    Lappendstr(l, "* 1.e2/ (_nd_area);\n");
+                    lappendstr(l, "* 1.e2/ (_nd_area);\n");
                 } else {
-                    Lappendstr(l, ";\n");
+                    lappendstr(l, ";\n");
                 }
             }
         }
         q = q->next;
     }
-    Lappendstr(l, "\t}\n");
+    lappendstr(l, "\t}\n");
     return l;
 }
 
@@ -2509,11 +2509,11 @@ void ion_promote(Item* qion) {
     ITERATE(q, LST(qion->next->next)) { /* promote if WRITE */
         type = iontype(SYM(q)->name, in);
         if (type == IONIN) {
-            Lappendstr(defs_list, "nrn_check_conc_write(_prop, prop_ion, 1);\n");
+            lappendstr(defs_list, "nrn_check_conc_write(_prop, prop_ion, 1);\n");
             conc = 3;
         }
         if (type == IONOUT) {
-            Lappendstr(defs_list, "nrn_check_conc_write(_prop, prop_ion, 0);\n");
+            lappendstr(defs_list, "nrn_check_conc_write(_prop, prop_ion, 0);\n");
             conc = 3;
         }
         if (type == IONEREV) {
@@ -2522,7 +2522,7 @@ void ion_promote(Item* qion) {
     }
     if (conc || rev) {
         Sprintf(buf, "nrn_promote(prop_ion, %d, %d);\n", conc, rev);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
     }
 }
 
@@ -2642,15 +2642,6 @@ static void cvode_conc_map() {
                                 for (q3 = q3->next; q3 != procfunc->prev; q3 = q3->next) {
                                     lappenditem(ion_synonym, q3);
                                     if (q3->itemtype == SYMBOL && SYM(q3) == semi) {
-#if 0
-				if (q3->itemtype == STRING && strchr(STR(q3), ';')) {
-					char* e, *s = stralloc(STR(q3), (char*)0);
-					e = strchr(s, ';');
-					*e = '\0';
-					Sprintf(buf, "%s;\n", s);
-printf("|%s||%s||%s|\n",STR(q3), s, buf);
-					lappendstr(ion_synonym, buf);
-#endif
                                         b = 1;
                                         break;
                                     }
@@ -2674,7 +2665,7 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, ""), "  Datum* _ppvar;\n");
     vectorize_substitute(lappendstr(p, ""), "  size_t _iml;");
     vectorize_substitute(lappendstr(p, ""), "  _nrn_mechanism_cache_range* _ml;");
-    Lappendstr(p,
+    lappendstr(p,
                "  Node* _nd{};\n"
                "  double _v{};\n"
                "  int _cntml;\n"
@@ -2692,16 +2683,16 @@ void cvode_emit_interface() {
     List* lst;
     Item *q, *q1;
     if (cvode_not_allowed) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n");
         Sprintf(buf,
                 "\n\
 static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CVODE\"); return 0;}\n",
                 mechname);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     } else if (cvode_emit) {
-        Lappendstr(defs_list,
+        lappendstr(defs_list,
                    "\n\
 static int _ode_count(int);\n\
 static void _ode_map(Prop*, int, neuron::container::data_handle<double>*, neuron::container::data_handle<double>*, double*, int);\n\
@@ -2712,14 +2703,14 @@ static void _ode_matsol(_nrn_model_sorted_token const&, NrnThread*, Memb_list*, 
                 "\n\
 static int _ode_count(int _type){ return %d;}\n",
                 cvode_neq_);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
         Sprintf(buf, "\n#define _cvode_ieq _ppvar[%d].literal_value<int>()\n", cvode_ieq_index);
-        Lappendstr(defs_list, buf);
+        lappendstr(defs_list, buf);
 
         if (cvode_fun_->subtype == PROCED) {
             cvode_proced_emit();
         } else {
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\nstatic void _ode_spec(_nrn_model_sorted_token const& _sorted_token, "
                        "NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
@@ -2727,14 +2718,14 @@ static int _ode_count(int _type){ return %d;}\n",
             if (lst->next->itemtype)
                 movelist(lst->next, lst->prev, procfunc);
             Sprintf(buf, "    _ode_spec%d", cvode_num_);
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
             vectorize_substitute(lappendstr(procfunc, "();\n"), "(_threadargs_);\n");
             lst = set_ion_variables(1);
             if (lst->next->itemtype)
                 movelist(lst->next, lst->prev, procfunc);
-            Lappendstr(procfunc, "}}\n");
+            lappendstr(procfunc, "}}\n");
 
-            Lappendstr(procfunc,
+            lappendstr(procfunc,
                        "\n\
 static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<double>* _pv, neuron::container::data_handle<double>* _pvdot, double* _atol, int _type) {");
             vectorize_substitute(lappendstr(procfunc, "\n"), "\n  Datum* _ppvar;\n");
@@ -2749,36 +2740,36 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                     cvode_neq_,
                     cvode_num_,
                     cvode_num_);
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
             /* need to take care of case where a state is an ion concentration. Replace
             the _pp pointer with a pointer to the actual ion model's concentration */
             cvode_conc_map();
-            Lappendstr(procfunc, "}\n");
+            lappendstr(procfunc, "}\n");
             if (ion_synonym) {
-                Lappendstr(defs_list,
+                lappendstr(defs_list,
                            "static void _ode_synonym(_nrn_model_sorted_token const&, "
                            "NrnThread&, Memb_list&, int);\n");
-                Lappendstr(procfunc,
+                lappendstr(procfunc,
                            "static void _ode_synonym(_nrn_model_sorted_token const& "
                            "_sorted_token, NrnThread& _nt, Memb_list& _ml_arg, int _type) {\n");
-                Lappendstr(procfunc,
+                lappendstr(procfunc,
                            "_nrn_mechanism_cache_range _lmr{_sorted_token, _nt, _ml_arg, _type};\n"
                            "auto* const _ml = &_lmr;\n"
                            "auto const _cnt = _ml_arg._nodecount;\n"
                            "for (int _iml = 0; _iml < _cnt; ++_iml) {\n"
                            "  Datum* _ppvar = _ml_arg._pdata[_iml];\n");
                 movelist(ion_synonym->next, ion_synonym->prev, procfunc);
-                Lappendstr(procfunc, "  }\n}\n");
+                lappendstr(procfunc, "  }\n}\n");
             }
 
             Sprintf(buf,
                     "static void _ode_matsol_instance%d(_internalthreadargsproto_);\n",
                     cvode_num_);
-            Lappendstr(defs_list, buf);
+            lappendstr(defs_list, buf);
             Sprintf(buf,
                     "\nstatic void _ode_matsol_instance%d(_internalthreadargsproto_) {\n",
                     cvode_num_);
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
             if (cvode_fun_->subtype == KINF) {
                 int i = cvode_num_;
                 Sprintf(buf,
@@ -2790,7 +2781,7 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                         i,
                         i,
                         i);
-                Lappendstr(procfunc, buf);
+                lappendstr(procfunc, buf);
                 Sprintf(buf,
                         "_cvode_sparse_thread(&(_thread[_cvspth%d].literal_value<void*>()), %d, "
                         "_dlist%d, neuron::scopmath::row_view{_ml, _iml}, _ode_matsol%d, "
@@ -2802,11 +2793,11 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
                 vectorize_substitute(procfunc->prev, buf);
             } else {
                 Sprintf(buf, "_ode_matsol%d", cvode_num_);
-                Lappendstr(procfunc, buf);
+                lappendstr(procfunc, buf);
                 vectorize_substitute(lappendstr(procfunc, "();\n"), "(_threadargs_);\n");
             }
-            Lappendstr(procfunc, "}\n");
-            Lappendstr(procfunc,
+            lappendstr(procfunc, "}\n");
+            lappendstr(procfunc,
                        "\nstatic void _ode_matsol(_nrn_model_sorted_token const& _sorted_token, "
                        "NrnThread* _nt, Memb_list* _ml_arg, int _type) {\n");
             out_nt_ml_frag(procfunc);
@@ -2814,8 +2805,8 @@ static void _ode_map(Prop* _prop, int _ieq, neuron::container::data_handle<doubl
             if (lst->next->itemtype)
                 movelist(lst->next, lst->prev, procfunc);
             Sprintf(buf, "_ode_matsol_instance%d(_threadargs_);\n", cvode_num_);
-            Lappendstr(procfunc, buf);
-            Lappendstr(procfunc, "}}\n");
+            lappendstr(procfunc, buf);
+            lappendstr(procfunc, "}}\n");
         }
         /* handle the state_discontinuities  (obsolete in NET_RECEIVE)*/
         if (state_discon_list_)
@@ -2841,13 +2832,13 @@ static void _ode_spec(Node* _nd, double* _pp, Datum* _ppd) {\n\
 	%s();\n}\n",
             cvode_fun_->name);
 
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf,
             "\n\
 static void _ode_map(int _ieq, double** _pv, doubl** _pvdot, double* _pp){}\n");
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
 
-    Lappendstr(procfunc,
+    lappendstr(procfunc,
                "\n\
 static void _ode_matsol(Node* _nd, double* _pp, Datum* _ppd){}\n");
 }
@@ -2871,13 +2862,13 @@ static int _ode_spec%d(_internalthreadargsproto_);\n\
 ",
             num,
             num);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
 }
 
 void cvode_valid() {
     static int once;
     if (!cvode_valid_ && !once++) {
-        Fprintf(stderr, "Notice: This mechanism cannot be used with CVODE\n");
+        fprintf(stderr, "Notice: This mechanism cannot be used with CVODE\n");
         cvode_not_allowed = 1;
     }
     cvode_valid_ = 0;

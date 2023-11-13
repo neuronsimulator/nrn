@@ -55,9 +55,9 @@ void solv_diffeq(Item* qsol,
         return;
     }
     if (steadystate) {
-        Strcpy(ssprefix, "_ss_");
+        strcpy(ssprefix, "_ss_");
     } else {
-        Strcpy(ssprefix, "");
+        strcpy(ssprefix, "");
     }
     Sprintf(dindepname, "d%s", indepsym->name);
     if (fun->subtype & KINF) { /* translate the kinetic equations */
@@ -120,8 +120,8 @@ void solv_diffeq(Item* qsol,
             lappendstr(thread_cleanup_list, buf);
             thread_data_index += 4;
         } else {
-            Strcpy(deriv1_advance, "");
-            Strcpy(deriv2_advance, "");
+            strcpy(deriv1_advance, "");
+            strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
                 "%s %s%s(_ninits, %d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, "
@@ -300,7 +300,7 @@ static Symbol* init_forderiv(Symbol* prime) {
         }
     } else {
         maxindx = 1;
-        Strcpy(name, prime->name + 1);
+        strcpy(name, prime->name + 1);
     }
     forderiv = lookup(name);
     if (!forderiv || !(forderiv->subtype & STAT)) {
@@ -336,13 +336,13 @@ char* reprime(Symbol* sym) {
     char* cp;
 
     if (sym->type != PRIME) {
-        Strcpy(name, sym->name);
+        strcpy(name, sym->name);
         return name;
     }
 
     init_forderiv(sym);
 
-    Strcpy(name, forderiv->name);
+    strcpy(name, forderiv->name);
     cp = name + strlen(name);
     for (i = 0; i < maxindx; i++) {
         *cp++ = '\'';
@@ -436,7 +436,7 @@ void add_deriv_imp_list(char* name) {
     if (!deriv_imp_list) {
         deriv_imp_list = newlist();
     }
-    Lappendstr(deriv_imp_list, name);
+    lappendstr(deriv_imp_list, name);
 }
 
 static List* deriv_used_list;  /* left hand side derivatives of diffeqs */
@@ -448,7 +448,7 @@ void deriv_used(Symbol* s, Item* q1, Item* q2) /* q1, q2 are begin and end token
         deriv_used_list = newlist();
         deriv_state_list = newlist();
     }
-    Lappendsym(deriv_used_list, s);
+    lappendsym(deriv_used_list, s);
     if (!cvode_diffeq_list) {
         cvode_diffeq_list = newlist();
     }
@@ -468,11 +468,11 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     if (!massage_list_) {
         massage_list_ = newlist();
     }
-    Lappendsym(massage_list_, SYM(q2));
+    lappendsym(massage_list_, SYM(q2));
 
     /* all this junk is still in the intoken list */
     Sprintf(buf, "static int %s(_internalthreadargsproto_);\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
     derfun = SYM(q2);
@@ -519,7 +519,7 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
 is not allowed on the left hand side.");
                 }
             }
-            Lappendsym(deriv_state_list, state);
+            lappendsym(deriv_state_list, state);
             slist_data(state, count, numlist);
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
@@ -529,23 +529,23 @@ is not allowed on the left hand side.");
                         numlist,
                         count,
                         state->name);
-                Lappendstr(initlist, buf);
+                lappendstr(initlist, buf);
                 Sprintf(buf,
                         " _dlist%d[%d+_i] = {%s_columnindex, _i};}\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
-                Lappendstr(initlist, buf);
+                lappendstr(initlist, buf);
                 count += dim;
             } else {
                 Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};", numlist, count, state->name);
-                Lappendstr(initlist, buf);
+                lappendstr(initlist, buf);
                 Sprintf(buf,
                         " _dlist%d[%d] = {%s_columnindex, 0};\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
-                Lappendstr(initlist, buf);
+                lappendstr(initlist, buf);
                 count++;
             }
         }
@@ -560,11 +560,11 @@ is not allowed on the left hand side.");
             count,
             numlist,
             count);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
 
-    Lappendstr(procfunc, "\n/*CVODE*/\n");
+    lappendstr(procfunc, "\n/*CVODE*/\n");
     Sprintf(buf, "static int _ode_spec%d", numlist);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     {
         Item* qq = procfunc->prev;
         copyitems(q1->next, q4, procfunc->prev);
@@ -578,7 +578,7 @@ is not allowed on the left hand side.");
         Item* qq;
         Item* qextra = q1->next->next->next->next;
         Sprintf(buf, "static int _ode_matsol%d", numlist);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
         vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
         qq = procfunc->next;
         cvode_cnexp_possible = 1;
@@ -594,10 +594,10 @@ is not allowed on the left hand side.");
             while (qextra != q1) { /* must first have any intervening statements */
                 switch (qextra->itemtype) {
                 case STRING:
-                    Lappendstr(procfunc, STR(qextra));
+                    lappendstr(procfunc, STR(qextra));
                     break;
                 case SYMBOL:
-                    Lappendsym(procfunc, SYM(qextra));
+                    lappendsym(procfunc, SYM(qextra));
                     break;
                 }
                 qextra = qextra->next;
@@ -611,20 +611,20 @@ is not allowed on the left hand side.");
         while (qextra != q4) {
             switch (qextra->itemtype) {
             case STRING:
-                Lappendstr(procfunc, STR(qextra));
+                lappendstr(procfunc, STR(qextra));
                 break;
             case SYMBOL:
-                Lappendsym(procfunc, SYM(qextra));
+                lappendsym(procfunc, SYM(qextra));
                 break;
             }
             qextra = qextra->next;
         }
 #endif
-        Lappendstr(procfunc, " return 0;\n}\n");
+        lappendstr(procfunc, " return 0;\n}\n");
         vectorize_scan_for_func(qq, procfunc);
     }
 
-    Lappendstr(procfunc, "/*END CVODE*/\n");
+    lappendstr(procfunc, "/*END CVODE*/\n");
     if (cvode_cnexp_solve && cvode_cnexp_success(q1, q4)) {
         freelist(&deriv_used_list);
         freelist(&deriv_state_list);
@@ -641,10 +641,10 @@ is not allowed on the left hand side.");
         vectorize_substitute(q, "");
     } else {
         Sprintf(buf, "static double *_temp%d;\n", numlist);
-        Linsertstr(procfunc, buf);
+        linsertstr(procfunc, buf);
     }
     movelist(q1, q4, procfunc);
-    Lappendstr(procfunc, "return _reset;}\n");
+    lappendstr(procfunc, "return _reset;}\n");
     /* reset used field for any states that may appear in
     nonlinear equations which should not be solved for. */
     ITERATE(q, deriv_used_list) {
@@ -660,7 +660,7 @@ is not allowed on the left hand side.");
 if (_deriv%d_advance) {\n",
                 count,
                 numlist);
-        Insertstr(q4, buf);
+        insertstr(q4, buf);
         sp = install("D", STRING);
         sp->araydim = count;
         q = insertsym(q4, sp);
@@ -672,14 +672,14 @@ if (_deriv%d_advance) {\n",
                 numlist,
                 numlist,
                 indepsym->name);
-        Insertstr(q4, buf);
+        insertstr(q4, buf);
         Sprintf(
             buf,
             "}else{\n_dlist%d[++_counte] = _ml->data(_iml, _slist%d[_id]) - _savstate%d[_id];}}}\n",
             numlist + 1,
             numlist,
             numlist);
-        Insertstr(q4, buf);
+        insertstr(q4, buf);
     } else {
         ITERATE(q, deriv_state_list) {
             SYM(q)->used = 0;
@@ -697,7 +697,7 @@ if (_deriv%d_advance) {\n",
                 count,
                 derfun->u.i,
                 derfun->u.i);
-        Insertstr(q, buf);
+        insertstr(q, buf);
     }
 
     freelist(&deriv_used_list);
@@ -712,10 +712,10 @@ void copylist(List* l, Item* i) /* copy list l before item i */
     ITERATE(q, l) {
         switch (q->itemtype) {
         case STRING:
-            Insertstr(i, STR(q));
+            insertstr(i, STR(q));
             break;
         case SYMBOL:
-            Insertsym(i, SYM(q));
+            insertsym(i, SYM(q));
             break;
         default:
             /*SUPPRESS 622*/
@@ -731,10 +731,10 @@ void copyitems(Item* q1, Item* q2, Item* qdest) /* copy items before item */
         switch (q->itemtype) {
         case STRING:
         case VERBATIM:
-            Linsertstr(qdest, STR(q));
+            linsertstr(qdest, STR(q));
             break;
         case SYMBOL:
-            Linsertsym(qdest, SYM(q));
+            linsertsym(qdest, SYM(q));
             break;
         default:
             /*SUPPRESS 622*/
@@ -791,45 +791,45 @@ void cvode_diffeq(Symbol* ds, Item* qbegin, Item* qend) {
     assert(s);
 
     /* ds/(1. - dt*( */
-    Lappendsym(procfunc, ds);
-    Lappendstr(procfunc, " / (1. - dt*(");
+    lappendsym(procfunc, ds);
+    lappendstr(procfunc, " / (1. - dt*(");
     if (cvode_linear_diffeq(ds, s, qbegin, qend)) {
         return;
     }
     /* ((expr(s+.001))-(expr))/.001; */
-    Lappendstr(procfunc, "((");
+    lappendstr(procfunc, "((");
     for (q = qbegin; q != qend->next; q = q->next) {
         switch (q->itemtype) {
         case STRING:
-            Lappendstr(procfunc, STR(q));
+            lappendstr(procfunc, STR(q));
             break;
         case SYMBOL:
             if (SYM(q) == s) {
-                Lappendstr(procfunc, "(");
-                Lappendsym(procfunc, s);
-                Lappendstr(procfunc, " + .001)");
+                lappendstr(procfunc, "(");
+                lappendsym(procfunc, s);
+                lappendstr(procfunc, " + .001)");
             } else {
-                Lappendsym(procfunc, SYM(q));
+                lappendsym(procfunc, SYM(q));
             }
             break;
         default:
             assert(0);
         }
     }
-    Lappendstr(procfunc, ") - (");
+    lappendstr(procfunc, ") - (");
     for (q = qbegin; q != qend->next; q = q->next) {
         switch (q->itemtype) {
         case STRING:
-            Lappendstr(procfunc, STR(q));
+            lappendstr(procfunc, STR(q));
             break;
         case SYMBOL:
-            Lappendsym(procfunc, SYM(q));
+            lappendsym(procfunc, SYM(q));
             break;
         default:
             assert(0);
         }
     }
-    Lappendstr(procfunc, " )) / .001 ))");
+    lappendstr(procfunc, " )) / .001 ))");
 }
 
 /*

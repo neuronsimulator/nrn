@@ -91,7 +91,7 @@ void nrn_list(Item* qtype, Item* qlist) {
     }
     if (plist && qlist) {
         ITERATE(q, qlist) {
-            Lappendsym(*plist, SYM(q));
+            lappendsym(*plist, SYM(q));
         }
     }
 }
@@ -113,14 +113,14 @@ void nrn_use(Item* qion, Item* qreadlist, Item* qwritelist) {
             ITERATE(q, l) {
                 switch (iontype(SYM(q)->name, ion->name)) {
                 case IONCUR:
-                    Lappendsym(current, SYM(q));
+                    lappendsym(current, SYM(q));
                     break;
                 case IONEREV:
-                    Lappendsym(potential, SYM(q));
+                    lappendsym(potential, SYM(q));
                     break;
                 case IONIN:
                 case IONOUT:
-                    Lappendsym(concen, SYM(q));
+                    lappendsym(concen, SYM(q));
                     break;
                 }
             }

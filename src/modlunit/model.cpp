@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
      * files
      * We first look for a .mrg file and then a .mod file
      */
-    Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
+    fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
 
 
     init(); /* keywords into symbol table, initialize
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     unit_init();
     nrn_unit_init();
     openfiles(argc, argv); /* .mrg else .mod,  .var, .c */
-    Fprintf(stderr, "Checking units of %s\n", finname);
+    fprintf(stderr, "Checking units of %s\n", finname);
 
     lex_start();
     /* declare all used variables */
@@ -127,16 +127,16 @@ void printitems(Item* q1, Item* q2) {
 void printitem(Item* q, FILE* fp) {
     switch (q->itemtype) {
     case SYMBOL:
-        Fprintf(fp, "%s", SYM(q)->name);
+        fprintf(fp, "%s", SYM(q)->name);
         break;
     case STRING:
-        Fprintf(fp, "%s", STR(q));
+        fprintf(fp, "%s", STR(q));
         break;
     case NEWLINE:
-        Fprintf(fp, "\n");
+        fprintf(fp, "\n");
         break;
     default:
-        Fprintf(stderr, "\nq->itemtype = %d\n", q->itemtype);
+        fprintf(stderr, "\nq->itemtype = %d\n", q->itemtype);
         diag("printlist handles only a few types of items", (char*) 0);
         break;
     }
@@ -153,20 +153,20 @@ static void debug_item(Item* q, int indent, FILE* file) {
     Item* q1;
 
     for (i = 0; i < indent; i++) {
-        Fprintf(file, " ");
+        fprintf(file, " ");
     }
     if (!q) {
-        Fprintf(file, "NULL ITEM\n");
+        fprintf(file, "NULL ITEM\n");
     } else
         switch (q->itemtype) {
         case SYMBOL:
-            Fprintf(file, "SYMBOL |%s| %p\n", SYM(q)->name, SYM(q));
+            fprintf(file, "SYMBOL |%s| %p\n", SYM(q)->name, SYM(q));
             break;
         case STRING:
-            Fprintf(file, "STRING |%s|\n", STR(q));
+            fprintf(file, "STRING |%s|\n", STR(q));
             break;
         case LIST:
-            Fprintf(file, "LIST\n");
+            fprintf(file, "LIST\n");
             list = LST(q);
             ITERATE(q1, list) {
                 debug_item(q1, indent + 2, file);
@@ -174,13 +174,13 @@ static void debug_item(Item* q, int indent, FILE* file) {
             break;
         case 0:
             list = (List*) q;
-            Fprintf(file, "HEAD/TAIL of list\n");
+            fprintf(file, "HEAD/TAIL of list\n");
             ITERATE(q1, list) {
                 debug_item(q1, indent, file);
             }
             break;
         case ITEM:
-            Fprintf(file, "ITEM\n");
+            fprintf(file, "ITEM\n");
             debug_item(ITM(q), indent + 2, file);
             break;
         case ITEMARRAY: {
@@ -189,16 +189,16 @@ static void debug_item(Item* q, int indent, FILE* file) {
             long n;
             qa = ITMA(q);
             n = (size_t) qa[-1];
-            Fprintf(file, "ITEMARRAY %ld\n", n);
+            fprintf(file, "ITEMARRAY %ld\n", n);
             for (i = 0; i < n; i++) {
                 debug_item(qa[i], indent + 2, file);
             }
         } break;
         case NEWLINE:
-            Fprintf(file, "NEWLINE %d\n", q->itemsubtype);
+            fprintf(file, "NEWLINE %d\n", q->itemsubtype);
             break;
         default:
-            Fprintf(stderr, "\nq->itemtype = %d\n", q->itemtype);
+            fprintf(stderr, "\nq->itemtype = %d\n", q->itemtype);
             diag("unknown itemtype", (char*) 0);
             break;
         }

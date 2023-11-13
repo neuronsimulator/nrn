@@ -69,8 +69,8 @@ static void ext_vdef() {
 void c_out() {
     Item* q;
 
-    Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
-    Fflush(fcout);
+    fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
+    fflush(fcout);
 
     if (vectorize) {
         vectorize_do_substitute();
@@ -79,7 +79,7 @@ void c_out() {
         return;
     }
     P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
-    Fflush(fcout);
+    fflush(fcout);
     /* things which must go first and most declarations */
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
     P("#undef PI\n");
@@ -103,11 +103,11 @@ void c_out() {
     P("static int _reset;\n");
     P("static ");
     if (modelline) {
-        Fprintf(fcout, "const char *modelname = \"%s\";\n\n", modelline);
+        fprintf(fcout, "const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "const char *modelname = \"\";\n\n");
+        fprintf(fcout, "const char *modelname = \"\";\n\n");
     }
-    Fflush(fcout); /* on certain internal errors partial output
+    fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
     P("static int error;\n");
     P("static ");
@@ -124,14 +124,14 @@ void c_out() {
      * p array as an argument
      */
     funcdec();
-    Fflush(fcout);
+    fflush(fcout);
 
     /*
      * translations of named blocks into functions, procedures, etc. Also
      * some special declarations used by some blocks
      */
     printlist(procfunc);
-    Fflush(fcout);
+    fflush(fcout);
 
     /* Initialization function must always be present */
     P("\nstatic void initmodel() {\n  int _i; double _save;");
@@ -141,7 +141,7 @@ void c_out() {
     initstates();
     printlist(initfunc);
     P("\n}\n}\n");
-    Fflush(fcout);
+    fflush(fcout);
 
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
@@ -339,13 +339,13 @@ static void initstates() {
                             * there is no initialization
                             * line */
             if (s->subtype & ARRAY) {
-                Fprintf(fcout,
+                fprintf(fcout,
                         " for (_i=0; _i<%d; _i++) %s[_i] = %s0;\n",
                         s->araydim,
                         s->name,
                         s->name);
             } else {
-                Fprintf(fcout, "  %s = %s0;\n", s->name, s->name);
+                fprintf(fcout, "  %s = %s0;\n", s->name, s->name);
             }
         }
     }
@@ -375,13 +375,13 @@ void printitem(Item* q) {
                 break;
             }
         }
-        Fprintf(fcout, " %s", SYM(q)->name);
+        fprintf(fcout, " %s", SYM(q)->name);
     } else if (q->itemtype == VERBATIM) {
         verbatim_adjust(STR(q));
     } else if (q->itemtype == ITEM) {
         printitem(ITM(q));
     } else {
-        Fprintf(fcout, " %s", STR(q));
+        fprintf(fcout, " %s", STR(q));
     }
 }
 
@@ -432,9 +432,9 @@ void printlist(List* s) {
         printitem(q);
         if (newline) {
             newline = 0;
-            Fprintf(fcout, "\n");
+            fprintf(fcout, "\n");
             for (i = 0; i < indent; i++) {
-                Fprintf(fcout, "  ");
+                fprintf(fcout, "  ");
             }
         }
     }
@@ -449,26 +449,26 @@ static void funcdec() {
     SYMITER(NAME) {
         more = 0;
         if (s->subtype & PROCED) {
-            Fprintf(fcout, "static int %s(", s->name);
+            fprintf(fcout, "static int %s(", s->name);
             more = 1;
         }
         if (more) {
             narg = s->varnum;
             if (vectorize) {
                 if (narg) {
-                    Fprintf(fcout, "_internalthreadargsprotocomma_ ");
+                    fprintf(fcout, "_internalthreadargsprotocomma_ ");
                 } else {
-                    Fprintf(fcout, "_internalthreadargsproto_");
+                    fprintf(fcout, "_internalthreadargsproto_");
                 }
             }
             /*loop over argcount and add ,double */
             if (narg > 0) {
-                Fprintf(fcout, "double");
+                fprintf(fcout, "double");
             }
             for (j = 1; j < narg; ++j) {
-                Fprintf(fcout, ", double");
+                fprintf(fcout, ", double");
             }
-            Fprintf(fcout, ");\n");
+            fprintf(fcout, ");\n");
         }
     }
 }
@@ -494,11 +494,11 @@ void c_out_vectorize() {
     printlist(firstlist);
     P("static int _reset;\n");
     if (modelline) {
-        Fprintf(fcout, "static const char *modelname = \"%s\";\n\n", modelline);
+        fprintf(fcout, "static const char *modelname = \"%s\";\n\n", modelline);
     } else {
-        Fprintf(fcout, "static const char *modelname = \"\";\n\n");
+        fprintf(fcout, "static const char *modelname = \"\";\n\n");
     }
-    Fflush(fcout); /* on certain internal errors partial output
+    fflush(fcout); /* on certain internal errors partial output
                     * is helpful */
     P("static int error;\n");
     P("static int _ninits = 0;\n");
@@ -506,14 +506,14 @@ void c_out_vectorize() {
     P("static void _modl_cleanup(){ _match_recurse=1;}\n");
 
     funcdec();
-    Fflush(fcout);
+    fflush(fcout);
 
     /*
      * translations of named blocks into functions, procedures, etc. Also
      * some special declarations used by some blocks
      */
     printlist(procfunc);
-    Fflush(fcout);
+    fflush(fcout);
 
     /* Initialization function must always be present */
 
@@ -523,7 +523,7 @@ void c_out_vectorize() {
     initstates();
     printlist(initfunc);
     P("\n}\n}\n");
-    Fflush(fcout);
+    fflush(fcout);
 
     /* generation of initmodel interface */
     P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "

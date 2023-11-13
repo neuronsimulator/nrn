@@ -69,10 +69,10 @@ void massagenonlin(Item* q1, Item* q2, Item* q3, Item* q4) {
             SYM(q2)->name,
             SYM(q2)->name,
             SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic void");
-    Insertstr(q3, "()\n");
-    Insertstr(q3->next, " int _counte = -1;\n");
+    insertstr(q3, "()\n");
+    insertstr(q3->next, " int _counte = -1;\n");
     nonfun = SYM(q2);
     if ((nonfun->subtype) & NLINF && nonfun->u.i) {
         diag("NONLINEAR merging not implemented", (char*) 0);
@@ -109,7 +109,7 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
                 Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};\n", numlist, counts, s->name);
                 counts++;
             }
-            Lappendstr(initlist, buf);
+            lappendstr(initlist, buf);
             s->used = 0;
         }
     }
@@ -144,7 +144,7 @@ int nonlin_common(Item* q4) /* used by massagenonlin() and mixed_eqns() */
  does not equal number of states, %d\", _counte + 1);\n",
                 counts - 1,
                 counts);
-        Insertstr(q4, buf);
+        insertstr(q4, buf);
 #endif
     }
     if (counte == 0) {
@@ -176,7 +176,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     the header stuff */
     numlist++;
     counts = nonlin_common(q4);
-    Insertstr(q4, "}");
+    insertstr(q4, "}");
     q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
     Sprintf(buf,
             "{\n"
@@ -189,7 +189,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             numlist - 1,
             counts);
     vectorize_substitute(q, buf);
-    Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
+    insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
     // olupton 2023-01-19: this code does not appear to be covered by the test suite
     Sprintf(buf,
             "error = newton<%d>(_slist%d, neuron::scopmath::row_view{_ml, _iml}, %s, _dlist%d);\n",
@@ -208,7 +208,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
             SYM(q2)->name,
             numlist);
     vectorize_substitute(qret, buf);
-    Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
+    insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
     return qret;
 }
 
@@ -275,7 +275,7 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
             Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};\n", numlist, nstate, statsym->name);
             nstate++;
         }
-        Lappendstr(initlist, buf);
+        lappendstr(initlist, buf);
     }
 }
 
@@ -299,14 +299,14 @@ void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
         } else {
             Sprintf(buf, "_coef%d[_counte][%d]%s", numlist, statsym->varnum, signstr);
         }
-        Insertstr(q1, buf);
+        insertstr(q1, buf);
     } else if (pstate == 0) {
         Sprintf(buf, "_RHS%d(_counte)%s", numlist, signstr);
-        Insertstr(q1, buf);
+        insertstr(q1, buf);
     } else {
         diag("more than one state in preceding term", (char*) 0);
     }
-    Insertstr(q2->next, ";\n");
+    insertstr(q2->next, ";\n");
 }
 
 void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtlist
@@ -320,10 +320,10 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
         diag(linblk->name, "has no equations");
     }
     Sprintf(buf, "static void %s();\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic void");
-    Insertstr(q3, "()\n");
-    Insertstr(q3->next, " int _counte = -1;\n");
+    insertstr(q3, "()\n");
+    insertstr(q3->next, " int _counte = -1;\n");
     linblk->subtype |= LINF;
     linblk->u.i = numlist;
     SYMITER(NAME) {
@@ -343,7 +343,7 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
  does not equal number of states, %d\", _counte + 1);\n",
                 nstate - 1,
                 nstate);
-        Insertstr(q4, buf);
+        insertstr(q4, buf);
 #endif
     }
     linblk->used = nstate;
@@ -352,14 +352,14 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
             numlist,
             nstate,
             numlist);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n", numlist, numlist, nstate);
-    Linsertstr(procfunc, buf);
+    linsertstr(procfunc, buf);
     Sprintf(buf, "if (_first) _coef%d = makematrix(%d, %d);\n", numlist, nstate, nstate + 1);
-    Lappendstr(initlist, buf);
+    lappendstr(initlist, buf);
     Sprintf(buf, "zero_matrix(_coef%d, %d, %d);\n{\n", numlist, nstate, nstate + 1);
-    Insertstr(q3->next, buf);
-    Insertstr(q4, "\n}\n");
+    insertstr(q3->next, buf);
+    insertstr(q4, "\n}\n");
     movelist(q1, q4, procfunc);
     nstate = 0;
     nlineq = 0;

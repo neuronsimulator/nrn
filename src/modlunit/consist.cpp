@@ -15,7 +15,7 @@ extern Item** scop_indep;
 #define con(arg1, arg2, arg3)                               \
     if (t & (arg2))                                         \
         if (t & (~(arg2 | arg3))) {                         \
-            Fprintf(stderr, "%s is a %s\n", s->name, arg1); \
+            fprintf(stderr, "%s is a %s\n", s->name, arg1); \
             err = 1;                                        \
         }
 
@@ -50,7 +50,7 @@ void consistency() {
         if ((tu & DEP) && (tu & FUNCT))
             diag(s->name, "used as both variable and function");
         if ((t == 0) && tu)
-            Fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
+            fprintf(stderr, "Warning: %s undefined. (declared within VERBATIM?)\n", s->name);
     }
 }
 if (err) {

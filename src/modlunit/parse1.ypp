@@ -545,23 +545,23 @@ arglist1: name units
 		    args = newlist();
 		    $$ = (Item *)newlist();
 		    pushlocal($1, ITEM0);
-		    Lappendsym(args, checklocal(SYM($1)));
+		    lappendsym(args, checklocal(SYM($1)));
 		    if ($2) {
 			checklocal(SYM($1))->u.str = STR($2);
-			Lappendstr((List *)$$, STR($2));
+			lappendstr((List *)$$, STR($2));
 		    }else{
-			Lappendstr((List *)$$, "");
+			lappendstr((List *)$$, "");
 		    }
 		}}
 	| arglist1 ',' name units
 		{P1{
 		    pushlocal($3, ITEM0);
-		    Lappendsym(args, checklocal(SYM($3)));
+		    lappendsym(args, checklocal(SYM($3)));
 		    if ($4) {
 			checklocal(SYM($3))->u.str = STR($4);
-			Lappendstr((List *)$1, STR($4));
+			lappendstr((List *)$1, STR($4));
 		    }else{
-			Lappendstr((List *)$1, "");
+			lappendstr((List *)$1, "");
 		    }
 		}}
 	;
@@ -581,7 +581,7 @@ netrecblk: NETRECEIVE '(' arglist ')'
 			l = newlist();
 			q = lappendsym(l, install("flag", NAME));
 			pushlocal(q, ITEM0);
-			Lappendstr((List *)$3, "");
+			lappendstr((List *)$3, "");
 			netreceive_arglist = args; args = (List*)0;
 		}}
 	   stmtlist
@@ -770,9 +770,9 @@ nrnuse: USEION NAME READ nrnlist valence
 		{myerr("syntax is: USEION ion READ list WRITE list");}
 	;
 nrnlist: NAME
-		{P1{$$ = (Item *)newlist(); Lappendsym((List *)$$, SYM($1));}}
+		{P1{$$ = (Item *)newlist(); lappendsym((List *)$$, SYM($1));}}
 	| nrnlist ',' NAME
-		{P1{ Lappendsym((List *)$1, SYM($3));}}
+		{P1{ lappendsym((List *)$1, SYM($3));}}
 	| error
 		{myerr("syntax is: keyword name , name, ..., name");}
 	;
@@ -788,7 +788,7 @@ valence: /*nothing*/
 
 static void yyerror(const char* s)	/* called for yacc syntax error */
 {
-	Fprintf(stderr, "%s:\n ", s);
+	fprintf(stderr, "%s:\n ", s);
 }
 
 static int yylex() {return next_intoken(&(yylval.qp));}

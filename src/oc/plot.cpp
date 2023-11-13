@@ -524,7 +524,7 @@ void vtplot(int mode, double x, double y) {
             fprintf(gdev, "[2J");
             break;
 
-        case -5:                                          /* switch to HP plotter */
+        case -5:                                  /* switch to HP plotter */
             fprintf(gdev, "%c\\%c[5i", ESC, ESC); /* esc and open port */
             vtgrph = 0;
             hplot(-5, 0., 0.);

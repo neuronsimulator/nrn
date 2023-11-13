@@ -184,19 +184,6 @@ extern Symbol *indepsym, /* The model independent variable */
     *endblk;             /* on output. */
 
 
-#define Fprintf     fprintf
-#define Fclose      fclose
-#define Fflush      fflush
-#define Printf      printf
-#define Strcpy      strcpy
-#define Strcat      strcat
-#define Insertstr   insertstr
-#define Insertsym   insertsym
-#define Linsertsym  linsertsym
-#define Linsertstr  linsertstr
-#define Lappendsym  lappendsym
-#define Lappendstr  lappendstr
-#define Lappenditem lappenditem
 using neuron::Sprintf;
 
 /* model.h,v

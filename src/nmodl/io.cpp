@@ -198,19 +198,6 @@ char* Gets(char* buf) {
     return (char*) 0;
 }
 
-#if 0 /* not currently used */
-void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
-				 * keyword */
-{
-	if (ctp != '\0') {	/* can only be called after successful Gets */
-		Strcpy(inlinep, buf);
-		ctp = inlinep;
-	} else {
-		diag("internal error in unGets()", "");
-	}
-}
-#endif
-
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
@@ -230,62 +217,27 @@ char* current_line() { /* assumes we actually want the previous line */
 /* two arguments so we can pass a name to construct an error message. */
 void diag(const char* s1, const char* s2) {
     char* cp;
-    Fprintf(stderr, "Error: %s", s1);
+    fprintf(stderr, "Error: %s", s1);
     if (s2) {
-        Fprintf(stderr, "%s", s2);
+        fprintf(stderr, "%s", s2);
     }
     if (fin) {
-        Fprintf(stderr, " at line %d in file %s\n", linenum, finname);
-        Fprintf(stderr, "%s", inlinep);
+        fprintf(stderr, " at line %d in file %s\n", linenum, finname);
+        fprintf(stderr, "%s", inlinep);
         if (ctp >= inlinep) {
             for (cp = inlinep; cp < ctp - 1; cp++) {
                 if (*cp == '\t') {
-                    Fprintf(stderr, "\t");
+                    fprintf(stderr, "\t");
                 } else {
-                    Fprintf(stderr, " ");
+                    fprintf(stderr, " ");
                 }
             }
-            Fprintf(stderr, "^");
+            fprintf(stderr, "^");
         }
     }
-    Fprintf(stderr, "\n");
+    fprintf(stderr, "\n");
     exit(1);
 }
-
-#if 0
-static Symbol  *symq[20], **symhead = symq, **symtail = symq;
-
-/*
- * the following is a nonsensical implementation of heirarchical model
- * building. Disregard. It assumes .mod files can be concatenated to produce
- * meaningful models.  It was this insanity which prompted us to allow use of
- * variables before declaration 
- */
-void enquextern(Symbol* sym)
-{
-	*symtail++ = sym;
-}
-
-FILE *dequextern()
-{
-	char            fname[256];
-	FILE           *f;
-	Symbol         *s;
-
-	if (symhead >= symtail)
-		return (FILE *) 0;
-	s = *symhead++;
-	Sprintf(fname, "%s.mod", s->name);
-	f = fopen(fname, "r");
-	if (f == (FILE *) 0) {
-		diag("Can't open", fname);
-	}
-	Fclose(fin);
-	linenum = 0;
-	Strcpy(finname, fname);
-	return f;
-}
-#endif
 
 typedef struct FileStackItem {
     char* inlinep;

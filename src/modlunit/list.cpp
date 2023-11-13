@@ -171,14 +171,14 @@ char* emalloc(unsigned n) { /* check return from malloc */
 }
 
 void memory_usage() {
-    Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);
+    fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);
 }
 
 char* stralloc(const char* buf, char* rel) {
     /* allocate space, copy buf, and free rel */
     char* s;
     s = (char*) emalloc((unsigned) (strlen(buf) + 1));
-    Strcpy(s, buf);
+    strcpy(s, buf);
     if (rel) {
         free(rel);
     }
@@ -227,7 +227,7 @@ Item* putintoken(const char* s, short type, short toktype) { /* make sure a symb
     static int linenum = 0;
 
     if (debugtoken) {
-        Fprintf(stderr, "%s|", s);
+        fprintf(stderr, "%s|", s);
     }
     if (s == (char*) 0)
         diag("internal error", " in putintoken");

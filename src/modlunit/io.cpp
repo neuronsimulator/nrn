@@ -112,9 +112,9 @@ void diag(const char* s1, const char* s2) {
     char* cp;
     Item *q1, *q2, *q;
 
-    Fprintf(stderr, "%s", s1);
+    fprintf(stderr, "%s", s1);
     if (s2) {
-        Fprintf(stderr, "%s", s2);
+        fprintf(stderr, "%s", s2);
     }
     if (lex_tok) {
         /*EMPTY*/
@@ -126,45 +126,45 @@ void diag(const char* s1, const char* s2) {
             ;
         }
         if (q2 == intoken) {
-            Fprintf(stderr, " at end of file in file %s\n", finname);
+            fprintf(stderr, " at end of file in file %s\n", finname);
         } else {
-            Fprintf(stderr, " at line %d in file %s\n", q2->itemsubtype, finname);
+            fprintf(stderr, " at line %d in file %s\n", q2->itemsubtype, finname);
         }
         assert(q1 != q2);
         for (q = q1->next; q != q2; q = q->next) {
             switch (q->itemtype) {
             case SYMBOL:
-                Fprintf(stderr, "%s", SYM(q)->name);
+                fprintf(stderr, "%s", SYM(q)->name);
                 break;
             case STRING:
-                Fprintf(stderr, "%s", STR(q));
+                fprintf(stderr, "%s", STR(q));
                 break;
             case NEWLINE:
-                Fprintf(stderr, "\n");
+                fprintf(stderr, "\n");
                 break;
             default:
                 /*SUPPRESS 622*/
                 assert(0);
             }
             if (q == lastok) {
-                Fprintf(stderr, "<<ERROR>>");
+                fprintf(stderr, "<<ERROR>>");
             }
         }
     } else if (fin) {
-        Fprintf(stderr, " at line %d in file %s\n", linenum, finname);
-        Fprintf(stderr, "%s", inlinep);
+        fprintf(stderr, " at line %d in file %s\n", linenum, finname);
+        fprintf(stderr, "%s", inlinep);
         if (ctp >= inlinep) {
             for (cp = inlinep; cp < ctp - 1; cp++) {
                 if (*cp == '\t') {
-                    Fprintf(stderr, "\t");
+                    fprintf(stderr, "\t");
                 } else {
-                    Fprintf(stderr, " ");
+                    fprintf(stderr, " ");
                 }
             }
-            Fprintf(stderr, "^");
+            fprintf(stderr, "^");
         }
     }
-    Fprintf(stderr, "\n");
+    fprintf(stderr, "\n");
     exit(1);
 }
 
@@ -204,8 +204,8 @@ List* _LST(Item* q, char* file, int line) {
 }
 
 void internal_error(Item* q, char* file, int line) {
-    Fprintf(stderr, "Internal error in file \"%s\", line %d\n", file, line);
-    Fprintf(stderr, "The offending item has the structure:\n");
+    fprintf(stderr, "Internal error in file \"%s\", line %d\n", file, line);
+    fprintf(stderr, "The offending item has the structure:\n");
     debugitem(q);
     exit(1);
 }

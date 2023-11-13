@@ -49,13 +49,13 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         if (!nrnstate) {
             nrnstate = newlist();
         }
-        Lappendstr(nrnstate, "{");
+        lappendstr(nrnstate, "{");
         if (qMethod) {
             movelist(qName->prev, qMethod, nrnstate);
         } else {
             movelist(qName->prev, qName, nrnstate);
         }
-        Lappendstr(nrnstate, "}");
+        lappendstr(nrnstate, "}");
     }
     /* verify that the block defintion for this SOLVE has not yet been seen */
     if (massage_list_) {
@@ -74,7 +74,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         lq->itemtype = -blocktype; /* gets put back below */
     }
     if (qMethod) {
-        Lappendsym(solvq, SYM(qMethod));
+        lappendsym(solvq, SYM(qMethod));
         if (strcmp(SYM(qMethod)->name, "derivimplicit") == 0) {
             add_deriv_imp_list(SYM(qName)->name);
         }
@@ -86,7 +86,7 @@ void solvequeue(Item* qName, Item* qMethod, int blocktype) /*solve NAME [using M
         remove(qMethod->prev);
         remove(qMethod);
     } else {
-        Lappendsym(solvq, SYM0);
+        lappendsym(solvq, SYM0);
     }
     remove(qName->prev);
 
@@ -173,7 +173,7 @@ void solvhandler() {
                             method->name);
                     vectorize = 0;
                     Sprintf(buf, " %s();\n", fun->name);
-                    Insertstr(follow, buf);
+                    insertstr(follow, buf);
                 }
                 cvode_interface(fun, listnum, numeqn);
             }
@@ -192,7 +192,7 @@ void solvhandler() {
                 vectorize = 0;
                 /* derivatives recalculated after while loop */
                 Sprintf(buf, " %s();\n", fun->name);
-                Insertstr(follow, buf);
+                insertstr(follow, buf);
             }
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, steadystate);
@@ -261,7 +261,7 @@ void solvhandler() {
             cvode_valid();
         }
         /* add the error check */
-        Insertstr(qsol, "error =");
+        insertstr(qsol, "error =");
         move(errstmt->next, errstmt->prev, qsol->next);
         if (errstmt->next == errstmt->prev) {
             vectorize_substitute(qsol->next, "");
@@ -283,18 +283,6 @@ void solvhandler() {
 void save_dt(Item* q) /* save and restore the value of indepvar */
 {
     /*ARGSUSED*/
-#if 0 /* integrators no longer increment time */
-	static int first=1;
-
-	if (first) {
-		first = 0;
-		Linsertstr(procfunc, "double _savlocal;\n");
-	}
-	Sprintf(buf, "_savlocal = %s;\n", indepsym->name);
-	Insertstr(q, buf);
-	Sprintf(buf, "%s = _savlocal;\n", indepsym->name);
-	Insertstr(q->next, buf);
-#endif
 }
 
 const char* saveindep = "";
@@ -351,7 +339,7 @@ void whileloop(Item* qsol, long type, int ss) {
     }
 
     if (called) {
-        Fprintf(stderr,
+        fprintf(stderr,
                 "Warning: More than one integrating SOLVE statement in an \
 BREAKPOINT block.\nThe simulation will be incorrect if more than one is used \
 at a time.\n");
@@ -364,7 +352,7 @@ at a time.\n");
         /* Assert no more additions to initfunc involving
         the value of time */
         Sprintf(buf, " _sav_indep = %s; %s = _save;\n", indepsym->name, indepsym->name);
-        Lappendstr(initfunc, buf);
+        lappendstr(initfunc, buf);
         vectorize_substitute(initfunc->prev, "");
     }
     called++;

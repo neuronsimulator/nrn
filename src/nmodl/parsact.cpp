@@ -47,7 +47,7 @@ void parm_array_install(Symbol* n, const char* num, char* units, char* limits, i
     char buf[NRN_BUFSIZE];
 
     if (n->u.str == (char*) 0)
-        Lappendsym(syminorder, n);
+        lappendsym(syminorder, n);
     n->subtype |= PARM;
     n->subtype |= ARRAY;
     n->araydim = index;
@@ -59,7 +59,7 @@ void parminstall(Symbol* n, const char* num, const char* units, const char* limi
     char buf[NRN_BUFSIZE];
 
     if (n->u.str == (char*) 0)
-        Lappendsym(syminorder, n);
+        lappendsym(syminorder, n);
     n->subtype |= PARM;
     Sprintf(buf, "\n%s\n%s\n%s\n", num, units, limits);
     n->u.str = stralloc(buf, (char*) 0);
@@ -108,11 +108,11 @@ void indepinstall(Symbol* n,
         diag("Only one independent variable can be defined", (char*) 0);
     }
     indeplist = newlist();
-    Lappendstr(indeplist, from);
-    Lappendstr(indeplist, to);
-    Lappendstr(indeplist, with);
-    Lappendstr(indeplist, from);
-    Lappendstr(indeplist, units);
+    lappendstr(indeplist, from);
+    lappendstr(indeplist, to);
+    lappendstr(indeplist, with);
+    lappendstr(indeplist, from);
+    lappendstr(indeplist, units);
     n->subtype |= INDEP;
     indepunits = stralloc(units, (char*) 0);
     if (n != scop_indep) {
@@ -150,7 +150,7 @@ void depinstall(int type,
         diag(n->name, "tolerance can be specified only for a STATE");
     }
     if (n->u.str == (char*) 0)
-        Lappendsym(syminorder, n);
+        lappendsym(syminorder, n);
     if (type) {
         n->subtype |= STAT;
         c = ':';
@@ -289,7 +289,7 @@ void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
     }
     if (lagval->subtype & ARRAY) {
         Sprintf(buf, "static double *%s;\n", lagval->name);
-        Linsertstr(procfunc, buf);
+        linsertstr(procfunc, buf);
         Sprintf(buf,
                 "%s = lag(%s, %s, %s, %d);\n",
                 lagval->name,
@@ -299,7 +299,7 @@ void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
                 lagval->araydim);
     } else {
         Sprintf(buf, "static double %s;\n", lagval->name);
-        Linsertstr(procfunc, buf);
+        linsertstr(procfunc, buf);
         Sprintf(buf,
                 "%s = *lag(&(%s), %s, %s, 0);\n",
                 lagval->name,
@@ -315,9 +315,9 @@ void add_reset_args(Item* q) {
 
     reset_fun_cnt++;
     Sprintf(buf, "&_reset, &_freset%d,", reset_fun_cnt);
-    Insertstr(q->next, buf);
+    insertstr(q->next, buf);
     Sprintf(buf, "static double _freset%d;\n", reset_fun_cnt);
-    Lappendstr(firstlist, buf);
+    lappendstr(firstlist, buf);
 }
 
 void add_nrnthread_arg(Item* q) {
@@ -427,7 +427,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             diag("TABLE stmt in FUNCTION cannot have a table name list", (char*) 0);
         }
         table = newlist();
-        Lappendsym(table, fsym);
+        lappendsym(table, fsym);
     } else {
         if (!table) {
             diag("TABLE stmt in PROCEDURE must have a table name list", (char*) 0);
@@ -465,7 +465,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
 
     /* declare communication between func and check_func */
     Sprintf(buf, "static double _mfac_%s, _tmin_%s;\n", fname, fname);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
 
     /* create the check function */
     if (!check_table_thread_list) {
@@ -480,11 +480,11 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     q = lappendstr(procfunc, buf);
     Sprintf(buf, "static void _check_%s(_internalthreadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
-    Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
-    Lappendstr(procfunc, " double _xi, _tmax;\n");
+    lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
+    lappendstr(procfunc, " double _xi, _tmax;\n");
     ITERATE(q, depend) {
         Sprintf(buf, " static double _sav_%s;\n", SYM(q)->name);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     }
     lappendstr(procfunc, " if (!usetable) {return;}\n");
     /*allocation*/
@@ -500,37 +500,37 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         } else {
             Sprintf(buf, "  _t_%s = makevector(%d*sizeof(double));\n", s->name, ntab + 1);
         }
-        Lappendstr(initlist, buf);
+        lappendstr(initlist, buf);
     }
     /* check dependency */
     ITERATE(q, depend) {
         Sprintf(buf, " if (_sav_%s != %s) { _maktable = 1;}\n", SYM(q)->name, SYM(q)->name);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     }
     /* make the table */
-    Lappendstr(procfunc, " if (_maktable) { double _x, _dx; _maktable=0;\n");
+    lappendstr(procfunc, " if (_maktable) { double _x, _dx; _maktable=0;\n");
     Sprintf(buf, "  _tmin_%s = ", fname);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     move(from->next, from->prev, procfunc);
     Sprintf(buf, ";\n   _tmax = ");
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     move(to->next, to->prev, procfunc);
-    Lappendstr(procfunc, ";\n");
+    lappendstr(procfunc, ";\n");
     Sprintf(buf, "  _dx = (_tmax - _tmin_%s)/%d.; _mfac_%s = 1./_dx;\n", fname, ntab, fname);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf, "  for (_i=0, _x=_tmin_%s; _i < %d; _x += _dx, _i++) {\n", fname, ntab + 1);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     if (type == FUNCTION1) {
         ITERATE(q, table) {
             s = SYM(q);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_threadargscomma_ _x);\n", s->name, fname);
             vectorize_substitute(procfunc->prev, buf);
         }
     } else {
         Sprintf(buf, "   _f_%s(_x);\n", fname);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
         Sprintf(buf, "   _f_%s(_threadargscomma_ _x);\n", fname);
         vectorize_substitute(procfunc->prev, buf);
         ITERATE(q, table) {
@@ -544,30 +544,30 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             } else {
                 Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
             }
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
         }
     }
-    Lappendstr(procfunc, "  }\n"); /*closes loop over _i index*/
+    lappendstr(procfunc, "  }\n"); /*closes loop over _i index*/
     /* save old dependency values */
     ITERATE(q, depend) {
         s = SYM(q);
         Sprintf(buf, "  _sav_%s = %s;\n", s->name, s->name);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     }
-    Lappendstr(procfunc, " }\n"); /* closes if(maktable)) */
-    Lappendstr(procfunc, "}\n\n");
+    lappendstr(procfunc, " }\n"); /* closes if(maktable)) */
+    lappendstr(procfunc, "}\n\n");
 
 
     /* create the new function (steers to analytic or table) */
     /*declaration*/
     if (type == FUNCTION1) {
 #define GLOBFUNC 1
-        Lappendstr(procfunc, "double");
+        lappendstr(procfunc, "double");
     } else {
-        Lappendstr(procfunc, "static int");
+        lappendstr(procfunc, "static int");
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf, "%s(_internalthreadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     /* check the table */
@@ -576,50 +576,50 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     Sprintf(buf, "\n#if 0\n_check_%s(_threadargs_);\n#endif\n", fname);
     vectorize_substitute(q, buf);
     if (type == FUNCTION1) {
-        Lappendstr(procfunc, "return");
+        lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf, "_n_%s(_threadargscomma_ %s);\n", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
-        Lappendstr(procfunc, "return 0;\n");
+        lappendstr(procfunc, "return 0;\n");
     }
-    Lappendstr(procfunc, "}\n\n"); /* end of new function */
+    lappendstr(procfunc, "}\n\n"); /* end of new function */
 
     /* _n_name function for table lookup with no checking */
     if (type == FUNCTION1) {
-        Lappendstr(procfunc, "static double");
+        lappendstr(procfunc, "static double");
     } else {
-        Lappendstr(procfunc, "static void");
+        lappendstr(procfunc, "static void");
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf, "_n_%s(_internalthreadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-    Lappendstr(procfunc, "int _i, _j;\n");
-    Lappendstr(procfunc, "double _xi, _theta;\n");
+    lappendstr(procfunc, "int _i, _j;\n");
+    lappendstr(procfunc, "double _xi, _theta;\n");
 
     /* usetable */
-    Lappendstr(procfunc, "if (!usetable) {\n");
+    lappendstr(procfunc, "if (!usetable) {\n");
     if (type == FUNCTION1) {
-        Lappendstr(procfunc, "return");
+        lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_f_%s(%s);", fname, arg->name);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     Sprintf(buf, "_f_%s(_threadargscomma_ %s);", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
     if (type != FUNCTION1) {
-        Lappendstr(procfunc, "return;");
+        lappendstr(procfunc, "return;");
     }
-    Lappendstr(procfunc, "\n}\n");
+    lappendstr(procfunc, "\n}\n");
 
     /* table lookup */
     Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n", fname, arg->name, fname);
-    Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "if (std::isnan(_xi)) {\n");
+    lappendstr(procfunc, buf);
+    lappendstr(procfunc, "if (std::isnan(_xi)) {\n");
     if (type == FUNCTION1) {
-        Lappendstr(procfunc, " return _xi; }\n");
+        lappendstr(procfunc, " return _xi; }\n");
     } else {
         ITERATE(q, table) {
             s = SYM(q);
@@ -631,14 +631,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             } else {
                 Sprintf(buf, " %s = _xi;\n", s->name);
             }
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
         }
-        Lappendstr(procfunc, " return;\n }\n");
+        lappendstr(procfunc, " return;\n }\n");
     }
-    Lappendstr(procfunc, "if (_xi <= 0.) {\n");
+    lappendstr(procfunc, "if (_xi <= 0.) {\n");
     if (type == FUNCTION1) {
         Sprintf(buf, "return _t_%s[0];\n", SYM(table->next)->name);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     } else {
         ITERATE(q, table) {
             s = SYM(q);
@@ -651,16 +651,16 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             } else {
                 Sprintf(buf, "%s = _t_%s[0];\n", s->name, s->name);
             }
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
         }
-        Lappendstr(procfunc, "return;");
+        lappendstr(procfunc, "return;");
     }
-    Lappendstr(procfunc, "}\n");
+    lappendstr(procfunc, "}\n");
     Sprintf(buf, "if (_xi >= %d.) {\n", ntab);
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     if (type == FUNCTION1) {
         Sprintf(buf, "return _t_%s[%d];\n", SYM(table->next)->name, ntab);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     } else {
         ITERATE(q, table) {
             s = SYM(q);
@@ -674,13 +674,13 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             } else {
                 Sprintf(buf, "%s = _t_%s[%d];\n", s->name, s->name, ntab);
             }
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
         }
-        Lappendstr(procfunc, "return;");
+        lappendstr(procfunc, "return;");
     }
-    Lappendstr(procfunc, "}\n");
+    lappendstr(procfunc, "}\n");
     /* table interpolation */
-    Lappendstr(procfunc, "_i = (int) _xi;\n");
+    lappendstr(procfunc, "_i = (int) _xi;\n");
     if (type == FUNCTION1) {
         s = SYM(table->next);
         Sprintf(buf,
@@ -688,9 +688,9 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
                 s->name,
                 s->name,
                 s->name);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
     } else {
-        Lappendstr(procfunc, "_theta = _xi - (double)_i;\n");
+        lappendstr(procfunc, "_theta = _xi - (double)_i;\n");
         ITERATE(q, table) {
             s = SYM(q);
             if (s->subtype & ARRAY) {
@@ -698,7 +698,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
                         "for (_j = 0; _j < %d; _j++) {double *_t = _t_%s[_j];",
                         s->araydim,
                         s->name);
-                Lappendstr(procfunc, buf);
+                lappendstr(procfunc, buf);
                 Sprintf(buf, "%s[_j] = _t[_i] + _theta*(_t[_i+1] - _t[_i]);}\n", s->name);
             } else {
                 Sprintf(buf,
@@ -708,10 +708,10 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
                         s->name,
                         s->name);
             }
-            Lappendstr(procfunc, buf);
+            lappendstr(procfunc, buf);
         }
     }
-    Lappendstr(procfunc, "}\n\n"); /* end of new function */
+    lappendstr(procfunc, "}\n\n"); /* end of new function */
 
     /* table declaration */
     ITERATE(q, table) {
@@ -721,7 +721,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         } else {
             Sprintf(buf, "static double *_t_%s;\n", s->name);
         }
-        Lappendstr(firstlist, buf);
+        lappendstr(firstlist, buf);
     }
 
     /*cleanup*/
@@ -749,11 +749,11 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
                 "    double _r{0.0};\n",
                 n->name);
     }
-    Lappendstr(procfunc, buf);
+    lappendstr(procfunc, buf);
     vectorize_substitute(lappendstr(procfunc, ""),
                          "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
-        Lappendstr(procfunc,
+        lappendstr(procfunc,
                    "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
                    "  auto* const _p = _pnt->_prop;\n"
                    "  if (!_p) {\n"
@@ -795,24 +795,24 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
         vectorize_substitute(qp, buf);
     }
     if (n->subtype & FUNCT) {
-        Lappendstr(procfunc, "_r = ");
+        lappendstr(procfunc, "_r = ");
     } else {
-        Lappendstr(procfunc, "_r = 1.;\n");
+        lappendstr(procfunc, "_r = 1.;\n");
     }
-    Lappendsym(procfunc, n);
+    lappendsym(procfunc, n);
     lappendstr(procfunc, "(");
     qp = lappendstr(procfunc, "");
     for (i = 0; i < n->varnum; ++i) {
         Sprintf(buf, "*getarg(%d)", i + 1);
-        Lappendstr(procfunc, buf);
+        lappendstr(procfunc, buf);
         if (i + 1 < n->varnum) {
-            Lappendstr(procfunc, ",");
+            lappendstr(procfunc, ",");
         }
     }
     if (point_process || !ishoc) {
-        Lappendstr(procfunc, ");\n return(_r);\n}\n");
+        lappendstr(procfunc, ");\n return(_r);\n}\n");
     } else if (ishoc) {
-        Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
+        lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
     }
     if (i) {
         vectorize_substitute(qp, "_threadargscomma_");
@@ -854,7 +854,7 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             // also confirms that the special case here in C does not apply to
             // C++. All of that said, neither GCC nor Clang even produces a
             // warning and it seems to work.
-            Insertstr(qpar1->next, "&");
+            insertstr(qpar1->next, "&");
         } else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
             if (blocktype == NETRECEIVE) {
                 Item* qeq = NULL;
@@ -880,28 +880,28 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
                 vectorize = 0;
                 if (!state_discon_list_) {
                     state_discon_list_ = newlist();
-                    Linsertstr(procfunc, "extern int state_discon_flag_;\n");
+                    linsertstr(procfunc, "extern int state_discon_flag_;\n");
                 }
                 lappenditem(state_discon_list_, qpar1->next);
-                Insertstr(qpar1->next, "-1, &");
+                insertstr(qpar1->next, "-1, &");
             }
         } else if (strcmp(SYM(qname)->name, "net_send") == 0) {
             net_send_seen_ = 1;
             if (artificial_cell) {
                 replacstr(qname, "artcell_net_send");
             }
-            Insertstr(qexpr, "t + ");
+            insertstr(qexpr, "t + ");
             if (blocktype == NETRECEIVE) {
-                Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
+                insertstr(qpar1->next, "_tqitem, _args, _pnt,");
             } else if (blocktype == INITIAL1) {
-                Insertstr(qpar1->next, "_tqitem, nullptr, _ppvar[1].get<Point_process*>(),");
+                insertstr(qpar1->next, "_tqitem, nullptr, _ppvar[1].get<Point_process*>(),");
             } else {
                 diag("net_send allowed only in INITIAL and NET_RECEIVE blocks", (char*) 0);
             }
         } else if (strcmp(SYM(qname)->name, "net_event") == 0) {
             net_event_seen_ = 1;
             if (blocktype == NETRECEIVE) {
-                Insertstr(qpar1->next, "_pnt,");
+                insertstr(qpar1->next, "_pnt,");
             } else {
                 diag("net_event", "only allowed in NET_RECEIVE block");
             }
@@ -910,7 +910,7 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
                 replacstr(qname, "artcell_net_move");
             }
             if (blocktype == NETRECEIVE) {
-                Insertstr(qpar1->next, "_tqitem, _pnt,");
+                insertstr(qpar1->next, "_tqitem, _pnt,");
             } else {
                 diag("net_move", "only allowed in NET_RECEIVE block");
             }

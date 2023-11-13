@@ -42,8 +42,8 @@ void massagediscblk(Item* q1, Item* q2, Item* q3, Item* q4) /*DISCRETE NAME stmt
     Item* qs;
 
     replacstr(q1, "void");
-    Insertstr(q3, "()\n{\n");
-    Insertstr(q4, "}\n");
+    insertstr(q3, "()\n{\n");
+    insertstr(q4, "}\n");
     SYM(q2)->subtype |= DISCF;
     SYMITER(NAME) if (s->subtype & STAT && s->used && s->discdim) {
         if (s->subtype & ARRAY) {
@@ -68,7 +68,7 @@ for (_i=%d; _i>0; _i--) __%s[_i][_j] = __%s[_i-1][_j];\n\
                     s->name,
                     s->name);
         }
-        Insertstr(q3, buf);
+        insertstr(q3, buf);
         s->used = 0;
     }
     /*initialization and declaration done elsewhere*/
@@ -88,18 +88,18 @@ for (_i=%d; _i>=0; _i--) __%s[_i][_j] = %s0;}}\n",
                     s->discdim - 1,
                     s->name,
                     s->name);
-            Linsertstr(initfunc, buf);
+            linsertstr(initfunc, buf);
             Sprintf(buf, "static double __%s[%d][%d];\n", s->name, s->discdim, s->araydim);
-            Linsertstr(procfunc, buf);
+            linsertstr(procfunc, buf);
         } else {
             Sprintf(buf,
                     "{int _i; for (_i=%d; _i>=0; _i--) __%s[_i] = %s0;}\n",
                     s->discdim - 1,
                     s->name,
                     s->name);
-            Linsertstr(initfunc, buf);
+            linsertstr(initfunc, buf);
             Sprintf(buf, "static double __%s[%d];\n", s->name, s->discdim);
-            Linsertstr(procfunc, buf);
+            linsertstr(procfunc, buf);
         }
     }
 }

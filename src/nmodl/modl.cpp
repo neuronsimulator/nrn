@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
     fclose(fcout);
 
     if (vectorize) {
-        Fprintf(stderr, "Thread Safe\n");
+        fprintf(stderr, "Thread Safe\n");
     }
     if (usederivstatearray) {
         fprintf(stderr,
@@ -231,10 +231,10 @@ static void openfiles(const char* given_filename, const char* output_dir) {
     if ((fcout = fopen(output_filename, "w")) == (FILE*) 0) {
         diag("Can't create C file: ", output_filename);
     }
-    Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
+    fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
 }
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
-    Fprintf(fcout, "%s", q);
+    fprintf(fcout, "%s", q);
 }

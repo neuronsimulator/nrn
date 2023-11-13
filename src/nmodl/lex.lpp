@@ -106,7 +106,7 @@ E	[Ee][-+]?{D}+
 	}
 	/* determine if really a constant */
 	if ((i = newinput()) == '0') {
-		Strcat(buf, "0");
+		strcat(buf, "0");
 		yylval.qp = putintoken(buf, NAME);
 		return NAME;
 	}else{

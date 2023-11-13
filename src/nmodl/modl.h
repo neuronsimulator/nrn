@@ -274,23 +274,7 @@ extern Symbol *semi, /* ';'. When seen on output, causes newline */
 
 extern void printlist(List*);
 
-#define Fprintf     fprintf
-#define Fclose      fclose
-#define Fflush      fflush
-#define Printf      printf
-#define Strcpy      strcpy
-#define Strcat      strcat
-#define Insertstr   insertstr
-#define Insertsym   insertsym
-#define Linsertsym  linsertsym
-#define Linsertstr  linsertstr
-#define Lappendsym  lappendsym
-#define Lappendstr  lappendstr
-#define Lappenditem lappenditem
-#define Lappendlst  lappendlst
-#define Free(arg)   free((void*) (arg))
 using neuron::Sprintf;
-
 
 void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions

@@ -9,17 +9,17 @@
 #define sdebug(arg1,arg2) {}
 #define qdebug(arg1,arg2) {}
 #else
-#define sdebug(arg1,arg2) {Fprintf(stderr,"arg1:%s\n", arg2); Fflush(stderr);}
-#define qdebug(arg1,arg2) {Item *q; Fprintf(stderr,"arg1:");Fflush(stderr);\
+#define sdebug(arg1,arg2) {fprintf(stderr,"arg1:%s\n", arg2); fflush(stderr);}
+#define qdebug(arg1,arg2) {Item *q; fprintf(stderr,"arg1:");fflush(stderr);\
 	for (q=arg2; q->type != 0; q=q->next){\
 		if (q->type == SYMBOL)\
-			Fprintf(stderr,"%s\n", SYM(q)->name);\
+			fprintf(stderr,"%s\n", SYM(q)->name);\
 		else if (q->type == STRING)\
-			Fprintf(stderr,"%s\n", STR(q);\
+			fprintf(stderr,"%s\n", STR(q);\
 		else\
-			Fprintf(stderr,"Illegal Item type\n");\
-		Fflush(stderr);}\
-		Fprintf(stderr,"\n");Fflush(stderr);}
+			fprintf(stderr,"Illegal Item type\n");\
+		fflush(stderr);}\
+		fprintf(stderr,"\n");fflush(stderr);}
 #endif
 
 #define ldebug(arg1, arg2) qdebug(arg1, arg2->next)
@@ -348,7 +348,7 @@ locallist: LOCAL
 		}
 	   locallist1
 		{ replacstr($1, "double");
-		  Insertstr(lastok->next, ";\n");
+		  insertstr(lastok->next, ";\n");
 		  possible_local_current(blocktype, toplocal1_);
 		}
 	| LOCAL error {myerr("Illegal LOCAL declaration");}
@@ -448,7 +448,7 @@ asgn:	varname '=' expr
 			deriv_used(SYM($1), $3, lastok);
 			}
 		  if (blocktype == DERIVATIVE && (SYM($1)->subtype & STAT)) {
-			Fprintf(stderr,
+			fprintf(stderr,
 "WARNING: %s (a STATE) is assigned a value\
  in a DERIVATIVE block.\n Multistep integrators (such as Runge) may not\
  work correctly.\n", SYM($1)->name);
@@ -466,7 +466,7 @@ asgn:	varname '=' expr
 	| nonlineqn expr '=' expr
 		/* put info in equation list */
 		{ inequation = 0;
-		Insertstr($2, " -(");
+		insertstr($2, " -(");
 		replacstr($3, ") + ");
 		if (nstate == 0)
 {yyerror("previous equation contains no state variables"); YYERROR;}
@@ -637,22 +637,22 @@ fromstmt: FROM NAME {pushlocal(); SYM($2) = copylocal(SYM($2));
 		/* translate the whole thing using _lNAME as an integer */
 		{ replacstr($1, "{int ");
 		poplocal();
-		Insertstr($4, ";for (");
-		Insertstr($4, SYM($2)->name);
-		Insertstr($6, ";");
-		Insertstr($6, SYM($2)->name);
+		insertstr($4, ";for (");
+		insertstr($4, SYM($2)->name);
+		insertstr($6, ";");
+		insertstr($6, SYM($2)->name);
 		replacstr($6, "<=");
 		if ($8) {
-			Insertstr($8, ";");
-			Insertstr($8, SYM($2)->name);
+			insertstr($8, ";");
+			insertstr($8, SYM($2)->name);
 			replacstr($8, "+=");
 		} else {
-			Insertstr($9, ";");
-			Insertstr($9, SYM($2)->name);
-			Insertstr($9, "++");
+			insertstr($9, ";");
+			insertstr($9, SYM($2)->name);
+			insertstr($9, "++");
 		}
-		Insertstr($9, ")");
-		Insertstr($10, "}");
+		insertstr($9, ")");
+		insertstr($10, "}");
 		}
 	|FROM error {
 myerr("FROM intvar = intexpr TO intexpr BY intexpr { statements }");}
@@ -721,9 +721,9 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		replacstr($1, "\ndouble");
 		defarg($3, $5);
 		Sprintf(buf, "double _l%s;\n", s->name);
-		Insertstr($8->next, buf);
+		insertstr($8->next, buf);
 		Sprintf(buf, "\nreturn _l%s;\n", s->name);
-		Insertstr($9, buf);
+		insertstr($9, buf);
 		movelist($1, $9, procfunc);
 		if (SYM($2)->subtype & FUNCT) {
 			diag(SYM($2)->name, " declared as FUNCTION twice");
@@ -739,10 +739,10 @@ arglist: /*nothing*/ {pushlocal(); $$ = LIST0; argcnt_ = 0;}
 	;
 arglist1: name units
 		{SYM($1) = copylocal(SYM($1)); argcnt_ = 1;
-		 $$ = newlist(); Lappendsym($$, SYM($1));
+		 $$ = newlist(); lappendsym($$, SYM($1));
 		}
 	| arglist1 ',' name units
-		{SYM($3) = copylocal(SYM($3)); Lappendsym($$, SYM($3));
+		{SYM($3) = copylocal(SYM($3)); lappendsym($$, SYM($3));
 		 ++argcnt_;
 		}
 	;
@@ -752,7 +752,7 @@ procedblk: PROCEDURE NAME '(' arglist ')' units {set_inside_func(SYM($2));} stmt
 		s->varnum = argcnt_; /* allow proper number of "double" in prototype */
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
 		replacstr($1, "\nstatic int "); defarg($3, $5);
-		Insertstr($9, " return 0;");
+		insertstr($9, " return 0;");
 		movelist($1, $9, procfunc);
 		if (SYM($2)->subtype & PROCED) {
 			diag(SYM($2)->name, " declared as PROCEDURE twice");
@@ -770,7 +770,7 @@ netrecblk: NETRECEIVE '(' arglist ')'
 			if ($3 == LIST0) {
 diag("NET_RECEIVE block",(char*)" must have at least one argument");
 			}
-			Lappendsym($3, copylocal(install("flag", NAME)));
+			lappendsym($3, copylocal(install("flag", NAME)));
 		}
 	     stmtlist '}'
 		{
@@ -802,11 +802,11 @@ solvefor: /*nothing*/
 	| solvefor1
 	;
 solvefor1: SOLVEFOR NAME
-		{ solveforlist = newlist(); Lappendsym(solveforlist, SYM($2));
+		{ solveforlist = newlist(); lappendsym(solveforlist, SYM($2));
 		  remove($1); remove($2);
 		}
 	| solvefor1 ',' NAME
-		{ Lappendsym(solveforlist, SYM($3)); remove($2); remove($3);}
+		{ lappendsym(solveforlist, SYM($3)); remove($2); remove($3);}
 	| SOLVEFOR error { myerr("Syntax: SOLVEFOR name, name, ...");}
 	;
 brkptblk: BREAKPOINT stmtlist '}'
@@ -925,19 +925,19 @@ factordef: NAME '=' real unit
 		{ SYM($1)->subtype |= nmodlCONST;
 		  Sprintf(buf, "static double %s = %s;\n", SYM($1)->name,
 			STR($3));
-		  Lappendstr(firstlist, buf);
+		  lappendstr(firstlist, buf);
 		}
 	| NAME '=' unit unit
 		{
 		    SYM($1)->subtype |= nmodlCONST;
 		    nrnunit_str(buf, SYM($1)->name, $3, $4);
-		    Lappendstr(firstlist, buf);
+		    lappendstr(firstlist, buf);
 		}
 	| NAME '=' unit '-' GT unit 
 		{
 		    SYM($1)->subtype |= nmodlCONST;
 		    nrnunit_str(buf, SYM($1)->name, $3, $6);
-		    Lappendstr(firstlist, buf);
+		    lappendstr(firstlist, buf);
 		}
 	| error {myerr("Unit factor syntax: examples:\n\
 foot2inch = (foot) -> (inch)\n\
@@ -952,7 +952,7 @@ conststmt: /*nothing*/
 		{ SYM($2)->subtype |= nmodlCONST;
 		  Sprintf(buf, "static double %s = %s;\n", SYM($2)->name,
 			STR($4));
-		  Lappendstr(firstlist, buf);
+		  lappendstr(firstlist, buf);
 		}
 	;
 tablestmt: TABLE tablst dependlst FROM expr TO expr WITH INTEGER
@@ -961,13 +961,13 @@ tablestmt: TABLE tablst dependlst FROM expr TO expr WITH INTEGER
 			diag("only one TABLE per function", (char *)0);
 		  }
 		  table_list = newlist();
-		  Lappendlst(table_list, $2);
+		  lappendlst(table_list, $2);
 		  q = lappendlst(table_list, newlist());
 		  movelist($4->next, $6->prev, LST(q));
 		  q = lappendlst(table_list, newlist());
 		  movelist($6->next, $8->prev, LST(q));
-		  Lappendstr(table_list, STR($9));
-		  Lappendlst(table_list, $3);
+		  lappendstr(table_list, STR($9));
+		  lappendlst(table_list, $3);
 		  deltokens($1, $9);
 		}
 	| TABLE error { myerr("syntax: TABLE [list] [DEPEND list] FROM expr TO expr WITH integer");}
@@ -977,9 +977,9 @@ tablst: /*Nothing*/
 	| tablst1
 	;
 tablst1: Name
-		{$$ = newlist(); Lappendsym($$, SYM($1));}
+		{$$ = newlist(); lappendsym($$, SYM($1));}
 	| tablst1 ',' Name
-		{ Lappendsym($1, SYM($3));}
+		{ lappendsym($1, SYM($3));}
 	;
 dependlst: /*NOTHING*/
 		{$$ = LIST0;}
@@ -1043,6 +1043,6 @@ valence: /*nothing*/
 %%
 void yyerror(const char* s)	/* called for yacc syntax error */
 {
-	Fprintf(stderr, "%s:\n ", s);
+	fprintf(stderr, "%s:\n ", s);
 }
 
