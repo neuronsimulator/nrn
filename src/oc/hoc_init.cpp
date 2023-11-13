@@ -260,7 +260,7 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
+        install(keywords[i].name, keywords[i].kval, 0.0, &symlist);
     for (i = 0; consts[i].name; i++) {
         s = install(consts[i].name, UNDEF, consts[i].cval, &symlist);
         s->type = VAR;

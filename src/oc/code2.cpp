@@ -476,7 +476,7 @@ void System(void) {
         }
 #endif
         hocstr_delete(st);
-        IGNORE(unlink(stdoutfile));
+        unlink(stdoutfile);
     } else if (ifarg(2)) {
         NrnFILEWrap* fpw;
         extern HocStr* hoc_tmpbuf;

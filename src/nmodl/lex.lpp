@@ -53,9 +53,6 @@ int unput(int c) {
 
 
 int output(int c) {
-#if LINT
-	IGNORE(c);
-#endif
 	diag("internal error: ", "called output");
 	return 0;
 }
@@ -120,9 +117,6 @@ E	[Ee][-+]?{D}+
 	yylval.qp = putintoken(buf, PRIME);
 	if (SYM(yylval.qp)->type != PRIME) {
 		diag(yytext, " needed as derivative variable");
-#if LINT
-goto yyfussy;
-#endif
 	}
 	/* the high order prime might not be explicitly declared at this
 	time. But the base state may be an array. If it is, then make

@@ -38,12 +38,6 @@ char finname[NRN_BUFSIZE]; /* filename.mod  or second argument */
 Item* parseroot;
 Item* title;
 
-#if LINT
-char* clint;
-int ilint;
-Item* qlint;
-#endif
-
 static const char* pgm_name = "model";
 extern const char* RCS_version;
 extern const char* RCS_date;
@@ -69,13 +63,9 @@ int main(int argc, char* argv[]) {
     lex_start();
     /* declare all used variables */
     parsepass(1);
-    IGNORE(yyparse());
+    yyparse();
     declare_implied();
     /* At this point The input file is in the intoken list */
-#if 0
-	printlist(intoken);
-	debug_item((Item *)intoken, 0, fparout);
-#endif
     /* give all names their proper units */
     /* all variables used consistently (arrays) */
     parsepass(2);
@@ -90,30 +80,6 @@ int main(int argc, char* argv[]) {
     /* check unit consistency */
     parsepass(3);
     yyparse();
-#if 0
-	parout();		/* print .var file.
-				 * Also #defines which used to be in defs.h
-				 * are printed into .c file at beginning.
-				 */
-	cout();			/* print .c file */
-#endif
-#if 0
-	IGNORE(fclose(fparout));
-	IGNORE(fclose(fcout));
-	memory_usage();
-#endif
-#if LINT
-    { /* for lex */
-        extern int yytchar, yylineno;
-        extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
-        yyunput(ilint);
-        yyoutput(ilint);
-    }
-#endif
     return 0;
 }
 

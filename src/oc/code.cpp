@@ -2528,12 +2528,12 @@ Inst* hoc_codeptr(void* vp) {
 
 void codesym(Symbol* f) {
     progp->sym = f;
-    IGNORE(codechk());
+    codechk();
 }
 
 void codein(Inst* f) {
     progp->in = f;
-    IGNORE(codechk());
+    codechk();
 }
 
 void insertcode(Inst* begin, Inst* end, Pfrv f) {

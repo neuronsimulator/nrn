@@ -246,41 +246,12 @@ extern Objectdata* hoc_objectdata_restore(Objectdata*);
 #define OPLIST(sym)   hoc_objectdata[sym->u.oboff].plist
 #define OPARINFO(sym) hoc_objectdata[sym->u.oboff + 1].arayinfo
 
-#if LINT
-#undef assert
-#define assert(arg) \
-    {               \
-        if (arg)    \
-            ;       \
-    } /* so fprintf doesn't give lint */
-#undef IGNORE
-#define IGNORE(arg) \
-    {               \
-        if (arg)    \
-            ;       \
-    }
-#define LINTUSE(arg) \
-    {                \
-        if (arg)     \
-            ;        \
-    }
-char* cplint;
-int ilint;
-#define Strcat  cplint = strcat
-#define Strncat cplint = strncat
-#define Strcpy  cplint = strcpy
-#define Strncpy cplint = strncpy
-#define Printf  ilint = printf
-#else
-#undef IGNORE
-#define IGNORE(arg) arg
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
 #define Printf  nrnpy_pr
-#endif
 using neuron::Sprintf;
 
 #define ERRCHK(c1) c1

@@ -35,7 +35,6 @@ struct Symbol;
 
 //#define system mysystem
 #undef DELETE
-#undef IGNORE
 #define HOC        1
 #define OOP        1
 #define OC_CLASSES "nrnclass.h"

@@ -15,7 +15,6 @@
 
 #undef MOVE
 #undef DELETE
-#undef IGNORE
 #define MOVE   mlhmove
 #define DELETE mlhdelete
 #include <Dispatch/dispatcher.h>

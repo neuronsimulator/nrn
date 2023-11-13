@@ -92,7 +92,7 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #define CHECK(name)                            \
     if (hoc_lookup(name) != (Symbol*) 0) {     \
-        IGNORE(fprintf(stderr, CHKmes, name)); \
+        fprintf(stderr, CHKmes, name); \
         nrn_exit(1);                           \
     }
 
@@ -324,7 +324,7 @@ void hoc_last_init(void) {
         if (nrn_nobanner_ == 0) {
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
-            IGNORE(fflush(stderr));
+            fflush(stderr);
         }
     memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
@@ -639,14 +639,7 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
             }
             /*SUPPRESS 624*/
             if ((s2 = hoc_lookup(buf))) {
-#if 0
-				if (s2->subtype != RANGEVAR) {
-					IGNORE(fprintf(stderr, CHKmes,
-					buf));
-				}
-#else   // not 0
-                IGNORE(fprintf(stderr, CHKmes, buf));
-#endif  // not 0
+                fprintf(stderr, CHKmes, buf);
             } else {
                 s2 = hoc_install(buf, RANGEVAR, 0.0, &hoc_symlist);
                 s2->subtype = modltype;

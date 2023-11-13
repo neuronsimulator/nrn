@@ -49,12 +49,6 @@ char* modprefix;
 
 char finname[NRN_BUFSIZE];
 
-#if LINT
-char* clint;
-int ilint;
-Item* qlint;
-#endif
-
 int nmodl_text = 1;
 List* filetxtlist;
 
@@ -100,7 +94,7 @@ int main(int argc, char** argv) {
     std::strcpy(finname, inputfile.c_str());
     openfiles(inputfile.c_str(),
               output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
-    IGNORE(yyparse());
+    yyparse();
     /*
      * At this point all blocks are fully processed except the kinetic
      * block and the solve statements. Even in these cases the
@@ -136,19 +130,6 @@ int main(int argc, char** argv) {
 #define NMODL_TEXT 1
 #endif
 #if NMODL_TEXT
-#if 0
-/* test: temp.txt should be identical to text of input file except for INCLUDE */
-{
-	FILE* f = fopen("temp.txt", "w");
-	assert(f);
-	Item* q;
-	ITERATE(q, filetxtlist) {
-		char* s = STR(q);
-		fprintf(f, "%s", s);
-	}
-	fclose(f);
-}
-#endif
     if (nmodl_text) {
         Item* q;
         char* pf{nullptr};
@@ -186,7 +167,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    IGNORE(fclose(fcout));
+    fclose(fcout);
 
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
@@ -198,18 +179,6 @@ int main(int argc, char** argv) {
         fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
     }
 
-#if LINT
-    { /* for lex */
-        extern int yytchar, yylineno;
-        extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
-        yyunput(ilint);
-        yyoutput(ilint);
-    }
-#endif
     free(modprefix); /* allocated in openfiles below */
     return 0;
 }

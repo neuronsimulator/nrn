@@ -310,7 +310,7 @@ restart: /* when no token in between comments */
     {
         char* npt;
         double d;
-        IGNORE(unGetc(c, fin));
+        unGetc(c, fin);
         npt = (char*) ctp;
         /*EMPTY*/
         while (isdigit(c = Getc(fin))) {
@@ -323,7 +323,7 @@ restart: /* when no token in between comments */
             }
         }
         if (*npt == '.' && !isdigit(npt[1])) {
-            IGNORE(unGetc(c, fin));
+            unGetc(c, fin);
             return (int) (*npt);
         }
         if (c == 'E' || c == 'e') {
@@ -334,8 +334,8 @@ restart: /* when no token in between comments */
                 }
             }
         }
-        IGNORE(unGetc(c, fin));
-        IGNORE(sscanf(npt, "%lf", &d));
+        unGetc(c, fin);
+        sscanf(npt, "%lf", &d);
         if (d == 0.)
             return NUMZERO;
         yylval.sym = install("", NUMBER, d, &p_symlist);
@@ -351,7 +351,7 @@ restart: /* when no token in between comments */
             }
             *p++ = c;
         } while ((c = Getc(fin)) != EOF && (isalnum(c) || c == '_'));
-        IGNORE(unGetc(c, fin));
+        unGetc(c, fin);
         *p = '\0';
         if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
             yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
@@ -416,7 +416,7 @@ restart: /* when no token in between comments */
         }
         while (isdigit(c = Getc(fin)))
             n = 10 * n + c - '0';
-        IGNORE(unGetc(c, fin));
+        unGetc(c, fin);
         if (n == 0)
             acterror("strange $...", (char*) 0);
         yylval.narg = n;
@@ -530,7 +530,7 @@ static int follow(int expect, int ifyes, int ifno) /* look ahead for >=, etc. */
 
     if (c == expect)
         return ifyes;
-    IGNORE(unGetc(c, fin));
+    unGetc(c, fin);
     return ifno;
 }
 
@@ -657,7 +657,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
 #endif
     hoc_execerror_messages = 1;
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
-        IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
+        nrn_fw_fseek(hoc_fin, 0L, 2); /* flush rest of file */
     }
 
     // If the exception is due to a multiple ^C interrupt, then onintr
@@ -695,7 +695,7 @@ RETSIGTYPE onintr(int sig) /* catch interrupt */
     stoprun = 1;
     if (hoc_intset++)
         execerror("interrupted", (char*) 0);
-    IGNORE(signal(SIGINT, onintr));
+    signal(SIGINT, onintr);
 }
 
 #if DOS
@@ -1090,7 +1090,7 @@ int hoc_moreinput() {
     }
 #endif  // WIN32
     if (fin && !nrn_fw_eq(fin, stdin)) {
-        IGNORE(nrn_fw_fclose(fin));
+        nrn_fw_fclose(fin);
     }
     fin = nrn_fw_set_stdin();
     infile = 0;

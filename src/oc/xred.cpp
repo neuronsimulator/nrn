@@ -67,7 +67,7 @@ double xred(const char* prompt, double defalt, double min, double max) {
     char istr[80], c[2];
     double input;
     for (;;) {
-        IGNORE(fprintf(stderr, "%s (%-.5g)", prompt, defalt));
+        fprintf(stderr, "%s (%-.5g)", prompt, defalt);
 #ifdef WIN32
         if (gets(istr) != NULL) {
             strcat(istr, "\n");
@@ -83,13 +83,13 @@ double xred(const char* prompt, double defalt, double min, double max) {
                 label: {
                     if (input >= min && input <= max)
                         return (input);
-                    IGNORE(fprintf(stderr, "must be > %-.5g and < %-.5g\n", min, max));
+                    fprintf(stderr, "must be > %-.5g and < %-.5g\n", min, max);
                     continue;
                 }
         } else {
             rewind(stdin);
         }
-        IGNORE(fprintf(stderr, "input error\n"));
+        fprintf(stderr, "input error\n");
     }
 #else
     return 0.;
@@ -134,7 +134,7 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     char istr[80], c[2], instring[40], *result;
 
     for (;;) {                                              /* cycle until done */
-        IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
+        fprintf(stderr, "%s (%s)", prompt, defalt); /* print prompt */
 #ifdef WIN32
         if (gets(istr) != NULL) {
             strcat(istr, "\n");
@@ -156,12 +156,12 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
                     return (result - charlist); /* update default and return pos */
                 }
             }
-            IGNORE(fprintf(stderr, "input must be a substring of <<%s>>\n", charlist));
+            fprintf(stderr, "input must be a substring of <<%s>>\n", charlist);
             continue; /* go back for another cycle */
         } else {
             rewind(stdin);
         }
-        IGNORE(fprintf(stderr, "input error\n")); /* recycle */
+        fprintf(stderr, "input error\n"); /* recycle */
     }
     return 0;
 }

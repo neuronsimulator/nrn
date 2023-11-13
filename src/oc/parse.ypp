@@ -19,12 +19,7 @@
 
 void* nrn_parsing_pysec_;
 
-#if LINT
-Inst *inlint;
-#define code	inlint = Code
-#else
 #define code	Code
-#endif
 
 #define paction(arg) fprintf(stderr, "%s\n", arg)
 
@@ -165,12 +160,6 @@ list:	/* nothing */
 	| list HELP {hoc_help();} '\n' { return '\n'; }
 	| list error
 		{clean_err(); hoc_execerror("parse error", (char*)0);
-#if LINT
-if (0) {
-if(yydebug);
-goto yynewstate;
-}
-#endif
 		}
 	;
 asgn:	varname ROP expr
@@ -375,9 +364,6 @@ acterror("iterator_statement used outside an iterator declaration", 0);
 			($2)[2].i =relative($6, $2, 2); /* exit from the for */
 			($2)[3].i  =relative($4, $2, 3);	/* increment */
 			$$ = $1;
-#if LINT
-if (0){YYERROR;}
-#endif
 			}
 	| FOR varname
 		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());

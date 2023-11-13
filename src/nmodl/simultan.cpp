@@ -316,9 +316,6 @@ void massage_linblk(Item* q1, Item* q2, Item* q3, Item* q4) /* LINEAR NAME stmtl
     Symbol* s;
     int i;
 
-#if LINT
-    assert(q2);
-#endif
     if (++nlineq == 0) {
         diag(linblk->name, "has no equations");
     }

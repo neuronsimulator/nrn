@@ -215,9 +215,6 @@ int unput(int c) {
 }
 
 int output(int c) {
-#if LINT
-	IGNORE(c);
-#endif
 	diag("internal error: ", "called output");
 	return 0;
 }
