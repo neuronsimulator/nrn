@@ -173,7 +173,6 @@ bool InlineVisitor::inline_function_call(ast::Block& callee,
     RenameVisitor visitor(function_name, new_varname);
     inlined_block->visit_children(visitor);
 
-    /// \todo Have to re-run symtab visitor pass to update symbol table
     inlined_block->set_symbol_table(nullptr);
 
     /// each argument is added as new assignment statement

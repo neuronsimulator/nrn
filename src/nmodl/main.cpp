@@ -443,6 +443,7 @@ int main(int argc, const char* argv[]) {
         if (nmodl_inline) {
             logger->info("Running nmodl inline visitor");
             InlineVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
             ast_to_nmodl(*ast, filepath("inline"));
         }
 
