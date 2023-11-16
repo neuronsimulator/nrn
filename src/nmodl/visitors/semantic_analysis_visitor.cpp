@@ -6,6 +6,7 @@
  */
 
 #include "visitors/semantic_analysis_visitor.hpp"
+#include "ast/breakpoint_block.hpp"
 #include "ast/function_block.hpp"
 #include "ast/function_table_block.hpp"
 #include "ast/independent_block.hpp"
@@ -167,6 +168,26 @@ void SemanticAnalysisVisitor::visit_mutex_unlock(const ast::MutexUnlock& /* node
         logger->warn("SemanticAnalysisVisitor :: Found a MUTEXUNLOCK outside a locked part.");
     }
     in_mutex = false;
+    /// -->
+}
+
+void SemanticAnalysisVisitor::visit_breakpoint_block(const ast::BreakpointBlock& node) {
+    /// <-- This code is for check 8
+    solve_block_found_in_this_breakpoint_block = false;
+    node.visit_children(*this);
+    solve_block_found_in_this_breakpoint_block = false;
+    /// -->
+}
+
+void SemanticAnalysisVisitor::visit_solve_block(const ast::SolveBlock& /* node */) {
+    /// <-- This code is for check 8
+    if (solve_block_found_in_this_breakpoint_block) {
+        logger->critical(
+            "It is not allowed to have several solve blocks in the same breakpoint block");
+        check_fail = true;
+    } else {
+        solve_block_found_in_this_breakpoint_block = true;
+    }
     /// -->
 }
 

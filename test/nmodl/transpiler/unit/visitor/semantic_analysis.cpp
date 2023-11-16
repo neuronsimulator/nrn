@@ -165,3 +165,41 @@ SCENARIO("FUNCTION_TABLE block", "[visitor][semantic_analysis]") {
         }
     }
 }
+
+
+SCENARIO("At most one solve block per breakpoint block", "[visitor][semantic_analysis]") {
+    GIVEN("A breakpoint block with only one solve block") {
+        std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE dX METHOD cnexp
+            }
+        )";
+        THEN("Semantic analysis should success") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("2 breakpoints block with one solve block each") {
+        std::string nmodl_text = R"(
+            PROCEDURE foo() {
+                SOLVE dX METHOD cnexp
+            }
+            BREAKPOINT {
+                SOLVE dY METHOD cnexp
+            }
+        )";
+        THEN("Semantic analysis should success") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A breakpoint block with two solve blocks") {
+        std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE dX METHOD cnexp
+                SOLVE dY METHOD cnexp
+            }
+        )";
+        THEN("Semantic analysis should fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}
