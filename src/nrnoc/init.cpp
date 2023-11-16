@@ -7,7 +7,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"

@@ -16,6 +16,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
   if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20" AND ${CMAKE_VERSION} VERSION_LESS "3.20.3")
     string(APPEND CMAKE_DEPFILE_FLAGS_CXX "-MD<DEP_FILE>")
   endif()
+
+  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
+  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997. Also, stdinit.h include
+  # behaviour is different with -A (ANSI C++) and result into an error mentioned in
+  # https://github.com/neuronsimulator/nrn/issues/2563
+  if(CMAKE_VERSION VERSION_LESS 3.19)
+    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
+  endif()
+
   if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 20.7)
     # https://forums.developer.nvidia.com/t/many-all-diagnostic-numbers-increased-by-1-from-previous-values/146268/3
     # changed the numbering scheme in newer versions. The following list is from a clean start 16
