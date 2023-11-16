@@ -18,6 +18,7 @@
 #include "nrnoc/nrniv_mf.h"
 #include "coreneuron/utils/offload.hpp"
 #include "nrnoc/section.h"
+#include "permute_utils.hpp"
 //#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "node_order_optim/node_permute.h"  // for print_quality
@@ -293,19 +294,6 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 #endif
 }
 
-template <typename T>
-static void forward_permute(T* data, int* perm, int n) {
-    // Move data[perm[i]] to data[i]
-    T* data_orig = new T[n];  // Should use an inplace algorithm
-    for (int i = 0; i < n; ++i) {
-        data_orig[i] = data[i];
-    }
-    for (int i = 0; i < n; ++i) {
-        data[i] = data_orig[perm[i]];
-    }
-    delete[] data_orig;
-}
-
 static void prnode(const char* mes, NrnThread& nt) {
     printf("%s nrnthread %d node info\n", mes, nt.id);
     for (int i = 0; i < nt.end; ++i) {
@@ -352,7 +340,7 @@ void nrn_permute_node_order() {
     create_interleave_info();
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
-        int* perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
+        auto perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
         auto p = inverse_permute(perm, nt.end);
 #if 0
         for (int i = 0; i < nt.end; ++i) {
@@ -362,9 +350,9 @@ void nrn_permute_node_order() {
         }
 #endif
         //        prnode("before perm", nt);
-        forward_permute<Node*>(nt._v_node, p, nt.end);
-        forward_permute<Node*>(nt._v_parent, p, nt.end);
-        forward_permute<int>(nt._v_parent_index, p, nt.end);
+        forward_permute(nt._v_node, p, nt.end);
+        forward_permute(nt._v_parent, p, nt.end);
+        forward_permute(nt._v_parent_index, p, nt.end);
         node_permute(nt._v_parent_index, nt.end, perm);
         for (int i = 0; i < nt.end; ++i) {
             nt._v_node[i]->v_node_index = i;
@@ -383,10 +371,10 @@ void nrn_permute_node_order() {
     //    printf("leave nrn_permute_node_order\n");
 }
 
-int* interleave_order(int ith, int ncell, int nnode, int* parent) {
+const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
     // return if there are no nodes to permute
     if (nnode <= 0)
-        return nullptr;
+        return {};
 
     // ensure parent of root = -1
     for (int i = 0; i < ncell; ++i) {
@@ -398,7 +386,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     int nwarp = 0, nstride = 0, *stride = nullptr, *firstnode = nullptr;
     int *lastnode = nullptr, *cellsize = nullptr, *stridedispl = nullptr;
 
-    int* order = node_order(
+    auto order = node_order(
         ncell, nnode, parent, nwarp, nstride, stride, firstnode, lastnode, cellsize, stridedispl);
 
     if (interleave_info) {
@@ -425,7 +413,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
         if (ith == 0) {
             // needed for print_quality[12] and done once here to save time
-            int* p = new int[nnode];
+            std::vector<size_t> p(nnode);
             for (int i = 0; i < nnode; ++i) {
                 p[i] = parent[i];
             }
@@ -450,7 +438,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
     }
 
-    return order;
+    return std::move(order);
 }
 
 #if INTERLEAVE_DEBUG  // only the cell per core style
