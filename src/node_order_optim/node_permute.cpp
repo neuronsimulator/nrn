@@ -138,22 +138,6 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
     delete[] data_orig;
 }
 
-int* inverse_permute(int* p, int n) {
-    int* pinv = new int[n];
-    for (int i = 0; i < n; ++i) {
-        pinv[p[i]] = i;
-    }
-    return pinv;
-}
-
-static void invert_permute(int* p, int n) {
-    int* pinv = inverse_permute(p, n);
-    for (int i = 0; i < n; ++i) {
-        p[i] = pinv[i];
-    }
-    delete[] pinv;
-}
-
 void node_permute(int* vec, int n, int* permute) {
     for (int i = 0; i < n; ++i) {
         if (vec[i] >= 0) {

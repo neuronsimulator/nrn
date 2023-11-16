@@ -20,10 +20,11 @@ void forward_permute(T*& data, const std::vector<int>& perm, int size) {
     delete[] new_data;
 }
 
-int* inverse_permute(int* p, int n) {
-    int* pinv = new int[n];
-    for (int i = 0; i < n; ++i) {
+template <typename T>
+std::vector<T> inverse_permute(const std::vector<T> p) {
+    std::vector<T> pinv(p.size());
+    for (int i = 0; i < p.size(); ++i) {
         pinv[p[i]] = i;
     }
-    return pinv;
+    return std::move(pinv);
 }
