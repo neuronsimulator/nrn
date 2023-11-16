@@ -411,12 +411,13 @@ const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* pare
         }
         if (ith == 0) {
             // needed for print_quality[12] and done once here to save time
-            std::vector<size_t> p(nnode);
+            std::vector<int> p(nnode);
             for (int i = 0; i < nnode; ++i) {
                 p[i] = parent[i];
             }
-            permute_ptr(p, nnode, order);
-            node_permute(p, nnode, order);
+            forward_permute(p, order);
+            /// magkanar TODO: Understand the following
+            // node_permute(p, nnode, order);
 
             ii.nnode = new size_t[nwarp];
             ii.ncycle = new size_t[nwarp];
