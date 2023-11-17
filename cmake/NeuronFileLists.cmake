@@ -269,7 +269,7 @@ set(NRNIV_FILE_LIST
 # Files in node_order_optim directory
 # =============================================================================
 set(NODEORDEROPTIM_FILE_LIST balance.cpp cellorder.cpp cellorder1.cpp cellorder2.cpp lpt.cpp
-                             node_permute.cpp)
+                             node_permute.cpp permute_utils.cpp)
 
 # =============================================================================
 # Files in nrncvode directory

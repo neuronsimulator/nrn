@@ -426,13 +426,12 @@ const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* pare
             ii.child_race = new size_t[nwarp];
             for (int i = 0; i < nwarp; ++i) {
                 if (interleave_permute_type == 1) {
-                    print_quality1(i, interleave_info[ith], ncell, p);
+                    print_quality1(i, interleave_info[ith], ncell, p.data());
                 }
                 if (interleave_permute_type == 2) {
-                    print_quality2(i, interleave_info[ith], p);
+                    print_quality2(i, interleave_info[ith], p.data());
                 }
             }
-            delete[] p;
             warp_balance(ith, interleave_info[ith]);
         }
     }

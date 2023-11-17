@@ -1,4 +1,6 @@
-#include <permute_utils.hpp>
+#include <algorithm>
+
+#include "node_order_optim/permute_utils.hpp"
 
 template <typename T>
 void forward_permute(std::vector<T>& data, const std::vector<int>& perm) {
