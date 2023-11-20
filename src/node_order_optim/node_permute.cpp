@@ -94,8 +94,8 @@ so pdata_m(k, isz) = inew + data_t
 
 namespace neuron {
 
-void node_permute(std::vector<int>& vec, const std::vector<int>& permute) {
-    for (int i = 0; i < vec.size(); ++i) {
+void node_permute(int* vec, int size, const std::vector<int>& permute) {
+    for (int i = 0; i < size; ++i) {
         if (vec[i] >= 0) {
             vec[i] = permute[vec[i]];
         }
