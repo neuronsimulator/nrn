@@ -10,6 +10,7 @@
 
 #include "node_order_optim/memory.h"
 #include <algorithm>
+#include <vector>
 namespace neuron {
 
 /**
