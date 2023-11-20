@@ -118,7 +118,7 @@ static bool nrn_index_sort_cmp(const std::pair<int, int>& a, const std::pair<int
     return result;
 }
 
-const std::vector<int> nrn_index_sort(int* values, int n) {
+std::vector<int> nrn_index_sort(int* values, int n) {
     std::vector<std::pair<int, int>> vi(n);
     for (int i = 0; i < n; ++i) {
         vi[i].first = values[i];
@@ -129,7 +129,7 @@ const std::vector<int> nrn_index_sort(int* values, int n) {
     for (int i = 0; i < n; ++i) {
         sort_indices[i] = vi[i].second;
     }
-    return std::move(sort_indices);
+    return sort_indices;
 }
 
 void sort_ml(Memb_list* ml) {

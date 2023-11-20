@@ -26,7 +26,7 @@ std::vector<T> inverse_permute_vector(const std::vector<T>& p) {
     for (int i = 0; i < p.size(); ++i) {
         pinv[p[i]] = i;
     }
-    return std::move(pinv);
+    return pinv;
 }
 
 template <typename T>

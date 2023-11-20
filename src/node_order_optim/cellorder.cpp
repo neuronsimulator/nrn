@@ -369,7 +369,7 @@ void nrn_permute_node_order() {
     //    printf("leave nrn_permute_node_order\n");
 }
 
-const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
+std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
     // return if there are no nodes to permute
     if (nnode <= 0)
         return {};
@@ -435,7 +435,7 @@ const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* pare
         }
     }
 
-    return std::move(order);
+    return order;
 }
 
 #if INTERLEAVE_DEBUG  // only the cell per core style

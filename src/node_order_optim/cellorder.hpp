@@ -23,7 +23,7 @@ namespace neuron {
  *
  * \return int* order, interleaved order of the cells
  */
-const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
+std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
 
 void create_interleave_info();
 void destroy_interleave_info();
@@ -85,7 +85,7 @@ class InterleaveInfo: public MemoryManaged {
  * \param stridedispl
  * \return int* : a permutation of length nnode
  */
-const std::vector<int> node_order(int ncell,
+std::vector<int> node_order(int ncell,
                 int nnode,
                 int* parents,
                 int& nwarp,

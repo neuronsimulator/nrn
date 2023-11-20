@@ -296,7 +296,7 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 }
 #undef MSS
 
-const std::vector<int> node_order(int ncell,
+std::vector<int> node_order(int ncell,
                 int nnode,
                 int* parent,
                 int& nwarp,
@@ -368,7 +368,7 @@ const std::vector<int> node_order(int ncell,
         delete nodevec[i];
     }
 
-    return std::move(nodeorder);
+    return nodeorder;
 }
 
 void check(VecTNode& nodevec) {
