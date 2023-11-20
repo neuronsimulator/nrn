@@ -341,7 +341,7 @@ void nrn_permute_node_order() {
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& nt = nrn_threads[tid];
         auto perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
-        auto p = inverse_permute(perm);
+        auto p = inverse_permute_vector(perm);
 #if 0
         for (int i = 0; i < nt.end; ++i) {
             int x = nt._v_parent_index[p[i]];
@@ -416,8 +416,7 @@ const std::vector<int> interleave_order(int ith, int ncell, int nnode, int* pare
                 p[i] = parent[i];
             }
             forward_permute(p, order);
-            /// magkanar TODO: Understand the following
-            // node_permute(p, nnode, order);
+            node_permute(p, order);
 
             ii.nnode = new size_t[nwarp];
             ii.ncycle = new size_t[nwarp];

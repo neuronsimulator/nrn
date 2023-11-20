@@ -94,64 +94,12 @@ so pdata_m(k, isz) = inew + data_t
 
 namespace neuron {
 
-static int nrn_soa_padded_size(int cnt, int layout) {
-    assert(layout == 1);
-    return cnt;
-}
-static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
-    assert(isz == 0);
-    assert(sz == 1);
-    assert(layout == 1);
-    return icnt;
-}
-template <typename T>
-void permute(T* data, int cnt, int sz, int layout, int* p) {
-    // data(p[icnt], isz) <- data(icnt, isz)
-    // this does not change data, merely permutes it.
-    // assert len(p) == cnt
-    if (!p) {
-        return;
-    }
-    int n = cnt * sz;
-    if (n < 1) {
-        return;
-    }
-
-    if (0) {  // layout == Layout::SoA) {  // for SoA, n might be larger due to cnt padding
-        n = nrn_soa_padded_size(cnt, layout) * sz;
-    }
-
-    T* data_orig = new T[n];
-    for (int i = 0; i < n; ++i) {
-        data_orig[i] = data[i];
-    }
-
-    for (int icnt = 0; icnt < cnt; ++icnt) {
-        for (int isz = 0; isz < sz; ++isz) {
-            // note that when layout==0, nrn_i_layout takes into account SoA padding.
-            int i = nrn_i_layout(icnt, cnt, isz, sz, layout);
-            int ip = nrn_i_layout(p[icnt], cnt, isz, sz, layout);
-            data[ip] = data_orig[i];
-        }
-    }
-
-    delete[] data_orig;
-}
-
-void node_permute(int* vec, int n, int* permute) {
-    for (int i = 0; i < n; ++i) {
+void node_permute(std::vector<int>& vec, const std::vector<int>& permute) {
+    for (int i = 0; i < vec.size(); ++i) {
         if (vec[i] >= 0) {
             vec[i] = permute[vec[i]];
         }
     }
-}
-
-void permute_ptr(int* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
-}
-
-void permute_data(double* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
 }
 
 // note that sort_indices has the sense of an inverse permutation in that
