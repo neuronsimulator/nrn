@@ -94,6 +94,260 @@ so pdata_m(k, isz) = inew + data_t
 
 namespace neuron {
 
+static int nrn_soa_padded_size(int cnt, int layout) {
+    assert(layout == 1);
+    return cnt;
+}
+static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+    assert(isz == 0);
+    assert(sz == 1);
+    assert(layout == 1);
+    return icnt;
+}
+template <typename T>
+void permute(T* data, int cnt, int sz, int layout, int* p) {
+    // data(p[icnt], isz) <- data(icnt, isz)
+    // this does not change data, merely permutes it.
+    // assert len(p) == cnt
+    if (!p) {
+        return;
+    }
+    int n = cnt * sz;
+    if (n < 1) {
+        return;
+    }
+
+    if (0) {  // layout == Layout::SoA) {  // for SoA, n might be larger due to cnt padding
+        n = nrn_soa_padded_size(cnt, layout) * sz;
+    }
+
+    T* data_orig = new T[n];
+    for (int i = 0; i < n; ++i) {
+        data_orig[i] = data[i];
+    }
+
+    for (int icnt = 0; icnt < cnt; ++icnt) {
+        for (int isz = 0; isz < sz; ++isz) {
+            // note that when layout==0, nrn_i_layout takes into account SoA padding.
+            int i = nrn_i_layout(icnt, cnt, isz, sz, layout);
+            int ip = nrn_i_layout(p[icnt], cnt, isz, sz, layout);
+            data[ip] = data_orig[i];
+        }
+    }
+
+    delete[] data_orig;
+}
+
+int* inverse_permute(int* p, int n) {
+    int* pinv = new int[n];
+    for (int i = 0; i < n; ++i) {
+        pinv[p[i]] = i;
+    }
+    return pinv;
+}
+
+static void invert_permute(int* p, int n) {
+    int* pinv = inverse_permute(p, n);
+    for (int i = 0; i < n; ++i) {
+        p[i] = pinv[i];
+    }
+    delete[] pinv;
+}
+
+// type_of_ntdata: Return the mechanism type (or voltage)  for nt._data[i].
+// Used for updating POINTER. Analogous to nrn_dblpntr2nrncore in NEURON.
+// To reduce search time, consider voltage first, then a few of the previous
+// search results.
+// type_hint first and store a few
+// of the previous search result types to try next.
+// Most usage is for voltage. Most of the rest is likely for a specific type.
+// Occasionally, eg. axial current, there are two types oscillationg between
+// a SUFFIX (for non-zero area node) and POINT_PROCESS (for zero area nodes)
+// version
+// full_search: helper for type_of_ntdata. Return mech type for nt._data[i].
+// Update type_hints.
+
+#if 0
+static std::vector<int> type_hints;
+
+static int full_search(NrnThread& nt, double* pd) {
+    int type = -1;
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        Memb_list* ml = tml->ml;
+        int n = corenrn.get_prop_param_size()[tml->index] * ml->_nodecount_padded;
+        if (pd >= ml->data && pd < ml->data + n) {
+            type = tml->index;
+            // insert into type_hints
+            int i = 0;
+            for (int type_hint: type_hints) {
+                if (type < type_hint) {
+                    break;
+                }
+                i++;
+            }
+            type_hints.insert(type_hints.begin() + i, type);
+            break;
+        }
+    }
+    assert(type > 0);
+    return type;
+}
+
+// no longer static because also used by POINTER in nrn_checkpoint.cpp
+int type_of_ntdata(NrnThread& nt, int i, bool reset) {
+    double* pd = nt._data + i;
+    assert(pd >= nt._actual_v);
+    if (pd < nt._actual_area) {  // voltage first (area just after voltage)
+        return voltage;
+    }
+    assert(size_t(i) < nt._ndata);
+    // then check the type hints. When inserting a hint, keep in type order
+    if (reset) {
+        type_hints.clear();
+    }
+    for (int type: type_hints) {
+        Memb_list* ml = nt._ml_list[type];
+        if (pd >= ml->data) {  // this or later
+            int n = corenrn.get_prop_param_size()[type] * ml->_nodecount_padded;
+            if (pd < ml->data + n) {  // this is the one
+                return type;
+            }
+        } else {  // earlier
+            return full_search(nt, pd);
+        }
+    }
+    // after the last type_hints
+    return full_search(nt, pd);
+}
+#endif  // 0
+
+static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
+#if 0
+    // assumes AoS to SoA transformation already made since we are using
+    // nrn_i_layout to determine indices into both ml->pdata and into target data
+    int psz = corenrn.get_prop_dparam_size()[type];
+    if (psz == 0) {
+        return;
+    }
+    if (corenrn.get_is_artificial()[type]) {
+        return;
+    }
+    int* semantics = corenrn.get_memb_func(type).dparam_semantics;
+    if (!semantics) {
+        return;
+    }
+    int* pdata = ml->pdata;
+    int layout = corenrn.get_mech_data_layout()[type];
+    int cnt = ml->nodecount;
+    // ml padding does not matter (but target padding does matter)
+
+    // interesting semantics are -1 (area), -5 (pointer), -9 (diam), or 0-999 (ion variables)
+    for (int i = 0; i < psz; ++i) {
+        int s = semantics[i];
+        if (s == -1) {                               // area
+            int area0 = nt._actual_area - nt._data;  // includes padding if relevant
+            int* p_target = nt._permute;
+            for (int iml = 0; iml < cnt; ++iml) {
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                // *pd is the original integer into nt._data . Needs to be replaced
+                // by the permuted value
+
+                // This is ok whether or not area changed by padding?
+                // since old *pd updated appropriately by earlier AoS to SoA
+                // transformation
+                int ix = *pd - area0;  // original integer into area array.
+                nrn_assert((ix >= 0) && (ix < nt.end));
+                int ixnew = p_target[ix];
+                *pd = ixnew + area0;
+            }
+        } else if (s == -9) {                        // diam
+            int diam0 = nt._actual_diam - nt._data;  // includes padding if relevant
+            int* p_target = nt._permute;
+            for (int iml = 0; iml < cnt; ++iml) {
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                // *pd is the original integer into nt._data . Needs to be replaced
+                // by the permuted value
+
+                // This is ok whether or not diam changed by padding?
+                // since old *pd updated appropriately by earlier AoS to SoA
+                // transformation
+                int ix = *pd - diam0;  // original integer into actual_diam array.
+                nrn_assert((ix >= 0) && (ix < nt.end));
+                int ixnew = p_target[ix];
+                *pd = ixnew + diam0;
+            }
+        } else if (s == -5) {  // POINTER
+            // assume pointer into nt._data. Most likely voltage.
+            // If not voltage, most likely same mechanism for all indices.
+            for (int iml = 0; iml < cnt; ++iml) {
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int etype = type_of_ntdata(nt, *pd, iml == 0);
+                if (etype == voltage) {
+                    int v0 = nt._actual_v - nt._data;
+                    int* e_target = nt._permute;
+                    int ix = *pd - v0;  // original integer into area array.
+                    nrn_assert((ix >= 0) && (ix < nt.end));
+                    int ixnew = e_target[ix];
+                    *pd = ixnew + v0;
+                } else if (etype > 0) {
+                    // about same as for ion below but check each instance
+                    Memb_list* eml = nt._ml_list[etype];
+                    int edata0 = eml->data - nt._data;
+                    int ecnt = eml->nodecount;
+                    int esz = corenrn.get_prop_param_size()[etype];
+                    int elayout = corenrn.get_mech_data_layout()[etype];
+                    int* e_permute = eml->_permute;
+                    int i_ecnt, i_esz, padded_ecnt;
+                    int ix = *pd - edata0;
+                    if (elayout == Layout::AoS) {
+                        padded_ecnt = ecnt;
+                        i_ecnt = ix / esz;
+                        i_esz = ix % esz;
+                    } else {  // SoA
+                        assert(elayout == Layout::SoA);
+                        padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
+                        i_ecnt = ix % padded_ecnt;
+                        i_esz = ix / padded_ecnt;
+                    }
+                    int i_ecnt_new = e_permute ? e_permute[i_ecnt] : i_ecnt;
+                    int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
+                    *pd = ix_new + edata0;
+                } else {
+                    nrn_assert(0);
+                }
+            }
+        } else if (s >= 0 && s < 1000) {  // ion
+            int etype = s;
+            int elayout = corenrn.get_mech_data_layout()[etype];
+            Memb_list* eml = nt._ml_list[etype];
+            int edata0 = eml->data - nt._data;
+            int ecnt = eml->nodecount;
+            int esz = corenrn.get_prop_param_size()[etype];
+            int* e_permute = eml->_permute;
+            for (int iml = 0; iml < cnt; ++iml) {
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int ix = *pd - edata0;
+                // from ix determine i_ecnt and i_esz (need to permute i_ecnt)
+                int i_ecnt, i_esz, padded_ecnt;
+                if (elayout == Layout::AoS) {
+                    padded_ecnt = ecnt;
+                    i_ecnt = ix / esz;
+                    i_esz = ix % esz;
+                } else {  // SoA
+                    assert(elayout == Layout::SoA);
+                    padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
+                    i_ecnt = ix % padded_ecnt;
+                    i_esz = ix / padded_ecnt;
+                }
+                int i_ecnt_new = e_permute[i_ecnt];
+                int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
+                *pd = ix_new + edata0;
+            }
+        }
+    }
+#endif  // 0
+}
+
 void node_permute(int* vec, int size, const std::vector<int>& permute) {
     for (int i = 0; i < size; ++i) {
         if (vec[i] >= 0) {
@@ -101,6 +355,67 @@ void node_permute(int* vec, int size, const std::vector<int>& permute) {
         }
     }
 }
+
+void permute_ptr(int* vec, int n, int* p) {
+    permute(vec, n, 1, 1, p);
+}
+
+void permute_data(double* vec, int n, int* p) {
+    permute(vec, n, 1, 1, p);
+}
+
+void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
+#if 0
+    int sz = corenrn.get_prop_param_size()[type];
+    int psz = corenrn.get_prop_dparam_size()[type];
+    int layout = corenrn.get_mech_data_layout()[type];
+    permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
+    permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
+
+    update_pdata_values(ml, type, nt);
+#endif  // 0
+}
+
+int nrn_index_permute(int ix, int type, Memb_list* ml) {
+    assert(0);
+#if 0
+    int* p = ml->_permute;
+    if (!p) {
+        return ix;
+    }
+    int layout = corenrn.get_mech_data_layout()[type];
+    if (layout == Layout::AoS) {
+        int sz = corenrn.get_prop_param_size()[type];
+        int i_cnt = ix / sz;
+        int i_sz = ix % sz;
+        return p[i_cnt] * sz + i_sz;
+    } else {
+        assert(layout == Layout::SoA);
+        int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
+        int i_cnt = ix % padded_cnt;
+        int i_sz = ix / padded_cnt;
+        return i_sz * padded_cnt + p[i_cnt];
+    }
+#endif  // 0
+}
+
+#if CORENRN_DEBUG
+static void pr(const char* s, int* x, int n) {
+    printf("%s:", s);
+    for (int i = 0; i < n; ++i) {
+        printf("  %d %d", i, x[i]);
+    }
+    printf("\n");
+}
+
+static void pr(const char* s, double* x, int n) {
+    printf("%s:", s);
+    for (int i = 0; i < n; ++i) {
+        printf("  %d %g", i, x[i]);
+    }
+    printf("\n");
+}
+#endif
 
 // note that sort_indices has the sense of an inverse permutation in that
 // the value of sort_indices[0] is the index with the smallest value in the
@@ -138,6 +453,26 @@ void sort_ml(Memb_list* ml) {
     forward_permute(ml->nodelist, isrt, ml->nodecount);
     forward_permute(ml->prop, isrt, ml->nodecount);
     forward_permute(ml->pdata, isrt, ml->nodecount);
+}
+
+void permute_nodeindices(Memb_list* ml, int* p) {
+    assert(0);
+#if 0
+    // nodeindices values are permuted according to p (that per se does
+    //  not affect vec).
+
+    node_permute(ml->nodeindices, ml->nodecount, p);
+
+    // Then the new node indices are sorted by
+    // increasing index. Instances using the same node stay in same
+    // original relative order so that their contributions to rhs, d (if any)
+    // remain in same order (except for gpu parallelism).
+    // That becomes ml->_permute
+
+    ml->_permute = nrn_index_sort(ml->nodeindices, ml->nodecount);
+    invert_permute(ml->_permute, ml->nodecount);
+    permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
+#endif  // 0
 }
 
 }  // namespace neuron
