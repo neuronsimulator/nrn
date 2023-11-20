@@ -48,8 +48,8 @@ if(NRN_SANITIZERS)
   # directory
   foreach(sanitizer ${nrn_sanitizers})
     if(EXISTS "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp")
-      cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
-                             OUTPUT "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp")
+      configure_file("${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
+                     "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp" COPYONLY)
       install(FILES "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp"
               DESTINATION "${CMAKE_INSTALL_PREFIX}/share/nrn/sanitizers")
     endif()
