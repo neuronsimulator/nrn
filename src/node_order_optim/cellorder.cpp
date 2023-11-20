@@ -5,6 +5,8 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 */
+#include <set>
+#include <vector>
 
 //#include "coreneuron/nrnconf.h"
 //#include "coreneuron/sim/multicore.hpp"
@@ -13,12 +15,12 @@
 #include "node_order_optim/tnode.hpp"
 #include "node_order_optim/lpt.hpp"
 #include "node_order_optim/memory.h"
+#include "node_order_optim/permute_utils.hpp"
 #include "nrnoc/multicore.h"
 #include "nrnoc/nrn_ansi.h"
 #include "nrnoc/nrniv_mf.h"
 #include "coreneuron/utils/offload.hpp"
 #include "nrnoc/section.h"
-#include "permute_utils.hpp"
 //#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "node_order_optim/node_permute.h"  // for print_quality
@@ -26,8 +28,6 @@
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
-
-#include <set>
 
 namespace neuron {
 int interleave_permute_type;
@@ -331,44 +331,6 @@ int nrn_optimize_node_order(int type) {
     return type;
 }
 
-void nrn_permute_node_order() {
-    if (!interleave_permute_type) {
-        return;
-    }
-    //    printf("enter nrn_permute_node_order\n");
-    destroy_interleave_info();
-    create_interleave_info();
-    for (int tid = 0; tid < nrn_nthread; ++tid) {
-        auto& nt = nrn_threads[tid];
-        auto perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
-        auto p = inverse_permute_vector(perm);
-#if 0
-        for (int i = 0; i < nt.end; ++i) {
-            int x = nt._v_parent_index[p[i]];
-            int par = x >= 0 ? perm[x] : -1;
-            printf("%2d <- %2d  parent=%2d\n", i, p[i], par);
-        }
-#endif
-        //        prnode("before perm", nt);
-        forward_permute(nt._v_node, p, nt.end);
-        forward_permute(nt._v_parent, p, nt.end);
-        forward_permute(nt._v_parent_index, p, nt.end);
-        node_permute(nt._v_parent_index, nt.end, perm);
-        for (int i = 0; i < nt.end; ++i) {
-            nt._v_node[i]->v_node_index = i;
-        }
-        for (auto tml = nt.tml; tml; tml = tml->next) {
-            Memb_list* ml = tml->ml;
-            for (int i = 0; i < ml->nodecount; ++i) {
-                ml->nodeindices[i] = perm[ml->nodeindices[i]];
-            }
-            sort_ml(ml);  // all fields in increasing nodeindex order
-        }
-        //        prnode("after perm", nt);
-    }
-    //    printf("leave nrn_permute_node_order\n");
-}
-
 std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
     // return if there are no nodes to permute
     if (nnode <= 0)
@@ -436,6 +398,44 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
     }
 
     return order;
+}
+
+void nrn_permute_node_order() {
+    if (!interleave_permute_type) {
+        return;
+    }
+    //    printf("enter nrn_permute_node_order\n");
+    destroy_interleave_info();
+    create_interleave_info();
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        auto& nt = nrn_threads[tid];
+        auto perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
+        auto p = inverse_permute_vector(perm);
+#if 0
+        for (int i = 0; i < nt.end; ++i) {
+            int x = nt._v_parent_index[p[i]];
+            int par = x >= 0 ? perm[x] : -1;
+            printf("%2d <- %2d  parent=%2d\n", i, p[i], par);
+        }
+#endif
+        //        prnode("before perm", nt);
+        forward_permute(nt._v_node, p, nt.end);
+        forward_permute(nt._v_parent, p, nt.end);
+        forward_permute(nt._v_parent_index, p, nt.end);
+        node_permute(nt._v_parent_index, nt.end, perm);
+        for (int i = 0; i < nt.end; ++i) {
+            nt._v_node[i]->v_node_index = i;
+        }
+        for (auto tml = nt.tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            for (int i = 0; i < ml->nodecount; ++i) {
+                ml->nodeindices[i] = perm[ml->nodeindices[i]];
+            }
+            sort_ml(ml);  // all fields in increasing nodeindex order
+        }
+        //        prnode("after perm", nt);
+    }
+    //    printf("leave nrn_permute_node_order\n");
 }
 
 #if INTERLEAVE_DEBUG  // only the cell per core style

@@ -86,15 +86,15 @@ class InterleaveInfo: public MemoryManaged {
  * \return int* : a permutation of length nnode
  */
 std::vector<int> node_order(int ncell,
-                int nnode,
-                int* parents,
-                int& nwarp,
-                int& nstride,
-                int*& stride,
-                int*& firstnode,
-                int*& lastnode,
-                int*& cellsize,
-                int*& stridedispl);
+                            int nnode,
+                            int* parents,
+                            int& nwarp,
+                            int& nstride,
+                            int*& stride,
+                            int*& firstnode,
+                            int*& lastnode,
+                            int*& cellsize,
+                            int*& stridedispl);
 
 // copy src array to dest with new allocation
 template <typename T>

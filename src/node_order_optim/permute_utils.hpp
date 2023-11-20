@@ -5,7 +5,9 @@ void forward_permute(std::vector<T>& data, const std::vector<int>& perm) {
     // Move data[perm[i]] to data[i]
     std::vector<T> new_data;
     new_data.reserve(data.size());
-    std::transform(perm.begin(), perm.end(), std::back_inserter(new_data), [&data](int ind) { return data[ind]; });
+    std::transform(perm.begin(), perm.end(), std::back_inserter(new_data), [&data](int ind) {
+        return data[ind];
+    });
     data = std::move(new_data);
 }
 

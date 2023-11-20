@@ -297,15 +297,15 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 #undef MSS
 
 std::vector<int> node_order(int ncell,
-                int nnode,
-                int* parent,
-                int& nwarp,
-                int& nstride,
-                int*& stride,
-                int*& firstnode,
-                int*& lastnode,
-                int*& cellsize,
-                int*& stridedispl) {
+                            int nnode,
+                            int* parent,
+                            int& nwarp,
+                            int& nstride,
+                            int*& stride,
+                            int*& firstnode,
+                            int*& lastnode,
+                            int*& cellsize,
+                            int*& stridedispl) {
     VecTNode nodevec;
 
     // nodevec[0:ncell] in increasing size, with identical trees together,
