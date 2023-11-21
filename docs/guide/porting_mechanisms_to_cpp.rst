@@ -343,4 +343,8 @@ This function now takes no argument anymore. An example of this change can also 
 `182129 <https://github.com/ModelDBRepository/182129/pull/1>`_.
 
 Finally, the preferred random number generator is ``Random123``. You can find more information
-about that in :meth:`Random.Random123` and :ref:`Randomness in NEURON models`.
+about that in :meth:`Random.Random123` and :ref:`Randomness in NEURON models`. An example of the
+usage of ``Random123`` can be seen in `netstim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod>`_
+and its `corresponding test <https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_psolve.py#L60>`_.`
+Another important aspect of ``Random123`` is that it's supported in CoreNEURON as well. For more
+information about this see :ref:`Random Number Generators: Random123 vs MCellRan4`.
