@@ -463,7 +463,7 @@ void initialize_memb_func(int mechtype,
                           nrn_init_t initialize,
                           int vectorized);
 void check_mech_version(const char** m);
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax);
+int count_variables_in_mechanism(const char** m2, int modltypemax);
 void register_mech_vars(const char** var_buffers,
                         int modltypemax,
                         Symbol* mech_symbol,
@@ -503,9 +503,9 @@ void nrn_register_mech_common(const char** m,
     } else {
         modltypemax = NRNPOINTER;
     }
-    auto [nvartypes, nvars] = count_variables_in_mechanism(m2, modltypemax);
+    int nvars = count_variables_in_mechanism(m2, modltypemax);
     mech_symbol->s_varn = nvars;
-    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
+    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvars * sizeof(Symbol*)));
 
     register_mech_vars(m2, modltypemax, mech_symbol, mechtype, nrnpointerindex);
     ++mechtype;
@@ -595,16 +595,18 @@ void register_mech_vars(const char** var_buffers,
     }
 }
 
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax) {
-    int j, k, modltype;
+int count_variables_in_mechanism(const char** m2, int modltypemax) {
+    int j;
+    int modltype;
+    int nvars;
     // count the number of variables registered in this mechanism
-    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
+    for (j = 0, nvars = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
         // while we have not encountered a 0 (sentinel for variable type)
         while (m2[j++]) {
-            k++;
+            nvars++;
         }
     }
-    return std::make_pair(j, k);
+    return nvars;
 }
 
 void reallocate_mech_data(int mechtype) {
