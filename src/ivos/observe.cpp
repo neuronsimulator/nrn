@@ -32,6 +32,9 @@
 #include <InterViews/observe.h>
 #include "utils/enumerate.h"
 
+Observable::Observable() {
+}
+
 Observable::~Observable() {
 	// in case a disconnect removes items from the observers
     for (long long i = static_cast<long long>(observers_.size()) - 1; i >= 0; --i) {
@@ -55,3 +58,8 @@ void Observable::notify() {
 	    obs->update(this);
     }
 }
+
+Observer::Observer() { }
+Observer::~Observer() { }
+void Observer::update(Observable*) { }
+void Observer::disconnect(Observable*) { }

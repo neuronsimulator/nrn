@@ -38,7 +38,7 @@ class Observer;
 
 class Observable {
 public:
-    Observable() = default;
+    Observable();
     virtual ~Observable();
 
     virtual void attach(Observer*);
@@ -50,12 +50,12 @@ private:
 
 class Observer {
 protected:
-    Observer() = default;
+    Observer();
 public:
-    virtual ~Observer() = default;
+    virtual ~Observer();
 
-    virtual void update(Observable*) {};
-    virtual void disconnect(Observable*) {};
+    virtual void update(Observable*);
+    virtual void disconnect(Observable*);
 };
 
 #include <InterViews/_leave.h>
