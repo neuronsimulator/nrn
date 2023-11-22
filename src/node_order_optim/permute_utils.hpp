@@ -13,9 +13,9 @@ void forward_permute(std::vector<T>& data, const std::vector<int>& perm) {
 }
 
 template <typename T>
-void forward_permute(T*& data, const std::vector<int>& perm, int size) {
+void forward_permute(T*& data, int data_size, const std::vector<int>& perm) {
     // Move data[perm[i]] to data[i]
-    auto new_data = new T[size];
+    auto new_data = new T[data_size];
     for (auto i = 0; i < perm.size(); ++i) {
         new_data[i] = data[perm[i]];
     }
@@ -44,9 +44,9 @@ void inverse_permute(std::vector<T>& data, const std::vector<int>& perm) {
 }
 
 template <typename T>
-std::vector<T> inverse_permute(T*& data, const std::vector<int>& perm, int size) {
+std::vector<T> inverse_permute(T*& data, int data_size, const std::vector<int>& perm) {
     // Move data[i] to data[p[i]]
-    auto new_data = new T[size];
+    auto new_data = new T[data_size];
     for (auto i = 0; i < perm.size(); ++i) {
         new_data[perm[i]] = data[i];
     }

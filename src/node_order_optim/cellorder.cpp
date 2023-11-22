@@ -419,9 +419,9 @@ void nrn_permute_node_order() {
         }
 #endif
         //        prnode("before perm", nt);
-        forward_permute(nt._v_node, p, nt.end);
-        forward_permute(nt._v_parent, p, nt.end);
-        forward_permute(nt._v_parent_index, p, nt.end);
+        forward_permute(nt._v_node, nt.end, p);
+        forward_permute(nt._v_parent, nt.end, p);
+        forward_permute(nt._v_parent_index, nt.end, p);
         node_permute(nt._v_parent_index, nt.end, perm);
         for (int i = 0; i < nt.end; ++i) {
             nt._v_node[i]->v_node_index = i;

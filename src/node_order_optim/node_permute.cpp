@@ -449,10 +449,10 @@ std::vector<int> nrn_index_sort(int* values, int n) {
 
 void sort_ml(Memb_list* ml) {
     auto isrt = nrn_index_sort(ml->nodeindices, ml->nodecount);
-    forward_permute(ml->nodeindices, isrt, ml->nodecount);
-    forward_permute(ml->nodelist, isrt, ml->nodecount);
-    forward_permute(ml->prop, isrt, ml->nodecount);
-    forward_permute(ml->pdata, isrt, ml->nodecount);
+    forward_permute(ml->nodeindices, ml->nodecount, isrt);
+    forward_permute(ml->nodelist, ml->nodecount, isrt);
+    forward_permute(ml->prop, ml->nodecount, isrt);
+    forward_permute(ml->pdata, ml->nodecount, isrt);
 }
 
 void permute_nodeindices(Memb_list* ml, int* p) {
