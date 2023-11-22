@@ -60,6 +60,17 @@ bool SemanticAnalysisVisitor::check(const ast::Program& node) {
     return check_fail;
 }
 
+void SemanticAnalysisVisitor::visit_program(const ast::Program& node) {
+    /// <-- This code is for check 8
+    const auto& derivative_block_nodes = collect_nodes(node, {ast::AstNodeType::DERIVATIVE_BLOCK});
+    if (derivative_block_nodes.size() > 1) {
+        logger->critical("It is not supported to have several DERIVATIVE blocks");
+        check_fail = true;
+    }
+    /// -->
+    node.visit_children(*this);
+}
+
 void SemanticAnalysisVisitor::visit_procedure_block(const ast::ProcedureBlock& node) {
     /// <-- This code is for check 1
     in_procedure = true;
@@ -168,26 +179,6 @@ void SemanticAnalysisVisitor::visit_mutex_unlock(const ast::MutexUnlock& /* node
         logger->warn("SemanticAnalysisVisitor :: Found a MUTEXUNLOCK outside a locked part.");
     }
     in_mutex = false;
-    /// -->
-}
-
-void SemanticAnalysisVisitor::visit_breakpoint_block(const ast::BreakpointBlock& node) {
-    /// <-- This code is for check 8
-    solve_block_found_in_this_breakpoint_block = false;
-    node.visit_children(*this);
-    solve_block_found_in_this_breakpoint_block = false;
-    /// -->
-}
-
-void SemanticAnalysisVisitor::visit_solve_block(const ast::SolveBlock& /* node */) {
-    /// <-- This code is for check 8
-    if (solve_block_found_in_this_breakpoint_block) {
-        logger->critical(
-            "It is not allowed to have several solve blocks in the same breakpoint block");
-        check_fail = true;
-    } else {
-        solve_block_found_in_this_breakpoint_block = true;
-    }
     /// -->
 }
 

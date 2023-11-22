@@ -167,38 +167,27 @@ SCENARIO("FUNCTION_TABLE block", "[visitor][semantic_analysis]") {
 }
 
 
-SCENARIO("At most one solve block per breakpoint block", "[visitor][semantic_analysis]") {
-    GIVEN("A breakpoint block with only one solve block") {
+SCENARIO("At most one DERIVATIVE block", "[visitor][semantic_analysis]") {
+    GIVEN("Only one DERIVATIVE block") {
         std::string nmodl_text = R"(
-            BREAKPOINT {
-                SOLVE dX METHOD cnexp
+            DERIVATIVE states {
+                m' = m/mTau
             }
         )";
         THEN("Semantic analysis should success") {
             REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
-    GIVEN("2 breakpoints block with one solve block each") {
+    GIVEN("2 DERIVATIVE blocks") {
         std::string nmodl_text = R"(
-            PROCEDURE foo() {
-                SOLVE dX METHOD cnexp
+            DERIVATIVE states1 {
+                m' = m/mTau
             }
-            BREAKPOINT {
-                SOLVE dY METHOD cnexp
+            DERIVATIVE states2 {
+                h' = h/hTau
             }
         )";
-        THEN("Semantic analysis should success") {
-            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
-        }
-    }
-    GIVEN("A breakpoint block with two solve blocks") {
-        std::string nmodl_text = R"(
-            BREAKPOINT {
-                SOLVE dX METHOD cnexp
-                SOLVE dY METHOD cnexp
-            }
-        )";
-        THEN("Semantic analysis should fail") {
+        THEN("Semantic analysis should failed") {
             REQUIRE(run_semantic_analysis_visitor(nmodl_text));
         }
     }

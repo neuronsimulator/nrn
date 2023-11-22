@@ -31,7 +31,7 @@
  * 5. Check if an independent variable is not 't'.
  * 6. Check that mutex are not badly use
  * 7. Check than function table got at least one argument.
- * 8. Check that at most one solve block is present per breakpoint block.
+ * 8. Check that at most one derivative block is present.
  */
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
@@ -55,8 +55,9 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
     bool is_point_process = false;
     /// true if we are inside a mutex locked part
     bool in_mutex = false;
-    /// true if we already found a solve block
-    bool solve_block_found_in_this_breakpoint_block = false;
+
+    /// Check number of DERIVATIVE blocks
+    void visit_program(const ast::Program& node) override;
 
     /// Store if we are in a procedure and if the arity of this is 1
     void visit_procedure_block(const ast::ProcedureBlock& node) override;
@@ -84,11 +85,6 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
 
     /// Look if MUTEXUNLOCK is outside a locked block
     void visit_mutex_unlock(const ast::MutexUnlock& node) override;
-
-    void visit_breakpoint_block(const ast::BreakpointBlock& node) override;
-
-    /// Check how many solve block we got
-    void visit_solve_block(const ast::SolveBlock& node) override;
 
   public:
     SemanticAnalysisVisitor(bool accel_backend = false)
