@@ -37,16 +37,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/modlunit/units.cpp", warning #170-D: pointer points outside of underlying object
     # "src/nrnpython/grids.cpp", warning #174-D: expression has no effect
     # "src/nmodl/nocpout.cpp", warning #177-D: variable "j" was declared but never referenced
-    # "src/mesch/conjgrad.c", warning #180-D: argument is incompatible with formal parameter
     # "src/nrniv/partrans.cpp", warning #186-D: pointless comparison of unsigned integer with zero
-    # "src/mesch/machine.h", warning #301-D: typedef name has already been declared (with same type)
     # "src/nrnpython/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
     # "src/nmodl/nocpout.cpp", warning #550-D: variable "sion" was set but never used
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
     list(APPEND NRN_COMPILE_FLAGS
-         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,2465)
+         --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,2465)
   endif()
   list(APPEND NRN_COMPILE_FLAGS -noswitcherror)
   list(APPEND NRN_LINK_FLAGS -noswitcherror)

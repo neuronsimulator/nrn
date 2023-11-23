@@ -26,7 +26,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ../nrniv
       ../ivos
       ../gnu
-      ../mesch
       ../nrnmpi
       ${PROJECT_BINARY_DIR}/src/nrnpython
       ${PROJECT_BINARY_DIR}/src/ivos
