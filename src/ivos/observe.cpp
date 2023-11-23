@@ -1,7 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include <../../nrnconf.h>
 #endif
-#include <iostream>
 /*
  * Copyright (c) 1992 Stanford University
  * Copyright (c) 1992 Silicon Graphics, Inc.
@@ -34,13 +33,11 @@
 #include "utils/enumerate.h"
 
 Observable::Observable() {
-    std::cerr << "Building Observable: " << this << std::endl;
 }
 
 Observable::~Observable() {
 	// in case a disconnect removes items from the observers
     for (long long i = static_cast<long long>(observers_.size()) - 1; i >= 0; --i) {
-        std::cerr << "Removing " << i << " from " << this << " (" << observers_[i] << ")" << std::endl;
 	    observers_[i]->disconnect(this);
         if (i > observers_.size()) {
             i = observers_.size();
@@ -49,18 +46,15 @@ Observable::~Observable() {
 }
 
 void Observable::attach(Observer* o) {
-    std::cerr << "Pushing " << o << " into " << this << std::endl;
     observers_.push_back(o);
 }
 
 void Observable::detach(Observer* o) {
-    std::cerr << "Removing " << o << " from " << this << std::endl;
     erase_first(observers_, o);
 }
 
 void Observable::notify() {
 	for (auto& obs: observers_) {
-        std::cerr << "Notifying " << obs << " from " << this << std::endl;
 	    obs->update(this);
     }
 }
