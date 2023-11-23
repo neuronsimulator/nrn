@@ -43,8 +43,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
-    list(APPEND NRN_COMPILE_FLAGS
-         --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,2465)
+    list(APPEND NRN_COMPILE_FLAGS --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,2465)
   endif()
   list(APPEND NRN_COMPILE_FLAGS -noswitcherror)
   list(APPEND NRN_LINK_FLAGS -noswitcherror)
