@@ -1,3 +1,5 @@
+#include <vector>
+
 struct Rlist;
 struct Reaction;
 

@@ -2455,7 +2455,7 @@ int iondef(int* p_pointercount) {
             ppvar_semantics(ioncount + *p_pointercount + index,
                             "random",
                             var.name.c_str(),
-                            "double*");
+                            "void*");
             index++;
         }
         lappendstr(defs_list, "\n");

@@ -21,6 +21,7 @@
 #include "nrnmpi.h"
 
 #include <vector>
+#include <unordered_map>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
@@ -774,33 +775,24 @@ namespace {
  *
  * This logic used to live inside hoc_register_dparam_semantics.
  */
+
+// name to int map for the negative types
+// xx_ion and #xx_ion will get values of type and type+1000 respectively
+static std::unordered_map<std::string, int> name_to_negint = {{"area", -1},
+                                                              {"iontype", -2},
+                                                              {"cvodeieq", -3},
+                                                              {"netsend", -4},
+                                                              {"pointer", -5},
+                                                              {"pntproc", -6},
+                                                              {"bbcorepointer", -7},
+                                                              {"watch", -8},
+                                                              {"diam", -9},
+                                                              {"fornetcon", -10},
+                                                              {"random", -11}};
+
 int dparam_semantics_to_int(std::string_view name) {
-    // only interested in area, iontype, cvode_ieq, netsend, pointer, pntproc, bbcorepointer, watch,
-    // diam, fornetcon, xx_ion and #xx_ion which will get a semantics value of -1, -2, -3, -4, -5,
-    // -6, -7, -8, -9, -10 type, and type+1000 respectively
-    if (name == "area") {
-        return -1;
-    } else if (name == "iontype") {
-        return -2;
-    } else if (name == "cvodeieq") {
-        return -3;
-    } else if (name == "netsend") {
-        return -4;
-    } else if (name == "pointer") {
-        return -5;
-    } else if (name == "pntproc") {
-        return -6;
-    } else if (name == "bbcorepointer") {
-        return -7;
-    } else if (name == "watch") {
-        return -8;
-    } else if (name == "diam") {
-        return -9;
-    } else if (name == "fornetcon") {
-        return -10;
-    } else if (name == "random") {
-        // TODO: treat random as a pointer for now
-        return -5;
+    if (auto got = name_to_negint.find(std::string{name}); got != name_to_negint.end()) {
+        return got->second;
     } else {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
@@ -810,6 +802,56 @@ int dparam_semantics_to_int(std::string_view name) {
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
 }
+
+std::vector<int> indices_of_type(
+    const char* semantic_type,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices{};
+    int inttype = dparam_semantics_to_int(std::string{semantic_type});
+    for (auto i = 0; i < dparam_info.size(); ++i) {
+        if (dparam_semantics_to_int(dparam_info[i].second) == inttype) {
+            indices.push_back(i);
+        }
+    }
+    return indices;
+}
+
+void update_mech_ppsym_for_modlrandom(
+    int mechtype,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices = indices_of_type("random", dparam_info);
+    if (indices.empty()) {
+        return;
+    }
+    Symbol* mechsym = memb_func[mechtype].sym;
+    int is_point = memb_func[mechtype].is_point;
+    std::cout << mechsym->name << std::endl;
+
+    int k = mechsym->s_varn;
+    mechsym->s_varn += int(indices.size());
+    mechsym->u.ppsym = (Symbol**) erealloc(mechsym->u.ppsym, mechsym->s_varn * sizeof(Symbol*));
+
+
+    for (auto i: indices) {
+        auto& p = dparam_info[i];
+        Symbol* ransym{};
+        if (is_point) {
+            ransym = hoc_install(p.first, RANGEVAR, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
+        } else {
+            ransym = hoc_install(p.first, RANGEVAR, 0.0, &hoc_symlist);
+        }
+        ransym->subtype = NMODLRANDOM;
+        ransym->cpublic = 1;
+        ransym->u.rng.index = i;
+        mechsym->u.ppsym[k++] = ransym;
+    }
+
+    for (int i = 0; i < mechsym->s_varn; ++i) {
+        Symbol* s = mechsym->u.ppsym[i];
+        std::cout << s->name << std::endl;
+    }
+}
+
 }  // namespace
 
 namespace neuron::mechanism::detail {
@@ -847,6 +889,7 @@ void register_data_fields(int mechtype,
                                                                        // of double-valued
                                                                        // per-instance variables
     memb_list[mechtype].set_storage_pointer(&mech_data);
+    update_mech_ppsym_for_modlrandom(mechtype, dparam_info);
 }
 }  // namespace neuron::mechanism::detail
 namespace neuron::mechanism {

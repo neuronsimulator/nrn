@@ -88,7 +88,7 @@ static std::vector<std::string> numbers;
 %token	<qp>	METHOD LIN1 NONLIN1 TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
-%token	<qp>	'~'
+%token	<qp>	'~' '.'
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
 %type	<qp>	Name NUMBER real intexpr integer
@@ -98,6 +98,7 @@ static std::vector<std::string> numbers;
 %type	<qp>	expr aexpr ostmt astmt stmtlist locallist locallist1
 %type	<qp>	varname exprlist define1
 %type	<qp>	asgn fromstmt whilestmt ifstmt solveblk funccall
+%type   <qp>    funccall1 methodcall
 %type	<qp>	opinc opstart lagstmt
 %type	<qp>	parmasgn indepdef depdef withby
 %type	<qp>	declare parmblk indepblk depblk stateblk
@@ -630,7 +631,51 @@ term:	varname
 {diag("Some operators are not permitted in linear\n",
 "expressions unless the terms containing them are\nenclosed in parentheses");}
 	;
-funccall: NAME '('
+funccall: funccall1
+	| methodcall
+	;
+methodcall: NAME '.' NAME '('
+	    {
+		// make it look like $3 '(' $1 ','
+                Symbol* t1 = SYM($3);
+                Symbol* t2 = SYM($4);
+                Symbol* t3 = SYM($1);
+                SYM($1) = t1;
+                SYM($2) = t2;
+                SYM($3) = t3;
+                SYM($4) = lookup(","); assert(t2);
+// at this point production is
+// funname '(' ranvar ',' {} exprlist ')' {}
+// $1      $2  $3     $4  $5 $6       $7  $8
+// the rest is identical to funccall1 except for $n modifications
+// and need to remove ',' after ranvar if no args in exprlist.
+// It is likely that all the EXTDEF stuff is irrelevant and can be removed.
+// A good deal of error checking should be added to ensure
+// RandomVariable.method are valid names.
+		if (SYM($1)->subtype & EXTDEF2) { extdef2 = 1;}
+	    }
+	    exprlist ')'
+                {
+                 lastok = $7; SYM($1)->usage |= FUNCT;
+                 check_range_in_func(SYM($1));
+                 if (SYM($1)->subtype & EXTDEF2) { extdef2 = 0;}
+                 if (SYM($1)->subtype & EXTDEF3) { add_reset_args($2);} 
+ 
+                 if (SYM($1)->subtype & EXTDEF4) { add_nrnthread_arg($2);}
+                 if (SYM($1)->subtype & EXTDEF5) {
+                        if (!assert_threadsafe) {
+fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
+                                vectorize = 0;
+                        }
+                 }
+                 if (!$6) { // no args in exprlist so remove comma
+                     replacstr($4, "");
+                 }
+                 vectorize_use_func($1,$2,$3,$7,blocktype);
+                }
+
+	;
+funccall1: NAME '('
 		{ if (SYM($1)->subtype & EXTDEF2) { extdef2 = 1;}}
 	   exprlist ')'
 		{lastok = $5; SYM($1)->usage |= FUNCT;

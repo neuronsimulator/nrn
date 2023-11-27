@@ -160,8 +160,8 @@ inline std::size_t vext_pseudoindex() {
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
-#define _AMBIGUOUS 5  // for Ions
-#define RAND       6  // RANDOM
+#define _AMBIGUOUS  5  // for Ions
+#define NMODLRANDOM 6  // RANDOM variable in NEURON block
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1

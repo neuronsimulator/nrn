@@ -22,6 +22,7 @@ def model():
     nc.weight[0] = 0.001
     return {"s": s, "ic": ic, "syn": syn, "nc": nc}
 
+
 def test_netstim_noise():
     cells = {gid: (h.NetStimRNG()) for gid in range(pc.id(), 5, pc.nhost())}
     for gid, cell in cells.items():

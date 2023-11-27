@@ -13,7 +13,8 @@ NEURON {
     RANGE interval, number, start
     RANGE noise
     RANGE id
-    RANDOM NEGEXP(1.0) r
+    RANDOM NEGEXP(1.0) rrr, xxx
+    RANDOM NEGEXP(2.0) yyy
 }
 
 PARAMETER {
@@ -33,10 +34,10 @@ ASSIGNED {
 
 INITIAL {
     : a way to initialize in MOD file
-    init(r, id, 2, 3)
+    rrr.init(id, 2, 3)
 
     : a way to set stream id
-    setseq(r, 0, 0)
+    rrr.setseq(0, 0)
 
     on = 0 : off
     ispike = 0
@@ -80,7 +81,7 @@ FUNCTION invl(mean (ms)) (ms) {
 
 FUNCTION erand() {
     : a way to sample/peek from RNG
-    erand = sample(r)
+    erand = rrr.sample()
 }
 
 PROCEDURE next_invl() {
