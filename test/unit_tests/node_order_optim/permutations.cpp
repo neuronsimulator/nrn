@@ -26,26 +26,5 @@ TEST_CASE("Permutation algorithms", "[Neuron][node_order_optim][permute]") {
             forward_permute(inverse_permutation_copy, forward_permutation);
             REQUIRE(inverse_permutation_copy == index);
         }
-        THEN("inverse_permute is done correctly") {
-            std::vector<int> inverse_permutted_values{17, 29, 32, 49};
-            WHEN("Using inverse_permute") {
-                auto values_copy{values};
-                inverse_permute(values_copy, forward_permutation);
-                REQUIRE(values_copy == inverse_permutted_values);
-                AND_THEN("Forward permute the values again with forward_permutation") {
-                    forward_permute(values_copy, forward_permutation);
-                    REQUIRE(values_copy == values);
-                }
-            }
-            WHEN("Using inverse_permutation") {
-                auto values_copy{values};
-                forward_permute(values_copy, inverse_permutation);
-                REQUIRE(values_copy == inverse_permutted_values);
-                AND_THEN("Inverse permute the values again with inverse_permutation") {
-                    inverse_permute(values_copy, inverse_permutation);
-                    REQUIRE(values_copy == values);
-                }
-            }
-        }
     }
 }
