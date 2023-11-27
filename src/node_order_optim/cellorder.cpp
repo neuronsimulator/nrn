@@ -378,7 +378,7 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
                 p[i] = parent[i];
             }
             forward_permute(p, order);
-            node_permute(p.data(), p.size(), order);
+            update_parent_index(p.data(), p.size(), order);
 
             ii.nnode = new size_t[nwarp];
             ii.ncycle = new size_t[nwarp];
@@ -422,7 +422,7 @@ void nrn_permute_node_order() {
         forward_permute(nt._v_node, nt.end, p);
         forward_permute(nt._v_parent, nt.end, p);
         forward_permute(nt._v_parent_index, nt.end, p);
-        node_permute(nt._v_parent_index, nt.end, perm);
+        update_parent_index(nt._v_parent_index, nt.end, perm);
         for (int i = 0; i < nt.end; ++i) {
             nt._v_node[i]->v_node_index = i;
         }

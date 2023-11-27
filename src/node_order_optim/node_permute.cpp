@@ -348,8 +348,8 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
 #endif  // 0
 }
 
-void node_permute(int* vec, int size, const std::vector<int>& permute) {
-    for (int i = 0; i < size; ++i) {
+void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute) {
+    for (int i = 0; i < vec_size; ++i) {
         if (vec[i] >= 0) {
             vec[i] = permute[vec[i]];
         }
@@ -461,7 +461,7 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     // nodeindices values are permuted according to p (that per se does
     //  not affect vec).
 
-    node_permute(ml->nodeindices, ml->nodecount, p);
+    update_parent_index(ml->nodeindices, ml->nodecount, p);
 
     // Then the new node indices are sorted by
     // increasing index. Instances using the same node stay in same
