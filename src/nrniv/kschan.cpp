@@ -2115,12 +2115,13 @@ void KSChan::setupmat() {
     elms_ = new double*[4 * (ntrans_ - ivkstrans_)];
     diag_ = new double*[nksstate_];
     for (int i = ivkstrans_, j = 0; i < ntrans_; ++i) {
-        int s = trans_[i].src_ - nhhstate_;
-        int t = trans_[i].target_ - nhhstate_;
-        elms_[j++] = mat_->mep(s, s);
-        elms_[j++] = mat_->mep(s, t);
-        elms_[j++] = mat_->mep(t, t);
-        elms_[j++] = mat_->mep(t, s);
+        int s, t;
+        s = trans_[i].src_ - nhhstate_;
+        t = trans_[i].target_ - nhhstate_;
+            elms_[j++] = mat_->mep(s, s);
+            elms_[j++] = mat_->mep(s, t);
+            elms_[j++] = mat_->mep(t, t);
+            elms_[j++] = mat_->mep(t, s);
     }
     for (int i = 0; i < nksstate_; ++i) {
         diag_[i] = mat_->mep(i, i);
@@ -2128,10 +2129,10 @@ void KSChan::setupmat() {
 }
 
 void KSChan::fillmat(double v, Datum* pd) {
+    int i, j;
+    double a, b;
     mat_->zero();
-    int j = 0;
-    for (int i = ivkstrans_; i < iligtrans_; ++i) {
-        double a, b;
+    for (i = ivkstrans_, j = 0; i < iligtrans_; ++i) {
         trans_[i].ab(v, a, b);
         // printf("trans %d v=%g a=%g b=%g\n", i, v, a, b);
         *elms_[j++] -= a;
@@ -2139,9 +2140,9 @@ void KSChan::fillmat(double v, Datum* pd) {
         *elms_[j++] -= b;
         *elms_[j++] += a;
     }
-    for (int i = iligtrans_; i < ntrans_; ++i) {
-        double a = trans_[i].alpha(pd);
-        double b = trans_[i].beta();
+    for (i = iligtrans_; i < ntrans_; ++i) {
+        a = trans_[i].alpha(pd);
+        b = trans_[i].beta();
         *elms_[j++] -= a;
         *elms_[j++] += b;
         *elms_[j++] -= b;
@@ -2163,18 +2164,15 @@ void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t 
 void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     // spSolve seems to require that the parameters are contiguous, which
     // they're not anymore in the real NEURON data structure
-    std::vector<double> s(nksstate_ + 1);
+    IvocVect s(nksstate_), out(nksstate_);
     for (auto j = 0; j < nksstate_; ++j) {
-        s[j + 1] = ml->data(instance, offset + j);
+        s[j] = ml->data(instance, offset + j);
     }
-    IvocVect inout{};
-    inout.vec() = std::vector<double>(s.begin(), s.end() - 1);
-    mat_->solv(&inout, &inout, false);
-    std::copy(inout.vec().begin(), inout.vec().end(), s.begin());
+    mat_->solv(&s, &out, false);
 
     // Propgate the solution back to the mechanism data
     for (auto j = 0; j < nksstate_; ++j) {
-        ml->data(instance, offset + j) = s[j + 1];
+        ml->data(instance, offset + j) = out[j];
     }
 }
 
@@ -2182,21 +2180,16 @@ void KSChan::mulmat(Memb_list* ml,
                     std::size_t instance,
                     std::size_t offset_s,
                     std::size_t offset_ds) {
-    std::vector<double> s(nksstate_+1), ds(nksstate_+1);
+    IvocVect s(nksstate_), ds(nksstate_);
     for (auto j = 0; j < nksstate_; ++j) {
-        s[j + 1] = ml->data(instance, offset_s + j);
-        ds[j + 1] = ml->data(instance, offset_ds + j);
+        s[j] = ml->data(instance, offset_s + j);
+        ds[j] = ml->data(instance, offset_ds + j);
     }
-    IvocVect in{}, out{};
-    in.vec() = std::vector<double>(ds.begin(), ds.end() - 1);
-    out.vec() = std::vector<double>(s.begin(), s.end() - 1);
-    mat_->mulv(&in, &out);
-    std::copy(in.vec().begin(), in.vec().end(), ds.begin());
-    std::copy(out.vec().begin(), out.vec().end(), s.begin());
+    mat_->mulv(&ds, &s);
     // Propagate the results
     for (auto j = 0; j < nksstate_; ++j) {
-        ml->data(instance, offset_s + j) = s[j + 1];
-        ml->data(instance, offset_ds + j) = ds[j + 1];
+        ml->data(instance, offset_s + j) = s[j];
+        ml->data(instance, offset_ds + j) = ds[j];
     }
 }
 
