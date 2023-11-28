@@ -468,7 +468,7 @@ class KSChan {
     int cvode_ieq_;
     Symbol* mechsym_;  // the top level symbol (insert sym or new sym)
     Symbol* rlsym_;    // symbol with the range list (= mechsym_ when  density)
-    std::unique_ptr<OcSparseMatrix> mat_;
+    std::unique_ptr<OcFullMatrix> mat_;
     double** elms_;
     double** diag_;
     int dsize_;       // size of prop->dparam
