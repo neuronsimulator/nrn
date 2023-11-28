@@ -13,7 +13,6 @@
 #undef begin
 #undef add
 
-#include <OS/list.h>
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
 #include "netcvode.h"
