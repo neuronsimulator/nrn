@@ -127,6 +127,7 @@ setup(
         "sphinxcontrib-htmlhelp<=2.0.0", # After this version it needs a toml file to work, no more setup.py
         "sphinx<6",
         "sphinx-rtd-theme", # needs sphinx < 7
+        "docutils<0.20", # needed by sphinx
     ]
     + install_requirements,
     install_requires=install_requirements,
