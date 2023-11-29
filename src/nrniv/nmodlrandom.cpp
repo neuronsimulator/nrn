@@ -14,19 +14,72 @@ syntax
 #include <parse.hpp>
 #include <nrnran123.h>
 #include <classreg.h>
+#include <gui-redirect.h>
 
 struct NMODLRandom {
     NMODLRandom(Object*, void* r) {
-        printf("NMODLRandom %p r=%p\n", this, r);
         r_ = (nrnran123_State*) r;
     }
     ~NMODLRandom() {
-        printf("~NMODLRandom %p r=%p\n", this, r_);
     }
-    nrnran123_State* r_;
+    nrnran123_State* r_{};
 };
 
-static Member_func members[] = {{nullptr, nullptr}};
+static Symbol* nmodlrandom_sym{};
+#undef dmaxuint
+#define dmaxuint 4294967295.
+
+static Object** set_ids(void* v) {  // return this NMODLRandom instance
+    NMODLRandom* r = (NMODLRandom*) v;
+    uint32_t id[3];
+    for (int i = 0; i < 3; ++i) {
+        id[i] = (uint32_t) (chkarg(i + 1, 0., dmaxuint));
+    }
+    nrnran123_setids(r->r_, id[0], id[1], id[2]);
+    return hoc_temp_objptr(nrn_get_gui_redirect_obj());
+}
+
+static Object** get_ids(void* v) {  // return a Vector of size 3.
+    NMODLRandom* r = (NMODLRandom*) v;
+    uint32_t id[3]{};
+    nrnran123_getids3(r->r_, id, id + 1, id + 2);
+    IvocVect* vec = vector_new1(3);
+    double* data = vector_vec(vec);
+    for (int i = 0; i < 3; ++i) {
+        data[i] = double(id[i]);
+    }
+    return vector_temp_objvar(vec);
+}
+
+static Object** set_seq(void* v) {  // return this NModlRandom instance
+    NMODLRandom* r = (NMODLRandom*) v;
+    double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
+    uint32_t seq = (uint32_t) (s / 4.);
+    char which = char(s - seq * 4.);
+    nrnran123_setseq(r->r_, seq, which);
+    return hoc_temp_objptr(nrn_get_gui_redirect_obj());
+}
+
+static double get_seq(void* v) {  // return the 34 bits (seq*4 + which) as double
+    NMODLRandom* r = (NMODLRandom*) v;
+    uint32_t seq;
+    char which;
+    nrnran123_getseq(r->r_, &seq, &which);
+    return double(seq * 4 + which);
+}
+
+static double pick(void* v) {
+    NMODLRandom* r = (NMODLRandom*) v;
+    // there is a way to call into the mod file to get the right distribution with parameters
+    return nrnran123_uniform(r->r_, 0.0, 1.0);
+}
+
+static Member_func members[] = {{"get_seq", get_seq}, {"pick", pick}, {nullptr, nullptr}};
+
+static Member_ret_obj_func retobj_members[] = {{"set_ids", set_ids},
+                                               {"get_ids", get_ids},
+                                               {"set_seq", set_seq},
+                                               {nullptr, nullptr}};
 
 static void* nmodlrandom_cons(Object*) {
     NMODLRandom* r = new NMODLRandom(nullptr, nullptr);
@@ -39,12 +92,20 @@ static void nmodlrandom_destruct(void* v) {
 }
 
 void NMODLRandom_reg() {
-    class2oc(
-        "NMODLRandom", nmodlrandom_cons, nmodlrandom_destruct, members, nullptr, nullptr, nullptr);
+    class2oc("NMODLRandom",
+             nmodlrandom_cons,
+             nmodlrandom_destruct,
+             members,
+             nullptr,
+             retobj_members,
+             nullptr);
+    if (!nmodlrandom_sym) {
+        nmodlrandom_sym = hoc_lookup("NMODLRandom");
+        assert(nmodlrandom_sym);
+    }
 }
 
 Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
-    static Symbol* nmodlrandom_sym{};
     auto* const pnt = static_cast<Point_process*>(v);
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
@@ -60,13 +121,7 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
     auto& datum = pnt->prop->dparam[sym->u.rng.index];
     assert(datum.holds<void*>());
 
-    if (!nmodlrandom_sym) {
-        nmodlrandom_sym = hoc_lookup("NMODLRandom");
-        assert(nmodlrandom_sym);
-    }
-
     NMODLRandom* r = new NMODLRandom(nullptr, datum.get<void*>());
     Object* wrap = hoc_new_object(nmodlrandom_sym, r);
-
     return wrap;
 }

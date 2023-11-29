@@ -45,6 +45,7 @@ extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
 extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
 extern void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+extern void nrnran123_setids(nrnran123_State*, uint32_t id1, uint32_t id2, uint32_t id3);
 
 extern double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
 extern double nrnran123_negexp(nrnran123_State*, double);

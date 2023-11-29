@@ -165,6 +165,7 @@ void print_functions_for_random_construct() {
         Fprintf(fcout, "        return %s(_r123state, %s);\n", method.c_str(), result.c_str());
         P("    }\n");
     }
+    P("    return 0.0;\n");
     P("}\n\n");
 
     Fflush(fcout);

@@ -1288,6 +1288,7 @@ void hoc_object_component() {
                 // RANGE type. The void* is a nrnran123_State*. Wrap in a
                 // NMODLRandom and push_object
                 Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
+                hoc_pop_defer();
                 hoc_push_object(o);
             } else {
                 hoc_pushs(sym);

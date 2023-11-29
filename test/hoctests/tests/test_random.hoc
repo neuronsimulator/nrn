@@ -1,0 +1,28 @@
+objref ns, z
+z = new List("NMODLRandom")
+proc assert() {
+  if ($1 == 0) {
+    hoc_execerror("assert", "")
+  }
+}
+
+// POINT_PROCESS syntax tests
+ns = new NetStimRNG()
+finitialize() // ns.rrr constructed in INITIAL block
+
+print ns.rrr
+assert(z.count == 0)
+
+assert(ns.rrr.set_seq(5).set_ids(7,8,9).get_seq() == 5)
+assert(ns.rrr.get_ids().x[2] == 9)
+assert(z.count == 0)
+
+objref x
+x = ns.rrr
+x.set_seq(25)
+assert(ns.rrr.get_seq() == 25)
+assert(z.count == 1)
+assert(x.get_ids().x[1] == 8)
+objref x
+assert(z.count == 0)
+
