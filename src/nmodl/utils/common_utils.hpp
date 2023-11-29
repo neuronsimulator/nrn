@@ -63,7 +63,7 @@ std::string generate_random_string(int len, UseNumbersInString use_numbers);
  * Singleton class for random strings that are appended to the
  * Eigen matrices names that are used in the solutions of
  * nmodl::visitor::SympySolverVisitor and need to be the same to
- * be printed by the nmodl::codegen::CodegenCppVisitor
+ * be printed by the nmodl::codegen::CodegenCoreneuronCppVisitor
  */
 template <unsigned int SIZE = 4>
 class SingletonRandomString {

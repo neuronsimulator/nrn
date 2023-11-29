@@ -68,8 +68,13 @@ add_executable(testunitlexer units/lexer.cpp)
 add_executable(testunitparser units/parser.cpp)
 add_executable(
   testcodegen
-  codegen/main.cpp codegen/codegen_helper.cpp codegen/codegen_utils.cpp
-  codegen/codegen_cpp_visitor.cpp codegen/transform.cpp codegen/codegen_compatibility_visitor.cpp)
+  codegen/main.cpp
+  codegen/codegen_helper.cpp
+  codegen/codegen_utils.cpp
+  codegen/codegen_coreneuron_cpp_visitor.cpp
+  codegen/codegen_neuron_cpp_visitor.cpp
+  codegen/transform.cpp
+  codegen/codegen_compatibility_visitor.cpp)
 
 target_link_libraries(testmodtoken PRIVATE lexer util)
 target_link_libraries(testlexer PRIVATE lexer util)

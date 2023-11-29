@@ -12,7 +12,7 @@
  * \brief \copybrief nmodl::codegen::CodegenAccVisitor
  */
 
-#include "codegen/codegen_cpp_visitor.hpp"
+#include "codegen/codegen_coreneuron_cpp_visitor.hpp"
 
 
 namespace nmodl {
@@ -27,7 +27,7 @@ namespace codegen {
  * \class CodegenAccVisitor
  * \brief %Visitor for printing C++ code with OpenACC backend
  */
-class CodegenAccVisitor: public CodegenCppVisitor {
+class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
   protected:
     /// name of the code generation backend
     std::string backend_name() const override;
@@ -140,13 +140,13 @@ class CodegenAccVisitor: public CodegenCppVisitor {
                       const std::string& output_dir,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCppVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
+        : CodegenCoreneuronCppVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
 
     CodegenAccVisitor(const std::string& mod_file,
                       std::ostream& stream,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCppVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
+        : CodegenCoreneuronCppVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
 };
 
 /** \} */  // end of codegen_backends

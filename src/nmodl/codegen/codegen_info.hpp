@@ -253,6 +253,10 @@ struct CodegenInfo {
     /// typically equal to number of primes
     int num_equations = 0;
 
+    /// True if we have to emit CVODE code
+    /// TODO: Figure out when this needs to be true
+    bool emit_cvode = false;
+
     /// derivative block
     const ast::BreakpointBlock* breakpoint_node = nullptr;
 

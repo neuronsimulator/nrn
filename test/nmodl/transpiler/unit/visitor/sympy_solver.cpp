@@ -9,7 +9,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
-#include "codegen/codegen_cpp_visitor.hpp"
+#include "codegen/codegen_coreneuron_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
@@ -2237,12 +2237,13 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
 }
 
 /// Helper for creating C codegen visitor
-std::shared_ptr<CodegenCppVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
-                                                    const std::string& /* text */,
-                                                    std::stringstream& ss,
-                                                    bool inline_visitor = true,
-                                                    bool pade = false,
-                                                    bool cse = false) {
+std::shared_ptr<CodegenCoreneuronCppVisitor> create_coreneuron_cpp_visitor(
+    const std::shared_ptr<ast::Program>& ast,
+    const std::string& /* text */,
+    std::stringstream& ss,
+    bool inline_visitor = true,
+    bool pade = false,
+    bool cse = false) {
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
@@ -2264,14 +2265,14 @@ std::shared_ptr<CodegenCppVisitor> create_c_visitor(const std::shared_ptr<ast::P
     NeuronSolveVisitor().visit_program(*ast);
     SolveBlockVisitor().visit_program(*ast);
 
-    // Update symtab before CodegenCppVisitor
+    // Update symtab before CodegenCoreneuronCppVisitor
     SymtabVisitor(true).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
     CheckParentVisitor().check_ast(*ast);
 
     /// create C code generation visitor
-    auto cv = std::make_shared<CodegenCppVisitor>("temp.mod", ss, "double", false);
+    auto cv = std::make_shared<CodegenCoreneuronCppVisitor>("temp.mod", ss, "double", false);
     cv->setup(*ast);
     return cv;
 }
@@ -2280,7 +2281,7 @@ std::shared_ptr<CodegenCppVisitor> create_c_visitor(const std::shared_ptr<ast::P
 std::string get_cpp_code(const std::string& nmodl_text) {
     const auto& ast = NmodlDriver().parse_string(nmodl_text);
     std::stringstream ss;
-    auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
+    auto cvisitor = create_coreneuron_cpp_visitor(ast, nmodl_text, ss);
     cvisitor->visit_program(*ast);
     auto generated_string = ss.str();
     return reindent_text(generated_string);
