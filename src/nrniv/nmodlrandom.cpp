@@ -17,12 +17,12 @@ syntax
 #include <gui-redirect.h>
 
 struct NMODLRandom {
-    NMODLRandom(Object*, void* r) {
-        r_ = (nrnran123_State*) r;
+    NMODLRandom(Object*) {}
+    ~NMODLRandom() {}
+    nrnran123_State* r() {
+        return (nrnran123_State*) hr_.get<void*>();
     }
-    ~NMODLRandom() {
-    }
-    nrnran123_State* r_{};
+    neuron::container::generic_data_handle hr_{};
 };
 
 static Symbol* nmodlrandom_sym{};
@@ -35,14 +35,15 @@ static Object** set_ids(void* v) {  // return this NMODLRandom instance
     for (int i = 0; i < 3; ++i) {
         id[i] = (uint32_t) (chkarg(i + 1, 0., dmaxuint));
     }
-    nrnran123_setids(r->r_, id[0], id[1], id[2]);
+    std::cout << r->hr_ << r->hr_.refers_to_a_modern_data_structure() << std::endl;
+    nrnran123_setids(r->r(), id[0], id[1], id[2]);
     return hoc_temp_objptr(nrn_get_gui_redirect_obj());
 }
 
 static Object** get_ids(void* v) {  // return a Vector of size 3.
     NMODLRandom* r = (NMODLRandom*) v;
     uint32_t id[3]{};
-    nrnran123_getids3(r->r_, id, id + 1, id + 2);
+    nrnran123_getids3(r->r(), id, id + 1, id + 2);
     IvocVect* vec = vector_new1(3);
     double* data = vector_vec(vec);
     for (int i = 0; i < 3; ++i) {
@@ -56,7 +57,7 @@ static Object** set_seq(void* v) {  // return this NModlRandom instance
     double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
     uint32_t seq = (uint32_t) (s / 4.);
     char which = char(s - seq * 4.);
-    nrnran123_setseq(r->r_, seq, which);
+    nrnran123_setseq(r->r(), seq, which);
     return hoc_temp_objptr(nrn_get_gui_redirect_obj());
 }
 
@@ -64,14 +65,14 @@ static double get_seq(void* v) {  // return the 34 bits (seq*4 + which) as doubl
     NMODLRandom* r = (NMODLRandom*) v;
     uint32_t seq;
     char which;
-    nrnran123_getseq(r->r_, &seq, &which);
+    nrnran123_getseq(r->r(), &seq, &which);
     return double(seq * 4 + which);
 }
 
 static double pick(void* v) {
     NMODLRandom* r = (NMODLRandom*) v;
     // there is a way to call into the mod file to get the right distribution with parameters
-    return nrnran123_uniform(r->r_, 0.0, 1.0);
+    return nrnran123_uniform(r->r(), 0.0, 1.0);
 }
 
 static Member_func members[] = {{"get_seq", get_seq}, {"pick", pick}, {nullptr, nullptr}};
@@ -82,7 +83,7 @@ static Member_ret_obj_func retobj_members[] = {{"set_ids", set_ids},
                                                {nullptr, nullptr}};
 
 static void* nmodlrandom_cons(Object*) {
-    NMODLRandom* r = new NMODLRandom(nullptr, nullptr);
+    NMODLRandom* r = new NMODLRandom(nullptr);
     return r;
 }
 
@@ -121,7 +122,8 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
     auto& datum = pnt->prop->dparam[sym->u.rng.index];
     assert(datum.holds<void*>());
 
-    NMODLRandom* r = new NMODLRandom(nullptr, datum.get<void*>());
+    NMODLRandom* r = new NMODLRandom(nullptr);
+    r->hr_ = datum;
     Object* wrap = hoc_new_object(nmodlrandom_sym, r);
     return wrap;
 }
