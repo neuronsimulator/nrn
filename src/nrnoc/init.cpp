@@ -160,6 +160,7 @@ int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
 void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
@@ -825,7 +826,6 @@ void update_mech_ppsym_for_modlrandom(
     }
     Symbol* mechsym = memb_func[mechtype].sym;
     int is_point = memb_func[mechtype].is_point;
-    std::cout << mechsym->name << std::endl;
 
     int k = mechsym->s_varn;
     mechsym->s_varn += int(indices.size());
@@ -844,11 +844,6 @@ void update_mech_ppsym_for_modlrandom(
         ransym->cpublic = 1;
         ransym->u.rng.index = i;
         mechsym->u.ppsym[k++] = ransym;
-    }
-
-    for (int i = 0; i < mechsym->s_varn; ++i) {
-        Symbol* s = mechsym->u.ppsym[i];
-        std::cout << s->name << std::endl;
     }
 }
 

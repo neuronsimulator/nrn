@@ -28,6 +28,13 @@ uint32_t nrnran123_get_globalindex() {
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
     return nrnran123_newstream3(id1, id2, 0);
 }
+
+nrnran123_State* nrnran123_newstream0() {
+    extern int nrnmpi_myid;
+    static uint32_t id3{};
+    return nrnran123_newstream3(1, nrnmpi_myid, ++id3);
+}
+
 nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3) {
     nrnran123_State* s;
     s = (nrnran123_State*) ecalloc(sizeof(nrnran123_State), 1);

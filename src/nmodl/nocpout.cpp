@@ -127,6 +127,7 @@ static List* rangedep;
 static List* rangestate;
 static List* nrnpointers;
 static List* nmodlrandoms;
+static List* nrn_mech_inst_destruct_list;
 static int num_random_vars = 0;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
@@ -909,6 +910,8 @@ static const char *_mechanism[] = {\n\
         q = q->next->next->next;
     }
 
+    Item* before_nrn_alloc = lappendstr(defs_list, "\n");
+
     Lappendstr(defs_list,
                "\n"
                "extern Prop* need_memb(Symbol*);\n"
@@ -1055,9 +1058,28 @@ static const char *_mechanism[] = {\n\
         }
     }
 
+
+    // I've put all the nrn_mech_inst_destruct here with nmodlrandoms allocation.
+    // Refactor if ever things other than nmodlrandoms need it.
+    nrn_mech_inst_destruct_list = newlist();
     ITERATE(q, nmodlrandoms) {
-        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream3(1, 2, 3);\n", SYM(q)->name);
+        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream0();\n", SYM(q)->name);
         Lappendstr(defs_list, buf);
+        Sprintf(buf, "nrnran123_deletestream(%s);\n", SYM(q)->name);
+        Lappendstr(nrn_mech_inst_destruct_list, buf);
+    }
+    if (nrn_mech_inst_destruct_list != nrn_mech_inst_destruct_list->next) {
+        auto& list = nrn_mech_inst_destruct_list;
+        // registration just means adding to nrn_mech_inst_destruct
+        Lappendstr(defs_list, "nrn_mech_inst_destruct[_mechtype] = _mech_inst_destruct;\n");
+        // boilerplate for _mech_inst_destruct
+        Linsertstr(list,
+                   "\nstatic void _mech_inst_destruct(Prop* _prop) {\n"
+                   " Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        Lappendstr(list, "}\n");
+        movelist(list->next, list->prev, procfunc);
+        // need a forward declaration before nrn_alloc.
+        insertstr(before_nrn_alloc, "\nstatic void _mech_inst_destruct(Prop* _prop);\n");
     }
 
     if (constructorfunc->next != constructorfunc) {

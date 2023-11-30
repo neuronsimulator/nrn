@@ -131,7 +131,6 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
     assert(sym->type == RANGEVAR && sym->subtype == NMODLRANDOM);
     auto& datum = pnt->prop->dparam[sym->u.rng.index];
     assert(datum.holds<void*>());
-    std::cout << datum << std::endl;
 
     NMODLRandom* r = new NMODLRandom(nullptr);
     r->hr_ = datum;

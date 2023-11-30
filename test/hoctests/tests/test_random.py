@@ -1,10 +1,12 @@
 from neuron import h
+from neuron.expect_hocerr import expect_err, set_quiet
+
+set_quiet(False)
 
 z = h.List("NMODLRandom")
 
 # POINT_PROCESS syntax tests
 ns = h.NetStimRNG()
-h.finitialize()
 
 print(ns.rrr)
 assert z.count() == 0
@@ -23,4 +25,10 @@ y(50.0)
 assert x.get_seq() == 50.0
 
 del x, y
+assert z.count() == 0
+
+x = ns.rrr
+del ns
+expect_err("x.get_seq()")
+del x
 assert z.count() == 0

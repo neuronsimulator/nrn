@@ -15,10 +15,6 @@ NEURON {
     RANDOM123 rrr
 }
 
-DESTRUCTOR {
-    nrnran123_deletestream(rrr)
-}
-
 PARAMETER {
     interval    = 10 (ms) <1e-9,1e9>    : time between spikes (msec)
     number      = 10 <0,1e9>            : number of spikes (independent of noise)
