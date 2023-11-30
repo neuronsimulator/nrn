@@ -3,7 +3,6 @@
 
 #include "modl.h"
 #include "parse1.hpp"
-#include "random_construct.hpp"
 
 extern List* firstlist;
 extern List* syminorder;
@@ -92,7 +91,7 @@ static struct { /* Keywords */
                 {"MUTEXLOCK", NRNMUTEXLOCK},
                 {"MUTEXUNLOCK", NRNMUTEXUNLOCK},
                 {"REPRESENTS", REPRESENTS},
-                {"RANDOM", RANDOM},
+                {"RANDOM123", RANDOM},
                 {0, 0}};
 
 /*
@@ -155,6 +154,10 @@ static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 #include "extdef5.h"
                                 0};
 
+static const char* extdef_rand[] = {/* nrnran123 functions */
+#include "extdef_rand.h"
+                                    nullptr};
+
 List *constructorfunc, *destructorfunc;
 
 void init() {
@@ -199,9 +202,10 @@ void init() {
         assert(s);
         s->subtype |= EXTDEF5;
     }
-    for (const auto& method: get_ext_random_methods()) {
-        s = install(method.c_str(), NAME);
-        s->subtype = EXT_DEF_RANDOM;
+    for (i = 0; extdef_rand[i]; i++) {
+        s = install(extdef_rand[i], NAME);
+        printf("EXTDEF_RANDOM %s\n", extdef_rand[i]);
+        s->subtype = EXTDEF_RANDOM;
     }
     intoken = newlist();
     initfunc = newlist();

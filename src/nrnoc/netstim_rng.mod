@@ -12,9 +12,11 @@ NEURON {
     ARTIFICIAL_CELL NetStimRNG
     RANGE interval, number, start
     RANGE noise
-    RANGE id
-    RANDOM NEGEXP(1.0) rrr, xxx
-    RANDOM NEGEXP(2.0) yyy
+    RANDOM123 rrr
+}
+
+DESTRUCTOR {
+    nrnran123_deletestream(rrr)
 }
 
 PARAMETER {
@@ -22,7 +24,6 @@ PARAMETER {
     number      = 10 <0,1e9>            : number of spikes (independent of noise)
     start       = 50 (ms)               : start of first spike
     noise       = 0 <0,1>               : amount of randomness (0.0 - 1.0)
-    id          = 0                     : id to demonstrate RNG initialization
 }
 
 ASSIGNED {
@@ -33,11 +34,8 @@ ASSIGNED {
 }
 
 INITIAL {
-    : a way to initialize in MOD file
-    rrr.init(id, 2, 3)
-
-    : a way to set stream id
-    rrr.setseq(0, 0)
+    : a way to initialize stream sequence
+    nrnran123_setseq(rrr, 0, 0)
 
     on = 0 : off
     ispike = 0
@@ -81,7 +79,7 @@ FUNCTION invl(mean (ms)) (ms) {
 
 FUNCTION erand() {
     : a way to sample/peek from RNG
-    erand = rrr.sample()
+    erand = nrnran123_negexp(rrr)
 }
 
 PROCEDURE next_invl() {

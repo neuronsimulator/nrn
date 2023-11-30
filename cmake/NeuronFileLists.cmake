@@ -423,7 +423,6 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    random_construct.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp

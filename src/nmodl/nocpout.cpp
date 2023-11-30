@@ -1,7 +1,4 @@
 #include <../../nmodlconf.h>
-#include "random_construct.hpp"
-
-#include <iostream>
 
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 
@@ -111,7 +108,6 @@ int thread_data_index = 0;
 List* thread_cleanup_list;
 List* thread_mem_init_list;
 List* toplocal_;
-List* numlist_;
 extern int protect_;
 extern int protect_include_;
 extern List *set_ion_variables(int), *get_ion_variables(int);
@@ -130,9 +126,11 @@ static List* rangeparm;
 static List* rangedep;
 static List* rangestate;
 static List* nrnpointers;
+static List* nmodlrandoms;
+static int num_random_vars = 0;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
-char* mechname;
+static char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0; /*1 if diam is declared*/
@@ -198,6 +196,7 @@ void nrninit() {
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();
+    nmodlrandoms = newlist();
 }
 
 void parout() {
@@ -386,13 +385,6 @@ void parout() {
         }
     }
 
-    // forward declaration of RANDOM related functions
-    if (get_num_random_variables() > 0) {
-        Lappendstr(defs_list, "/* declaration of RANDOM related functions */\n");
-        Lappendstr(defs_list, "static double _hoc_init_rng(void*);\n");
-        Lappendstr(defs_list, "static double _hoc_sample_rng(void*);\n");
-    }
-
     Lappendstr(defs_list,
                "static int _mechtype;\n\
 extern void _nrn_cacheloop_reg(int, int);\n\
@@ -485,19 +477,6 @@ extern void nrn_promote(Prop*, int, int);\n\
             Lappendstr(defs_list, buf);
         }
     }
-
-    // Register RANDOM related functions with the NEURON so that they are available
-    // at the interpreter level.
-    // TODO: these methods don't seem to be accessible for density channel?
-    if (get_num_random_variables() > 0) {
-        if (!point_process) {
-            Lappendstr(defs_list, "{0, 0}\n};\n");
-            Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
-        }
-        Lappendstr(defs_list, "{\"init_rng\", _hoc_init_rng},\n");
-        Lappendstr(defs_list, "{\"sample_rng\", _hoc_sample_rng},\n");
-    }
-
     Lappendstr(defs_list, "{0, 0}\n};\n");
 
     /* Direct Python call wrappers to density mechanism functions. */
@@ -784,7 +763,11 @@ extern void nrn_promote(Prop*, int, int);\n\
             "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
-    ppvar_cnt = ioncount + diamdec + pointercount + get_num_random_variables() + areadec;
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
+    ppvar_cnt = ioncount + diamdec + pointercount + num_random_vars + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(
@@ -902,16 +885,6 @@ static const char *_mechanism[] = {\n\
         } else {
             Sprintf(buf, "\"%s%s\",\n", s->name, rsuffix);
         }
-        Lappendstr(defs_list, buf);
-    }
-
-    /*
-     * random variables names
-     * TODO: Note that we are registering them with POINTER variables.
-     *       This might need to be changed.
-     */
-    for (const auto& var: get_random_variables()) {
-        Sprintf(buf, "\"%s\",\n", var.name.c_str(), rsuffix);
         Lappendstr(defs_list, buf);
     }
 
@@ -1080,6 +1053,11 @@ static const char *_mechanism[] = {\n\
                 sion->name);
             Lappendstr(defs_list, buf);
         }
+    }
+
+    ITERATE(q, nmodlrandoms) {
+        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream3(1, 2, 3);\n", SYM(q)->name);
+        Lappendstr(defs_list, buf);
     }
 
     if (constructorfunc->next != constructorfunc) {
@@ -1875,6 +1853,12 @@ void nrn_list(Item* q1, Item* q2) {
         }
         use_bbcorepointer = 1;
         break;
+    case RANDOM:
+        for (q = q1->next; q != q2->next; q = q->next) {
+            SYM(q)->nrntype |= NRNNOTP | EXTDEF_RANDOM;
+        }
+        plist = &nmodlrandoms;
+        break;
     }
     if (plist) {
         if (!*plist) {
@@ -2432,30 +2416,29 @@ int iondef(int* p_pointercount) {
         (*p_pointercount)++;
     }
 
-    const auto& random_vars = get_random_variables();
-    const auto num_random_vars = get_num_random_variables();
-
     // print all RANDOM variables
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
     if (num_random_vars) {
         Sprintf(buf, "\n //RANDOM variables \n");
         lappendstr(defs_list, buf);
 
         int index = 0;
-        for (const auto& var: random_vars) {
+        ITERATE(q, nmodlrandoms) {
+            Symbol* s = SYM(q);
             Sprintf(buf,
-                    "#define %s	*_ppvar[%d].get<double*>()\n",
-                    var.name.c_str(),
+                    "#define %s	(nrnran123_State*)_ppvar[%d].get<void*>()\n",
+                    s->name,
                     ioncount + *p_pointercount + index);
             lappendstr(defs_list, buf);
             Sprintf(buf,
                     "#define _p_%s _ppvar[%d].literal_value<void*>()\n",
-                    var.name.c_str(),
+                    s->name,
                     ioncount + *p_pointercount + index);
             lappendstr(defs_list, buf);
-            ppvar_semantics(ioncount + *p_pointercount + index,
-                            "random",
-                            var.name.c_str(),
-                            "void*");
+            ppvar_semantics(ioncount + *p_pointercount + index, "random", s->name, "void*");
             index++;
         }
         lappendstr(defs_list, "\n");

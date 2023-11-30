@@ -9,8 +9,6 @@
 #include "modl.h"
 #include "parse1.hpp"
 
-#include "random_construct.hpp"
-
 Symbol* scop_indep;      /* independent used by SCoP */
 Symbol* indepsym;        /* only one independent variable */
 Symbol* stepsym;         /* one or fewer stepped variables */
@@ -225,6 +223,9 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
         if (q->itemtype == SYMBOL) {
             Symbol* s = SYM(q);
             if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF))) {
+                if (s->subtype & EXTDEF_RANDOM) {
+                    printf("EXTDEF_RANDOM %s with threadargs\n", s->name);
+                }
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
@@ -843,33 +844,11 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
     // wrapper for direct call from python
     npyfunc(n, 0);  // shares most of hocfunchack code (factored out).
 }
-extern char* mechname;
 
 /* ARGSUSED */
 void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int blocktype) {
     Item* q;
-
-    // check if function call is a method name reserved for RANDOM variable type
-    if (SYM(qname)->subtype & EXT_DEF_RANDOM) {
-        // get corresponding RANDOM variable
-        const auto& r = get_random_variable(SYM(qexpr)->name);
-        // find what to replace with
-        std::string replaced_name;
-        if (strcmp(SYM(qname)->name, RANDOM_SETSEQ_METHOD) == 0) {
-            replaced_name = RANDOM123_SETSEQ_METHOD;
-        } else if (strcmp(SYM(qname)->name, RANDOM_SAMPLE_METHOD) == 0) {
-            replaced_name = r.get_random123_function_for_distribution();
-        } else if (strcmp(SYM(qname)->name, RANDOM_INIT_METHOD) == 0) {
-            replaced_name = "_init_rng";
-        } else {
-            diag(SYM(qname)->name, " is an invalid function name used with RANDOM variable");
-        }
-        // perform inplace replacement
-        replacstr(qname, replaced_name.c_str());
-        sprintf(buf, "reinterpret_cast<nrnran123_State*&>(_p_%s)", SYM(qexpr)->name);
-        replacstr(qexpr, buf);
-        return;
-    } else if (SYM(qname)->subtype & EXTDEF) {
+    if (SYM(qname)->subtype & (EXTDEF | EXTDEF_RANDOM)) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
             // TODO: this relies on undefined behaviour in C++. &*foo is not
             // guaranteed to be equivalent to foo if foo is null. See

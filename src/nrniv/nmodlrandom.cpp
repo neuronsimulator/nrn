@@ -35,7 +35,6 @@ static Object** set_ids(void* v) {  // return this NMODLRandom instance
     for (int i = 0; i < 3; ++i) {
         id[i] = (uint32_t) (chkarg(i + 1, 0., dmaxuint));
     }
-    std::cout << r->hr_ << r->hr_.refers_to_a_modern_data_structure() << std::endl;
     nrnran123_setids(r->r(), id[0], id[1], id[2]);
     return hoc_temp_objptr(nrn_get_gui_redirect_obj());
 }
@@ -121,6 +120,7 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
     assert(sym->type == RANGEVAR && sym->subtype == NMODLRANDOM);
     auto& datum = pnt->prop->dparam[sym->u.rng.index];
     assert(datum.holds<void*>());
+    std::cout << datum << std::endl;
 
     NMODLRandom* r = new NMODLRandom(nullptr);
     r->hr_ = datum;
