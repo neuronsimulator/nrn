@@ -22,7 +22,13 @@ struct NMODLRandom {
     nrnran123_State* r() {
         return (nrnran123_State*) hr_.get<void*>();
     }
+    void chk() {
+        if (!prop_id_) {
+            hoc_execerr_ext("NMODLRandom wrapped handle is not valid");
+        }
+    }
     neuron::container::generic_data_handle hr_{};
+    neuron::container::non_owning_identifier_without_container prop_id_{};
 };
 
 static Symbol* nmodlrandom_sym{};
@@ -31,6 +37,7 @@ static Symbol* nmodlrandom_sym{};
 
 static Object** set_ids(void* v) {  // return this NMODLRandom instance
     NMODLRandom* r = (NMODLRandom*) v;
+    r->chk();
     uint32_t id[3];
     for (int i = 0; i < 3; ++i) {
         id[i] = (uint32_t) (chkarg(i + 1, 0., dmaxuint));
@@ -41,6 +48,7 @@ static Object** set_ids(void* v) {  // return this NMODLRandom instance
 
 static Object** get_ids(void* v) {  // return a Vector of size 3.
     NMODLRandom* r = (NMODLRandom*) v;
+    r->chk();
     uint32_t id[3]{};
     nrnran123_getids3(r->r(), id, id + 1, id + 2);
     IvocVect* vec = vector_new1(3);
@@ -53,6 +61,7 @@ static Object** get_ids(void* v) {  // return a Vector of size 3.
 
 static Object** set_seq(void* v) {  // return this NModlRandom instance
     NMODLRandom* r = (NMODLRandom*) v;
+    r->chk();
     double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
     uint32_t seq = (uint32_t) (s / 4.);
     char which = char(s - seq * 4.);
@@ -62,6 +71,7 @@ static Object** set_seq(void* v) {  // return this NModlRandom instance
 
 static double get_seq(void* v) {  // return the 34 bits (seq*4 + which) as double
     NMODLRandom* r = (NMODLRandom*) v;
+    r->chk();
     uint32_t seq;
     char which;
     nrnran123_getseq(r->r(), &seq, &which);
@@ -70,6 +80,7 @@ static double get_seq(void* v) {  // return the 34 bits (seq*4 + which) as doubl
 
 static double pick(void* v) {
     NMODLRandom* r = (NMODLRandom*) v;
+    r->chk();
     // there is a way to call into the mod file to get the right distribution with parameters
     return nrnran123_uniform(r->r(), 0.0, 1.0);
 }
@@ -124,6 +135,7 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
 
     NMODLRandom* r = new NMODLRandom(nullptr);
     r->hr_ = datum;
+    r->prop_id_ = pnt->prop->id();
     Object* wrap = hoc_new_object(nmodlrandom_sym, r);
     return wrap;
 }
