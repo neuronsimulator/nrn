@@ -1258,13 +1258,15 @@ std::string CodegenCoreneuronCppVisitor::process_verbatim_text(std::string const
 
 
 std::string CodegenCoreneuronCppVisitor::register_mechanism_arguments() const {
+    auto nrn_channel_info_var_name = get_channel_info_var_name();
     auto nrn_cur = nrn_cur_required() ? method_name(naming::NRN_CUR_METHOD) : "nullptr";
     auto nrn_state = nrn_state_required() ? method_name(naming::NRN_STATE_METHOD) : "nullptr";
     auto nrn_alloc = method_name(naming::NRN_ALLOC_METHOD);
     auto nrn_init = method_name(naming::NRN_INIT_METHOD);
     auto const nrn_private_constructor = method_name(naming::NRN_PRIVATE_CONSTRUCTOR_METHOD);
     auto const nrn_private_destructor = method_name(naming::NRN_PRIVATE_DESTRUCTOR_METHOD);
-    return fmt::format("mechanism, {}, {}, nullptr, {}, {}, {}, {}, first_pointer_var_index()",
+    return fmt::format("{}, {}, {}, nullptr, {}, {}, {}, {}, first_pointer_var_index()",
+                       nrn_channel_info_var_name,
                        nrn_alloc,
                        nrn_cur,
                        nrn_state,

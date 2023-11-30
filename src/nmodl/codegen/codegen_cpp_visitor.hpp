@@ -375,6 +375,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         return info.electrode_current ? "-=" : "+=";
     }
 
+    /**
+     * Name of channel info variable
+     *
+     */
+    std::string get_channel_info_var_name() const noexcept {
+        return std::string("mechanism_info");
+    }
+
 
     /****************************************************************************************/
     /*                     Common helper routines accross codegen functions                 */

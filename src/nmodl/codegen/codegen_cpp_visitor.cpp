@@ -219,7 +219,7 @@ void CodegenCppVisitor::print_mechanism_info() {
 
     printer->add_newline(2);
     printer->add_line("/** channel information */");
-    printer->add_line("static const char *mechanism[] = {");
+    printer->fmt_line("static const char *{}[] = {{", get_channel_info_var_name());
     printer->increase_indent();
     printer->add_line(add_escape_quote(nmodl_version()), ",");
     printer->add_line(add_escape_quote(info.mod_suffix), ",");

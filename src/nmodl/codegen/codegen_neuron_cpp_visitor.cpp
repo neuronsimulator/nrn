@@ -298,23 +298,23 @@ void CodegenNeuronCppVisitor::print_sdlists_init(bool print_initializers) {
             /// TODO: Also needs a test
             printer->fmt_push_block("for (int _i = 0; _i < {}; ++_i)", prime_var->get_length());
             printer->fmt_line("/* {}[{}] */", prime_var->get_name(), prime_var->get_length());
-            printer->fmt_line("_slist1[{}+_i] = {{{}, _i}}",
+            printer->fmt_line("_slist1[{}+_i] = {{{}, _i}};",
                               i,
                               position_of_float_var(prime_var->get_name()));
             const auto prime_var_deriv_name = "D" + prime_var->get_name();
             printer->fmt_line("/* {}[{}] */", prime_var_deriv_name, prime_var->get_length());
-            printer->fmt_line("_dlist1[{}+_i] = {{{}, _i}}",
+            printer->fmt_line("_dlist1[{}+_i] = {{{}, _i}};",
                               i,
                               position_of_float_var(prime_var_deriv_name));
             printer->pop_block();
         } else {
             printer->fmt_line("/* {} */", prime_var->get_name());
-            printer->fmt_line("_slist1[{}] = {{{}, 0}}",
+            printer->fmt_line("_slist1[{}] = {{{}, 0}};",
                               i,
                               position_of_float_var(prime_var->get_name()));
             const auto prime_var_deriv_name = "D" + prime_var->get_name();
             printer->fmt_line("/* {} */", prime_var_deriv_name);
-            printer->fmt_line("_dlist1[{}] = {{{}, 0}}",
+            printer->fmt_line("_dlist1[{}] = {{{}, 0}};",
                               i,
                               position_of_float_var(prime_var_deriv_name));
         }
@@ -391,12 +391,11 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->fmt_push_block("void _{}_reg()", info.mod_file);
     print_sdlists_init(true);
     // type related information
-    auto suffix = add_escape_quote(info.mod_suffix);
     printer->add_newline();
-    printer->fmt_line("int mech_type = nrn_get_mechtype({});", suffix);
+    printer->fmt_line("int mech_type = nrn_get_mechtype({}[1]);", get_channel_info_var_name());
 
     // More things to add here
-    printer->add_line("_nrn_mechanism_register_data_fields(_mechtype,");
+    printer->add_line("_nrn_mechanism_register_data_fields(mech_type,");
     printer->increase_indent();
     const auto codegen_float_variables_size = codegen_float_variables.size();
     for (int i = 0; i < codegen_float_variables_size; ++i) {
