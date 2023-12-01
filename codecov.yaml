@@ -1,2 +1,11 @@
 ignore:
 - src/language/templates/
+
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
