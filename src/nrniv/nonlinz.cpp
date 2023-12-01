@@ -35,9 +35,7 @@ class NonLinImpRep final {
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
     std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
-    std::vector<int> v_index_;
     std::vector<std::complex<double>> v_;
-    std::vector<std::complex<double>*> diag_;
     std::vector<double> deltavec_;  // just like cvode.atol*cvode.atolscale for ode's
     double delta_;                  // slightly more efficient and easier for v.
     void current(int, Memb_list*, int);
@@ -45,8 +43,8 @@ class NonLinImpRep final {
 
     double omega_;
     int iloc_;  // current injection site of last solve
-    float* vsymtol_;
-    int maxiter_;
+    float* vsymtol_{};
+    int maxiter_{500};
 };
 
 NonLinImp::~NonLinImp() {
@@ -113,6 +111,7 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     v_setup_vectors();
     nrn_rhs(nrn_ensure_model_data_are_sorted(), nrn_threads[0]);
     if (rep_ && rep_->scnt_ != structure_change_cnt) {
+        delete rep_;
         rep_ = nullptr;
     }
     if (!rep_) {
@@ -131,8 +130,10 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
 
     rep_->omega_ = 1000. * omega;
     rep_->delta(deltafac);
-    // fill matrix
+
     rep_->m_.setZero();
+
+    // fill matrix
     rep_->didv();
     rep_->dsds();
 #if 1  // when 0 equivalent to standard method
@@ -154,21 +155,18 @@ int NonLinImp::solve(int curloc) {
         hoc_execerror("Must call Impedance.compute first", 0);
     }
     if (rep_->iloc_ != curloc) {
-        int i;
         rep_->iloc_ = curloc;
-        for (i = 0; i < rep_->neq_; ++i) {
-            rep_->v_[i] = std::complex<double>(0, 0);
-        }
+        rep_->v_ = std::vector<std::complex<double>>(rep_->neq_);
         if (curloc >= 0) {
-            rep_->v_[curloc] = 1.e2 / NODEAREA(_nt->_v_node[curloc]);
+            rep_->v_[curloc].real(1.e2 / NODEAREA(_nt->_v_node[curloc]));
         }
         if (nrnthread_v_transfer_) {
             rval = rep_->gapsolve();
         } else {
-            auto rv =
+            auto v =
                 Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rep_->v_.data(),
                                                                                 rep_->v_.size());
-            rv = rep_->lu_->solve(rv);
+            v = rep_->lu_->solve(v);
         }
     }
     return rval;
@@ -178,12 +176,9 @@ int NonLinImp::solve(int curloc) {
 // mapping is already done there.
 
 NonLinImpRep::NonLinImpRep() {
-    int err;
-    int i, j, ieq, cnt;
+    int i, cnt;
     NrnThread* _nt = nrn_threads;
-    maxiter_ = 500;
 
-    vsymtol_ = NULL;
     Symbol* vsym = hoc_table_lookup("v", hoc_built_in_symlist);
     if (vsym->extra) {
         vsymtol_ = &vsym->extra->tolerance;
@@ -218,9 +213,7 @@ NonLinImpRep::NonLinImpRep() {
     m_ = Eigen::SparseMatrix<std::complex<double>, Eigen::RowMajor>(neq_, neq_);
     pv_.resize(neq_);
     pvdot_.resize(neq_);
-    v_index_.resize(n_v_);
     v_.resize(neq_);
-    diag_.resize(neq_);
     deltavec_.resize(neq_);
 
     for (i = 0; i < n_v_; ++i) {
@@ -228,13 +221,6 @@ NonLinImpRep::NonLinImpRep() {
         Node* nd = _nt->_v_node[i];
         pv_[i] = nd->v_handle();
         pvdot_[i] = nd->rhs_handle();
-        v_index_[i] = i + 1;
-    }
-    for (i = 0; i < n_v_; ++i) {
-        diag_[i] = &m_.coeffRef(v_index_[i], v_index_[i]);
-    }
-    for (i = neq_v_; i < neq_; ++i) {
-        diag_[i] = &m_.coeffRef(i, i);
     }
     scnt_ = structure_change_cnt;
 }
@@ -275,17 +261,17 @@ void NonLinImpRep::didv() {
     for (i = _nt->ncell; i < n_v_; ++i) {
         nd = _nt->_v_node[i];
         ip = _nt->_v_parent[i]->v_node_index;
-        m_.coeffRef(v_index_[ip], v_index_[i]) += NODEA(nd);
-        m_.coeffRef(v_index_[i], v_index_[ip]) += NODEB(nd);
-        *diag_[i] -= NODEB(nd);
-        *diag_[ip] -= NODEA(nd);
+        m_.coeffRef(ip, i) += NODEA(nd);
+        m_.coeffRef(i, ip) += NODEB(nd);
+        m_.coeffRef(i, i) -= NODEB(nd);
+        m_.coeffRef(ip, ip) -= NODEA(nd);
     }
     // jwC term
     Memb_list* mlc = _nt->tml->ml;
     int n = mlc->nodecount;
     for (i = 0; i < n; ++i) {
         j = mlc->nodelist[i]->v_node_index;
-        diag_[v_index_[j] - 1][1] += .001 * mlc->data(i, 0) * omega_;
+        m_.coeffRef(j, j) += std::complex<double>(0, .001 * mlc->data(i, 0) * omega_);
     }
     // di/dv terms
     // because there may be several point processes of the same type
@@ -326,7 +312,8 @@ void NonLinImpRep::didv() {
             current(i, ml, j);
             // conductance
             // add to matrix
-            *diag_[v_index_[nd->v_node_index] - 1] -= (x2 - NODERHS(nd)) / delta_;
+            m_.coeffRef(nd->v_node_index,
+                        nd->v_node_index) -= std::complex<double>((x2 - NODERHS(nd)) / delta_, 0);
         }
     }
 }
@@ -366,7 +353,7 @@ void NonLinImpRep::dids() {
                         *pv_[is] = v_[is].real();  // restore s
                         double g = (NODERHS(nd) - v_[in].imag()) / deltavec_[is];
                         if (g != 0.) {
-                            m_.coeffRef(v_index_[nd->v_node_index], is + 1) = -g;
+                            m_.coeffRef(nd->v_node_index, is) = -g;
                         }
                     }
                     // don't know if this is necessary but make sure last
@@ -427,7 +414,7 @@ void NonLinImpRep::dsdv() {
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
                         double ds = (v_[is].imag() - *pvdot_[is]) / delta_;
                         if (ds != 0.) {
-                            m_.coeffRef(is + 1, v_index_[nd->v_node_index]) = -ds;
+                            m_.coeffRef(is, nd->v_node_index) = -ds;
                         }
                     }
                 }
@@ -442,7 +429,7 @@ void NonLinImpRep::dsds() {
     NrnThread* nt = nrn_threads;
     // jw term
     for (i = neq_v_; i < neq_; ++i) {
-        *diag_[i] += std::complex<double>(0, omega_);
+        m_.coeffRef(i, i) += std::complex<double>(0, omega_);
     }
     ieq = neq_v_;
     for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
@@ -541,11 +528,11 @@ int NonLinImpRep::gapsolve() {
 
     std::vector<std::complex<double>> rx(neq_);
     std::vector<std::complex<double>> rx1(neq_);
-    std::vector<std::complex<double>> rb(v_.begin(), v_.end());
+    std::vector<std::complex<double>> rb(v_);
 
     // iterate till change in x is small
     double tol = 1e-9;
-    double delta;
+    double delta{};
 
     int success = 0;
     int iter;
