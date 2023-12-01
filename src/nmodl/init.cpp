@@ -204,7 +204,6 @@ void init() {
     }
     for (i = 0; extdef_rand[i]; i++) {
         s = install(extdef_rand[i], NAME);
-        printf("EXTDEF_RANDOM %s\n", extdef_rand[i]);
         s->subtype = EXTDEF_RANDOM;
     }
     intoken = newlist();

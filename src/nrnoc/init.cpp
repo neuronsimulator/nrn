@@ -554,16 +554,8 @@ void register_mech_vars(const char** var_buffers,
                 nsub = 1;
                 varname.erase(subscript);
             }
-            /*SUPPRESS 624*/
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-#if 0
-                if (var_symbol->subtype != RANGEVAR) {
-                    IGNORE(fprintf(stderr, CHKmes,
-                    varname.c_str()));
-                }
-#else   // not 0
                 IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
-#endif  // not 0
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;
@@ -838,9 +830,13 @@ void update_mech_ppsym_for_modlrandom(
         if (is_point) {
             ransym = hoc_install(p.first, RANGEVAR, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
         } else {
-            ransym = hoc_install(p.first, RANGEVAR, 0.0, &hoc_symlist);
+            std::string s{p.first};
+            s += "_";
+            s += mechsym->name;
+            ransym = hoc_install(s.c_str(), RANGEVAR, 0.0, &hoc_symlist);
         }
         ransym->subtype = NMODLRANDOM;
+        ransym->u.rng.type = mechtype;
         ransym->cpublic = 1;
         ransym->u.rng.index = i;
         mechsym->u.ppsym[k++] = ransym;

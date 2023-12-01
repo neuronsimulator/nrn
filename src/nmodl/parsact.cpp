@@ -222,10 +222,7 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
     for (q = q1; q != q2; q = q->next) {
         if (q->itemtype == SYMBOL) {
             Symbol* s = SYM(q);
-            if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF))) {
-                if (s->subtype & EXTDEF_RANDOM) {
-                    printf("EXTDEF_RANDOM %s with threadargs\n", s->name);
-                }
+            if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF | EXTDEF_RANDOM))) {
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
