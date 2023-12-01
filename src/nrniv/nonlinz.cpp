@@ -16,7 +16,8 @@ extern int nrndae_extra_eqn_count();
 extern Symlist* hoc_built_in_symlist;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
-extern void pargap_jacobi_rhs(std::vector<std::complex<double>>&, const std::vector<std::complex<double>>&);
+extern void pargap_jacobi_rhs(std::vector<std::complex<double>>&,
+                              const std::vector<std::complex<double>>&);
 extern void pargap_jacobi_setup(int mode);
 
 class NonLinImpRep final {
@@ -38,7 +39,7 @@ class NonLinImpRep final {
     std::vector<std::complex<double>> v_;
     std::vector<std::complex<double>*> diag_;
     std::vector<double> deltavec_;  // just like cvode.atol*cvode.atolscale for ode's
-    double delta_;      // slightly more efficient and easier for v.
+    double delta_;                  // slightly more efficient and easier for v.
     void current(int, Memb_list*, int);
     void ode(int, Memb_list*);
 
@@ -164,7 +165,9 @@ int NonLinImp::solve(int curloc) {
         if (nrnthread_v_transfer_) {
             rval = rep_->gapsolve();
         } else {
-            auto rv = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rep_->v_.data(), rep_->v_.size());
+            auto rv =
+                Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rep_->v_.data(),
+                                                                                rep_->v_.size());
             rv = rep_->lu_->solve(rv);
         }
     }
@@ -250,8 +253,12 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
         if (nrn_ode_count_t s = memb_func[i].ode_count; s && (cnt = s(i)) > 0) {
             nrn_ode_map_t ode_map = memb_func[i].ode_map;
             for (auto j = 0; j < nc; ++j) {
-                ode_map(
-                    ml->prop[j], ieq, pv_.data() + ieq, pvdot_.data() + ieq, deltavec_.data() + ieq, i);
+                ode_map(ml->prop[j],
+                        ieq,
+                        pv_.data() + ieq,
+                        pvdot_.data() + ieq,
+                        deltavec_.data() + ieq,
+                        i);
                 ieq += cnt;
             }
         }
@@ -545,8 +552,10 @@ int NonLinImpRep::gapsolve() {
 
     for (iter = 1; iter <= maxiter_; ++iter) {
         if (neq_) {
-            auto rb_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rb.data(), rb.size());
-            auto rx1_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rx1.data(), rx1.size());
+            auto rb_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rb.data(),
+                                                                                       rb.size());
+            auto rx1_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rx1.data(),
+                                                                                        rx1.size());
             rx1_ = lu_->solve(rb_);
         }
 

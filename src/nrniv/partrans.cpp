@@ -874,7 +874,8 @@ void pargap_jacobi_setup(int mode) {
     }
 }
 
-void pargap_jacobi_rhs(std::vector<std::complex<double>>& b, const std::vector<std::complex<double>>& x) {
+void pargap_jacobi_rhs(std::vector<std::complex<double>>& b,
+                       const std::vector<std::complex<double>>& x) {
     // First loop for real, second for imag
     for (int real_imag = 0; real_imag < 2; ++real_imag) {
         // helper for complex impedance with parallel gap junctions
