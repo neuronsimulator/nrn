@@ -13,6 +13,7 @@
 #include <mymath.h>
 #include <stdint.h>
 
+#include <complex>
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
 #include <utility>
 #include <vector>
@@ -873,47 +874,58 @@ void pargap_jacobi_setup(int mode) {
     }
 }
 
-void pargap_jacobi_rhs(double* b, double* x) {
-    // helper for complex impedance with parallel gap junctions
-    // b = b - R*x  R are the off diagonal gap elements of the jacobian.
-    // we presume 1 thread. First nrn_thread[0].end equations are in node order.
-    if (!nrnthread_v_transfer_) {
-        return;
-    }
+void pargap_jacobi_rhs(std::vector<std::complex<double>>& b, const std::vector<std::complex<double>>& x) {
+    // First loop for real, second for imag
+    for (int real_imag = 0; real_imag < 2; ++real_imag) {
+        // helper for complex impedance with parallel gap junctions
+        // b = b - R*x  R are the off diagonal gap elements of the jacobian.
+        // we presume 1 thread. First nrn_thread[0].end equations are in node order.
+        if (!nrnthread_v_transfer_) {
+            return;
+        }
 
-    NrnThread* _nt = nrn_threads;
+        NrnThread* _nt = nrn_threads;
 
-    // transfer gap node voltages to gap vpre
-    for (size_t i = 0; i < visources_.size(); ++i) {
-        Node* nd = visources_[i];
-        nd->v() = x[nd->v_node_index];
-    }
-    mpi_transfer();
-    thread_transfer(_nt);
+        // transfer gap node voltages to gap vpre
+        for (size_t i = 0; i < visources_.size(); ++i) {
+            Node* nd = visources_[i];
+            if (real_imag == 0) {
+                nd->v() = x[nd->v_node_index].real();
+            } else {
+                nd->v() = x[nd->v_node_index].imag();
+            }
+        }
+        mpi_transfer();
+        thread_transfer(_nt);
 
-    // set gap node voltages to 0 so we can use nrn_cur to set rhs
-    for (size_t i = 0; i < visources_.size(); ++i) {
-        Node* nd = visources_[i];
-        nd->v() = 0.0;
-    }
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    // Initialize rhs to 0.
-    for (int i = 0; i < _nt->end; ++i) {
-        vec_rhs[i] = 0.0;
-    }
-    for (int k = 0; k < imped_current_type_count_; ++k) {
-        int type = imped_current_type_[k];
-        Memb_list* ml = imped_current_ml_[k];
-        memb_func[type].current(sorted_token, _nt, ml, type);
-    }
+        // set gap node voltages to 0 so we can use nrn_cur to set rhs
+        for (size_t i = 0; i < visources_.size(); ++i) {
+            Node* nd = visources_[i];
+            nd->v() = 0.0;
+        }
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+        auto* const vec_rhs = _nt->node_rhs_storage();
+        // Initialize rhs to 0.
+        for (int i = 0; i < _nt->end; ++i) {
+            vec_rhs[i] = 0.0;
+        }
+        for (int k = 0; k < imped_current_type_count_; ++k) {
+            int type = imped_current_type_[k];
+            Memb_list* ml = imped_current_ml_[k];
+            memb_func[type].current(sorted_token, _nt, ml, type);
+        }
 
-    // possibly many gap junctions in same node (and possible even different
-    // types) but rhs is the accumulation of all those instances at each node
-    // so ...  The only thing that can go wrong is if there are intances of
-    // gap junctions that are not being used  (not in the target list).
-    for (int i = 0; i < _nt->end; ++i) {
-        b[i] += vec_rhs[i];
+        // possibly many gap junctions in same node (and possible even different
+        // types) but rhs is the accumulation of all those instances at each node
+        // so ...  The only thing that can go wrong is if there are intances of
+        // gap junctions that are not being used  (not in the target list).
+        for (int i = 0; i < _nt->end; ++i) {
+            if (real_imag == 0) {
+                b[i] += vec_rhs[i];
+            } else {
+                b[i] += std::complex<double>(0, vec_rhs[i]);
+            }
+        }
     }
 }
 

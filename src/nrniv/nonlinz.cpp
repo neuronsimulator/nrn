@@ -6,24 +6,22 @@
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnmpi.h"
-#include "cspmatrix.h"
 #include "membfunc.h"
 
 #include <Eigen/Sparse>
+#include <complex>
 
 extern void v_setup_vectors();
 extern int nrndae_extra_eqn_count();
 extern Symlist* hoc_built_in_symlist;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
-extern spREAL* spGetElement(char*, int, int);
 
-extern void pargap_jacobi_rhs(double*, double*);
+extern void pargap_jacobi_rhs(std::vector<std::complex<double>>&, const std::vector<std::complex<double>>&);
 extern void pargap_jacobi_setup(int mode);
 
-class NonLinImpRep {
+class NonLinImpRep final {
   public:
     NonLinImpRep();
-    virtual ~NonLinImpRep();
     void delta(double);
     void didv();
     void dids();
@@ -32,14 +30,14 @@ class NonLinImpRep {
     int gapsolve();
 
     Eigen::SparseMatrix<std::complex<double>, Eigen::RowMajor> m_{};
+    std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
     std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
-    int* v_index_;
-    double* rv_;
-    double* jv_;
+    std::vector<int> v_index_;
+    std::vector<std::complex<double>> v_;
     std::vector<std::complex<double>*> diag_;
-    double* deltavec_;  // just like cvode.atol*cvode.atolscale for ode's
+    std::vector<double> deltavec_;  // just like cvode.atol*cvode.atolscale for ode's
     double delta_;      // slightly more efficient and easier for v.
     void current(int, Memb_list*, int);
     void ode(int, Memb_list*);
@@ -50,14 +48,10 @@ class NonLinImpRep {
     int maxiter_;
 };
 
-NonLinImp::NonLinImp() {
-    rep_ = NULL;
-}
 NonLinImp::~NonLinImp() {
-    if (rep_) {
-        delete rep_;
-    }
+    delete rep_;
 }
+
 double NonLinImp::transfer_amp(int curloc, int vloc) {
     if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_ && curloc != rep_->iloc_) {
         hoc_execerror(
@@ -66,9 +60,7 @@ double NonLinImp::transfer_amp(int curloc, int vloc) {
     if (curloc != rep_->iloc_) {
         solve(curloc);
     }
-    double x = rep_->rv_[vloc];
-    double y = rep_->jv_[vloc];
-    return sqrt(x * x + y * y);
+    return std::abs(rep_->v_[vloc]);
 }
 double NonLinImp::input_amp(int curloc) {
     if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
@@ -80,9 +72,7 @@ double NonLinImp::input_amp(int curloc) {
     if (curloc < 0) {
         return 0.0;
     }
-    double x = rep_->rv_[curloc];
-    double y = rep_->jv_[curloc];
-    return sqrt(x * x + y * y);
+    return std::abs(rep_->v_[curloc]);
 }
 double NonLinImp::transfer_phase(int curloc, int vloc) {
     if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_ && curloc != rep_->iloc_) {
@@ -92,9 +82,7 @@ double NonLinImp::transfer_phase(int curloc, int vloc) {
     if (curloc != rep_->iloc_) {
         solve(curloc);
     }
-    double x = rep_->rv_[vloc];
-    double y = rep_->jv_[vloc];
-    return atan2(y, x);
+    return std::arg(rep_->v_[vloc]);
 }
 double NonLinImp::input_phase(int curloc) {
     if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
@@ -106,9 +94,7 @@ double NonLinImp::input_phase(int curloc) {
     if (curloc < 0) {
         return 0.0;
     }
-    double x = rep_->rv_[curloc];
-    double y = rep_->jv_[curloc];
-    return atan2(y, x);
+    return std::arg(rep_->v_[curloc]);
 }
 double NonLinImp::ratio_amp(int clmploc, int vloc) {
     if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
@@ -120,22 +106,13 @@ double NonLinImp::ratio_amp(int clmploc, int vloc) {
     if (clmploc != rep_->iloc_) {
         solve(clmploc);
     }
-    double ax, bx, cx, ay, by, cy, bb;
-    ax = rep_->rv_[vloc];
-    ay = rep_->jv_[vloc];
-    bx = rep_->rv_[clmploc];
-    by = rep_->jv_[clmploc];
-    bb = bx * bx + by * by;
-    cx = (ax * bx + ay * by) / bb;
-    cy = (ay * bx - ax * by) / bb;
-    return sqrt(cx * cx + cy * cy);
+    return std::abs(rep_->v_[vloc] * std::conj(rep_->v_[clmploc]) / std::norm(rep_->v_[clmploc]));
 }
 void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     v_setup_vectors();
     nrn_rhs(nrn_ensure_model_data_are_sorted(), nrn_threads[0]);
     if (rep_ && rep_->scnt_ != structure_change_cnt) {
-        delete rep_;
-        rep_ = NULL;
+        rep_ = nullptr;
     }
     if (!rep_) {
         rep_ = new NonLinImpRep();
@@ -162,6 +139,10 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     rep_->dsdv();
 #endif
 
+    rep_->lu_ = std::make_unique<Eigen::SparseLU<decltype(rep_->m_)>>(rep_->m_);
+    rep_->lu_->analyzePattern(rep_->m_);
+    rep_->lu_->factorize(rep_->m_);
+
     rep_->iloc_ = -2;
 }
 
@@ -175,29 +156,16 @@ int NonLinImp::solve(int curloc) {
         int i;
         rep_->iloc_ = curloc;
         for (i = 0; i < rep_->neq_; ++i) {
-            rep_->rv_[i] = 0;
-            rep_->jv_[i] = 0;
+            rep_->v_[i] = std::complex<double>(0, 0);
         }
         if (curloc >= 0) {
-            rep_->rv_[curloc] = 1.e2 / NODEAREA(_nt->_v_node[curloc]);
+            rep_->v_[curloc] = 1.e2 / NODEAREA(_nt->_v_node[curloc]);
         }
         if (nrnthread_v_transfer_) {
             rval = rep_->gapsolve();
         } else {
-            std::vector<std::complex<double>> rjv{};
-            rjv.reserve(rep_->neq_);
-            for (size_t i = 0; i < rep_->neq_; ++i) {
-                rjv.emplace_back(rep_->rv_[i], rep_->jv_[i]);
-            }
-            auto lu = Eigen::SparseLU<decltype(rep_->m_)>(rep_->m_);
-            lu.analyzePattern(rep_->m_);
-            lu.factorize(rep_->m_);
-            auto rjv_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rjv.data(), rjv.size());
-            rjv_ = lu.solve(rjv_);
-            for (size_t i = 0; i < rep_->neq_; ++i) {
-                rep_->rv_[i] = rjv[i].real();
-                rep_->jv_[i] = rjv[i].imag();
-            }
+            auto rv = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rep_->v_.data(), rep_->v_.size());
+            rv = rep_->lu_->solve(rv);
         }
     }
     return rval;
@@ -247,13 +215,10 @@ NonLinImpRep::NonLinImpRep() {
     m_ = Eigen::SparseMatrix<std::complex<double>, Eigen::RowMajor>(neq_, neq_);
     pv_.resize(neq_);
     pvdot_.resize(neq_);
-    v_index_ = new int[n_v_];
-    rv_ = new double[neq_ + 1];
-    rv_ += 1;
-    jv_ = new double[neq_ + 1];
-    jv_ += 1;
+    v_index_.resize(n_v_);
+    v_.resize(neq_);
     diag_.resize(neq_);
-    deltavec_ = new double[neq_];
+    deltavec_.resize(neq_);
 
     for (i = 0; i < n_v_; ++i) {
         // utilize nd->eqn_index in case of use_sparse13 later
@@ -271,13 +236,6 @@ NonLinImpRep::NonLinImpRep() {
     scnt_ = structure_change_cnt;
 }
 
-NonLinImpRep::~NonLinImpRep() {
-    delete[] v_index_;
-    delete[](rv_ - 1);
-    delete[](jv_ - 1);
-    delete[] deltavec_;
-}
-
 void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for ode
     int i, nc, cnt, ieq;
     NrnThread* nt = nrn_threads;
@@ -293,7 +251,7 @@ void NonLinImpRep::delta(double deltafac) {  // also defines pv_,pvdot_ map for 
             nrn_ode_map_t ode_map = memb_func[i].ode_map;
             for (auto j = 0; j < nc; ++j) {
                 ode_map(
-                    ml->prop[j], ieq, pv_.data() + ieq, pvdot_.data() + ieq, deltavec_ + ieq, i);
+                    ml->prop[j], ieq, pv_.data() + ieq, pvdot_.data() + ieq, deltavec_.data() + ieq, i);
                 ieq += cnt;
             }
         }
@@ -381,8 +339,6 @@ void NonLinImpRep::dids() {
             nrn_ode_count_t s = memb_func[i].ode_count;
             int cnt = (*s)(i);
             if (memb_func[i].current) {
-                double* x1 = rv_;  // use as temporary storage
-                double* x2 = jv_;
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
                     // zero rhs
@@ -390,18 +346,18 @@ void NonLinImpRep::dids() {
                     // compute rhs
                     current(i, ml, in);
                     // save rhs
-                    x2[in] = NODERHS(nd);
+                    v_[in].imag(NODERHS(nd));
                     // each state incremented separately and restored
                     for (iis = 0; iis < cnt; ++iis) {
                         is = ieq + in * cnt + iis;
                         // save s
-                        x1[is] = *pv_[is];
+                        v_[is].real(*pv_[is]);
                         // increment s and zero rhs
                         *pv_[is] += deltavec_[is];
                         NODERHS(nd) = 0;
                         current(i, ml, in);
-                        *pv_[is] = x1[is];  // restore s
-                        double g = (NODERHS(nd) - x2[in]) / deltavec_[is];
+                        *pv_[is] = v_[is].real();  // restore s
+                        double g = (NODERHS(nd) - v_[in].imag()) / deltavec_[is];
                         if (g != 0.) {
                             m_.coeffRef(v_index_[nd->v_node_index], is + 1) = -g;
                         }
@@ -428,22 +384,20 @@ void NonLinImpRep::dsdv() {
             nrn_ode_count_t s = memb_func[i].ode_count;
             int cnt = (*s)(i);
             if (memb_func[i].current) {
-                double* x1 = rv_;  // use as temporary storage
-                double* x2 = jv_;
                 // zero rhs, save v
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
                         *pvdot_[is] = 0.;
                     }
-                    x1[in] = NODEV(nd);
+                    v_[in].real(NODEV(nd));
                 }
                 // increment v only once in case there are multiple
                 // point processes at the same location
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
                     auto const v = nd->v();
-                    if (x1[in] == v) {
+                    if (v_[in].real() == v) {
                         nd->v() = v + delta_;
                     }
                 }
@@ -453,10 +407,10 @@ void NonLinImpRep::dsdv() {
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
-                        x2[is] = *pvdot_[is];
+                        v_[is].imag(*pvdot_[is]);
                         *pvdot_[is] = 0;
                     }
-                    nd->v() = x1[in];
+                    nd->v() = v_[in].real();
                 }
                 // compute the rhs(v)
                 ode(i, ml);
@@ -464,7 +418,7 @@ void NonLinImpRep::dsdv() {
                 for (in = 0; in < ml->nodecount; ++in) {
                     Node* nd = ml->nodelist[in];
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
-                        double ds = (x2[is] - *pvdot_[is]) / delta_;
+                        double ds = (v_[is].imag() - *pvdot_[is]) / delta_;
                         if (ds != 0.) {
                             m_.coeffRef(is + 1, v_index_[nd->v_node_index]) = -ds;
                         }
@@ -491,13 +445,11 @@ void NonLinImpRep::dsds() {
             int nc = ml->nodecount;
             nrn_ode_count_t s = memb_func[i].ode_count;
             int cnt = (*s)(i);
-            double* x1 = rv_;  // use as temporary storage
-            double* x2 = jv_;
             // zero rhs, save s
             for (in = 0; in < ml->nodecount; ++in) {
                 for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
                     *pvdot_[is] = 0.;
-                    x1[is] = *pv_[is];
+                    v_[is].real(*pv_[is]);
                 }
             }
             // compute rhs. this is the rhs(s)
@@ -505,7 +457,7 @@ void NonLinImpRep::dsds() {
             // save rhs
             for (in = 0; in < ml->nodecount; ++in) {
                 for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
-                    x2[is] = *pvdot_[is];
+                    v_[is].imag(*pvdot_[is]);
                 }
             }
             // iterate over the states
@@ -525,11 +477,11 @@ void NonLinImpRep::dsds() {
                     Node* nd = ml->nodelist[in];
                     ks = ieq + in * cnt + kks;
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
-                        double ds = (*pvdot_[is] - x2[is]) / deltavec_[is];
+                        double ds = (*pvdot_[is] - v_[is].imag()) / deltavec_[is];
                         if (ds != 0.) {
                             m_.coeffRef(is, ks) = -ds;
                         }
-                        *pv_[ks] = x1[ks];
+                        *pv_[ks] = v_[ks].real();
                     }
                 }
                 // perhaps not necessary but ensures the last computation is with
@@ -560,8 +512,8 @@ void NonLinImpRep::ode(int im, Memb_list* ml) {  // assume there is in fact an o
 }
 
 int NonLinImpRep::gapsolve() {
-    // On entry, rv_ and jv_ contain the complex b for A*x = b.
-    // On return rv_ and jv_ contain complex solution, x.
+    // On entry, v_ contains the complex b for A*x = b.
+    // On return v_ contains complex solution, x.
     // m_ is the factored matrix for the trees without gap junctions
     // Jacobi method (easy for parallel)
     // A = D + R
@@ -580,22 +532,9 @@ int NonLinImpRep::gapsolve() {
 
     pargap_jacobi_setup(0);
 
-    double *rx, *jx, *rx1, *jx1, *rb, *jb;
-    if (neq_) {
-        rx = new double[neq_];
-        jx = new double[neq_];
-        rx1 = new double[neq_];
-        jx1 = new double[neq_];
-        rb = new double[neq_];
-        jb = new double[neq_];
-    }
-
-    // initialize for first iteration
-    for (int i = 0; i < neq_; ++i) {
-        rx[i] = jx[i] = 0.0;
-        rb[i] = rv_[i];
-        jb[i] = jv_[i];
-    }
+    std::vector<std::complex<double>> rx(neq_);
+    std::vector<std::complex<double>> rx1(neq_);
+    std::vector<std::complex<double>> rb(v_.begin(), v_.end());
 
     // iterate till change in x is small
     double tol = 1e-9;
@@ -606,27 +545,17 @@ int NonLinImpRep::gapsolve() {
 
     for (iter = 1; iter <= maxiter_; ++iter) {
         if (neq_) {
-            std::vector<std::complex<double>> rjv{};
-            rjv.reserve(neq_);
-            for (size_t i = 0; i < neq_; ++i) {
-                rjv.emplace_back(rb[i], rx1[i]);
-            }
-            auto lu = Eigen::SparseLU<decltype(m_)>(m_);
-            lu.analyzePattern(m_);
-            lu.factorize(m_);
-            auto rjv_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rjv.data(), rjv.size());
-            rjv_ = lu.solve(rjv_);
-            for (size_t i = 0; i < neq_; ++i) {
-                jb[i] = rjv[i].real();
-                jx1[i] = rjv[i].imag();
-            }
+            auto rb_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rb.data(), rb.size());
+            auto rx1_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rx1.data(), rx1.size());
+            rx1_ = lu_->solve(rb_);
         }
 
         // if any change in x > tol, then do another iteration.
         success = 1;
         delta = 0.0;
         for (int i = 0; i < neq_; ++i) {
-            double err = fabs(rx1[i] - rx[i]) + fabs(jx1[i] - jx[i]);
+            auto diff = rx1[i] - rx[i];
+            double err = std::abs(diff.real()) + std::abs(diff.imag());
             if (err > tol) {
                 success = 0;
             }
@@ -640,34 +569,17 @@ int NonLinImpRep::gapsolve() {
         }
 #endif
         if (success) {
-            for (int i = 0; i < neq_; ++i) {
-                rv_[i] = rx1[i];
-                jv_[i] = jx1[i];
-            }
+            v_ = rx1;
             break;
         }
 
         // setup for next iteration
-        for (int i = 0; i < neq_; ++i) {
-            rx[i] = rx1[i];
-            jx[i] = jx1[i];
-            rb[i] = rv_[i];
-            jb[i] = jv_[i];
-        }
+        rx = rx1;
+        rb = v_;
         pargap_jacobi_rhs(rb, rx);
-        pargap_jacobi_rhs(jb, jx);
     }
 
     pargap_jacobi_setup(1);  // tear down
-
-    if (neq_) {
-        delete[] rx;
-        delete[] jx;
-        delete[] rx1;
-        delete[] jx1;
-        delete[] rb;
-        delete[] jb;
-    }
 
     if (!success) {
         char buf[256];

@@ -3,10 +3,9 @@
 
 class NonLinImpRep;
 
-class NonLinImp {
+class NonLinImp final {
   public:
-    NonLinImp();
-    virtual ~NonLinImp();
+    ~NonLinImp();
     void compute(double omega, double deltafac, int maxiter);
     double transfer_amp(int curloc, int vloc);  // v_node[arg] is the node
     double transfer_phase(int curloc, int vloc);
@@ -16,7 +15,7 @@ class NonLinImp {
     int solve(int curloc);
 
   private:
-    NonLinImpRep* rep_;
+    NonLinImpRep* rep_{};
 };
 
 #endif
