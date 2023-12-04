@@ -235,7 +235,7 @@ void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_se
 
 void nrnthread_dat3_secmapping(int i_c,
                                int i_sec,
-                               std::string& segname,
+                               std::string& sclname,
                                int& nsec,
                                int& nseg,
                                size_t& total_lfp_factors,
@@ -245,7 +245,7 @@ void nrnthread_dat3_secmapping(int i_c,
                                std::vector<double>& data_lfp) {
     CellMapping* c = mapinfo.mapping[i_c];
     SecMapping* s = c->secmapping[i_sec];
-    segname = s->name.c_str();
+    sclname = s->name;
     nsec = s->nsec;
     nseg = s->size();
     total_lfp_factors = s->seglfp_factors.size();

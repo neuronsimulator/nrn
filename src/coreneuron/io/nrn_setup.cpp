@@ -951,30 +951,30 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
         nrn2core_get_dat3_cell_count(count);
         /** for every neuron */
         for (int i = 0; i < count; i++) {
-            int gid, nsec, nseg, nseclist;
-            nrn2core_get_dat3_cellmapping(i, gid, nsec, nseg, nseclist);
+            int gid, t_sec, t_seg, nseclist;
+            nrn2core_get_dat3_cellmapping(i, gid, t_sec, t_seg, nseclist);
             CellMapping* cmap = new CellMapping(gid);
             for (int j = 0; j < nseclist; j++) {
-                std::string segname;
-                int n_secsec, n_secseg, n_electrodes;
+                std::string sclname;
+                int n_sec, n_seg, n_electrodes;
                 size_t total_lfp_factors;
                 std::vector<int> data_sec;
                 std::vector<int> data_seg;
                 std::vector<double> data_lfp;
                 nrn2core_get_dat3_secmapping(i,
                                              j,
-                                             segname,
-                                             n_secsec,
-                                             n_secseg,
+                                             sclname,
+                                             n_sec,
+                                             n_seg,
                                              total_lfp_factors,
                                              n_electrodes,
                                              data_sec,
                                              data_seg,
                                              data_lfp);
                 SecMapping* smap = new SecMapping();
-                smap->name = segname;
+                smap->name = sclname;
                 int factor_offset = 0;
-                for (int i_seg = 0; i_seg < n_secseg; i_seg++) {
+                for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                     smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                     ntmapping->add_segment_id(data_seg[i_seg]);
                     int factor_offset = i_seg * n_electrodes;
