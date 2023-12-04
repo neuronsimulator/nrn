@@ -201,18 +201,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Generate the string representing the procedure parameter declaration
-     *
-     * The procedure parameters are stored in a vector of 4-tuples each representing a parameter.
-     *
-     * \param params The parameters that should be concatenated into the function parameter
-     * declaration
-     * \return The string representing the declaration of function parameters
-     */
-    static std::string get_parameter_str(const ParamVector& params);
-
-
-    /**
      * Print the code to copy derivative advance flag to device
      */
     virtual void print_deriv_advance_flag_transfer_to_device() const;

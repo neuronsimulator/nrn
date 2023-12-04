@@ -632,7 +632,10 @@ void CodegenNeuronCppVisitor::print_function_declaration(const T& node, const st
 
     /// TODO: Edit for NEURON
     printer->add_indent();
-    printer->fmt_text("inline {} {}({})", return_type, method_name(name), "params");
+    printer->fmt_text("inline {} {}({})",
+                      return_type,
+                      method_name(name),
+                      get_parameter_str(internal_params));
 
     enable_variable_name_lookup = true;
 }

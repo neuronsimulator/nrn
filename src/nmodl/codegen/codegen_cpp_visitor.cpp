@@ -26,6 +26,25 @@ using symtab::syminfo::NmodlType;
 /****************************************************************************************/
 
 
+std::string CodegenCppVisitor::get_parameter_str(const ParamVector& params) {
+    std::string str;
+    bool is_first = true;
+    for (const auto& param: params) {
+        if (is_first) {
+            is_first = false;
+        } else {
+            str += ", ";
+        }
+        str += fmt::format("{}{} {}{}",
+                           std::get<0>(param),
+                           std::get<1>(param),
+                           std::get<2>(param),
+                           std::get<3>(param));
+    }
+    return str;
+}
+
+
 template <typename T>
 bool CodegenCppVisitor::has_parameter_of_name(const T& node, const std::string& name) {
     auto parameters = node->get_parameters();

@@ -290,24 +290,6 @@ bool CodegenCoreneuronCppVisitor::is_constant_variable(const std::string& name) 
 /*                                Backend specific routines                             */
 /****************************************************************************************/
 
-std::string CodegenCoreneuronCppVisitor::get_parameter_str(const ParamVector& params) {
-    std::string str;
-    bool is_first = true;
-    for (const auto& param: params) {
-        if (is_first) {
-            is_first = false;
-        } else {
-            str += ", ";
-        }
-        str += fmt::format("{}{} {}{}",
-                           std::get<0>(param),
-                           std::get<1>(param),
-                           std::get<2>(param),
-                           std::get<3>(param));
-    }
-    return str;
-}
-
 
 void CodegenCoreneuronCppVisitor::print_deriv_advance_flag_transfer_to_device() const {
     // backend specific, do nothing
