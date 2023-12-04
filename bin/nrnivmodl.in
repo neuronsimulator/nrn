@@ -76,7 +76,7 @@ while [ "$1" ] ; do
         shift
         shift;;
     -nmodlflags)
-        echo "UserNMODLFLAGS: $2"
+        echo "[NMODL][warning] If sympy is enabled, NMODL needs to be found in PYTHONPATH"
         UserNMODLFLAGS="$UserNMODLFLAGS $2"
         shift
         shift;;
