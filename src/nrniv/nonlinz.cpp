@@ -11,6 +11,8 @@
 #include <Eigen/Sparse>
 #include <complex>
 
+using namespace std::complex_literals;
+
 extern void v_setup_vectors();
 extern int nrndae_extra_eqn_count();
 extern Symlist* hoc_built_in_symlist;
@@ -141,9 +143,23 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     rep_->dsdv();
 #endif
 
+    // Now that the matrix is filled we can compressed it (mandatory for SparseLU)
+    rep_->m_.makeCompressed();
+
     rep_->lu_ = std::make_unique<Eigen::SparseLU<decltype(rep_->m_)>>(rep_->m_);
-    rep_->lu_->analyzePattern(rep_->m_);
-    rep_->lu_->factorize(rep_->m_);
+    rep_->lu_->compute(rep_->m_);
+    auto info = rep_->lu_->info();
+    switch (info) {
+        case Eigen::NumericalIssue:
+            hoc_execerror("NumericalIssue: The matrix is not valid following what expect Eigen SparseLu", nullptr);
+            break;
+        case Eigen::NoConvergence:
+            hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
+            break;
+        case Eigen::InvalidInput:
+            hoc_execerror("InvalidInput: the inputs are invalid", nullptr);
+            break;
+    };
 
     rep_->iloc_ = -2;
 }
@@ -158,7 +174,7 @@ int NonLinImp::solve(int curloc) {
         rep_->iloc_ = curloc;
         rep_->v_ = std::vector<std::complex<double>>(rep_->neq_);
         if (curloc >= 0) {
-            rep_->v_[curloc].real(1.e2 / NODEAREA(_nt->_v_node[curloc]));
+            rep_->v_[curloc] = 1.e2 / NODEAREA(_nt->_v_node[curloc]);
         }
         if (nrnthread_v_transfer_) {
             rval = rep_->gapsolve();
@@ -271,7 +287,7 @@ void NonLinImpRep::didv() {
     int n = mlc->nodecount;
     for (i = 0; i < n; ++i) {
         j = mlc->nodelist[i]->v_node_index;
-        m_.coeffRef(j, j) += std::complex<double>(0, .001 * mlc->data(i, 0) * omega_);
+        m_.coeffRef(j, j) += .001 * mlc->data(i, 0) * omega_ * 1i;
     }
     // di/dv terms
     // because there may be several point processes of the same type
@@ -313,7 +329,7 @@ void NonLinImpRep::didv() {
             // conductance
             // add to matrix
             m_.coeffRef(nd->v_node_index,
-                        nd->v_node_index) -= std::complex<double>((x2 - NODERHS(nd)) / delta_, 0);
+                        nd->v_node_index) -= (x2 - NODERHS(nd)) / delta_;
         }
     }
 }
@@ -429,7 +445,7 @@ void NonLinImpRep::dsds() {
     NrnThread* nt = nrn_threads;
     // jw term
     for (i = neq_v_; i < neq_; ++i) {
-        m_.coeffRef(i, i) += std::complex<double>(0, omega_);
+        m_.coeffRef(i, i) += omega_ * 1i;
     }
     ieq = neq_v_;
     for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
