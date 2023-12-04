@@ -150,15 +150,17 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     rep_->lu_->compute(rep_->m_);
     auto info = rep_->lu_->info();
     switch (info) {
-        case Eigen::NumericalIssue:
-            hoc_execerror("NumericalIssue: The matrix is not valid following what expect Eigen SparseLu", nullptr);
-            break;
-        case Eigen::NoConvergence:
-            hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
-            break;
-        case Eigen::InvalidInput:
-            hoc_execerror("InvalidInput: the inputs are invalid", nullptr);
-            break;
+    case Eigen::NumericalIssue:
+        hoc_execerror(
+            "NumericalIssue: The matrix is not valid following what expect Eigen SparseLu",
+            nullptr);
+        break;
+    case Eigen::NoConvergence:
+        hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
+        break;
+    case Eigen::InvalidInput:
+        hoc_execerror("InvalidInput: the inputs are invalid", nullptr);
+        break;
     };
 
     rep_->iloc_ = -2;
@@ -328,8 +330,7 @@ void NonLinImpRep::didv() {
             current(i, ml, j);
             // conductance
             // add to matrix
-            m_.coeffRef(nd->v_node_index,
-                        nd->v_node_index) -= (x2 - NODERHS(nd)) / delta_;
+            m_.coeffRef(nd->v_node_index, nd->v_node_index) -= (x2 - NODERHS(nd)) / delta_;
         }
     }
 }
