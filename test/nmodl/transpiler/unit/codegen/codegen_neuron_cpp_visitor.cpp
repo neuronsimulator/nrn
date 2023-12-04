@@ -157,7 +157,7 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
         THEN("Correct channel information are printed") {
             std::string expected_channel_info = R"(/** channel information */
     static const char *mechanism_info[] = {
-        "6.2.0",
+        "7.7.0",
         "pas_test",
         "g_pas_test",
         "e_pas_test",
