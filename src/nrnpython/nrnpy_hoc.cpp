@@ -1185,7 +1185,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         // an array
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION ||
-            t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS) {
+            t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS || t == RANGEOBJ) {
             if (sym != nrn_child_sym && !ISARRAY(sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;

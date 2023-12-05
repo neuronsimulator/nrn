@@ -35,8 +35,8 @@ assert z.count() == 0
 
 # density mechanism tests
 cable = h.Section(name="cable")
-nseg = 3
+cable.nseg = 3
 cable.insert("rantst")
-nr = [seg.rantst.rrr for seg in cable]
+nr = [(seg.x, seg.rantst.rrr) for seg in cable]
 for r in nr:
-    print(r.get_ids().to_python())
+    assert r[1].get_ids().eq(cable(r[0]).rrr_rantst.get_ids())
