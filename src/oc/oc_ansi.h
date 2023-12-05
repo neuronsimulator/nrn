@@ -37,6 +37,7 @@ union Objectdata;
 struct Symbol;
 struct Symlist;
 struct VoidFunc;
+struct Prop;
 
 namespace neuron {
 struct model_sorted_token;
@@ -314,6 +315,7 @@ Object** hoc_temp_objptr(Object*);
 Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
 Object* nrn_pntproc_nmodlrandom_wrap(void* pnt, Symbol* sym);
+Object* nrn_nmodlrandom_wrap(Prop* prop, Symbol* sym);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);
 Object* hoc_obj_get(int i);

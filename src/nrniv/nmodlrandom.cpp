@@ -128,13 +128,18 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
             hoc_execerror("point process not located in a section", nullptr);
         }
     }
-    assert(sym->type == RANGEVAR && sym->subtype == NMODLRANDOM);
-    auto& datum = pnt->prop->dparam[sym->u.rng.index];
+
+    return nrn_nmodlrandom_wrap(pnt->prop, sym);
+}
+
+Object* nrn_nmodlrandom_wrap(Prop* prop, Symbol* sym) {
+    assert(sym->type == RANGEOBJ && sym->subtype == NMODLRANDOM);
+    auto& datum = prop->dparam[sym->u.rng.index];
     assert(datum.holds<void*>());
 
     NMODLRandom* r = new NMODLRandom(nullptr);
     r->hr_ = datum;
-    r->prop_id_ = pnt->prop->id();
+    r->prop_id_ = prop->id();
     Object* wrap = hoc_new_object(nmodlrandom_sym, r);
     return wrap;
 }

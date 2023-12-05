@@ -828,12 +828,12 @@ void update_mech_ppsym_for_modlrandom(
         auto& p = dparam_info[i];
         Symbol* ransym{};
         if (is_point) {
-            ransym = hoc_install(p.first, RANGEVAR, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
+            ransym = hoc_install(p.first, RANGEOBJ, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
         } else {
             std::string s{p.first};
             s += "_";
             s += mechsym->name;
-            ransym = hoc_install(s.c_str(), RANGEVAR, 0.0, &hoc_symlist);
+            ransym = hoc_install(s.c_str(), RANGEOBJ, 0.0, &hoc_symlist);
         }
         ransym->subtype = NMODLRANDOM;
         ransym->u.rng.type = mechtype;

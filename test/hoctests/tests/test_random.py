@@ -5,7 +5,7 @@ set_quiet(False)
 
 z = h.List("NMODLRandom")
 
-# POINT_PROCESS syntax tests
+# ARTIFICIAL_CELL syntax tests
 ns = h.NetStimRNG()
 
 print(ns.rrr)
@@ -32,3 +32,11 @@ del ns
 expect_err("x.get_seq()")
 del x
 assert z.count() == 0
+
+# density mechanism tests
+cable = h.Section(name="cable")
+nseg = 3
+cable.insert("rantst")
+nr = [seg.rantst.rrr for seg in cable]
+for r in nr:
+    print(r.get_ids().to_python())

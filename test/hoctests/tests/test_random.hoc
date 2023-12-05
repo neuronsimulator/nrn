@@ -16,12 +16,28 @@ assert(ns.rrr.set_seq(5).set_ids(7,8,9).get_seq() == 5)
 assert(ns.rrr.get_ids().x[2] == 9)
 assert(z.count == 0)
 
-objref x
-x = ns.rrr
-x.set_seq(25)
+objref r
+r = ns.rrr
+r.set_seq(25)
 assert(ns.rrr.get_seq() == 25)
 assert(z.count == 1)
-assert(x.get_ids().x[1] == 8)
-objref x
+assert(r.get_ids().x[1] == 8)
+objref r
 assert(z.count == 0)
 
+create cable
+access cable
+nseg=3
+insert rantst
+finitialize(-70)
+
+r =  cable.rrr_rantst
+assert(cable.rrr_rantst.set_seq(10).get_seq() == 10)
+assert(cable.rrr_rantst(.5).get_ids().eq(r.get_ids()))
+
+for (x,0) {
+  r = cable.rrr_rantst(x)
+  assert(rrr_rantst(x).get_ids().eq(r.get_ids()))
+}
+objref r
+assert(z.count == 0)

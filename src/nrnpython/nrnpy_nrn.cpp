@@ -2614,7 +2614,7 @@ static PyMethodDef nrnpy_methods[] = {
 static PyObject* nrnmodule_;
 
 static void rangevars_add(Symbol* sym) {
-    assert(sym && sym->type == RANGEVAR);
+    //    assert(sym && sym->type == RANGEVAR);
     NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
     // printf("%s\n", sym->name);
     r->sym_ = sym;

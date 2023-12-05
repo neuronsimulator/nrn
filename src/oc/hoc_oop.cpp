@@ -1263,6 +1263,17 @@ void hoc_object_component() {
         hoc_nopop(); /* get rid of iterator statement context */
         break;
     }
+    case RANGEOBJ: {
+        assert(sym->subtype == NMODLRANDOM);
+        if (sym->subtype == NMODLRANDOM) {  // NMODL NEURON block RANDOM var
+            // RANGE type. The void* is a nrnran123_State*. Wrap in a
+            // NMODLRandom and push_object
+            Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
+            hoc_pop_defer();
+            hoc_push_object(o);
+        }
+        break;
+    }
     default:
         if (cplus) {
             if (nindex) {
@@ -1284,19 +1295,11 @@ void hoc_object_component() {
                     }
                 }
             }
-            if (sym->subtype == NMODLRANDOM) {  // NMODL NEURON block RANDOM var
-                // RANGE type. The void* is a nrnran123_State*. Wrap in a
-                // NMODLRandom and push_object
-                Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
-                hoc_pop_defer();
-                hoc_push_object(o);
-            } else {
-                hoc_pushs(sym);
-                (*obp->ctemplate->steer)(obp->u.this_pointer);
-                auto dh = hoc_pop_handle<double>();
-                hoc_pop_defer();
-                hoc_push(std::move(dh));
-            }
+            hoc_pushs(sym);
+            (*obp->ctemplate->steer)(obp->u.this_pointer);
+            auto dh = hoc_pop_handle<double>();
+            hoc_pop_defer();
+            hoc_push(std::move(dh));
         } else {
             hoc_execerror(sym->name, ": can't push that type onto stack");
         }
