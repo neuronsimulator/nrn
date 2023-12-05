@@ -244,7 +244,7 @@ class ChildNode(BaseNode):
     def member_rvalue_typename(self):
         """returns rvalue reference type when used as returned or parameter type"""
         typename = self.member_typename
-        if not self.is_integral_type_node:
+        if not self.is_integral_type_node and not self._is_member_type_wrapped_as_shared_pointer:
             return "const " + typename + "&"
         return typename
 

@@ -29,7 +29,7 @@ std::string Ast::get_node_name() const {
   throw std::logic_error("get_node_name() not implemented");
 }
 
-const std::shared_ptr<StatementBlock>& Ast::get_statement_block() const {
+std::shared_ptr<StatementBlock> Ast::get_statement_block() const {
   throw std::runtime_error("get_statement_block not implemented");
 }
 
