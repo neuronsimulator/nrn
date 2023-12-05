@@ -71,6 +71,7 @@ while [ "$1" ] ; do
         shift
         shift;;
     -nmodl)
+        echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
         UserNMODLBIN="$2"
         UserNMODLFLAGS="--neuron$UserNMODLFLAGS"
         shift
