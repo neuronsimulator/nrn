@@ -53,7 +53,7 @@ std::string get_neuron_cpp_code(const std::string& nmodl_text,
     std::stringstream ss;
     auto cvisitor = create_neuron_cpp_visitor(ast, nmodl_text, ss);
     cvisitor->visit_program(*ast);
-    return reindent_text(ss.str());
+    return ss.str();
 }
 
 
@@ -138,6 +138,7 @@ using _nrn_mechanism_std_vector = std::vector<T>;
 using _nrn_model_sorted_token = neuron::model_sorted_token;
 using _nrn_mechanism_cache_range = neuron::cache::MechanismRange<number_of_floating_point_variables, number_of_datum_variables>;
 using _nrn_mechanism_cache_instance = neuron::cache::MechanismInstance<number_of_floating_point_variables, number_of_datum_variables>;
+using _nrn_non_owning_id_without_container = neuron::container::non_owning_identifier_without_container;
 template <typename T>
 using _nrn_mechanism_field = neuron::mechanism::field<T>;
 template <typename... Args>
@@ -213,26 +214,30 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
                          ContainsSubstring(reindent_and_trim_text(expected_hoc_global_variables)));
         }
         THEN("Placeholder nrn_cur function is printed") {
-            std::string expected_placeholder_nrn_cur = R"(void nrn_cur() {})";
+            std::string expected_placeholder_nrn_cur =
+                R"(void nrn_cur_pas_test(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* _ml_arg, int _type) {})";
 
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_placeholder_nrn_cur)));
         }
         THEN("Placeholder nrn_state function is printed") {
-            std::string expected_placeholder_nrn_state = R"(void nrn_state() {})";
+            std::string expected_placeholder_nrn_state =
+                R"(void nrn_state_pas_test(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt,  Memb_list* _ml_arg, int _type) {})";
 
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_placeholder_nrn_state)));
         }
         THEN("Placeholder registration function is printed") {
-            std::string expected_placeholder_reg = R"(/** register channel with the simulator */
-    void __test_reg() {
+            std::string expected_placeholder_reg = R"CODE(/** register channel with the simulator */
+    extern "C" void __test_reg() {
         /* s */
         _slist1[0] = {4, 0};
         /* Ds */
         _dlist1[0] = {7, 0};
 
-        int mech_type = nrn_get_mechtype(mechanism_info[1]);
+        register_mech(mechanism_info, nrn_alloc_pas_test, nrn_cur_pas_test, nrn_jacob_pas_test, nrn_state_pas_test, nrn_init_pas_test, hoc_nrnpointerindex, 1);
+
+        mech_type = nrn_get_mechtype(mechanism_info[1]);
         _nrn_mechanism_register_data_fields(mech_type,
             _nrn_mechanism_field<double>{"g"} /* 0 */,
             _nrn_mechanism_field<double>{"e"} /* 1 */,
@@ -246,7 +251,7 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
             _nrn_mechanism_field<double>{"g_unused"} /* 9 */
         );
 
-    })";
+    })CODE";
 
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_placeholder_reg)));

@@ -152,6 +152,9 @@ static constexpr char NRN_STATE_METHOD[] = "nrn_state";
 /// nrn_cur method in generated code
 static constexpr char NRN_CUR_METHOD[] = "nrn_cur";
 
+/// nrn_jacob method in generated code
+static constexpr char NRN_JACOB_METHOD[] = "nrn_jacob";
+
 /// nrn_watch_check method in generated c++ file
 static constexpr char NRN_WATCH_CHECK_METHOD[] = "nrn_watch_check";
 
@@ -163,6 +166,9 @@ static constexpr char THREAD_ARGS_PROTO[] = "_threadargsproto_";
 
 /// prefix for ion variable
 static constexpr char ION_VARNAME_PREFIX[] = "ion_";
+
+/// hoc_nrnpointerindex name
+static constexpr char NRN_POINTERINDEX[] = "hoc_nrnpointerindex";
 
 
 /// commonly used variables in verbatim block and how they

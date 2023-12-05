@@ -362,6 +362,13 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print the \c nrn\_init function definition
+     * \param skip_init_check \c true to generate code executing the initialization conditionally
+     */
+    void print_nrn_init(bool skip_init_check = true);
+
+
+    /**
      * Print nrn_constructor function definition
      *
      */
@@ -380,6 +387,13 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      */
     void print_nrn_alloc() override;
+
+
+    /**
+     * Print nrn_jacob function definition
+     *
+     */
+    void print_nrn_jacob();
 
 
     /****************************************************************************************/
