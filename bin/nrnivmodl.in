@@ -73,7 +73,7 @@ while [ "$1" ] ; do
     -nmodl)
         echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
         UserNMODLBIN="$2"
-        UserNMODLFLAGS="--neuron$UserNMODLFLAGS"
+        UserNMODLFLAGS="--neuron $UserNMODLFLAGS"
         shift
         shift;;
     -nmodlflags)
