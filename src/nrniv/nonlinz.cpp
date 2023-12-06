@@ -32,8 +32,8 @@ class NonLinImpRep final {
     void dsds();
     int gapsolve();
 
-    Eigen::SparseMatrix<std::complex<double>, Eigen::RowMajor> m_{};
-    std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
+    Eigen::SparseMatrix<std::complex<double>> m_{};
+    std::unique_ptr<Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>>> lu_{};
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
     std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
@@ -146,8 +146,8 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     // Now that the matrix is filled we can compressed it (mandatory for SparseLU)
     rep_->m_.makeCompressed();
 
-    rep_->lu_ = std::make_unique<Eigen::SparseLU<decltype(rep_->m_)>>(rep_->m_);
-    rep_->lu_->compute(rep_->m_);
+    rep_->lu_ = std::make_unique<Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>>>(
+        rep_->m_);
     auto info = rep_->lu_->info();
     switch (info) {
     case Eigen::NumericalIssue:
