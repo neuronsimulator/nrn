@@ -33,7 +33,7 @@ class NonLinImpRep final {
     int gapsolve();
 
     Eigen::SparseMatrix<std::complex<double>> m_{};
-    std::unique_ptr<Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>>> lu_{};
+    Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> lu_{};
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
     std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
@@ -146,10 +146,8 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     // Now that the matrix is filled we can compressed it (mandatory for SparseLU)
     rep_->m_.makeCompressed();
 
-    rep_->lu_ = std::make_unique<Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>>>(
-        rep_->m_);
-    auto info = rep_->lu_->info();
-    switch (info) {
+    rep_->lu_.compute(rep_->m_);
+    switch (rep_->lu_.info()) {
     case Eigen::NumericalIssue:
         hoc_execerror(
             "NumericalIssue: The matrix is not valid following what expect Eigen SparseLu",
@@ -184,7 +182,7 @@ int NonLinImp::solve(int curloc) {
             auto v =
                 Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rep_->v_.data(),
                                                                                 rep_->v_.size());
-            v = rep_->lu_->solve(v);
+            v = rep_->lu_.solve(v);
         }
     }
     return rval;
@@ -560,7 +558,7 @@ int NonLinImpRep::gapsolve() {
                                                                                        rb.size());
             auto rx1_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rx1.data(),
                                                                                         rx1.size());
-            rx1_ = lu_->solve(rb_);
+            rx1_ = lu_.solve(rb_);
         }
 
         // if any change in x > tol, then do another iteration.
