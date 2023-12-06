@@ -768,3 +768,82 @@ Random Class
 
          
 
+----
+
+NMODLRandom Class
+=================
+
+.. class:: NMODLRandom
+
+    Syntax:
+        ``r = point_process.ranvar``
+
+        ``r = section(x).mech.ranvar``
+
+        ``r = section(x).ranvar_mech``
+
+
+    Description:
+        Returns an NMODLRandom wrapper for the nrnran123_State associated with the mechanism
+        :ref:`RANDOM123 ranvar <nmodlrandom123>` variable.
+        Note that an attempt to assign a value to ranvar will raise an error.
+        At present, all mentions of ranvar in the context of a specific mechanism instance return a wrapper for
+        the same nrnran123_State (though the NMODLRandom instances are different).
+
+----
+
+.. method:: NMODLRandom.get_ids
+
+    Syntax:
+        ``vector = r.get_ids()``
+
+    Description:
+        Returns a HOC Vector of size 3 containing the 32 bit id1, id2, id3 of the nrnran123_State
+
+----
+
+.. method:: NMODLRandom.set_ids
+
+    Syntax:
+        ``r = r.set_ids(id1, id2, id3)``
+
+    Description:
+        Sets the 32 bit id1, id2, id3 of the nrnran123_State and returns the same NModlRandom instance.
+
+
+----
+
+.. method:: NMODLRandom.get_seq
+
+    Syntax:
+        ``x = r.get_seq()``
+
+    Description:
+        Returns as a float, the 34 bit sequence position of the nrnran123_State
+
+----
+
+.. method:: NMODLRandom.set_seq
+
+    Syntax:
+        ``r = r.set_seq(x)``
+
+    Description:
+        Sets the 34 bit sequence position of the nrnran123_State. Returns the same NMODLRandom instance.
+
+----
+
+.. method:: NMODLRandom.pick
+
+    Syntax:
+        ``x = r.pick()``
+
+    Description:
+        Returns as a float, the uniform random value in the range 0 to 1 at the current sequence
+        position of the nrnran123_State (the current sequence position is then incremented by 1)
+
+
+
+
+
+
