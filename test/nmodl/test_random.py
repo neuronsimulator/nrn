@@ -34,18 +34,8 @@ def test_netstim_noise():
         cell.start = 0
         cell.noise = 1
 
-        # id is introduced to just demonstrate initialization
-        # of RANDOM variable type
-        cell.id = gid
-
-        # actual syntax to initialize RANDOM variable is
-        # the following and it needs to be implemented
-        # cell.r.init_rng(gid, 2, 3)
-
-        # for now, we support following. We don't need to
-        # call this initialization because the MOD file already
-        # calls init() in the INITIAL block.
-        # cell.init_rng("r", gid, 2, 3)
+        # Initialize RANDOM variable ids and initial sequence.
+        cell.rrr.set_ids(gid, 2, 3).set_seq(0)
 
     spiketime = h.Vector()
     spikegid = h.Vector()
@@ -110,14 +100,10 @@ def test_random():
     for gid in gids:
         pc.set_gid2node(gid, pc.id())
         cell = h.NetStimRNG()
-        cell.id = gid
 
-        # as we are not calling finitialize(),
-        # we need to explicitly call init_rng
-        # like this
-        cell.init_rng("r", gid, 2, 3)
+        cell.rrr.set_ids(gid, 2, 3).set_seq(0)
 
-        r = cell.sample_rng("r")
+        r = cell.erand()
         rng.append(r)
 
     rng_ref = [
