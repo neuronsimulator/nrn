@@ -2,7 +2,6 @@
 #include <map>
 #include <cstdio>
 #include <InterViews/resource.h>
-#include <OS/list.h>
 #include "hoclist.h"
 #if HAVE_IV
 #include "graph.h"
