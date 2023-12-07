@@ -226,7 +226,7 @@ NonLinImpRep::NonLinImpRep() {
     if (neq_ == 0) {
         return;
     }
-    m_ = Eigen::SparseMatrix<std::complex<double>, Eigen::RowMajor>(neq_, neq_);
+    m_ = Eigen::SparseMatrix<std::complex<double>>(neq_, neq_);
     pv_.resize(neq_);
     pvdot_.resize(neq_);
     v_.resize(neq_);
