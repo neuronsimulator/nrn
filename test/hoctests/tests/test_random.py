@@ -21,8 +21,8 @@ assert z.count() == 1
 assert x.get_ids().x[1] == 8
 
 y = ns.rrr.set_seq
-y(50.0)
-assert x.get_seq() == 50.0
+y(50)
+assert x.get_seq() == 50
 
 del x, y
 assert z.count() == 0
