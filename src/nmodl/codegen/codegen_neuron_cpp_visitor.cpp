@@ -285,7 +285,11 @@ void CodegenNeuronCppVisitor::print_neuron_includes() {
 }
 
 
-void CodegenNeuronCppVisitor::print_sdlists_init(bool print_initializers) {
+void CodegenNeuronCppVisitor::print_sdlists_init([[maybe_unused]] bool print_initializers) {
+    /// _initlists() should only be called once by the mechanism registration function
+    /// (_<mod_file>_reg())
+    printer->add_newline(2);
+    printer->push_block("static void _initlists()");
     for (auto i = 0; i < info.prime_variables_by_order.size(); ++i) {
         const auto& prime_var = info.prime_variables_by_order[i];
         /// TODO: Something similar needs to happen for slist/dlist2 but I don't know their usage at
@@ -319,6 +323,7 @@ void CodegenNeuronCppVisitor::print_sdlists_init(bool print_initializers) {
                               position_of_float_var(prime_var_deriv_name));
         }
     }
+    printer->pop_block();
 }
 
 
@@ -396,7 +401,7 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->add_newline(2);
     printer->add_line("/** register channel with the simulator */");
     printer->fmt_push_block("extern \"C\" void _{}_reg()", info.mod_file);
-    print_sdlists_init(true);
+    printer->add_line("_initlists();");
     printer->add_newline();
 
     const auto compute_functions_parameters =
@@ -449,7 +454,8 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
 }
 
 
-void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_initializers) {
+void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(
+    [[maybe_unused]] bool print_initializers) {
     printer->add_newline(2);
     printer->add_line("/* NEURON RANGE variables macro definitions */");
     for (auto i = 0; i < codegen_float_variables.size(); ++i) {
@@ -731,6 +737,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_nrn_alloc();
     print_global_variables_for_hoc();
     print_compute_functions();  // only nrn_cur and nrn_state
+    print_sdlists_init(true);
     print_mechanism_register();
     print_namespace_end();
     codegen = false;

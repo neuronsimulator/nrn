@@ -227,13 +227,19 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_placeholder_nrn_state)));
         }
+        THEN("Initialization function for slist/dlist is printed correctly") {
+            std::string expected_initlists_s_var = "_slist1[0] = {4, 0};";
+            std::string expected_initlists_Ds_var = "_dlist1[0] = {7, 0};";
+
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(reindent_and_trim_text(expected_initlists_s_var)));
+            REQUIRE_THAT(generated,
+                         ContainsSubstring(reindent_and_trim_text(expected_initlists_Ds_var)));
+        }
         THEN("Placeholder registration function is printed") {
             std::string expected_placeholder_reg = R"CODE(/** register channel with the simulator */
     extern "C" void __test_reg() {
-        /* s */
-        _slist1[0] = {4, 0};
-        /* Ds */
-        _dlist1[0] = {7, 0};
+        _initlists();
 
         register_mech(mechanism_info, nrn_alloc_pas_test, nrn_cur_pas_test, nrn_jacob_pas_test, nrn_state_pas_test, nrn_init_pas_test, hoc_nrnpointerindex, 1);
 
