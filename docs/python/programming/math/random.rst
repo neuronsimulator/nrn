@@ -785,7 +785,7 @@ NMODLRandom Class
 
     Description:
         Returns an NMODLRandom wrapper for the nrnran123_State associated with the mechanism
-        :ref:`RANDOM123 ranvar <nmodlrandom123>` variable.
+        :ref:`RANDOM ranvar <nmodlrandom>` variable.
         Note that an attempt to assign a value to ranvar will raise an error.
         At present, all mentions of ranvar in the context of a specific mechanism instance return a wrapper for
         the same nrnran123_State (though the NMODLRandom instances are different).

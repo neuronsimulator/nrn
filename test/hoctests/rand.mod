@@ -1,7 +1,7 @@
 NEURON {
     SUFFIX rantst
     RANGE x
-    RANDOM123 rrr
+    RANDOM rrr
 }
 
 ASSIGNED {
@@ -9,12 +9,12 @@ ASSIGNED {
 }
 
 INITIAL {
-    nrnran123_setseq(rrr, 5, 0)
-    x = nrnran123_uniform(rrr, 0, 1)
+    random_setseq(rrr, 5)
+    x = random_uniform(rrr)
 }
 
 BEFORE STEP {
-    x = nrnran123_normal(rrr)
+    x = random_normal(rrr)
 }
 
 

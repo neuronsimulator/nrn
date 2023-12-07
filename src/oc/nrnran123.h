@@ -44,6 +44,7 @@ extern nrnran123_State* nrnran123_newstream0();  // increment id3 for each insta
 extern void nrnran123_deletestream(nrnran123_State*);
 extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
 extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
+extern void nrnran123_setseq1(nrnran123_State*, double seq4which);  // seq*4+which);
 extern void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 extern void nrnran123_setids(nrnran123_State*, uint32_t id1, uint32_t id2, uint32_t id3);

@@ -914,6 +914,8 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             } else {
                 diag("net_move", "only allowed in NET_RECEIVE block");
             }
+        } else if (SYM(qname)->subtype & EXTDEF_RANDOM) {
+            replacstr(qname, extdef_rand[SYM(qname)->name]);
         }
         return;
     }

@@ -12,7 +12,7 @@ NEURON {
     ARTIFICIAL_CELL NetStimRNG
     RANGE interval, number, start
     RANGE noise
-    RANDOM123 rrr
+    RANDOM rrr
 }
 
 PARAMETER {
@@ -31,7 +31,7 @@ ASSIGNED {
 
 INITIAL {
     : a way to initialize stream sequence
-    nrnran123_setseq(rrr, 0, 0)
+    random_setseq(rrr, 0)
 
     on = 0 : off
     ispike = 0
@@ -75,7 +75,7 @@ FUNCTION invl(mean (ms)) (ms) {
 
 FUNCTION erand() {
     : a way to sample/peek from RNG
-    erand = nrnran123_negexp(rrr)
+    erand = random_negexp(rrr)
 }
 
 PROCEDURE next_invl() {

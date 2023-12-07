@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <map>
+#include <string>
 
 /**
  * \dir
@@ -154,6 +156,8 @@ typedef struct Symbol {
     char* name;
 } Symbol;
 #define SYM0 (Symbol*) 0
+
+extern std::map<std::string, const char*> extdef_rand;
 
 /*
  * this is convenient way to get the element pointer if you know what type

@@ -44,7 +44,7 @@ Description:
            POINT_PROCESS ... 
            POINTER pointer1, ...
            BBCOREPOINTER bbcore1, ...
-           RANDOM123 ranvar1, ...
+           RANDOM ranvar1, ...
            EXTERNAL external1, ...
            THREADSAFE
            REPRESENTS ontology_id
@@ -411,16 +411,16 @@ Description:
 
     ``TODO``: Add description (?) and existing example mod file (provided by link)
 
-.. _nmodlrandom123:
+.. _nmodlrandom:
 
-RANDOM123
-#########
+RANDOM
+######
 
 Description:
     .. code-block::
 
         NEURON {
-            RANDOM123 ranvar1, ...
+            RANDOM ranvar1, ...
         }
 
     These names refer to random variable streams that are automatically
@@ -447,15 +447,14 @@ Description:
     construction, it is recommended for parallel simulation reproducibility that triplets be algorithmically specified
     at the interpreter level. And see :meth:`Random.Random123_globalindex`.
 
-    At present, the list of nrnran123 methods available for use within mod files (outside of VERBATIM blocks) are:
+    At present, the list of random_... methods available for use within mod files (outside of VERBATIM blocks) are:
 
-        * nrnran123_setseq(ranvar1, uint32_value, which0to4)
-        * nrnran123_setids(ranvar1, id1_uint32, id2_uint32, id3_uint32)
-        * x = nrnran123_negexp(ranvar1) : mean 1.0 -- min value is 2.3283064e-10, max is 22.18071
-        * x = nrnran123_norm(ranvar1) : mean 1.0, std 1.0
-        * x = nrnran123_dblpick(ranvar1) : uniform 0 to 1 -- minimum value is 2.3283064e-10 and max value is 1-min
-        * x = nrnran123_ipick(ranvar1) : range 0 to 2^32-1
-        * x = nrnran123_uniform(ranvar1, min, max)
+        * random_setseq(ranvar1, uint34_value)
+        * random_setids(ranvar1, id1_uint32, id2_uint32, id3_uint32)
+        * x = random_negexp(ranvar1) : mean 1.0 -- min value is 2.3283064e-10, max is 22.18071
+        * x = random_norm(ranvar1) : mean 1.0, std 1.0
+        * x = random_ipick(ranvar1) : range 0 to 2^32-1
+        * x = random_uniform(ranvar1) : uniform 0 to 1 -- minimum value is 2.3283064e-10 and max value is 1-min
   
 
 EXTERNAL

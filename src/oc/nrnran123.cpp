@@ -64,6 +64,11 @@ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     s->r = philox4x32(s->c, k);
 }
 
+void nrnran123_setseq1(nrnran123_State* s, double seq4which) {
+    s->c.v[0] = (uint32_t) (seq4which / 4.0);
+    s->which_ = char(seq4which - 4.0 * s->c.v[0]);
+}
+
 void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
     *id1 = s->c.v[2];
     *id2 = s->c.v[3];
