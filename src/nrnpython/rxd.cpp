@@ -1430,7 +1430,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 
     if (_membrane_flux) {
         for (i = 0; i < react->icsN; i++)
-            bzero(react->flux[i], react->num_regions * sizeof(double));
+            memset(react->flux[i], 0, react->num_regions * sizeof(double));
     }
     for (segment = 0; segment < react->num_segments; segment++) {
         for (i = 0; i < react->num_species; i++) {
@@ -1578,8 +1578,8 @@ void solve_reaction(ICSReactions* react,
         }
 
         if (react->num_ecs_species > 0) {
-            bzero(react->ecs_result, react->num_ecs_species * sizeof(double));
-            bzero(react->ecs_result_dx, react->num_ecs_species * sizeof(double));
+            memset(react->ecs_result, 0, react->num_ecs_species * sizeof(double));
+            memset(react->ecs_result_dx, 0, react->num_ecs_species * sizeof(double));
         }
 
         for (i = 0; i < react->num_mult; i++) {
