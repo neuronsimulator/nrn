@@ -65,9 +65,10 @@ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
 }
 
 void nrnran123_setseq1(nrnran123_State* s, double seq4which) {
-    double x = floor(seq4which / 4.0);
-    char which = char(seq4which - 4.0 * x);
-    uint32_t seq = uint32_t(x);
+    // at least 64 bits even on 32 bit machine (could be more)
+    unsigned long long x = ((unsigned long long) seq4which) & 0X3ffffffff;
+    char which = x & 0X3;
+    uint32_t seq = x >> 2;
     nrnran123_setseq(s, seq, which);
 }
 

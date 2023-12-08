@@ -88,7 +88,7 @@ for m in mlist:
 
 assert z.count() == 0
 
-chk("results", results)
+chk("results", results, tol=1e-12)
 
 # test access to hoc cell class
 h(
