@@ -1,3 +1,5 @@
+load_file("expect_err.hoc")
+
 objref rt, z
 z = new List("NMODLRandom")
 proc assert() {
@@ -41,3 +43,30 @@ for (x,0) {
 }
 objref r
 assert(z.count == 0)
+
+// test syntax in a cell type
+begintemplate Cell
+public cable, rt
+create cable
+objref rt
+proc init() {
+  create cable
+  cable {
+    nseg = 3
+    insert rantst
+  }
+  rt = new RanTst()
+}
+endtemplate Cell
+
+objref cell
+cell = new Cell()
+cell.cable print ran2_rantst
+cell.cable print ran2_rantst(.1)
+expect_err("cell.cable print ran2_rantst(.1, .2)")
+print cell.cable.ran2_rantst
+print cell.cable.ran2_rantst(.1)
+expect_err("print cell.cable.ran2_rantst(.1, .2)")
+cell.cable.ran2_rantst(.1).set_seq(10).set_ids(8,9,10)
+cell.cable.ran2_rantst(.5).set_seq(11).set_ids(1,2,3)
+assert( cell.cable.ran2_rantst(.1).get_seq() == 10)

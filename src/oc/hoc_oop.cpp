@@ -948,6 +948,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
             hoc_execerror(sym->name, "section property can't have argument");
         }
         hoc_pushs(sym);
+    } else if (sym->type == RANGEOBJ) {
+        // must return NMODLObject on stack
+        assert(sym->subtype == NMODLRANDOM);  // the only possibility at the moment
+        double x{0.5};
+        if (narg) {
+            if (narg > 1) {
+                hoc_execerr_ext("%s range object can have only one arc length parameter",
+                                sym->name);
+            }
+            x = xpop();
+        }
+        Section* sec{nrn_sec_pop()};
+        auto const i = node_index(sec, x);
+        Prop* m = nrn_mechanism_check(sym->u.rng.type, sec, i);
+        Object* ob = nrn_nmodlrandom_wrap(m, sym);
+        hoc_push_object(ob);
     } else {
         hoc_execerror(sym->name, "suffix not a range variable or section property");
     }
