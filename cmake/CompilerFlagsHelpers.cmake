@@ -62,6 +62,8 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
     set(CMAKE_${COMPILER_LANGUAGE}_STACK_PROTECTION "-fstack-protector")
     set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDENT "-fPIC")
     set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "-ftree-vectorize")
+    set(CMAKE_${COMPILER_LANGUAGE}_UNSAFE_MATH
+        "-ffinite-math-only -fno-math-errno -funsafe-math-optimizations -fno-associative-math")
     set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-Wno-unknown-pragmas")
 
     if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_VERSION VERSION_GREATER "4.7.0")
