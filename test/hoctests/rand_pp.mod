@@ -1,5 +1,5 @@
 NEURON {
-    ARTIFICIAL_CELL RanArt
+    POINT_PROCESS RanPP
     RANGE x1, x2
     RANDOM ran1, ran2
 }

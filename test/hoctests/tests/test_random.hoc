@@ -9,7 +9,7 @@ proc assert() {
 }
 
 // ARTIFICIAL_CELL syntax tests (same as POINT_PROCESS wrt RANDOM)
-rt = new RanTst()
+rt = new RanArt()
 
 print rt.ran1
 assert(z.count == 0)
@@ -54,8 +54,8 @@ proc init() {
   cable {
     nseg = 3
     insert rantst
+    rt = new RanPP(.1)
   }
-  rt = new RanTst()
 }
 endtemplate Cell
 
@@ -70,3 +70,10 @@ expect_err("print cell.cable.ran2_rantst(.1, .2)")
 cell.cable.ran2_rantst(.1).set_seq(10).set_ids(8,9,10)
 cell.cable.ran2_rantst(.5).set_seq(11).set_ids(1,2,3)
 assert( cell.cable.ran2_rantst(.1).get_seq() == 10)
+
+objref rp
+rp = cell.rt
+objref cell // but rp is still a reference to unlocated point process.
+expect_err("rp.ran1")
+
+

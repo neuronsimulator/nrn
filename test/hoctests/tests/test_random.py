@@ -11,7 +11,7 @@ set_quiet(False)
 z = h.List("NMODLRandom")
 
 # ARTIFICIAL_CELL syntax tests
-rt = h.RanTst()
+rt = h.RanArt()
 
 print(rt.ran1)
 assert z.count() == 0
@@ -49,7 +49,7 @@ for r in nr:
 del nr, r
 assert z.count() == 0
 
-rt = h.RanTst()
+rt = h.RanArt()
 r1 = rt.ran1
 # wrap around at end
 assert r1.set_seq(2**34 - 1).get_seq() == (2**34 - 1)
@@ -62,7 +62,7 @@ expect_err("r1.uniform()")
 del r1
 
 # test the mod random_... functions
-rt = h.RanTst()
+rt = h.RanArt()
 cable = h.Section(name="cable")
 cable.nseg = 3
 cable.insert("rantst")
@@ -103,7 +103,7 @@ proc init() {
     nseg = 3
     insert rantst
   }
-  rt = new RanTst() 
+  rt = new RanPP() 
 }
 endtemplate Cell
 """
@@ -112,5 +112,9 @@ cell = h.Cell()
 cell.cable(0.1).ran2_rantst.set_seq(10).set_ids(8, 9, 10)
 cell.cable(0.5).ran2_rantst.set_seq(11).set_ids(1, 2, 3)
 assert cell.cable(0.1).rantst.ran2.get_seq() == 10
+
+rp = cell.rt
+del cell
+expect_err("rp.ran2")
 
 chk.save()

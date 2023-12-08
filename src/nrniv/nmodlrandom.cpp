@@ -117,7 +117,6 @@ Object* nrn_pntproc_nmodlrandom_wrap(void* v, Symbol* sym) {
     auto* const pnt = static_cast<Point_process*>(v);
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
-            // is this necessary if, instead, there is a try...
             hoc_warning("point process not located in a section", nullptr);
             nrn_inpython_ = 2;
             return {};
