@@ -97,8 +97,8 @@ jobs:
         if: startsWith(matrix.os, 'macOS')
         run: |
           brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
-          brew unlink mpich
-          brew install openmpi
+          #brew unlink mpich
+          #brew install openmpi
           brew install --cask xquartz
           echo /usr/local/opt/flex/bin:/usr/local/opt/bison/bin >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
