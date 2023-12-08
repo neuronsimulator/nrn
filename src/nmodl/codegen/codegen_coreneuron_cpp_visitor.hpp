@@ -422,13 +422,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print call to internal or external function
-     * \param node The AST node representing a function call
-     */
-    void print_function_call(const ast::FunctionCall& node) override;
-
-
-    /**
      * Print top level (global scope) verbatim blocks
      */
     void print_top_verbatim_blocks();
@@ -951,21 +944,21 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      * Print call to \c net\_send
      * \param node The AST node representing the function call
      */
-    void print_net_send_call(const ast::FunctionCall& node);
+    void print_net_send_call(const ast::FunctionCall& node) override;
 
 
     /**
      * Print call to net\_move
      * \param node The AST node representing the function call
      */
-    void print_net_move_call(const ast::FunctionCall& node);
+    void print_net_move_call(const ast::FunctionCall& node) override;
 
 
     /**
      * Print call to net\_event
      * \param node The AST node representing the function call
      */
-    void print_net_event_call(const ast::FunctionCall& node);
+    void print_net_event_call(const ast::FunctionCall& node) override;
 
 
     /**

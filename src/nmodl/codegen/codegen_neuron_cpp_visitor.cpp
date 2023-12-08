@@ -90,12 +90,6 @@ void CodegenNeuronCppVisitor::print_atomic_reduction_pragma() {
 
 
 /// TODO: Edit for NEURON
-void CodegenNeuronCppVisitor::print_function_call(const FunctionCall& node) {
-    return;
-}
-
-
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_function_prototypes() {
     if (info.functions.empty() && info.procedures.empty()) {
         return;
@@ -730,6 +724,18 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_mechanism_register();
     print_namespace_end();
     codegen = false;
+}
+
+void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node) {
+    throw std::runtime_error("Not implemented.");
+}
+
+void CodegenNeuronCppVisitor::print_net_move_call(const ast::FunctionCall& node) {
+    throw std::runtime_error("Not implemented.");
+}
+
+void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& node) {
+    throw std::runtime_error("Not implemented.");
 }
 
 
