@@ -44,7 +44,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-12, ubuntu-20.04]
+        os: [ macOS-12]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -97,8 +97,8 @@ jobs:
         if: startsWith(matrix.os, 'macOS')
         run: |
           brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
-          #brew unlink mpich
-          #brew install openmpi
+          brew unlink mpich
+          brew install openmpi
           brew install --cask xquartz
           echo /usr/local/opt/flex/bin:/usr/local/opt/bison/bin >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
@@ -218,6 +218,9 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}/nrn
         run:  |
+          # Remove ccache
+          rm -rf ${CCACHE_DIR}
+
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
             export ${MATRIX_EVAL};
