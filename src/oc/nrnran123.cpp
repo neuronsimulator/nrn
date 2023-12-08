@@ -65,8 +65,10 @@ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
 }
 
 void nrnran123_setseq1(nrnran123_State* s, double seq4which) {
-    s->c.v[0] = (uint32_t) (seq4which / 4.0);
-    s->which_ = char(seq4which - 4.0 * s->c.v[0]);
+    double x = floor(seq4which / 4.0);
+    char which = char(seq4which - 4.0 * x);
+    uint32_t seq = uint32_t(x);
+    nrnran123_setseq(s, seq, which);
 }
 
 void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
@@ -102,6 +104,10 @@ uint32_t nrnran123_ipick(nrnran123_State* s) {
 
 double nrnran123_dblpick(nrnran123_State* s) {
     return nrnran123_uint2dbl(nrnran123_ipick(s));
+}
+
+double nrnran123_uniform(nrnran123_State* s) {
+    return nrnran123_dblpick(s);
 }
 
 double nrnran123_uniform(nrnran123_State* s, double a, double b) {

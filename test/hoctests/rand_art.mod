@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX rantst
+    ARTIFICIAL_CELL RanTst
     RANGE x1, x2
     RANDOM ran1, ran2
 }

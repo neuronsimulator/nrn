@@ -579,6 +579,15 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
+  For a list of all the cpp files changed in a pull request, consider
+  copy/pasting the ``;`` separated list obtained with
+
+  .. code-block:: shell
+
+     a=`git diff --name-only master | grep '\.cpp'`
+     echo $a | sed 's/ /;/g'
+
+
 NRN_SANITIZERS:STRING=
 ----------------------
   Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
@@ -588,6 +597,11 @@ NRN_SANITIZERS:STRING=
   Note that on macOS it can be a little intricate to combine
   ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
   you attempt this then the CMake code should recommend a solution.
+
+  Note: the ``address`` sanitizer also prints leak infornation when a
+  launch exits. That can be avoided with
+
+  ``export ASAN_OPTIONS=detect_leaks=0``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================

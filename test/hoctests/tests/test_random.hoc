@@ -1,4 +1,4 @@
-objref ns, z
+objref rt, z
 z = new List("NMODLRandom")
 proc assert() {
   if ($1 == 0) {
@@ -6,20 +6,20 @@ proc assert() {
   }
 }
 
-// POINT_PROCESS syntax tests
-ns = new NetStimRNG()
+// ARTIFICIAL_CELL syntax tests (same as POINT_PROCESS wrt RANDOM)
+rt = new RanTst()
 
-print ns.rrr
+print rt.ran1
 assert(z.count == 0)
 
-assert(ns.rrr.set_seq(5).set_ids(7,8,9).get_seq() == 5)
-assert(ns.rrr.get_ids().x[2] == 9)
+assert(rt.ran1.set_seq(5).set_ids(7,8,9).get_seq() == 5)
+assert(rt.ran1.get_ids().x[2] == 9)
 assert(z.count == 0)
 
 objref r
-r = ns.rrr
+r = rt.ran1
 r.set_seq(25)
-assert(ns.rrr.get_seq() == 25)
+assert(rt.ran1.get_seq() == 25)
 assert(z.count == 1)
 assert(r.get_ids().x[1] == 8)
 objref r
@@ -31,13 +31,13 @@ nseg=3
 insert rantst
 finitialize(-70)
 
-r =  cable.rrr_rantst
-assert(cable.rrr_rantst.set_seq(10).get_seq() == 10)
-assert(cable.rrr_rantst(.5).get_ids().eq(r.get_ids()))
+r =  cable.ran1_rantst
+assert(cable.ran1_rantst.set_seq(10).get_seq() == 10)
+assert(cable.ran1_rantst(.5).get_ids().eq(r.get_ids()))
 
 for (x,0) {
-  r = cable.rrr_rantst(x)
-  assert(rrr_rantst(x).get_ids().eq(r.get_ids()))
+  r = cable.ran1_rantst(x)
+  assert(ran1_rantst(x).get_ids().eq(r.get_ids()))
 }
 objref r
 assert(z.count == 0)

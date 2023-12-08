@@ -59,6 +59,7 @@ extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1
 extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 extern double nrnran123_normal(nrnran123_State*, double, double);
 
+extern double nrnran123_uniform(nrnran123_State*); /* same as dblpick */
 extern double nrnran123_uniform(nrnran123_State*, double, double);
 
 /* more fundamental (stateless) (though the global index is still used) */

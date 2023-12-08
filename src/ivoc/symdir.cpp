@@ -248,7 +248,7 @@ double* SymDirectory::variable(int index) {
                 return od[sym->u.oboff].pval + array_index(index);
             }
         case RANGEVAR:
-            if (ob && ob->ctemplate->is_point_ && sym->subtype != NMODLRANDOM) {
+            if (ob && ob->ctemplate->is_point_) {
                 return static_cast<double*>(point_process_pointer(
                     (Point_process*) ob->u.this_pointer, sym, array_index(index)));
             }

@@ -62,10 +62,8 @@ static Object** get_ids(void* v) {  // return a Vector of size 3.
 static Object** set_seq(void* v) {  // return this NModlRandom instance
     NMODLRandom* r = (NMODLRandom*) v;
     r->chk();
-    double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
-    uint32_t seq = (uint32_t) (s / 4.);
-    char which = char(s - seq * 4.);
-    nrnran123_setseq(r->r(), seq, which);
+    double seq = *getarg(1);
+    nrnran123_setseq1(r->r(), seq);
     return hoc_temp_objptr(nrn_get_gui_redirect_obj());
 }
 
@@ -75,17 +73,16 @@ static double get_seq(void* v) {  // return the 34 bits (seq*4 + which) as doubl
     uint32_t seq;
     char which;
     nrnran123_getseq(r->r(), &seq, &which);
-    return double(seq * 4 + which);
+    return double(seq) * 4.0 + which;
 }
 
-static double pick(void* v) {
+static double uniform(void* v) {
     NMODLRandom* r = (NMODLRandom*) v;
     r->chk();
-    // there is a way to call into the mod file to get the right distribution with parameters
-    return nrnran123_uniform(r->r(), 0.0, 1.0);
+    return nrnran123_uniform(r->r());
 }
 
-static Member_func members[] = {{"get_seq", get_seq}, {"pick", pick}, {nullptr, nullptr}};
+static Member_func members[] = {{"get_seq", get_seq}, {"uniform", uniform}, {nullptr, nullptr}};
 
 static Member_ret_obj_func retobj_members[] = {{"set_ids", set_ids},
                                                {"get_ids", get_ids},

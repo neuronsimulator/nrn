@@ -451,10 +451,14 @@ Description:
 
         * random_setseq(ranvar1, uint34_value)
         * random_setids(ranvar1, id1_uint32, id2_uint32, id3_uint32)
-        * x = random_negexp(ranvar1) : mean 1.0 -- min value is 2.3283064e-10, max is 22.18071
-        * x = random_norm(ranvar1) : mean 1.0, std 1.0
-        * x = random_ipick(ranvar1) : range 0 to 2^32-1
         * x = random_uniform(ranvar1) : uniform 0 to 1 -- minimum value is 2.3283064e-10 and max value is 1-min
+        * x = random_uniform(ranvar1, min, max)
+        * x = random_negexp(ranvar1) : mean 1.0 -- min value is 2.3283064e-10, max is 22.18071
+        * x = random_negexp(ranvar1, mean)
+        * x = random_normal(ranvar1) : mean 1.0, std 1.0
+        * x = random_normal(ranvar1, mean, std)
+        * x = random_ipick(ranvar1) : range 0 to 2^32-1
+
   
 
 EXTERNAL

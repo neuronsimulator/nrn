@@ -833,13 +833,13 @@ NMODLRandom Class
 
 ----
 
-.. method:: NMODLRandom.pick
+.. method:: NMODLRandom.uniform
 
     Syntax:
-        ``x = r.pick()``
+        ``x = r.uniform()``
 
     Description:
-        Returns as a float, the uniform random value in the range 0 to 1 at the current sequence
+        Returns as a float, the uniform random value in the open interval 0 to 1 at the current sequence
         position of the nrnran123_State (the current sequence position is then incremented by 1)
 
 
