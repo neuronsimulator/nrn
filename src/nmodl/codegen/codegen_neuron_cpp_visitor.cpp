@@ -100,9 +100,6 @@ void CodegenNeuronCppVisitor::print_function_prototypes() {
     if (info.functions.empty() && info.procedures.empty()) {
         return;
     }
-    codegen = true;
-    /// TODO: Fill in
-    codegen = false;
 }
 
 
@@ -115,9 +112,7 @@ void CodegenNeuronCppVisitor::print_function_or_procedure(const ast::Block& node
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_function_procedure_helper(const ast::Block& node) {
-    codegen = true;
-    /// TODO: Fill in
-    codegen = false;
+    return;
 }
 
 
@@ -501,7 +496,6 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
 
 
 void CodegenNeuronCppVisitor::print_nrn_jacob() {
-    codegen = true;
     printer->add_newline(2);
     printer->add_line("/** nrn_jacob function */");
 
@@ -509,8 +503,6 @@ void CodegenNeuronCppVisitor::print_nrn_jacob() {
         "static void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
         "_nt, Memb_list* _ml_arg, int _type) {{}}",
         method_name(naming::NRN_JACOB_METHOD));
-
-    codegen = false;
 }
 
 
@@ -601,7 +593,6 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
         return;
     }
 
-    codegen = true;
     printer->add_newline(2);
 
     printer->fmt_line(
@@ -610,8 +601,6 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
         method_name(naming::NRN_CUR_METHOD));
 
     /// TODO: Fill in
-
-    codegen = false;
 }
 
 
