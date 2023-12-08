@@ -1123,6 +1123,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_mutex_lock(const ast::MutexLock& node) override;
     void visit_mutex_unlock(const ast::MutexUnlock& node) override;
 
+    std::string compute_method_name(BlockType type) const;
 
   public:
     /** Setup the target backend code generator

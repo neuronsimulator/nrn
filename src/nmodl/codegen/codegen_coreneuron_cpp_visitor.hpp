@@ -371,13 +371,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Return the name of main compute kernels
-     * \param type A block type
-     */
-    virtual std::string compute_method_name(BlockType type) const;
-
-
-    /**
      * Instantiate global var instance
      *
      * For C++ code generation this is empty

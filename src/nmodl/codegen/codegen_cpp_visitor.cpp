@@ -911,6 +911,28 @@ void CodegenCppVisitor::setup(const Program& node) {
     rename_function_arguments();
 }
 
+std::string CodegenCppVisitor::compute_method_name(BlockType type) const {
+    if (type == BlockType::Initial) {
+        return method_name(naming::NRN_INIT_METHOD);
+    }
+    if (type == BlockType::Constructor) {
+        return method_name(naming::NRN_CONSTRUCTOR_METHOD);
+    }
+    if (type == BlockType::Destructor) {
+        return method_name(naming::NRN_DESTRUCTOR_METHOD);
+    }
+    if (type == BlockType::State) {
+        return method_name(naming::NRN_STATE_METHOD);
+    }
+    if (type == BlockType::Equation) {
+        return method_name(naming::NRN_CUR_METHOD);
+    }
+    if (type == BlockType::Watch) {
+        return method_name(naming::NRN_WATCH_CHECK_METHOD);
+    }
+    throw std::logic_error("compute_method_name not implemented");
+}
+
 
 void CodegenCppVisitor::visit_program(const Program& node) {
     setup(node);

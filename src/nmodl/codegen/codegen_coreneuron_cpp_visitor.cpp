@@ -497,29 +497,6 @@ void CodegenCoreneuronCppVisitor::print_abort_routine() const {
 }
 
 
-std::string CodegenCoreneuronCppVisitor::compute_method_name(BlockType type) const {
-    if (type == BlockType::Initial) {
-        return method_name(naming::NRN_INIT_METHOD);
-    }
-    if (type == BlockType::Constructor) {
-        return method_name(naming::NRN_CONSTRUCTOR_METHOD);
-    }
-    if (type == BlockType::Destructor) {
-        return method_name(naming::NRN_DESTRUCTOR_METHOD);
-    }
-    if (type == BlockType::State) {
-        return method_name(naming::NRN_STATE_METHOD);
-    }
-    if (type == BlockType::Equation) {
-        return method_name(naming::NRN_CUR_METHOD);
-    }
-    if (type == BlockType::Watch) {
-        return method_name(naming::NRN_WATCH_CHECK_METHOD);
-    }
-    throw std::logic_error("compute_method_name not implemented");
-}
-
-
 void CodegenCoreneuronCppVisitor::print_global_var_struct_decl() {
     printer->add_line(global_struct(), ' ', global_struct_instance(), ';');
 }
