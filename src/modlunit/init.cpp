@@ -79,6 +79,7 @@ static struct { /* Keywords */
                 {"READ", READ},
                 {"WRITE", WRITE},
                 {"RANGE", RANGE},
+                {"RANDOM", RANDOM},
                 {"VALENCE", VALENCE},
                 {"CHARGE", VALENCE},
                 {"GLOBAL", GLOBAL},

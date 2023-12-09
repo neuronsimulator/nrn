@@ -767,6 +767,7 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pytest_coreneuron/unitstest.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
