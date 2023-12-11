@@ -89,7 +89,7 @@ char* prepare_args(int& argc, char**& argv, std::string& args) {
     free(first);
 
     // now build char*argv
-    argv = new char*[argc];
+    argv = new char*[argc+1];
     first = strdup(args.c_str());
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
@@ -97,6 +97,7 @@ char* prepare_args(int& argc, char**& argv, std::string& args) {
         token = strtok(nullptr, sep);
     }
 
+    argv[argc] = nullptr;
     // return actual data to be freed
     return first;
 }
