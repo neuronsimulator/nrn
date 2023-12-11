@@ -100,6 +100,7 @@ jobs:
           # install Python outside of brew; See actions/setup-python#577 and BlueBrain/libsonata/pull/317
           brew list -1 | grep python | while read formula; do brew unlink $formula; brew link --overwrite $formula; done
           brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
+          # We use both for dynamic mpi in nrn
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -216,14 +217,6 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
-      - name: Use MPICH on MacOS-13
-        if: startsWith(matrix.os, 'macOS-13')
-        run: |
-          # TODO: do not use problematic openmpi on macos-13
-          #       see https://github.com/open-mpi/ompi/issues/10986
-          brew unlink openmpi
-          brew link mpich
-
       - name: Build and Test
         id: build-test
         shell: bash
@@ -246,9 +239,6 @@ jobs:
             # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
             export TMPDIR=/tmp/$GITHUB_JOB
             mkdir -p $TMPDIR
-
-            # TODO: macOS ccache is causing random build failures
-            rm -rf ${CCACHE_DIR}
           fi
 
           # Python setup
