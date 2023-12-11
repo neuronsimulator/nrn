@@ -216,14 +216,6 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
-      - name: Use MPICH on MacOS-13
-        if: startsWith(matrix.os, 'macOS-13')
-        run: |
-          # TODO: do not use problematic openmpi on macos-13
-          #       see https://github.com/open-mpi/ompi/issues/10986
-          brew unlink openmpi
-          brew link mpich
-
       - name: Build and Test
         id: build-test
         shell: bash
@@ -247,8 +239,10 @@ jobs:
             export TMPDIR=/tmp/$GITHUB_JOB
             mkdir -p $TMPDIR
 
-            # TODO: macOS ccache is causing random build failures
-            rm -rf ${CCACHE_DIR}
+            # use workaround from https://github.com/open-mpi/ompi/issues/10986
+            export OMPI_MCA_pml=cm
+            export OMPI_MCA_mtl=ofi
+            export OMPI_MCA_mtl_ofi_provider_include=psm2
           fi
 
           # Python setup
