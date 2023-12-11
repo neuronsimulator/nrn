@@ -82,10 +82,8 @@ jobs:
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
-              # TODO: removing -DNMODL_SANITIZERS=address with MacOS-13 as it's failing
-              #       in OpenMPI initialization
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
       fail-fast: false
 
