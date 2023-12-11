@@ -254,12 +254,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Flag to indicate if visitor should print the visited nodes
-     */
-    bool codegen = false;
-
-
-    /**
      * Variable name should be converted to instance name (but not for function arguments)
      */
     bool enable_variable_name_lookup = true;

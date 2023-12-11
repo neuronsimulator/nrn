@@ -476,7 +476,6 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
 
 
 void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
-    codegen = true;
     printer->add_newline(2);
     printer->add_line("/** initialize channel */");
 
@@ -484,8 +483,6 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
         "static void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* "
         "_ml_arg, int _type) {{}}",
         method_name(naming::NRN_INIT_METHOD));
-
-    codegen = false;
 }
 
 
@@ -532,7 +529,7 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
     if (!nrn_state_required()) {
         return;
     }
-    codegen = true;
+
     printer->add_newline(2);
 
     printer->fmt_line(
@@ -541,8 +538,6 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
         method_name(naming::NRN_STATE_METHOD));
 
     /// TODO: Fill in
-
-    codegen = false;
 }
 
 
@@ -708,7 +703,6 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_codegen_routines() {
-    codegen = true;
     print_backend_info();
     print_headers_include();
     print_macro_definitions();
@@ -723,7 +717,6 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_sdlists_init(true);
     print_mechanism_register();
     print_namespace_end();
-    codegen = false;
 }
 
 void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node) {

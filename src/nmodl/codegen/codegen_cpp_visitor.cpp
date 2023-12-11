@@ -384,9 +384,6 @@ extern const std::regex regex_special_chars{R"([-[\]{}()*+?.,\^$|#\s])"};
 
 
 void CodegenCppVisitor::visit_string(const String& node) {
-    if (!codegen) {
-        return;
-    }
     std::string name = node.eval();
     if (enable_variable_name_lookup) {
         name = get_variable_name(name);
@@ -396,42 +393,27 @@ void CodegenCppVisitor::visit_string(const String& node) {
 
 
 void CodegenCppVisitor::visit_integer(const Integer& node) {
-    if (!codegen) {
-        return;
-    }
     const auto& value = node.get_value();
     printer->add_text(std::to_string(value));
 }
 
 
 void CodegenCppVisitor::visit_float(const Float& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(format_float_string(node.get_value()));
 }
 
 
 void CodegenCppVisitor::visit_double(const Double& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(format_double_string(node.get_value()));
 }
 
 
 void CodegenCppVisitor::visit_boolean(const Boolean& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(std::to_string(static_cast<int>(node.eval())));
 }
 
 
 void CodegenCppVisitor::visit_name(const Name& node) {
-    if (!codegen) {
-        return;
-    }
     node.visit_children(*this);
 }
 
@@ -450,9 +432,6 @@ void CodegenCppVisitor::visit_prime_name(const PrimeName& /* node */) {
  * \todo : Validate how @ is being handled in neuron implementation
  */
 void CodegenCppVisitor::visit_var_name(const VarName& node) {
-    if (!codegen) {
-        return;
-    }
     const auto& name = node.get_name();
     const auto& at_index = node.get_at();
     const auto& index = node.get_index();
@@ -472,9 +451,6 @@ void CodegenCppVisitor::visit_var_name(const VarName& node) {
 
 
 void CodegenCppVisitor::visit_indexed_name(const IndexedName& node) {
-    if (!codegen) {
-        return;
-    }
     node.get_name()->accept(*this);
     printer->add_text("[");
     printer->add_text("static_cast<int>(");
@@ -485,18 +461,12 @@ void CodegenCppVisitor::visit_indexed_name(const IndexedName& node) {
 
 
 void CodegenCppVisitor::visit_local_list_statement(const LocalListStatement& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(local_var_type(), ' ');
     print_vector_elements(node.get_variables(), ", ");
 }
 
 
 void CodegenCppVisitor::visit_if_statement(const IfStatement& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text("if (");
     node.get_condition()->accept(*this);
     printer->add_text(") ");
@@ -510,9 +480,6 @@ void CodegenCppVisitor::visit_if_statement(const IfStatement& node) {
 
 
 void CodegenCppVisitor::visit_else_if_statement(const ElseIfStatement& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(" else if (");
     node.get_condition()->accept(*this);
     printer->add_text(") ");
@@ -521,9 +488,6 @@ void CodegenCppVisitor::visit_else_if_statement(const ElseIfStatement& node) {
 
 
 void CodegenCppVisitor::visit_else_statement(const ElseStatement& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(" else ");
     node.visit_children(*this);
 }
@@ -538,9 +502,6 @@ void CodegenCppVisitor::visit_while_statement(const WhileStatement& node) {
 
 
 void CodegenCppVisitor::visit_from_statement(const ast::FromStatement& node) {
-    if (!codegen) {
-        return;
-    }
     auto name = node.get_node_name();
     const auto& from = node.get_from();
     const auto& to = node.get_to();
@@ -562,9 +523,6 @@ void CodegenCppVisitor::visit_from_statement(const ast::FromStatement& node) {
 
 
 void CodegenCppVisitor::visit_paren_expression(const ParenExpression& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text("(");
     node.get_expression()->accept(*this);
     printer->add_text(")");
@@ -572,9 +530,6 @@ void CodegenCppVisitor::visit_paren_expression(const ParenExpression& node) {
 
 
 void CodegenCppVisitor::visit_binary_expression(const BinaryExpression& node) {
-    if (!codegen) {
-        return;
-    }
     auto op = node.get_op().eval();
     const auto& lhs = node.get_lhs();
     const auto& rhs = node.get_rhs();
@@ -593,17 +548,11 @@ void CodegenCppVisitor::visit_binary_expression(const BinaryExpression& node) {
 
 
 void CodegenCppVisitor::visit_binary_operator(const BinaryOperator& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(node.eval());
 }
 
 
 void CodegenCppVisitor::visit_unary_operator(const UnaryOperator& node) {
-    if (!codegen) {
-        return;
-    }
     printer->add_text(" " + node.eval());
 }
 
@@ -614,26 +563,16 @@ void CodegenCppVisitor::visit_unary_operator(const UnaryOperator& node) {
  * false. Hence we visit children even if code generation is false.
  */
 void CodegenCppVisitor::visit_statement_block(const StatementBlock& node) {
-    if (!codegen) {
-        node.visit_children(*this);
-        return;
-    }
     print_statement_block(node);
 }
 
 
 void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
-    if (!codegen) {
-        return;
-    }
     print_function_call(node);
 }
 
 
 void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
-    if (!codegen) {
-        return;
-    }
     const auto& text = node.get_statement()->eval();
     const auto& result = process_verbatim_text(text);
 

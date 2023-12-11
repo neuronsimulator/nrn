@@ -515,7 +515,7 @@ void CodegenCoreneuronCppVisitor::print_top_verbatim_blocks() {
 
     printer->add_newline(2);
     printer->add_line("using namespace coreneuron;");
-    codegen = true;
+
     printing_top_verbatim_blocks = true;
 
     for (const auto& block: info.top_blocks) {
@@ -526,7 +526,7 @@ void CodegenCoreneuronCppVisitor::print_top_verbatim_blocks() {
     }
 
     printing_top_verbatim_blocks = false;
-    codegen = false;
+
     print_namespace_start();
 }
 
@@ -535,7 +535,7 @@ void CodegenCoreneuronCppVisitor::print_function_prototypes() {
     if (info.functions.empty() && info.procedures.empty()) {
         return;
     }
-    codegen = true;
+
     printer->add_newline(2);
     for (const auto& node: info.functions) {
         print_function_declaration(*node, node->get_node_name());
@@ -547,7 +547,6 @@ void CodegenCoreneuronCppVisitor::print_function_prototypes() {
         printer->add_text(';');
         printer->add_newline();
     }
-    codegen = false;
 }
 
 
@@ -832,7 +831,6 @@ void CodegenCoreneuronCppVisitor::print_function_or_procedure(const ast::Block& 
 
 
 void CodegenCoreneuronCppVisitor::print_function_procedure_helper(const ast::Block& node) {
-    codegen = true;
     auto name = node.get_node_name();
 
     if (info.function_uses_table(name)) {
@@ -843,8 +841,6 @@ void CodegenCoreneuronCppVisitor::print_function_procedure_helper(const ast::Blo
     } else {
         print_function_or_procedure(node, name);
     }
-
-    codegen = false;
 }
 
 
@@ -2486,7 +2482,6 @@ void CodegenCoreneuronCppVisitor::print_global_function_common_code(
 }
 
 void CodegenCoreneuronCppVisitor::print_nrn_init(bool skip_init_check) {
-    codegen = true;
     printer->add_newline(2);
     printer->add_line("/** initialize channel */");
 
@@ -2559,13 +2554,10 @@ void CodegenCoreneuronCppVisitor::print_nrn_init(bool skip_init_check) {
     if (skip_init_check) {
         printer->pop_block();
     }
-    codegen = false;
 }
 
 void CodegenCoreneuronCppVisitor::print_before_after_block(const ast::Block* node,
                                                            size_t block_id) {
-    codegen = true;
-
     std::string ba_type;
     std::shared_ptr<ast::BABlock> ba_block;
 
@@ -2616,8 +2608,6 @@ void CodegenCoreneuronCppVisitor::print_before_after_block(const ast::Block* nod
     printer->pop_block();
     printer->pop_block();
     print_kernel_data_present_annotation_block_end();
-
-    codegen = false;
 }
 
 void CodegenCoreneuronCppVisitor::print_nrn_constructor() {
@@ -2645,12 +2635,10 @@ void CodegenCoreneuronCppVisitor::print_nrn_destructor() {
 
 
 void CodegenCoreneuronCppVisitor::print_functors_definitions() {
-    codegen = true;
     for (const auto& functor_name: info.functor_names) {
         printer->add_newline(2);
         print_functor_definition(*functor_name.first);
     }
-    codegen = false;
 }
 
 
@@ -2671,7 +2659,7 @@ void CodegenCoreneuronCppVisitor::print_watch_activate() {
     if (info.watch_statements.empty()) {
         return;
     }
-    codegen = true;
+
     printer->add_newline(2);
     auto inst = fmt::format("{}* inst", instance_struct());
 
@@ -2708,7 +2696,6 @@ void CodegenCoreneuronCppVisitor::print_watch_activate() {
         printer->pop_block();
     }
     printer->pop_block();
-    codegen = false;
 }
 
 
@@ -2720,7 +2707,7 @@ void CodegenCoreneuronCppVisitor::print_watch_check() {
     if (info.watch_statements.empty()) {
         return;
     }
-    codegen = true;
+
     printer->add_newline(2);
     printer->add_line("/** routine to check watch activation */");
     print_global_function_common_code(BlockType::Watch);
@@ -2795,7 +2782,6 @@ void CodegenCoreneuronCppVisitor::print_watch_check() {
     print_send_event_move();
     print_kernel_data_present_annotation_block_end();
     printer->pop_block();
-    codegen = false;
 }
 
 
@@ -2970,7 +2956,6 @@ void CodegenCoreneuronCppVisitor::print_net_init() {
     // rename net_receive arguments used in the initial block of net_receive
     rename_net_receive_arguments(*info.net_receive_node, *node);
 
-    codegen = true;
     printing_net_init = true;
     auto args = "Point_process* pnt, int weight_index, double flag";
     printer->add_newline(2);
@@ -2990,7 +2975,6 @@ void CodegenCoreneuronCppVisitor::print_net_init() {
         }
     }
     printer->pop_block();
-    codegen = false;
     printing_net_init = false;
 }
 
@@ -3132,7 +3116,7 @@ void CodegenCoreneuronCppVisitor::print_net_receive_kernel() {
     if (!net_receive_required()) {
         return;
     }
-    codegen = true;
+
     printing_net_receive = true;
     const auto node = info.net_receive_node;
 
@@ -3184,7 +3168,6 @@ void CodegenCoreneuronCppVisitor::print_net_receive_kernel() {
     printer->pop_block();
 
     printing_net_receive = false;
-    codegen = false;
 }
 
 
@@ -3192,7 +3175,7 @@ void CodegenCoreneuronCppVisitor::print_net_receive() {
     if (!net_receive_required()) {
         return;
     }
-    codegen = true;
+
     printing_net_receive = true;
     if (!info.artificial_cell) {
         const auto& name = method_name("net_receive");
@@ -3219,7 +3202,6 @@ void CodegenCoreneuronCppVisitor::print_net_receive() {
         printer->pop_block();
     }
     printing_net_receive = false;
-    codegen = false;
 }
 
 
@@ -3270,9 +3252,9 @@ void CodegenCoreneuronCppVisitor::print_derivimplicit_kernel(const Block& block)
     printer->add_line(slist1);
     printer->add_line(dlist1);
     printer->add_line(dlist2);
-    codegen = true;
+
     print_statement_block(*block.get_statement_block(), false, false);
-    codegen = false;
+
     printer->add_line("int counter = -1;");
             printer->fmt_push_block("for (int i=0; i<{}; i++)", info.num_primes);
             printer->fmt_push_block("if (*deriv{}_advance(thread))", list_num);
@@ -3333,7 +3315,6 @@ void CodegenCoreneuronCppVisitor::print_nrn_state() {
     if (!nrn_state_required()) {
         return;
     }
-    codegen = true;
 
     printer->add_newline(2);
     printer->add_line("/** update state */");
@@ -3377,7 +3358,6 @@ void CodegenCoreneuronCppVisitor::print_nrn_state() {
     print_kernel_data_present_annotation_block_end();
 
     printer->pop_block();
-    codegen = false;
 }
 
 
@@ -3546,7 +3526,6 @@ void CodegenCoreneuronCppVisitor::print_nrn_cur() {
         return;
     }
 
-    codegen = true;
     if (info.conductances.empty()) {
         print_nrn_current(*info.breakpoint_node);
     }
@@ -3572,7 +3551,6 @@ void CodegenCoreneuronCppVisitor::print_nrn_cur() {
 
     print_kernel_data_present_annotation_block_end();
     printer->pop_block();
-    codegen = false;
 }
 
 
@@ -3669,7 +3647,6 @@ void CodegenCoreneuronCppVisitor::print_compute_functions() {
 
 
 void CodegenCoreneuronCppVisitor::print_codegen_routines() {
-    codegen = true;
     print_backend_info();
     print_headers_include();
     print_namespace_begin();
@@ -3692,7 +3669,6 @@ void CodegenCoreneuronCppVisitor::print_codegen_routines() {
     print_check_table_thread_function();
     print_mechanism_register();
     print_namespace_end();
-    codegen = false;
 }
 
 
@@ -3702,9 +3678,6 @@ void CodegenCoreneuronCppVisitor::print_codegen_routines() {
 
 
 void CodegenCoreneuronCppVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) {
-    if (!codegen) {
-        return;
-    }
     printer->fmt_line("{}_{}({});",
                       node.get_node_to_solve()->get_node_name(),
                       info.mod_suffix,
