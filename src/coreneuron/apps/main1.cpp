@@ -89,7 +89,7 @@ char* prepare_args(int& argc, char**& argv, std::string& args) {
     free(first);
 
     // now build char*argv
-    argv = new char*[argc+1];
+    argv = new char*[argc + 1];
     first = strdup(args.c_str());
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
