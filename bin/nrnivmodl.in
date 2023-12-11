@@ -46,6 +46,8 @@ LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
 UserCOREFLAGS=()
+UserNMODLBIN=""
+UserNMODLFLAGS=""
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
@@ -66,6 +68,17 @@ while [ "$1" ] ; do
         UserLDFLAGS="$2"
         # extra lin flags, paths. libraries (CoreNEURON)
         UserCOREFLAGS+=(-l "${2}")
+        shift
+        shift;;
+    -nmodl)
+        echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
+        UserNMODLBIN="$2"
+        UserNMODLFLAGS="--neuron $UserNMODLFLAGS"
+        shift
+        shift;;
+    -nmodlflags)
+        echo "[NMODL][warning] If sympy is enabled, NMODL needs to be found in PYTHONPATH"
+        UserNMODLFLAGS="$UserNMODLFLAGS $2"
         shift
         shift;;
     -*)
@@ -159,7 +172,7 @@ for i in "${files[@]}" ; do
   echo "\
 ./${base_name// /\\ }.cpp: ${f}.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\" $UserNMODLFLAGS)
 
 ./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
@@ -246,5 +259,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special &&
 echo "Successfully created $MODSUBDIR/special"

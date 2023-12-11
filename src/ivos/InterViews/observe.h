@@ -32,30 +32,30 @@
 #include <InterViews/enter-scope.h>
 
 #include <InterViews/_enter.h>
+#include <vector>
 
 class Observer;
-class ObserverList;
 
 class Observable {
 public:
-    Observable();
+    Observable() = default;
     virtual ~Observable();
 
     virtual void attach(Observer*);
     virtual void detach(Observer*);
     virtual void notify();
 private:
-    ObserverList* observers_;
+    std::vector<Observer*> observers_;
 };
 
 class Observer {
 protected:
-    Observer();
+    Observer() = default;
 public:
-    virtual ~Observer();
+    virtual ~Observer() = default;
 
-    virtual void update(Observable*);
-    virtual void disconnect(Observable*);
+    virtual void update(Observable*) {};
+    virtual void disconnect(Observable*) {};
 };
 
 #include <InterViews/_leave.h>
