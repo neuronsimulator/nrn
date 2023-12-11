@@ -240,9 +240,9 @@ jobs:
             mkdir -p $TMPDIR
 
             # use workaround from https://github.com/open-mpi/ompi/issues/10986
-            export OMPI_MCA_pml=cm
-            export OMPI_MCA_mtl=ofi
-            export OMPI_MCA_mtl_ofi_provider_include=psm2
+            ompi_info
+            export FI_PROVIDER=tcp
+            export OMPI_MCA_mtl_ofi_provider_include=tcp
           fi
 
           # Python setup
