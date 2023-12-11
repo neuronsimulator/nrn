@@ -216,6 +216,14 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
+      - name: Use MPICH on MacOS-13
+        if: startsWith(matrix.os, 'macOS-13')
+        run: |
+          # TODO: do not use problematic openmpi on macos-13
+          #       see https://github.com/open-mpi/ompi/issues/10986
+          brew unlink openmpi
+          brew link mpich
+
       - name: Build and Test
         id: build-test
         shell: bash
