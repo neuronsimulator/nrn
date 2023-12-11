@@ -238,6 +238,9 @@ jobs:
             # Set shorter path as discussed in https://github.com/open-mpi/ompi/issues/8510
             export TMPDIR=/tmp/$GITHUB_JOB
             mkdir -p $TMPDIR
+
+            # TODO: macOS ccache is causing random build failures
+            rm -rf ${CCACHE_DIR}
           fi
 
           # Python setup
