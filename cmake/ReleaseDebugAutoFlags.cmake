@@ -58,25 +58,29 @@ set(CMAKE_CXX_FLAGS_FAST
 )
 # ~~~
 
-include(CheckCXXCompilerFlag)
-
-# Check support for OpenMP SIMD constructs
-set(SIMD_FLAGS "")
-
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(SIMD_FLAGS "-qopenmp-simd")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  set(SIMD_FLAGS "-openmp:experimental")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(SIMD_FLAGS "-openmp-simd")
-else() # not ICC, MSVC, or Clang => GCC and others
-  set(SIMD_FLAGS "-fopenmp-simd")
-endif()
-
-check_cxx_compiler_flag("${SIMD_FLAGS}" COMPILER_SUPPORT_SIMD)
-if(COMPILER_SUPPORT_SIMD)
-  set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAGS}")
+# for binary distributions, avoid addition of OpenMP specific flags (for now)
+if(NRN_WHEEL_BUILD OR NRN_WINDOWS_BUILD)
+  message(STATUS "Skipping addition of OpenMP SIMD flags")
 else()
-  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no support for OpenMP SIMD construct")
+  include(CheckCXXCompilerFlag)
+  # Check support for OpenMP SIMD constructs
+  set(SIMD_FLAGS "")
+
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+    set(SIMD_FLAGS "-qopenmp-simd")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(SIMD_FLAGS "-openmp:experimental")
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(SIMD_FLAGS "-openmp-simd")
+  else() # not ICC, MSVC, or Clang => GCC and others
+    set(SIMD_FLAGS "-fopenmp-simd")
+  endif()
+
+  check_cxx_compiler_flag("${SIMD_FLAGS}" COMPILER_SUPPORT_SIMD)
+  if(COMPILER_SUPPORT_SIMD)
+    set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAGS}")
+  else()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no support for OpenMP SIMD construct")
+  endif()
 endif()
