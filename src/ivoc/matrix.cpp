@@ -358,10 +358,6 @@ static Object** m_muls(void* v) {
     if (ifarg(2)) {
         out = matrix_arg(2);
     }
-    // 	I believe meschach does this for us
-    //	if (out != m) {
-    //		out->resize(...
-    //	}
     m->muls(*getarg(1), out);
     return temp_objvar(out);
 }
