@@ -50,7 +50,7 @@ jobs:
           name: Release ${{ env.REL_TAG }}
           prerelease: true
 
-  full-src-package:
+  nrn-full-src-package:
     runs-on: ubuntu-latest
     needs: tag-n-release
     steps:
@@ -72,13 +72,13 @@ jobs:
         cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
         make nrnversion_h VERBOSE=1
 
-    - name: Create full-src-package
+    - name: Create nrn-full-src-package
       id: tar
       run: |
-        tar -czvf full-src-package-${REL_TAG}.tar.gz nrn
-        echo "asset_file=full-src-package-${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
+        tar -czvf nrn-full-src-package-${REL_TAG}.tar.gz nrn
+        echo "asset_file=nrn-full-src-package-${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
 
-    - name: Upload full-src-package to release
+    - name: Upload nrn-full-src-package to release
       run: |
         gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${{ steps.tar.outputs.asset_file }}
       env:
