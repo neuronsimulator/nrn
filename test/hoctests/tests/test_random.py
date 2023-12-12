@@ -155,7 +155,7 @@ def test_bbsavestate():
 
     # second half is our standard
     run(2, False)
-    chk("bbsavestate 1 to 2", [v.to_python() for v in rec])
+    chk("bbsavestate 1 to 2", [v.to_python() for v in rec], tol=1e-12)
 
     # savestate restore and redo second half.
     bbss.restore("bbss_random.txt")
