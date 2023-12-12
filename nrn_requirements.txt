@@ -14,5 +14,5 @@ mpi4py
 numpy
 find_libpython
 
-# For python 3.12. Better seems to use importlib instead
+# For python 3.12
 setuptools
