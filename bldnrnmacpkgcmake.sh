@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.8 python3.9 python3.10"
+default_pythons="python3.8 python3.9 python3.10 python3.11"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
@@ -10,6 +10,10 @@ default_pythons="python3.8 python3.9 python3.10"
 # Otherwise $CPU
 # All pythons must have the same macos version and that will become
 # the MACOSX_DEPLOYMENT_TARGET
+
+# On my machine, to build nrn-x.x.x-macosx-10.9-universal2-py-38-39-310-311.pkg
+# I built my own versions of 3.8 in $HOME/soft/python3.8, and
+export PATH=$HOME/soft/python3.8/bin:$PATH
 
 CPU=`uname -m`
 
@@ -45,11 +49,15 @@ if test "$archs" != "universal2" ; then
   universal=no
 fi
 
+# Arrgh. Recent changes to nrn source require at least 10.15!
+macosver=10.15
+mac_platform=macosx-$macosver-$archs
+
 export MACOSX_DEPLOYMENT_TARGET=$macosver
 echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
 if test "$NRN_SRC" == "" ; then
-  NRN_SRC=$HOME/neuron/nrn
+  NRN_SRC=`pwd`
 fi
 NRN_BLD=$NRN_SRC/build
 NSRC=$NRN_SRC
@@ -64,7 +72,7 @@ mkdir -p $NRN_BLD
 rm -r -f $NRN_BLD/*
 cd $NRN_BLD
 
-PYVS="py" # will be part of package file name, eg. py-37-38-39-310
+PYVS="py" # will be part of package file name, eg. py-38-39-310-311
 pythons="" # will be arg value of NRN_PYTHON_DYNAMIC
 for i in $args ; do
   PYVER=`$i -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
@@ -83,7 +91,7 @@ fi
 # from brew install gedit). User installations are expected to have the
 # former and would only accidentally have the latter.
 
-cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
+cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
@@ -94,7 +102,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
-make -j install
+ninja install
 
 if test "$universal" = "yes" ; then
   _temp="`lipo -archs $NRN_INSTALL/share/nrn/demo/release/$CPU/special`"
@@ -121,32 +129,29 @@ chk () {
   )
 }
 
-#/Applications/Packages.app from
-# http://s.sudre.free.fr/Software/Packages/about.html
-# For mac to do a productsign, need my developerID_installer.cer
-# and Neurondev.p12 file. To add to the keychain, double click each
-# of those files. By default, I added my certificates to the login keychain.
-make macpkg # will sign the binaries, construct below
-            # mentioned PACKAGE_FILE_NAME, and request notarization from
-            # Apple. At the end it will print a stapling request that you
-            # should run manually after receiving a "success" email from
-            # Apple.
-
 # test basic functionality
 for i in $args ; do
   chk $i
 done
 
-# upload package to neuron.yale.edu
-ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
+#/Applications/Packages.app from
+# http://s.sudre.free.fr/Software/Packages/about.html
+# For mac to do a productsign, need my developerID_installer.cer
+# and Neurondev.p12 file. To add to the keychain, double click each
+# of those files. By default, I added my certificates to the login keychain.
+ninja macpkg # will sign the binaries, construct below
+            # mentioned PACKAGE_FILE_NAME, request notarization from
+            # Apple, and staple the package.
+
+# Copy the package to $HOME/$PACKAGE_FULL_NAME
+# You should then manually upload that to github.
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
 PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
-PACKATE_DOWNLOAD_NAME=$ALPHADIR/$PACKAGE_FULL_NAME
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
+
+cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
+
 echo "
-  Until we figure out how to automatically staple the notarization
-  the following two commands must be executed manually.
-  xcrun stapler staple $PACKAGE_FILE_NAME
-  cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
+  Manually upload $HOME/$PACKAGE_FULL_NAME to github
 "
