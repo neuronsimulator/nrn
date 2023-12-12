@@ -1197,7 +1197,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;
-    virtual void visit_solution_expression(const ast::SolutionExpression& node) override;
     virtual void visit_watch_statement(const ast::WatchStatement& node) override;
 
 

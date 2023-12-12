@@ -611,6 +611,17 @@ void CodegenCppVisitor::visit_mutex_unlock(const ast::MutexUnlock& node) {
 }
 
 
+void CodegenCppVisitor::visit_solution_expression(const SolutionExpression& node) {
+    auto block = node.get_node_to_solve().get();
+    if (block->is_statement_block()) {
+        auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
+        print_statement_block(*statement_block, false, false);
+    } else {
+        block->accept(*this);
+    }
+}
+
+
 /**
  * \details Once variables are populated, update index semantics to register with coreneuron
  */

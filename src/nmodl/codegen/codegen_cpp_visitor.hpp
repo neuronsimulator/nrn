@@ -1135,6 +1135,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_protect_statement(const ast::ProtectStatement& node) override;
     void visit_mutex_lock(const ast::MutexLock& node) override;
     void visit_mutex_unlock(const ast::MutexUnlock& node) override;
+    void visit_solution_expression(const ast::SolutionExpression& node) override;
 
     std::string compute_method_name(BlockType type) const;
 

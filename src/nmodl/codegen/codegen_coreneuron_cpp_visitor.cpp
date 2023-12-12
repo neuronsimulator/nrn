@@ -3777,17 +3777,6 @@ void CodegenCoreneuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
 }
 
 
-void CodegenCoreneuronCppVisitor::visit_solution_expression(const SolutionExpression& node) {
-    auto block = node.get_node_to_solve().get();
-    if (block->is_statement_block()) {
-        auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
-        print_statement_block(*statement_block, false, false);
-    } else {
-        block->accept(*this);
-    }
-}
-
-
 void CodegenCoreneuronCppVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
     printer->add_text(fmt::format("nrn_watch_activate(inst, id, pnodecount, {}, v, watch_remove)",
                                   current_watch_statement++));

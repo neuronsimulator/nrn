@@ -736,13 +736,6 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& node
 /*                            Overloaded visitor routines                               */
 /****************************************************************************************/
 
-
-/// TODO: Edit for NEURON
-void CodegenNeuronCppVisitor::visit_solution_expression(const SolutionExpression& node) {
-    return;
-}
-
-
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
     return;
