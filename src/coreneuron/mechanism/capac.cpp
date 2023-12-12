@@ -1,6 +1,3 @@
-/***
-  THIS FILE IS AUTO GENERATED DONT MODIFY IT.
- ***/
 /*
 # =============================================================================
 # Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
