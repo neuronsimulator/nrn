@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 /* this was removed from the scopmath library since there could be
 multiple copies of the static value below. One in neuron.exe and the

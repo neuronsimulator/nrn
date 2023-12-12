@@ -24,14 +24,17 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ../nrnoc
       ../ivoc
       ../nrniv
-      ../ivos
       ../gnu
       ../mesch
       ../nrnmpi
       ${PROJECT_BINARY_DIR}/src/nrnpython
       ${PROJECT_BINARY_DIR}/src/ivos
-      ${PROJECT_BINARY_DIR}/src/oc
-      ${IV_INCLUDE_DIR})
+      ${PROJECT_BINARY_DIR}/src/oc)
+  if(NRN_ENABLE_INTERVIEWS)
+    list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
+  else()
+    list(APPEND INCLUDE_DIRS ../ivos)
+  endif()
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
