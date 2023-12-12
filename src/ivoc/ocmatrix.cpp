@@ -282,8 +282,6 @@ void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     if (!lu_ || !use_lu || lu_->rows() != m_.rows()) {
         m_.makeCompressed();
         lu_ = std::make_unique<Eigen::SparseLU<decltype(m_)>>(m_);
-        lu_->analyzePattern(m_);
-        lu_->factorize(m_);
     }
     auto v1 = Vect2VEC(in);
     auto v2 = Vect2VEC(out);
