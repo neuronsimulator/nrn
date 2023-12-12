@@ -44,7 +44,7 @@ class ReportEvent: public DiscreteEvent {
     bool require_checkpoint() override;
     void summation_alu(NrnThread* nt);
     void lfp_calc(NrnThread* nt);
-    virtual int type() const override {
+    int type() const override {
         return ReportEventType;
     }
 

@@ -73,18 +73,18 @@ int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::ve
 
 void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 
-void (*nrn2core_get_dat3_cell_count)(int& cell_count);
-void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
-void (*nrn2core_get_dat3_secmapping)(int i_c,
-                                     int i_sec,
-                                     std::string& segname,
-                                     int& nsec,
-                                     int& nseg,
-                                     size_t& total_lfp_factors,
-                                     int& n_electrode,
-                                     std::vector<int>& data_sec,
-                                     std::vector<int>& data_seg,
-                                     std::vector<double>& data_lfp);
+const void (*nrn2core_get_dat3_cell_count)(int& cell_count);
+const void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+const void (*nrn2core_get_dat3_secmapping)(int i_c,
+                                           int i_sec,
+                                           std::string& segname,
+                                           int& nsec,
+                                           int& nseg,
+                                           size_t& total_lfp_factors,
+                                           int& n_electrode,
+                                           std::vector<int>& data_sec,
+                                           std::vector<int>& data_seg,
+                                           std::vector<double>& data_lfp);
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
 // Note that regardless of the gid contents of a group, since all gids are
@@ -951,12 +951,17 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
         nrn2core_get_dat3_cell_count(count);
         /** for every neuron */
         for (int i = 0; i < count; i++) {
-            int gid, t_sec, t_seg, nseclist;
+            int gid;
+            int t_sec;
+            int t_seg;
+            int nseclist;
             nrn2core_get_dat3_cellmapping(i, gid, t_sec, t_seg, nseclist);
-            CellMapping* cmap = new CellMapping(gid);
+            auto cmap = new CellMapping(gid);
             for (int j = 0; j < nseclist; j++) {
                 std::string sclname;
-                int n_sec, n_seg, n_electrodes;
+                int n_sec;
+                int n_seg;
+                int n_electrodes;
                 size_t total_lfp_factors;
                 std::vector<int> data_sec;
                 std::vector<int> data_seg;
@@ -971,9 +976,8 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
                                              data_sec,
                                              data_seg,
                                              data_lfp);
-                SecMapping* smap = new SecMapping();
+                auto smap = new SecMapping();
                 smap->name = sclname;
-                int factor_offset = 0;
                 for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                     smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                     ntmapping->add_segment_id(data_seg[i_seg]);
