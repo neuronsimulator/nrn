@@ -2103,7 +2103,7 @@ void KSChan::setupmat() {
     if (!nksstate_) {
         return;
     }
-    mat_ = Eigen::SparseMatrix<double>(nksstate_, nksstate_);
+    mat_.resize(nksstate_, nksstate_);
 }
 
 void KSChan::fillmat(double v, Datum* pd) {
