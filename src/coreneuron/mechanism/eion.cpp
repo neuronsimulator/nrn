@@ -6,8 +6,6 @@
 # =============================================================================.
 */
 
-/// THIS FILE IS AUTO GENERATED DONT MODIFY IT.
-
 #include <math.h>
 #include <string.h>
 
