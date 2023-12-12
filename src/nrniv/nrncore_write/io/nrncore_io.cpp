@@ -528,7 +528,11 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
 }
 
 /** @brief dump mapping information to gid_3.dat file */
-void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& /* minfo */) {
+void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
+    if (minfo.size() <= 0) {
+        return;
+    }
+
     /** full path of mapping file */
     std::stringstream ss;
     ss << path << "/" << gid << "_3.dat";
