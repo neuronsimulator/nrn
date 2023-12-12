@@ -2153,15 +2153,17 @@ void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
     mat_.makeCompressed();
     lu_.compute(mat_);
     switch (lu_.info()) {
-        case Eigen::NumericalIssue:
-            hoc_execerror("NumericalIssue: The matrix is not valid following what expect Eigen SparseLU", nullptr);
-            break;
-        case Eigen::NoConvergence:
-            hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
-            break;
-        case Eigen::InvalidInput:
-            hoc_execerror("InvalidInput: the inputs are invliad", nullptr);
-            break;
+    case Eigen::NumericalIssue:
+        hoc_execerror(
+            "NumericalIssue: The matrix is not valid following what expect Eigen SparseLU",
+            nullptr);
+        break;
+    case Eigen::NoConvergence:
+        hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
+        break;
+    case Eigen::InvalidInput:
+        hoc_execerror("InvalidInput: the inputs are invliad", nullptr);
+        break;
     }
     auto s_ = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(s.data(), s.size());
     s_ = lu_.solve(s_);
