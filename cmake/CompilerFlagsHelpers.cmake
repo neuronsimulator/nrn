@@ -27,6 +27,9 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
   endif()
 endforeach()
 
+set(UNSAFE_MATH_FLAG
+    "-ffinite-math-only -fno-math-errno -funsafe-math-optimizations -fno-associative-math")
+
 # Set optimization flags for each compiler
 foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 
@@ -62,8 +65,7 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
     set(CMAKE_${COMPILER_LANGUAGE}_STACK_PROTECTION "-fstack-protector")
     set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDENT "-fPIC")
     set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "-ftree-vectorize")
-    set(CMAKE_${COMPILER_LANGUAGE}_UNSAFE_MATH
-        "-ffinite-math-only -fno-math-errno -funsafe-math-optimizations -fno-associative-math")
+    set(CMAKE_${COMPILER_LANGUAGE}_UNSAFE_MATH ${UNSAFE_MATH_FLAG})
     set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-Wno-unknown-pragmas")
 
     if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_VERSION VERSION_GREATER "4.7.0")
@@ -101,6 +103,9 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
     set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "")
     if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_ID STREQUAL "PGI")
       set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "")
+    endif()
+    if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_ID STREQUAL "Clang")
+      set(CMAKE_${COMPILER_LANGUAGE}_UNSAFE_MATH ${UNSAFE_MATH_FLAG})
     endif()
   endif()
 endforeach()

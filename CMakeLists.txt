@@ -74,6 +74,8 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
+option(NRN_ENABLE_MATH_OPT "Enable extra math optimisations (to enable SIMD)"
+       ${NRN_ENABLE_MATH_OPT_DEFAULT})
 set(NRN_ENABLE_MODEL_TESTS
     "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
