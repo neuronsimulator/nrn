@@ -948,6 +948,10 @@ void hoc_register_dparam_semantics(int mechtype, int ix, const char* name) {
     assert(memb_func[mechtype].dparam_semantics[ix] == dparam_semantics_to_int(name));
 }
 
+int nrn_dparam_semantics_to_int(const char* name) {
+    return dparam_semantics_to_int(name);
+}
+
 void hoc_register_cvode(int i,
                         nrn_ode_count_t cnt,
                         nrn_ode_map_t map,

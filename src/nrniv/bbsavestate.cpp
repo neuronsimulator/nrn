@@ -172,6 +172,7 @@ callback to bbss_early when needed.
 #include "ndatclas.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
+#include "nrnran123.h"
 #include "ocfile.h"
 #include <cmath>
 #include <nrnmpiuse.h>
@@ -1017,6 +1018,7 @@ struct StateStructInfo {
     int offset{-1};
     int size{};
     Symbol* callback{nullptr};
+    std::vector<int> random_indices{};
 };
 static StateStructInfo* ssi;
 static cTemplate* nct;
@@ -1075,6 +1077,19 @@ static void ssi_def() {
             // if (ssi[im].callback) {
             //	printf("callback %s\n", ssi[im].callback->name);
             //}
+        }
+        // indices of RANDOM variables
+        // only look when there is a destructor
+        if (nrn_mech_inst_destruct.count(im)) {
+            // search through memb_func[im].dparam_semantics for "random"
+            int random_semantics = nrn_dparam_semantics_to_int("random");
+            int* semantics = memb_func[im].dparam_semantics;
+            int dparam_size = nrn_prop_dparam_size_[im];
+            for (int i = 0; i < dparam_size; ++i) {
+                if (semantics[i] == random_semantics) {
+                    ssi[im].random_indices.push_back(i);
+                }
+            }
         }
     }
     // Following set to 1 when NrnProperty constructor calls prop_alloc.
@@ -2056,12 +2071,41 @@ void BBSaveState::mech(Prop* p) {
     f->s(buf, 1);
     {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
+        auto& random_indices = ssi[p->_type].random_indices;
+        int size_random = int(random_indices.size());
         std::vector<double*> tmp{};
-        tmp.reserve(size);
+        tmp.reserve(size + size_random);
         for (auto i = 0; i < size; ++i) {
             tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
         }
-        f->d(size, tmp.data());
+
+        // read or write the RANDOM 34 sequence values by pointing last
+        // size_random tmp elements to seq34 double slots.
+        std::vector<double> seq34{};
+        seq34.reserve(size_random);
+        for (auto i = 0; i < size_random; ++i) {
+            tmp.push_back(static_cast<double*>(&seq34[i]));
+        }
+        // if writing, nrnran123_getseq into seq34
+        if (f->type() == BBSS_IO::OUT) {  // save
+            for (auto i = 0; i < size_random; ++i) {
+                uint32_t seq{};
+                char which{};
+                auto& datum = p->dparam[random_indices[i]];
+                nrnran123_State* n123s = (nrnran123_State*) datum.get<void*>();
+                nrnran123_getseq(n123s, &seq, &which);
+                seq34[i] = 4.0 * double(seq) + double(which);
+            }
+        }
+        f->d(size + size_random, tmp.data());
+        // if reading, seq34 into nrnran123_setseq1
+        if (f->type() == BBSS_IO::IN) {  // restore
+            for (auto i = 0; i < size_random; ++i) {
+                auto& datum = p->dparam[random_indices[i]];
+                nrnran123_State* n123s = (nrnran123_State*) datum.get<void*>();
+                nrnran123_setseq1(n123s, seq34[i]);
+            }
+        }
     }
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {

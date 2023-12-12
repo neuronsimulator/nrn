@@ -180,6 +180,7 @@ extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
+extern int nrn_dparam_semantics_to_int(const char*);
 
 extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,

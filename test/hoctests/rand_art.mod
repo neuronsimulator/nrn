@@ -1,8 +1,10 @@
 NEURON {
     ARTIFICIAL_CELL RanArt
-    RANGE x1, x2
+    RANGE x1, x2, mean
     RANDOM ran1, ran2
 }
+
+PARAMETER { mean = .1 (ms) }
 
 ASSIGNED {
     x1 x2
@@ -12,10 +14,15 @@ INITIAL {
     random_setseq(ran1, 5)
     random_setseq(ran2, 5)
     x1 = random_uniform(ran1)
+    net_send(mean*negexp0(), 1)
 }
 
-BEFORE STEP {
-    x2 = random_normal(ran2)
+NET_RECEIVE(w){
+    if (flag == 1) {
+        net_send(mean*negexp0(), 1)
+        net_event(t)
+        x2 = t
+    }
 }
 
 FUNCTION uniform0() {
