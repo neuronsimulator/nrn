@@ -73,18 +73,18 @@ int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::ve
 
 void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 
-const void (*nrn2core_get_dat3_cell_count)(int& cell_count);
-const void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
-const void (*nrn2core_get_dat3_secmapping)(int i_c,
-                                           int i_sec,
-                                           std::string& segname,
-                                           int& nsec,
-                                           int& nseg,
-                                           size_t& total_lfp_factors,
-                                           int& n_electrode,
-                                           std::vector<int>& data_sec,
-                                           std::vector<int>& data_seg,
-                                           std::vector<double>& data_lfp);
+void (*nrn2core_get_dat3_cell_count)(int& cell_count);
+void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+void (*nrn2core_get_dat3_secmapping)(int i_c,
+                                     int i_sec,
+                                     std::string& segname,
+                                     int& nsec,
+                                     int& nseg,
+                                     size_t& total_lfp_factors,
+                                     int& n_electrode,
+                                     std::vector<int>& data_sec,
+                                     std::vector<int>& data_seg,
+                                     std::vector<double>& data_lfp);
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
 // Note that regardless of the gid contents of a group, since all gids are

@@ -96,19 +96,18 @@ extern int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
 
 extern void (*nrn2core_part2_clean_)();
 
-extern const void (*nrn2core_get_dat3_cell_count)(int& cell_count);
-extern const void (
-    *nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
-extern const void (*nrn2core_get_dat3_secmapping)(int i_c,
-                                                  int i_sec,
-                                                  std::string& segname,
-                                                  int& nsec,
-                                                  int& nseg,
-                                                  size_t& total_lfp_factors,
-                                                  int& n_electrode,
-                                                  std::vector<int>& data_sec,
-                                                  std::vector<int>& data_seg,
-                                                  std::vector<double>& data_lfp);
+extern void (*nrn2core_get_dat3_cell_count)(int& cell_count);
+extern void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+extern void (*nrn2core_get_dat3_secmapping)(int i_c,
+                                            int i_sec,
+                                            std::string& segname,
+                                            int& nsec,
+                                            int& nseg,
+                                            size_t& total_lfp_factors,
+                                            int& n_electrode,
+                                            std::vector<int>& data_sec,
+                                            std::vector<int>& data_seg,
+                                            std::vector<double>& data_lfp);
 
 /* what variables to send back to NEURON on each time step */
 extern void (*nrn2core_get_trajectory_requests_)(int tid,
