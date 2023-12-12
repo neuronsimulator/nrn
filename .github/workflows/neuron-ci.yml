@@ -15,6 +15,7 @@ on:
     branches:
       - master
       - release/**
+    types: [opened, synchronize, reopened, converted_to_draft, ready_for_review]
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
@@ -23,6 +24,29 @@ on:
 
 
 jobs:
+  draft_pr_reminder:
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add comment to PR
+        if: ${{ github.event_name == 'pull_request'
+          && (github.event.action == 'opened' || github.event.action == 'converted_to_draft')
+          && github.event.pull_request.draft }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Friendly reminder, CI workflows in draft PR's only run on ubuntu-20.04.
+          comment_tag: friendly_reminder
+      - name: Remove comment from PR
+        if: ${{ github.event.action == 'ready_for_review' }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Friendly reminder, CI workflows in draft PR's only run on ubuntu-20.04.
+          comment_tag: friendly_reminder
+          mode: delete
+          create_if_not_exists: false
   ci:
     runs-on: ${{ matrix.os }}
 
@@ -41,7 +65,6 @@ jobs:
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
       MUSIC_VERSION: 1.2.0
-
     strategy:
       matrix:
         os: [ macOS-12, ubuntu-20.04]
@@ -85,16 +108,30 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
+        exclude: ${{ fromJSON(needs.draft-pr-job-limiter.outputs.jobs) }}
       fail-fast: false
 
     steps:
+      - name: filter step
+        id: run_on_this_platform
+        if: ${{ !github.event.pull_request.draft || (
+          matrix.os == 'ubuntu-20.04' &&
+          matrix.config.matrix_eval == "CC=gcc-9 CXX=g++-9" &&
+          matrix.config.build_mode == "cmake" &&
+          matrix.config.cmake_option == "-DNRN_ENABLE_CORENEURON=ON"
+          )}}
+        run: |
+          echo "${{ matrix.os }}"
+          echo "${{ matrix.config.foo }}"
       - name: Setup cmake
+        if: steps.run_on_this_platform.outcome == 'success'
         uses: jwlawson/actions-setup-cmake@v1
         with:
           cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
       - name: Install homebrew packages
-        if: startsWith(matrix.os, 'macOS')
+        if: ${{ startsWith(matrix.os, 'macOS')
+          && steps.run_on_this_platform.outcome == 'success' }}
         run: |
           # Unlink and re-link to prevent errors when GitHub macOS runner images
           # install Python outside of brew; See actions/setup-python#577 and BlueBrain/libsonata/pull/317
@@ -112,7 +149,8 @@ jobs:
         shell: bash
 
       - name: Install apt packages
-        if: startsWith(matrix.os, 'ubuntu')
+        if: ${{ startsWith(matrix.os, 'ubuntu')
+          && steps.run_on_this_platform.outcome == 'success' }}
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
@@ -132,18 +170,21 @@ jobs:
           fetch-depth: 2
 
       - name: Clone nmodl
+        if: steps.run_on_this_platform.outcome == 'success'
         working-directory: ${{runner.workspace}}/nrn
         run: |
             git submodule update --init --recursive --force --depth 1 -- external/nmodl
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
-        if: ${{matrix.config.python_dynamic == 'ON'}}
+        if: ${{ matrix.config.python_dynamic == 'ON'
+          && steps.run_on_this_platform.outcome == 'success' }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
-        if: ${{ matrix.config.python_dynamic == 'ON' }}
+        if: ${{ matrix.config.python_dynamic == 'ON'
+          && steps.run_on_this_platform.outcome == 'success' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
@@ -156,6 +197,7 @@ jobs:
           python-version: ${{ env.PY_MAX_VERSION }}
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
+        if: steps.run_on_this_platform.outcome == 'success'
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
@@ -163,7 +205,8 @@ jobs:
           python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
-        if: matrix.config.music == 'ON'
+        if: ${{ matrix.config.music == 'ON'
+          && steps.run_on_this_platform.outcome == 'success' }}
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
@@ -179,14 +222,17 @@ jobs:
         working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
-        if: ${{matrix.config.flag_warnings == 'ON'}}
+        if: ${{ matrix.config.flag_warnings == 'ON'
+          && steps.run_on_this_platform.outcome == 'success' }}
         run: echo "::add-matcher::.github/problem-matchers/gcc.json"
 
       - name: Register sanitizer problem matcher
-        if: ${{matrix.config.sanitizer}}
+        if: ${{ matrix.config.sanitizer
+          && steps.run_on_this_platform.outcome == 'success'}}
         run: echo "::add-matcher::.github/problem-matchers/${{matrix.config.sanitizer}}.json"
 
       - name: Hash config dictionary
+        if: steps.run_on_this_platform.outcome == 'success'
         run: |
           cat << EOF > matrix.json
           ${{toJSON(matrix.config)}}
@@ -197,6 +243,7 @@ jobs:
 
       # Workaround for https://github.com/actions/cache/issues/92
       - name: Checkout cache action
+        if: steps.run_on_this_platform.outcome == 'success'
         uses: actions/checkout@v3
         with:
           repository: actions/cache
@@ -204,10 +251,12 @@ jobs:
           path: tmp/actions/cache
 
       - name: Make actions/cache@v3 run even on failure
+        if: steps.run_on_this_platform.outcome == 'success'
         run: |
           sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
 
       - name: Restore compiler cache
+        if: steps.run_on_this_platform.outcome == 'success'
         uses: ./tmp/actions/cache
         with:
           path: |
@@ -218,6 +267,7 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
       - name: Build and Test
+        if: steps.run_on_this_platform.outcome == 'success'
         id: build-test
         shell: bash
         working-directory: ${{runner.workspace}}/nrn
