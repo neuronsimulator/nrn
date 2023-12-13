@@ -2146,13 +2146,16 @@ void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t 
 }
 
 void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
-    std::vector<double> s(nksstate_);
+    Eigen::VectorXd s(nksstate_);
     for (auto j = 0; j < nksstate_; ++j) {
         s[j] = ml->data(instance, offset + j);
     }
     mat_.makeCompressed();
     lu_.compute(mat_);
     switch (lu_.info()) {
+    case Eigen::Success:
+        // Everything fine, at least no warning
+        break;
     case Eigen::NumericalIssue:
         hoc_execerror(
             "NumericalIssue: The matrix is not valid following what expect Eigen SparseLU",
@@ -2165,8 +2168,7 @@ void KSChan::solvemat(Memb_list* ml, std::size_t instance, std::size_t offset) {
         hoc_execerror("InvalidInput: the inputs are invliad", nullptr);
         break;
     }
-    auto s_ = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(s.data(), s.size());
-    s_ = lu_.solve(s_);
+    s = lu_.solve(s);
 
     // Propgate the solution back to the mechanism data
     for (auto j = 0; j < nksstate_; ++j) {
@@ -2178,14 +2180,12 @@ void KSChan::mulmat(Memb_list* ml,
                     std::size_t instance,
                     std::size_t offset_s,
                     std::size_t offset_ds) {
-    std::vector<double> s(nksstate_);
-    std::vector<double> ds(nksstate_);
+    Eigen::VectorXd s(nksstate_);
+    Eigen::VectorXd ds(nksstate_);
     for (auto j = 0; j < nksstate_; ++j) {
         s[j] = ml->data(instance, offset_s + j);
     }
-    auto s_ = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(s.data(), s.size());
-    auto ds_ = Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>>(ds.data(), ds.size());
-    ds_ = mat_ * s_;
+    ds = mat_ * s;
     // Propagate the results
     for (auto j = 0; j < nksstate_; ++j) {
         ml->data(instance, offset_ds + j) = ds[j];
