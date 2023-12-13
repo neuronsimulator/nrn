@@ -58,10 +58,9 @@ set(CMAKE_CXX_FLAGS_FAST
 )
 # ~~~
 
-# for binary distributions, avoid addition of OpenMP specific flags (for now)
-if(NRN_WHEEL_BUILD OR NRN_WINDOWS_BUILD)
-  message(STATUS "Skipping addition of OpenMP SIMD flags")
-else()
+# for binary distributions, avoid addition of OpenMP specific flag as compiler on end-user machine
+# may not support it.
+if(NOT DEFINED NRN_BINARY_DIST_BUILD OR NOT NRN_BINARY_DIST_BUILD)
   include(CheckCXXCompilerFlag)
   # Check support for OpenMP SIMD constructs
   set(SIMD_FLAGS "")

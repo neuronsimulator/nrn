@@ -96,11 +96,11 @@ option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD fil
        ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
        ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_WHEEL_BUILD ${NRN_WHEEL_BUILD_DEFAULT})
+option(NRN_BINARY_DIST_BUILD ${NRN_BINARY_DIST_BUILD_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
        ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
-mark_as_advanced(NRN_WHEEL_BUILD)
+mark_as_advanced(NRN_BINARY_DIST_BUILD)
 
 # =============================================================================
 # Build options (string)

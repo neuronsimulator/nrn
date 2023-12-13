@@ -90,7 +90,7 @@ build_wheel_linux() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     if [ "$2" == "coreneuron" ]; then
@@ -147,7 +147,7 @@ build_wheel_osx() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     # We need to "fix" the platform tag if the Python installer is universal2
