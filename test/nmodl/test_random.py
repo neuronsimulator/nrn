@@ -24,7 +24,7 @@ def model():
 
 
 def test_netstim_noise():
-    cells = {gid: (h.NetStimRNG()) for gid in range(pc.id(), 5, pc.nhost())}
+    cells = {gid: (h.NetStim()) for gid in range(pc.id(), 5, pc.nhost())}
     for gid, cell in cells.items():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, h.NetCon(cell, None))
@@ -35,7 +35,7 @@ def test_netstim_noise():
         cell.noise = 1
 
         # Initialize RANDOM variable ids and initial sequence.
-        cell.rrr.set_ids(gid, 2, 3).set_seq(0)
+        cell.ranvar.set_ids(gid, 2, 3).set_seq(0)
 
     spiketime = h.Vector()
     spikegid = h.Vector()
@@ -93,15 +93,16 @@ def test_netstim_noise():
 
 
 def test_random():
+    pc.gid_clear()
     ncell = 10
     cells = []
     gids = range(pc.id(), ncell, pc.nhost())
     rng = []
     for gid in gids:
         pc.set_gid2node(gid, pc.id())
-        cell = h.NetStimRNG()
+        cell = h.NetStim()
 
-        cell.rrr.set_ids(gid, 2, 3).set_seq(0)
+        cell.ranvar.set_ids(gid, 2, 3).set_seq(0)
 
         r = cell.erand()
         rng.append(r)
