@@ -26,8 +26,6 @@
 //#include <OS/string.h>
 
 #include <IV-look/kit.h>
-#else
-#include <OS/list.h>
 #endif
 
 #if defined(SVR4)
