@@ -3,42 +3,12 @@
 #include <iostream>
 #include <fstream>
 #include <dlfcn.h>
+#include "neuronapi.h"
+
 
 using std::cout;
 using std::endl;
 using std::ofstream;
-
-typedef struct Symbol Symbol;
-typedef struct Object Object;
-typedef struct Section Section;
-typedef struct SectionListIterator SectionListIterator;
-typedef struct nrn_Item nrn_Item;
-typedef struct SymbolTableIterator SymbolTableIterator;
-typedef struct Symlist Symlist;
-
-extern "C" {
-int nrn_init(int argc, const char** argv);
-void nrn_str_push(char** str);
-void nrn_function_call(Symbol* sym, int narg);
-double nrn_double_pop(void);
-Section* nrn_section_new(char const* const name);
-Symbol* nrn_symbol(char const* const name);
-void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
-Object* nrn_object_new(Symbol* sym, int narg);
-void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
-void nrn_property_set(Object* obj, const char* name, double value);
-void nrn_property_array_set(Object* obj, const char* name, int i, double value);
-void nrn_double_push(double val);
-void nrn_object_push(Object* obj);
-Symbol* nrn_method_symbol(Object* obj, char const* const name);
-Object* nrn_object_pop(void);
-void nrn_object_unref(Object* obj);
-double* nrn_vector_data(Object* vec);
-int nrn_vector_capacity(Object* vec);
-double* nrn_symbol_ptr(Symbol* sym);
-void nrn_rangevar_push(Symbol* const sym, Section* const sec, double x);
-void nrn_symbol_push(Symbol* sym);
-}
 
 static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
 

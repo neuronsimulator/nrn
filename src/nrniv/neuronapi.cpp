@@ -11,7 +11,7 @@
 #include "section.h"
 
 /// A public face of hoc_Item
-struct nrn_Item : public hoc_Item {};
+struct nrn_Item: public hoc_Item {};
 
 struct SectionListIterator {
     SectionListIterator(nrn_Item*);
@@ -167,15 +167,15 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(const Symbol* sym, const Section *const sec, double x) {
+double nrn_rangevar_get(const Symbol* sym, const Section* const sec, double x) {
     return *nrn_rangepointer(const_cast<Section*>(sec), const_cast<Symbol*>(sym), x);
 }
 
-void nrn_rangevar_set(Symbol* sym, Section *const sec, double x, double value) {
+void nrn_rangevar_set(Symbol* sym, Section* const sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
 }
 
-void nrn_rangevar_push(Symbol* sym, Section *const sec, double x) {
+void nrn_rangevar_push(Symbol* sym, Section* const sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 

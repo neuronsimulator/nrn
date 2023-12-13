@@ -35,17 +35,14 @@ void nrn_stdout_redirect(int (*myprint)(int, char*));
  * Sections
  ****************************************/
 Section* nrn_section_new(char const* name);
-void nrn_section_connect(Section* child_sec,
-                         double child_x,
-                         Section* parent_sec,
-                         double parent_x);
+void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x);
 void nrn_section_length_set(Section* sec, double length);
 double nrn_section_length_get(Section const* sec);
 void nrn_section_Ra_set(Section* sec, double val);
 char const* nrn_secname(Section* sec);
 void nrn_section_push(Section* sec);
 void nrn_section_pop(void);
-void nrn_mechanism_insert(Section *sec, Symbol *mechanism);
+void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(Object* obj);
 
@@ -53,11 +50,11 @@ nrn_Item* nrn_sectionlist_data(Object* obj);
  * Segments
  ****************************************/
 int nrn_nseg_get(Section const* sec);
-void nrn_nseg_set(Section * sec, int nseg);
+void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
-void nrn_rangevar_push(Symbol *sym, Section *sec, double x);
-double nrn_rangevar_get(const Symbol *sym, const Section *sec, double x);
-void nrn_rangevar_set(Symbol *sym, Section *sec, double x, double value);
+void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
+double nrn_rangevar_get(const Symbol* sym, const Section* sec, double x);
+void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 
 /****************************************
  * Functions, objects, and the stack
@@ -103,10 +100,10 @@ char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
 int nrn_symbol_table_iterator_done(SymbolTableIterator* st);
 int nrn_vector_capacity(const Object* vec);
 double* nrn_vector_data(Object* vec);
-double nrn_property_get(const Object* obj, const char *name);
-double nrn_property_array_get(const Object* obj, const char *name, int i);
-void nrn_property_set(Object* obj, const char *name, double value);
-void nrn_property_array_set(Object *obj, const char* name, int i, double value);
+double nrn_property_get(const Object* obj, const char* name);
+double nrn_property_array_get(const Object* obj, const char* name, int i);
+void nrn_property_set(Object* obj, const char* name, double value);
+void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);

@@ -15,47 +15,6 @@ static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
 
 extern "C" void modl_reg(){};
 
-void setup_neuron_api(void) {
-    void* handle = dlopen("libnrniv.dylib", RTLD_NOW | RTLD_LOCAL);
-    if (!handle) {
-        handle = dlopen("libnrniv.so", RTLD_NOW | RTLD_LOCAL);
-        if (!handle) {
-            cout << "Couldn't open NEURON library." << endl << dlerror() << endl;
-            exit(-1);
-        }
-    }
-    nrn_init = reinterpret_cast<decltype(nrn_init)>(dlsym(handle, "nrn_init"));
-    assert(nrn_init);
-    nrn_str_push = reinterpret_cast<decltype(nrn_str_push)>(dlsym(handle, "nrn_str_push"));
-    nrn_function_call = reinterpret_cast<decltype(nrn_function_call)>(
-        dlsym(handle, "nrn_function_call"));
-    nrn_symbol = reinterpret_cast<decltype(nrn_symbol)>(dlsym(handle, "nrn_symbol"));
-    nrn_double_pop = reinterpret_cast<decltype(nrn_double_pop)>(dlsym(handle, "nrn_double_pop"));
-    nrn_section_push = reinterpret_cast<decltype(nrn_section_push)>(
-        dlsym(handle, "nrn_section_push"));
-    nrn_section_new = reinterpret_cast<decltype(nrn_section_new)>(dlsym(handle, "nrn_section_new"));
-    nrn_nseg_set = reinterpret_cast<decltype(nrn_nseg_set)>(dlsym(handle, "nrn_nseg_set"));
-    nrn_mechanism_insert = reinterpret_cast<decltype(nrn_mechanism_insert)>(
-        dlsym(handle, "nrn_mechanism_insert"));
-    nrn_double_push = reinterpret_cast<decltype(nrn_double_push)>(dlsym(handle, "nrn_double_push"));
-    nrn_object_new = reinterpret_cast<decltype(nrn_object_new)>(dlsym(handle, "nrn_object_new"));
-    nrn_rangevar_push = reinterpret_cast<decltype(nrn_rangevar_push)>(
-        dlsym(handle, "nrn_rangevar_push"));
-    nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
-    nrn_object_unref = reinterpret_cast<decltype(nrn_object_unref)>(
-        dlsym(handle, "nrn_object_unref"));
-    nrn_vector_capacity = reinterpret_cast<decltype(nrn_vector_capacity)>(
-        dlsym(handle, "nrn_vector_capacity"));
-    nrn_vector_data = reinterpret_cast<decltype(nrn_vector_data)>(dlsym(handle, "nrn_vector_data"));
-    nrn_method_symbol = reinterpret_cast<decltype(nrn_method_symbol)>(
-        dlsym(handle, "nrn_method_symbol"));
-    nrn_method_call = reinterpret_cast<decltype(nrn_method_call)>(dlsym(handle, "nrn_method_call"));
-    nrn_object_pop = reinterpret_cast<decltype(nrn_object_pop)>(dlsym(handle, "nrn_object_pop"));
-    nrn_symbol_push = reinterpret_cast<decltype(nrn_symbol_push)>(dlsym(handle, "nrn_symbol_push"));
-    nrn_property_set = reinterpret_cast<decltype(nrn_property_set)>(
-        dlsym(handle, "nrn_property_set"));
-}
-
 int main(void) {
     Section* soma;
     Object* iclamp;
@@ -63,7 +22,6 @@ int main(void) {
     Object* t;
     char* temp_str;
 
-    setup_neuron_api();
     nrn_init(3, argv);
 
     // load the stdrun library
