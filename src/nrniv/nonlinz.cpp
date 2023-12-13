@@ -195,7 +195,6 @@ int NonLinImp::solve(int curloc) {
 // mapping is already done there.
 
 NonLinImpRep::NonLinImpRep() {
-    int i, cnt;
     NrnThread* _nt = nrn_threads;
 
     Symbol* vsym = hoc_table_lookup("v", hoc_built_in_symlist);
@@ -217,10 +216,10 @@ NonLinImpRep::NonLinImpRep() {
     n_ode_ = 0;
     for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
-        i = tml->index;
+        int i = tml->index;
         nrn_ode_count_t s = memb_func[i].ode_count;
         if (s) {
-            cnt = (*s)(i);
+            int cnt = (*s)(i);
             n_ode_ += cnt * ml->nodecount;
         }
     }
@@ -235,7 +234,7 @@ NonLinImpRep::NonLinImpRep() {
     v_.resize(neq_);
     deltavec_.resize(neq_);
 
-    for (i = 0; i < n_v_; ++i) {
+    for (int i = 0; i < n_v_; ++i) {
         // utilize nd->eqn_index in case of use_sparse13 later
         Node* nd = _nt->_v_node[i];
         pv_[i] = nd->v_handle();
