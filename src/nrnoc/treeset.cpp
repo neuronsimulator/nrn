@@ -28,8 +28,6 @@
 #include <algorithm>
 #include <string>
 
-extern spREAL* spGetElement(char*, int, int);
-
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
@@ -391,13 +389,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     }
     auto* const vec_rhs = nt.node_rhs_storage();
     if (use_sparse13) {
-        int i, neqn;
         nrn_thread_error("nrn_rhs use_sparse13");
-        neqn = spGetSize(_nt->_sp13mat, 0);
-        for (i = 1; i <= neqn; ++i) {
+        int neqn = _nt->_sp13mat->cols();
+        for (int i = 1; i <= neqn; ++i) {
             _nt->_sp13_rhs[i] = 0.;
         }
-        for (i = i1; i < i3; ++i) {
+        for (int i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
         }
     } else {
@@ -499,7 +496,14 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     if (use_sparse13) {
         // Zero the sparse13 matrix
-        spClear(_nt->_sp13mat);
+        // We cannot setZero() because it invalidates pointers
+        // _nt->_sp13mat->setZero();
+        auto m = _nt->_sp13mat;
+        for (int k = 0; k < m->outerSize(); ++k) { 
+            for (Eigen::SparseMatrix<double>::InnerIterator it(*m, k); it; ++it) {
+                it.valueRef() = 0.;
+            }
+        }
     }
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
@@ -1871,8 +1875,9 @@ void nrn_matrix_node_free() {
             free(std::exchange(nt->_sp13_rhs, nullptr));
         }
         if (nt->_sp13mat) {
-            spDestroy(nt->_sp13mat);
-            nt->_sp13mat = (char*) 0;
+            nt->_sp13mat->setZero();
+            nt->_sp13mat->data().squeeze();
+            nt->_sp13mat = nullptr;
         }
     }
     diam_changed = 1;
@@ -1935,14 +1940,6 @@ int nrn_method_consistent(void) {
 }
 
 
-/*
-sparse13 uses the mathematical index scheme in which the rows and columns
-range from 1...size instead of 0...size-1. Thus the calls to
-spGetElement(i,j) have args that are 1 greater than a normal c style.
-Also the actual_rhs_ uses this style, 1-neqn, when sparse13 is activated
-and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
-*/
-
 static void nrn_matrix_node_alloc(void) {
     int i, b;
     Node* nd;
@@ -1969,7 +1966,7 @@ static void nrn_matrix_node_alloc(void) {
     }
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
-        int in, err, extn, neqn, j;
+        int in, extn, neqn, j;
         nt = nrn_threads;
         neqn = nt->end + nrndae_extra_eqn_count();
         extn = 0;
@@ -1979,10 +1976,7 @@ static void nrn_matrix_node_alloc(void) {
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
-        nt->_sp13mat = spCreate(neqn, 0, &err);
-        if (err != spOKAY) {
-            hoc_execerror("Couldn't create sparse matrix", (char*) 0);
-        }
+        nt->_sp13mat = new Eigen::SparseMatrix<double>(neqn, neqn);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
@@ -1998,26 +1992,26 @@ static void nrn_matrix_node_alloc(void) {
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = spGetElement(nt->_sp13mat, i, i);
+            nd->_d_matelm = &nt->_sp13mat->coeffRef(i-1, i-1);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
-                    k = i + ie + 1;
-                    nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
+                    k = i + ie;
+                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k, k);
                     nde->_rhs[ie] = nt->_sp13_rhs + k;
-                    nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k - 1);
-                    nde->_x12[ie] = spGetElement(nt->_sp13mat, k - 1, k);
+                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k, k - 1);
+                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 1, k);
                 }
             }
             if (pnd) {
                 j = pnd->eqn_index_;
-                nd->_a_matelm = spGetElement(nt->_sp13mat, j, i);
-                nd->_b_matelm = spGetElement(nt->_sp13mat, i, j);
+                nd->_a_matelm = &nt->_sp13mat->coeffRef(j-1, i-1);
+                nd->_b_matelm = &nt->_sp13mat->coeffRef(i-1, j-1);
                 if (nde && pnd->extnode)
                     for (ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie + 1;
-                        k = i + ie + 1;
-                        nde->_a_matelm[ie] = spGetElement(nt->_sp13mat, kp, k);
-                        nde->_b_matelm[ie] = spGetElement(nt->_sp13mat, k, kp);
+                        int kp = j + ie;
+                        k = i + ie;
+                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp, k);
+                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k, kp);
                     }
             } else { /* not needed if index starts at 1 */
                 nd->_a_matelm = nullptr;

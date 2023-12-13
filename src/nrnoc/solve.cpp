@@ -367,19 +367,13 @@ void nrn_solve(NrnThread* _nt) {
         int e;
         nrn_thread_error("solve use_sparse13");
         update_sp13_mat_based_on_actual_d(_nt);
-        e = spFactor(_nt->_sp13mat);
-        if (e != spOKAY) {
-            switch (e) {
-            case spZERO_DIAG:
-                hoc_execerror("spFactor error:", "Zero Diagonal");
-            case spNO_MEMORY:
-                hoc_execerror("spFactor error:", "No Memory");
-            case spSINGULAR:
-                hoc_execerror("spFactor error:", "Singular");
-            }
-        }
+        // Use a copy because makeCompressed can invalidate pointers
+        Eigen::SparseMatrix<double> mat = *_nt->_sp13mat;
+        mat.makeCompressed();
         update_sp13_rhs_based_on_actual_rhs(_nt);
-        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> lu{mat};
+        Eigen::Map<Eigen::VectorXd> rhs(_nt->_sp13_rhs + 1, mat.cols());
+        rhs = lu.solve(rhs);
         update_actual_d_based_on_sp13_mat(_nt);
         update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {

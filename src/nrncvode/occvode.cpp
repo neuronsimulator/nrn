@@ -356,7 +356,7 @@ void Cvode::daspk_init_eqn() {
     if (use_sparse13 == 0 || diam_changed != 0) {
         recalc_diam();
     }
-    zneq = spGetSize(_nt->_sp13mat, 0);
+    zneq = _nt->_sp13mat->cols();
     z.neq_v_ = z.nonvint_offset_ = zneq;
     // now add the membrane mechanism ode's to the count
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
