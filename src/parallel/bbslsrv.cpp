@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <stdio.h>
 #include <string.h>
 #include "bbslsrv.h"

@@ -27,7 +27,6 @@
 
 #include <OS/os.h>
 
-#undef String
 #undef u_char
 
 #include <OS/_defines.h>

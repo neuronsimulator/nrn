@@ -106,6 +106,7 @@ struct Node {
     // neuron::container::handle::Node, but as an intermediate measure we can
     // add one of those as a member and forward some access/modifications to it.
     neuron::container::Node::owning_handle _node_handle{neuron::model().node_data()};
+
     [[nodiscard]] auto id() {
         return _node_handle.id();
     }

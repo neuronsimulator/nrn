@@ -6,8 +6,6 @@
 # =============================================================================.
 */
 
-/// THIS FILE IS AUTO GENERATED DONT MODIFY IT.
-
 #include <math.h>
 #include <string.h>
 
@@ -18,7 +16,7 @@
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
-#define _STRIDE _cntml_padded + _iml
+#define CNRN_FLAT_INDEX_IML_ROW(i) ((i) * (_cntml_padded) + (_iml))
 
 namespace coreneuron {
 
@@ -142,11 +140,11 @@ the USEION statement of any model using this ion\n",
 }
 
 #if VECTORIZE
-#define erev   pd[0 * _STRIDE] /* From Eion */
-#define conci  pd[1 * _STRIDE]
-#define conco  pd[2 * _STRIDE]
-#define cur    pd[3 * _STRIDE]
-#define dcurdv pd[4 * _STRIDE]
+#define erev   pd[CNRN_FLAT_INDEX_IML_ROW(0)] /* From Eion */
+#define conci  pd[CNRN_FLAT_INDEX_IML_ROW(1)]
+#define conco  pd[CNRN_FLAT_INDEX_IML_ROW(2)]
+#define cur    pd[CNRN_FLAT_INDEX_IML_ROW(3)]
+#define dcurdv pd[CNRN_FLAT_INDEX_IML_ROW(4)]
 
 /*
  handle erev, conci, conc0 "in the right way" according to ion_style

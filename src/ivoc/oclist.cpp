@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
-#include <OS/string.h>
 #include "classreg.h"
 #include "oclist.h"
 #include "oc2iv.h"

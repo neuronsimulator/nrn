@@ -6,6 +6,8 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
+#include <unordered_map>
+
 #include "nrnwrap_dlfcn.h"
 #include "ocfile.h"
 #include "ocjump.h"
@@ -20,6 +22,7 @@
 #include <sstream>
 
 extern PyTypeObject* psection_type;
+extern std::vector<const char*> py_exposed_classes;
 
 #include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
@@ -82,6 +85,10 @@ static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
 
+static std::unordered_map<Symbol*, PyTypeObject*> sym_to_type_map;
+static std::unordered_map<PyTypeObject*, Symbol*> type_to_sym_map;
+static std::vector<std::string> exposed_py_type_names;
+
 // typestr returned by Vector.__array_interface__
 // byteorder (first element) is modified at import time
 // to reflect the system byteorder
@@ -121,6 +128,7 @@ static PyObject* get_mech_object_ = NULL;
 static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 
 PyTypeObject* hocobject_type;
+
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
@@ -192,8 +200,11 @@ static void hocobj_dealloc(PyHocObject* self) {
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
     PyObject* subself;
+    PyObject* base;
+    PyHocObject* hbase = nullptr;
+
     subself = subtype->tp_alloc(subtype, 0);
-    // printf("hocobj_new %s %p\n", subtype->tp_name, subself);
+    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
     if (subself == NULL) {
         return NULL;
     }
@@ -205,37 +216,47 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->nindex_ = 0;
     self->type_ = PyHoc::HocTopLevelInterpreter;
     self->iteritem_ = 0;
-    if (kwds && PyDict_Check(kwds)) {
-        PyObject* base = PyDict_GetItemString(kwds, "hocbase");
-        if (base) {
-            int ok = 0;
-            if (PyObject_TypeCheck(base, hocobject_type)) {
-                PyHocObject* hbase = (PyHocObject*) base;
-                if (hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
-                    // printf("hocobj_new base %s\n", hbase->sym_->name);
-                    // remove the hocbase keyword since hocobj_call only allows
-                    // the "sec" keyword argument
-                    PyDict_DelItemString(kwds, "hocbase");
-                    PyObject* r = hocobj_call(hbase, args, kwds);
-                    if (!r) {
-                        Py_DECREF(subself);
-                        return NULL;
-                    }
-                    PyHocObject* rh = (PyHocObject*) r;
-                    self->type_ = rh->type_;
-                    self->ho_ = rh->ho_;
-                    hoc_obj_ref(self->ho_);
-                    Py_DECREF(r);
-                    ok = 1;
-                }
-            }
-            if (!ok) {
-                Py_DECREF(subself);
-                PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
-                return NULL;
-            }
+
+    // if subtype is a subclass of some NEURON class, then one of its
+    // tp_mro's is in sym_to_type_map
+    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
+        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
+        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
+        if (symbol_result != type_to_sym_map.end()) {
+            hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+            hbase->type_ = PyHoc::HocFunction;
+            hbase->sym_ = symbol_result->second;
+            break;
         }
     }
+
+    if (kwds && PyDict_Check(kwds) && (base = PyDict_GetItemString(kwds, "hocbase"))) {
+        if (PyObject_TypeCheck(base, hocobject_type)) {
+            hbase = (PyHocObject*) base;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
+            Py_DECREF(subself);
+            return NULL;
+        }
+        PyDict_DelItemString(kwds, "hocbase");
+    }
+
+    if (hbase and hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
+        // printf("hocobj_new base %s\n", hbase->sym_->name);
+        // remove the hocbase keyword since hocobj_call only allows
+        // the "sec" keyword argument
+        PyObject* r = hocobj_call(hbase, args, kwds);
+        if (!r) {
+            Py_DECREF(subself);
+            return NULL;
+        }
+        PyHocObject* rh = (PyHocObject*) r;
+        self->type_ = rh->type_;
+        self->ho_ = rh->ho_;
+        hoc_obj_ref(self->ho_);
+        Py_DECREF(r);
+    }
+
     return subself;
 }
 
@@ -330,7 +351,8 @@ static Inst* save_pc(Inst* newpc) {
     return savpc;
 }
 
-static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
+// also called from nrnpy_nrn.cpp
+int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     int i, narg = PyTuple_Size(args);
     for (i = 0; i < narg; ++i) {
         PyObject* po = PyTuple_GetItem(args, i);
@@ -402,7 +424,7 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     return narg;
 }
 
-static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
+void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
     std::vector<char*>::iterator it = s2free.begin();
     for (; it != s2free.end(); ++it) {
         if (*it) {
@@ -514,6 +536,11 @@ PyObject* nrnpy_ho2po(Object* o) {
         po = hocobj_new(hocobject_type, 0, 0);
         ((PyHocObject*) po)->ho_ = o;
         ((PyHocObject*) po)->type_ = PyHoc::HocObject;
+        auto location = sym_to_type_map.find(o->ctemplate->sym);
+        if (location != sym_to_type_map.end()) {
+            Py_INCREF(location->second);
+            po->ob_type = location->second;
+        }
         hoc_obj_ref(o);
     }
     return po;
@@ -678,6 +705,15 @@ static void* fcall(void* vself, void* vargs) {
         PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
         result->ho_ = ho;
         result->type_ = PyHoc::HocObject;
+        // Note: I think the only reason we're not using ho2po here is because we don't have to
+        //       hocref ho since it was created by hoc_newobj1... but it would be better if we did
+        //       so we could avoid repetitive code
+        auto location = sym_to_type_map.find(ho->ctemplate->sym);
+        if (location != sym_to_type_map.end()) {
+            Py_INCREF(location->second);
+            ((PyObject*) result)->ob_type = location->second;
+        }
+
         hocobj_pushargs_free_strings(strings_to_free);
         return result;
     } else {
@@ -971,6 +1007,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     }
 
     Symbol* sym = getsym(n, self->ho_, 0);
+    // Return well known types right away
+    auto location = sym_to_type_map.find(sym);
+    if (location != sym_to_type_map.end()) {
+        Py_INCREF(location->second);
+        return (PyObject*) location->second;
+    }
+
     if (!sym) {
         if (self->type_ == PyHoc::HocObject && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
             PyObject* p = nrnpy_hoc2pyobject(self->ho_);
@@ -1454,14 +1497,6 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                     return -1;
                 }
                 err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
-                if (!err && sym->subtype == DYNAMICUNITS) {
-                    char mes[100];
-                    Sprintf(mes,
-                            "Assignment to %s value of physical constant %s",
-                            _nrnunit_use_legacy_ ? "legacy" : "modern",
-                            sym->name);
-                    err = PyErr_WarnEx(PyExc_Warning, mes, 1);
-                }
             }
         }
         break;
@@ -1832,6 +1867,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     if (po->type_ == PyHoc::HocObject) {  // might be in an iterator context
         if (po->ho_->ctemplate == hoc_vec_template_) {
             Vect* hv = (Vect*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += vector_capacity(hv);
+            }
             if (ix < 0 || ix >= vector_capacity(hv)) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
@@ -1842,6 +1880,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             }
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             OcList* hl = (OcList*) po->ho_->u.this_pointer;
+            if (ix < 0) {
+                ix += hl->count();
+            }
             if (ix < 0 || ix >= hl->count()) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
@@ -1940,8 +1981,36 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     return result;
 }
 
+static PyObject* hocobj_slice_getitem(PyObject* self, PyObject* slice) {
+    // Non slice indexing still uses original function
+    if (!PySlice_Check(slice)) {
+        return hocobj_getitem(self, PyLong_AsLong(slice));
+    }
+    auto* po = (PyHocObject*) self;
+    if (!po->ho_) {
+        PyErr_SetString(PyExc_TypeError, "Obj is NULL");
+        return nullptr;
+    }
+    if (po->type_ != PyHoc::HocObject || po->ho_->ctemplate != hoc_vec_template_) {
+        PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
+        return nullptr;
+    }
+    auto* v = (Vect*) po->ho_->u.this_pointer;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    Py_ssize_t step = 0;
+    Py_ssize_t slicelen = 0;
+    Py_ssize_t len = vector_capacity(v);
+    PySlice_GetIndicesEx(slice, len, &start, &end, &step, &slicelen);
+    if (step == 0) {
+        PyErr_SetString(PyExc_ValueError, "slice step cannot be zero");
+        return nullptr;
+    }
+    Object** obj = new_vect(v, slicelen, start, step);
+    return nrnpy_ho2po(*obj);
+}
+
 static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
-    // printf("hocobj_setitem %d\n", i);
     int err = -1;
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ > PyHoc::HocArray) {
@@ -2062,6 +2131,54 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
         HocContextRestore;
     }
     return err;
+}
+
+static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) {
+    // Non slice indexing still uses original function
+    if (!PySlice_Check(slice)) {
+        return hocobj_setitem(self, PyLong_AsLong(slice), arg);
+    }
+    auto* po = (PyHocObject*) self;
+    if (!po->ho_) {
+        PyErr_SetString(PyExc_TypeError, "Obj is NULL");
+        return -1;
+    }
+    if (po->type_ != PyHoc::HocObject || po->ho_->ctemplate != hoc_vec_template_) {
+        PyErr_SetString(PyExc_TypeError, "sequence index must be integer, not 'slice'");
+        return -1;
+    }
+    auto v = (Vect*) po->ho_->u.this_pointer;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    Py_ssize_t step = 0;
+    Py_ssize_t slicelen = 0;
+    Py_ssize_t cap = vector_capacity(v);
+    PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
+    // Slice index assignment requires a list of the same size as the slice
+    PyObject* iter = PyObject_GetIter(arg);
+    if (!iter) {
+        PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
+        return -1;
+    }
+    PyObject* val = nullptr;
+    for (Py_ssize_t i = 0; i < slicelen; ++i) {
+        val = PyIter_Next(iter);
+        if (!val) {
+            Py_DECREF(iter);
+            PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+            return -1;
+        }
+        PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
+        Py_DECREF(val);
+    }
+    val = PyIter_Next(iter);
+    Py_DECREF(iter);
+    if (val) {
+        Py_DECREF(val);
+        PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+        return -1;
+    }
+    return 0;
 }
 
 static PyObject* mkref(PyObject* self, PyObject* args) {
@@ -3000,7 +3117,6 @@ static PyObject* py_hocobj_mul(PyObject* obj1, PyObject* obj2) {
 static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
     return py_hocobj_math("div", obj1, obj2);
 }
-static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
 #include "nrnpy_hoc.h"
 
@@ -3152,8 +3268,22 @@ static char* nrncore_arg(double tstop) {
     return NULL;
 }
 
+
+static PyType_Spec obj_spec_from_name(const char* name) {
+    return {
+        name,
+        sizeof(PyHocObject),
+        0,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        nrnpy_HocObjectType_slots,
+    };
+}
+
 PyObject* nrnpy_hoc() {
     PyObject* m;
+    PyObject* bases;
+    PyTypeObject* pto;
+    PyType_Spec spec;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
@@ -3176,12 +3306,26 @@ PyObject* nrnpy_hoc() {
     m = PyModule_Create(&hocmodule);
     assert(m);
     Symbol* s = NULL;
-    hocobject_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_HocObjectType_spec);
+    spec = obj_spec_from_name("hoc.HocObject");
+    hocobject_type = (PyTypeObject*) PyType_FromSpec(&spec);
     if (PyType_Ready(hocobject_type) < 0)
         goto fail;
-    Py_INCREF(hocobject_type);
-    // printf("AddObject HocObject\n");
     PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
+
+    bases = PyTuple_Pack(1, hocobject_type);
+    Py_INCREF(bases);
+    for (auto name: py_exposed_classes) {
+        // TODO: obj_spec_from_name needs a hoc. prepended
+        exposed_py_type_names.push_back(std::string("hoc.") + name);
+        spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
+        pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+        sym_to_type_map[hoc_lookup(name)] = pto;
+        type_to_sym_map[pto] = hoc_lookup(name);
+        if (PyType_Ready(pto) < 0)
+            goto fail;
+        PyModule_AddObject(m, name, (PyObject*) pto);
+    }
+    Py_DECREF(bases);
 
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {

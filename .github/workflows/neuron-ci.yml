@@ -1,12 +1,13 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
+  merge_group:
   push:
-    branches: 
+    branches:
       # If nothing else, this is important for the ccache logic below...
       - master
       - release/**
@@ -34,7 +35,7 @@ jobs:
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.15
+      DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
@@ -43,7 +44,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-11, ubuntu-20.04]
+        os: [ macOS-12, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -77,7 +78,7 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
                 -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
-          - os: macOS-12
+          - os: macOS-13
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
@@ -95,7 +96,11 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
+          # Unlink and re-link to prevent errors when GitHub macOS runner images
+          # install Python outside of brew; See actions/setup-python#577 and BlueBrain/libsonata/pull/317
+          brew list -1 | grep python | while read formula; do brew unlink $formula; brew link --overwrite $formula; done
           brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
+          # We use both for dynamic mpi in nrn
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
@@ -143,6 +148,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
+          python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v4
@@ -154,6 +160,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
+          python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
@@ -169,7 +176,7 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
@@ -195,7 +202,7 @@ jobs:
           repository: actions/cache
           ref: v3
           path: tmp/actions/cache
-          
+
       - name: Make actions/cache@v3 run even on failure
         run: |
           sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml

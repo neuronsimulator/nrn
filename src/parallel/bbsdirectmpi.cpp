@@ -1,10 +1,11 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
-#include "bbsconf.h"
 #ifdef NRNMPI  // to end of file
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbs.h"

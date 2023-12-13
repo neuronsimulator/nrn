@@ -28,9 +28,6 @@
 #if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#if HAVE_ALLOC_H
-#include <alloc.h> /* at least for turbo C 2.0 */
-#endif
 
 #include "nrnmpiuse.h"
 

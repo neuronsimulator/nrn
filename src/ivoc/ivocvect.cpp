@@ -26,8 +26,6 @@
 //#include <OS/string.h>
 
 #include <IV-look/kit.h>
-#else
-#include <OS/list.h>
 #endif
 
 #if defined(SVR4)
@@ -396,6 +394,16 @@ int is_vector_arg(int i) {
         return 0;
     }
     return 1;
+}
+
+Object** new_vect(Vect* v, ssize_t delta, ssize_t start, ssize_t step) {
+    // Creates a new vector of values delta steps from start
+    std::size_t size{(size_t) delta};
+    auto* y = new Vect(size);
+    for (int i = 0; i < delta; ++i) {
+        y->elem(i) = v->elem(int(i * step + start));
+    }
+    return y->temp_objvar();
 }
 
 int vector_arg_px(int i, double** px) {
@@ -1565,7 +1573,6 @@ static Object** v_copy(void* v) {
     return y->temp_objvar();
 }
 
-
 static Object** v_at(void* v) {
     auto* x = static_cast<Vect*>(v);
     std::size_t start{};
@@ -1576,14 +1583,11 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    std::size_t size{end - start};
-    auto* y = new Vect(size);
-    // ZFM: fixed bug -- i<size, not i<=size
-    for (std::size_t i = 0; i < size; ++i) {
-        y->elem(i) = x->elem(i + start);
-    }
-    return y->temp_objvar();
+    // Creation of a new vector has been moved to new_vect to allow slicing
+    ssize_t delta = end - start;
+    return new_vect(x, delta, start, 1);
 }
+
 
 typedef struct {
     double x;
@@ -1679,7 +1683,6 @@ static Object** v_interpolate(void* v) {
     if (flag) {
         delete ys;
     }
-
     return yd->temp_objvar();
 }
 
@@ -2364,7 +2367,11 @@ static Object** v_mul(void* v1) {
 static Object** v_div(void* v1) {
     Vect* x = (Vect*) v1;
     if (hoc_argtype(1) == NUMBER) {
-        std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        if (*getarg(1) == 0.0) {
+            hoc_execerror("Vector", "Division by zero");
+        } else {
+            std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        }
     }
     if (hoc_is_object_arg(1)) {
         Vect* y = vector_arg(1);

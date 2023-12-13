@@ -311,7 +311,7 @@ void OcFile::close() {
 }
 void OcFile::set_name(const char* s) {
     close();
-    if (s != filename_.string()) {
+    if (s != filename_.c_str()) {
         filename_ = s;
     }
 }
@@ -329,7 +329,7 @@ void OcFile::binary_mode() {
         // printf("can't switch to binary mode. No setmode\n");
         mode_[1] = 'b';
         mode_[2] = '\0';
-        file_ = freopen(filename_.string(), mode_, file());
+        file_ = freopen(filename_.c_str(), mode_, file());
 #else
         setmode(fileno(file()), O_BINARY);
 #endif
@@ -471,13 +471,13 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir();
+        dirname_ = *fc_->dir()->string();
     } else
 #endif
     {
         dirname_ = "";
     }
-    return dirname_.string();
+    return dirname_.c_str();
 }
 
 bool OcFile::file_chooser_popup() {

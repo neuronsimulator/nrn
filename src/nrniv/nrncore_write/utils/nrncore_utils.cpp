@@ -11,7 +11,9 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <algorithm>
 #include <cerrno>
 #include <filesystem>
@@ -266,18 +268,6 @@ void check_coreneuron_compatibility(void* handle) {
         std::stringstream s_path;
         s_path << bbcore_write_version << " vs " << cn_bbcore_read_version;
         hoc_execerror("Incompatible NEURON and CoreNEURON versions :", s_path.str().c_str());
-    }
-
-    // Make sure legacy vs modern units are consistent.
-    // Would be nice to check in coreneuron set_globals but that would abort
-    // if inconsistent.
-    void* cn_nrnunit_use_legacy_sym = dlsym(handle, "corenrn_units_use_legacy");
-    if (!cn_nrnunit_use_legacy_sym) {
-        hoc_execerror("Could not get symbol corenrn_units_use_legacy from CoreNEURON", NULL);
-    }
-    bool cn_nrnunit_use_legacy = (*(bool (*)()) cn_nrnunit_use_legacy_sym)();
-    if (cn_nrnunit_use_legacy != (_nrnunit_use_legacy_ == 1)) {
-        hoc_execerror("nrnunit_use_legacy() inconsistent with CORENRN_ENABLE_LEGACY_UNITS", NULL);
     }
 }
 

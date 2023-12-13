@@ -13,11 +13,11 @@
 #undef begin
 #undef add
 
-#include <OS/list.h>
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
 #include "netcvode.h"
 #include "cvodeobj.h"
+#include "utils/enumerate.h"
 
 #if HAVE_IV  // to end of file
 #include "graph.h"
@@ -108,9 +108,9 @@ void GLineRecord::fill_pd1() {
 
 void GLineRecord::fill_pd() {
     // Get rid of old pd_and_vec_ info.
-    for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-        if ((*it).second) {
-            delete (*it).second;
+    for (auto& [_, elem]: pd_and_vec_) {
+        if (elem) {
+            delete elem;
         }
     }
     pd_and_vec_.resize(0);
@@ -205,10 +205,8 @@ void GLineRecord::plot(int vecsz, double tstop) {
         ObjectContext obc(NULL);
         for (int i = 0; i < vecsz; ++i) {
             x->add(dt * i);
-            for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end();
-                 ++it) {
-                double* pd = (*it).first;
-                *pd = (*it).second->elem(i);
+            for (auto& [pd, elem]: pd_and_vec_) {
+                *pd = elem->elem(i);
             }
             gl_->plot();
         }

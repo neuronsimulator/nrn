@@ -1,7 +1,6 @@
 #ifndef nrnmenu_h
 #define nrnmenu_h
 
-#include <OS/string.h>
 #include "ndatclas.h"
 class MechTypeImpl;
 
@@ -39,7 +38,7 @@ class MechanismStandard: public Resource {
     int name_cnt_;
     int offset_;
     int vartype_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Symbol** glosym_;
     void mschk(const char*);

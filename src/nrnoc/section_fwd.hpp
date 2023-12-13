@@ -11,6 +11,13 @@ struct Prop;
 struct Section;
 using Datum = neuron::container::generic_data_handle;
 
+// Forward declaration of Prop means Prop.id() not directly accessible
+// in mod files. This helps work around that problem for purposes of validity
+// checking. Perhaps someday, Prop will disappear entirely as it conceptually
+// is just a mechanism row and is bloated with redundant type and size info.
+// It does not exist in CoreNEURON.
+neuron::container::non_owning_identifier_without_container _nrn_get_prop_id(Prop*);
+
 extern int cvode_active_;
 extern int secondorder;
 extern int use_sparse13;

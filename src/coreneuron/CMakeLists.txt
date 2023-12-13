@@ -42,7 +42,6 @@ option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" O
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC or OpenMP" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
-option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_NMODL_DIR
@@ -181,11 +180,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
-  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
-  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
-  if(CMAKE_VERSION VERSION_LESS 3.19)
-    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
-  endif()
 endif()
 
 if(CORENRN_ENABLE_SHARED)
@@ -243,17 +237,6 @@ if(CORENRN_ENABLE_REPORTING)
 
   include_directories(${sonatareport_INCLUDE_DIR})
 endif()
-
-if(CORENRN_ENABLE_LEGACY_UNITS)
-  set(CORENRN_USE_LEGACY_UNITS 1)
-else()
-  set(CORENRN_USE_LEGACY_UNITS 0)
-endif()
-list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
-# Propagate Legacy Units flag to backends.
-set(NMODL_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
 
 if(CORENRN_ENABLE_PRCELLSTATE)
   set(CORENRN_NRN_PRCELLSTATE 1)
@@ -669,15 +652,15 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
+configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
 foreach(header ${main_headers})
-  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
 endforeach()
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
 # main program required for building special-core
 cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
@@ -800,7 +783,6 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
-message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
 message(STATUS "NMODL PATH          | ${CORENRN_NMODL_BINARY}")
 message(STATUS "NMODL FLAGS         | ${CORENRN_NMODL_FLAGS}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")

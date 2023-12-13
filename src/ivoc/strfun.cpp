@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <OS/string.h>
 #include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,10 +20,6 @@ extern int nrn_is_artificial(int);
 
 extern int hoc_return_type_code;
 
-inline unsigned long key_to_hash(String& s) {
-    return s.hash();
-}
-
 static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);
@@ -43,18 +38,14 @@ static double l_len(void*) {
 }
 
 static double l_head(void*) {
-    String text(gargstr(1));
+    std::string text(gargstr(1));
     Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
+    r.Search(text.c_str(), text.size(), 0, text.size());
     int i = r.BeginningOfMatch();
     //	text.set_to_left(i); doesnt work
     char** head = hoc_pgargstr(3);
     if (i > 0) {
-        char* buf = new char[i + 1];
-        strncpy(buf, text.string(), i);
-        buf[i] = '\0';
-        hoc_assign_str(head, buf);
-        delete[] buf;
+        hoc_assign_str(head, text.substr(0, i).c_str());
     } else {
         hoc_assign_str(head, "");
     }
@@ -63,13 +54,13 @@ static double l_head(void*) {
 }
 
 static double l_tail(void*) {
-    CopyString text(gargstr(1));
+    std::string text(gargstr(1));
     Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
+    r.Search(text.c_str(), text.size(), 0, text.size());
     int i = r.EndOfMatch();
     char** tail = hoc_pgargstr(3);
     if (i >= 0) {
-        hoc_assign_str(tail, text.string() + i);
+        hoc_assign_str(tail, text.c_str() + i);
     } else {
         hoc_assign_str(tail, "");
     }
@@ -77,17 +68,43 @@ static double l_tail(void*) {
     return double(i);
 }
 
+static double l_ltrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(0, s.find_first_not_of(chars));
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
+static double l_rtrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(s.find_last_not_of(chars) + 1);
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
 static double l_left(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.left(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(0, int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
 static double l_right(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.right(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
@@ -102,11 +119,12 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_top_level_symlist;
 
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob) {
+    Symbol* s{};
     IvocAliases* a = (IvocAliases*) ob->aliases;
     if (a) {
-        return a->lookup(name);
+        s = a->lookup(name);
     }
-    return NULL;
+    return s;
 }
 
 extern void ivoc_free_alias(Object* ob) {
@@ -159,14 +177,12 @@ static Object** l_alias_list(void*) {
     Symbol* sl = hoc_lookup("List");
     Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
     if (!st || st->type != TEMPLATE) {
-        printf("st=%p %s %d\n", st, st ? st->name : "NULL", st ? st->type : 0);
-        hoc_execerror("String is not a template", 0);
+        hoc_execerror("String is not a HOC template", 0);
     }
     Object** po = hoc_temp_objvar(sl, list);
     (*po)->refcount++;
     int id = (*po)->index;
     if (a) {
-        char buf[256];
         for (auto& kv: a->symtab_) {
             Symbol* sym = kv.second;
             hoc_pushstr(&sym->name);
@@ -321,6 +337,8 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"len", l_len},
                                   {"head", l_head},
                                   {"tail", l_tail},
+                                  {"ltrim", l_ltrim},
+                                  {"rtrim", l_rtrim},
                                   {"right", l_right},
                                   {"left", l_left},
                                   {"is_name", l_is_name},
@@ -333,13 +351,11 @@ static Member_func l_members[] = {{"substr", l_substr},
 static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
 
 static void* l_cons(Object*) {
-    return NULL;
+    return nullptr;
 }
 
-static void l_destruct(void*) {}
-
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
 }
 
 
@@ -349,7 +365,7 @@ IvocAliases::IvocAliases(Object* ob) {
 }
 
 IvocAliases::~IvocAliases() {
-    ob_->aliases = NULL;
+    ob_->aliases = nullptr;
     for (auto& kv: symtab_) {
         Symbol* sym = kv.second;
         hoc_free_symspace(sym);
@@ -358,8 +374,7 @@ IvocAliases::~IvocAliases() {
     }
 }
 Symbol* IvocAliases::lookup(const char* name) {
-    String s(name);
-    const auto& it = symtab_.find(s);
+    const auto& it = symtab_.find(name);
     if (it != symtab_.end()) {
         return it->second;
     }
@@ -372,16 +387,14 @@ Symbol* IvocAliases::install(const char* name) {
     strcpy(sp->name, name);
     sp->type = VARALIAS;
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
-    sp->extra = 0;
-    sp->arayinfo = 0;
-    String s(sp->name);
-    symtab_.emplace(s, sp);
+    sp->extra = nullptr;
+    sp->arayinfo = nullptr;
+    symtab_.try_emplace(sp->name, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
-    String s(sym->name);
-    auto it = symtab_.find(s);
+    auto it = symtab_.find(sym->name);
     symtab_.erase(it);
     free(sym->name);
     free(sym);

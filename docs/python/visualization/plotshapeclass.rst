@@ -22,6 +22,7 @@ PlotShape
         ``ps.plot(graphics_object)``
 
     Description:
+
         In NEURON 7.7+, PlotShape.plot works both with and without Interviews support.
 	Variables, sectionlists, and scale are supported.
         Clicking on a segment displays the value and the segment id.
@@ -58,6 +59,7 @@ PlotShape
 	    or use plotly instead.
     
     Example:
+
         You can also pass in a SectionList argument to only plot specific sections
 
 
@@ -75,7 +77,89 @@ PlotShape
             ps.variable('v')
             ax = ps.plot(pyplot, cmap=cm.jet)
             pyplot.show()    
-            
+
+    Example:
+
+        Line width across the neuron morphology is able to be altered depending on different modes. ``ps.show(0)`` allows for visualizing diameters for each segment across the cell. Additionally, when ``mode = 1`` or ``mode = 2`` , line_width argument can be passed in to specify fixed width across cell.
+
+	For plotting on matplotlib:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            from neuron.units import mV, ms
+            from matplotlib.pyplot import cm
+            from matplotlib import pyplot
+
+            h.load_file("c91662.ses")
+
+            for sec in h.allsec():
+                sec.nseg = int(1 + 2 * (sec.L // 40))
+                sec.insert(h.hh)
+
+            ic = h.IClamp(h.soma(0.5))
+            ic.delay = 1 * ms
+            ic.dur = 1 * ms
+            ic.amp = 10
+
+            h.finitialize(-65 * mV)
+            h.continuerun(2 * ms)
+
+            ps = h.PlotShape(False)
+            ps.variable("v")
+            ps.show(1)
+            ps.plot(pyplot, cmap=cm.magma, line_width=10, color="red")
+            pyplot.show()
+
+        For plotting on plotly:
+
+            .. code-block::
+                python
+
+                import plotly
+                import matplotlib
+                from neuron import h
+                from neuron.units import mV, ms
+
+                h.load_file("c91662.ses")
+                for sec in h.allsec():
+                    sec.nseg = int(1 + 2 * (sec.L // 40))
+                    sec.insert(h.hh)
+
+                ic = h.IClamp(h.soma(0.5))
+                ic.delay = 1 * ms
+                ic.dur = 1 * ms
+                ic.amp = 10
+
+                h.finitialize(-65 * mV)
+                h.continuerun(2 * ms)
+
+                ps = h.PlotShape(False)
+                ps.variable("v")
+                ps.show(1)
+                ps.plot(plotly, width=7, cmap=matplotlib.colormaps["viridis"]).show()
+
+
+    Example:
+        Color argument can also be passed in when consistent color across cell is preferred. When not specified, the morphology will be plotted in color gradient passed as ``cmap`` in accordance with voltage values of each segment after simulation is initiated. To specifiy cmap, 
+
+        .. code-block::   
+            python
+
+            from neuron import h
+            from matplotlib import pyplot, cm
+
+            h.load_file("c91662.ses")
+            sl = h.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
+            for sec in sl:
+                sec.v = 0
+            ps = h.PlotShape(False)
+            ps.scale(-80, 40)
+            ps.variable("v")
+            ax = ps.plot(pyplot, line_width=3, color="red")
+            pyplot.show()
+
 ----
 
 .. method:: PlotShape.scale
@@ -172,6 +256,44 @@ PlotShape
     Description:
     Range variable (v, m_hh, etc.) to be used for time, space, and
     shape plots.
+    
+    Additionally, the variable can also be identified by species or specific region to show the corresponding voltage across.
+
+    Example:
+
+        .. code-block::
+            python
+            
+            from neuron import h, rxd
+            from neuron.units import mM, µm, ms, mV
+            import plotly
+            h.load_file("stdrun.hoc")
+
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
+            dend2.connect(dend1(1))
+
+            dend1.nseg = dend1.L = dend2.nseg = dend2.L = 11
+            dend1.diam = dend2.diam = 2 * µm
+
+            cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
+            cyt2 = rxd.Region(dend2.wholetree(), nrn_region="i")
+
+            ca = rxd.Species([cyt,cyt2], name="ca", charge=2, initial=0 * mM, d=1 * µm ** 2 / ms)
+
+            ca.nodes(dend1(0.5))[0].include_flux(1e-13, units="mmol/ms")
+
+            h.finitialize(-65 * mV)
+            h.continuerun(50 * ms)
+
+            ps = h.PlotShape(False)
+
+            ps.variable(ca[cyt])
+
+            ps.plot(plotly).show()
+
+
+
 
 
 ----

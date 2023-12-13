@@ -17,11 +17,11 @@ add_executable(
   testneuron
   common/catch2_main.cpp
   unit_tests/basic.cpp
-  unit_tests/matrix.cpp
   unit_tests/container/container.cpp
   unit_tests/container/generic_data_handle.cpp
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
+  unit_tests/utils/enumerate.cpp
   unit_tests/oc/hoc_interpreter.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
@@ -215,6 +215,15 @@ if(NRN_ENABLE_PYTHON)
     list(APPEND pytest_args --cov-report=xml --cov=neuron)
   endif()
   set(pytest -m pytest ${pytest_args})
+
+  nrn_add_test(
+    GROUP unit_tests
+    NAME python_unit_tests
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
+    PRELOAD_SANITIZER
+    SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
+
   # In brief:
   #
   # * tests and mod files under pytest/ are only compatible with NEURON
@@ -287,7 +296,7 @@ if(NRN_ENABLE_PYTHON)
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
     NAME hoctests
-    MODFILE_PATTERNS *.mod
+    MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY test/hoctests)
   set(hoctest_utils expect_err.hoc)
   foreach(ext hoc py)

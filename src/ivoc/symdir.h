@@ -3,7 +3,6 @@
 
 #include <InterViews/resource.h>
 #include <map>
-#include <OS/string.h>
 
 struct Object;
 class SymDirectoryImpl;
@@ -20,14 +19,14 @@ class IvocAliases {
     Symbol* symbol(int);
 
     Object* ob_;  // not referenced
-    std::map<String, Symbol*> symtab_;
+    std::map<std::string, Symbol*> symtab_;
 };
 
 /* List of Symbols considered as a directory */
 
 class SymDirectory: public Resource {
   public:
-    SymDirectory(const String& parent_path,
+    SymDirectory(const std::string& parent_path,
                  Object* parent_object,
                  Symbol*,
                  int array_index = 0,
@@ -37,16 +36,16 @@ class SymDirectory: public Resource {
     SymDirectory();
     virtual ~SymDirectory();
 
-    virtual const String& path() const;
+    virtual const std::string& path() const;
     virtual int count() const;
-    virtual const String& name(int index) const;
-    virtual int index(const String&) const;
-    virtual void whole_name(int index, CopyString&) const;
+    virtual const std::string& name(int index) const;
+    virtual int index(const std::string&) const;
+    virtual void whole_name(int index, std::string&) const;
     virtual bool is_directory(int index) const;
     virtual double* variable(int index);
     virtual int whole_vector(int index);
 
-    static bool match(const String& name, const String& pattern);
+    static bool match(const std::string& name, const std::string& pattern);
     Symbol* symbol(int index) const;
     int array_index(int index) const;
     Object* object() const;  // the parent_object

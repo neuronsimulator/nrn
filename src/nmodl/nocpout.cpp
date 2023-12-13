@@ -63,10 +63,13 @@ directly by hoc.
 #include "parse1.hpp"
 
 #include <algorithm>
+#include <iterator>  // std::back_inserter
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
@@ -150,10 +153,8 @@ static List* ba_list_;
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
-static int cond_index;
 static int tqitem_index;
 static int watch_index;
-static int cvode_index;
 static List* ion_synonym;
 int debugging_;
 int net_receive_;
@@ -195,7 +196,7 @@ void nrninit() {
 }
 
 void parout() {
-    int i, j, ioncount, pointercount, gind, emit_check_table_thread;
+    int i, ioncount, pointercount, gind, emit_check_table_thread;
     Item *q, *q1;
     Symbol *s, *sion;
     double d1, d2;
@@ -226,6 +227,9 @@ void parout() {
     } else {
         Sprintf(suffix, "_%s", mechname);
     }
+
+    func_needs_setdata();  // Do FUNCTION/PROCEDURE need prior call to setdata.
+
     if (artificial_cell && vectorize && (thread_data_index || toplocal_)) {
         fprintf(stderr,
                 "Notice: ARTIFICIAL_CELL models that would require thread specific data are not "
@@ -337,17 +341,14 @@ void parout() {
 
     if (vectorize) {
         Lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
-        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
     }
-#if 0
-	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
-	SYMLISTITER {
-		if (SYM(q)->nrntype & NRNSTATIC) {
-			Sprintf(buf, "static double %s;\n", SYM(q)->name);
-			Lappendstr(defs_list, buf);
-		}
-	}
-#endif
+    if (!point_process) {
+        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
+        Lappendstr(defs_list,
+                   "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
+        Lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
+    }
+
     Lappendstr(defs_list, "/* external NEURON variables */\n");
     SYMLISTITER {
         s = SYM(q);
@@ -386,7 +387,6 @@ extern void _nrn_cacheloop_reg(int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
 extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
-extern Memb_func* memb_func;\n\
 ");
 
     if (nmodl_text) {
@@ -422,9 +422,11 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-    if (vectorize) {
+    if (!point_process) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-    } else {
+        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
+    }
+    if (!vectorize) {
         Lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
@@ -463,6 +465,7 @@ extern Memb_func* memb_func;\n\
         Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
         Lappendstr(defs_list, buf);
     }
+
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
@@ -471,6 +474,30 @@ extern Memb_func* memb_func;\n\
         }
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
+
+    /* Direct Python call wrappers to density mechanism functions. */
+    if (!point_process) {
+        Lappendstr(defs_list,
+                   "\n/* Direct Python call wrappers to density mechanism functions.*/\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "static double _npy_%s(Prop*);\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list,
+                   "\n"
+                   "static NPyDirectMechFunc npy_direct_func_proc[] = {\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "{\"%s\", _npy_%s},\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list, "{0, 0}\n};\n");
+    }
 
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
@@ -1165,6 +1192,10 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             }
         }
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        if (!point_process) {
+            Lappendstr(defs_list,
+                       "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");
+        }
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
             lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 1, _thread_mem_init);\n");
@@ -1313,8 +1344,8 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
         }
     } /* end of not "nothing" */
     Lappendstr(defs_list,
-               "\
-	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
+               "\n"
+               "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
         char* pf{};
@@ -1563,7 +1594,6 @@ void ldifusreg() {
 
 int decode_limits(Symbol* sym, double* pg1, double* pg2) {
     int i;
-    double d1;
     if (sym->subtype & PARM) {
         char* cp;
         int n;
@@ -1587,7 +1617,6 @@ int decode_limits(Symbol* sym, double* pg1, double* pg2) {
 
 int decode_tolerance(Symbol* sym, double* pg1) {
     int i;
-    double d1;
     if (sym->subtype & STAT) {
         char* cp;
         int n;
@@ -2095,6 +2124,8 @@ void declare_p() {
                "using _nrn_mechanism_cache_instance = "
                "neuron::cache::MechanismInstance<number_of_floating_point_variables, "
                "number_of_datum_variables>;\n"
+               "using _nrn_non_owning_id_without_container = "
+               "neuron::container::non_owning_identifier_without_container;\n"
                "template <typename T>\n"
                "using _nrn_mechanism_field = neuron::mechanism::field<T>;\n"
                "template <typename... Args>\n"
@@ -2857,10 +2888,8 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
        since it may compute some aspect of the current */
     Item *q, *q1;
     int type;
-    Symbol* sion;
     b[0] = '\0';
     ITERATE(q, useion) {
-        sion = SYM(q);
         q = q->next;
         ITERATE(q1, LST(q)) {
             type = SYM(q1)->nrntype;
@@ -2883,7 +2912,7 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;
     Symbol* s;
-    int i, b;
+    int i;
     char snew[256];
     if (net_receive_) {
         diag("Only one NET_RECEIVE block allowed", (char*) 0);
@@ -3084,7 +3113,6 @@ void chk_global_state() {
 }
 
 void conductance_hint(int blocktype, Item* q1, Item* q2) {
-    Item* q;
     if (blocktype != BREAKPOINT) {
         diag("CONDUCTANCE can only appear in BREAKPOINT block", (char*) 0);
     }
@@ -3134,4 +3162,149 @@ Symbol* breakpoint_current(Symbol* s) {
         }
     }
     return s;
+}
+
+// Determine if setdata is required to call FUNCTION or PROCEDURE
+// setdata is required if RANGE var used. For safety, also VERBATIM.
+// Deal with nested calls, via maintaining a list for each func.
+// Note that the nest can be recursive and called function may not
+// yet be defined til entire text is processed.
+
+#include <unordered_set>
+#include <unordered_map>
+
+struct Info {
+    std::unordered_set<Symbol*> func_calls;
+    bool need_setdata{false};
+    bool is_being_looked_at{false};  // avoid recursion loops
+    Item* q{nullptr};                // To be modified if need_setdata.
+};
+
+static std::unordered_map<Symbol*, Info> funcs;
+static Symbol* in_func_;
+
+void check_range_in_func(Symbol* s) {
+    if (in_func_) {
+        // If s is a RANGE variable or nullptr (VERBATIM)
+        // then mark the current function as needing setdata
+        // If s is FUNCTION or PROCEDURE, then add to list
+        Info& i = funcs[in_func_];
+        if (!s) {  // VERBATIM
+            i.need_setdata = true;
+        } else if (s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            i.need_setdata = true;
+        } else if (s->usage & FUNCT) {
+            i.func_calls.insert(s);
+        }
+    }
+}
+
+void set_inside_func(Symbol* s) {
+    in_func_ = s;
+    if (s) {
+        assert(funcs.count(s) == 0);
+        funcs[s] = {};
+    }
+}
+
+// Make sure need_setdata is properly marked for all funcs.
+// I.e on entry, only ones marked are those that use RANGE or VERBATIM.
+// Need to recursively look through func_calls but watch out for loops.
+// If there are no RANGE then VERBATIM is ok and set all need_setdata to false.
+
+static bool check_func(Symbol* s);  // recursive
+
+void func_needs_setdata() {
+    if (suffix[0] == '\0') {
+        return;
+    }
+    for (auto& f: funcs) {
+        f.second.is_being_looked_at = false;
+    }
+
+    // if there are no RANGE then set all need_setdata to false.
+    bool norange{true};
+    Item* q;
+    int i;
+    SYMLISTITER {
+        Symbol* s = SYM(q);
+        if (s->type == NAME && s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            norange = false;
+            break;
+        }
+    }
+    if (norange) {
+        for (auto& f: funcs) {
+            f.second.need_setdata = false;
+        }
+    }
+
+    for (auto& f: funcs) {
+        check_func(f.first);
+    }
+    for (auto& f: funcs) {  // update the hocfunc item if need_setdata
+        auto& q = f.second.q;
+        if (q && f.second.need_setdata) {
+            // error if not valid id
+            Symbol* s = f.first;
+            Sprintf(buf,
+                    "\n"
+                    "  if(!_prop_id) {\n"
+                    "    hoc_execerror(\""
+                    "No data for %s_%s. Requires prior call to setdata_%s"
+                    " and that the specified mechanism instance still be in existence.\","
+                    " NULL);\n",
+                    s->name,
+                    mechname,
+                    mechname);
+            insertstr(q, buf);
+            if (vectorize) {
+                insertstr(q,
+                          " }\n"
+                          "  Prop* _local_prop = _extcall_prop;\n");
+            } else {
+                // ensure current instance matches _extcall_prop
+                insertstr(q,
+                          " } else {\n"
+                          "    _setdata(_extcall_prop);\n"
+                          "  }\n");
+            }
+
+        } else if (q) {
+            if (vectorize) {
+                // if id not valid then _local_prop must be nullptr
+                // because of later _ppvar = _local_prop ? ...
+                insertstr(q, "\n  Prop* _local_prop = _prop_id ? _extcall_prop : nullptr;\n");
+            }
+        }
+    }
+}
+
+static bool check_func(Symbol* s) {  // recursive
+    if (funcs.count(s) == 0) {
+        return false;
+    }
+    Info& i = funcs[s];
+    if (i.need_setdata) {
+        return true;
+    }
+    if (i.is_being_looked_at) {
+        return false;
+    }
+    i.is_being_looked_at = true;
+    for (auto& s1: i.func_calls) {
+        if (check_func(s1)) {
+            i.need_setdata = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+// If the function needs setdata, then q can be changed to
+// perform the check on _extcall_prop
+// Not called for POINT_PROCESS functions.
+void hocfunc_setdata_item(Symbol* s, Item* q) {
+    auto& i = funcs[s];
+    i.q = q;
 }
