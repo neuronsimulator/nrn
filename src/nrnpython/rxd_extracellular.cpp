@@ -26,6 +26,14 @@ Reaction* ecs_reactions = NULL;
 
 int states_cvode_offset;
 
+int node_grid_index;
+int node_index;
+bool test = true;
+int node1_grid_index;
+int node1_index;
+int node2_grid_index;
+int node2_index;
+
 /*Update the global array of reaction tasks when the number of reactions
  *or threads change.
  *n - the old number of threads - use to free the old threaded_reactions_tasks*/
@@ -181,7 +189,60 @@ extern "C" void ics_register_reaction(int list_idx,
     ecs_refresh_reactions(NUM_THREADS);
 }
 
-/*ecs_register_reaction is called from python it creates a reaction with
+extern "C" void get_indices(int64_t* node_grid_index_, int64_t* node_index_) {
+    node_grid_index = node_grid_index_[0];
+    node_index = node_index_[0];
+    printf("get_indices: \n");
+    printf("%lld, %lld ", node_grid_index, node_index);
+}
+
+/*
+extern "C" void connect_nodes(int64_t* node1_grid_index_, 
+                              int64_t* node1_index_, 
+                              int64_t* node2_grid_index_, 
+                              int64_t* node2_index_) {
+    node1_grid_index = node1_grid_index_[0];
+    node1_index = node1_index_[0];
+    node2_grid_index = node2_grid_index_[0];
+    node2_index = node2_index_[0];
+    printf("connect_nodes: \n");
+    printf("%lld, %lld \n", node1_grid_index, node1_index);
+    printf("%lld, %lld \n", node2_grid_index, node2_index);
+}
+*/
+
+
+int64_t* node1_grid_index_list;
+int64_t* node1_index_list;
+int64_t* node2_grid_index_list;
+int64_t* node2_index_list;
+double_t* node1_to_node2_coefficient;
+double_t* node2_to_node1_coefficient;
+int node1_index_list_length;
+int node2_index_list_length;
+
+
+extern "C" void connect_pairs_of_nodes(int64_t* node1_grid_index_list_,
+                                       int64_t* node2_grid_index_list_,
+                                       int64_t* node1_index_list_,
+                                       int64_t* node2_index_list_,
+                                       double_t* node1_to_node2_coefficient_,
+                                       double_t* node2_to_node1_coefficient_,
+                                       int64_t* node1_index_list_length_,
+                                       int64_t* node2_index_list_length_) {
+    node1_index_list_length = node1_index_list_length_[0];
+    node2_index_list_length = node2_index_list_length_[0];
+    node1_grid_index_list = node1_grid_index_list_;
+    node2_grid_index_list = node2_grid_index_list_;
+    node1_index_list = node1_index_list_;
+    node2_index_list = node2_index_list_;
+    node1_to_node2_coefficient = node1_to_node2_coefficient_;
+    node2_to_node1_coefficient = node2_to_node1_coefficient_;
+    printf("node1_to_node2_coefficient, %f, %f", node1_to_node2_coefficient[0], node1_to_node2_coefficient[2]);
+    }
+
+/*ecs_register_reaction is cal
+led from python it creates a reaction with
  * list_idx - the index for the linked list in the global array Parallel_grids
  * 	(currently this is always 0)
  * grid_id - the grid id within the linked list - this corresponds to species
@@ -598,6 +659,63 @@ void _fadvance_fixed_step_3D(void) {
     if (threaded_reactions_tasks != NULL)
         run_threaded_reactions(threaded_reactions_tasks);
 
+
+    Grid_node* grid2;
+    int id2;
+    printf("----------\n");
+
+    for (int i = 0; i < node1_index_list_length; i++) {
+        for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, id++) {
+            if (node1_grid_index_list[i] == id) {
+                for (id2 = 0, grid2 = Parallel_grids[0]; grid2 != NULL && grid2 != grid; grid2 = grid2->next, id2++) {
+                    if (node2_grid_index_list[i] == id2) {
+                        //printf("dt: %f \n", dt);
+                        // printf("grid2: %p \n", grid2);
+                        // printf("grid2_states: %p \n", grid2->states);
+                        printf("node1: %f; node2: %f \n", grid->states[node1_index_list[i]], grid2->states[node2_index_list[i]]);
+                        //double temp, f1, f2;
+                        //printf("node1tonode2: %f, %f \n", node1_to_node2_coefficient[i], node2_to_node1_coefficient[i]);
+                        //printf("Why 0*sth != 0?, %f, %f, %f \n", node1_to_node2_coefficient[i], grid->states[node1_index_list[i]], node1_to_node2_coefficient[i] * grid->states[node1_index_list[i]]);
+                        //double f1 = node1_to_node2_coefficient[i] * grid->states[node1_index_list[i]];
+                        //double f2 = node2_to_node1_coefficient[i] * grid2->states[node2_index_list[i]];
+                        //double temp = f1 - f2;
+                        double diff_concentration = grid->states[node1_index_list[i]] - grid2->states[node2_index_list[i]];
+                        //grid->states[node1_index_list[i]] = grid->states[node1_index_list[i]] - dt*temp;
+                        //grid2->states[node2_index_list[i]] = grid2->states[node2_index_list[i]] + dt*temp;
+                        grid->states[node1_index_list[i]] = grid->states[node1_index_list[i]] - dt*node1_to_node2_coefficient[i]*diff_concentration;
+                        grid2->states[node2_index_list[i]] = grid2->states[node2_index_list[i]] + dt*node2_to_node1_coefficient[i]*diff_concentration;
+                        //double V1 = grid->dx * grid->dx * grid->dx;
+                        //double V2 = grid2->dx * grid2->dx * grid2->dx;
+                        //grid->states[node1_index_list[i]] = grid->states[node1_index_list[i]] - dt*node1_to_node2_coefficient[i]*diff_concentration - dt*node2_to_node1_coefficient[i]*diff_concentration*V2/V1;
+                        //grid2->states[node2_index_list[i]] = grid2->states[node2_index_list[i]] + dt*node2_to_node1_coefficient[i]*diff_concentration*V1/V2 + dt*node1_to_node2_coefficient[i]*diff_concentration;
+                        printf("flux is %f, %f \n", node1_to_node2_coefficient[i]*diff_concentration, node2_to_node1_coefficient[i]*diff_concentration);
+                        // printf("V is %f, %f \n", grid->dx, grid2->dx);
+                        //printf("dt is %f \n", dt);
+                    }
+                }
+                // break;
+            } 
+        }
+    }
+
+    /*
+    for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, id++) {
+        if (node1_grid_index == id) {
+            for (id2 = 0, grid2 = Parallel_grids[0]; grid2 != NULL; grid2 = grid2->next, id2++) {
+                if (node2_grid_index == id2) {
+                    float temp; 
+                    temp = grid->states[node1_index] - grid2->states[node2_index];
+                    grid->states[node1_index] = grid->states[node1_index] - temp;
+                    grid2->states[node2_index] = grid2->states[node2_index] + temp;
+                    printf("flux is %f \n", temp);
+                    printf("node1: %f; node2: %f \n", grid->states[node1_index], grid2->states[node2_index]);
+                }
+
+            }
+        } 
+    }
+    */
+
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, id++) {
         MEM_ZERO(grid->states_cur, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
         g = dynamic_cast<ECS_Grid_node*>(grid);
@@ -610,7 +728,19 @@ void _fadvance_fixed_step_3D(void) {
         if (grid->hybrid) {
             grid->hybrid_connections();
         }
+        // *** TODO: ADD functions here
+        //printf("****** add here (%d, %d) ******\n", node1_grid_index, node1_index);
+        //printf("****** add here (%d, %d) ******\n", node2_grid_index, node2_index);
         grid->dg_adi();
+        // grid->states[0] = 72.1;
+        //float temp;
+        //temp = grid->states[node1_index] - grid->states[node2_index];
+        //grid->states[node1_index] = grid->states[node1_index] - temp;
+        //grid->states[node2_index] = grid->states[node2_index] + temp;
+        // if (test == true) {
+        //     grid->states[node_index] = 1666;
+        //     test = false;
+        // }
     }
     /* transfer concentrations */
     scatter_concentrations();

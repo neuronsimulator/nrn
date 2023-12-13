@@ -142,6 +142,49 @@ set_hybrid_data.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
+get_data_from_python = nrn_dll_sym("get_data_from_python")
+get_data_from_python.argtypes = [
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+]
+
+update_flux = nrn_dll_sym("update_flux")
+update_flux.argtypes = [
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+]
+
+get_indices = nrn_dll_sym("get_indices")
+get_indices.argtypes = [
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+]
+
+"""
+connect_nodes = nrn_dll_sym("connect_nodes")
+connect_nodes.argtypes = [
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64)
+]
+"""
+
+
+connect_pairs_of_nodes = nrn_dll_sym("connect_pairs_of_nodes")
+connect_pairs_of_nodes.argtypes = [
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.double),
+    numpy.ctypeslib.ndpointer(dtype=numpy.double),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64)
+]
+
 # ics_register_reaction = nrn_dll_sym('ics_register_reaction')
 # ics_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
 
@@ -286,6 +329,81 @@ def _domain_lookup(sec, dim=None):
     _dimensions[dimension].append(sec)
     return dimension
 
+
+def find_indices(nodes, index_tuple):
+    node = nodes(index_tuple)[0]
+    get_indices(
+        numpy.asarray(node.species._intracellular_instances[node.region]._grid_id, dtype=numpy.int64),
+        numpy.asarray(node._index, dtype=numpy.int64)
+        )
+    return (node.species._intracellular_instances[node.region]._grid_id, node._index)
+
+"""
+def connect_two_nodes(node1, node2):
+    connect_nodes(
+        numpy.asarray(node1.species._intracellular_instances[node1.region]._grid_id, dtype=numpy.int64), 
+        numpy.asarray(node1._index, dtype=numpy.int64), 
+        numpy.asarray(node2.species._intracellular_instances[node2.region]._grid_id, dtype=numpy.int64), 
+        numpy.asarray(node2._index, dtype=numpy.int64)
+    )
+    return (node1.species._intracellular_instances[node1.region]._grid_id, 
+            node1._index,
+            node2.species._intracellular_instances[node2.region]._grid_id, 
+            node2._index)
+"""
+
+def calc_pair_coef(node_list1, node_list2):
+    coef1, coef2 = [], []
+    for i in range(len(node_list1)): # assert len(node_list1) == len(node_list2)
+        node1 = node_list1[i]
+        node2 = node_list2[i]
+        dx1 = node1.region.dx
+        dx2 = node2.region.dx
+        dx_min = min(dx1, dx2)
+        dx_avg = (dx1+dx2)/2
+        # area_of_contact = dx_min*dx_min
+        area_of_contact = ( (dx1+dx2)/2 - abs(node1.y3d - node2.y3d) ) * ( (dx1+dx2)/2 - abs(node1.z3d - node2.z3d) )
+        coef1.append( # Is "D" here correct?
+            # Correct version: 2*area_of_contact*node1.d[0]/((dx1+dx2)*dx2*dx2*dx2)
+            2*area_of_contact*node1.d[0]/((dx1+dx2)*dx1*dx1*dx1)
+        )
+        coef2.append(
+            # Correct version: 2*area_of_contact*node2.d[0]/((dx1+dx2)*dx1*dx1*dx1)
+            2*area_of_contact*node2.d[0]/((dx1+dx2)*dx2*dx2*dx2)
+        )
+
+    assert (len(node_list1) == len(coef1))
+    return coef1, coef2
+    # return coef2, coef1
+
+node_pair_data = []
+def connect_node_pairs(node_list1, node_list2):
+    coef1_, coef2_ = calc_pair_coef(node_list1, node_list2)
+    node_pair_data.append(numpy.asarray([node.species._intracellular_instances[node.region]._grid_id for node in node_list1], dtype=numpy.int64))
+    node_pair_data.append(numpy.asarray([node.species._intracellular_instances[node.region]._grid_id for node in node_list2], dtype=numpy.int64))
+    node_pair_data.append(numpy.asarray([node._index for node in node_list1], dtype=numpy.int64))
+    node_pair_data.append(numpy.asarray([node._index for node in node_list2], dtype=numpy.int64))
+    node_pair_data.append(numpy.asarray(coef1_, dtype=numpy.double))
+    node_pair_data.append(numpy.asarray(coef2_, dtype=numpy.double))
+    node_pair_data.append(numpy.asarray(len(node_list1), dtype=numpy.int64))
+    node_pair_data.append(numpy.asarray(len(node_list2), dtype=numpy.int64))
+    # nlist1 = numpy.asarray([node.species._intracellular_instances[node.region]._grid_id for node in node_list1], dtype=numpy.int64)
+    print("coefs: ", coef1_, coef2_)
+    connect_pairs_of_nodes(
+        *node_pair_data[-8:]
+    )
+    """
+    connect_pairs_of_nodes(
+        numpy.asarray([node.species._intracellular_instances[node.region]._grid_id for node in node_list1], dtype=numpy.int64), 
+        numpy.asarray([node.species._intracellular_instances[node.region]._grid_id for node in node_list2], dtype=numpy.int64), 
+        numpy.asarray([node._index for node in node_list1], dtype=numpy.int64), 
+        numpy.asarray([node._index for node in node_list2], dtype=numpy.int64), 
+        numpy.asarray(coef1_, dtype=numpy.double),
+        numpy.asarray(coef2_, dtype=numpy.double),
+        numpy.asarray(len(node_list1), dtype=numpy.int64), 
+        numpy.asarray(len(node_list2), dtype=numpy.int64)
+    )
+    """
 
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
@@ -700,8 +818,8 @@ def _check_multigridding_supported_3d():
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
     with initializer._init_lock:
-        if not _check_multigridding_supported_3d():
-            raise RxDException("unsupported multigridding case")
+        # if not _check_multigridding_supported_3d():
+        #     raise RxDException("unsupported multigridding case")
 
         # update _node_fluxes in C
         _include_flux()
@@ -926,6 +1044,25 @@ def _setup_matrices():
                 volumes3d,
                 dxs,
             )
+            test1 = numpy.array([1, 2, 3])
+            get_data_from_python(
+                test1,
+                numpy.array([6, 7, 8]),
+                numpy.array([11, 22, 33]),
+                numpy.array([44, 55, 66]),
+            )
+            print("test1: ", test1)
+        print("get_data_from_python")
+        ct = 0
+        for sr in _species_get_all_species():
+            s = sr()
+            print(ct, s)
+            if s is not None:
+                if s._intracellular_instances:
+                    for r in s._regions:
+                        if r in s._intracellular_instances:
+                            print(r)
+            ct += 1
 
         # TODO: Replace this this to handle 1d/3d hybrid models
         """

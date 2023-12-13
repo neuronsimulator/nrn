@@ -66,6 +66,8 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid,
                 grid->hybrid_data->num_3d_indices_per_1d_seg[i] =
                     num_3d_indices_per_1d_seg[index_ctr_1d];
                 grid->hybrid_data->volumes1d[i] = volumes1d[index_ctr_1d];
+                ((ICS_Grid_node*) grid)->_ics_alphas[hybrid_indices1d[index_ctr_1d]] =
+                    volumes1d[index_ctr_1d] / dx;
 
                 for (j = 0; j < num_3d_indices_per_1d_seg[index_ctr_1d]; j++, index_ctr_3d++, k++) {
                     grid->hybrid_data->indices3d[k] = hybrid_indices3d[index_ctr_3d];
@@ -79,6 +81,17 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid,
         }
     }
 }
+
+
+extern "C" void get_data_from_python(int64_t* n1, int64_t* n2, int64_t* n3, int64_t* n4) {
+    printf("%lld, %lld, %lld, %lld ", n1[0], n2[1], n3[2], n4[3]);
+}
+
+extern "C" void update_flux(int64_t* grid1, int64_t* grid2) {
+    grid1[0] += 0.01;
+    grid2[0] += 0.01;
+}
+
 
 /* solve Ax=b where A is a diagonally dominant tridiagonal matrix
  * N	-	length of the matrix
@@ -1670,10 +1683,16 @@ void _ics_hybrid_helper(ICS_Grid_node* g) {
             // forward euler coupling
             g->states[my_3d_index] -= dt * rate;
             states[my_1d_index] += dt * rate * vol_3d / vol_1d;
-            // printf("for 3d index %d: volume 3d = %g and states3d = %g and rate3d = %g\n",
-            // my_3d_index, vol_3d, g->states[my_3d_index], rates[vol_3d_index]);
+            printf("for 3d index %d: volume 3d = %g and states3d = %g and rate3d = %g\n",
+                   my_3d_index,
+                   vol_3d,
+                   g->states[my_3d_index],
+                   rates[vol_3d_index]);
         }
+        printf("g->states[0] is %g & ", g->states[0]);
     }
+    //g->states[0] = 42.3456;
+    printf("g->states[0] is %g \n", g->states[0]);
 
     free(old_g_states);
 }

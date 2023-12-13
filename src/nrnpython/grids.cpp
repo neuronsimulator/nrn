@@ -246,6 +246,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
                              double atolscale,
                              double* ics_alphas) {
     int k;
+    printf("(@ ICS_Grid_node) Parallel_grids %ld \n", Parallel_grids[0]);
     _num_nodes = num_nodes;
     diffusable = is_diffusable;
     this->atolscale = atolscale;
@@ -595,6 +596,7 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index,
     ssize_t n = (ssize_t) PyList_Size(neuron_pointers);  // number of segments.
 
     /* Find the Grid Object */
+    printf("grid_list_index %ld \n", grid_list_index);
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
         g = g->next;
@@ -647,6 +649,7 @@ extern "C" void set_grid_concentrations(int grid_list_index,
     /* TODO: note that these will need updating anytime the structure of the model changes... look
      * at the structure change count at each advance and trigger a callback to regenerate if
      * necessary */
+    printf("set_grid_concentrations \n");
     Grid_node* g;
     ssize_t i;
     ssize_t n = (ssize_t) PyList_Size(grid_indices);
@@ -691,6 +694,7 @@ extern "C" void set_grid_currents(int grid_list_index,
      * at the structure change count at each advance and trigger a callback to regenerate if
      * necessary */
     Grid_node* g;
+    // printf("set_grid_currents");
     ssize_t i;
     ssize_t n = (ssize_t) PyList_Size(grid_indices);
     long* dests;
@@ -803,6 +807,7 @@ void empty_list(int list_index) {
 }
 
 int Grid_node::insert(int grid_list_index) {
+    printf("Grid_node::insert");
     int i = 0;
     Grid_node** head = &(Parallel_grids[grid_list_index]);
 
@@ -1680,6 +1685,7 @@ int ICS_Grid_node::dg_adi() {
         run_threaded_ics_dg_adi(ics_adi_dir_y);
         run_threaded_ics_dg_adi(ics_adi_dir_z);
     }
+    //states[0] = 3.14159;
     return 0;
 }
 

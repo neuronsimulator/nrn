@@ -396,6 +396,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // #include <unistd.h>
     // extern char** environ;
     int i;
+    printf("Hello. McDougal was here\n");
     //	prargs("at beginning", argc, argv);
     force_load();
     nrn_global_argc = argc;
