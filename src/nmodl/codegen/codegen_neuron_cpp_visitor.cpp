@@ -199,7 +199,21 @@ void CodegenNeuronCppVisitor::print_namespace_stop() {
 /// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::float_variable_name(const SymbolType& symbol,
                                                          bool use_instance) const {
-    return symbol->get_name();
+    auto name = symbol->get_name();
+    auto dimension = symbol->get_length();
+    // auto position = position_of_float_var(name);
+    if (symbol->is_array()) {
+        if (use_instance) {
+            return fmt::format("(inst.{}+id*{})", name, dimension);
+        }
+        throw std::runtime_error("Printing non-instance variables is not implemented.");
+        // return fmt::format("(data + {}*pnodecount + id*{})", position, dimension);
+    }
+    if (use_instance) {
+        return fmt::format("inst.{}[id]", name);
+    }
+    throw std::runtime_error("Not implemented.");
+    // return fmt::format("data[{}*pnodecount + id]", position);
 }
 
 
@@ -218,10 +232,70 @@ std::string CodegenNeuronCppVisitor::global_variable_name(const SymbolType& symb
 }
 
 
-/// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
                                                        bool use_instance) const {
-    return name;
+    // const std::string& varname = update_if_ion_variable_name(name);
+    const std::string& varname = name;
+
+    auto symbol_comparator = [&varname](const SymbolType& sym) {
+        return varname == sym->get_name();
+    };
+
+    auto index_comparator = [&varname](const IndexVariableInfo& var) {
+        return varname == var.symbol->get_name();
+    };
+
+    // float variable
+    auto f = std::find_if(codegen_float_variables.begin(),
+                          codegen_float_variables.end(),
+                          symbol_comparator);
+    if (f != codegen_float_variables.end()) {
+        return float_variable_name(*f, use_instance);
+    }
+
+    // integer variable
+    auto i =
+        std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), index_comparator);
+    if (i != codegen_int_variables.end()) {
+        return int_variable_name(*i, varname, use_instance);
+    }
+
+    // global variable
+    auto g = std::find_if(codegen_global_variables.begin(),
+                          codegen_global_variables.end(),
+                          symbol_comparator);
+    if (g != codegen_global_variables.end()) {
+        return global_variable_name(*g, use_instance);
+    }
+
+    if (varname == naming::NTHREAD_DT_VARIABLE) {
+        return std::string("_nt->_") + naming::NTHREAD_DT_VARIABLE;
+    }
+
+    // t in net_receive method is an argument to function and hence it should
+    // be used instead of nt->_t which is current time of thread
+    if (varname == naming::NTHREAD_T_VARIABLE && !printing_net_receive) {
+        return std::string("_nt->_") + naming::NTHREAD_T_VARIABLE;
+    }
+
+    auto const iter =
+        std::find_if(info.neuron_global_variables.begin(),
+                     info.neuron_global_variables.end(),
+                     [&varname](auto const& entry) { return entry.first->get_name() == varname; });
+    if (iter != info.neuron_global_variables.end()) {
+        std::string ret;
+        if (use_instance) {
+            ret = "*(inst->";
+        }
+        ret.append(varname);
+        if (use_instance) {
+            ret.append(")");
+        }
+        return ret;
+    }
+
+    // otherwise return original name
+    return varname;
 }
 
 
@@ -384,6 +458,23 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     printer->add_line("};");
 }
 
+void CodegenNeuronCppVisitor::print_make_instance() const {
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_range& _ml)",
+                            instance_struct(),
+                            info.mod_suffix);
+    printer->fmt_push_block("return {}", instance_struct());
+
+    const auto codegen_float_variables_size = codegen_float_variables.size();
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        const auto& float_var = codegen_float_variables[i];
+        printer->fmt_line("&_ml.template fpfield<{}>(0){}",
+                          i,
+                          i < codegen_float_variables_size - 1 ? "," : "");
+    }
+    printer->pop_block(";");
+    printer->pop_block();
+}
 
 void CodegenNeuronCppVisitor::print_mechanism_register() {
     /// TODO: Write this according to NEURON
@@ -443,48 +534,80 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
 }
 
 
-void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(
-    [[maybe_unused]] bool print_initializers) {
+void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_initializers) {
+    auto const value_initialize = print_initializers ? "{}" : "";
+    auto int_type = default_int_data_type();
     printer->add_newline(2);
-    printer->add_line("/* NEURON RANGE variables macro definitions */");
-    for (auto i = 0; i < codegen_float_variables.size(); ++i) {
-        const auto float_var = codegen_float_variables[i];
-        if (float_var->is_array()) {
-            printer->add_line("#define ",
-                              float_var->get_name(),
-                              "(id) _ml->template data_array<",
-                              std::to_string(i),
-                              ", ",
-                              std::to_string(float_var->get_length()),
-                              ">(id)");
+    printer->add_line("/** all mechanism instance variables and global variables */");
+    printer->fmt_push_block("struct {} ", instance_struct());
+
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        printer->fmt_line("{}* {}{};",
+                          type,
+                          name,
+                          print_initializers ? fmt::format("{{&coreneuron::{}}}", name)
+                                             : std::string{});
+    }
+    for (auto& var: codegen_float_variables) {
+        const auto& name = var->get_name();
+        printer->fmt_line("double* {}{};", name, value_initialize);
+    }
+    for (auto& var: codegen_int_variables) {
+        const auto& name = var.symbol->get_name();
+        if (var.is_index || var.is_integer) {
+            auto qualifier = var.is_constant ? "const " : "";
+            printer->fmt_line("{}{}* {}{};", qualifier, int_type, name, value_initialize);
         } else {
-            printer->add_line("#define ",
-                              float_var->get_name(),
-                              "(id) _ml->template fpfield<",
-                              std::to_string(i),
-                              ">(id)");
+            auto qualifier = var.is_constant ? "const " : "";
+            auto type = var.is_vdata ? "void*" : default_float_data_type();
+            printer->fmt_line("{}{}* {}{};", qualifier, type, name, value_initialize);
         }
+    }
+
+    // printer->fmt_line("{}* {}{};",
+    //                   global_struct(),
+    //                   naming::INST_GLOBAL_MEMBER,
+    //                   print_initializers ? fmt::format("{{&{}}}", global_struct_instance())
+    //                                      : std::string{});
+    printer->pop_block(";");
+}
+
+
+void CodegenNeuronCppVisitor::print_initial_block(const InitialBlock* node) {
+    // initial block
+    if (node != nullptr) {
+        const auto& block = node->get_statement_block();
+        print_statement_block(*block, false, false);
     }
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
                                                                 const std::string& function_name) {
-    return;
+    std::string method = function_name.empty() ? compute_method_name(type) : function_name;
+    std::string args =
+        "_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* _ml_arg, int "
+        "_type";
+    printer->fmt_push_block("void {}({})", method, args);
+
+    printer->add_line("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};");
+    printer->fmt_line("auto inst = make_instance_{}(_lmr);", info.mod_suffix);
+    printer->add_line("auto nodecount = _ml_arg->nodecount;");
 }
 
 
 void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
     printer->add_newline(2);
-    printer->add_line("/** initialize channel */");
 
-    printer->fmt_line(
-        "static void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* "
-        "_ml_arg, int _type) {{}}",
-        method_name(naming::NRN_INIT_METHOD));
+    print_global_function_common_code(BlockType::Initial);
+
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    print_initial_block(info.initial_node);
+    printer->pop_block();
+
+    printer->pop_block();
 }
-
 
 void CodegenNeuronCppVisitor::print_nrn_jacob() {
     printer->add_newline(2);
@@ -531,13 +654,21 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
     }
 
     printer->add_newline(2);
+    print_global_function_common_code(BlockType::State);
 
-    printer->fmt_line(
-        "void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt,  Memb_list* "
-        "_ml_arg, int _type) {{}}",
-        method_name(naming::NRN_STATE_METHOD));
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
 
-    /// TODO: Fill in
+    if (info.nrn_state_block) {
+        info.nrn_state_block->visit_children(*this);
+    }
+
+    if (info.currents.empty() && info.breakpoint_node != nullptr) {
+        auto block = info.breakpoint_node->get_statement_block();
+        print_statement_block(*block, false, false);
+    }
+
+    printer->pop_block();
+    printer->pop_block();
 }
 
 
@@ -668,6 +799,7 @@ void CodegenNeuronCppVisitor::print_namespace_end() {
 void CodegenNeuronCppVisitor::print_data_structures(bool print_initializers) {
     print_mechanism_global_var_structure(print_initializers);
     print_mechanism_range_var_structure(print_initializers);
+    print_make_instance();
 }
 
 

@@ -19,6 +19,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # =============================================================================
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
 option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
+option(NMODL_ENABLE_USECASES
+       "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -207,6 +209,10 @@ if(NOT NMODL_AS_SUBPROJECT AND NMODL_ENABLE_TESTS)
   include(CTest)
   add_subdirectory(test/unit)
   add_subdirectory(test/integration)
+
+  if(NMODL_ENABLE_USECASES)
+    add_subdirectory(test/usecases)
+  endif()
 endif()
 
 # =============================================================================

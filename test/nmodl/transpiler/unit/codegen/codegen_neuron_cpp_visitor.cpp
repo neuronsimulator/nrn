@@ -181,21 +181,25 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_global_variables)));
         }
-        THEN("Correct range variables' macros are printed") {
-            std::string expected_range_macros = R"(/* NEURON RANGE variables macro definitions */
-    #define g(id) _ml->template fpfield<0>(id)
-    #define e(id) _ml->template fpfield<1>(id)
-    #define i(id) _ml->template fpfield<2>(id)
-    #define ar(id) _ml->template data_array<3, 2>(id)
-    #define s(id) _ml->template fpfield<4>(id)
-    #define ena(id) _ml->template fpfield<5>(id)
-    #define ina(id) _ml->template fpfield<6>(id)
-    #define Ds(id) _ml->template fpfield<7>(id)
-    #define v_unused(id) _ml->template fpfield<8>(id)
-    #define g_unused(id) _ml->template fpfield<9>(id))";
+        THEN("Correct pas_test_Instance") {
+            std::string expected =
+                R"(      struct pas_test_Instance  {
+        double* g{};
+        double* e{};
+        double* i{};
+        double* ar{};
+        double* s{};
+        double* ena{};
+        double* ina{};
+        double* Ds{};
+        double* v_unused{};
+        double* g_unused{};
+        const double* ion_ena{};
+        double* ion_ina{};
+        double* ion_dinadv{};
+    };)";
 
-            REQUIRE_THAT(generated,
-                         ContainsSubstring(reindent_and_trim_text(expected_range_macros)));
+            REQUIRE_THAT(generated, ContainsSubstring(reindent_and_trim_text(expected)));
         }
         THEN("Correct HOC global variables are printed") {
             std::string expected_hoc_global_variables =
@@ -222,7 +226,7 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
         }
         THEN("Placeholder nrn_state function is printed") {
             std::string expected_placeholder_nrn_state =
-                R"(void nrn_state_pas_test(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt,  Memb_list* _ml_arg, int _type) {})";
+                R"(void nrn_state_pas_test(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* _ml_arg, int _type) {)";
 
             REQUIRE_THAT(generated,
                          ContainsSubstring(reindent_and_trim_text(expected_placeholder_nrn_state)));
