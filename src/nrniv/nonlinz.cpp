@@ -148,6 +148,9 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
 
     rep_->lu_.compute(rep_->m_);
     switch (rep_->lu_.info()) {
+    case Eigen::Success:
+        // Everything fine
+        break;
     case Eigen::NumericalIssue:
         hoc_execerror(
             "NumericalIssue: The matrix is not valid following what expect Eigen SparseLu",
@@ -159,7 +162,7 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     case Eigen::InvalidInput:
         hoc_execerror("InvalidInput: the inputs are invalid", nullptr);
         break;
-    };
+    }
 
     rep_->iloc_ = -2;
 }
