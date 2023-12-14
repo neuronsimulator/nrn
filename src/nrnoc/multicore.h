@@ -31,10 +31,10 @@ actual_v, etc.
 #include <cstddef>
 
 namespace Eigen {
-    template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
-        class Matrix;
-    using MatrixXd = Matrix<double, -1, -1, 0, -1, -1>;
-}
+template <typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
+class Matrix;
+using MatrixXd = Matrix<double, -1, -1, 0, -1, -1>;
+}  // namespace Eigen
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     struct NrnThreadMembList* next;
