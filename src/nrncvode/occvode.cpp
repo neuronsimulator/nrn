@@ -14,6 +14,8 @@
 
 #include <utility>
 
+#include <Eigen/Eigen>
+
 extern void setup_topology(), v_setup_vectors();
 extern void recalc_diam();
 extern int nrn_errno_check(int);

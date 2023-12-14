@@ -6,6 +6,8 @@
 #include "treeset.h"
 #include "utils/enumerate.h"
 
+#include <Eigen/Eigen>
+
 extern int secondorder;
 
 static NrnDAEPtrList nrndae_list;

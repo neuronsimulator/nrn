@@ -16,7 +16,7 @@
 #include "ocnotify.h"
 #include "partrans.h"
 #include "section.h"
-#include "spmatrix.h"
+#include <Eigen/Eigen>
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
