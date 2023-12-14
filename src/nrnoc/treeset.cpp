@@ -495,15 +495,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     }
 
     if (use_sparse13) {
-        // Zero the sparse13 matrix
-        // We cannot setZero() because it invalidates pointers
-        // _nt->_sp13mat->setZero();
-        auto m = _nt->_sp13mat;
-        for (int k = 0; k < m->outerSize(); ++k) {
-            for (Eigen::SparseMatrix<double>::InnerIterator it(*m, k); it; ++it) {
-                it.valueRef() = 0.;
-            }
-        }
+        _nt->_sp13mat->setZero();
     }
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
@@ -1875,8 +1867,7 @@ void nrn_matrix_node_free() {
             free(std::exchange(nt->_sp13_rhs, nullptr));
         }
         if (nt->_sp13mat) {
-            nt->_sp13mat->setZero();
-            nt->_sp13mat->data().squeeze();
+            delete nt->_sp13mat;
             nt->_sp13mat = nullptr;
         }
     }
@@ -1976,7 +1967,7 @@ static void nrn_matrix_node_alloc(void) {
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
-        nt->_sp13mat = new Eigen::SparseMatrix<double>(neqn, neqn);
+        nt->_sp13mat = new Eigen::MatrixXd(neqn, neqn);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
@@ -1992,7 +1983,7 @@ static void nrn_matrix_node_alloc(void) {
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = &nt->_sp13mat->coeffRef(i-1, i-1);
+            nd->_d_matelm = &nt->_sp13mat->coeffRef(i - 1, i - 1);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
@@ -2004,8 +1995,8 @@ static void nrn_matrix_node_alloc(void) {
             }
             if (pnd) {
                 j = pnd->eqn_index_;
-                nd->_a_matelm = &nt->_sp13mat->coeffRef(j-1, i-1);
-                nd->_b_matelm = &nt->_sp13mat->coeffRef(i-1, j-1);
+                nd->_a_matelm = &nt->_sp13mat->coeffRef(j - 1, i - 1);
+                nd->_b_matelm = &nt->_sp13mat->coeffRef(i - 1, j - 1);
                 if (nde && pnd->extnode)
                     for (ie = 0; ie < nlayer; ++ie) {
                         int kp = j + ie + 1;
