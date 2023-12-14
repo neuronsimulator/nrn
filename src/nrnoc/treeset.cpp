@@ -332,7 +332,7 @@ vm += dvi-dvx
  */
 void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
     for (int i = 0; i < nt->end; i++) {
-        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
+        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_ - 1];
     }
 }
 
@@ -341,7 +341,7 @@ void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
  */
 void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
     for (int i = 0; i < nt->end; i++) {
-        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
+        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_ - 1] = nt->actual_rhs(i);
     }
 }
 
@@ -391,7 +391,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         nrn_thread_error("nrn_rhs use_sparse13");
         int neqn = _nt->_sp13mat->cols();
-        for (int i = 1; i <= neqn; ++i) {
+        for (int i = 0; i < neqn; ++i) {
             _nt->_sp13_rhs[i] = 0.;
         }
         for (int i = i1; i < i3; ++i) {
@@ -1966,7 +1966,7 @@ static void nrn_matrix_node_alloc(void) {
         }
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
-        nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
+        nt->_sp13_rhs = (double*) ecalloc(neqn, sizeof(double));
         nt->_sp13mat = new Eigen::MatrixXd(neqn, neqn);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
@@ -1982,13 +1982,13 @@ static void nrn_matrix_node_alloc(void) {
             nde = nd->extnode;
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
-            nt->_sp13_rhs[i] = nt->actual_rhs(in);
+            nt->_sp13_rhs[i - 1] = nt->actual_rhs(in);
             nd->_d_matelm = &nt->_sp13mat->coeffRef(i - 1, i - 1);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     nde->_d[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 1);
-                    nde->_rhs[ie] = nt->_sp13_rhs + k;
+                    nde->_rhs[ie] = nt->_sp13_rhs + k - 1;
                     nde->_x21[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 2);
                     nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 2, k - 1);
                 }

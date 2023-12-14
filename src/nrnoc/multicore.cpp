@@ -442,7 +442,7 @@ void nrn_threads_free() {
             nt->_ecell_children = NULL;
         }
         if (nt->_sp13mat) {
-            free(nt->_sp13mat);
+            delete nt->_sp13mat;
             nt->_sp13mat = nullptr;
         }
         nt->end = 0;

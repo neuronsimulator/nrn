@@ -369,7 +369,7 @@ void nrn_solve(NrnThread* _nt) {
         update_sp13_mat_based_on_actual_d(_nt);
         update_sp13_rhs_based_on_actual_rhs(_nt);
         Eigen::FullPivLU<Eigen::MatrixXd> lu{*_nt->_sp13mat};
-        Eigen::Map<Eigen::VectorXd> rhs(_nt->_sp13_rhs + 1, _nt->_sp13mat->cols());
+        Eigen::Map<Eigen::VectorXd> rhs(_nt->_sp13_rhs, _nt->_sp13mat->cols());
         rhs = lu.solve(rhs);
         update_actual_d_based_on_sp13_mat(_nt);
         update_actual_rhs_based_on_sp13_rhs(_nt);
