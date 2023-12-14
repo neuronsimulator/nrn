@@ -89,6 +89,10 @@ using namespace ast;
 
 {%- for node in nodes %}
 void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}(const {{ node.class_name }}& node) {
+    {% if node.is_independent_node %}
+        printer->add_element(": INDEPENDENT block is deprecated and has no effect in the NEURON model. Skipped!");
+        return;
+    {%- endif %}
     if (is_exclude_type(node.get_node_type())) {
         return;
     }

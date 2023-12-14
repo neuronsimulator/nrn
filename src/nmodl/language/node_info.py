@@ -155,6 +155,7 @@ PROGRAM_BLOCK = "Program"
 STATEMENT_BLOCK_NODE = "StatementBlock"
 STRING_NODE = "String"
 UNIT_BLOCK = "UnitBlock"
+INDEPENDENT_BLOCK_NODE = "IndependentBlock"
 
 # name of variable in prime node which represent order of derivative
 ORDER_VAR_NAME = "order"

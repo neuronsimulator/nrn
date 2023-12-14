@@ -32,11 +32,15 @@ namespace visitor {
 /**
  * \class NmodlPrintVisitor
  * \brief %Visitor for printing AST back to NMODL
- * \todo Note that AstNodeType::INDEPENDENT_BLOCK is now trimmed-down
- *       in the AST. So if we need to make provide something like
- *       `nmodl-format` then we should exclude this node type i.e.
- *       add that in the exclude_types.
+ *
+ * \note AstNodeType::INDEPENDENT_BLOCK representation in the AST has
+ *       been trimmed as the `INDEPENDENT {}` block is now deprecated
+ *       and considered an unused construct in MOD files. If a user
+ *       attempts to print a MOD file containing an INDEPENDENT block,
+ *       it will be skipped, and a comment will be added to indicate
+ *       the deprecation.
  */
+
 class NmodlPrintVisitor: public ConstVisitor {
   private:
     std::unique_ptr<printer::NMODLPrinter> printer;

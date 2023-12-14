@@ -433,8 +433,7 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
                 }
             )",
             R"(
-                INDEPENDENT {
-                t u}
+                : INDEPENDENT block is deprecated and has no effect in the NEURON model. Skipped!
             )"
         }
     },

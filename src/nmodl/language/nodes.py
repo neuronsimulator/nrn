@@ -60,6 +60,10 @@ class BaseNode:
         return self.class_name == node_info.PRIME_NAME_NODE
 
     @property
+    def is_independent_node(self):
+        return self.class_name == node_info.INDEPENDENT_BLOCK_NODE
+
+    @property
     def is_program_node(self):
         """
         check if current node is main program container node
