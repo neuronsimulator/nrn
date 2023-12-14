@@ -499,7 +499,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         // We cannot setZero() because it invalidates pointers
         // _nt->_sp13mat->setZero();
         auto m = _nt->_sp13mat;
-        for (int k = 0; k < m->outerSize(); ++k) { 
+        for (int k = 0; k < m->outerSize(); ++k) {
             for (Eigen::SparseMatrix<double>::InnerIterator it(*m, k); it; ++it) {
                 it.valueRef() = 0.;
             }
@@ -1995,11 +1995,11 @@ static void nrn_matrix_node_alloc(void) {
             nd->_d_matelm = &nt->_sp13mat->coeffRef(i-1, i-1);
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
-                    k = i + ie;
-                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k, k);
+                    k = i + ie + 1;
+                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 1);
                     nde->_rhs[ie] = nt->_sp13_rhs + k;
-                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k, k - 1);
-                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 1, k);
+                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 2);
+                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 2, k - 1);
                 }
             }
             if (pnd) {
@@ -2008,10 +2008,10 @@ static void nrn_matrix_node_alloc(void) {
                 nd->_b_matelm = &nt->_sp13mat->coeffRef(i-1, j-1);
                 if (nde && pnd->extnode)
                     for (ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie;
-                        k = i + ie;
-                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp, k);
-                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k, kp);
+                        int kp = j + ie + 1;
+                        k = i + ie + 1;
+                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp - 1, k - 1);
+                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k - 1, kp - 1);
                     }
             } else { /* not needed if index starts at 1 */
                 nd->_a_matelm = nullptr;
