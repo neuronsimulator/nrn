@@ -25,8 +25,8 @@ int main(void) {
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = new char[11];
-    strcpy(temp_str, "stdrun.hoc");
+
+    temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
@@ -47,13 +47,12 @@ int main(void) {
     nrn_double_push(0.5);
     vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
-    nrn_property_array_set(vclamp, "amp", 0, 0);
-    nrn_property_array_set(vclamp, "amp", 1, 10);
-    nrn_property_array_set(vclamp, "amp", 2, 5);
-    nrn_property_array_set(vclamp, "dur", 0, 1);
-    nrn_property_array_set(vclamp, "dur", 1, 2);
-    nrn_property_array_set(vclamp, "dur", 2, 3);
-
+    int i = 0;
+    for (auto& [amp, dur]: {std::pair<int, double>{0, 1}, {10, 2}, {5, 3}}) {
+        nrn_property_array_set(vclamp, "amp", i, amp);
+        nrn_property_array_set(vclamp, "dur", i, dur);
+        ++i;
+    }
     // setup recording
     v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);

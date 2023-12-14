@@ -19,26 +19,14 @@ int main(void) {
     Object* t;
     char* temp_str;
 
-    // Note: cannot use RTLD_LOCAL here
-    void* handle = dlopen("libnrniv.dylib", RTLD_NOW);
-    if (!handle) {
-        handle = dlopen("libnrniv.so", RTLD_NOW);
-        if (!handle) {
-            cout << "Couldn't open NEURON library." << endl << dlerror() << endl;
-            exit(-1);
-        }
-    }
-
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = new char[11];
-    strcpy(temp_str, "stdrun.hoc");
+    temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
     delete[] temp_str;
-
 
     // topology
     auto soma = nrn_section_new("soma");
@@ -102,6 +90,4 @@ int main(void) {
     }
     out_file.close();
     cout << "Results saved to netcon.csv" << endl;
-
-    dlclose(handle);
 }

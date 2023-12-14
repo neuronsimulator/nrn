@@ -25,13 +25,11 @@ int main(void) {
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = new char[11];
-    strcpy(temp_str, "stdrun.hoc");
+    temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
     delete[] temp_str;
-
 
     // topology
     soma = nrn_section_new("soma");
@@ -39,18 +37,14 @@ int main(void) {
 
     // define soma morphology with two 3d points
     nrn_section_push(soma);
-    // (0, 0, 0, 10)
-    nrn_double_push(0);
-    nrn_double_push(0);
-    nrn_double_push(0);
-    nrn_double_push(10);
+    for (double x: {0, 0, 0, 10}) {
+        nrn_double_push(x);
+    }
     nrn_function_call(nrn_symbol("pt3dadd"), 4);
     nrn_double_pop();  // pt3dadd returns a number
-    // (10, 0, 0, 10)
-    nrn_double_push(10);
-    nrn_double_push(0);
-    nrn_double_push(0);
-    nrn_double_push(10);
+    for (double x: {10, 0, 0, 10}) {
+        nrn_double_push(x);
+    }
     nrn_function_call(nrn_symbol("pt3dadd"), 4);
     nrn_double_pop();  // pt3dadd returns a number
 

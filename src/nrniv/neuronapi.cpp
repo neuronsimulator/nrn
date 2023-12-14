@@ -78,9 +78,7 @@ Section* nrn_section_new(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
     auto pitm = new hoc_Item*;
-    char* name_ptr = new char[strlen(name) + 1];
-    strcpy(name_ptr, name);
-    symbol->name = name_ptr;
+    symbol->name = strdup(name);
     symbol->type = 1;
     symbol->u.oboff = 0;
     symbol->arayinfo = 0;
