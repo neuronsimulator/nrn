@@ -47,6 +47,8 @@ the handling of v_structure_change as long as possible.
 #include <vector>
 #include <iostream>
 
+#include <Eigen/Eigen>
+
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
 #define CACHELINE_CALLOC(name, type, size) \
