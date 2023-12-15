@@ -148,6 +148,15 @@ inline void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     s->r = coreneuron_random123_philox4x32_helper(s);
 }
 
+/* this could be called from openacc parallel construct (in INITIAL block) */
+inline void nrnran123_setseq(nrnran123_State* s, double seq34) {
+    // at least 64 bits even on 32 bit machine (could be more)
+    unsigned long long x = ((unsigned long long) seq34) & 0X3ffffffff;
+    char which = x & 0X3;
+    uint32_t seq = x >> 2;
+    nrnran123_setseq(s, seq, which);
+}
+
 // nrnran123_negexp min value is 2.3283064e-10, max is 22.18071, mean 1.0
 inline double nrnran123_negexp(nrnran123_State* s) {
     return -std::log(nrnran123_dblpick(s));

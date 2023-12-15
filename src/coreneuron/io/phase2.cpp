@@ -50,6 +50,7 @@ int (*nrn2core_get_dat2_mech_)(int tid,
                                int*& nodeindices,
                                double*& data,
                                int*& pdata,
+                               std::vector<uint32_t>& nmodlrandom,
                                std::vector<int>& pointer2type);
 
 int (*nrn2core_get_dat2_3_)(int tid,
@@ -181,6 +182,14 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
             if (sz) {
                 auto& p2t = tmls.back().pointer2type;
                 p2t = F.read_vector<int>(sz);
+            }
+        }
+        {
+            // if there are RANDOM vars ...
+            int sz = F.read_int();
+            if (sz) {
+                std::vector<uint32_t> nmodlrandom;
+                nmodlrandom = F.read_vector<uint32_t>(sz);
             }
         }
     }
@@ -325,12 +334,17 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         int* nodeindices_ = nullptr;
         double* data_ = _data + offset;
         int* pdata_ = const_cast<int*>(tml.pdata.data());
+        // nmodlrandom:  5 uint32 for each var of each instance
+        // id1, id2, id3, seq, uint32_t(which)
+        // all instances of ranvar1 first, then all instances of ranvar2, etc.
+        std::vector<uint32_t> nmodlrandom{};
         (*nrn2core_get_dat2_mech_)(thread_id,
                                    i,
                                    dparam_sizes[type] > 0 ? dsz_inst : 0,
                                    nodeindices_,
                                    data_,
                                    pdata_,
+                                   nmodlrandom,
                                    tml.pointer2type);
         if (dparam_sizes[type] > 0)
             dsz_inst++;
