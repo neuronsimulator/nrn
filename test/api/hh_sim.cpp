@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "./test_common.h"
+
 using std::cout;
 using std::endl;
 using std::ofstream;
@@ -78,13 +80,9 @@ int main(void) {
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();
 
-    double* tvec = nrn_vector_data(t);
-    double* vvec = nrn_vector_data(v);
-    ofstream out_file;
-    out_file.open("hh_sim.csv");
-    for (auto i = 0; i < nrn_vector_capacity(t); i++) {
-        out_file << tvec[i] << "," << vvec[i] << endl;
+    long n_voltages = nrn_vector_capacity(t);
+    if (compare_spikes("hh_sim.csv", nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
+        return 0;
     }
-    out_file.close();
-    cout << "Results saved to hh_sim.csv" << endl;
+    return 1;
 }
