@@ -258,7 +258,7 @@ int nrnthread_dat2_1(int tid,
         cg.ml_vdata_offset[j] = vdata_offset;
         int* ds = memb_func[type].dparam_semantics;
         for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
-            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == 0) {
+            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == -11 || ds[psz] == 0) {
                 // printf("%s ds[%d]=%d vdata_offset=%d\n", memb_func[type].sym->name, psz, ds[psz],
                 // vdata_offset);
                 vdata_offset += ml->nodecount;
@@ -616,6 +616,8 @@ int* datum2int(int type,
             } else if (etype == -7) {  // bbcorepointer
                 pdata[jj] = ml_vdata_offset + eindex;
                 // printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
+            } else if (etype == -11) {  // random
+                pdata[jj] = ml_vdata_offset + eindex;
             } else {                   // uninterpreted
                 assert(eindex != -3);  // avoided if last
                 pdata[jj] = 0;
