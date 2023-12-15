@@ -362,14 +362,18 @@ def calc_pair_coef(node_list1, node_list2):
         dx_min = min(dx1, dx2)
         dx_avg = (dx1+dx2)/2
         # area_of_contact = dx_min*dx_min
-        area_of_contact = ( (dx1+dx2)/2 - abs(node1.y3d - node2.y3d) ) * ( (dx1+dx2)/2 - abs(node1.z3d - node2.z3d) )
+        prop1 = node1.volume/(dx1*dx1*dx1)
+        prop2 = node2.volume/(dx2*dx2*dx2)
+        area_of_contact = ( (dx1+dx2)/2 - abs(node1.y3d - node2.y3d) ) * ( (dx1+dx2)/2 - abs(node1.z3d - node2.z3d) ) * (prop1+prop2)
         coef1.append( # Is "D" here correct?
             # Correct version: 2*area_of_contact*node1.d[0]/((dx1+dx2)*dx2*dx2*dx2)
-            2*area_of_contact*node1.d[0]/((dx1+dx2)*dx1*dx1*dx1)
+            # 2*area_of_contact*node1.d[0]/((dx1+dx2)*dx1*dx1*dx1)
+            2*area_of_contact*node1.d[0]/((dx1+dx2)*node1.volume)
         )
         coef2.append(
             # Correct version: 2*area_of_contact*node2.d[0]/((dx1+dx2)*dx1*dx1*dx1)
-            2*area_of_contact*node2.d[0]/((dx1+dx2)*dx2*dx2*dx2)
+            # 2*area_of_contact*node2.d[0]/((dx1+dx2)*dx2*dx2*dx2)
+            2*area_of_contact*node2.d[0]/((dx1+dx2)*node2.volume)
         )
 
     assert (len(node_list1) == len(coef1))
