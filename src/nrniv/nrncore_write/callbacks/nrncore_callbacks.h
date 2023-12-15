@@ -66,6 +66,7 @@ int nrnthread_dat2_mech(int tid,
                         int*& nodeindices,
                         double*& data,
                         int*& pdata,
+                        std::vector<uint32_t>& nmodlrandom,
                         std::vector<int>& pointer2type);
 int nrnthread_dat2_3(int tid,
                      int nweight,

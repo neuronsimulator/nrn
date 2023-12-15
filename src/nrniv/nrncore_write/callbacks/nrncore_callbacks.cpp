@@ -326,12 +326,30 @@ int nrnthread_dat2_2(int tid,
     return 1;
 }
 
+static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+static std::vector<int>& nrn_mech_random_indices(int type) {
+    if (mech_random_indices.count(type) == 0) {
+        // if no element, create empty one and search dparam_semantics to fill
+        auto& mri = mech_random_indices[type];
+        int random_semantics = nrn_dparam_semantics_to_int("random");
+        int* semantics = memb_func[type].dparam_semantics;
+        int dparam_size = nrn_prop_dparam_size_[type];
+        for (int i = 0; i < dparam_size; ++i) {
+            if (semantics[i] == random_semantics) {
+                mri.push_back(i);
+            }
+        }
+    }
+    return mech_random_indices[type];
+}
+
 int nrnthread_dat2_mech(int tid,
                         size_t i,
                         int dsz_inst,
                         int*& nodeindices,
                         double*& data,
                         int*& pdata,
+                        std::vector<uint32_t>& nmodlrandom,  // 5 uint32_t per var per instance
                         std::vector<int>& pointer2type) {
     if (tid >= nrn_nthread) {
         return 0;
@@ -392,6 +410,27 @@ int nrnthread_dat2_mech(int tid,
         pdata = NULL;
     }
 
+    // nmodlrandom: reserve 5 uint32 for each var of each instance
+    // id1, id2, id3, seq, uint32_t(which)
+    // if no destructor, skip. There are no random variables.
+    if (nrn_mech_inst_destruct.count(type)) {
+        auto& indices = nrn_mech_random_indices(type);
+        nmodlrandom.reserve(5 * n * indices.size());
+        for (int ix: indices) {
+            uint32_t data[5];
+            char which;
+            for (int i = 0; i < n; ++i) {
+                auto& datum = ml->pdata[i][ix];
+                nrnran123_State* r = (nrnran123_State*) datum.get<void*>();
+                nrnran123_getids3(r, &data[0], &data[1], &data[2]);
+                nrnran123_getseq(r, &data[3], &which);
+                data[4] = uint32_t(which);
+                for (auto j: data) {
+                    nmodlrandom.push_back(j);
+                }
+            }
+        }
+    }
     return 1;
 }
 

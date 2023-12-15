@@ -311,6 +311,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -10) {  // fornetcon
                 etype = -10;
                 eindex = 0;
+            } else if (dmap[j] == -11) {  // random
+                etype = -11;
+                eindex = 0;
             } else if (dmap[j] == -9) {  // diam
                 cg.ndiam = nt.end;
                 etype = -9;

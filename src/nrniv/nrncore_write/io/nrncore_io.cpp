@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char* bbcore_write_version = "1.6";  // Allow muliple gid and PreSyn per real cell.
+const char* bbcore_write_version = "1.7";  // NMODLRandom
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -206,7 +206,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
         int *nodeindices = NULL, *pdata = NULL;
         double* data = NULL;
         std::vector<int> pointer2type;
-        nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata, pointer2type);
+        std::vector<uint32_t> nmodlrandom;
+        nrnthread_dat2_mech(
+            nt.id, i, dsz_inst, nodeindices, data, pdata, nmodlrandom, pointer2type);
         Memb_list* ml = mla[i].second;
         int n = ml->nodecount;
         int sz = nrn_prop_param_size_[type];
@@ -227,6 +229,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             if (sz > 0) {
                 writeint(pointer2type.data(), sz);
             }
+        }
+        if (nmodlrandom.size()) {
+            write_uint32vec(nmodlrandom, f);
         }
     }
 
@@ -298,6 +303,12 @@ void writedbl_(double* p, size_t size, FILE* f) {
     fprintf(f, "chkpnt %d\n", chkpnt++);
     size_t n = fwrite(p, sizeof(double), size, f);
     assert(n == size);
+}
+
+void write_uint32vec(std::vector<uint32_t>& vec, FILE* f) {
+    fprintf(f, "chkpnt %d\n", chkpnt++);
+    size_t n = fwrite(vec.data(), sizeof(uint32_t), vec.size(), f);
+    assert(n == vec.size());
 }
 
 #define writeint(p, size) writeint_(p, size, f)

@@ -20,7 +20,6 @@ ASSIGNED {
     event (ms)
     on
     ispike
-    donotuse
 }
 
 INITIAL {
