@@ -81,11 +81,9 @@ int main(void) {
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();
 
-    double* tvec = nrn_vector_data(t);
-    double* vvec = nrn_vector_data(v);
-
     long n_voltages = nrn_vector_capacity(t);
-    if (compare_spikes("netcon.csv", nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
+    auto ref_file = std::string(std::getenv("CURRENT_SOURCE_DIR")) + "/ref/netcon.csv";
+    if (compare_spikes(ref_file.c_str(), nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
         return 0;
     }
     return 1;

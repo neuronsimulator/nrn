@@ -81,7 +81,8 @@ int main(void) {
     nrn_double_pop();
 
     long n_voltages = nrn_vector_capacity(t);
-    if (compare_spikes("hh_sim.csv", nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
+    auto ref_file = std::string(std::getenv("CURRENT_SOURCE_DIR")) + "/ref/hh_sim.csv";
+    if (compare_spikes(ref_file.c_str(), nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
         return 0;
     }
     return 1;

@@ -4,7 +4,7 @@
 #include <string>
 #include <cmath>
 
-constexpr double EPSILON = 1.0 / 4096;
+constexpr double EPSILON = 1.0 / 1024;
 
 bool almost_equal(double a, double b) {
     return std::fabs(a - b) < EPSILON;

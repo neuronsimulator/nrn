@@ -1,6 +1,3 @@
-# These produce reference files called hh_sim.csv and so on
-set(api_tests ${api_tests_with_reference_files} ${api_tests_without_reference_files})
-
 foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
@@ -11,5 +8,6 @@ foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
 
   set(test_name "api::${api_test_name}")
   add_test(NAME "${test_name}" COMMAND ${api_test_name})
-  set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                            "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
