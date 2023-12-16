@@ -154,6 +154,7 @@ namespace coreneuron {
         ml->global_variables = inst->global;
         ml->global_variables_size = sizeof(NetStim_Store);
 // perhaps setup_instance should be called from here
+printf("ZZZ nrn_private_constructor_NetStim\n");
     }
 
     // Deallocate the instance structure
@@ -168,6 +169,7 @@ namespace coreneuron {
         int pnodecount = ml->_nodecount_padded;
         int nodecount = ml->nodecount;
         Datum* indexes = ml->pdata;
+printf("ZZZ nrn_private_destructor_NetStim\n");
         for (int id = 0; id < nodecount; id++) {
             nrnran123_deletestream(Zranvar);
         }
@@ -202,9 +204,6 @@ namespace coreneuron {
         inst->ranvar = nt->_vdata;
         inst->tqitem = nt->_vdata;
         int nodecount = ml->nodecount;
-        for (int id = 0; id < nodecount; id++) {
-            inst->ranvar[indexes[2*pnodecount + id]] = (void*)nrnran123_newstream(0, 0);
-        }
     }
 
 

@@ -412,10 +412,15 @@ int nrnthread_dat2_mech(int tid,
 
     // nmodlrandom: reserve 5 uint32 for each var of each instance
     // id1, id2, id3, seq, uint32_t(which)
+    // Header is number of random variables followed by dparam indices
     // if no destructor, skip. There are no random variables.
     if (nrn_mech_inst_destruct.count(type)) {
         auto& indices = nrn_mech_random_indices(type);
-        nmodlrandom.reserve(5 * n * indices.size());
+        nmodlrandom.reserve(1 + indices.size() + 5 * n * indices.size());
+        nmodlrandom.push_back(indices.size());
+        for (int ix: indices) {
+            nmodlrandom.push_back((uint32_t) ix);
+        }
         for (int ix: indices) {
             uint32_t data[5];
             char which;

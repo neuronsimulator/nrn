@@ -188,7 +188,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
             // if there are RANDOM vars ...
             int sz = F.read_int();
             if (sz) {
-                std::vector<uint32_t> nmodlrandom;
+                auto& nmodlrandom = tmls.back().nmodlrandom;
                 nmodlrandom = F.read_vector<uint32_t>(sz);
             }
         }
@@ -334,10 +334,15 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         int* nodeindices_ = nullptr;
         double* data_ = _data + offset;
         int* pdata_ = const_cast<int*>(tml.pdata.data());
-        // nmodlrandom:  5 uint32 for each var of each instance
+
+        // nmodlrandom, receives:
+        // number of random variables
+        // dparam index (neuron side) of each random variable
+        // 5 uint32 for each var of each instance
         // id1, id2, id3, seq, uint32_t(which)
         // all instances of ranvar1 first, then all instances of ranvar2, etc.
-        std::vector<uint32_t> nmodlrandom{};
+        auto& nmodlrandom = tml.nmodlrandom;
+
         (*nrn2core_get_dat2_mech_)(thread_id,
                                    i,
                                    dparam_sizes[type] > 0 ? dsz_inst : 0,
@@ -346,6 +351,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
                                    pdata_,
                                    nmodlrandom,
                                    tml.pointer2type);
+
         if (dparam_sizes[type] > 0)
             dsz_inst++;
         offset += nrn_soa_padded_size(nodecounts[i], layout) * param_sizes[type];
@@ -1123,6 +1129,28 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                 pp->_i_instance = i;
                 nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
                 pp->_tid = nt.id;
+            }
+        }
+
+        printf("QQQ copy nmodlrandom to %s RANDOM vars\n", memb_func[type].sym);
+        auto& r = tmls[itml].nmodlrandom;
+        if (r.size()) {
+            size_t ix{};
+            uint32_t n_randomvar = r[ix++];
+            assert(r.size() == 1 + n_randomvar + 5 * n_randomvar * n);
+            std::vector<uint32_t> indices{};
+            for (uint32_t i = 0; i < n_randomvar; ++i) {
+                indices.push_back(r[ix++]);
+            }
+            int cnt = ml->nodecount;
+            for (auto index: indices) {
+                // should we verify that index on cn side same as on nrn side?
+                for (int i = 0; i < n; ++i) {
+                    nrnran123_State* state = nrnran123_newstream3(r[ix], r[ix + 1], r[ix + 2]);
+                    nrnran123_setseq(state, r[ix + 3], char(r[ix + 4]));
+                    ix += 5;
+                    nt._vdata[ml->pdata[nrn_i_layout(i, cnt, index, szdp, layout)]] = state;
+                }
             }
         }
     }
