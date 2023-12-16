@@ -4,10 +4,10 @@ Filename        : netstim.mod
 NMODL Version   : 7.7.0
 Vectorized      : true
 Threadsafe      : true
-Created         : Thu Dec 14 13:52:59 2023
+Created         : Sat Dec 16 11:04:46 2023
 Simulator       : CoreNEURON
 Backend         : C++ (api-compatibility)
-NMODL Compiler  : 0.6 [0f937194 2023-12-13 12:03:22 +0100]
+NMODL Compiler  : 0.6 [dc0b14fe 2023-12-14 19:33:02 -0500]
 *********************************************************/
 
 #include <math.h>
@@ -25,6 +25,7 @@ NMODL Compiler  : 0.6 [0f937194 2023-12-13 12:03:22 +0100]
 #include <coreneuron/utils/ivocvect.hpp>
 #include <coreneuron/utils/nrnoc_aux.hpp>
 #include <coreneuron/utils/randoms/nrnran123.h>
+
 
 namespace coreneuron {
     #ifndef NRN_PRCELLSTATE
@@ -80,6 +81,7 @@ namespace coreneuron {
         void** tqitem{};
         NetStim_Store* global{&NetStim_global};
     };
+
 
     /** connect global (scalar) variables to hoc -- */
     static DoubScal hoc_scalar_double[] = {
@@ -155,6 +157,7 @@ namespace coreneuron {
         ml->global_variables_size = sizeof(NetStim_Store);
 // perhaps setup_instance should be called from here
 printf("ZZZ nrn_private_constructor_NetStim\n");
+
     }
 
     // Deallocate the instance structure
@@ -203,7 +206,6 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
         inst->point_process = nt->_vdata;
         inst->ranvar = nt->_vdata;
         inst->tqitem = nt->_vdata;
-        int nodecount = ml->nodecount;
     }
 
 
@@ -266,24 +268,7 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
     inline int next_invl_NetStim(int id, int pnodecount, NetStim_Instance* inst, double* data, const Datum* indexes, ThreadDatum* thread, NrnThread* nt, double v) {
         int ret_next_invl = 0;
         if (inst->number[id] > 0.0) {
-            double invl_in_1;
-            {
-                double mean_in_1;
-                mean_in_1 = inst->interval[id];
-                if (mean_in_1 <= 0.0) {
-                    mean_in_1 = .01;
-                }
-                if (inst->noise[id] == 0.0) {
-                    invl_in_1 = mean_in_1;
-                } else {
-                    double erand_in_0;
-                    {
-                        erand_in_0 = nrnran123_negexp(Zranvar);
-                    }
-                    invl_in_1 = (1.0 - inst->noise[id]) * mean_in_1 + inst->noise[id] * mean_in_1 * erand_in_0;
-                }
-            }
-            inst->event[id] = invl_in_1;
+            inst->event[id] = invl_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v, inst->interval[id]);
         }
         if (inst->ispike[id] >= inst->number[id]) {
             inst->on[id] = 0.0;
@@ -344,11 +329,7 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
         if (inst->noise[id] == 0.0) {
             ret_invl = mean;
         } else {
-            double erand_in_0;
-            {
-                erand_in_0 = nrnran123_negexp(Zranvar);
-            }
-            ret_invl = (1.0 - inst->noise[id]) * mean + inst->noise[id] * mean * erand_in_0;
+            ret_invl = (1.0 - inst->noise[id]) * mean + inst->noise[id] * mean * erand_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v);
         }
         return ret_invl;
     }
@@ -381,40 +362,8 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
         {
             if (flag == 0.0) {
                 if ((*w) > 0.0 && inst->on[id] == 0.0) {
-                    {
-                        double t_in_0;
-                        t_in_0 = t;
-                        if (inst->number[id] > 0.0) {
-                            inst->on[id] = 1.0;
-                            inst->event[id] = 0.0;
-                            inst->ispike[id] = 0.0;
-                        }
-                    }
-                    {
-                        if (inst->number[id] > 0.0) {
-                            double invl_in_1;
-                            {
-                                double mean_in_1;
-                                mean_in_1 = inst->interval[id];
-                                if (mean_in_1 <= 0.0) {
-                                    mean_in_1 = .01;
-                                }
-                                if (inst->noise[id] == 0.0) {
-                                    invl_in_1 = mean_in_1;
-                                } else {
-                                    double erand_in_0;
-                                    {
-                                        erand_in_0 = nrnran123_negexp(Zranvar);
-                                    }
-                                    invl_in_1 = (1.0 - inst->noise[id]) * mean_in_1 + inst->noise[id] * mean_in_1 * erand_in_0;
-                                }
-                            }
-                            inst->event[id] = invl_in_1;
-                        }
-                        if (inst->ispike[id] >= inst->number[id]) {
-                            inst->on[id] = 0.0;
-                        }
-                    }
+                    init_sequence_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v, t);
+                    next_invl_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v);
                     inst->event[id] = inst->event[id] - inst->interval[id] * (1.0 - inst->noise[id]);
                     artcell_net_send(&inst->tqitem[indexes[3*pnodecount + id]], weight_index, pnt, nt->_t+inst->event[id], 1.0);
                 } else if ((*w) < 0.0) {
@@ -423,46 +372,14 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
             }
             if (flag == 3.0) {
                 if (inst->on[id] == 1.0) {
-                    {
-                        double t_in_1;
-                        t_in_1 = t;
-                        if (inst->number[id] > 0.0) {
-                            inst->on[id] = 1.0;
-                            inst->event[id] = 0.0;
-                            inst->ispike[id] = 0.0;
-                        }
-                    }
+                    init_sequence_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v, t);
                     artcell_net_send(&inst->tqitem[indexes[3*pnodecount + id]], weight_index, pnt, nt->_t+0.0, 1.0);
                 }
             }
             if (flag == 1.0 && inst->on[id] == 1.0) {
                 inst->ispike[id] = inst->ispike[id] + 1.0;
                 net_event(pnt, t);
-                {
-                    if (inst->number[id] > 0.0) {
-                        double invl_in_1;
-                        {
-                            double mean_in_1;
-                            mean_in_1 = inst->interval[id];
-                            if (mean_in_1 <= 0.0) {
-                                mean_in_1 = .01;
-                            }
-                            if (inst->noise[id] == 0.0) {
-                                invl_in_1 = mean_in_1;
-                            } else {
-                                double erand_in_0;
-                                {
-                                    erand_in_0 = nrnran123_negexp(Zranvar);
-                                }
-                                invl_in_1 = (1.0 - inst->noise[id]) * mean_in_1 + inst->noise[id] * mean_in_1 * erand_in_0;
-                            }
-                        }
-                        inst->event[id] = invl_in_1;
-                    }
-                    if (inst->ispike[id] >= inst->number[id]) {
-                        inst->on[id] = 0.0;
-                    }
-                }
+                next_invl_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v);
                 if (inst->on[id] == 1.0) {
                     artcell_net_send(&inst->tqitem[indexes[3*pnodecount + id]], weight_index, pnt, nt->_t+inst->event[id], 1.0);
                 }
@@ -490,11 +407,7 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
             for (int id = 0; id < nodecount; id++) {
                 inst->tsave[id] = -1e20;
                 double v = 0.0;
-                {
-                    double x_in_0;
-                    x_in_0 = 0.0;
-                    nrnran123_setseq(Zranvar, x_in_0);
-                }
+                seed_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v, 0.0);
                 inst->on[id] = 0.0;
                 inst->ispike[id] = 0.0;
                 if (inst->noise[id] < 0.0) {
@@ -504,25 +417,8 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
                     inst->noise[id] = 1.0;
                 }
                 if (inst->start[id] >= 0.0 && inst->number[id] > 0.0) {
-                    double invl_in_0;
                     inst->on[id] = 1.0;
-                    {
-                        double mean_in_0;
-                        mean_in_0 = inst->interval[id];
-                        if (mean_in_0 <= 0.0) {
-                            mean_in_0 = .01;
-                        }
-                        if (inst->noise[id] == 0.0) {
-                            invl_in_0 = mean_in_0;
-                        } else {
-                            double erand_in_0;
-                            {
-                                erand_in_0 = nrnran123_negexp(Zranvar);
-                            }
-                            invl_in_0 = (1.0 - inst->noise[id]) * mean_in_0 + inst->noise[id] * mean_in_0 * erand_in_0;
-                        }
-                    }
-                    inst->event[id] = inst->start[id] + invl_in_0 - inst->interval[id] * (1.0 - inst->noise[id]);
+                    inst->event[id] = inst->start[id] + invl_NetStim(id, pnodecount, inst, data, indexes, thread, nt, v, inst->interval[id]) - inst->interval[id] * (1.0 - inst->noise[id]);
                     if (inst->event[id] < 0.0) {
                         inst->event[id] = 0.0;
                     }
@@ -551,7 +447,7 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
         hoc_register_dparam_semantics(mech_type, 2, "ranvar");
         hoc_register_dparam_semantics(mech_type, 3, "netsend");
         add_nrn_has_net_event(mech_type);
-        add_nrn_artcell(mech_type, 2);
+        add_nrn_artcell(mech_type, 3);
         set_pnt_receive(mech_type, net_receive_NetStim, nullptr, num_net_receive_args());
         hoc_register_net_send_buffering(mech_type);
         hoc_register_var(hoc_scalar_double, hoc_vector_double, NULL);
