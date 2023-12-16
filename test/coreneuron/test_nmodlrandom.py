@@ -28,15 +28,28 @@ def run(tstop, m):
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(tstop)
-    pspike(m)
+
+
+def chk(std, m):
+    assert std[0].eq(m[1])
+    assert std[1].eq(m[2])
 
 
 def test1():
     m = model()
     run(5, m)
+    std = [m[1].c(), m[2].c()]
+    pc.psolve(7)
+    std2 = [m[1].c(), m[2].c()]
+
     coreneuron.enable = True
     coreneuron.verbose = 0
     run(5, m)
+    chk(std, m)
+
+    coreneuron.enable = False
+    pc.psolve(7)
+    chk(std2, m)
 
 
 if __name__ == "__main__":

@@ -155,9 +155,6 @@ namespace coreneuron {
         ml->instance = inst;
         ml->global_variables = inst->global;
         ml->global_variables_size = sizeof(NetStim_Store);
-// perhaps setup_instance should be called from here
-printf("ZZZ nrn_private_constructor_NetStim\n");
-
     }
 
     // Deallocate the instance structure
@@ -172,7 +169,6 @@ printf("ZZZ nrn_private_constructor_NetStim\n");
         int pnodecount = ml->_nodecount_padded;
         int nodecount = ml->nodecount;
         Datum* indexes = ml->pdata;
-printf("ZZZ nrn_private_destructor_NetStim\n");
         for (int id = 0; id < nodecount; id++) {
             nrnran123_deletestream(Zranvar);
         }
@@ -444,7 +440,7 @@ printf("ZZZ nrn_private_destructor_NetStim\n");
         hoc_register_prop_size(mech_type, float_variables_size(), int_variables_size());
         hoc_register_dparam_semantics(mech_type, 0, "area");
         hoc_register_dparam_semantics(mech_type, 1, "pntproc");
-        hoc_register_dparam_semantics(mech_type, 2, "ranvar");
+        hoc_register_dparam_semantics(mech_type, 2, "random");
         hoc_register_dparam_semantics(mech_type, 3, "netsend");
         add_nrn_has_net_event(mech_type);
         add_nrn_artcell(mech_type, 3);

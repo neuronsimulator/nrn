@@ -567,6 +567,37 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     return 1;
 }
 
+// NMODL RANDOM seq34 data return from coreneuron
+int core2nrn_nmodlrandom(int tid,
+                         int type,
+                         std::vector<int>& indices,
+                         std::vector<double>& nmodlrandom) {
+    if (tid >= nrn_nthread) {
+        return 0;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    // ARTIFICIAL_CELL are not in nt.
+    if (!ml) {
+        ml = CellGroup::deferred_type2artml_[tid][type];
+        assert(ml);
+    }
+
+    auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
+    assert(nrnindices == indices);
+    assert(nmodlrandom.size() == indices.size() * ml->nodecount);
+
+    int ir = 0;  // into nmodlrandom
+    for (auto ix: nrnindices) {
+        for (int i = 0; i < ml->nodecount; ++i) {
+            auto& datum = ml->pdata[i][ix];
+            nrnran123_State* state = (nrnran123_State*) datum.get<void*>();
+            nrnran123_setseq1(state, nmodlrandom[ir++]);
+        }
+    }
+    return 1;
+}
+
 int* datum2int(int type,
                Memb_list* ml,
                NrnThread& nt,

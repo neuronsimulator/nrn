@@ -1132,7 +1132,6 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             }
         }
 
-        printf("QQQ copy nmodlrandom to %s RANDOM vars\n", memb_func[type].sym);
         auto& r = tmls[itml].nmodlrandom;
         if (r.size()) {
             size_t ix{};
