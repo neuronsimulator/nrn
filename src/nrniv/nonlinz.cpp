@@ -32,7 +32,9 @@ class NonLinImpRep final {
     void dsds();
     int gapsolve();
 
+    // Matrix containing the non linear system to solve.
     Eigen::SparseMatrix<std::complex<double>> m_{};
+    // The solver of the matrix using the LU decomposition method.
     Eigen::SparseLU<Eigen::SparseMatrix<std::complex<double>>> lu_{};
     int scnt_;  // structure_change
     int n_v_, n_ext_, n_lin_, n_ode_, neq_v_, neq_;
@@ -143,7 +145,7 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     rep_->dsdv();
 #endif
 
-    // Now that the matrix is filled we can compressed it (mandatory for SparseLU)
+    // Now that the matrix is filled we can compress it (mandatory for SparseLU)
     rep_->m_.makeCompressed();
 
     rep_->lu_.compute(rep_->m_);
@@ -153,14 +155,20 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
         break;
     case Eigen::NumericalIssue:
         hoc_execerror(
-            "NumericalIssue: The matrix is not valid following what expect Eigen SparseLu",
-            nullptr);
+            "Eigen Sparse LU factorization failed with Eigen::NumericalIssue, please check the "
+            "input matrix:",
+            rep_->lu_.lastErrorMessage().c_str());
         break;
     case Eigen::NoConvergence:
-        hoc_execerror("NoConvergence: The matrix did not converge", nullptr);
+        hoc_execerror(
+            "Eigen Sparse LU factorization reports Eigen::NonConvergence after calling compute():",
+            rep_->lu_.lastErrorMessage().c_str());
         break;
     case Eigen::InvalidInput:
-        hoc_execerror("InvalidInput: the inputs are invalid", nullptr);
+        hoc_execerror(
+            "Eigen Sparse LU factorization failed with Eigen::InvalidInput, the input matrix seems "
+            "invalid:",
+            rep_->lu_.lastErrorMessage().c_str());
         break;
     }
 
