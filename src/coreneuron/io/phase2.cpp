@@ -184,13 +184,12 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
                 p2t = F.read_vector<int>(sz);
             }
         }
-        {
-            // if there are RANDOM vars ...
-            int sz = F.read_int();
-            if (sz) {
-                auto& nmodlrandom = tmls.back().nmodlrandom;
-                nmodlrandom = F.read_vector<uint32_t>(sz);
-            }
+
+        // nmodlrandom
+        sz = F.read_int();
+        if (sz) {
+            auto& nmodlrandom = tmls.back().nmodlrandom;
+            nmodlrandom = F.read_vector<uint32_t>(sz);
         }
     }
     output_vindex = F.read_vector<int>(nt.n_presyn);

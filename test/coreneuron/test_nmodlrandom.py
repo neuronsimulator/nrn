@@ -35,7 +35,7 @@ def chk(std, m):
     assert std[1].eq(m[2])
 
 
-def test1():
+def test_1():
     m = model()
     run(5, m)
     std = [m[1].c(), m[2].c()]
@@ -52,5 +52,90 @@ def test1():
     chk(std2, m)
 
 
+def sortspikes(spiketime, gidvec):
+    return sorted(zip(spiketime, gidvec))
+
+
+def test_chkpnt():
+    import shutil, os, platform, subprocess
+
+    # clear out the old
+    shutil.rmtree("coredat", ignore_errors=True)
+
+    m = model()
+
+    # std spikes from 0-5 and 5-10
+    run(5, m)
+    std1 = [m[1].c(), m[2].c()]
+    m[1].resize(0)
+    m[2].resize(0)
+    pc.psolve(10)
+    std2 = [m[1].c(), m[2].c()]
+    pspike(m)
+
+    # Files for coreneuron runs
+    h.finitialize(-65)
+    pc.nrncore_write("coredat")
+
+    def runcn(tstop, perm, args):
+        exe = os.path.join(os.getcwd(), platform.machine(), "special-core")
+        common = [
+            "-d",
+            "coredat",
+            "--voltage",
+            "1000",
+            "--verbose",
+            "0",
+            "--cell-permute",
+            str(perm),
+        ]
+        cmd = [exe] + ["--tstop", "{:g}".format(tstop)] + common + args
+        print(" ".join(cmd))
+        subprocess.run(
+            cmd,
+            check=True,
+            shell=False,
+        )
+
+    runcn(5, 0, ["--checkpoint", "coredat/chkpnt", "-o", "coredat"])
+    runcn(10, 0, ["--restore", "coredat/chkpnt", "-o", "coredat/chkpnt"])
+    cmp_spks(sortspikes(std2[0], std2[1]), "coredat")
+
+
+def cmp_spks(spikes, dir):  # modified from test_pointer.py
+    import os, subprocess, shutil
+
+    # sorted nrn standard spikes into dir/out.spk
+    with open(os.path.join(dir, "temp"), "w") as f:
+        for spike in spikes:
+            f.write("{:.8g}\t{}\n".format(spike[0], int(spike[1])))
+
+    # sometimes roundoff to %.8g gives different sort.
+    def help(cmd, name_in, name_out):
+        # `cmd` is some generic utility, which does not need to have a
+        # sanitizer runtime pre-loaded. LD_PRELOAD=/path/to/libtsan.so can
+        # cause problems for *nix utilities, so drop it if it was present.
+        env = os.environ.copy()
+        try:
+            del env["LD_PRELOAD"]
+        except KeyError:
+            pass
+        subprocess.run(
+            [
+                shutil.which(cmd),
+                os.path.join(dir, name_in),
+                os.path.join(dir, name_out),
+            ],
+            check=True,
+            env=env,
+            shell=False,
+        )
+
+    help("sortspike", "temp", "nrn.spk")
+    help("sortspike", "chkpnt/out.dat", "chkpnt/out.spk")
+    help("cmp", "chkpnt/out.spk", "nrn.spk")
+
+
 if __name__ == "__main__":
-    test1()
+    test_1()
+    test_chkpnt()

@@ -186,7 +186,7 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
 
 // based on code from nrncore_callbacks.cpp
 static std::unordered_map<int, std::vector<int>> mech_random_indices{};
-static std::vector<int>& nrn_mech_random_indices(int type) {
+std::vector<int>& nrn_mech_random_indices(int type) {
     if (mech_random_indices.count(type) == 0) {
         // if no element, create empty one and search dparam_semantics to fill
         auto& mri = mech_random_indices[type];

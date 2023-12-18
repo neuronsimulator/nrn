@@ -307,12 +307,44 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 }
             }
             fh.write_array<int>(d, cnt * sz);
-            delete[] d;
             size_t s = pointer2type.size();
             fh << s << " npointer\n";
             if (s) {
                 fh.write_array<int>(pointer2type.data(), s);
             }
+
+            // nmodlrandom
+            auto& indices = nrn_mech_random_indices(type);
+            s = indices.size() ? (1 + indices.size() + 5 * cnt * indices.size()) : 0;
+            fh << s << " nmodlrandom\n";
+            if (s) {
+                std::vector<uint32_t> nmodlrandom{};
+                nmodlrandom.reserve(s);
+                nmodlrandom.push_back((uint32_t) indices.size());
+                for (auto ix: indices) {
+                    nmodlrandom.push_back((uint32_t) ix);
+                }
+                for (auto ix: indices) {
+                    uint32_t data[5];
+                    char which;
+                    for (int i; i < cnt; ++i) {
+                        // bug? permutation problem? When read in phase2.cpp
+                        // the nrnran123_State* will go into
+                        // nt._vdata[ml->pdata[nrn_i_layout(i, cnt, ix, sz, layout)]]
+                        void* v = nt._vdata[d[i * sz + ix]];
+                        nrnran123_State* r = (nrnran123_State*) v;
+                        nrnran123_getids3(r, &data[0], &data[1], &data[2]);
+                        nrnran123_getseq(r, &data[3], &which);
+                        data[4] = uint32_t(which);
+                        for (auto j: data) {
+                            nmodlrandom.push_back(j);
+                        }
+                    }
+                }
+                fh.write_array<uint32_t>(nmodlrandom.data(), nmodlrandom.size());
+            }
+
+            delete[] d;
         }
     }
 
