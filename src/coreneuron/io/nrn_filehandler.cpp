@@ -107,8 +107,9 @@ void FileHandler::close() {
     F.close();
 
     // Delete source file if read-mode is enabled and path matches '/dev/shm'
-    const auto& env = getenv("CORENEURON_SHM_DELETESOURCE");
-    if ((env == nullptr || std::string(env) != "OFF") && current_mode == std::ios::in &&
+    // Note: This is useful when, from Neurodamus, the input files are stored on '/dev/shm'
+    //       and we want to make sure that the memory consumption is not affected
+    if (current_mode == std::ios::in &&
         std::regex_match(current_filename, std::regex("^/dev/shm/.*_[1-4].dat$"))) {
         remove(current_filename.c_str());
         current_filename = "";  // Clear the filename
