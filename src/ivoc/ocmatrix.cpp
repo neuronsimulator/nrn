@@ -128,7 +128,7 @@ void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
 
 void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
     auto v1 = Vect2VEC(d);
-    Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::ComputeFullU | Eigen::ComputeFullV> svd(m_);
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(m_, Eigen::ComputeFullU | Eigen::ComputeFullV);
     v1 = svd.singularValues();
     if (u) {
         u->full()->m_ = svd.matrixU().transpose();
