@@ -534,6 +534,8 @@ void NonLinImpRep::ode(int im, Memb_list* ml) {  // assume there is in fact an o
     memb_func[im].ode_spec(nrn_ensure_model_data_are_sorted(), nrn_threads, ml, im);
 }
 
+// This function compute a solution of a converging system by iteration.
+// The value returned is the number of iterations to reach a precision of "tol" (1e-9).
 int NonLinImpRep::gapsolve() {
     // On entry, v_ contains the complex b for A*x = b.
     // On return v_ contains complex solution, x.
@@ -553,11 +555,11 @@ int NonLinImpRep::gapsolve() {
     }
 #endif
 
-    pargap_jacobi_setup(0);
+    pargap_jacobi_setup(0);  // 0 means 'setup'
 
-    std::vector<std::complex<double>> rx(neq_);
-    std::vector<std::complex<double>> rx1(neq_);
-    std::vector<std::complex<double>> rb(v_);
+    std::vector<std::complex<double>> x_old(neq_);
+    std::vector<std::complex<double>> x(neq_);
+    std::vector<std::complex<double>> b(v_);
 
     // iterate till change in x is small
     double tol = 1e-9;
@@ -568,25 +570,25 @@ int NonLinImpRep::gapsolve() {
 
     for (iter = 1; iter <= maxiter_; ++iter) {
         if (neq_) {
-            auto rb_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rb.data(),
-                                                                                       rb.size());
-            auto rx1_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(rx1.data(),
-                                                                                        rx1.size());
-            rx1_ = lu_.solve(rb_);
+            auto b_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(b.data(),
+                                                                                      b.size());
+            auto x_ = Eigen::Map<Eigen::Vector<std::complex<double>, Eigen::Dynamic>>(x.data(),
+                                                                                      x.size());
+            x_ = lu_.solve(b_);
         }
 
         // if any change in x > tol, then do another iteration.
         success = 1;
         delta = 0.0;
+        // Do the substraction of the previous result (x_old) and current result (x).
+        // If all differences are < tol stop the loop, otherwise continue to iterate
         for (int i = 0; i < neq_; ++i) {
-            auto diff = rx1[i] - rx[i];
+            auto diff = x[i] - x_old[i];
             double err = std::abs(diff.real()) + std::abs(diff.imag());
             if (err > tol) {
                 success = 0;
             }
-            if (delta < err) {
-                delta = err;
-            }
+            delta = std::max(err, delta);
         }
 #if NRNMPI
         if (nrnmpi_numprocs > 1) {
@@ -594,17 +596,17 @@ int NonLinImpRep::gapsolve() {
         }
 #endif
         if (success) {
-            v_ = rx1;
+            v_ = x;
             break;
         }
 
         // setup for next iteration
-        rx = rx1;
-        rb = v_;
-        pargap_jacobi_rhs(rb, rx);
+        x_old = x;
+        b = v_;
+        pargap_jacobi_rhs(b, x_old);
     }
 
-    pargap_jacobi_setup(1);  // tear down
+    pargap_jacobi_setup(1);  // 1 means 'tear down'
 
     if (!success) {
         char buf[256];
@@ -614,7 +616,7 @@ int NonLinImpRep::gapsolve() {
                 maxiter_,
                 delta,
                 tol);
-        execerror(buf, 0);
+        hoc_execerror(buf, nullptr);
     }
     return iter;
 }
