@@ -22,14 +22,17 @@ extern void pargap_jacobi_rhs(std::vector<std::complex<double>>&,
                               const std::vector<std::complex<double>>&);
 extern void pargap_jacobi_setup(int mode);
 
-class NonLinImpRep final {
+class NonLinImpRep {
   public:
     NonLinImpRep();
     void delta(double);
+
+    // Functions to fill the matrix
     void didv();
     void dids();
     void dsdv();
     void dsds();
+
     int gapsolve();
 
     // Matrix containing the non linear system to solve.
@@ -148,6 +151,7 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
     // Now that the matrix is filled we can compress it (mandatory for SparseLU)
     rep_->m_.makeCompressed();
 
+    // Factorize the matrix so this is ready to solve
     rep_->lu_.compute(rep_->m_);
     switch (rep_->lu_.info()) {
     case Eigen::Success:
