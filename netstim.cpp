@@ -4,7 +4,7 @@ Filename        : netstim.mod
 NMODL Version   : 7.7.0
 Vectorized      : true
 Threadsafe      : true
-Created         : Sat Dec 16 11:04:46 2023
+Created         : Tue Dec 19 12:41:26 2023
 Simulator       : CoreNEURON
 Backend         : C++ (api-compatibility)
 NMODL Compiler  : 0.6 [dc0b14fe 2023-12-14 19:33:02 -0500]
@@ -44,11 +44,9 @@ namespace coreneuron {
         0,
         0,
         0,
-        "ranvar",
         0
     };
 
-#define Zranvar (nrnran123_State*)inst->ranvar[indexes[2*pnodecount + id]]
 
     /** all global variables */
     struct NetStim_Store {
@@ -77,7 +75,7 @@ namespace coreneuron {
         double* tsave{};
         const double* node_area{};
         void** point_process{};
-        void** ranvar{};
+        nrnran123_State** ranvar{};
         void** tqitem{};
         NetStim_Store* global{&NetStim_global};
     };
@@ -96,6 +94,11 @@ namespace coreneuron {
 
 
     static inline int first_pointer_var_index() {
+        return -1;
+    }
+
+
+    static inline int first_random_var_index() {
         return 2;
     }
 
@@ -165,14 +168,12 @@ namespace coreneuron {
         assert(inst->global == &NetStim_global);
         assert(inst->global == ml->global_variables);
         assert(ml->global_variables_size == sizeof(NetStim_Store));
-
         int pnodecount = ml->_nodecount_padded;
         int nodecount = ml->nodecount;
         Datum* indexes = ml->pdata;
         for (int id = 0; id < nodecount; id++) {
-            nrnran123_deletestream(Zranvar);
+            nrnran123_deletestream(inst->ranvar[indexes[2*pnodecount + id]]);
         }
-
         delete inst;
         ml->instance = nullptr;
         ml->global_variables = nullptr;
@@ -200,7 +201,7 @@ namespace coreneuron {
         inst->tsave = ml->data+8*pnodecount;
         inst->node_area = nt->_data;
         inst->point_process = nt->_vdata;
-        inst->ranvar = nt->_vdata;
+        inst->ranvar = (nrnran123_State**)nt->_vdata;
         inst->tqitem = nt->_vdata;
     }
 
@@ -275,7 +276,7 @@ namespace coreneuron {
 
     inline int seed_NetStim(int id, int pnodecount, NetStim_Instance* inst, double* data, const Datum* indexes, ThreadDatum* thread, NrnThread* nt, double v, double x) {
         int ret_seed = 0;
-        nrnran123_setseq(Zranvar, x);
+        nrnran123_setseq1(inst->ranvar[indexes[2*pnodecount + id]], x);
         return ret_seed;
     }
 
@@ -290,10 +291,10 @@ namespace coreneuron {
                 if (!nrn_random_isran123(r, &id[0], &id[1], &id[2])) {
                     hoc_execerr_ext("NetStim: Random.Random123 generator is required.");
                 }
-                nrnran123_setids(Zranvar, id[0], id[1], id[2]);
+                nrnran123_setids(inst->ranvar[indexes[2*pnodecount + id]], id[0], id[1], id[2]);
                 char which;
                 nrn_random123_getseq(r, &id[0], &which);
-                nrnran123_setseq(Zranvar, id[0], which);
+                nrnran123_setseq(inst->ranvar[indexes[2*pnodecount + id]], id[0], which);
             }
          }
         #endif
@@ -306,11 +307,11 @@ namespace coreneuron {
         int ret_noiseFromRandom123 = 0;
         #if !NRNBBCORE
             if (ifarg(3)) {
-                nrnran123_setids(Zranvar, static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), static_cast<uint32_t>(*getarg(3)));
+                nrnran123_setids(inst->ranvar[indexes[2*pnodecount + id]], static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), static_cast<uint32_t>(*getarg(3)));
             } else if (ifarg(2)) {
-                nrnran123_setids(Zranvar, static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), 0);
+                nrnran123_setids(inst->ranvar[indexes[2*pnodecount + id]], static_cast<uint32_t>(*getarg(1)), static_cast<uint32_t>(*getarg(2)), 0);
             }
-            nrnran123_setseq(Zranvar, 0, 0);
+            nrnran123_setseq(inst->ranvar[indexes[2*pnodecount + id]], 0, 0);
         #endif
 
         return ret_noiseFromRandom123;
@@ -333,7 +334,7 @@ namespace coreneuron {
 
     inline double erand_NetStim(int id, int pnodecount, NetStim_Instance* inst, double* data, const Datum* indexes, ThreadDatum* thread, NrnThread* nt, double v) {
         double ret_erand = 0.0;
-        ret_erand = nrnran123_negexp(Zranvar);
+        ret_erand = nrnran123_negexp(inst->ranvar[indexes[2*pnodecount + id]]);
         return ret_erand;
     }
 
