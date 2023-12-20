@@ -6,6 +6,8 @@
 #include <vector>
 #include <set>
 #include <cstdlib>
+#include <inttypes.h>
+
 // includers need several pieces of info for nrn_get_partrans_setup_info
 #include "partrans.h"
 
