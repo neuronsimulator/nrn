@@ -229,11 +229,11 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             if (sz > 0) {
                 writeint(pointer2type.data(), sz);
             }
-        }
 
-        fprintf(f, "%d nmodlrandom\n", int(nmodlrandom.size()));
-        if (nmodlrandom.size()) {
-            write_uint32vec(nmodlrandom, f);
+            fprintf(f, "%d nmodlrandom\n", int(nmodlrandom.size()));
+            if (nmodlrandom.size()) {
+                write_uint32vec(nmodlrandom, f);
+            }
         }
     }
 
