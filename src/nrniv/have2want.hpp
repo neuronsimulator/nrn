@@ -34,69 +34,65 @@ int rendezvous_rank(const T& key) {
     return key % nrnmpi_numprocs;
 }
 
-static int* cnt2displ(const int* cnt) {
-    int* displ = new int[nrnmpi_numprocs + 1];
-    displ[0] = 0;
-    std::partial_sum(cnt, cnt + nrnmpi_numprocs, displ + 1);
+template <typename T>
+struct Data
+{
+    Data() = default;
+    explicit Data(std::size_t data_size)
+        : data(data_size)
+    {}
+    std::vector<T> data{};
+    std::vector<int> cnt{};
+    std::vector<int> displ{};
+};
+
+static std::vector<int> cnt2displ(const std::vector<int>& cnt) {
+    std::vector<int> displ(nrnmpi_numprocs + 1);
+    std::partial_sum(cnt.cbegin(), cnt.cend(), displ.begin() + 1);
     return displ;
 }
 
-static int* srccnt2destcnt(int* srccnt) {
-    int* destcnt = new int[nrnmpi_numprocs];
-    nrnmpi_int_alltoall(srccnt, destcnt, 1);
+static std::vector<int> srccnt2destcnt(std::vector<int> srccnt) {
+    std::vector<int> destcnt(nrnmpi_numprocs);
+    nrnmpi_int_alltoall(srccnt.data(), destcnt.data(), 1);
     return destcnt;
 }
 
 template <typename T, typename F>
-static void rendezvous_rank_get(T* data,
-                                int size,
-                                T*& sdata,
-                                int*& scnt,
-                                int*& sdispl,
-                                T*& rdata,
-                                int*& rcnt,
-                                int*& rdispl,
+static std::tuple<Data<T>, Data<T>> rendezvous_rank_get(const std::vector<T>& data,
                                 F alltoall_function) {
     int nhost = nrnmpi_numprocs;
 
+    Data<T> s;
     // count what gets sent
-    scnt = new int[nhost];
-    for (int i = 0; i < nhost; ++i) {
-        scnt[i] = 0;
-    }
-    for (int i = 0; i < size; ++i) {
-        int r = rendezvous_rank<T>(data[i]);
-        ++scnt[r];
+    s.cnt = std::vector<int>(nhost);
+
+    for (const auto& e: data) {
+        int r = rendezvous_rank<T>(e);
+        s.cnt[r] += 1;
     }
 
-    sdispl = cnt2displ(scnt);
-    rcnt = srccnt2destcnt(scnt);
-    rdispl = cnt2displ(rcnt);
-    sdata = new T[sdispl[nhost] + 1];  // ensure not 0 size
-    rdata = new T[rdispl[nhost] + 1];  // ensure not 0 size
-    // scatter data into sdata by recalculating scnt.
-    for (int i = 0; i < nhost; ++i) {
-        scnt[i] = 0;
+    s.displ = cnt2displ(s.cnt);
+    s.data.resize(s.displ[nhost] + 1);
+
+    Data<T> r;
+    r.cnt = srccnt2destcnt(s.cnt);
+    r.displ = cnt2displ(r.cnt);
+    r.data.resize(r.displ[nhost]);
+    // scatter data into sdata by recalculating s.cnt.
+    std::fill(s.cnt.begin(), s.cnt.end(), 0);
+    for (const auto& e: data) {
+        int r = rendezvous_rank<T>(e);
+        s.data[s.displ[r] + s.cnt[r]] = e;
+        s.cnt[r] += 1;
     }
-    for (int i = 0; i < size; ++i) {
-        int r = rendezvous_rank<T>(data[i]);
-        sdata[sdispl[r] + scnt[r]] = data[i];
-        ++scnt[r];
-    }
-    alltoall_function(sdata, scnt, sdispl, rdata, rcnt, rdispl);
+    alltoall_function(s, r);
+    return {s, r};
 }
 
 template <typename T, typename F>
-void have_to_want(T* have,
-                  int have_size,
-                  T* want,
-                  int want_size,
-                  T*& send_to_want,
-                  int*& send_to_want_cnt,
-                  int*& send_to_want_displ,
-                  T*& recv_from_have,
-                  int*& recv_from_have_cnt,
-                  int*& recv_from_have_displ,
+std::pair<Data<T>, Data<T>> have_to_want(const std::vector<T>& have,
+                  const std::vector<T>& want,
                   F alltoall_function) {
     // 1) Send have and want to the rendezvous ranks.
     // 2) Rendezvous rank matches have and want.
@@ -106,60 +102,38 @@ void have_to_want(T* have,
     int nhost = nrnmpi_numprocs;
 
     // 1) Send have and want to the rendezvous ranks.
-    T *have_s_data, *have_r_data;
-    int *have_s_cnt, *have_s_displ, *have_r_cnt, *have_r_displ;
-    rendezvous_rank_get<T>(have,
-                           have_size,
-                           have_s_data,
-                           have_s_cnt,
-                           have_s_displ,
-                           have_r_data,
-                           have_r_cnt,
-                           have_r_displ,
-                           alltoall_function);
-    delete[] have_s_cnt;
-    delete[] have_s_displ;
-    delete[] have_s_data;
-    // assume it is an error if two ranks have the same key so create
+
     // hash table of key2rank. Will also need it for matching have and want
-    std::unordered_map<T, int> havekey2rank(have_r_displ[nhost] + 1);  // ensure not empty.
-    for (int r = 0; r < nhost; ++r) {
-        for (int i = 0; i < have_r_cnt[r]; ++i) {
-            T key = have_r_data[have_r_displ[r] + i];
-            if (havekey2rank.find(key) != havekey2rank.end()) {
-                hoc_execerr_ext(
-                    "internal error in have_to_want: key %lld owned by multiple ranks\n",
-                    (long long) key);
+    std::unordered_map<T, int> havekey2rank{};
+    {
+        auto [_, have_r] = rendezvous_rank_get<T>(have, alltoall_function);
+        // assume it is an error if two ranks have the same key so create
+        havekey2rank.reserve(have_r.displ[nhost] + 1);
+        for (int r = 0; r < nhost; ++r) {
+            for (int i = 0; i < have_r.cnt[r]; ++i) {
+                T key = have_r.data[have_r.displ[r] + i];
+                if (havekey2rank.find(key) != havekey2rank.end()) {
+                    hoc_execerr_ext(
+                        "internal error in have_to_want: key %lld owned by multiple ranks\n",
+                        (long long) key);
+                }
+                havekey2rank[key] = r;
             }
-            havekey2rank[key] = r;
         }
     }
-    delete[] have_r_data;
-    delete[] have_r_cnt;
-    delete[] have_r_displ;
 
-    T *want_s_data, *want_r_data;
-    int *want_s_cnt, *want_s_displ, *want_r_cnt, *want_r_displ;
-    rendezvous_rank_get<T>(want,
-                           want_size,
-                           want_s_data,
-                           want_s_cnt,
-                           want_s_displ,
-                           want_r_data,
-                           want_r_cnt,
-                           want_r_displ,
-                           alltoall_function);
+    auto [want_s, want_r] = rendezvous_rank_get<T>(want, alltoall_function);
 
     // 2) Rendezvous rank matches have and want.
     //    we already have made the havekey2rank map.
     // Create an array parallel to want_r_data which contains the ranks that
     // have that data.
-    int n = want_r_displ[nhost];
-    int* want_r_ownerranks = new int[n];
+    int n = want_r.displ[nhost];
+    std::vector<int> want_r_ownerranks(n);
     for (int r = 0; r < nhost; ++r) {
-        for (int i = 0; i < want_r_cnt[r]; ++i) {
-            int ix = want_r_displ[r] + i;
-            T key = want_r_data[ix];
+        for (int i = 0; i < want_r.cnt[r]; ++i) {
+            int ix = want_r.displ[r] + i;
+            T key = want_r.data[ix];
             auto search = havekey2rank.find(key);
             if (search == havekey2rank.end()) {
                 hoc_execerr_ext(
@@ -169,33 +143,28 @@ void have_to_want(T* have,
             want_r_ownerranks[ix] = search->second;
         }
     }
-    delete[] want_r_data;
 
     // 3) Rendezvous ranks tell the want ranks which ranks own the keys
     // The ranks that want keys need to know the ranks that own those keys.
     // The want_s_ownerranks will be parallel to the want_s_data.
     // That is, each item defines the rank from which information associated
     // with that key is coming from
-    int* want_s_ownerranks = new int[want_s_displ[nhost]];
+    std::vector<int> want_s_ownerranks(want_s.displ[nhost]);
     if (nrn_sparse_partrans > 0) {
-        nrnmpi_int_alltoallv_sparse(want_r_ownerranks,
-                                    want_r_cnt,
-                                    want_r_displ,
-                                    want_s_ownerranks,
-                                    want_s_cnt,
-                                    want_s_displ);
+        nrnmpi_int_alltoallv_sparse(want_r_ownerranks.data(),
+                                    want_r.cnt.data(),
+                                    want_r.displ.data(),
+                                    want_s_ownerranks.data(),
+                                    want_s.cnt.data(),
+                                    want_s.displ.data());
     } else {
-        nrnmpi_int_alltoallv(want_r_ownerranks,
-                             want_r_cnt,
-                             want_r_displ,
-                             want_s_ownerranks,
-                             want_s_cnt,
-                             want_s_displ);
+        nrnmpi_int_alltoallv(want_r_ownerranks.data(),
+                             want_r.cnt.data(),
+                             want_r.displ.data(),
+                             want_s_ownerranks.data(),
+                             want_s.cnt.data(),
+                             want_s.displ.data());
     }
-
-    delete[] want_r_ownerranks;
-    delete[] want_r_cnt;
-    delete[] want_r_displ;
 
     // 4) Ranks that want tell owner ranks where to send.
     // Finished with the rendezvous ranks. The ranks that want keys know the
@@ -204,41 +173,35 @@ void have_to_want(T* have,
     // The parallel want_s_ownerranks and want_s_data are now uselessly ordered
     // by rendezvous rank. Reorganize so that want ranks can tell owner ranks
     // what they want.
-    n = want_s_displ[nhost];
-    delete[] want_s_displ;
+    n = want_s.displ[nhost];
     for (int i = 0; i < nhost; ++i) {
-        want_s_cnt[i] = 0;
+        want_s.cnt[i] = 0;
     }
-    T* old_want_s_data = want_s_data;
-    want_s_data = new T[n];
+    std::vector<T> old_want_s_data(n);
+    std::swap(old_want_s_data, want_s.data);
     // compute the counts
     for (int i = 0; i < n; ++i) {
         int r = want_s_ownerranks[i];
-        ++want_s_cnt[r];
+        ++want_s.cnt[r];
     }
-    want_s_displ = cnt2displ(want_s_cnt);
+    want_s.displ = cnt2displ(want_s.cnt);
     for (int i = 0; i < nhost; ++i) {
-        want_s_cnt[i] = 0;
+        want_s.cnt[i] = 0;
     }  // recount while filling
     for (int i = 0; i < n; ++i) {
         int r = want_s_ownerranks[i];
         T key = old_want_s_data[i];
-        want_s_data[want_s_displ[r] + want_s_cnt[r]] = key;
-        ++want_s_cnt[r];
+        want_s.data[want_s.displ[r] + want_s.cnt[r]] = key;
+        ++want_s.cnt[r];
     }
-    delete[] want_s_ownerranks;
-    delete[] old_want_s_data;
-    want_r_cnt = srccnt2destcnt(want_s_cnt);
-    want_r_displ = cnt2displ(want_r_cnt);
-    want_r_data = new T[want_r_displ[nhost]];
-    alltoall_function(want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt, want_r_displ);
+
+    Data<T> new_want_r{};
+    new_want_r.cnt = srccnt2destcnt(want_s.cnt);
+    new_want_r.displ = cnt2displ(new_want_r.cnt);
+    new_want_r.data.resize(new_want_r.displ[nhost]);
+    alltoall_function(want_s, new_want_r);
     // now the want_r_data on the have_ranks are grouped according to the ranks
     // that want those keys.
 
-    send_to_want = want_r_data;
-    send_to_want_cnt = want_r_cnt;
-    send_to_want_displ = want_r_displ;
-    recv_from_have = want_s_data;
-    recv_from_have_cnt = want_s_cnt;
-    recv_from_have_displ = want_s_displ;
+    return {new_want_r, want_s};
 }
