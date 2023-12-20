@@ -579,11 +579,10 @@ static void thread_transfer(NrnThread* _nt) {
 
 // 22-08-2014  For setup of the All2allv pattern, use the rendezvous rank
 // idiom.
-#define HAVEWANT_t         sgid_t
 #define HAVEWANT_alltoallv sgid_alltoallv
 #define HAVEWANT2Int       MapSgid2Int
 #if NRNMPI
-#include "have2want.cpp"
+#include "have2want.hpp"
 #endif
 
 void nrnmpi_setup_transfer() {
@@ -680,17 +679,17 @@ void nrnmpi_setup_transfer() {
         sgid_t* recv_from_have;
         int *recv_from_have_cnt, *recv_from_have_displ;
 
-        have_to_want(ownsrc,
-                     sgids_.size(),
-                     needsrc,
-                     needsrc_cnt,
-                     send_to_want,
-                     send_to_want_cnt,
-                     send_to_want_displ,
-                     recv_from_have,
-                     recv_from_have_cnt,
-                     recv_from_have_displ,
-                     default_rendezvous);
+        have_to_want<sgid_t>(ownsrc,
+                             sgids_.size(),
+                             needsrc,
+                             needsrc_cnt,
+                             send_to_want,
+                             send_to_want_cnt,
+                             send_to_want_displ,
+                             recv_from_have,
+                             recv_from_have_cnt,
+                             recv_from_have_displ,
+                             default_rendezvous<sgid_t>);
 
         // sanity check. all the sgids we are asked to send, we actually have
         int n = send_to_want_displ[nhost];
