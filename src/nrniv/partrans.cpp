@@ -17,6 +17,11 @@
 #include <utility>
 #include <vector>
 
+#if NRNMPI
+#include "have2want.hpp"
+#endif
+
+
 #if NRNLONGSGID
 #if NRNMPI
 static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
@@ -577,14 +582,6 @@ static void thread_transfer(NrnThread* _nt) {
 // "  But this was a mistake as many mpi implementations do not allow overlap
 // of send and receive buffers.
 
-// 22-08-2014  For setup of the All2allv pattern, use the rendezvous rank
-// idiom.
-#define HAVEWANT_alltoallv sgid_alltoallv
-#define HAVEWANT2Int       MapSgid2Int
-#if NRNMPI
-#include "have2want.hpp"
-#endif
-
 void nrnmpi_setup_transfer() {
 #if !NRNMPI
     if (nrnmpi_numprocs > 1) {
@@ -689,7 +686,7 @@ void nrnmpi_setup_transfer() {
                              recv_from_have,
                              recv_from_have_cnt,
                              recv_from_have_displ,
-                             default_rendezvous<sgid_t>);
+                             sgid_alltoallv);
 
         // sanity check. all the sgids we are asked to send, we actually have
         int n = send_to_want_displ[nhost];

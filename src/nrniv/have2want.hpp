@@ -1,14 +1,8 @@
 #pragma once
 
 #include <numeric>
+#include <unordered_map>
 #include <vector>
-
-/*
-To be included by a file that desires rendezvous rank exchange functionality.
-Need to define HAVEWANT_alltoallv, and HAVEWANT2Int
-The latter is a map or unordered_map.
-E.g. std::unordered_map<size_t, int>
-*/
 
 /*
 A rank owns a set of T keys and wants information associated with
@@ -34,9 +28,9 @@ The rendezvous_rank function is used to parallelize this computation
 and minimize memory usage so that no single rank ever needs to know all keys.
 */
 
-// round robin default rendezvous rank function
+// round robin rendezvous rank function
 template <typename T>
-int default_rendezvous(const T& key) {
+int rendezvous_rank(const T& key) {
     return key % nrnmpi_numprocs;
 }
 
@@ -53,7 +47,7 @@ static int* srccnt2destcnt(int* srccnt) {
     return destcnt;
 }
 
-template <typename T>
+template <typename T, typename F>
 static void rendezvous_rank_get(T* data,
                                 int size,
                                 T*& sdata,
@@ -62,7 +56,7 @@ static void rendezvous_rank_get(T* data,
                                 T*& rdata,
                                 int*& rcnt,
                                 int*& rdispl,
-                                int (*rendezvous_rank)(const T&)) {
+                                F alltoall_function) {
     int nhost = nrnmpi_numprocs;
 
     // count what gets sent
@@ -71,7 +65,7 @@ static void rendezvous_rank_get(T* data,
         scnt[i] = 0;
     }
     for (int i = 0; i < size; ++i) {
-        int r = (*rendezvous_rank)(data[i]);
+        int r = rendezvous_rank<T>(data[i]);
         ++scnt[r];
     }
 
@@ -85,14 +79,14 @@ static void rendezvous_rank_get(T* data,
         scnt[i] = 0;
     }
     for (int i = 0; i < size; ++i) {
-        int r = (*rendezvous_rank)(data[i]);
+        int r = rendezvous_rank<T>(data[i]);
         sdata[sdispl[r] + scnt[r]] = data[i];
         ++scnt[r];
     }
-    HAVEWANT_alltoallv(sdata, scnt, sdispl, rdata, rcnt, rdispl);
+    alltoall_function(sdata, scnt, sdispl, rdata, rcnt, rdispl);
 }
 
-template <typename T = int>
+template <typename T, typename F>
 void have_to_want(T* have,
                   int have_size,
                   T* want,
@@ -103,7 +97,7 @@ void have_to_want(T* have,
                   T*& recv_from_have,
                   int*& recv_from_have_cnt,
                   int*& recv_from_have_displ,
-                  int (*rendezvous_rank)(const T&)) {
+                  F alltoall_function) {
     // 1) Send have and want to the rendezvous ranks.
     // 2) Rendezvous rank matches have and want.
     // 3) Rendezvous ranks tell the want ranks which ranks own the keys
@@ -122,13 +116,13 @@ void have_to_want(T* have,
                            have_r_data,
                            have_r_cnt,
                            have_r_displ,
-                           rendezvous_rank);
+                           alltoall_function);
     delete[] have_s_cnt;
     delete[] have_s_displ;
     delete[] have_s_data;
     // assume it is an error if two ranks have the same key so create
     // hash table of key2rank. Will also need it for matching have and want
-    HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost] + 1);  // ensure not empty.
+    std::unordered_map<T, int> havekey2rank(have_r_displ[nhost] + 1);  // ensure not empty.
     for (int r = 0; r < nhost; ++r) {
         for (int i = 0; i < have_r_cnt[r]; ++i) {
             T key = have_r_data[have_r_displ[r] + i];
@@ -154,7 +148,7 @@ void have_to_want(T* have,
                            want_r_data,
                            want_r_cnt,
                            want_r_displ,
-                           rendezvous_rank);
+                           alltoall_function);
 
     // 2) Rendezvous rank matches have and want.
     //    we already have made the havekey2rank map.
@@ -237,8 +231,7 @@ void have_to_want(T* have,
     want_r_cnt = srccnt2destcnt(want_s_cnt);
     want_r_displ = cnt2displ(want_r_cnt);
     want_r_data = new T[want_r_displ[nhost]];
-    HAVEWANT_alltoallv(
-        want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt, want_r_displ);
+    alltoall_function(want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt, want_r_displ);
     // now the want_r_data on the have_ranks are grouped according to the ranks
     // that want those keys.
 
