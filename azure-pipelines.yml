@@ -42,6 +42,8 @@ stages:
             python.version: '3.10'
           Python311:
             python.version: '3.11'
+          Python312:
+            python.version: '3.12'
       steps:
 
       # Secure files documentation:
@@ -101,6 +103,10 @@ stages:
           Python311:
             python.version: '3.11'
             python.org.version: '3.11.7'
+            python.installer.name: 'macos11.pkg'
+          Python312:
+            python.version: '3.12'
+            python.org.version: '3.12.0'
             python.installer.name: 'macos11.pkg'
 
       steps:
