@@ -1877,7 +1877,12 @@ void nrn_list(Item* q1, Item* q2) {
         break;
     case RANDOM:
         for (q = q1->next; q != q2->next; q = q->next) {
-            SYM(q)->nrntype |= NRNNOTP | EXTDEF_RANDOM;
+            Symbol* s = SYM(q);
+            if (s->type != NAME || s->subtype || s->nrntype) {
+                diag(s->name, " cannot be redeclared as RANDOM");
+            }
+            s->nrntype |= NRNNOTP | EXTDEF_RANDOM;
+            s->type = RANDOMVAR;
         }
         plist = &nmodlrandoms;
         break;
