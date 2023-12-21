@@ -35,12 +35,7 @@ int rendezvous_rank(const T& key) {
 }
 
 template <typename T>
-struct Data
-{
-    Data() = default;
-    explicit Data(std::size_t data_size)
-        : data(data_size)
-    {}
+struct Data {
     std::vector<T> data{};
     std::vector<int> cnt{};
     std::vector<int> displ{};
@@ -60,7 +55,7 @@ static std::vector<int> srccnt2destcnt(std::vector<int> srccnt) {
 
 template <typename T, typename F>
 static std::tuple<Data<T>, Data<T>> rendezvous_rank_get(const std::vector<T>& data,
-                                F alltoall_function) {
+                                                        F alltoall_function) {
     int nhost = nrnmpi_numprocs;
 
     Data<T> s;
@@ -92,8 +87,8 @@ static std::tuple<Data<T>, Data<T>> rendezvous_rank_get(const std::vector<T>& da
 
 template <typename T, typename F>
 std::pair<Data<T>, Data<T>> have_to_want(const std::vector<T>& have,
-                  const std::vector<T>& want,
-                  F alltoall_function) {
+                                         const std::vector<T>& want,
+                                         F alltoall_function) {
     // 1) Send have and want to the rendezvous ranks.
     // 2) Rendezvous rank matches have and want.
     // 3) Rendezvous ranks tell the want ranks which ranks own the keys

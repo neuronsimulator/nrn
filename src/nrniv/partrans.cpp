@@ -24,21 +24,33 @@
 
 #if NRNLONGSGID
 #if NRNMPI
-static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r)
-    if (nrn_sparse_partrans > 0) {
-        nrnmpi_long_alltoallv_sparse(s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
-    } else {
-        nrnmpi_long_alltoallv(s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
-    }
+static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) if (nrn_sparse_partrans > 0) {
+    nrnmpi_long_alltoallv_sparse(
+        s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
+}
+else {
+    nrnmpi_long_alltoallv(
+        s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
+}
 }
 #endif  // NRNMPI
 #else   // not NRNLONGSGID
 #if NRNMPI
 static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) {
     if (nrn_sparse_partrans > 0) {
-        nrnmpi_int_alltoallv_sparse(s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
+        nrnmpi_int_alltoallv_sparse(s.data.data(),
+                                    s.cnt.data(),
+                                    s.displ.data(),
+                                    r.data.data(),
+                                    r.cnt.data(),
+                                    r.displ.data());
     } else {
-        nrnmpi_int_alltoallv(s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
+        nrnmpi_int_alltoallv(s.data.data(),
+                             s.cnt.data(),
+                             s.displ.data(),
+                             r.data.data(),
+                             r.cnt.data(),
+                             r.displ.data());
     }
 }
 #endif  // NRNMPI
@@ -531,11 +543,19 @@ static void mpi_transfer() {
     if (nrnmpi_numprocs > 1) {
         double wt = nrnmpi_wtime();
         if (nrn_sparse_partrans > 0) {
-            nrnmpi_dbl_alltoallv_sparse(
-                outsrc_buf_, outsrccnt_.data(), outsrcdspl_.data(), insrc_buf_, insrccnt_.data(), insrcdspl_.data());
+            nrnmpi_dbl_alltoallv_sparse(outsrc_buf_,
+                                        outsrccnt_.data(),
+                                        outsrcdspl_.data(),
+                                        insrc_buf_,
+                                        insrccnt_.data(),
+                                        insrcdspl_.data());
         } else {
-            nrnmpi_dbl_alltoallv(
-                outsrc_buf_, outsrccnt_.data(), outsrcdspl_.data(), insrc_buf_, insrccnt_.data(), insrcdspl_.data());
+            nrnmpi_dbl_alltoallv(outsrc_buf_,
+                                 outsrccnt_.data(),
+                                 outsrcdspl_.data(),
+                                 insrc_buf_,
+                                 insrccnt_.data(),
+                                 insrcdspl_.data());
         }
         nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
         errno = 0;
@@ -611,10 +631,14 @@ void nrnmpi_setup_transfer() {
         return;
     }
     if (nrnmpi_numprocs > 1) {
-        insrccnt_.clear(); insrccnt_.shrink_to_fit();
-        insrcdspl_.clear(); insrcdspl_.shrink_to_fit();
-        outsrccnt_.clear(); outsrccnt_.shrink_to_fit();
-        outsrcdspl_.clear(); outsrcdspl_.shrink_to_fit();
+        insrccnt_.clear();
+        insrccnt_.shrink_to_fit();
+        insrcdspl_.clear();
+        insrcdspl_.shrink_to_fit();
+        outsrccnt_.clear();
+        outsrccnt_.shrink_to_fit();
+        outsrcdspl_.clear();
+        outsrcdspl_.shrink_to_fit();
         // This is an old comment prior to using the want_to_have rendezvous
         // rank function in want2have.cpp. The old method did not scale
         // to more sgids than could fit on a single rank, because
@@ -654,7 +678,7 @@ void nrnmpi_setup_transfer() {
 
         // At the moment sid2insrc_ is serving as 'seen'
         sid2insrc_.clear();
-        sid2insrc_.reserve(szalloc);            // for single counting
+        sid2insrc_.reserve(szalloc);  // for single counting
         std::vector<sgid_t> needsrc{};
         for (size_t i = 0; i < sgid2targets_.size(); ++i) {
             sgid_t sid = sgid2targets_[i];
