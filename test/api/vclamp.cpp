@@ -2,6 +2,7 @@
 #include "neuronapi.h"
 #include <dlfcn.h>
 
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -13,9 +14,19 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
+extern "C" void modl_reg(){};
+
 static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
 
-extern "C" void modl_reg(){};
+constexpr std::array<double, 7> EXPECTED_V{
+    -0x1.04p+6,
+    -0x1.00d7f6756215p-182,
+    0x1.3ffe5c93f70cep+3,
+    0x1.3ffe5c93f70cep+3,
+    0x1.3ffe5c93f70cep+2,
+    0x1.3ffe5c93f70cep+2,
+    0x1.3ffe5c93f70cep+2,
+};
 
 int main(void) {
     Section* soma;
@@ -58,11 +69,8 @@ int main(void) {
     // setup recording
     v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 1);
-    nrn_object_unref(nrn_object_pop());  // record returns the vector
-    t = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_symbol_push(nrn_symbol("t"));
-    nrn_method_call(t, nrn_method_symbol(t, "record"), 1);
+    nrn_double_push(1);
+    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     // finitialize(-65)
@@ -75,10 +83,7 @@ int main(void) {
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();
 
-    long n_voltages = nrn_vector_capacity(t);
-    auto ref_file = std::string(std::getenv("CURRENT_SOURCE_DIR")) + "/ref/vclamp.csv";
-    if (compare_spikes(ref_file.c_str(), nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
-        return 0;
+    if (!approximate(EXPECTED_V, v)) {
+        return 1;
     }
-    return 1;
 }

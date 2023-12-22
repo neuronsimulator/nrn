@@ -12,6 +12,25 @@ using std::ofstream;
 
 static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
 
+constexpr std::array<double, 6> EXPECTED_V{
+#ifndef CORENEURON_ENABLED
+    -0x1.04p+6,
+    0x1.d8340689fafcdp+3,
+    -0x1.2e02b18fab641p+6,
+    -0x1.0517fe92a58d9p+6,
+    -0x1.03e59d79732fcp+6,
+    -0x1.03e51f949532bp+6,
+#else
+    -0x1.04p+6,
+    0x1.d9fa4f205318p+3,
+    -0x1.2e0327138fc9p+6,
+    -0x1.051caef48c1p+6,
+    -0x1.03e62a34d83f2p+6,
+    -0x1.03e5860b6c0c1p+6,
+#endif
+};
+
+
 extern "C" void modl_reg(){};
 
 int main(void) {
@@ -64,11 +83,8 @@ int main(void) {
     // setup recording
     v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 1);
-    nrn_object_unref(nrn_object_pop());  // record returns the vector
-    t = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_symbol_push(nrn_symbol("t"));
-    nrn_method_call(t, nrn_method_symbol(t, "record"), 1);
+    nrn_double_push(20);
+    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     // finitialize(-65)
@@ -77,14 +93,11 @@ int main(void) {
     nrn_double_pop();
 
     // continuerun(100)
-    nrn_double_push(100);
+    nrn_double_push(100.5);
     nrn_function_call(nrn_symbol("continuerun"), 1);
     nrn_double_pop();
 
-    long n_voltages = nrn_vector_capacity(t);
-    auto ref_file = std::string(std::getenv("CURRENT_SOURCE_DIR")) + "/ref/netcon.csv";
-    if (compare_spikes(ref_file.c_str(), nrn_vector_data(t), nrn_vector_data(v), n_voltages)) {
-        return 0;
+    if (!approximate(EXPECTED_V, v)) {
+        return 1;
     }
-    return 1;
 }
