@@ -77,9 +77,9 @@ static std::tuple<Data<T>, Data<T>> rendezvous_rank_get(const std::vector<T>& da
     // scatter data into sdata by recalculating s.cnt.
     std::fill(s.cnt.begin(), s.cnt.end(), 0);
     for (const auto& e: data) {
-        int r = rendezvous_rank<T>(e);
-        s.data[s.displ[r] + s.cnt[r]] = e;
-        s.cnt[r] += 1;
+        int rank = rendezvous_rank<T>(e);
+        s.data[s.displ[rank] + s.cnt[rank]] = e;
+        s.cnt[rank] += 1;
     }
     alltoall_function(s, r);
     return {s, r};
