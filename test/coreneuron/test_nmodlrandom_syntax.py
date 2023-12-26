@@ -8,8 +8,9 @@ def modfile(
     s1="RANDOM rv1, rv2",
     s2=":s2",
     s3=":s3",
-    s4="4",
-    s5="random_negexp(rv1, 1.0)",
+    s4="x1 = random_negexp(rv1, 1.0)",
+    s5=":s5",
+    s6="foo = random_negexp(rv1, 1.0)",
 ):
     txt = """
 : temp.mod file with format elements to test for RANDOM syntax errors
@@ -22,18 +23,20 @@ NEURON {
   %s : 1 declare randomvars
 }
 
+%s : 2 error if randomvar is mentioned
+
 ASSIGNED {
   x1
-  %s : 2 error if randomvar
 }
 
 BEFORE STEP {
-  %s = 5 : 3 cannot assign to randomvar
-  x1 = %s : 4 cannot evaluate randomvar
-  %s : 5 random_function accepted but ranvar must be first arg
+  %s : 3 error if assign or eval a randomvar
+  %s : 4 random_function accepted but ranvar must be first arg
 }
 
 FUNCTION foo(arg) {
+  %s : 5  LOCAL ranvar makes it a double in this scope
+  %s : 6  random_function accepted but ranvar must be first arg
   foo = arg
 }
 """ % (
@@ -43,6 +46,7 @@ FUNCTION foo(arg) {
         s3,
         s4,
         s5,
+        s6,
     )
     return txt
 
@@ -56,6 +60,8 @@ def chk_nmodl(txt, program="nocmodl", rcode=False):
     f = open("temp.mod", "w")
     f.write(txt)
     f.close()
+    f = open("temp.cpp", "w")  # so can be unlinked after run if not created
+    f.close()
     result = run([program, "temp.mod"])
     ret = (result.returncode == 0) == rcode
     if ret:
@@ -64,21 +70,27 @@ def chk_nmodl(txt, program="nocmodl", rcode=False):
     else:
         print("chk_nmodl ", program, " return code ", result.returncode)
         print(txt)
-        print(result.stderr)
-        print(result.stdout)
+        print(result.stderr.decode())
+        print(result.stdout.decode())
     return (result.returncode == 0) == rcode
 
 
 def test_syntax():
-    for program in ["nocmodl"]:
+    for program in ["nocmodl", "nmodl"]:
+        foo = False
         assert chk_nmodl(modfile(), program, rcode=True)
         assert chk_nmodl(modfile(s0="ASSIGNED{rv1}"), program)
-        assert chk_nmodl(modfile(s2="rv1"), program)
-        assert chk_nmodl(modfile(s3="rv1"), program)
-        assert chk_nmodl(modfile(s4="rv1"), program)
-        assert chk_nmodl(modfile(s5="foo(rv1)"), program)
-        assert chk_nmodl(modfile(s5="random_negexp()"), program)
-        assert chk_nmodl(modfile(s5="random_negexp(1.0)"), program)
+        foo = True if program == "nocmodl" else False
+        assert chk_nmodl(modfile(s0="LOCAL rv1"), program, rcode=foo)
+        assert chk_nmodl(modfile(s2="ASSIGNED{rv1}"), program)
+        assert chk_nmodl(modfile(s2="LOCAL rv1"), program)
+        assert chk_nmodl(modfile(s3="rv1 = 1"), program)
+        assert chk_nmodl(modfile(s3="x1 = rv1"), program)
+        assert chk_nmodl(modfile(s4="foo(rv1)"), program)
+        assert chk_nmodl(modfile(s4="random_negexp()"), program)
+        assert chk_nmodl(modfile(s4="random_negexp(1.0)"), program)
+        assert chk_nmodl(modfile(s5="LOCAL rv1"), program)
+        assert chk_nmodl(modfile(s4="random_negexp(rv1, rv2)"), program)
 
 
 if __name__ == "__main__":
