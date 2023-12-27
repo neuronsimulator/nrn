@@ -60,13 +60,11 @@ def chk_nmodl(txt, program="nocmodl", rcode=False):
     f = open("temp.mod", "w")
     f.write(txt)
     f.close()
-    f = open("temp.cpp", "w")  # so can be unlinked after run if not created
-    f.close()
     result = run([program, "temp.mod"])
     ret = (result.returncode == 0) == rcode
     if ret:
         pathlib.Path.unlink("temp.mod")
-        pathlib.Path.unlink("temp.cpp")
+        pathlib.Path.unlink("temp.cpp", missing_ok=True)
     else:
         print("chk_nmodl ", program, " return code ", result.returncode)
         print(txt)
