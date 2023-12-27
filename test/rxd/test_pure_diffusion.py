@@ -52,4 +52,4 @@ def test_pure_diffusion_cvode(neuron_instance):
         h.continuerun(t)
     if not save_path:
         max_err = compare_data(data)
-        assert max_err < tol
+        assert max_err < 2e-10  # tol
