@@ -2081,8 +2081,7 @@ void BBSaveState::mech(Prop* p) {
 
         // read or write the RANDOM 34 sequence values by pointing last
         // size_random tmp elements to seq34 double slots.
-        std::vector<double> seq34{};
-        seq34.reserve(size_random);
+        std::vector<double> seq34(size_random, 0);
         for (auto i = 0; i < size_random; ++i) {
             tmp.push_back(static_cast<double*>(&seq34[i]));
         }
