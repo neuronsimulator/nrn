@@ -584,6 +584,17 @@ int core2nrn_nmodlrandom(int tid,
     }
 
     auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
+    if (nrnindices != indices) {
+        printf("tid=%d type=%d size=(%zd %zd)\n", tid, type, indices.size(), nrnindices.size());
+        printf("  indices\n");
+        for (auto i: indices) {
+            printf("  %d\n", i);
+        }
+        printf("  nrnindices\n");
+        for (auto i: nrnindices) {
+            printf("  %d\n", i);
+        }
+    }
     assert(nrnindices == indices);
     assert(nmodlrandom.size() == indices.size() * ml->nodecount);
 
