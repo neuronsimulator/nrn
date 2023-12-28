@@ -73,6 +73,8 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
     /**
      * if openmp threading needed:
      *  #pragma omp parallel for private(i) shared(nt, nb_threads) schedule(runtime)
+     *  but note that nrn_mech_random_indices(type) is not threadsafe on first
+     *  call for each type.
      */
     for (int i = 0; i < nb_threads; i++) {
         if (nt[i].ncell || nt[i].tml) {

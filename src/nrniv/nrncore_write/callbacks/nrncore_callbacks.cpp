@@ -326,23 +326,6 @@ int nrnthread_dat2_2(int tid,
     return 1;
 }
 
-static std::unordered_map<int, std::vector<int>> mech_random_indices{};
-static std::vector<int>& nrn_mech_random_indices(int type) {
-    if (mech_random_indices.count(type) == 0) {
-        // if no element, create empty one and search dparam_semantics to fill
-        auto& mri = mech_random_indices[type];
-        int random_semantics = nrn_dparam_semantics_to_int("random");
-        int* semantics = memb_func[type].dparam_semantics;
-        int dparam_size = nrn_prop_dparam_size_[type];
-        for (int i = 0; i < dparam_size; ++i) {
-            if (semantics[i] == random_semantics) {
-                mri.push_back(i);
-            }
-        }
-    }
-    return mech_random_indices[type];
-}
-
 int nrnthread_dat2_mech(int tid,
                         size_t i,
                         int dsz_inst,
@@ -584,17 +567,6 @@ int core2nrn_nmodlrandom(int tid,
     }
 
     auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
-    if (nrnindices != indices) {
-        printf("tid=%d type=%d size=(%zd %zd)\n", tid, type, indices.size(), nrnindices.size());
-        printf("  indices\n");
-        for (auto i: indices) {
-            printf("  %d\n", i);
-        }
-        printf("  nrnindices\n");
-        for (auto i: nrnindices) {
-            printf("  %d\n", i);
-        }
-    }
     assert(nrnindices == indices);
     assert(nmodlrandom.size() == indices.size() * ml->nodecount);
 

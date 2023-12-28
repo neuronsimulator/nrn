@@ -809,10 +809,13 @@ std::vector<int> indices_of_type(
     return indices;
 }
 
+static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+
 void update_mech_ppsym_for_modlrandom(
     int mechtype,
     std::vector<std::pair<const char*, const char*>> const& dparam_info) {
     std::vector<int> indices = indices_of_type("random", dparam_info);
+    mech_random_indices[mechtype] = indices;
     if (indices.empty()) {
         return;
     }
@@ -950,6 +953,13 @@ void hoc_register_dparam_semantics(int mechtype, int ix, const char* name) {
 
 int nrn_dparam_semantics_to_int(const char* name) {
     return dparam_semantics_to_int(name);
+}
+
+/**
+ * @brief dparam indices with random semantics for mechtype
+ */
+std::vector<int>& nrn_mech_random_indices(int type) {
+    return mech_random_indices[type];
 }
 
 void hoc_register_cvode(int i,

@@ -1018,7 +1018,6 @@ struct StateStructInfo {
     int offset{-1};
     int size{};
     Symbol* callback{nullptr};
-    std::vector<int> random_indices{};
 };
 static StateStructInfo* ssi;
 static cTemplate* nct;
@@ -1077,19 +1076,6 @@ static void ssi_def() {
             // if (ssi[im].callback) {
             //	printf("callback %s\n", ssi[im].callback->name);
             //}
-        }
-        // indices of RANDOM variables
-        // only look when there is a destructor
-        if (nrn_mech_inst_destruct.count(im)) {
-            // search through memb_func[im].dparam_semantics for "random"
-            int random_semantics = nrn_dparam_semantics_to_int("random");
-            int* semantics = memb_func[im].dparam_semantics;
-            int dparam_size = nrn_prop_dparam_size_[im];
-            for (int i = 0; i < dparam_size; ++i) {
-                if (semantics[i] == random_semantics) {
-                    ssi[im].random_indices.push_back(i);
-                }
-            }
         }
     }
     // Following set to 1 when NrnProperty constructor calls prop_alloc.
@@ -2071,7 +2057,7 @@ void BBSaveState::mech(Prop* p) {
     f->s(buf, 1);
     {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
-        auto& random_indices = ssi[p->_type].random_indices;
+        auto& random_indices = nrn_mech_random_indices(p->_type);
         int size_random = int(random_indices.size());
         std::vector<double*> tmp{};
         tmp.reserve(size + size_random);
