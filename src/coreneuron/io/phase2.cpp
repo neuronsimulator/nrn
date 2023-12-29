@@ -1147,7 +1147,9 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                     nrnran123_State* state = nrnran123_newstream3(r[ix], r[ix + 1], r[ix + 2]);
                     nrnran123_setseq(state, r[ix + 3], char(r[ix + 4]));
                     ix += 5;
-                    nt._vdata[ml->pdata[nrn_i_layout(i, cnt, index, szdp, layout)]] = state;
+                    int ipd = ml->pdata[nrn_i_layout(i, cnt, index, szdp, layout)];
+                    assert(ipd >= 0 && ipd < n_vdata + extra_nv);
+                    nt._vdata[ipd] = state;
                 }
             }
         }

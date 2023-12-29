@@ -137,6 +137,15 @@ inline double nrnran123_dblpick(nrnran123_State* s) {
     return nrnran123_uint2dbl(nrnran123_ipick(s));
 }
 
+// same as dblpick
+inline double nrnran123_uniform(nrnran123_State* s) {
+    return nrnran123_uint2dbl(nrnran123_ipick(s));
+}
+
+inline double nrnran123_uniform(nrnran123_State* s, double low, double high) {
+    return low + nrnran123_uint2dbl(nrnran123_ipick(s)) * (high - low);
+}
+
 /* this could be called from openacc parallel construct (in INITIAL block) */
 inline void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     if (which > 3) {
