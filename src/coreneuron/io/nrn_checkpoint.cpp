@@ -330,9 +330,6 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                     uint32_t data[5];
                     char which;
                     for (int i = 0; i < cnt; ++i) {
-                        // bug? permutation problem? When read in phase2.cpp
-                        // the nrnran123_State* will go into
-                        // nt._vdata[ml->pdata[nrn_i_layout(i, cnt, ix, sz, layout)]]
                         void* v = nt._vdata[d[i * sz + ix]];
                         nrnran123_State* r = (nrnran123_State*) v;
                         nrnran123_getids3(r, &data[0], &data[1], &data[2]);

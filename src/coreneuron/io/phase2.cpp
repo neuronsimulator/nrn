@@ -1142,7 +1142,9 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             }
             int cnt = ml->nodecount;
             for (auto index: indices) {
-                // should we verify that index on cn side same as on nrn side?
+                // should we also verify that index on cn side same as on nrn side?
+                // sonarcloud thinks ml_pdata can be nullptr, so ...
+                assert(index >= 0 && index < szdp);
                 for (int i = 0; i < n; ++i) {
                     nrnran123_State* state = nrnran123_newstream3(r[ix], r[ix + 1], r[ix + 2]);
                     nrnran123_setseq(state, r[ix + 3], char(r[ix + 4]));

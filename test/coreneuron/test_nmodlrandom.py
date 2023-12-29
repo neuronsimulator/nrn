@@ -1,10 +1,27 @@
+# augmented to also checkpoint verify when RANDOM is permuted
+
 from neuron import h, coreneuron
 
 pc = h.ParallelContext()
 
 
+class Cell:
+    def __init__(self, gid):
+        self.soma = h.Section(name="soma", cell=self)
+        self.soma.insert("noisychan")
+        if gid % 2 == 0:
+            # CoreNEURON permutation not the identity if cell topology not homogeneous
+            self.dend = h.Section(name="dend", cell=self)
+            self.dend.connect(self.soma(0.5))
+            self.dend.insert("noisychan")
+        self.gid = gid
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma))
+
+
 def model():
     nslist = [h.NetStim() for _ in range(3)]
+    cells = [Cell(gid) for gid in range(10, 15)]
     for gid, ns in enumerate(nslist):
         ns.start = 0
         ns.number = 1e9
@@ -15,7 +32,7 @@ def model():
     spiketime = h.Vector()
     spikegid = h.Vector()
     pc.spike_record(-1, spiketime, spikegid)
-    return nslist, spiketime, spikegid
+    return nslist, spiketime, spikegid, cells
 
 
 def pspike(m):
@@ -97,8 +114,8 @@ def test_chkpnt():
             shell=False,
         )
 
-    runcn(5, 0, ["--checkpoint", "coredat/chkpnt", "-o", "coredat"])
-    runcn(10, 0, ["--restore", "coredat/chkpnt", "-o", "coredat/chkpnt"])
+    runcn(5, 1, ["--checkpoint", "coredat/chkpnt", "-o", "coredat"])
+    runcn(10, 1, ["--restore", "coredat/chkpnt", "-o", "coredat/chkpnt"])
     cmp_spks(sortspikes(std2[0], std2[1]), "coredat")
 
 
