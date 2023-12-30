@@ -338,12 +338,13 @@ int Daspk::advance_tn(double tstop) {
 int Daspk::interpolate(double tt) {
     // printf("Daspk::interpolate %.15g\n", tt);
     assert(tt >= cv_->t0_ && tt <= cv_->tn_);
-    int ier = IDAGetSolution(mem_, tt, cv_->y_, yp_);
+    // do not setIDASetStopTime since tt earlier than tn_
+    int ier = IDASolve(mem_, tt, &cv_->t_, cv_->y_, yp_, IDA_NORMAL);
     if (ier != IDA_SUCCESS) {
         Printf("DASPK interpolate error\n");
         return ier;
     }
-    cv_->t_ = tt;
+    assert(MyMath::eq(tt, cv_->t_, NetCvode::eps(cv_->t_)));
     // interpolation does not call res. So we have to.
     res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
     // if(MyMath::eq(t, cv_->t_, NetCvode::eps(cv_->t_))) {
