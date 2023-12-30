@@ -318,7 +318,7 @@ endif()
 # Do not set this when building wheels. The nrnivmodl workflow means that we do not know what
 # compiler will be invoked with these flags, so we have to use flags that are as generic as
 # possible.
-if(NOT DEFINED NRN_WHEEL_BUILD OR NOT NRN_WHEEL_BUILD)
+if(NOT DEFINED NRN_BINARY_DIST_BUILD OR NOT NRN_BINARY_DIST_BUILD)
   list(APPEND CORENRN_EXTRA_CXX_FLAGS "${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif()
 
@@ -652,15 +652,15 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
+configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
 foreach(header ${main_headers})
-  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
 endforeach()
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
 # main program required for building special-core
 cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp

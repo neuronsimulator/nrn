@@ -33,8 +33,8 @@
 
 class Resource {
 public:
-    Resource();
-    virtual ~Resource();
+    Resource() = default;
+    virtual ~Resource() = default;
 
     virtual void ref() const;
     virtual void unref() const;
@@ -54,7 +54,7 @@ public:
     virtual void Reference() const { ref(); }
     virtual void Unreference() const { unref(); }
 private:
-    unsigned refcount_;
+    unsigned refcount_{};
 private:
     /* prohibit default assignment */
     Resource& operator =(const Resource&);
