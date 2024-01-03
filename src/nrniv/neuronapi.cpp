@@ -77,14 +77,14 @@ void nrn_stdout_redirect(int (*myprint)(int, char*)) {
 Section* nrn_section_new(char const* const name) {
     // TODO: check for memory leaks; should we free the symbol, pitm, etc?
     Symbol* symbol = new Symbol;
-    auto pitm = new hoc_Item*;
     symbol->name = strdup(name);
     symbol->type = 1;
     symbol->u.oboff = 0;
     symbol->arayinfo = 0;
     hoc_install_object_data_index(symbol);
-    new_sections(nullptr, symbol, pitm, 1);
-    return (*pitm)->element.sec;
+    hoc_Item* itm;
+    new_sections(nullptr, symbol, &itm, 1);
+    return itm->element.sec;
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
