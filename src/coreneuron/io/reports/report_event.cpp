@@ -61,7 +61,9 @@ void ReportEvent::summation_alu(NrnThread* nt) {
             int gid = kv.first;
             for (const auto& segment_id: kv.second) {
                 sum_soma += summation_report.summation_[segment_id];
+                std::cout << "Adding segment id: " << segment_id << " value: " << summation_report.summation_[segment_id] << std::endl;
             }
+            std::cout << "Total sum for gid " << gid << " is: " << sum_soma << std::endl;
             *(vars_to_report[gid].front().var_value) = sum_soma;
         }
     }
