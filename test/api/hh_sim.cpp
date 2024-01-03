@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -44,7 +45,7 @@ int main(void) {
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
-    delete[] temp_str;
+    free(temp_str);
 
     // topology
     soma = nrn_section_new("soma");
