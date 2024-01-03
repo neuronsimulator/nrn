@@ -297,7 +297,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                     if (report.section_type == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
-                    } else if (report.section_type == SectionType::Cell) {
+                    } else if (report.section_type == SectionType::Cell || report.section_type == SectionType::Soma) {
                         summation_report.gid_segments_[gid].push_back(segment_id);
                     }
                 }
