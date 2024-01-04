@@ -24,14 +24,22 @@
 
 #if NRNLONGSGID
 #if NRNMPI
-static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) if (nrn_sparse_partrans > 0) {
-    nrnmpi_long_alltoallv_sparse(
-        s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
-}
-else {
-    nrnmpi_long_alltoallv(
-        s.data.data(), s.cnt.data(), s.displ.data(), r.data.data(), r.cnt.data(), r.displ.data());
-}
+static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) {
+    if (nrn_sparse_partrans > 0) {
+        nrnmpi_long_alltoallv_sparse(s.data.data(),
+                                     s.cnt.data(),
+                                     s.displ.data(),
+                                     r.data.data(),
+                                     r.cnt.data(),
+                                     r.displ.data());
+    } else {
+        nrnmpi_long_alltoallv(s.data.data(),
+                              s.cnt.data(),
+                              s.displ.data(),
+                              r.data.data(),
+                              r.cnt.data(),
+                              r.displ.data());
+    }
 }
 #endif  // NRNMPI
 #else   // not NRNLONGSGID
