@@ -1,5 +1,9 @@
 #include "neuronapi.h"
 
+#include <cstdarg>
+#include <iostream>
+#include <variant>
+
 #include "../../nrnconf.h"
 #include "hocdec.h"
 #include "nrniv_mf.h"
@@ -45,6 +49,9 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern void nrn_change_nseg(Section*, int);
 extern Section* section_new(Symbol* sym);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
+
+// Default implementation of modl_reg
+extern "C" __attribute__((weak)) void modl_reg(){};
 
 extern "C" {
 
@@ -183,6 +190,8 @@ nrn_Item* nrn_sectionlist_data(Object* obj) {
  * Functions, objects, and the stack
  ****************************************/
 
+const char* nrn_stack_error = NULL;
+
 Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
@@ -283,6 +292,36 @@ char const* nrn_stack_type_name(nrn_stack_types_t id) {
     }
 }
 
+int stack_push_args(const nrn_arg_t arg_types[], va_list args) {
+    for (int n_args = 0; n_args < 32; ++n_args) {  // 32 is arbitrary limit (avoid infinite loop)
+        switch (arg_types[n_args]) {
+        case ARG_DOUBLE:
+            hoc_pushx(va_arg(args, double));
+            break;
+        case ARG_DOUBLE_PTR:
+            hoc_pushpx(va_arg(args, double*));
+            break;
+        case ARG_STR_PTR:
+            hoc_pushstr(va_arg(args, char**));
+            break;
+        case ARG_SYMBOL:
+            hoc_pushs(va_arg(args, Symbol*));
+            break;
+        case ARG_OBJECT:
+            hoc_push_object(va_arg(args, Object*));
+            break;
+        case ARG_INT:
+            hoc_pushi(va_arg(args, int));
+            break;
+        case NRN_ARGS_END:
+            return n_args;
+        default:
+            return -1;
+        }
+    }
+    return -1;
+}
+
 Object* nrn_object_new(Symbol* sym, int narg) {
     return hoc_newobj1(sym, narg);
 }
@@ -295,10 +334,38 @@ void nrn_method_call(Object* obj, Symbol* method_sym, int narg) {
     OcJump::execute_throw_on_exception(obj, method_sym, narg);
 }
 
-void nrn_function_call(Symbol* sym, int narg) {
-    // NOTE: this differs from hoc_call_func in that the response remains on the
-    // stack
-    OcJump::execute_throw_on_exception(sym, narg);
+double nrn_function_call_d(const char* func_name, double v) {
+    return nrn_function_call(func_name, NRN_ARGS_DOUBLE, v);
+}
+double nrn_function_call_s(const char* func_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_function_call(func_name, NRN_ARGS_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
+}
+
+double nrn_function_call(const char* func_name, const nrn_arg_t arg_types[], ...) {
+    va_list args;
+    va_start(args, arg_types);
+    int n_args = stack_push_args(arg_types, args);
+    va_end(args);
+
+    // Clear errors
+    nrn_stack_error = NULL;
+
+    auto sym = nrn_symbol(func_name);
+    if (sym == nullptr) {
+        nrn_stack_error = "Symbol not found";
+        return -1;
+    }
+    try {
+        OcJump::execute_throw_on_exception(sym, n_args);
+        return hoc_xpop();
+    } catch (std::exception const& e) {
+        std::cerr << "Function call stack error: " << e.what() << std::endl;
+        nrn_stack_error = "Error calling function. See stderr";
+        return -1;
+    }
 }
 
 void nrn_object_ref(Object* obj) {
@@ -505,3 +572,4 @@ Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
 }
 }
+ // extern "C"

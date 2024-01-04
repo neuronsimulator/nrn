@@ -13,6 +13,9 @@ typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 
+/// Track errors. NULL -> No error, otherwise a description of it
+extern const char* nrn_stack_error;
+
 typedef enum {
     STACK_IS_STR = 1,
     STACK_IS_VAR = 2,
@@ -23,6 +26,18 @@ typedef enum {
     STACK_IS_SYM = 7,
     STACK_UNKNOWN = -1
 } nrn_stack_types_t;
+
+typedef enum {
+    ARG_DOUBLE = 1,
+    ARG_DOUBLE_PTR = 2,
+    // ARG_STR = 3,
+    ARG_STR_PTR = 4,
+    ARG_SYMBOL = 5,
+    ARG_OBJECT = 6,
+    ARG_INT = 7,
+    // Sentinel
+    NRN_ARGS_END = 0
+} nrn_arg_t;
 
 /****************************************
  * Initialization
@@ -59,6 +74,14 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
+
+// Helpers
+static nrn_arg_t NRN_ARGS_DOUBLE[] = {ARG_DOUBLE, NRN_ARGS_END};
+static nrn_arg_t NRN_ARGS_STR_PTR[] = {ARG_STR_PTR, NRN_ARGS_END};
+static nrn_arg_t NRN_NO_ARGS[] = {NRN_ARGS_END};
+double nrn_function_call_d(const char* func_name, double v);
+double nrn_function_call_s(const char* func_name, const char* v);
+
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
@@ -80,7 +103,18 @@ Symbol* nrn_method_symbol(Object* obj, char const* name);
 //       returns a bool success indicator instead (this is actually the
 //       classic behavior of OcJump)
 void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
-void nrn_function_call(Symbol* sym, int narg);
+
+/**
+ * @brief Invokes the execution of an interpreter function, given its name and arguments
+ *
+ * @param func_name The name of the function to be called
+ * @param arg_types The argument types, given as an array of nrn_arg_t, delimited by the
+ *  special element `ARGS_END`
+ * @param ... The arguments themselves
+ * @return The returned value (double). On error returns -1 and `nrn_stack_error` is set.
+ */
+double nrn_function_call(const char* func_name, const nrn_arg_t arg_types[], ...);
+
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(Object const* obj);

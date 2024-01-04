@@ -15,7 +15,7 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-extern "C" void modl_reg(){/* No modl_reg */};
+static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
 
 constexpr std::array<double, 7> EXPECTED_V{
     -0x1.04p+6,
@@ -32,11 +32,16 @@ int main(void) {
     nrn_init(3, argv.data());
 
     // load the stdrun library
-    char* temp_str = strdup("stdrun.hoc");
-    nrn_str_push(&temp_str);
-    nrn_function_call(nrn_symbol("load_file"), 1);
-    nrn_double_pop();
-    free(temp_str);
+    // Ensure If arguments are not correct we handle gracefully
+    if (nrn_function_call("load_file", NRN_NO_ARGS) == -1 && nrn_stack_error) {
+        std::cerr << "Err: " << nrn_stack_error << std::endl;
+    }
+    // Do it right this time
+    nrn_function_call_s("load_file", "stdrun.hoc");
+    if (nrn_stack_error != NULL) {
+        std::cerr << "Err: nrn_stack_error not cleared" << std::endl;
+        return 1;
+    }
 
     // topology
     Section* soma = nrn_section_new("soma");
@@ -65,15 +70,9 @@ int main(void) {
     nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
-    // finitialize(-65)
-    nrn_double_push(-65);
-    nrn_function_call(nrn_symbol("finitialize"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("finitialize", -65);
 
-    // continuerun(6)
-    nrn_double_push(6);
-    nrn_function_call(nrn_symbol("continuerun"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("continuerun", 6);
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;

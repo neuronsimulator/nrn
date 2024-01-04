@@ -29,18 +29,12 @@ constexpr std::array<double, 6> EXPECTED_V{
 #endif
 };
 
-extern "C" void modl_reg(){/* No modl_reg */};
-
 int main(void) {
     static std::array<const char*, 4> argv = {"netcon", "-nogui", "-nopython", nullptr};
     nrn_init(3, argv.data());
 
     // load the stdrun library
-    char* temp_str = strdup("stdrun.hoc");
-    nrn_str_push(&temp_str);
-    nrn_function_call(nrn_symbol("load_file"), 1);
-    nrn_double_pop();
-    free(temp_str);
+    nrn_function_call_s("load_file", "stdrun.hoc");
 
     // topology
     auto soma = nrn_section_new("soma");
@@ -87,15 +81,9 @@ int main(void) {
     nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
-    // finitialize(-65)
-    nrn_double_push(-65);
-    nrn_function_call(nrn_symbol("finitialize"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("finitialize", -65);
 
-    // continuerun(100)
-    nrn_double_push(100.5);
-    nrn_function_call(nrn_symbol("continuerun"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("continuerun", 100.5);
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;
