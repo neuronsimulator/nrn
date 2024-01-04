@@ -7,8 +7,6 @@
 
 static const char* argv[] = {"sections", "-nogui", "-nopython", NULL};
 
-void modl_reg(){};
-
 int main(void) {
     nrn_init(3, argv);
 
@@ -25,7 +23,7 @@ int main(void) {
     nrn_nseg_set(axon, 5);
 
     // print out the morphology
-    nrn_function_call(nrn_symbol("topology"), 0);
+    nrn_function_call("topology", NRN_NO_ARGS);
 
     /* create a SectionList that is dend1 and its children */
     Object* seclist = nrn_object_new(nrn_symbol("SectionList"), 0);

@@ -29,8 +29,6 @@ constexpr std::array<double, 3> EXPECTED_V{
 
 static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
 
-extern "C" void modl_reg(){};
-
 int main(void) {
     Section* soma;
     Object* iclamp;
@@ -41,11 +39,7 @@ int main(void) {
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = strdup("stdrun.hoc");
-    nrn_str_push(&temp_str);
-    nrn_function_call(nrn_symbol("load_file"), 1);
-    nrn_double_pop();
-    free(temp_str);
+    nrn_function_call_s("load_file", "stdrun.hoc");
 
     // topology
     soma = nrn_section_new("soma");
@@ -53,16 +47,9 @@ int main(void) {
 
     // define soma morphology with two 3d points
     nrn_section_push(soma);
-    for (double x: {0, 0, 0, 10}) {
-        nrn_double_push(x);
-    }
-    nrn_function_call(nrn_symbol("pt3dadd"), 4);
-    nrn_double_pop();  // pt3dadd returns a number
-    for (double x: {10, 0, 0, 10}) {
-        nrn_double_push(x);
-    }
-    nrn_function_call(nrn_symbol("pt3dadd"), 4);
-    nrn_double_pop();  // pt3dadd returns a number
+    nrn_arg_t add_args_t[] = {ARG_DOUBLE, ARG_DOUBLE, ARG_DOUBLE, ARG_DOUBLE, NRN_ARGS_END};
+    nrn_function_call("pt3dadd", add_args_t, 0, 0, 0, 10);
+    nrn_function_call("pt3dadd", add_args_t, 10, 0, 0, 10);
 
     // ion channels
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
@@ -81,15 +68,9 @@ int main(void) {
     nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
-    // finitialize(-65)
-    nrn_double_push(-65);
-    nrn_function_call(nrn_symbol("finitialize"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("finitialize", -65);
 
-    // continuerun(10)
-    nrn_double_push(10.5);
-    nrn_function_call(nrn_symbol("continuerun"), 1);
-    nrn_double_pop();
+    nrn_function_call_d("continuerun", 10.5);
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;
