@@ -124,11 +124,12 @@ cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 # Tell spdlog not to use its bundled fmt, it should either use the fmt submodule or a truly external
 # installation for consistency. This line should be harmless if we use an external spdlog.
 set(SPDLOG_FMT_EXTERNAL ON)
-cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+set(SPDLOG_SYSTEM_INCLUDE ON)
 if(NMODL_3RDPARTY_USE_SPDLOG)
   # See above, same logic as fmt
-  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+  set(SPDLOG_BUILD_PIC ON)
 endif()
+cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
 
 # =============================================================================
 # Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)
