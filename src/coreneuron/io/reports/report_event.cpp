@@ -40,16 +40,26 @@ ReportEvent::ReportEvent(double dt,
     std::sort(gids_to_report.begin(), gids_to_report.end());
 }
 
+// Function to perform Kahan summation algorithm
+double kahan_summation(double sum, double input, double& c) {
+    double y = input - c;  // Subtract the compensation from the value
+    double t = sum + y;  // Add the corrected scaled value to the running sum
+    c = (t - sum) - y;  // Recover the high-order bits of y
+    return t;  // Return the updated sum
+}
+
 void ReportEvent::summation_alu(NrnThread* nt) {
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
     // Add currents of all variables in each segment
     for (const auto& kv: summation_report.currents_) {
         double sum = 0.0;
+        double c = 0.0;  // A running compensation for lost low-order bits
         int segment_id = kv.first;
         for (const auto& value: kv.second) {
             double current_value = *value.first;
             int scale = value.second;
-            sum += current_value * scale;
+            //sum += current_value * scale;
+            sum = kahan_summation(sum, current_value * scale, c);
         }
         summation_report.summation_[segment_id] = sum;
     }
@@ -58,12 +68,12 @@ void ReportEvent::summation_alu(NrnThread* nt) {
     if (!summation_report.gid_segments_.empty()) {
         for (const auto& kv: summation_report.gid_segments_) {
             double sum_soma = 0.0;
+            double c_soma = 0.0;  // A running compensation for lost low-order bits]
             int gid = kv.first;
             for (const auto& segment_id: kv.second) {
-                sum_soma += summation_report.summation_[segment_id];
-                std::cout << "Adding segment id: " << segment_id << " value: " << summation_report.summation_[segment_id] << std::endl;
+                //sum_soma += summation_report.summation_[segment_id];
+                sum_soma = kahan_summation(sum_soma, summation_report.summation_[segment_id], c_soma);
             }
-            std::cout << "Total sum for gid " << gid << " is: " << sum_soma << std::endl;
             *(vars_to_report[gid].front().var_value) = sum_soma;
         }
     }
@@ -79,18 +89,22 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         int num_electrodes = cell_mapping->num_electrodes();
         std::vector<double> lfp_values(num_electrodes, 0.0);
+        std::vector<double> c_values(num_electrodes, 0.0);  // A running compensation for lost low-order bits
         for (const auto& kv: cell_mapping->lfp_factors) {
             int segment_id = kv.first;
             const auto& factors = kv.second;
             int electrode_id = 0;
             for (const auto& factor: factors) {
                 double iclamp = 0.0;
+                double c = 0.0;  // A running compensation for lost low-order bits
                 for (const auto& value: summation_report.currents_[segment_id]) {
                     double current_value = *value.first;
                     int scale = value.second;
-                    iclamp += current_value * scale;
+                    //iclamp += current_value * scale;
+                    iclamp = kahan_summation(iclamp, current_value * scale, c);
                 }
-                lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
+                //lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
+                lfp_values[electrode_id] = kahan_summation(lfp_values[electrode_id], (fast_imem_rhs[segment_id] + iclamp) * factor, c_values[electrode_id]);
                 electrode_id++;
             }
         }
