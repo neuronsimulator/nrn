@@ -12,9 +12,16 @@ typedef struct SectionListIterator SectionListIterator;
 typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
+typedef struct Segment Segment;
+
+typedef struct {
+    Segment* node;
+    double x;
+    Symbol* sym;
+} RangeVar;
 
 /// Track errors. NULL -> No error, otherwise a description of it
-extern const char* nrn_stack_error;
+const char* nrn_stack_err();
 
 typedef enum {
     STACK_IS_STR = 1,
@@ -27,17 +34,16 @@ typedef enum {
     STACK_UNKNOWN = -1
 } nrn_stack_types_t;
 
-typedef enum {
-    ARG_DOUBLE = 1,
-    ARG_DOUBLE_PTR = 2,
-    // ARG_STR = 3,
-    ARG_STR_PTR = 4,
-    ARG_SYMBOL = 5,
-    ARG_OBJECT = 6,
-    ARG_INT = 7,
-    // Sentinel
-    NRN_ARGS_END = 0
-} nrn_arg_t;
+// char* is really handy as literals have the \0 sentinel
+// and automatically join when mentioned together, e.g. NRN_ARG_DOUBLE NRN_ARG_STR
+#define NRN_NO_ARGS        ""
+#define NRN_ARG_DOUBLE     "d"
+#define NRN_ARG_DOUBLE_PTR "D"
+#define NRN_ARG_STR_PTR    "S"
+#define NRN_ARG_SYMBOL     "y"
+#define NRN_ARG_OBJECT     "o"
+#define NRN_ARG_INT        "i"
+#define NRN_ARG_RANGEVAR   "r"
 
 /****************************************
  * Initialization
@@ -67,42 +73,37 @@ nrn_Item* nrn_sectionlist_data(Object* obj);
 int nrn_nseg_get(const Section* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
-void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
+RangeVar nrn_rangevar_new(Section*, double x, const char* var_name);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
+Symbol* nrn_symbol(char const* name);
+Symbol* nrn_method_symbol(Object* obj, char const* name);
 
-// Helpers
-static nrn_arg_t NRN_ARGS_DOUBLE[] = {ARG_DOUBLE, NRN_ARGS_END};
-static nrn_arg_t NRN_ARGS_STR_PTR[] = {ARG_STR_PTR, NRN_ARGS_END};
-static nrn_arg_t NRN_NO_ARGS[] = {NRN_ARGS_END};
 double nrn_function_call_d(const char* func_name, double v);
 double nrn_function_call_s(const char* func_name, const char* v);
+Object* nrn_object_new_d(const char* cls_name, double v);
+Object* nrn_object_new_s(const char* cls_name, const char* v);
+int nrn_method_call_d(Object* obj, const char* method_name, double v);
+int nrn_method_call_s(Object* obj, const char* method_name, const char* v);
 
-Symbol* nrn_symbol(const char* name);
-void nrn_symbol_push(Symbol* sym);
+// void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
-void nrn_double_push(double val);
+// void nrn_double_push(double val);
 double nrn_double_pop(void);
-void nrn_double_ptr_push(double* addr);
+// void nrn_double_ptr_push(double* addr);
 double* nrn_double_ptr_pop(void);
-void nrn_str_push(char** str);
+// void nrn_str_push(char** str);
 char** nrn_pop_str(void);
-void nrn_int_push(int i);
+// void nrn_int_push(int i);
 int nrn_int_pop(void);
-void nrn_object_push(Object* obj);
+// void nrn_object_push(Object* obj);
 Object* nrn_object_pop(void);
 nrn_stack_types_t nrn_stack_type(void);
-char const* nrn_stack_type_name(nrn_stack_types_t id);
-Object* nrn_object_new(Symbol* sym, int narg);
-Symbol* nrn_method_symbol(Object* obj, char const* name);
-// TODO: the next two functions throw exceptions in C++; need a version that
-//       returns a bool success indicator instead (this is actually the
-//       classic behavior of OcJump)
-void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
+char const* const nrn_stack_type_name(nrn_stack_types_t id);
 
 /**
  * @brief Invokes the execution of an interpreter function, given its name and arguments
@@ -113,7 +114,28 @@ void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
  * @param ... The arguments themselves
  * @return The returned value (double). On error returns -1 and `nrn_stack_error` is set.
  */
-double nrn_function_call(const char* func_name, const nrn_arg_t arg_types[], ...);
+double nrn_function_call(const char* func_name, const char* format, ...);
+
+
+/** @brief Create a new object given the "Class" Symbol and its arguments
+ *
+ * @param arg_types: See `nrn_function_call` for an the argument format
+ */
+Object* nrn_object_new(const char* cls_name, const char* format, ...);
+
+
+/** @brief Call a method, given the object, method name and arguments
+ *
+ * @param arg_types: See `nrn_function_call` for an the argument format
+ */
+int nrn_method_call(Object* obj, const char* method_name, const char* format, ...);
+
+/** @brief Call a method, given the object, method name and arguments
+ *
+ * @param arg_types: See `nrn_function_call` for an the argument format
+ */
+Object* nrn_object_new_NoArgs(const char* method_name);
+
 
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
@@ -131,7 +153,7 @@ SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table);
 void nrn_symbol_table_iterator_free(SymbolTableIterator* st);
 char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
 int nrn_symbol_table_iterator_done(SymbolTableIterator* st);
-int nrn_vector_capacity(const Object* vec);
+int nrn_vector_size(const Object* vec);
 double* nrn_vector_data(Object* vec);
 double nrn_property_get(const Object* obj, const char* name);
 double nrn_property_array_get(const Object* obj, const char* name, int i);
