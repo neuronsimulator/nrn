@@ -2,7 +2,6 @@
 #include "neuronapi.h"
 #include <dlfcn.h>
 
-#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -17,7 +16,7 @@ using std::ofstream;
 
 static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
 
-constexpr std::array<double, 7> EXPECTED_V{
+constexpr std::initializer_list<double> EXPECTED_V{
     -0x1.04p+6,
     -0x1.00d7f6756215p-182,
     0x1.3ffe5c93f70cep+3,
@@ -38,12 +37,12 @@ int main(void) {
 
     // load the stdrun library
     // Ensure If arguments are not correct we handle gracefully
-    if (nrn_function_call("load_file", NRN_NO_ARGS) == -1 && nrn_stack_error) {
-        std::cerr << "Err: " << nrn_stack_error << std::endl;
+    if (nrn_function_call("load_file", NRN_NO_ARGS) == -1 && nrn_stack_err()) {
+        std::cerr << "Err: " << nrn_stack_err() << std::endl;
     }
     // Do it right this time
     nrn_function_call_s("load_file", "stdrun.hoc");
-    if (nrn_stack_error != NULL) {
+    if (nrn_stack_err() != NULL) {
         std::cerr << "Err: nrn_stack_error not cleared" << std::endl;
         return 1;
     }
@@ -59,8 +58,7 @@ int main(void) {
     nrn_segment_diam_set(soma, 0.5, 3);
 
     // voltage clamp at soma(0.5)
-    nrn_double_push(0.5);
-    vclamp = nrn_object_new(nrn_symbol("VClamp"), 1);
+    vclamp = nrn_object_new_d("VClamp", 0.5);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
     for (auto& [amp, dur]: {std::pair<int, double>{0, 1}, {10, 2}, {5, 3}}) {
@@ -68,11 +66,11 @@ int main(void) {
         nrn_property_array_set(vclamp, "dur", i, dur);
         ++i;
     }
+
     // setup recording
-    v = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_double_push(1);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
+    v = nrn_object_new_NoArgs("Vector");
+    auto ref_v = nrn_rangevar_new(soma, 0.5, "v");
+    nrn_method_call(v, "record", /* "rd" */ NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &ref_v, 1.0);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     nrn_function_call_d("finitialize", -65);

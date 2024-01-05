@@ -1,8 +1,6 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
 #include "neuronapi.h"
-#include <dlfcn.h>
 
-#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -15,7 +13,7 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-constexpr std::array<double, 3> EXPECTED_V{
+constexpr std::initializer_list<double> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
     -0x1.04p+6,
     -0x1.b254ad82e20edp+5,
@@ -47,25 +45,22 @@ int main(void) {
 
     // define soma morphology with two 3d points
     nrn_section_push(soma);
-    nrn_arg_t add_args_t[] = {ARG_DOUBLE, ARG_DOUBLE, ARG_DOUBLE, ARG_DOUBLE, NRN_ARGS_END};
-    nrn_function_call("pt3dadd", add_args_t, 0, 0, 0, 10);
-    nrn_function_call("pt3dadd", add_args_t, 10, 0, 0, 10);
+    nrn_function_call("pt3dadd", "dddd", 0, 0, 0, 10);
+    nrn_function_call("pt3dadd", "dddd", 10, 0, 0, 10);
 
     // ion channels
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
     // current clamp at soma(0.5)
-    nrn_double_push(0.5);
-    iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+    iclamp = nrn_object_new_d("IClamp", 0.5);
     nrn_property_set(iclamp, "amp", 0.3);
     nrn_property_set(iclamp, "del", 1);
     nrn_property_set(iclamp, "dur", 0.1);
 
     // setup recording
-    v = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_double_push(5.);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
+    RangeVar ref_v = nrn_rangevar_new(soma, 0.5, "v");
+    v = nrn_object_new("Vector", NRN_NO_ARGS);
+    nrn_method_call(v, "record", "rd", &ref_v, 5.0);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     nrn_function_call_d("finitialize", -65);

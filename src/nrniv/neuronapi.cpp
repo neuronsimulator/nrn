@@ -17,6 +17,9 @@
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
 
+/// A public interface of a Segment
+struct Segment: public Node {};
+
 struct SectionListIterator {
     SectionListIterator(nrn_Item*);
     Section* next(void);
@@ -172,16 +175,23 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(const Symbol* sym, const Section* const sec, double x) {
-    return *nrn_rangepointer(const_cast<Section*>(sec), const_cast<Symbol*>(sym), x);
+double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
+    return *nrn_rangepointer(sec, sym, x);
 }
 
-void nrn_rangevar_set(Symbol* sym, Section* const sec, double x, double value) {
+void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
 }
 
-void nrn_rangevar_push(Symbol* sym, Section* const sec, double x) {
-    hoc_push(nrn_rangepointer(sec, sym, x));
+RangeVar nrn_rangevar_new(Section* sec, double x, const char* var_name) {
+    auto* node = static_cast<Segment*>(node_exact(sec, x));
+    if (strcmp(var_name, "v") == 0) {
+        // v doesnt requir symbol
+        return {node, x, nullptr};
+    } else {
+        Symbol* sym = hoc_table_lookup(var_name, hoc_built_in_symlist);
+        return {node, x, sym};
+    }
 }
 
 nrn_Item* nrn_allsec(void) {
@@ -197,10 +207,23 @@ nrn_Item* nrn_sectionlist_data(Object* obj) {
  * Functions, objects, and the stack
  ****************************************/
 
-const char* nrn_stack_error = NULL;
+static constexpr int MAX_ERR_LEN = 200;
+static char nrn_stack_error[MAX_ERR_LEN] = "";
+
+const char* nrn_stack_err() {
+    if (nrn_stack_error[0]) {
+        return nrn_stack_error;
+    } else {
+        return NULL;
+    }
+}
 
 Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
+}
+
+Symbol* nrn_method_symbol(Object* obj, char const* const name) {
+    return hoc_table_lookup(name, obj->ctemplate->symtable);
 }
 
 int nrn_symbol_type(Symbol const* sym) {
@@ -253,16 +276,22 @@ void nrn_object_push(Object* obj) {
     hoc_push_object(obj);
 }
 
-Object* nrn_object_pop(void) {
+Object* nrn_object_pop() {
     // NOTE: the returned object should be unref'd when no longer needed
-    Object** obptr = hoc_objpop();
+    Object** obptr;
+    try {
+        obptr = hoc_objpop();
+    } catch (const std::exception& e) {
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_object_pop: %s", e.what());
+        return nullptr;
+    }
     Object* new_ob_ptr = *obptr;
     new_ob_ptr->refcount++;
     hoc_tobj_unref(obptr);
     return new_ob_ptr;
 }
 
-nrn_stack_types_t nrn_stack_type(void) {
+nrn_stack_types_t nrn_stack_type() {
     switch (hoc_stack_type()) {
     case STRING:
         return STACK_IS_STR;
@@ -307,80 +336,165 @@ char const* const nrn_stack_type_name(nrn_stack_types_t id) {
     }
 }
 
-int stack_push_args(const nrn_arg_t arg_types[], va_list args) {
-    for (int n_args = 0; n_args < 32; ++n_args) {  // 32 is arbitrary limit (avoid infinite loop)
-        switch (arg_types[n_args]) {
-        case ARG_DOUBLE:
-            hoc_pushx(va_arg(args, double));
-            break;
-        case ARG_DOUBLE_PTR:
+static int stack_push_args(const char arg_types[], va_list args) {
+    for (int n_arg = 0; n_arg < 32; ++n_arg) {  // max 32 args
+        switch (arg_types[n_arg]) {
+        case (*NRN_ARG_DOUBLE): {
+            auto d = va_arg(args, double);
+            std::cerr << "Pushing double: " << d << std::endl;
+            hoc_pushx(d);
+        } break;
+        case* NRN_ARG_DOUBLE_PTR:
             hoc_pushpx(va_arg(args, double*));
             break;
-        case ARG_STR_PTR:
+        case* NRN_ARG_STR_PTR:
             hoc_pushstr(va_arg(args, char**));
             break;
-        case ARG_SYMBOL:
+        case* NRN_ARG_SYMBOL:
+            std::cerr << "Pushing symbol" << std::endl;
             hoc_pushs(va_arg(args, Symbol*));
             break;
-        case ARG_OBJECT:
+        case* NRN_ARG_OBJECT:
+            std::cerr << "Pushing object" << std::endl;
             hoc_push_object(va_arg(args, Object*));
             break;
-        case ARG_INT:
+        case* NRN_ARG_INT:
             hoc_pushi(va_arg(args, int));
             break;
-        case NRN_ARGS_END:
-            return n_args;
+        case* NRN_ARG_RANGEVAR: {
+            auto* range_var = va_arg(args, RangeVar*);
+            if (range_var->sym == nullptr) {
+                // No symbol -> must be v
+                std::cerr << "Pushing Range Var V" << std::endl;
+                hoc_push(range_var->node->v_handle());
+            } else {
+                std::cerr << "Pushing Range Var Other" << std::endl;
+                hoc_push(nrn_rangepointer(range_var->node->sec, range_var->sym, range_var->x));
+            }
+        } break;
+        case 0:
+            return n_arg;
         default:
-            return -1;
+            throw std::runtime_error(std::string("Invalid argument type: ") + arg_types[n_arg]);
         }
     }
-    return -1;
+    throw std::runtime_error("Too many arguments or invalid format string");
 }
 
-Object* nrn_object_new(Symbol* sym, int narg) {
-    return hoc_newobj1(sym, narg);
+#define NRN_CHECK_SYMBOL(SYMB, ERR_RET)              \
+    nrn_stack_error[0] = 0;                          \
+    if (SYMB == nullptr) {                           \
+        strcpy(nrn_stack_error, "Symbol not found"); \
+        return ERR_RET;                              \
+    }
+
+/* NOTE
+   We use this macro to deduplicate common code preparing arguments for a Neuron call
+   It _must_ be a macro due to `va_start` and `return`
+*/
+#define NRN_CALL_CHECK_PREPARE(SYMB, ERR_RET) \
+    NRN_CHECK_SYMBOL(SYMB, ERR_RET);          \
+    va_list args;                             \
+    va_start(args, format);
+
+
+double nrn_function_call(const char* func_name, const char* format, ...) {
+    auto sym = nrn_symbol(func_name);
+    NRN_CALL_CHECK_PREPARE(sym,
+                           -1);  // Important: initializes va_args. DON'T return before `va_end`
+    double ret_val = -1.;        // default err. Happy path sets to 0
+
+    try {
+        int n_args = stack_push_args(format, args);
+        OcJump::execute_throw_on_exception(sym, n_args);
+        ret_val = hoc_xpop();
+    } catch (const std::exception& e) {
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_function_call: %s", e.what());
+    }
+
+    va_end(args);  // mind we always need to `va_end` after a `va_start`
+    return ret_val;
 }
 
-Symbol* nrn_method_symbol(Object* obj, char const* const name) {
-    return hoc_table_lookup(name, obj->ctemplate->symtable);
+
+Object* nrn_object_new(const char* cls_name, const char* format, ...) {
+    auto sym = nrn_symbol(cls_name);
+    NRN_CALL_CHECK_PREPARE(sym, nullptr);
+    Object* ret_value = nullptr;
+
+    try {
+        int n_args = stack_push_args(format, args);
+        ret_value = hoc_newobj1(sym, n_args);
+    } catch (const std::exception& e) {
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_object_new: %s", e.what());
+    }
+
+    va_end(args);
+    return ret_value;
 }
 
-void nrn_method_call(Object* obj, Symbol* method_sym, int narg) {
-    OcJump::execute_throw_on_exception(obj, method_sym, narg);
+Object* nrn_object_new_NoArgs(const char* cls_name) {
+    auto sym = nrn_symbol(cls_name);
+    NRN_CHECK_SYMBOL(sym, nullptr);
+    Object* ret_val = nullptr;
+    try {
+        ret_val = hoc_newobj1(sym, 0);
+    } catch (const std::exception& e) {
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_object_new: %s", e.what());
+    }
+    return ret_val;
 }
+
+int nrn_method_call(Object* obj, const char* method_name, const char* format, ...) {
+    auto sym = nrn_method_symbol(obj, method_name);
+    NRN_CALL_CHECK_PREPARE(sym, -1.);
+    int ret_val = -1.;
+
+    try {
+        int n_args = stack_push_args(format, args);
+        OcJump::execute_throw_on_exception(obj, sym, n_args);
+        ret_val = 0;
+    } catch (const std::exception& e) {
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_method_call: %s", e.what());
+    }
+
+    va_end(args);
+    return ret_val;
+}
+
+// --- Helpers
 
 double nrn_function_call_d(const char* func_name, double v) {
-    return nrn_function_call(func_name, NRN_ARGS_DOUBLE, v);
+    return nrn_function_call(func_name, NRN_ARG_DOUBLE, v);
 }
+
 double nrn_function_call_s(const char* func_name, const char* v) {
     char* temp_str = strdup(v);
-    auto x = nrn_function_call(func_name, NRN_ARGS_STR_PTR, &temp_str);
+    auto x = nrn_function_call(func_name, NRN_ARG_STR_PTR, &temp_str);
     free(temp_str);
     return x;
 }
 
-double nrn_function_call(const char* func_name, const nrn_arg_t arg_types[], ...) {
-    va_list args;
-    va_start(args, arg_types);
-    int n_args = stack_push_args(arg_types, args);
-    va_end(args);
+Object* nrn_object_new_d(const char* cls_name, double v) {
+    return nrn_object_new(cls_name, NRN_ARG_DOUBLE, v);
+}
 
-    // Clear errors
-    nrn_stack_error = NULL;
+Object* nrn_object_new_s(const char* cls_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_object_new(cls_name, NRN_ARG_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
+}
 
-    auto sym = nrn_symbol(func_name);
-    if (sym == nullptr) {
-        nrn_stack_error = "Symbol not found";
-        return -1;
-    }
-    try {
-        OcJump::execute_throw_on_exception(sym, n_args);
-        return hoc_xpop();
-    } catch (std::exception const& e) {
-        std::cerr << "Function call stack error: " << e.what() << std::endl;
-        nrn_stack_error = "Error calling function. See stderr";
-        return -1;
-    }
+int nrn_method_call_d(Object* obj, const char* method_name, double v) {
+    return nrn_method_call(obj, method_name, NRN_ARG_DOUBLE, v);
+}
+
+int nrn_method_call_s(Object* obj, const char* method_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_method_call(obj, method_name, NRN_ARG_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
 }
 
 void nrn_object_ref(Object* obj) {
@@ -483,7 +597,7 @@ int nrn_symbol_table_iterator_done(SymbolTableIterator* st) {
     return st->done();
 }
 
-int nrn_vector_capacity(Object const* vec) {
+int nrn_vector_size(Object const* vec) {
     // TODO: throw exception if vec is not a Vector
     return vector_capacity((IvocVect*) vec->u.this_pointer);
 }
@@ -588,4 +702,4 @@ Symlist* nrn_symbol_table(Symbol* sym) {
 Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
 }
-} // extern "C"
+}  // extern "C"

@@ -3,7 +3,6 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
-#include <dlfcn.h>
 #include "neuronapi.h"
 #include "./test_common.h"
 
@@ -13,7 +12,7 @@ using std::ofstream;
 
 static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
 
-constexpr std::array<double, 6> EXPECTED_V{
+constexpr std::initializer_list<double> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
     -0x1.04p+6,
     0x1.d8340689fafcdp+3,
@@ -48,42 +47,41 @@ int main(void) {
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
     // NetStim
-    auto ns = nrn_object_new(nrn_symbol("NetStim"), 0);
+    auto ns = nrn_object_new_NoArgs("NetStim");
     nrn_property_set(ns, "start", 5);
     nrn_property_set(ns, "noise", 1);
     nrn_property_set(ns, "interval", 5);
     nrn_property_set(ns, "number", 10);
 
     // syn = h.ExpSyn(soma(0.5))
-    nrn_double_push(0.5);
-    auto syn = nrn_object_new(nrn_symbol("ExpSyn"), 1);
+    auto syn = nrn_object_new_d("ExpSyn", 0.5);
     nrn_property_set(syn, "tau", 3);  // 3 ms timeconstant
     nrn_property_set(syn, "e", 0);    // 0 mV reversal potential (excitatory synapse)
 
     // nc = h.NetCon(ns, syn)
-    nrn_object_push(ns);
-    nrn_object_push(syn);
-    auto nc = nrn_object_new(nrn_symbol("NetCon"), 2);
+    auto nc = nrn_object_new("NetCon", "oo", ns, syn);
     nrn_property_array_set(nc, "weight", 0, 0.5);
     nrn_property_set(nc, "delay", 0);
 
-    auto vec = nrn_object_new(nrn_symbol("Vector"), 0);
-
-    // nc.record(vec)
-    nrn_object_push(vec);
-    nrn_method_call(nc, nrn_method_symbol(nc, "record"), 1);
-    // TODO: record probably put something on the stack that should be removed
+    // record from the netcon directly
+    auto vec = nrn_object_new_NoArgs("Vector");
+    nrn_method_call(nc, "record", NRN_ARG_OBJECT, vec);
 
     // setup recording
-    v = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_double_push(20);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
+    auto ref_v = nrn_rangevar_new(soma, 0.5, "v");
+    v = nrn_object_new_NoArgs("Vector");
+    nrn_method_call(v, "record", NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &ref_v, 20.0);
     nrn_object_unref(nrn_object_pop());  // record returns the vector
 
     nrn_function_call_d("finitialize", -65);
 
     nrn_function_call_d("continuerun", 100.5);
+
+    int n_nc_events = nrn_vector_size(vec);
+    if (n_nc_events != 10) {
+        std::cerr << "Wrong number of Netcon events: " << n_nc_events << std::endl;
+        return 1;
+    }
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;
