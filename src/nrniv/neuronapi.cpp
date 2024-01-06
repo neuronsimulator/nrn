@@ -5,14 +5,16 @@
 #include <variant>
 
 #include "../../nrnconf.h"
-#include "hocdec.h"
-#include "nrniv_mf.h"
-#include "nrnmpi.h"
+#include "../oc/hocdec.h"
+#include "../nrnoc/nrniv_mf.h"
+#include "../oc/nrnmpi.h"
+#include "../oc/oc_ansi.h"
+#include "../oc/ocfunc.h"
+#include "../ivoc/ocjump.h"
+#include "../nrnoc/section.h"
+
 #include "nrnmpiuse.h"
-#include "ocfunc.h"
-#include "ocjump.h"
 #include "parse.hpp"
-#include "section.h"
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -326,7 +328,6 @@ static int stack_push_args(const char arg_types[], va_list args) {
         switch (arg_types[n_arg]) {
         case (*NRN_ARG_DOUBLE): {
             auto d = va_arg(args, double);
-            std::cerr << "Pushing double: " << d << std::endl;
             hoc_pushx(d);
         } break;
         case* NRN_ARG_DOUBLE_PTR:
@@ -336,11 +337,9 @@ static int stack_push_args(const char arg_types[], va_list args) {
             hoc_pushstr(va_arg(args, char**));
             break;
         case* NRN_ARG_SYMBOL:
-            std::cerr << "Pushing symbol" << std::endl;
             hoc_pushs(va_arg(args, Symbol*));
             break;
         case* NRN_ARG_OBJECT:
-            std::cerr << "Pushing object" << std::endl;
             hoc_push_object(va_arg(args, Object*));
             break;
         case* NRN_ARG_INT:
@@ -350,10 +349,8 @@ static int stack_push_args(const char arg_types[], va_list args) {
             auto* range_var = va_arg(args, RangeVar*);
             if (range_var->sym == nullptr) {
                 // No symbol -> must be v
-                std::cerr << "Pushing Range Var V" << std::endl;
                 hoc_push(range_var->node->v_handle());
             } else {
-                std::cerr << "Pushing Range Var Other" << std::endl;
                 hoc_push(nrn_rangepointer(range_var->node->sec, range_var->sym, range_var->x));
             }
         } break;
