@@ -80,62 +80,61 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
+
+/// @brief Looks up a top-level symbol by name. Returns NULL if it doesn't exist
 Symbol* nrn_symbol(char const* name);
+/// @brief Looks up an object's method symbol by name. Returns NULL if it doesn't exist
 Symbol* nrn_method_symbol(Object* obj, char const* name);
-
-double nrn_function_call_d(const char* func_name, double v);
-double nrn_function_call_s(const char* func_name, const char* v);
-Object* nrn_object_new_d(const char* cls_name, double v);
-Object* nrn_object_new_s(const char* cls_name, const char* v);
-int nrn_method_call_d(Object* obj, const char* method_name, double v);
-int nrn_method_call_s(Object* obj, const char* method_name, const char* v);
-
-// void nrn_symbol_push(Symbol* sym);
-int nrn_symbol_type(const Symbol* sym);
-// void nrn_double_push(double val);
-double nrn_double_pop(void);
-// void nrn_double_ptr_push(double* addr);
-double* nrn_double_ptr_pop(void);
-// void nrn_str_push(char** str);
-char** nrn_pop_str(void);
-// void nrn_int_push(int i);
-int nrn_int_pop(void);
-// void nrn_object_push(Object* obj);
-Object* nrn_object_pop(void);
-nrn_stack_types_t nrn_stack_type(void);
-char const* const nrn_stack_type_name(nrn_stack_types_t id);
 
 /**
  * @brief Invokes the execution of an interpreter function, given its name and arguments
- *
  * @param func_name The name of the function to be called
- * @param arg_types The argument types, given as an array of nrn_arg_t, delimited by the
- *  special element `ARGS_END`
+ * @param format The argument types, given as a format string. See NRN_ARG_XXX defines
  * @param ... The arguments themselves
- * @return The returned value (double). On error returns -1 and `nrn_stack_error` is set.
+ * @return The returned value (double). On error returns -1 and `nrn_stack_err()` is set.
  */
 double nrn_function_call(const char* func_name, const char* format, ...);
 
-
-/** @brief Create a new object given the "Class" Symbol and its arguments
- *
- * @param arg_types: See `nrn_function_call` for an the argument format
+/**
+ * @brief Create a new object given the "Class" Symbol and its arguments
+ * @param format The argument types, given as a format string. See NRN_ARG_XXX defines
+ * @return The created object. On error returns NULL and `nrn_stack_err()` is set.
  */
 Object* nrn_object_new(const char* cls_name, const char* format, ...);
 
-
-/** @brief Call a method, given the object, method name and arguments
- *
- * @param arg_types: See `nrn_function_call` for an the argument format
+/**
+ * @brief Call a method, given the object, method name and arguments
+ * @param format The argument types, given as a format string. See NRN_ARG_XXX defines
+ * @return 1 on suceess. On error returns 0 and `nrn_stack_err()` is set.
  */
 int nrn_method_call(Object* obj, const char* method_name, const char* format, ...);
 
-/** @brief Call a method, given the object, method name and arguments
- *
- * @param arg_types: See `nrn_function_call` for an the argument format
- */
+/// @brief Calls a function which expects a single double value
+double nrn_function_call_d(const char* func_name, double v);
+/// @brief Calls a function which expects a single string (char*) value
+double nrn_function_call_s(const char* func_name, const char* v);
+/// @brief Calls a constructor which requires no arguments. Avoids any argument handling
 Object* nrn_object_new_NoArgs(const char* method_name);
+/// @brief Calls a constructor which expects a single double value
+Object* nrn_object_new_d(const char* cls_name, double v);
+/// @brief Calls a constructor which expects a single string (char*) value
+Object* nrn_object_new_s(const char* cls_name, const char* v);
+/// @brief Calls a method which expects a single double value
+int nrn_method_call_d(Object* obj, const char* method_name, double v);
+/// @brief Calls a method which expects a single string (char*) value
+int nrn_method_call_s(Object* obj, const char* method_name, const char* v);
 
+// Methods may return void, double, string or objects
+// The user should pop from the stack accordingly
+nrn_stack_types_t nrn_stack_type(void);
+char const* const nrn_stack_type_name(nrn_stack_types_t id);
+int nrn_symbol_type(const Symbol* sym);
+double* (*nrn_get_symbol_ptr)(Symbol* sym);
+double nrn_double_pop(void);
+double* nrn_double_ptr_pop(void);
+char** nrn_pop_str(void);
+int nrn_int_pop(void);
+Object* nrn_object_pop(void);
 
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
