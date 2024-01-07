@@ -74,6 +74,8 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
+option(NRN_ENABLE_MATH_OPT "Enable extra math optimisations (to enable SIMD)"
+       ${NRN_ENABLE_MATH_OPT_DEFAULT})
 set(NRN_ENABLE_MODEL_TESTS
     "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
@@ -94,11 +96,11 @@ option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD fil
        ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
        ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_WHEEL_BUILD ${NRN_WHEEL_BUILD_DEFAULT})
+option(NRN_BINARY_DIST_BUILD ${NRN_BINARY_DIST_BUILD_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
        ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
-mark_as_advanced(NRN_WHEEL_BUILD)
+mark_as_advanced(NRN_BINARY_DIST_BUILD)
 
 # =============================================================================
 # Build options (string)
@@ -214,7 +216,7 @@ include(cmake/modules/FindPythonModule.cmake)
 include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
-set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
@@ -929,7 +931,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
-string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS})
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")

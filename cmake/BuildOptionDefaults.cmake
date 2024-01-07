@@ -28,6 +28,7 @@ set(NRN_ENABLE_REL_RPATH_DEFAULT OFF)
 set(NRN_AVOID_ABSOLUTE_PATHS_DEFAULT OFF)
 set(NRN_NMODL_CXX_FLAGS_DEFAULT "-O0")
 set(NRN_SANITIZERS_DEFAULT "")
+set(NRN_ENABLE_MATH_OPT_DEFAULT OFF)
 
 # Some distributions may set the prefix. To avoid errors, unset it
 set(NRN_PYTHON_DYNAMIC_DEFAULT "")
@@ -43,7 +44,7 @@ set(PYTHON_EXECUTABLE_DEFAULT "")
 set(IV_LIB_DEFAULT "")
 
 # For wheel deployment
-set(NRN_WHEEL_BUILD_DEFAULT OFF)
+set(NRN_BINARY_DIST_BUILD_DEFAULT OFF)
 set(NRN_WHEEL_STATIC_READLINE_DEFAULT OFF)
 
 # we add some coreneuron options in order to check support like GPU
