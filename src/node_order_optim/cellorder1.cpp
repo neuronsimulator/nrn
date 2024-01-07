@@ -296,16 +296,16 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 }
 #undef MSS
 
-int* node_order(int ncell,
-                int nnode,
-                int* parent,
-                int& nwarp,
-                int& nstride,
-                int*& stride,
-                int*& firstnode,
-                int*& lastnode,
-                int*& cellsize,
-                int*& stridedispl) {
+std::vector<int> node_order(int ncell,
+                            int nnode,
+                            int* parent,
+                            int& nwarp,
+                            int& nstride,
+                            int*& stride,
+                            int*& firstnode,
+                            int*& lastnode,
+                            int*& cellsize,
+                            int*& stridedispl) {
     VecTNode nodevec;
 
     // nodevec[0:ncell] in increasing size, with identical trees together,
@@ -338,7 +338,7 @@ int* node_order(int ncell,
     quality(nodevec);
 
     // the permutation
-    int* nodeorder = new int[nnode];
+    std::vector<int> nodeorder(nnode);
     for (int i = 0; i < nnode; ++i) {
         TNode& nd = *nodevec[i];
         nodeorder[nd.nodeindex] = i;

@@ -17,8 +17,12 @@ void permute_nodeindices(Memb_list* ml, int* permute);
 // sort ml fields in increasing node index order
 void sort_ml(Memb_list* ml);
 
-// vec values >= 0 updated according to permutation
-void node_permute(int* vec, int n, int* permute);
+/*
+ * Update indeces vector so that the parent-child relation is kept valid
+ * after applying a permutation to the vector `vec`.
+ * This is done by updating vec values >= 0 according to the permutation.
+ */
+void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute);
 
 // moves values to new location but does not change those values
 void permute_ptr(int* vec, int n, int* permute);

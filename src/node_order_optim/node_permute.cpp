@@ -89,10 +89,9 @@ so pdata_m(k, isz) = inew + data_t
 #include <algorithm>
 
 #include "nrnoc/multicore.h"
-//#include "coreneuron/io/nrn_setup.hpp"
-//#include "coreneuron/nrniv/nrniv_decl.h"
 #include "oc/nrnassrt.h"
-//#include "coreneuron/coreneuron.hpp"
+#include "permute_utils.hpp"
+
 namespace neuron {
 
 static int nrn_soa_padded_size(int cnt, int layout) {
@@ -349,8 +348,8 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
 #endif  // 0
 }
 
-void node_permute(int* vec, int n, int* permute) {
-    for (int i = 0; i < n; ++i) {
+void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute) {
+    for (int i = 0; i < vec_size; ++i) {
         if (vec[i] >= 0) {
             vec[i] = permute[vec[i]];
         }
@@ -434,40 +433,26 @@ static bool nrn_index_sort_cmp(const std::pair<int, int>& a, const std::pair<int
     return result;
 }
 
-static int* nrn_index_sort(int* values, int n) {
+std::vector<int> nrn_index_sort(int* values, int n) {
     std::vector<std::pair<int, int>> vi(n);
     for (int i = 0; i < n; ++i) {
         vi[i].first = values[i];
         vi[i].second = i;
     }
     std::sort(vi.begin(), vi.end(), nrn_index_sort_cmp);
-    int* sort_indices = new int[n];
+    std::vector<int> sort_indices(n);
     for (int i = 0; i < n; ++i) {
         sort_indices[i] = vi[i].second;
     }
     return sort_indices;
 }
 
-template <typename T>
-static void sort_ml_field(T* data, int* isrt, int n) {
-    // Move data[isrt[i]] to data[i]
-    T* data_orig = new T[n];  // Should use an inplace algorithm
-    for (int i = 0; i < n; ++i) {
-        data_orig[i] = data[i];
-    }
-    for (int i = 0; i < n; ++i) {
-        data[i] = data_orig[isrt[i]];
-    }
-    delete[] data_orig;
-}
-
 void sort_ml(Memb_list* ml) {
     auto isrt = nrn_index_sort(ml->nodeindices, ml->nodecount);
-    sort_ml_field<int>(ml->nodeindices, isrt, ml->nodecount);
-    sort_ml_field<Node*>(ml->nodelist, isrt, ml->nodecount);
-    sort_ml_field<Prop*>(ml->prop, isrt, ml->nodecount);
-    sort_ml_field<Datum*>(ml->pdata, isrt, ml->nodecount);
-    delete[] isrt;
+    forward_permute(ml->nodeindices, ml->nodecount, isrt);
+    forward_permute(ml->nodelist, ml->nodecount, isrt);
+    forward_permute(ml->prop, ml->nodecount, isrt);
+    forward_permute(ml->pdata, ml->nodecount, isrt);
 }
 
 void permute_nodeindices(Memb_list* ml, int* p) {
@@ -476,7 +461,7 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     // nodeindices values are permuted according to p (that per se does
     //  not affect vec).
 
-    node_permute(ml->nodeindices, ml->nodecount, p);
+    update_parent_index(ml->nodeindices, ml->nodecount, p);
 
     // Then the new node indices are sorted by
     // increasing index. Instances using the same node stay in same
@@ -489,4 +474,5 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 #endif  // 0
 }
+
 }  // namespace neuron

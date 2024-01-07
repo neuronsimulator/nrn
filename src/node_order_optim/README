@@ -23,4 +23,4 @@ In CoreNEURON, phase2.cpp
   apply the permutation to nodes, mechanisms, point processes 
 
 
-int* perm = interleave_order(int ith, int ncell, int nnode, int* parent);
+std::vector<int> perm = interleave_order(int ith, int ncell, int nnode, int* parent);
