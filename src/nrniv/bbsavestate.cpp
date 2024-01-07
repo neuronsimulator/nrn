@@ -1967,6 +1967,22 @@ void BBSaveState::seccontents(Section* sec) {
     }
 }
 
+// If extracellular, then save/restore not just v but also vext
+void BBSaveState::v_vext(Node* nd) {
+    if (nd->extnode) {
+        int n = 1 + nlayer;
+        std::vector<double*> tmp{};
+        tmp.reserve(n);
+        tmp.push_back(static_cast<double*>(nd->v_handle()));
+        for (int i = 0; i < nlayer; ++i) {
+            tmp.push_back(&nd->extnode->v[i]);
+        }
+        f->d(n, tmp.data());
+    } else {
+        f->d(1, nd->v_handle());
+    }
+}
+
 // all Point_process and mechanisms -- except IGNORE point process instances
 void BBSaveState::node(Node* nd) {
     if (debug) {
@@ -1975,7 +1991,7 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    f->d(1, nd->v_handle());
+    v_vext(nd);
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -2014,7 +2030,11 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    f->d(1, nd->v_handle());
+    // I don't know if there is duplicate saving of zero area node voltages.
+    // or, if so, it can be avoided. There was mention above of split cells
+    // and, with extracellular, there can be no such thing.
+    v_vext(nd);
+
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
@@ -2054,7 +2074,10 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     Sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    {
+
+    if (type == EXTRACELL) {
+        // skip - vext states saved by caller and we are not saving parameters.
+    } else {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
         std::vector<double*> tmp{};
         tmp.reserve(size);
