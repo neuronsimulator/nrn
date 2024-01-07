@@ -234,48 +234,24 @@ int nrn_symbol_type(Symbol const* sym) {
     return sym->type;
 }
 
-void nrn_symbol_push(Symbol* sym) {
-    hoc_pushpx(sym->u.pval);
-}
-
 /*double* nrn_get_symbol_ptr(Symbol* sym) {
     return sym->u.pval;
 }*/
 
-void nrn_double_push(double val) {
-    hoc_pushx(val);
-}
-
 double nrn_double_pop(void) {
     return hoc_xpop();
-}
-
-void nrn_double_ptr_push(double* addr) {
-    hoc_pushpx(addr);
 }
 
 double* nrn_double_ptr_pop(void) {
     return hoc_pxpop();
 }
 
-void nrn_str_push(char** str) {
-    hoc_pushstr(str);
-}
-
 char** nrn_pop_str(void) {
     return hoc_strpop();
 }
 
-void nrn_int_push(int i) {
-    hoc_pushi(i);
-}
-
 int nrn_int_pop(void) {
     return hoc_ipop();
-}
-
-void nrn_object_push(Object* obj) {
-    hoc_push_object(obj);
 }
 
 Object* nrn_object_pop() {
@@ -397,9 +373,8 @@ static int stack_push_args(const char arg_types[], va_list args) {
 
 double nrn_function_call(const char* func_name, const char* format, ...) {
     auto sym = nrn_symbol(func_name);
-    NRN_CALL_CHECK_PREPARE(sym,
-                           -1);  // Important: initializes va_args. DON'T return before `va_end`
-    double ret_val = -1.;        // default err. Happy path sets to 0
+    NRN_CALL_CHECK_PREPARE(sym, -1);  // Note: initializes va_args. DON'T return before `va_end`
+    double ret_val = -1.;             // default err. Happy path sets to 0
 
     try {
         int n_args = stack_push_args(format, args);

@@ -35,7 +35,7 @@ struct Model {
      */
     template <typename Callable>
     void apply_to_mechanisms(Callable const& callable) {
-        for (auto type = 0; type < m_mech_data.size(); ++type) {
+        for (size_t type = 0; type < m_mech_data.size(); ++type) {
             if (!m_mech_data[type]) {
                 continue;
             }
@@ -45,7 +45,7 @@ struct Model {
 
     template <typename Callable>
     void apply_to_mechanisms(Callable const& callable) const {
-        for (auto type = 0; type < m_mech_data.size(); ++type) {
+        for (size_t type = 0; type < m_mech_data.size(); ++type) {
             if (!m_mech_data[type]) {
                 continue;
             }
