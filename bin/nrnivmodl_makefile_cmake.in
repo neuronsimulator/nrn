@@ -4,6 +4,8 @@
 # UserLDFLAGS
 # UserINCFLAGS
 # LinkCoreNEURON
+# UserNMODLBIN
+# UserNMODLFLAGS
 # Rules to build MODOBJFILES from mod files are found in makemod2c_inc
 
 # Mechanisms version are by default 0.0, but should be overriden
@@ -15,6 +17,7 @@ OUTPUT = .
 DESTDIR =
 UserINCFLAGS =
 UserLDFLAGS =
+UserNMODLBIN =
 
 # install dirs
 bindir := ${ROOT}/@CMAKE_INSTALL_BINDIR@
@@ -67,7 +70,11 @@ CCOMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 
+ifeq ($(UserNMODLBIN), )
 NOCMODL = $(bindir)/nocmodl
+else
+NOCMODL = $(UserNMODLBIN)
+endif
 NRNUNITS = $(datadir_lib)/nrnunits.lib
 
 # File path config (internal)

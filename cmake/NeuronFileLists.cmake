@@ -433,7 +433,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST listimpl.cpp observe.cpp regexp.cpp resource.cpp)
+set(IVOS_FILES_LIST observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 

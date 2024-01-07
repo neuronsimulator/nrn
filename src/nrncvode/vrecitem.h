@@ -1,7 +1,6 @@
 #ifndef vrecitem_h
 #define vrecitem_h
 
-#include <OS/list.h>
 #include <InterViews/observe.h>
 #include <netcon.h>
 #include <ivocvect.h>

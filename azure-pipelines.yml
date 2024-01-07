@@ -42,6 +42,8 @@ stages:
             python.version: '3.10'
           Python311:
             python.version: '3.11'
+          Python312:
+            python.version: '3.12'
       steps:
 
       # Secure files documentation:
@@ -83,24 +85,28 @@ stages:
     - job: 'MacOSWheels'
       timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-11'
+        vmImage: 'macOS-12'
       strategy:
         matrix:
           Python38:
             python.version: '3.8'
             python.org.version: '3.8.10'
-            python.installer.name: 'macosx10.9.pkg'
+            python.installer.name: 'macos11.pkg'
           Python39:
             python.version: '3.9'
             python.org.version: '3.9.13'
-            python.installer.name: 'macosx10.9.pkg'
+            python.installer.name: 'macos11.pkg'
           Python310:
             python.version: '3.10'
-            python.org.version: '3.10.5'
+            python.org.version: '3.10.11'
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.org.version: '3.11.1'
+            python.org.version: '3.11.7'
+            python.installer.name: 'macos11.pkg'
+          Python312:
+            python.version: '3.12'
+            python.org.version: '3.12.0'
             python.installer.name: 'macos11.pkg'
 
       steps:

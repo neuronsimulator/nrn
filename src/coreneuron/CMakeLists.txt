@@ -318,7 +318,7 @@ endif()
 # Do not set this when building wheels. The nrnivmodl workflow means that we do not know what
 # compiler will be invoked with these flags, so we have to use flags that are as generic as
 # possible.
-if(NOT DEFINED NRN_WHEEL_BUILD OR NOT NRN_WHEEL_BUILD)
+if(NOT DEFINED NRN_BINARY_DIST_BUILD OR NOT NRN_BINARY_DIST_BUILD)
   list(APPEND CORENRN_EXTRA_CXX_FLAGS "${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif()
 
