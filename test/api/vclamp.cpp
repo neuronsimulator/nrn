@@ -61,7 +61,7 @@ int main(void) {
     vclamp = nrn_object_new_d("VClamp", 0.5);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
-    for (auto& [amp, dur]: {std::pair<int, double>{0, 1}, {10, 2}, {5, 3}}) {
+    for (auto& [amp, dur]: std::initializer_list<std::pair<int, double>>{{0, 1}, {10, 2}, {5, 3}}) {
         nrn_property_array_set(vclamp, "amp", i, amp);
         nrn_property_array_set(vclamp, "dur", i, dur);
         ++i;
