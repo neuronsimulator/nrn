@@ -468,9 +468,16 @@ void CodegenNeuronCppVisitor::print_make_instance() const {
     const auto codegen_float_variables_size = codegen_float_variables.size();
     for (int i = 0; i < codegen_float_variables_size; ++i) {
         const auto& float_var = codegen_float_variables[i];
-        printer->fmt_line("&_ml.template fpfield<{}>(0){}",
-                          i,
-                          i < codegen_float_variables_size - 1 ? "," : "");
+        if (float_var->is_array()) {
+            printer->fmt_line("_ml.template data_array<{}, {}>(0){}",
+                              i,
+                              float_var->get_length(),
+                              i < codegen_float_variables_size - 1 ? "," : "");
+        } else {
+            printer->fmt_line("&_ml.template fpfield<{}>(0){}",
+                              i,
+                              i < codegen_float_variables_size - 1 ? "," : "");
+        }
     }
     printer->pop_block(";");
     printer->pop_block();
