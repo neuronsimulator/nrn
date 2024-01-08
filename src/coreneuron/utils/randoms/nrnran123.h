@@ -80,14 +80,12 @@ nrnran123_State* nrnran123_newstream3(uint32_t id1,
                                       uint32_t id2,
                                       uint32_t id3,
                                       bool use_unified_memory = true);
-inline nrnran123_State* nrnran123_newstream(
-    uint32_t id1,
-    uint32_t id2,
-    bool use_unified_memory = true) {
+inline nrnran123_State* nrnran123_newstream(uint32_t id1,
+                                            uint32_t id2,
+                                            bool use_unified_memory = true) {
     return nrnran123_newstream3(id1, id2, 0, use_unified_memory);
 }
-void nrnran123_deletestream(nrnran123_State* s,
-                            bool use_unified_memory = true);
+void nrnran123_deletestream(nrnran123_State* s, bool use_unified_memory = true);
 
 /* minimal data stream */
 constexpr void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
