@@ -338,20 +338,6 @@ bool OcFile::open(const char* name, const char* type) {
     strcpy(mode_, type);
 #endif
     file_ = fopen(expand_env_var(name), type);
-#if defined(FILE_OPEN_RETRY) && FILE_OPEN_RETRY > 0
-    int i;
-    for (i = 0; !file_ && i < FILE_OPEN_RETRY; ++i) {
-        // retry occasionally needed on BlueGene
-        file_ = fopen(expand_env_var(name), type);
-    }
-    if (i > 0) {
-        if (file_) {
-            printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
-        } else {
-            printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
-        }
-    }
-#endif
     return is_open();
 }
 
