@@ -406,22 +406,6 @@ set(CORENEURON_BUILTIN_MODFILES
 # coreneuron GPU library
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
-  # ~~~
-  # artificial cells and some other cpp files (using Random123) should be compiled
-  # without OpenACC to avoid use of GPU Random123 streams
-  # OL210813: this shouldn't be needed anymore, but it may have a small performance benefit
-  # ~~~
-  set(OPENACC_EXCLUDED_FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/pattern.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/nrn_setup.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/setup_fornetcon.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
-
-  set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
-                                                                   "-DDISABLE_OPENACC")
   # Only compile the explicit CUDA implementation of the Hines solver in GPU builds. Because of
   # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
   # this cannot be included in the same shared library as the rest of the OpenACC code.
