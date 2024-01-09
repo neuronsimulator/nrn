@@ -325,14 +325,7 @@ void OcFile::binary_mode() {
  Use File.seek(0) after opening or use a binary style read/write as first\n\
  access to file.");
         }
-#if defined(__MWERKS__)
-        // printf("can't switch to binary mode. No setmode\n");
-        mode_[1] = 'b';
-        mode_[2] = '\0';
-        file_ = freopen(filename_.c_str(), mode_, file());
-#else
         setmode(fileno(file()), O_BINARY);
-#endif
         binary_ = true;
     }
 }
