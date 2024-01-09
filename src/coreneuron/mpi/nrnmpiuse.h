@@ -24,6 +24,3 @@
 
 /* define to the dll path if you want to load automatically */
 #undef DLL_DEFAULT_FNAME
-
-/* Number of times to retry a failed open */
-#undef FILE_OPEN_RETRY

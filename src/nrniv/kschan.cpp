@@ -11,10 +11,6 @@
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
-#if defined(__MWERKS__) && !defined(_MSC_VER)
-#include <extras.h>
-#define strdup _strdup
-#endif
 
 using KSChanList = std::vector<KSChan*>;
 static KSChanList* channels;
