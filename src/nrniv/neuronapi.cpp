@@ -16,14 +16,14 @@
 #include "nrnmpiuse.h"
 #include "parse.hpp"
 
-/// A public face of hoc_Item
-struct nrn_Item: public hoc_Item {};
+/// A public interface of hoc_Item
+struct NrnListItem: public hoc_Item {};
 
 /// A public interface of a Segment
 struct Segment: public Node {};
 
 struct SectionListIterator {
-    SectionListIterator(nrn_Item*);
+    SectionListIterator(NrnListItem*);
     Section* next(void);
     int done(void);
 
@@ -40,6 +40,7 @@ struct SymbolTableIterator {
   private:
     Symbol* current;
 };
+
 
 /****************************************
  * Connections to the rest of NEURON
@@ -177,32 +178,32 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
+double nrn_rangevar_get(Section* sec, double x, const char* var_name) {
+    Symbol* sym = hoc_table_lookup(var_name, hoc_built_in_symlist);
     return *nrn_rangepointer(sec, sym, x);
 }
 
-void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
+void nrn_rangevar_set(Section* sec, double x, const char* var_name, double value) {
+    Symbol* sym = hoc_table_lookup(var_name, hoc_built_in_symlist);
     *nrn_rangepointer(sec, sym, x) = value;
 }
 
 RangeVar nrn_rangevar_new(Section* sec, double x, const char* var_name) {
     auto* node = static_cast<Segment*>(node_exact(sec, x));
-    if (strcmp(var_name, "v") == 0) {
-        // v doesnt requir symbol
+    if (strcmp(var_name, "v") == 0) {  // v doesnt require symbol
         return {node, x, nullptr};
     } else {
-        Symbol* sym = hoc_table_lookup(var_name, hoc_built_in_symlist);
-        return {node, x, sym};
+        return {node, x, hoc_table_lookup(var_name, hoc_built_in_symlist)};
     }
 }
 
-nrn_Item* nrn_allsec(void) {
-    return static_cast<nrn_Item*>(section_list);
+NrnList* nrn_allsec(void) {
+    return static_cast<NrnList*>(section_list);
 }
 
-nrn_Item* nrn_sectionlist_data(Object* obj) {
+NrnList* nrn_sectionlist_data(Object* obj) {
     // TODO: verify the obj is in fact a SectionList
-    return (nrn_Item*) obj->u.this_pointer;
+    return static_cast<NrnList*>(obj->u.this_pointer);
 }
 
 /****************************************
@@ -211,6 +212,10 @@ nrn_Item* nrn_sectionlist_data(Object* obj) {
 
 static constexpr int MAX_ERR_LEN = 200;
 static char nrn_stack_error[MAX_ERR_LEN] = "";
+
+char const* nrn_class_name(const Object* obj) {
+    return obj->ctemplate->sym->name;
+}
 
 const char* nrn_stack_err() {
     if (nrn_stack_error[0]) {
@@ -238,22 +243,6 @@ int nrn_symbol_type(Symbol const* sym) {
     return sym->u.pval;
 }*/
 
-double nrn_double_pop(void) {
-    return hoc_xpop();
-}
-
-double* nrn_double_ptr_pop(void) {
-    return hoc_pxpop();
-}
-
-char** nrn_pop_str(void) {
-    return hoc_strpop();
-}
-
-int nrn_int_pop(void) {
-    return hoc_ipop();
-}
-
 Object* nrn_object_pop() {
     // NOTE: the returned object should be unref'd when no longer needed
     Object** obptr;
@@ -267,51 +256,6 @@ Object* nrn_object_pop() {
     new_ob_ptr->refcount++;
     hoc_tobj_unref(obptr);
     return new_ob_ptr;
-}
-
-nrn_stack_types_t nrn_stack_type() {
-    switch (hoc_stack_type()) {
-    case STRING:
-        return STACK_IS_STR;
-    case VAR:
-        return STACK_IS_VAR;
-    case NUMBER:
-        return STACK_IS_NUM;
-    case OBJECTVAR:
-        return STACK_IS_OBJVAR;
-    case OBJECTTMP:
-        return STACK_IS_OBJTMP;
-    case USERINT:
-        return STACK_IS_USERINT;
-    case SYMBOL:
-        return STACK_IS_SYM;
-    case STKOBJ_UNREF:
-        return STACK_IS_OBJUNREF;
-    }
-    return STACK_UNKNOWN;
-}
-
-char const* const nrn_stack_type_name(nrn_stack_types_t id) {
-    switch (id) {
-    case STACK_IS_STR:
-        return "STRING";
-    case STACK_IS_VAR:
-        return "VAR";
-    case STACK_IS_NUM:
-        return "NUMBER";
-    case STACK_IS_OBJVAR:
-        return "OBJECTVAR";
-    case STACK_IS_OBJTMP:
-        return "OBJECTTMP";
-    case STACK_IS_USERINT:
-        return "USERINT";
-    case STACK_IS_SYM:
-        return "SYMBOL";
-    case STACK_IS_OBJUNREF:
-        return "STKOBJ_UNREF";
-    default:
-        return "UNKNOWN";
-    }
 }
 
 static int stack_push_args(const char arg_types[], va_list args) {
@@ -417,15 +361,35 @@ Object* nrn_object_new_NoArgs(const char* cls_name) {
     return ret_val;
 }
 
-int nrn_method_call(Object* obj, const char* method_name, const char* format, ...) {
+NrnResult nrn_method_call(Object* obj, const char* method_name, const char* format, ...) {
     auto sym = nrn_method_symbol(obj, method_name);
-    NRN_CALL_CHECK_PREPARE(sym, -1.);
-    int ret_val = -1.;
+    NrnResult ret_val{NrnResultType::NRN_ERR};
+    NRN_CALL_CHECK_PREPARE(sym, ret_val);
 
     try {
         int n_args = stack_push_args(format, args);
         OcJump::execute_throw_on_exception(obj, sym, n_args);
-        ret_val = 0;
+        switch (sym->type) {
+        case PROCEDURE:
+            std::cerr << "pop nothing" << std::endl;
+            ret_val.type = NrnResultType::NRN_VOID;
+            break;
+        case OBFUNCTION:
+            std::cerr << "pop Object" << std::endl;
+            ret_val.type = NrnResultType::NRN_OBJECT;
+            ret_val.ptr_ = static_cast<void*>(nrn_object_pop());
+            break;
+        case STRFUNCTION:
+            std::cerr << "pop str" << std::endl;
+            ret_val.type = NrnResultType::NRN_STRING;
+            ret_val.ptr_ = static_cast<void*>(hoc_strpop());
+            break;
+        default:
+            std::cerr << "pop int" << std::endl;
+            ret_val.type = NrnResultType::NRN_DOUBLE;
+            ret_val.d_ = hoc_xpop();
+            break;
+        }
     } catch (const std::exception& e) {
         snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_method_call: %s", e.what());
     }
@@ -434,51 +398,46 @@ int nrn_method_call(Object* obj, const char* method_name, const char* format, ..
     return ret_val;
 }
 
-// --- Helpers
 
-double nrn_function_call_d(const char* func_name, double v) {
-    return nrn_function_call(func_name, NRN_ARG_DOUBLE, v);
-}
-
-double nrn_function_call_s(const char* func_name, const char* v) {
-    char* temp_str = strdup(v);
-    auto x = nrn_function_call(func_name, NRN_ARG_STR_PTR, &temp_str);
-    free(temp_str);
-    return x;
-}
-
-Object* nrn_object_new_d(const char* cls_name, double v) {
-    return nrn_object_new(cls_name, NRN_ARG_DOUBLE, v);
-}
-
-Object* nrn_object_new_s(const char* cls_name, const char* v) {
-    char* temp_str = strdup(v);
-    auto x = nrn_object_new(cls_name, NRN_ARG_STR_PTR, &temp_str);
-    free(temp_str);
-    return x;
-}
-
-int nrn_method_call_d(Object* obj, const char* method_name, double v) {
-    return nrn_method_call(obj, method_name, NRN_ARG_DOUBLE, v);
-}
-
-int nrn_method_call_s(Object* obj, const char* method_name, const char* v) {
-    char* temp_str = strdup(v);
-    auto x = nrn_method_call(obj, method_name, NRN_ARG_STR_PTR, &temp_str);
-    free(temp_str);
-    return x;
-}
-
-void nrn_object_ref(Object* obj) {
+void nrn_object_incref(Object* obj) {
     obj->refcount++;
 }
 
-void nrn_object_unref(Object* obj) {
+void nrn_object_decref(Object* obj) {
     hoc_obj_unref(obj);
 }
 
-char const* nrn_class_name(const Object* obj) {
-    return obj->ctemplate->sym->name;
+double nrn_result_get_double(NrnResult* r) {
+    if (r->type != NrnResultType::NRN_DOUBLE) {
+        throw std::runtime_error("Result bad type");
+    }
+    return r->d_;
+}
+
+Object* nrn_result_get_object(NrnResult* r) {
+    if (r->type != NrnResultType::NRN_OBJECT) {
+        throw std::runtime_error("Result bad type");
+    }
+    return static_cast<Object*>(r->ptr_);
+}
+
+const char* nrn_result_get_string(NrnResult* r) {
+    if (r->type != NrnResultType::NRN_STRING) {
+        throw std::runtime_error("Result bad type");
+    }
+    return *static_cast<const char**>(r->ptr_);
+}
+
+void nrn_result_drop(NrnResult* r) {
+    switch (r->type) {
+    case NrnResultType::NRN_OBJECT:
+        nrn_object_decref(nrn_result_get_object(r));
+        r->type = NrnResultType::NRN_ERR;
+        break;
+    default:
+        // Nothing to do for others
+        break;
+    }
 }
 
 /****************************************
@@ -488,7 +447,7 @@ int nrn_hoc_call(char const* const command) {
     return hoc_oc(command);
 }
 
-SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist) {
+SectionListIterator::SectionListIterator(NrnListItem* my_sectionlist) {
     initial = my_sectionlist;
     current = my_sectionlist->next;
 }
@@ -537,7 +496,7 @@ int SymbolTableIterator::done(void) {
 
 // copy semantics isn't great, but only two data items
 // and is cleaner to use in a for loop than having to free memory at the end
-SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist) {
+SectionListIterator* nrn_sectionlist_iterator_new(NrnListItem* my_sectionlist) {
     return new SectionListIterator(my_sectionlist);
 }
 

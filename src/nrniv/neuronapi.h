@@ -9,7 +9,8 @@ typedef struct Symbol Symbol;
 typedef struct Object Object;
 typedef struct Section Section;
 typedef struct SectionListIterator SectionListIterator;
-typedef struct nrn_Item nrn_Item;
+typedef struct NrnListItem NrnListItem;
+typedef struct NrnListItem NrnList;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
 typedef struct Segment Segment;
@@ -23,18 +24,7 @@ typedef struct {
 /// Track errors. NULL -> No error, otherwise a description of it
 const char* nrn_stack_err();
 
-typedef enum {
-    STACK_IS_STR = 1,
-    STACK_IS_VAR = 2,
-    STACK_IS_NUM = 3,
-    STACK_IS_OBJVAR = 4,
-    STACK_IS_OBJTMP = 5,
-    STACK_IS_USERINT = 6,
-    STACK_IS_SYM = 7,
-    STACK_IS_OBJUNREF = 8,
-    STACK_UNKNOWN = -1
-} nrn_stack_types_t;
-
+/// @brief Type for Arguments
 // char* is really handy as literals have the \0 sentinel
 // and automatically join when mentioned together, e.g. NRN_ARG_DOUBLE NRN_ARG_STR
 #define NRN_NO_ARGS        ""
@@ -45,6 +35,27 @@ typedef enum {
 #define NRN_ARG_OBJECT     "o"
 #define NRN_ARG_INT        "i"
 #define NRN_ARG_RANGEVAR   "r"
+
+/// @brief Type of method results
+typedef enum {
+    NRN_ERR = -1,
+    NRN_VOID,
+    NRN_DOUBLE,
+    NRN_STRING,
+    NRN_OBJECT,
+} NrnResultType;
+
+/** @brief A result holder.
+ * Result type can be directly inspected but to obtain the value please use the respective method
+ */
+typedef struct {
+    NrnResultType type;
+    union {
+        int i_;
+        double d_;
+        void* ptr_;
+    };
+} NrnResult;
 
 /****************************************
  * Initialization
@@ -64,8 +75,8 @@ char const* nrn_secname(Section* sec);
 void nrn_section_push(Section* sec);
 void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
-nrn_Item* nrn_allsec(void);
-nrn_Item* nrn_sectionlist_data(Object* obj);
+NrnList* nrn_allsec(void);
+NrnList* nrn_sectionlist_data(Object* obj);
 
 /****************************************
  * Segments
@@ -74,12 +85,15 @@ int nrn_nseg_get(Section const* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 RangeVar nrn_rangevar_new(Section*, double x, const char* var_name);
-double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
-void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
+double nrn_rangevar_get(Section* sec, double x, const char* var_name);
+void nrn_rangevar_set(Section* sec, double x, const char* var_name, double value);
 
 /****************************************
  * Functions, objects, and the stack
  ****************************************/
+
+/// @brief The class name of an object
+char const* nrn_class_name(Object const* obj);
 
 /// @brief Looks up a top-level symbol by name. Returns NULL if it doesn't exist
 Symbol* nrn_symbol(char const* name);
@@ -103,48 +117,41 @@ double nrn_function_call(const char* func_name, const char* format, ...);
 Object* nrn_object_new(const char* cls_name, const char* format, ...);
 
 /**
- * @brief Call a method, given the object, method name and arguments
+ * @brief Call a method, given the object, method name and arguments.
+ * On error `nrn_stack_err()` is set.
  * @param format The argument types, given as a format string. See NRN_ARG_XXX defines
- * @return 1 on suceess. On error returns 0 and `nrn_stack_err()` is set.
  */
-int nrn_method_call(Object* obj, const char* method_name, const char* format, ...);
+NrnResult nrn_method_call(Object* obj, const char* method_name, const char* format, ...);
 
-/// @brief Calls a function which expects a single double value
-double nrn_function_call_d(const char* func_name, double v);
-/// @brief Calls a function which expects a single string (char*) value
-double nrn_function_call_s(const char* func_name, const char* v);
-/// @brief Calls a constructor which requires no arguments. Avoids any argument handling
-Object* nrn_object_new_NoArgs(const char* method_name);
-/// @brief Calls a constructor which expects a single double value
-Object* nrn_object_new_d(const char* cls_name, double v);
-/// @brief Calls a constructor which expects a single string (char*) value
-Object* nrn_object_new_s(const char* cls_name, const char* v);
-/// @brief Calls a method which expects a single double value
-int nrn_method_call_d(Object* obj, const char* method_name, double v);
-/// @brief Calls a method which expects a single string (char*) value
-int nrn_method_call_s(Object* obj, const char* method_name, const char* v);
+/// Expose a sort of default constructor, sligthly more efficient
+Object* nrn_object_new_NoArgs(const char* cls_name);
 
 // Methods may return void, double, string or objects
 // The user should pop from the stack accordingly
-nrn_stack_types_t nrn_stack_type(void);
-char const* const nrn_stack_type_name(nrn_stack_types_t id);
 int nrn_symbol_type(const Symbol* sym);
 double* (*nrn_get_symbol_ptr)(Symbol* sym);
-double nrn_double_pop(void);
-double* nrn_double_ptr_pop(void);
-char** nrn_pop_str(void);
-int nrn_int_pop(void);
-Object* nrn_object_pop(void);
 
-void nrn_object_ref(Object* obj);
-void nrn_object_unref(Object* obj);
-char const* nrn_class_name(Object const* obj);
+/// Increment the object reference count
+void nrn_object_incref(Object* obj);
+/// Decrement the object reference count
+void nrn_object_decref(Object* obj);
+
+/// @brief Decreses reference counts properly, according to inner type
+/// In case of objects, similar to nrn_object_decref(nrn_result_get_object(Result*))
+void nrn_result_drop(NrnResult* r);
+/// @brief Gets the double from a result. Aborts if wrong type.
+double nrn_result_get_double(NrnResult* r);
+/// @brief Gets the object pointer from a result. Aborts if wrong type.
+Object* nrn_result_get_object(NrnResult* r);
+/// @brief Gets the string from a result. Aborts if wrong type.
+const char* nrn_result_get_string(NrnResult* r);
+
 
 /****************************************
  * Miscellaneous
  ****************************************/
 int nrn_hoc_call(char const* command);
-SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist);
+SectionListIterator* nrn_sectionlist_iterator_new(NrnListItem* my_sectionlist);
 void nrn_sectionlist_iterator_free(SectionListIterator* sl);
 Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);
 int nrn_sectionlist_iterator_done(SectionListIterator* sl);

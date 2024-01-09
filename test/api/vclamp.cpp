@@ -58,7 +58,7 @@ int main(void) {
     nrn_segment_diam_set(soma, 0.5, 3);
 
     // voltage clamp at soma(0.5)
-    vclamp = nrn_object_new_d("VClamp", 0.5);
+    vclamp = nrn_object_new("VClamp", "d", 0.5);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
     for (auto& [amp, dur]: std::initializer_list<std::pair<int, double>>{{0, 1}, {10, 2}, {5, 3}}) {
@@ -70,12 +70,10 @@ int main(void) {
     // setup recording
     v = nrn_object_new_NoArgs("Vector");
     auto ref_v = nrn_rangevar_new(soma, 0.5, "v");
-    nrn_method_call(v, "record", /* "rd" */ NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &ref_v, 1.0);
-    nrn_object_unref(nrn_object_pop());  // record returns the vector
+    auto r = nrn_method_call(v, "record", /* "rd" */ NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &ref_v, 1.0);
 
-    nrn_function_call_d("finitialize", -65);
-
-    nrn_function_call_d("continuerun", 6);
+    nrn_function_call("finitialize", NRN_ARG_DOUBLE, -65.0);
+    nrn_function_call("continuerun", NRN_ARG_DOUBLE, 6.0);
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;

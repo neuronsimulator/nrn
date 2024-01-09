@@ -15,7 +15,7 @@ inline bool almost_equal(double a, double b, double* drift) {
 }
 
 /// @brief Compared volatges from a csv file against raw vectors of tvec and voltage
-bool compare_spikes(const char* ref_csv, double* tvec, double* vvec, long n_voltages) {
+inline bool compare_spikes(const char* ref_csv, double* tvec, double* vvec, long n_voltages) {
     std::ifstream ref_file(ref_csv);
     if (!ref_file.is_open()) {
         std::cerr << "Bad ref file: " << ref_csv << std::endl;
@@ -55,7 +55,7 @@ bool compare_spikes(const char* ref_csv, double* tvec, double* vvec, long n_volt
     return true;
 }
 
-bool approximate(const std::initializer_list<double>& reference, Object* v) {
+inline bool approximate(const std::initializer_list<double>& reference, Object* v) {
     long v_size = nrn_vector_size(v);
     double* v_values = nrn_vector_data(v);
     if (v_size != reference.size()) {
@@ -74,3 +74,26 @@ bool approximate(const std::initializer_list<double>& reference, Object* v) {
     return true;
 }
 #endif
+
+// --- String Helpers (Neuron doesnt handle char* strings ? yet)
+
+inline double nrn_function_call_s(const char* func_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_function_call(func_name, NRN_ARG_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
+}
+
+inline Object* nrn_object_new_s(const char* cls_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_object_new(cls_name, NRN_ARG_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
+}
+
+inline decltype(auto) nrn_method_call_s(Object* obj, const char* method_name, const char* v) {
+    char* temp_str = strdup(v);
+    auto x = nrn_method_call(obj, method_name, NRN_ARG_STR_PTR, &temp_str);
+    free(temp_str);
+    return x;
+}
