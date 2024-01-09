@@ -6,7 +6,7 @@
 
 constexpr double EPSILON = 0x1p-16;  // 1>>16 for double
 
-bool approximate(const std::initializer_list<double>& reference, Object* v) {
+inline bool approximate(const std::initializer_list<double>& reference, Object* v) {
     long v_size = nrn_vector_size(v);
     const double* v_values = nrn_vector_data(v);
     if (v_size != reference.size()) {
