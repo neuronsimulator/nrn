@@ -325,14 +325,7 @@ void OcFile::binary_mode() {
  Use File.seek(0) after opening or use a binary style read/write as first\n\
  access to file.");
         }
-#if defined(__MWERKS__)
-        // printf("can't switch to binary mode. No setmode\n");
-        mode_[1] = 'b';
-        mode_[2] = '\0';
-        file_ = freopen(filename_.c_str(), mode_, file());
-#else
         setmode(fileno(file()), O_BINARY);
-#endif
         binary_ = true;
     }
 }
@@ -345,20 +338,6 @@ bool OcFile::open(const char* name, const char* type) {
     strcpy(mode_, type);
 #endif
     file_ = fopen(expand_env_var(name), type);
-#if defined(FILE_OPEN_RETRY) && FILE_OPEN_RETRY > 0
-    int i;
-    for (i = 0; !file_ && i < FILE_OPEN_RETRY; ++i) {
-        // retry occasionally needed on BlueGene
-        file_ = fopen(expand_env_var(name), type);
-    }
-    if (i > 0) {
-        if (file_) {
-            printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
-        } else {
-            printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
-        }
-    }
-#endif
     return is_open();
 }
 
