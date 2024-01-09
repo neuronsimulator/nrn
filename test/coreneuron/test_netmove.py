@@ -1,6 +1,6 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h
@@ -79,9 +79,7 @@ def test_netmove():
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     def runassert(mode):
         run(tstop, mode)

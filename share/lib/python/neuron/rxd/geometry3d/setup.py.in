@@ -16,16 +16,15 @@ else: # not an absolute path
 
 pgi_compiler_flags = "-noswitcherror"
 
-from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup, Extension
 
 def have_vc():
     if not mingw:
         return False
     import traceback
     try:
-        from distutils import spawn
-        x = spawn.find_executable("cl")
+        from shutil import which
+        x = which("cl")
         x = True if x is not None and "Microsoft" in x else False
     except:
         traceback.print_exc()
