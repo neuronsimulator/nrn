@@ -49,10 +49,11 @@ jobs:
             # choose available python versions from pyenv
             pyenv_py_ver=""
             case << parameters.NRN_PYTHON_VERSION >> in
-              38) pyenv_py_ver="3.8.7" ;;
-              39) pyenv_py_ver="3.9.1" ;;
-              310) pyenv_py_ver="3.10.1" ;;
-              311) pyenv_py_ver="3.11.0" ;;
+              38) pyenv_py_ver="3.8.10" ;;
+              39) pyenv_py_ver="3.9.13" ;;
+              310) pyenv_py_ver="3.10.11" ;;
+              311) pyenv_py_ver="3.11.7" ;;
+              312) pyenv_py_ver="3.12.0" ;;
               *) echo "Error: pyenv python version not specified!" && exit 1;;
             esac
 
@@ -95,7 +96,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["311"]
+              NRN_PYTHON_VERSION: ["312"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
@@ -110,5 +111,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
+              NRN_PYTHON_VERSION: ["38", "39", "310", "311", "312"]
               NRN_NIGHTLY_UPLOAD: ["true"]
