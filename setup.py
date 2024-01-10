@@ -591,6 +591,16 @@ def mac_osx_setenv():
     logging.info("Setting SDKROOT=%s", sdk_root)
     os.environ["SDKROOT"] = sdk_root
 
+    def fmt(version):
+        return ".".join(str(x) for x in version)
+
+    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+        # Don't override the value if it is set explicitly, but try and print a
+        # helpful message
+        explicit_target = tuple(
+            int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
+        )
+
     # Match Python OSX framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
     if py_osx_framework is None:
