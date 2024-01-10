@@ -1,4 +1,6 @@
 # augmented to also checkpoint verify when RANDOM is permuted
+from neuron.tests.utils.strtobool import strtobool
+import os
 
 from neuron import h, coreneuron
 
@@ -52,7 +54,7 @@ def chk(std, m):
     assert std[1].eq(m[2])
 
 
-def test_1():
+def test_embeded_run():
     m = model()
     run(5, m)
     std = [m[1].c(), m[2].c()]
@@ -61,6 +63,7 @@ def test_1():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     run(5, m)
     chk(std, m)
 
@@ -76,7 +79,7 @@ def sortspikes(spiketime, gidvec):
 def test_chkpnt():
     import shutil, os, platform, subprocess
 
-    # clear out the old
+    # clear out the old if any exist
     shutil.rmtree("coredat", ignore_errors=True)
 
     m = model()
@@ -106,6 +109,11 @@ def test_chkpnt():
             "--cell-permute",
             str(perm),
         ]
+
+        gpu_run = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+        if gpu_run:
+            common.append("--gpu")
+
         cmd = [exe] + ["--tstop", "{:g}".format(tstop)] + common + args
         print(" ".join(cmd))
         subprocess.run(
@@ -118,6 +126,8 @@ def test_chkpnt():
     runcn(10, 1, ["--restore", "coredat/chkpnt", "-o", "coredat/chkpnt"])
     cmp_spks(sortspikes(std2[0], std2[1]), "coredat")
 
+    # cleanup
+    shutil.rmtree("coredat", ignore_errors=True)
 
 def cmp_spks(spikes, dir):  # modified from test_pointer.py
     import os, subprocess, shutil
@@ -154,5 +164,5 @@ def cmp_spks(spikes, dir):  # modified from test_pointer.py
 
 
 if __name__ == "__main__":
-    test_1()
+    test_embeded_run()
     test_chkpnt()
