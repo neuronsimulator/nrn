@@ -585,7 +585,7 @@ def mac_osx_setenv():
     if py_osx_framework is None:
         py_osx_framework = [10, 9]
     if py_osx_framework[1] > 9:
-        log.warn(
+        logging.warning(
             "[ WARNING ] You are building a wheel with a Python built"
             " for a recent MACOS version (from brew?). Your wheel won't be portable."
             " Consider using an official Python build from python.org"
