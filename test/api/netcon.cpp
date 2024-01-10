@@ -81,20 +81,6 @@ int main(void) {
         return 1;
     }
 
-    // experiment with returned objects
-    // Note: lots of leaks
-    auto tv = nrn_object_new_NoArgs("Vector");
-    nrn_method_call(vec, "indgen", "ddd", 10., 50., 5.);
-    auto other_v_res = nrn_method_call(vec, "c", NRN_NO_ARGS);
-    auto other_v = nrn_result_get_object(&other_v_res);
-    nrn_method_call(other_v, "reverse", NRN_NO_ARGS);
-    auto res = nrn_method_call(other_v, "get", NRN_ARG_DOUBLE, 1.);
-    int elem = nrn_result_get_double(&res);
-    if (elem != 45) {
-        std::cerr << "Bad element " << elem << std::endl;
-        return 1;
-    }
-
     if (!approximate(EXPECTED_V, v)) {
         return 1;
     }

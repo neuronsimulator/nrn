@@ -137,9 +137,6 @@ void nrn_object_incref(Object* obj);
 /// Decrement the object reference count
 void nrn_object_decref(Object* obj);
 
-/// @brief Decreses reference counts properly, according to inner type
-/// In case of objects, similar to nrn_object_decref(nrn_result_get_object(Result*))
-void nrn_result_drop(NrnResult* r);
 /// @brief Gets the double from a result. Aborts if wrong type.
 double nrn_result_get_double(NrnResult* r);
 /// @brief Gets the object pointer from a result. Aborts if wrong type.
@@ -147,6 +144,9 @@ Object* nrn_result_get_object(NrnResult* r);
 /// @brief Gets the string from a result. Aborts if wrong type.
 const char* nrn_result_get_string(NrnResult* r);
 
+/// @brief Decreses reference counts properly, according to inner type
+/// In case of objects, similar to nrn_object_decref(nrn_result_get_object(Result*))
+void nrn_result_drop(NrnResult* r);
 
 /****************************************
  * Miscellaneous
