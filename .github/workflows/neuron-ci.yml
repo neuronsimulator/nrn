@@ -40,7 +40,7 @@ jobs:
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.0
+      MUSIC_VERSION: 1.2.1
 
     strategy:
       matrix:
