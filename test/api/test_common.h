@@ -30,9 +30,9 @@ inline bool approximate(const std::initializer_list<double>& reference, Object* 
 
 // --- String Helpers (Neuron doesnt handle char* strings ? yet)
 
-inline double nrn_function_call_s(const char* func_name, const char* v) {
+inline NrnResult nrn_function_call_s(const char* func_name, const char* v) {
     char* temp_str = strdup(v);
-    double x = nrn_function_call(func_name, NRN_ARG_STR_PTR, &temp_str);
+    NrnResult x = nrn_function_call(func_name, NRN_ARG_STR_PTR, &temp_str);
     free(temp_str);
     return x;
 }

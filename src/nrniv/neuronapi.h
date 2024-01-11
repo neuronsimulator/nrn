@@ -49,11 +49,13 @@ typedef enum {
  * Result type can be directly inspected but to obtain the value please use the respective method
  */
 typedef struct {
+    /// The type of the returned data
     NrnResultType type;
+    /// The actual value. Refer to accessor functions `nrn_result_get_xxx`
     union {
-        int i_;
-        double d_;
-        void* ptr_;
+        double d;
+        Object* o;
+        char** s;
     };
 } NrnResult;
 
@@ -108,7 +110,7 @@ Symbol* nrn_method_symbol(Object* obj, char const* name);
  * @param ... The arguments themselves
  * @return The returned value (double). On error returns -1 and `nrn_stack_err()` is set.
  */
-double nrn_function_call(const char* func_name, const char* format, ...);
+NrnResult nrn_function_call(const char* func_name, const char* format, ...);
 
 /**
  * @brief Create a new object given the "Class" Symbol and its arguments

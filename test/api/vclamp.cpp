@@ -32,7 +32,8 @@ int main(void) {
 
     // load the stdrun library
     // Ensure If arguments are not correct we handle gracefully
-    if (nrn_function_call("load_file", NRN_NO_ARGS) == -1 && nrn_stack_err()) {
+    auto res = nrn_function_call("load_file", NRN_NO_ARGS);
+    if (res.type == NrnResultType::NRN_ERR) {
         std::cerr << "Err: " << nrn_stack_err() << std::endl;
     }
     // Do it right this time

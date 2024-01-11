@@ -218,6 +218,10 @@ const char* nrn_stack_err() {
     }
 }
 
+void clear_errors() {
+    nrn_stack_error[0] = 0;
+}
+
 Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
@@ -242,7 +246,7 @@ Object* nrn_object_pop() {
         return nullptr;
     }
     Object* new_ob_ptr = *obptr;
-    new_ob_ptr->refcount++;
+    hoc_obj_ref(new_ob_ptr);
     hoc_tobj_unref(obptr);
     return new_ob_ptr;
 }
@@ -287,32 +291,60 @@ static int stack_push_args(const char arg_types[], va_list args) {
     throw std::runtime_error("Too many arguments or invalid format string");
 }
 
-#define NRN_CHECK_SYMBOL(SYMB, ERR_RET)              \
-    nrn_stack_error[0] = 0;                          \
-    if (SYMB == nullptr) {                           \
-        strcpy(nrn_stack_error, "Symbol not found"); \
-        return ERR_RET;                              \
+static NrnResult stack_pop_result(Symbol* func) {
+    NrnResult result{NrnResultType::NRN_ERR};
+    switch (func->type) {
+    case PROCEDURE:
+        result.type = NrnResultType::NRN_VOID;
+        break;
+    case OBFUNCTION:
+    case HOCOBJFUNCTION:
+    case OBJECTFUNC:
+        result.type = NrnResultType::NRN_OBJECT;
+        result.o = nrn_object_pop();
+        break;
+    case STRFUNCTION:
+    case STRINGFUNC:
+        result.type = NrnResultType::NRN_STRING;
+        result.s = hoc_strpop();
+        break;
+    default:
+        result.type = NrnResultType::NRN_DOUBLE;
+        result.d = hoc_xpop();
+        break;
+    }
+    return result;
+}
+
+#define CHECK_SYMB_NOT_NULL(SYMB, SYMB_NAME, ERR_RET)                              \
+    if (SYMB == nullptr) {                                                         \
+        snprintf(nrn_stack_error, MAX_ERR_LEN, "Symbol not found: %s", SYMB_NAME); \
+        return ERR_RET;                                                            \
     }
 
 /* NOTE
    We use this macro to deduplicate common code preparing arguments for a Neuron call
    It _must_ be a macro due to `va_start` and `return`
 */
-#define NRN_CALL_CHECK_PREPARE(SYMB, ERR_RET) \
-    NRN_CHECK_SYMBOL(SYMB, ERR_RET);          \
-    va_list args;                             \
+#define NRN_CALL_CHECK_PREPARE(SYMB, SYMB_NAME, ERR_RET) \
+    CHECK_SYMB_NOT_NULL(SYMB, SYMB_NAME, ERR_RET);       \
+    va_list args;                                        \
     va_start(args, format);
 
 
-double nrn_function_call(const char* func_name, const char* format, ...) {
+NrnResult nrn_function_call(const char* func_name, const char* format, ...) {
+    clear_errors();
     auto sym = nrn_symbol(func_name);
-    NRN_CALL_CHECK_PREPARE(sym, -1);  // Note: initializes va_args. DON'T return before `va_end`
-    double ret_val = -1.;             // default err. Happy path sets to 0
-
+    NrnResult ret_val{NrnResultType::NRN_ERR};
+    NRN_CALL_CHECK_PREPARE(sym, func_name, ret_val);  // Initialize va_args. DON'T return before
+                                                      // `va_end`
     try {
+        if (sym->type == STRINGFUNC || sym->type == OBJECTFUNC) {
+            throw std::runtime_error("Can't call non-numeric functions yet");
+        }
         int n_args = stack_push_args(format, args);
         OcJump::execute_throw_on_exception(sym, n_args);
-        ret_val = hoc_xpop();
+        ret_val = stack_pop_result(sym);
     } catch (const std::exception& e) {
         snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_function_call: %s", e.what());
     }
@@ -323,8 +355,9 @@ double nrn_function_call(const char* func_name, const char* format, ...) {
 
 
 Object* nrn_object_new(const char* cls_name, const char* format, ...) {
+    clear_errors();
     auto sym = nrn_symbol(cls_name);
-    NRN_CALL_CHECK_PREPARE(sym, nullptr);
+    NRN_CALL_CHECK_PREPARE(sym, cls_name, nullptr);
     Object* ret_value = nullptr;
 
     try {
@@ -339,8 +372,9 @@ Object* nrn_object_new(const char* cls_name, const char* format, ...) {
 }
 
 Object* nrn_object_new_NoArgs(const char* cls_name) {
+    clear_errors();
     auto sym = nrn_symbol(cls_name);
-    NRN_CHECK_SYMBOL(sym, nullptr);
+    CHECK_SYMB_NOT_NULL(sym, cls_name, nullptr);
     Object* ret_val = nullptr;
     try {
         ret_val = hoc_newobj1(sym, 0);
@@ -351,34 +385,15 @@ Object* nrn_object_new_NoArgs(const char* cls_name) {
 }
 
 NrnResult nrn_method_call(Object* obj, const char* method_name, const char* format, ...) {
+    clear_errors();
     auto sym = nrn_method_symbol(obj, method_name);
     NrnResult ret_val{NrnResultType::NRN_ERR};
-    NRN_CALL_CHECK_PREPARE(sym, ret_val);
+    NRN_CALL_CHECK_PREPARE(sym, method_name, ret_val);
 
     try {
         int n_args = stack_push_args(format, args);
         OcJump::execute_throw_on_exception(obj, sym, n_args);
-        switch (sym->type) {
-        case PROCEDURE:
-            std::cerr << "pop nothing" << std::endl;
-            ret_val.type = NrnResultType::NRN_VOID;
-            break;
-        case OBFUNCTION:
-            std::cerr << "pop Object" << std::endl;
-            ret_val.type = NrnResultType::NRN_OBJECT;
-            ret_val.ptr_ = static_cast<void*>(nrn_object_pop());
-            break;
-        case STRFUNCTION:
-            std::cerr << "pop str" << std::endl;
-            ret_val.type = NrnResultType::NRN_STRING;
-            ret_val.ptr_ = static_cast<void*>(hoc_strpop());
-            break;
-        default:
-            std::cerr << "pop int" << std::endl;
-            ret_val.type = NrnResultType::NRN_DOUBLE;
-            ret_val.d_ = hoc_xpop();
-            break;
-        }
+        ret_val = stack_pop_result(sym);
     } catch (const std::exception& e) {
         snprintf(nrn_stack_error, MAX_ERR_LEN, "nrn_method_call: %s", e.what());
     }
@@ -400,21 +415,21 @@ double nrn_result_get_double(NrnResult* r) {
     if (r->type != NrnResultType::NRN_DOUBLE) {
         throw std::runtime_error("Result bad type");
     }
-    return r->d_;
+    return r->d;
 }
 
 Object* nrn_result_get_object(NrnResult* r) {
     if (r->type != NrnResultType::NRN_OBJECT) {
         throw std::runtime_error("Result bad type");
     }
-    return static_cast<Object*>(r->ptr_);
+    return r->o;
 }
 
 const char* nrn_result_get_string(NrnResult* r) {
     if (r->type != NrnResultType::NRN_STRING) {
         throw std::runtime_error("Result bad type");
     }
-    return *static_cast<const char**>(r->ptr_);
+    return *r->s;
 }
 
 void nrn_result_drop(NrnResult* r) {
