@@ -309,6 +309,30 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Name of structure that wraps range variables
+     */
+    std::string instance_struct() const {
+        return fmt::format("{}_Instance", info.mod_suffix);
+    }
+
+
+    /**
+     * Name of structure that wraps global variables
+     */
+    std::string global_struct() const {
+        return fmt::format("{}_Store", info.mod_suffix);
+    }
+
+
+    /**
+     * Name of the (host-only) global instance of `global_struct`
+     */
+    std::string global_struct_instance() const {
+        return info.mod_suffix + "_global";
+    }
+
+
+    /**
      * Name of the code generation backend
      */
     virtual std::string backend_name() const = 0;
@@ -575,6 +599,15 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Print atomic update pragma for reduction statements
      */
     virtual void print_atomic_reduction_pragma() = 0;
+
+
+    /**
+     * Instantiate global var instance
+     *
+     * For C++ code generation this is empty
+     * \return ""
+     */
+    virtual void print_global_var_struct_decl();
 
 
     /****************************************************************************************/
@@ -881,6 +914,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *                           definition (true: int foo{42}; false: int foo;)
      */
     virtual void print_mechanism_global_var_structure(bool print_initializers) = 0;
+
+
+    /**
+     * Print static assertions about the global variable struct.
+     */
+    virtual void print_global_var_struct_assertions() const;
 
 
     /**

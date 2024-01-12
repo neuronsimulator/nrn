@@ -214,6 +214,25 @@ bool CodegenCppVisitor::need_semicolon(const Statement& node) {
 /*                      Main printing routines for code generation                      */
 /****************************************************************************************/
 
+
+void CodegenCppVisitor::print_global_var_struct_assertions() const {
+    // Assert some things that we assume when copying instances of this struct
+    // to the GPU and so on.
+    printer->fmt_line("static_assert(std::is_trivially_copy_constructible_v<{}>);",
+                      global_struct());
+    printer->fmt_line("static_assert(std::is_trivially_move_constructible_v<{}>);",
+                      global_struct());
+    printer->fmt_line("static_assert(std::is_trivially_copy_assignable_v<{}>);", global_struct());
+    printer->fmt_line("static_assert(std::is_trivially_move_assignable_v<{}>);", global_struct());
+    printer->fmt_line("static_assert(std::is_trivially_destructible_v<{}>);", global_struct());
+}
+
+
+void CodegenCppVisitor::print_global_var_struct_decl() {
+    printer->add_line(global_struct(), ' ', global_struct_instance(), ';');
+}
+
+
 void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
     const auto& name = node.get_node_name();
     auto function_name = name;

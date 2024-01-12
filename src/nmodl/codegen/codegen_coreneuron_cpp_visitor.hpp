@@ -84,30 +84,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Name of structure that wraps range variables
-     */
-    std::string instance_struct() const {
-        return fmt::format("{}_Instance", info.mod_suffix);
-    }
-
-
-    /**
-     * Name of structure that wraps global variables
-     */
-    std::string global_struct() const {
-        return fmt::format("{}_Store", info.mod_suffix);
-    }
-
-
-    /**
-     * Name of the (host-only) global instance of `global_struct`
-     */
-    std::string global_struct_instance() const {
-        return info.mod_suffix + "_global";
-    }
-
-
-    /**
      * Determine the number of threads to allocate
      */
     int num_thread_objects() const noexcept {
@@ -368,15 +344,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      * Print backend specific abort routine
      */
     virtual void print_abort_routine() const;
-
-
-    /**
-     * Instantiate global var instance
-     *
-     * For C++ code generation this is empty
-     * \return ""
-     */
-    virtual void print_global_var_struct_decl();
 
 
     /**
@@ -786,12 +753,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      *                           definition (true: int foo{42}; false: int foo;)
      */
     void print_mechanism_global_var_structure(bool print_initializers) override;
-
-
-    /**
-     * Print static assertions about the global variable struct.
-     */
-    virtual void print_global_var_struct_assertions() const;
 
 
     /**

@@ -83,12 +83,6 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     virtual std::string backend_name() const override;
 
-    /**
-     * Name of structure that wraps range variables
-     */
-    std::string instance_struct() const {
-        return fmt::format("{}_Instance", info.mod_suffix);
-    }
 
     /****************************************************************************************/
     /*                     Common helper routines accross codegen functions                 */
