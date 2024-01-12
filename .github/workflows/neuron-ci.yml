@@ -173,7 +173,8 @@ jobs:
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
-          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource MPI_CXXFLAGS="-g -O3"
+          # on some systems MPI library detection fails, provide exact flags/compilers
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource MPI_CXXFLAGS="-g -O3" MPI_CFLAGS="-g -O3" MPI_LDFLAGS=" " CC=mpicc CXX=mpicxx
           make -j install
           deactivate
         working-directory: ${{runner.temp}}
