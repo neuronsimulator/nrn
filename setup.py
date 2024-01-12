@@ -485,6 +485,7 @@ def setup_package():
                         "share/nrn/lib/python/neuron/rxd/geometry3d/ctng.pyx",
                     )
                 ],
+                include_dirs=include_dirs,
                 **rxd_params,
             ),
             CyExtension(
@@ -497,6 +498,7 @@ def setup_package():
                     "src/nrnpython/rxd_marching_cubes.cpp",
                     "src/nrnpython/rxd_llgramarea.cpp",
                 ],
+                include_dirs=include_dirs,
                 **rxd_params,
             ),
         ]
