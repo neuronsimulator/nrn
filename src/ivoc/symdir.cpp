@@ -503,13 +503,15 @@ void SymDirectoryImpl::load_section() {
 }
 
 void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
-    NrnProperty np(p);
-    if (np.is_point()) {
+    if (memb_func[type].is_point) {
         return;
     }
     char buf[200];
-    for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
-        if (np.var_type(sym) == type || type == 0) {
+    Symbol* msym = memb_func[type].sym;
+    int cnt = msym->s_varn;
+    for (int i = 0; i < cnt; ++i) {
+        Symbol* sym = msym->u.ppsym[i];
+        if (nrn_vartype(sym) == type || type == 0) {
             if (ISARRAY(sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
