@@ -431,11 +431,17 @@ def setup_package():
     ]
 
     if Components.MUSIC:
+        import pathlib
+
+        cmake_proj_dir = pathlib.Path(__file__).parent.resolve()
         extensions += [
             CyExtension(
                 "neuronmusic",
-                ["src/neuronmusic/neuronmusic.pyx"],
-                include_dirs=["src/nrnpython", "src/nrnmusic"],
+                [os.path.join(cmake_build_dir, "src/neuronmusic/neuronmusic.pyx")],
+                include_dirs=[
+                    os.path.join(cmake_proj_dir, "src/neuronmusic"),
+                    "src/nrnpython",
+                ],
                 **extension_common_params,
             )
         ]
@@ -463,23 +469,34 @@ def setup_package():
         extensions += [
             CyExtension(
                 "neuron.rxd.geometry3d.graphicsPrimitives",
-                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
+                [
+                    os.path.join(
+                        cmake_build_dir,
+                        "share/nrn/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx",
+                    )
+                ],
                 **rxd_params,
             ),
             CyExtension(
                 "neuron.rxd.geometry3d.ctng",
-                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
-                include_dirs=include_dirs,
+                [
+                    os.path.join(
+                        cmake_build_dir,
+                        "share/nrn/lib/python/neuron/rxd/geometry3d/ctng.pyx",
+                    )
+                ],
                 **rxd_params,
             ),
             CyExtension(
                 "neuron.rxd.geometry3d.surfaces",
                 [
-                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
+                    os.path.join(
+                        cmake_build_dir,
+                        "share/nrn/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
+                    ),
                     "src/nrnpython/rxd_marching_cubes.cpp",
                     "src/nrnpython/rxd_llgramarea.cpp",
                 ],
-                include_dirs=include_dirs,
                 **rxd_params,
             ),
         ]

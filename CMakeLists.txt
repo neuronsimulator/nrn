@@ -380,6 +380,10 @@ if(NRN_ENABLE_MUSIC)
   endif()
   find_package(MUSIC REQUIRED)
   set(NRN_MUSIC 1)
+  cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/src/neuronmusic/neuronmusic.pxd"
+                         OUTPUT "${PROJECT_BINARY_DIR}/src/neuronmusic/neuronmusic.pxd")
+  cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/src/neuronmusic/neuronmusic.pyx"
+                         OUTPUT "${PROJECT_BINARY_DIR}/src/neuronmusic/neuronmusic.pyx")
 endif()
 
 # =============================================================================
