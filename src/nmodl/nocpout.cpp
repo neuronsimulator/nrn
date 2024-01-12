@@ -102,6 +102,7 @@ extern int check_tables_threads(List*);
 List* syminorder;
 List* plotlist;
 List* defs_list;
+Item* defs_list_parm_default;  // where we insert initializer defaults
 int electrode_current = 0;
 int thread_data_index = 0;
 List* thread_cleanup_list;
@@ -901,6 +902,8 @@ static const char *_mechanism[] = {\n\
         q = q->next->next->next;
     }
 
+    defs_list_parm_default = lappendstr(defs_list, "\n");
+
     Lappendstr(defs_list,
                "\n"
                "extern Prop* need_memb(Symbol*);\n"
@@ -931,15 +934,29 @@ static const char *_mechanism[] = {\n\
             parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
+
+    // _parm_default allows implementation of a more robust NrnProperty
+    //  that does not require a call to prop_alloc.
+    /* arrays have only a single default value of 0.0 */
+    i = 0;
+    insertstr(defs_list_parm_default, "\n /* Used by NrnProperty */\n");
+    insertstr(defs_list_parm_default, "static std::vector<double> _parm_default{\n");
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
-            continue;
+            d1 = 0.0;
+        } else {
+            decode_ustr(s, &d1, &d2, buf);
+            Sprintf(buf, "	%s = _parm_default[%d]; /* %g */\n", s->name, i, d1);
+            Lappendstr(defs_list, buf);
         }
-        decode_ustr(s, &d1, &d2, buf);
-        Sprintf(buf, "	%s = %g;\n", s->name, d1);
-        Lappendstr(defs_list, buf);
+        /* fill in the std::vector<double> _parm_default initializer */
+        Sprintf(buf, "    %g, /* %s */\n", d1, s->name);
+        insertstr(defs_list_parm_default, buf);
+        ++i;
     }
+    insertstr(defs_list_parm_default, "};");
+
     if (point_process) {
         Lappendstr(defs_list, " }\n");
     }
@@ -1192,6 +1209,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             }
         }
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        Lappendstr(defs_list, "hoc_register_parm_default(_mechtype, &_parm_default);\n");
         if (!point_process) {
             Lappendstr(defs_list,
                        "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");

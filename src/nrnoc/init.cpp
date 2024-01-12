@@ -751,6 +751,10 @@ void register_mech(const char** m,
     }
 }
 
+void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
+    memb_func[mechtype].parm_default = pd;
+}
+
 void nrn_writes_conc(int mechtype, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;

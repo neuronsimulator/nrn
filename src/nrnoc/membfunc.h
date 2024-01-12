@@ -84,7 +84,8 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;  // for nrncore writing.
+    int* dparam_semantics;                    // for nrncore writing.
+    const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};
 };
@@ -105,6 +106,8 @@ struct NPyDirectMechFunc {
 using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
 extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
 extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+extern void hoc_register_parm_default(int type, const std::vector<double>*);
 
 #define IMEMFAST     -2
 #define VINDEX       -1
