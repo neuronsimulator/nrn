@@ -34,6 +34,7 @@ class HocMech {
     Symbol* initial;     // INITIAL  proc initial()
     Symbol* after_step;  // SOLVE ... METHOD after_cvode;proc after_step()
     Symlist* slist;      // point process range variables.
+    std::vector<double> parm_default{};
 };
 
 static void check(const char* s) {
@@ -205,6 +206,9 @@ static HocMech* common_register(const char** m,
     }
     register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
     type = nrn_get_mechtype(m[1]);
+    // parm_default currently empty. That is ok. But fill in if
+    // implementation provides a default method.
+    hoc_register_parm_default(type, &hm->parm_default);
     hoc_register_cvode(type, nullptr, nullptr, nullptr, nullptr);
     memb_func[type].hoc_mech = hm;
     return hm;

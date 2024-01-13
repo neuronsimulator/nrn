@@ -262,6 +262,7 @@ static double ks_gmax(void* v) {
     KSChan* ks = (KSChan*) v;
     if (ifarg(1)) {
         ks->gmax_deflt_ = chkarg(1, 0., 1e9);
+        ks->parm_default_fill();
     }
     return ks->gmax_deflt_;
 }
@@ -270,6 +271,7 @@ static double ks_erev(void* v) {
     KSChan* ks = (KSChan*) v;
     if (ifarg(1)) {
         ks->erev_deflt_ = chkarg(1, -1e9, 1e9);
+        ks->parm_default_fill();
     }
     return ks->erev_deflt_;
 }
@@ -811,6 +813,17 @@ void KSChan_reg() {
     KSSingle::idum_ = 0;
 }
 
+void KSChan::parm_default_fill() {
+    parm_default.resize(0);
+    if (is_single()) {
+        parm_default.push_back(1.0);  // NSingleIndex is first
+    }
+    parm_default.push_back(gmax_deflt_);
+    if (!ion_sym_) {
+        parm_default.push_back(erev_deflt_);
+    }
+}
+
 // param is gmax, g, i --- if change then change numbers below
 // state names are handled individually
 static const char* m_kschan_pat[] = {"0", "kschan", "gmax", 0, "g", "i", 0, 0, 0};
@@ -838,6 +851,10 @@ void KSChan::add_channel(const char** m) {
     hoc_built_in_symlist = hoc_symlist;
     hoc_symlist = sav;
     mechtype_ = nrn_get_mechtype(m[1]);
+
+    parm_default_fill();
+    hoc_register_parm_default(mechtype_, &parm_default);
+
     // printf("mechanism type is %d\n", mechtype_);
     hoc_register_cvode(mechtype_, ode_count, ode_map, ode_spec, ode_matsol);
     if (!channels) {
@@ -2268,6 +2285,7 @@ void KSChan::update_size() {
     auto const old_param_size =
         mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_variables();
     auto const old_dparam_size = nrn_mechanism_prop_datum_count(mechtype_);
+    parm_default_fill();
     if (new_param_size == old_param_size && new_dparam_size == old_dparam_size) {
         // no change
         return;
@@ -2302,12 +2320,12 @@ void KSChan::alloc(Prop* prop) {
         // prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        prop->param(gmaxoffset_) = gmax_deflt_;
+        prop->param(gmaxoffset_) = parm_default[gmaxoffset_];  // gmax_deflt_
         if (is_point()) {
-            prop->param(NSingleIndex) = 1.;
+            prop->param(NSingleIndex) = parm_default[NSingleIndex];  // 1.
         }
         if (!ion_sym_) {
-            prop->param(1 + gmaxoffset_) = erev_deflt_;
+            prop->param(1 + gmaxoffset_) = parm_default[1 + gmaxoffset_];  // erev_deflt_;
         }
     }
     int ppsize = ppoff_;

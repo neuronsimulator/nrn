@@ -443,6 +443,7 @@ class KSChan {
     std::string ion_;   // name of ion , "" means non-specific
     double gmax_deflt_;
     double erev_deflt_;
+    void parm_default_fill();
     int cond_model_;
     KSIv* iv_relation_;
     int ngate_;       // number of gating complexes
@@ -482,6 +483,8 @@ class KSChan {
     double vmin_, vmax_, dvinv_, dtsav_;
     int hh_tab_size_;
     bool usetable_;
+
+    std::vector<double> parm_default{};
 };
 
 #endif
