@@ -9,18 +9,21 @@
 
 #include "coreneuron/io/phase3.hpp"
 
-void (*nrn2core_get_dat3_cell_count)(int& cell_count);
-void (*nrn2core_get_dat3_cellmapping)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
-void (*nrn2core_get_dat3_secmapping)(int i_c,
-                                     int i_sec,
-                                     std::string& segname,
-                                     int& nsec,
-                                     int& nseg,
-                                     size_t& total_lfp_factors,
-                                     int& n_electrode,
-                                     std::vector<int>& data_sec,
-                                     std::vector<int>& data_seg,
-                                     std::vector<double>& data_lfp);
+extern "C" {  // avoid symbol name mangling for nrn2core_get_dat3_secmapping_
+              // caused by dual ABI for std::string
+void (*nrn2core_get_dat3_cell_count_)(int& cell_count);
+void (*nrn2core_get_dat3_cellmapping_)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+void (*nrn2core_get_dat3_secmapping_)(int i_c,
+                                      int i_sec,
+                                      std::string& sclname,
+                                      int& nsec,
+                                      int& nseg,
+                                      size_t& total_lfp_factors,
+                                      int& n_electrodes,
+                                      std::vector<int>& data_sec,
+                                      std::vector<int>& data_seg,
+                                      std::vector<double>& data_lfp);
+}
 
 namespace coreneuron {
 void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
@@ -44,14 +47,14 @@ void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
 
 void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
     int count;
-    nrn2core_get_dat3_cell_count(count);
+    nrn2core_get_dat3_cell_count_(count);
     /** for every neuron */
     for (int i = 0; i < count; i++) {
         int gid;
         int t_sec;
         int t_seg;
         int nseclist;
-        nrn2core_get_dat3_cellmapping(i, gid, t_sec, t_seg, nseclist);
+        nrn2core_get_dat3_cellmapping_(i, gid, t_sec, t_seg, nseclist);
         auto cmap = new CellMapping(gid);
         for (int j = 0; j < nseclist; j++) {
             std::string sclname;
@@ -62,16 +65,16 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
             std::vector<int> data_sec;
             std::vector<int> data_seg;
             std::vector<double> data_lfp;
-            nrn2core_get_dat3_secmapping(i,
-                                         j,
-                                         sclname,
-                                         n_sec,
-                                         n_seg,
-                                         total_lfp_factors,
-                                         n_electrodes,
-                                         data_sec,
-                                         data_seg,
-                                         data_lfp);
+            nrn2core_get_dat3_secmapping_(i,
+                                          j,
+                                          sclname,
+                                          n_sec,
+                                          n_seg,
+                                          total_lfp_factors,
+                                          n_electrodes,
+                                          data_sec,
+                                          data_seg,
+                                          data_lfp);
             auto smap = new SecMapping();
             smap->name = sclname;
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {

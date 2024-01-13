@@ -9,10 +9,9 @@
 #pragma once
 
 #include "coreneuron/io/nrn_filehandler.hpp"
-#include "coreneuron/io/user_params.hpp"
 
 namespace coreneuron {
-struct NrnThread;
+struct NrnThreadMappingInfo;
 
 class Phase3 {
   public:
