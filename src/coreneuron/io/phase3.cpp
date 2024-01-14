@@ -8,9 +8,10 @@
 #include <algorithm>
 
 #include "coreneuron/io/phase3.hpp"
+// Where nrn2core_get_dat3_secmapping_ is declared with extern "C" to avoid symbol name mangling
+// caused by dual ABI for std::string
+#include "coreneuron/io/nrn2core_direct.h"
 
-extern "C" {  // avoid symbol name mangling for nrn2core_get_dat3_secmapping_
-              // caused by dual ABI for std::string
 void (*nrn2core_get_dat3_cell_count_)(int& cell_count);
 void (*nrn2core_get_dat3_cellmapping_)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
 void (*nrn2core_get_dat3_secmapping_)(int i_c,
@@ -23,7 +24,6 @@ void (*nrn2core_get_dat3_secmapping_)(int i_c,
                                       std::vector<int>& data_sec,
                                       std::vector<int>& data_seg,
                                       std::vector<double>& data_lfp);
-}
 
 namespace coreneuron {
 void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
