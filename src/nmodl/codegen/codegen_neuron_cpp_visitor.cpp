@@ -225,10 +225,13 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
 }
 
 
-/// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::global_variable_name(const SymbolType& symbol,
                                                           bool use_instance) const {
-    return symbol->get_name();
+    if (use_instance) {
+        return fmt::format("inst.{}->{}", naming::INST_GLOBAL_MEMBER, symbol->get_name());
+    } else {
+        return fmt::format("{}.{}", global_struct_instance(), symbol->get_name());
+    }
 }
 
 
@@ -391,6 +394,8 @@ void CodegenNeuronCppVisitor::print_sdlists_init([[maybe_unused]] bool print_ini
 
 
 void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_initializers) {
+    const auto value_initialize = print_initializers ? "{}" : "";
+
     /// TODO: Print only global variables printed in NEURON
     printer->add_newline(2);
     printer->add_line("/* NEURON global variables */");
@@ -405,6 +410,73 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
                       info.pointer_variables.size() > 0
                           ? static_cast<int>(info.pointer_variables.size())
                           : -1);
+
+    // Start printing the CNRN-style global variables.
+    auto float_type = default_float_data_type();
+    printer->add_newline(2);
+    printer->add_line("/** all global variables */");
+    printer->fmt_push_block("struct {}", global_struct());
+
+    if (!info.ions.empty()) {
+        // TODO implement these when needed.
+    }
+
+    if (info.point_process) {
+        throw std::runtime_error("Not implemented, global point process.");
+    }
+
+    if (!info.vectorize && !info.top_local_variables.empty()) {
+        throw std::runtime_error("Not implemented, global vectorize something.");
+    }
+
+    if (!info.thread_variables.empty()) {
+        throw std::runtime_error("Not implemented, global thread variables.");
+    }
+
+    if (info.table_count > 0) {
+        throw std::runtime_error("Not implemented, global table count.");
+    }
+
+    for (const auto& var: info.state_vars) {
+        auto name = var->get_name() + "0";
+        auto symbol = program_symtab->lookup(name);
+        if (symbol == nullptr) {
+            printer->fmt_line("{} {}{};", float_type, name, value_initialize);
+            codegen_global_variables.push_back(make_symbol(name));
+        }
+    }
+
+    for (const auto& var: info.global_variables) {
+        auto name = var->get_name();
+        auto length = var->get_length();
+        if (var->is_array()) {
+            printer->fmt_line("{} {}[{}] /* TODO init const-array */;", float_type, name, length);
+        } else {
+            double value{};
+            if (auto const& value_ptr = var->get_value()) {
+                value = *value_ptr;
+            }
+            printer->fmt_line("{} {}{};",
+                              float_type,
+                              name,
+                              print_initializers ? fmt::format("{{{:g}}}", value) : std::string{});
+        }
+        codegen_global_variables.push_back(var);
+    }
+
+
+    for (const auto& f: info.function_tables) {
+        throw std::runtime_error("Not implemented, global function tables.");
+    }
+
+    if (info.vectorize && info.thread_data_index) {
+        throw std::runtime_error("Not implemented, global vectorize something else.");
+    }
+
+    printer->pop_block(";");
+
+    print_global_var_struct_assertions();
+    print_global_var_struct_decl();
 }
 
 
@@ -572,11 +644,11 @@ void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_ini
         }
     }
 
-    // printer->fmt_line("{}* {}{};",
-    //                   global_struct(),
-    //                   naming::INST_GLOBAL_MEMBER,
-    //                   print_initializers ? fmt::format("{{&{}}}", global_struct_instance())
-    //                                      : std::string{});
+    printer->fmt_line("{}* {}{};",
+                      global_struct(),
+                      naming::INST_GLOBAL_MEMBER,
+                      print_initializers ? fmt::format("{{&{}}}", global_struct_instance())
+                                         : std::string{});
     printer->pop_block(";");
 }
 

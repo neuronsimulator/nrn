@@ -197,6 +197,7 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
         const double* ion_ena{};
         double* ion_ina{};
         double* ion_dinadv{};
+        pas_test_Store* global{&pas_test_global};
     };)";
 
             REQUIRE_THAT(generated, ContainsSubstring(reindent_and_trim_text(expected)));
