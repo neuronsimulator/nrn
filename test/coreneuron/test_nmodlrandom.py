@@ -129,6 +129,7 @@ def test_chkpnt():
     # cleanup
     shutil.rmtree("coredat", ignore_errors=True)
 
+
 def cmp_spks(spikes, dir):  # modified from test_pointer.py
     import os, subprocess, shutil
 
