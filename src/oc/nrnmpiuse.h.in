@@ -16,7 +16,4 @@
 /* define if needed */
 #undef ALWAYS_CALL_MPI_INIT
 
-/* Number of times to retry a failed open */
-#undef FILE_OPEN_RETRY
-
 #endif

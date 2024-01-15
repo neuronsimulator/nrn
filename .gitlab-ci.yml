@@ -53,6 +53,7 @@ mac_m1_cmake_build:
     - real_python=$(python3 resolve_shim.py)
     - echo "python3=$(command -v python3) is really ${real_python}"
     - PYTHONEXECUTABLE=${real_python} ${real_python} -mvenv venv
+    - venv/bin/python3 -m ensurepip --upgrade --default-pip
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - git submodule update --init --recursive --force --depth 1 -- external/nmodl
     - venv/bin/pip install --upgrade -r external/nmodl/requirements.txt
@@ -187,6 +188,7 @@ simulation_stack:
     bb5_constraint: volta
     bb5_cpus_per_task: 2
     bb5_partition: prod # assume this is a good source of GPU nodes
+    bb5_exclusive: user # allocate gpu node exclusively for the CI user (to avoid errors from oversubscription)
 .test_neuron:
   extends: [.ctest]
   variables:

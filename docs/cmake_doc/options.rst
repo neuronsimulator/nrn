@@ -12,14 +12,14 @@ together using the following instructions:
 .. code-block:: shell
 
    git clone https://github.com/neuronsimulator/nrn           # latest development branch
-   git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
+   git clone https://github.com/neuronsimulator/nrn -b 8.2.3  # specific release version 8.2.3
    cd nrn
 
 ..
 
    .. warning:: To build NEURON from source you either need to clone the
    NEURON Git repository or download a source code archive that includes
-   Git submodules, such as the ``full-src-package-X.Y.Z.tar.gz`` file in
+   Git submodules, such as the ``nrn-full-src-package-X.Y.Z.tar.gz`` file in
    the `NEURON
    releases <https://github.com/neuronsimulator/nrn/releases>`__ on
    GitHub. The tarballs like ``Source code (tar.gz)`` or
@@ -648,3 +648,15 @@ NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
   built with support for, for use in tests of error messages and reporting.
   For these purposes, minor versions (3.X and 3.Y) are considered different
   and patch versions (3.8.X and 3.8.Y) are considered to be the same.
+
+NRN_ENABLE_MATH_OPT:BOOL=OFF
+-------------------------------------
+  Enable extra math optimisations.
+
+  When using compilers like GCC and Clang, one needs to explicitly use compiler
+  flags like `-funsafe-math-optimizations` in order to generate SIMD/vectorised
+  code using vector math library. This flag adds these extra compiler flags
+  to enable SIMD code.
+
+  Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
+  by default.

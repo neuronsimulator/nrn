@@ -148,11 +148,9 @@ void hoc_win_exec(void) {
 
 void hoc_winio_show(int b) {}
 
-#if !defined(__MWERKS__)
 int getpid() {
     return 1;
 }
-#endif
 
 void hoc_Plt() {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
