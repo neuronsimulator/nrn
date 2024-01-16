@@ -222,7 +222,6 @@ set(NRNIV_FILE_LIST
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
-    geometry3d.cpp
     glinerec.cpp
     hocmech.cpp
     impedanc.cpp
