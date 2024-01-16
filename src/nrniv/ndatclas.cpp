@@ -57,7 +57,16 @@ NrnPropertyImpl::NrnPropertyImpl(int mechtype) {
     iterator_ = -1;
     type_ = mechtype;
     sym_ = memb_func[mechtype].sym;
-    params_.resize(nrn_prop_param_size_[type_]);
+    // how many values. nrn_prop_param_size[EXTRACELL] is not all of them
+    int ntotal = nrn_prop_param_size_[type_];
+    if (type_ == EXTRACELL) {
+        ntotal = 0;
+        for (int i = 0; i < sym_->s_varn; ++i) {
+            Symbol* s = sym_->u.ppsym[i];
+            ntotal += hoc_total_array_data(s, nullptr);
+        }
+    }
+    params_.resize(ntotal);
     auto& param_default = *memb_func[mechtype].parm_default;
     int ix = 0;
     int i = 0;

@@ -940,7 +940,7 @@ static const char *_mechanism[] = {\n\
     /* arrays have only a single default value of 0.0 */
     i = 0;
     insertstr(defs_list_parm_default, "\n /* Used by NrnProperty */\n");
-    insertstr(defs_list_parm_default, "static std::vector<double> _parm_default{\n");
+    insertstr(defs_list_parm_default, "static _nrn_mechanism_std_vector<double> _parm_default{\n");
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
