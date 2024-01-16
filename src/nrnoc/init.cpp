@@ -808,6 +808,7 @@ int dparam_semantics_to_int(std::string_view name) {
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
@@ -822,6 +823,7 @@ void register_data_fields(int mechtype,
                 dparam_info[i].second);
         }
     }
+
     // Translate param_info into the type we want to use internally now we're fully inside NEURON
     // library code (wheels...)
     std::vector<container::Mechanism::Variable> param_info_new{};

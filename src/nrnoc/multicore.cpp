@@ -403,6 +403,11 @@ void nrn_threads_free() {
                 }
                 delete[] ml->_thread;
             }
+            // The last allocated dparam_semantics needs to be freed
+            auto dparam_semantics = std::exchange(memb_func[tml->index].dparam_semantics, nullptr);
+            if (dparam_semantics) {
+                delete[] dparam_semantics;
+            }
             delete ml;
             free((char*) tml);
         }
