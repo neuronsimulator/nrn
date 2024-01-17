@@ -3,9 +3,9 @@
 :: download all installers
 
 :: python
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.18/python-3.8.18-amd64.exe || goto :error
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.9.exe https://www.python.org/ftp/python/3.9.18/python-3.9.18-amd64.exe || goto :error
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.10.exe https://www.python.org/ftp/python/3.10.13/python-3.10.13-amd64.exe || goto :error
+pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe || goto :error
+pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.9.exe https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe || goto :error
+pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.10.exe https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.11.exe https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.12.exe https://www.python.org/ftp/python/3.12.1/python-3.12.1-amd64.exe || goto :error
 
