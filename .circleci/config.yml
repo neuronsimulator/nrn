@@ -39,11 +39,6 @@ jobs:
           destination: artifacts
 
       - run:
-          command: |
-            sudo apt install tmate
-            export TERM=xterm
-            tmate
-      - run:
           name: Test manylinux AArch64 wheel
           command: |
 
