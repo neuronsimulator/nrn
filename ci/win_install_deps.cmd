@@ -28,6 +28,7 @@ C:\Python39\python.exe -m pip install  numpy==1.19.3 "cython < 3" || goto :error
 C:\Python310\python.exe -m pip install numpy==1.21.3 "cython < 3" || goto :error
 C:\Python311\python.exe -m pip install numpy==1.23.5 "cython < 3" || goto :error
 C:\Python312\python.exe -m pip install numpy==1.26.3 "cython < 3" || goto :error
+C:\Python312\python.exe -m pip install setuptools || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
