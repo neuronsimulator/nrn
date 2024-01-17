@@ -49,11 +49,11 @@ jobs:
             # choose available python versions from pyenv
             pyenv_py_ver=""
             case << parameters.NRN_PYTHON_VERSION >> in
-              38) pyenv_py_ver="3.8.10" ;;
-              39) pyenv_py_ver="3.9.13" ;;
-              310) pyenv_py_ver="3.10.11" ;;
-              311) pyenv_py_ver="3.11.7" ;;
-              312) pyenv_py_ver="3.12.0rc2" ;;
+              38) pyenv_py_ver="3.8" ;;
+              39) pyenv_py_ver="3.9" ;;
+              310) pyenv_py_ver="3.10" ;;
+              311) pyenv_py_ver="3.11" ;;
+              312) pyenv_py_ver="3.12" ;;
               *) echo "Error: pyenv python version not specified!" && exit 1;;
             esac
 
