@@ -10,11 +10,11 @@ python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustF
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
 
 :: fix msvcc version for all python3
-pwsh -command "(Get-Content C:\Python38\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1916'':' | Out-File C:\Python38\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1927'':' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1929'':' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1934'':' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python312\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1934'':' | Out-File C:\Python312\Lib\distutils\cygwinccompiler.py"
+pwsh -command "(Get-Content C:\Python38\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver >= ''1600'':' | Out-File C:\Python38\Lib\distutils\cygwinccompiler.py"
+pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver >= ''1600'':' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
+pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver >= ''1600'':' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
+pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver >= ''1600'':' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
+pwsh -command "(Get-Content C:\Python312\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver >= ''1600'':' | Out-File C:\Python312\Lib\distutils\cygwinccompiler.py"
 
 
 :: fix msvc runtime library for all python
