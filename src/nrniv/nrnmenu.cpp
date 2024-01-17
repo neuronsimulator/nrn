@@ -857,11 +857,11 @@ void MechanismStandard::in(Section* sec, double x) {
         i = node_index(sec, x);
     }
     Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-    np_->copy_in(p, sec->pnode[i], vartype_);
+    np_->copy(false, p, sec->pnode[i], vartype_);
 }
 void MechanismStandard::in(Point_process* pp) {
     mschk("in");
-    np_->copy_in(pp->prop, pp->node, vartype_);
+    np_->copy(false, pp->prop, pp->node, vartype_);
 }
 void MechanismStandard::in(MechanismStandard* ms) {
     mschk("in");
@@ -873,17 +873,17 @@ void MechanismStandard::out(Section* sec, double x) {
     if (x < 0) {
         for (int i = 0; i < sec->nnode; ++i) {
             Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-            np_->copy_out(p, sec->pnode[i], vartype_);
+            np_->copy(true, p, sec->pnode[i], vartype_);
         }
     } else {
         int i = node_index(sec, x);
         Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-        np_->copy_out(p, sec->pnode[i], vartype_);
+        np_->copy(true, p, sec->pnode[i], vartype_);
     }
 }
 void MechanismStandard::out(Point_process* pp) {
     mschk("out");
-    np_->copy_out(pp->prop, pp->node, vartype_);
+    np_->copy(true, pp->prop, pp->node, vartype_);
 }
 void MechanismStandard::out(MechanismStandard* ms) {
     mschk("out");

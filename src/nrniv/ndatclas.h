@@ -30,8 +30,7 @@ class NrnProperty {
                                                             int arrayindex = 0);
 
     // vartype=0, 1, 2, 3 means all, PARAMETER, ASSIGNED, STATE
-    bool copy_out(Prop* dest, Node* nd_dest, int vartype = 0);
-    bool copy_in(Prop* src, Node* nd_src, int vartype = 0);
+    bool copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype = 0);
     bool copy_out(NrnProperty& dest, int vartype = 0);
 
   private:

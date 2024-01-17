@@ -164,7 +164,7 @@ Symbol* NrnProperty::var(int i) {
     return npi_->sym_->u.ppsym[i];
 }
 
-bool NrnProperty::copy_out(Prop* dest, Node* nd_dest, int vartype) {
+bool NrnProperty::copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype) {
     assert(vartype != NRNPOINTER);
     auto& x = npi_->params_;
     Prop* p = dest;
@@ -180,7 +180,11 @@ bool NrnProperty::copy_out(Prop* dest, Node* nd_dest, int vartype) {
                     auto const n = sym->u.rng.index;
                     auto const y = p->ob->u.dataspace[n].pval;
                     for (int j = 0; j < jmax; ++j) {
-                        y[j] = x[k + j];
+                        if (to_prop) {
+                            y[j] = x[k + j];
+                        } else {
+                            x[k + j] = y[j];
+                        }
                     }
                 }
                 k += jmax;
@@ -195,19 +199,29 @@ bool NrnProperty::copy_out(Prop* dest, Node* nd_dest, int vartype) {
                 if (vartype == 0 || nrn_vartype(sym) == vartype) {
                     auto const n = sym->u.rng.index;
                     for (int j = 0; j < jmax; ++j) {
-                        p->param_legacy(n + j) = x[k + j];
+                        if (p->_type == EXTRACELL &&
+                            n == neuron::extracellular::vext_pseudoindex()) {
+                            if (to_prop) {
+                                nd_dest->extnode->v[j] = x[k + j];
+                            } else {
+                                x[k + j] = nd_dest->extnode->v[j];
+                            }
+                        } else {
+                            if (to_prop) {
+                                p->param_legacy(n + j) = x[k + j];
+                            } else {
+                                x[k + j] = p->param_legacy(n + j);
+                            }
+                        }
                     }
                 }
+                k += jmax;
             }
         }
         return true;
     } else {
         return false;
     }
-}
-
-bool NrnProperty::copy_in(Prop* src, Node* nd_src, int vartype) {
-    return false;
 }
 
 bool NrnProperty::copy_out(NrnProperty& np, int vartype) {
