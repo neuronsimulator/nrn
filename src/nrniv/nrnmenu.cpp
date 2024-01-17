@@ -616,6 +616,11 @@ static double ms_count(void* v) {
     hoc_return_type_code = 1;
     return ((MechanismStandard*) v)->count();
 }
+static double ms_is_array(void* v) {
+    MechanismStandard* ms = (MechanismStandard*) v;
+    hoc_return_type_code = 2;
+    return ms->is_array((int) chkarg(1, 0, ms->count() - 1));
+}
 static double ms_name(void* v) {
     const char* n;
     int rval = 0;
@@ -664,6 +669,7 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"set", ms_set},
                                    {"get", ms_get},
                                    {"count", ms_count},
+                                   {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
                                    {0, 0}};
@@ -724,6 +730,10 @@ MechanismStandard::~MechanismStandard() {
 }
 int MechanismStandard::count() {
     return name_cnt_;
+}
+bool MechanismStandard::is_array(int i) {
+    Symbol* s = np_->var(i + offset_);
+    return s->arayinfo;
 }
 const char* MechanismStandard::name() {
     return np_->name();

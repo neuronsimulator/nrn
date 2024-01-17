@@ -15,6 +15,7 @@ class MechanismStandard: public Resource {
     int count();
     const char* name();
     const char* name(int, int&);  // returns array dimension and name
+    bool is_array(int);
 
     // from arg (section.node(x) (0 if x < 0) to this
     void in(Section*, double x = -1.);

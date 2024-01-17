@@ -1,6 +1,28 @@
 from neuron import h
 
 
+def mkmodel(mnames):
+    s = h.Section(name="dend")
+    for name in mnames:
+        if name != "capacitance":
+            s.insert(name)
+    return s
+
+
+# for MechStan, mechname, varname, isarray, size var_ref_in_seg in variter(mslist, seg)
+def variter(mslist, seg=None):
+    for m in mslist:
+        mname = h.ref("")
+        m.name(mname)
+        for i in range(m.count()):
+            varname = h.ref("")
+            size = m.name(varname, i)
+            isarray = m.is_array(i)
+            refname = "_ref_" + varname[0] + ("[0]" if isarray else "")
+            ref = getattr(seg, refname) if seg else None
+            yield m, mname[0], varname[0], isarray, size, ref
+
+
 def test_mechstd1():  # default params
     def mechstd(vartype, mnames):
         print("\nvartype ", vartype)
@@ -16,13 +38,13 @@ def test_mechstd1():  # default params
             for i in range(m.count()):
                 varname = h.ref("")
                 size = m.name(varname, i)
-                if size == 1:
+                if not m.is_array(i):
                     print(name[0], i, varname[0], size, m.get(varname[0]))
                     assert getattr(s(0.5), varname[0]) == m.get(varname[0])
                 else:
                     for j in range(size):
                         print(name[0], i, varname[0], j, size, m.get(varname[0]))
-                        assert getattr(s, varname[0])[j] == m.get(varname[0], j)
+                        assert getattr(s(0.5), varname[0])[j] == m.get(varname[0], j)
 
     mnames = ["hh", "pas", "fastpas", "capacitance", "na_ion", "extracellular"]
     for vartype in [1, 2, 3, 0]:
@@ -32,19 +54,17 @@ def test_mechstd1():  # default params
         mechstd(0, ["extracellular"])
 
 
-def test_mechstd():
-    m = h.MechanismStandard("extracellular")
-    m.set("vext", 5, 0)
-
-
-def test_mech_getattro():
-    s = h.Section("soma")
-    s.insert("extracellular")
-    s(0.5).extracellular.e = 10.0
-    s(0.5).vext[1] = 7.0
+def test_mechstd2():  # test set, get, in, out
+    mnames = ["hh", "pas", "fastpas", "capacitance", "na_ion", "extracellular"]
+    mslist = [h.MechanismStandard(name, 0) for name in mnames]
+    # fill with distinct values
+    val = 0.0
+    for ms, mname, varname, isarray, size, ref in variter(mslist, None):
+        for i in range(size):
+            val += 0.1
+            print(ms, mname, varname, isarray, size, ref, val)
+            ms.set(varname, i, val)
 
 
 if __name__ == "__main__":
-    test_mechstd1()
-#    test_mech_getattro()
-#    test_mechstd()
+    test_mechstd2()
