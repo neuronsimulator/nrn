@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@0.3.2
+  python: circleci/python@2.1.1
 
 jobs:
   manylinux2014-aarch64:
@@ -53,22 +53,14 @@ jobs:
               39) pyenv_py_ver="3.9.13" ;;
               310) pyenv_py_ver="3.10.11" ;;
               311) pyenv_py_ver="3.11.7" ;;
-              312) pyenv_py_ver="3.12.0" ;;
+              312) pyenv_py_ver="3.12.0rc2" ;;
               *) echo "Error: pyenv python version not specified!" && exit 1;;
             esac
 
-            # install python dependencies: .10 is not available pyenv
-            if [ "<< parameters.NRN_PYTHON_VERSION >>" == "310" ]; then
-              sudo apt install software-properties-common -y
-              sudo add-apt-repository ppa:deadsnakes/ppa -y
-              sudo apt install python3.10 libpython3.10 python3.10-venv
-              export PYTHON_EXE=$(which python3.10)
-            else
-              cd /opt/circleci/.pyenv/plugins/python-build/../.. && git pull && cd -
-              env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
-              pyenv global $pyenv_py_ver
-              export PYTHON_EXE=$(which python)
-            fi
+            cd /opt/circleci/.pyenv/plugins/python-build/../.. && git pull && cd -
+            env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
+            pyenv global $pyenv_py_ver
+            export PYTHON_EXE=$(which python)
 
             # test wheel
             packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
