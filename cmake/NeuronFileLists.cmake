@@ -101,6 +101,7 @@ set(OC_FILE_LIST
     hoc_oop.cpp
     list.cpp
     math.cpp
+    memory.cpp
     mswinprt.cpp
     nonlin.cpp
     ocerf.cpp
