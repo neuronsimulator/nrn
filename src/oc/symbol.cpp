@@ -2,17 +2,6 @@
 /* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
 
-#if HAVE_POSIX_MEMALIGN
-#define HAVE_MEMALIGN 1
-#endif
-#if defined(DARWIN) /* posix_memalign seems not to work on Darwin 10.6.2 */
-#undef HAVE_MEMALIGN
-#endif
-#if HAVE_MEMALIGN
-#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
-#define _XOPEN_SOURCE 600
-#endif
-
 #include "hoc.h"
 #include "hocdec.h"
 #include "hoclist.h"
