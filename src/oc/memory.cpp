@@ -41,7 +41,7 @@ void* hoc_Erealloc(void* ptr, std::size_t size) { /* check return from realloc *
 
 void hoc_malchk(void) {
     if (emalloc_error) {
-        emalloc_error = 0;
+        emalloc_error = false;
         hoc_execerror("out of memory", nullptr);
     }
 }
