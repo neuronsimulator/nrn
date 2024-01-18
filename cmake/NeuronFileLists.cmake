@@ -39,6 +39,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/hocparse.h
     oc/mcran4.h
     oc/mech_api.h
+    oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
     oc/nrnisaac.h
