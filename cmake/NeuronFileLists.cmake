@@ -68,8 +68,6 @@ set(HEADER_FILES_TO_INSTALL
     scopmath/sparse_thread.hpp
     scopmath/ssimplic.hpp
     scopmath/ssimplic_thread.hpp
-    sparse13/cspmatrix.h
-    sparse13/cspredef.h
     sparse13/spconfig.h
     sparse13/spmatrix.h)
 
@@ -222,7 +220,6 @@ set(NRNIV_FILE_LIST
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
-    geometry3d.cpp
     glinerec.cpp
     hocmech.cpp
     impedanc.cpp
