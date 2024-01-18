@@ -15,7 +15,7 @@ namespace neuron::cache {
 template <typename Callable>
 void indices_to_cache(short type, Callable callable) {
     auto const pdata_size = nrn_prop_dparam_size_[type];
-    auto* const dparam_semantics = memb_func[type].dparam_semantics;
+    auto* const dparam_semantics = memb_func[type].dparam_semantics.get();
     for (int field = pdata_size - 1; field >= 0; --field) {
         // Check if the field-th dparam of this mechanism type is an ion variable. See
         // hoc_register_dparam_semantics.
