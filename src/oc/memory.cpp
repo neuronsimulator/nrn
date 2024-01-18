@@ -92,4 +92,3 @@ void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size) {
     std::memset(*memptr, 0, nmemb * size);
     return *memptr;
 }
-
