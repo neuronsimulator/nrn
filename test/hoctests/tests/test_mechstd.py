@@ -88,4 +88,5 @@ def test_mechstd2():  # test set, get, in, out
 
 
 if __name__ == "__main__":
+    test_mechstd1()
     test_mechstd2()

@@ -847,6 +847,7 @@ void KSChan::add_channel(const char** m) {
     hoc_built_in_symlist = hoc_symlist;
     hoc_symlist = sav;
     mechtype_ = nrn_get_mechtype(m[1]);
+    register_data_fields();
 
     parm_default_fill();
     hoc_register_parm_default(mechtype_, &parm_default);
@@ -860,7 +861,6 @@ void KSChan::add_channel(const char** m) {
         channels->push_back(nullptr);
     }
     channels->push_back(this);
-    neuron::model().add_mechanism(mechtype_, m[1]);  // no floating point fields
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
@@ -2006,6 +2006,7 @@ void KSChan::setstructure(Vect* vec) {
         sname_install();
         setupmat();
     }
+    register_data_fields();
 }
 
 void KSChan::sname_install() {
@@ -2297,12 +2298,56 @@ void KSChan::update_size() {
             std::to_string(new_dparam_size) + " while " + std::to_string(mech_data.size()) +
             " instances are active");
     }
-    std::vector<neuron::container::Mechanism::Variable> new_param_info;
-    new_param_info.resize(new_param_size, {"kschan_field", 1});
-    std::string mech_name{mech_data.name()};
-    neuron::model().delete_mechanism(mechtype_);
-    nrn_delete_mechanism_prop_datum(mechtype_);
-    neuron::model().add_mechanism(mechtype_, std::move(mech_name), std::move(new_param_info));
+}
+
+void KSChan::register_data_fields() {  // or re-register
+    // prop.param is [Nsingle], gmax, [e], g, i, states
+    // prop.dparam for density is [5ion], [2ligands]
+    // prop.dparam for point is area, pnt, [singledata], [5ion], [2ligands]
+
+    std::vector<std::pair<const char*, int>> params{};
+    if (is_single()) {
+        params.push_back({"Nsingle", 1});
+    }
+    params.push_back({"gmax", 1});
+    if (ion_sym_ == nullptr) {
+        params.push_back({"e", 1});
+    }
+    params.push_back({"g", 1});
+    params.push_back({"i", 1});
+    for (int i = 0; i < nstate_; ++i) {
+        params.push_back({state(i), 1});
+    }
+    // Dstate
+    std::string d{"D"};
+    for (int i = 0; i < nstate_; ++i) {
+        params.push_back({(d + state(i)).c_str(), 1});
+    }
+
+
+    std::vector<std::pair<const char*, const char*>> dparams{};
+    if (is_point()) {
+        dparams.push_back({"_nd_area", "area"});
+        dparams.push_back({"_pntproc", "pntproc"});
+    }
+    if (is_single()) {
+        dparams.push_back({"singleptr", "pointer"});
+    }
+    if (ion_sym_) {
+        std::string name{ion_sym_->name};
+        // the names don't matter
+        dparams.push_back({(name + "_erev").c_str(), name.c_str()});
+        dparams.push_back({(name + "_icur").c_str(), name.c_str()});
+        dparams.push_back({(name + "_didv").c_str(), name.c_str()});
+        dparams.push_back({(name + "_ci").c_str(), name.c_str()});
+        dparams.push_back({(name + "_co").c_str(), name.c_str()});
+    }
+    for (int i = 0; i < nligand_; ++i) {
+        std::string name{ligands_[i]->name};
+        dparams.push_back({(name + "_ligo").c_str(), name.c_str()});
+        dparams.push_back({(name + "_ligi").c_str(), name.c_str()});
+    }
+    neuron::mechanism::detail::register_data_fields(mechtype_, params, dparams);
 }
 
 void KSChan::alloc(Prop* prop) {

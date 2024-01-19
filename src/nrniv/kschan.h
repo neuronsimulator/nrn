@@ -421,6 +421,7 @@ class KSChan {
     void update_prop();  // can add and remove Nsingle and SingleNodeData
     void update_size();
     void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
+    void register_data_fields();
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);
