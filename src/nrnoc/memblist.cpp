@@ -7,9 +7,38 @@
 #include <iterator>  // std::distance, std::next
 #include <numeric>   // std::accumulate
 
+extern void* emalloc(size_t);
+
+
 Memb_list::Memb_list(int type)
     : m_storage{&neuron::model().mechanism_data(type)} {
     assert(type == m_storage->type());
+}
+
+void Memb_list::nodes_alloc(int node_count, bool also_pdata) {
+    if (node_count == 0) {
+        return;
+    }
+    nodecount = node_count;
+    nodelist = (Node**) emalloc(node_count * sizeof(Node*));
+    nodeindices = (int*) emalloc(node_count * sizeof(int));
+    // Prop used by ode_map even when hoc_mech is false
+    prop = new Prop*[node_count];
+    if (also_pdata) {
+        pdata = (Datum**) emalloc(node_count * sizeof(Datum*));
+    }
+}
+
+void Memb_list::nodes_free() {
+    nodecount = 0;
+    free(std::exchange(nodelist, nullptr));
+    free(std::exchange(nodeindices, nullptr));
+    delete[] std::exchange(prop, nullptr);
+    free(std::exchange(pdata, nullptr));
+}
+
+Memb_list::~Memb_list() {
+    nodes_free();
 }
 
 [[nodiscard]] std::vector<double*> Memb_list::data() {

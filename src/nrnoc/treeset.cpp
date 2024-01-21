@@ -1620,41 +1620,21 @@ void v_setup_vectors(void) {
     for (i = 0; i < n_memb_func; ++i)
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
-                memb_list[i].nodecount = 0;
-                free(memb_list[i].nodelist);
-                free(memb_list[i].nodeindices);
-                delete[] memb_list[i].prop;
-                if (!memb_func[i].hoc_mech) {
-                    // free(memb_list[i]._data);
-                    free(memb_list[i].pdata);
-                }
+                memb_list[i].nodes_free();
             }
         }
 
 #if 1 /* see finitialize */
-    /* and count the artificial cells */
-    for (i = 0; i < n_memb_func; ++i)
+    /* and allocate for the artificial cells */
+    for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
-            cTemplate* tmp = nrn_pnt_template_[i];
-            memb_list[i].nodecount = tmp->count;
+            int node_count = nrn_pnt_template_[i]->count;
+            bool alloc_pdata = !memb_func[i].hoc_mech;
+            memb_list[i].nodes_alloc(node_count, alloc_pdata);
+            memb_list[i].nodecount = 0; /* counted again below. TODO: Why? */
         }
+    }
 #endif
-
-    /* allocate it*/
-
-    for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
-            if (memb_list[i].nodecount) {
-                memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
-                memb_list[i].nodeindices = (int*) emalloc(memb_list[i].nodecount * sizeof(int));
-                // Prop used by ode_map even when hoc_mech is false
-                memb_list[i].prop = new Prop*[memb_list[i].nodecount];
-                if (!memb_func[i].hoc_mech) {
-                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
-                }
-                memb_list[i].nodecount = 0; /* counted again below */
-            }
-        }
 
 #if MULTICORE
     if (!nrn_user_partition()) {

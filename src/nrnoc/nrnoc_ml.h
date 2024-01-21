@@ -45,6 +45,22 @@ struct Memb_list {
      */
     Memb_list(int type);
 
+    /**
+     * @brief Uninitialize, freeing any allocated mem for nodes.
+     */
+    ~Memb_list();
+
+    /**
+     * @brief Allocate memory for node_count nodes.
+     * @param also_pdata Allocate also pdata Datum's
+     */
+    void nodes_alloc(int node_count, bool also_pdata);
+
+    /**
+     * @brief Free memory allocated for nodes (with nodes_alloc)
+     */
+    void nodes_free();
+
     Node** nodelist{};
     /* nodeindices contains all nodes this extension is responsible for,
      * ordered according to the matrix. This allows to access the matrix
