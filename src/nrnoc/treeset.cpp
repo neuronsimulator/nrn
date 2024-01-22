@@ -1617,20 +1617,26 @@ void v_setup_vectors(void) {
 
     nrn_threads_free();
 
-    for (i = 0; i < n_memb_func; ++i)
+    for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
                 memb_list[i].nodes_free();
+                if (!memb_func[i].hoc_mech) {
+                    free(memb_list[i].pdata);
+                }
             }
         }
+    }
 
 #if 1 /* see finitialize */
     /* and allocate for the artificial cells */
     for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             int node_count = nrn_pnt_template_[i]->count;
-            bool alloc_pdata = !memb_func[i].hoc_mech;
-            memb_list[i].nodes_alloc(node_count, alloc_pdata);
+            memb_list[i].nodes_alloc(node_count);
+            if (!memb_func[i].hoc_mech) {
+                memb_list[i].pdata = (Datum**) emalloc(node_count * sizeof(Datum*));
+            }
             memb_list[i].nodecount = 0; /* counted again below. TODO: Why? */
         }
     }

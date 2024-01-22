@@ -15,18 +15,16 @@ Memb_list::Memb_list(int type)
     assert(type == m_storage->type());
 }
 
-void Memb_list::nodes_alloc(int node_count, bool also_pdata) {
+void Memb_list::nodes_alloc(int node_count) {
     if (node_count == 0) {
         return;
     }
+    m_owns_nodes = true;
     nodecount = node_count;
     nodelist = (Node**) emalloc(node_count * sizeof(Node*));
     nodeindices = (int*) emalloc(node_count * sizeof(int));
     // Prop used by ode_map even when hoc_mech is false
     prop = new Prop*[node_count];
-    if (also_pdata) {
-        pdata = (Datum**) emalloc(node_count * sizeof(Datum*));
-    }
 }
 
 void Memb_list::nodes_free() {
@@ -34,11 +32,13 @@ void Memb_list::nodes_free() {
     free(std::exchange(nodelist, nullptr));
     free(std::exchange(nodeindices, nullptr));
     delete[] std::exchange(prop, nullptr);
-    free(std::exchange(pdata, nullptr));
+    m_owns_nodes = false;  // make potentially reusable for a view
 }
 
 Memb_list::~Memb_list() {
-    nodes_free();
+    if (m_owns_nodes) {
+        nodes_free();
+    }
 }
 
 [[nodiscard]] std::vector<double*> Memb_list::data() {

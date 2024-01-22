@@ -52,9 +52,8 @@ struct Memb_list {
 
     /**
      * @brief Allocate memory for node_count nodes.
-     * @param also_pdata Allocate also pdata Datum's
      */
-    void nodes_alloc(int node_count, bool also_pdata);
+    void nodes_alloc(int node_count);
 
     /**
      * @brief Free memory allocated for nodes (with nodes_alloc)
@@ -218,4 +217,10 @@ struct Memb_list {
      * permanent...in which case this value should probably not live here.
      */
     std::size_t m_storage_offset{neuron::container::invalid_row};
+
+    /**
+     * @brief Whether this memlist owns its nodes memory or whether we are a view
+     * Has implications on memory management
+     */
+    bool m_owns_nodes{false};
 };
