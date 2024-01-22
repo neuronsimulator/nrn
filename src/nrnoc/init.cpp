@@ -815,7 +815,7 @@ void register_data_fields(int mechtype,
     nrn_prop_param_size_[mechtype] = param_info.size();
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
     if (dparam_info.empty()) {
-        memb_func[mechtype].dparam_semantics.reset(nullptr);
+        memb_func[mechtype].dparam_semantics = nullptr;
     } else {
         memb_func[mechtype].dparam_semantics.reset(new int[dparam_info.size()]);
         for (auto i = 0; i < dparam_info.size(); ++i) {

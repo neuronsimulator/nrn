@@ -1633,10 +1633,8 @@ void v_setup_vectors(void) {
     for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             int node_count = nrn_pnt_template_[i]->count;
-            memb_list[i].nodes_alloc(node_count);
-            if (!memb_func[i].hoc_mech) {
-                memb_list[i].pdata = (Datum**) emalloc(node_count * sizeof(Datum*));
-            }
+            bool alloc_pdata = !memb_func[i].hoc_mech;
+            memb_list[i].nodes_alloc(node_count, alloc_pdata);
             memb_list[i].nodecount = 0; /* counted again below. TODO: Why? */
         }
     }

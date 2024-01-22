@@ -52,8 +52,9 @@ struct Memb_list {
 
     /**
      * @brief Allocate memory for node_count nodes.
+     * @param also_pdata Allocate also pdata Datum's
      */
-    void nodes_alloc(int node_count);
+    void nodes_alloc(int node_count, bool also_pdata);
 
     /**
      * @brief Free memory allocated for nodes (with nodes_alloc)
