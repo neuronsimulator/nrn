@@ -13,6 +13,3 @@ pytest-cov
 mpi4py
 numpy
 find_libpython
-
-# For python 3.12
-setuptools
