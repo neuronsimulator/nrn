@@ -231,6 +231,7 @@ extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
 extern std::string nrnmpi_load();
+void nrnmpi_load_or_exit();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -805,3 +806,28 @@ int run_til_stdin() {
 }
 void hoc_notify_value() {}
 #endif
+
+
+/// A top-level initialization of MPI given argc and argv.
+/// Sets stubs, load dyn lib, and initializes
+std::tuple<int, char**> nrn_mpi_setup(int argc, char** argv) {
+#if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+    nrn_noauto_dlopen_nrnmech = 1;
+#endif
+
+#if NRNMPI
+#if NRNMPI_DYNAMICLOAD
+    nrnmpi_stubs();
+    bool mpi_loaded = false;
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            nrnmpi_load_or_exit();
+            mpi_loaded = true;
+            break;
+        }
+    }
+#endif                             // NRNMPI_DYNAMICLOAD
+    nrnmpi_init(1, &argc, &argv);  // may change argc and argv
+#endif                             // NRNMPI
+    return {argc, argv};
+}

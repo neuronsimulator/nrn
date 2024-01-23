@@ -43,6 +43,7 @@ int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void nrn_change_nseg(Section*, int);
+extern std::tuple<int, char**> nrn_mpi_setup(int argc, char** argv);
 
 extern "C" {
 
@@ -52,15 +53,9 @@ extern "C" {
 
 int nrn_init(int argc, const char** argv) {
     nrn_nobanner_ = 1;
-    int exit_status = ivocmain_session(argc, argv, nullptr, 0);
-#if NRNMPI
-#if NRNMPI_DYNAMICLOAD
-#ifdef nrnmpi_stubs
-    nrnmpi_stubs();
-#endif
-#endif
-#endif
-    return exit_status;
+    auto [final_argc, final_argv] = nrn_mpi_setup(argc, const_cast<char**>(argv));
+    errno = 0;
+    return ivocmain_session(final_argc, (const char**) final_argv, nullptr, 0);
 }
 
 void nrn_stdout_redirect(int (*myprint)(int, char*)) {
