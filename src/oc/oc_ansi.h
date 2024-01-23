@@ -104,7 +104,8 @@ std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
 void hoc_reg_nmodl_filename(int type, const char* filename);
 std::size_t nrn_mallinfo(int item);
-int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
+template <typename F>
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, F cmp);
 void state_discontinuity(int i, double* pd, double d);
 
 IvocVect* vector_arg(int);
