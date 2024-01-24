@@ -37,8 +37,7 @@ include(CMakeListsNrnMech)
 # nrnmech_makefile (based on coreneuron Configure templates)
 # =============================================================================
 nrn_configure_file(nrngui bin)
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
-                       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sortspike)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/sortspike COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 string(JOIN " " NRN_PYTHON_VERSIONS_STRING ${NRN_PYTHON_VERSIONS})

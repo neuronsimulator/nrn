@@ -25,24 +25,19 @@
  * OF THIS SOFTWARE.
  */
 
-#include <InterViews/resource.h>
-#include <OS/list.h>
+#include <vector>
 
-declarePtrList(ResourceList,Resource)
-implementPtrList(ResourceList,Resource)
+#include <InterViews/resource.h>
 
 class ResourceImpl {
     friend class Resource;
 
     static bool deferred_;
-    static ResourceList* deletes_;
+    static std::vector<Resource*> deletes_;
 };
 
 bool ResourceImpl::deferred_ = false;
-ResourceList* ResourceImpl::deletes_;
-
-Resource::Resource() { refcount_ = 0; }
-Resource::~Resource() { }
+std::vector<Resource*> ResourceImpl::deletes_;
 
 void Resource::ref() const {
     Resource* r = (Resource*)this;
@@ -52,29 +47,26 @@ void Resource::ref() const {
 void Resource::unref() const {
     Resource* r = (Resource*)this;
     if (r->refcount_ != 0) {
-	r->refcount_ -= 1;
+        r->refcount_ -= 1;
     }
     if (r->refcount_ == 0) {
-	r->cleanup();
-	delete r;
+        r->cleanup();
+        delete r;
     }
 }
 
 void Resource::unref_deferred() const {
     Resource* r = (Resource*)this;
     if (r->refcount_ != 0) {
-	r->refcount_ -= 1;
+        r->refcount_ -= 1;
     }
     if (r->refcount_ == 0) {
-	r->cleanup();
-	if (ResourceImpl::deferred_) {
-	    if (ResourceImpl::deletes_ == nil) {
-		ResourceImpl::deletes_ = new ResourceList;
-	    }
-	    ResourceImpl::deletes_->append(r);
-	} else {
-	    delete r;
-	}
+        r->cleanup();
+        if (ResourceImpl::deferred_) {
+            ResourceImpl::deletes_.push_back(r);
+        } else {
+            delete r;
+        }
     }
 }
 
@@ -82,41 +74,38 @@ void Resource::cleanup() { }
 
 void Resource::ref(const Resource* r) {
     if (r != nil) {
-	r->ref();
+        r->ref();
     }
 }
 
 void Resource::unref(const Resource* r) {
     if (r != nil) {
-	r->unref();
+        r->unref();
     }
 }
 
 void Resource::unref_deferred(const Resource* r) {
     if (r != nil) {
-	r->unref_deferred();
+        r->unref_deferred();
     }
 }
 
 bool Resource::defer(bool b) {
     bool previous = ResourceImpl::deferred_;
     if (b != previous) {
-	flush();
-	ResourceImpl::deferred_ = b;
+        flush();
+        ResourceImpl::deferred_ = b;
     }
     return previous;
 }
 
 void Resource::flush() {
-    ResourceList* list = ResourceImpl::deletes_;
-    if (list != nil) {
 	bool previous = ResourceImpl::deferred_;
 	ResourceImpl::deferred_ = false;
-	for (ListItr(ResourceList) i(*list); i.more(); i.next()) {
-	    Resource* r = i.cur();
+	for (auto& r: ResourceImpl::deletes_) {
 	    delete r;
 	}
-	list->remove_all();
+    ResourceImpl::deletes_.clear();
+    ResourceImpl::deletes_.shrink_to_fit();
 	ResourceImpl::deferred_ = previous;
-    }
 }
