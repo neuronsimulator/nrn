@@ -39,12 +39,17 @@ extern std::uint32_t nrnran123_get_globalindex();
 
 /* minimal data stream */
 extern nrnran123_State* nrnran123_newstream(std::uint32_t id1, std::uint32_t id2);
-extern nrnran123_State* nrnran123_newstream3(std::uint32_t id1, std::uint32_t id2, std::uint32_t id3);
+extern nrnran123_State* nrnran123_newstream3(std::uint32_t id1,
+                                             std::uint32_t id2,
+                                             std::uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 extern void nrnran123_getseq(nrnran123_State*, std::uint32_t* seq, char* which);
 extern void nrnran123_setseq(nrnran123_State*, std::uint32_t seq, char which);
 extern void nrnran123_getids(nrnran123_State*, std::uint32_t* id1, std::uint32_t* id2);
-extern void nrnran123_getids3(nrnran123_State*, std::uint32_t* id1, std::uint32_t* id2, std::uint32_t* id3);
+extern void nrnran123_getids3(nrnran123_State*,
+                              std::uint32_t* id1,
+                              std::uint32_t* id2,
+                              std::uint32_t* id3);
 
 // Get a random uint32_t in [0, 2^32-1]
 extern std::uint32_t nrnran123_ipick(nrnran123_State*);
@@ -58,6 +63,9 @@ extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 
 /* more fundamental (stateless) (though the global index is still used) */
 extern nrnran123_array4x32 nrnran123_iran(std::uint32_t seq, std::uint32_t id1, std::uint32_t id2);
-extern nrnran123_array4x32 nrnran123_iran3(std::uint32_t seq, std::uint32_t id1, std::uint32_t id2, std::uint32_t id3);
+extern nrnran123_array4x32 nrnran123_iran3(std::uint32_t seq,
+                                           std::uint32_t id1,
+                                           std::uint32_t id2,
+                                           std::uint32_t id3);
 
 #endif
