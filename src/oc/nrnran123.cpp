@@ -59,7 +59,10 @@ void nrnran123_getids(nrnran123_State* s, std::uint32_t* id1, std::uint32_t* id2
     *id2 = s->c[3];
 }
 
-void nrnran123_getids3(nrnran123_State* s, std::uint32_t* id1, std::uint32_t* id2, std::uint32_t* id3) {
+void nrnran123_getids3(nrnran123_State* s,
+                       std::uint32_t* id1,
+                       std::uint32_t* id2,
+                       std::uint32_t* id3) {
     *id3 = s->c[1];
     *id1 = s->c[2];
     *id2 = s->c[3];
@@ -109,7 +112,10 @@ double nrnran123_normal(nrnran123_State* s) {
 nrnran123_array4x32 nrnran123_iran(std::uint32_t seq, std::uint32_t id1, std::uint32_t id2) {
     return nrnran123_iran3(seq, id1, id2, 0);
 }
-nrnran123_array4x32 nrnran123_iran3(std::uint32_t seq, std::uint32_t id1, std::uint32_t id2, std::uint32_t id3) {
+nrnran123_array4x32 nrnran123_iran3(std::uint32_t seq,
+                                    std::uint32_t id1,
+                                    std::uint32_t id2,
+                                    std::uint32_t id3) {
     nrnran123_array4x32 a;
     RNG::ctr_type c;
     c[0] = seq;
