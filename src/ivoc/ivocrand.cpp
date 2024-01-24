@@ -337,8 +337,12 @@ static double r_nrnran123(void* r) {
         id2 = (uint32_t) (chkarg(2, 0., dmaxuint));
     if (ifarg(3))
         id3 = (uint32_t) (chkarg(3, 0., dmaxuint));
-    NrnRandom123* r123 = new NrnRandom123(id1, id2, id3);
-    x->rand->generator(r123);
+    try {
+        NrnRandom123* r123 = new NrnRandom123(id1, id2, id3);
+        x->rand->generator(r123);
+    } catch (const std::bad_alloc& e) {
+        hoc_execerror("Bad allocation for 'NrnRandom123'", e.what());
+    }
     delete x->gen;
     x->gen = x->rand->generator();
     x->type_ = 4;
