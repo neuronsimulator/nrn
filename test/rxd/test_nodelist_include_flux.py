@@ -1,7 +1,7 @@
 def test_nodelist_include_flux(neuron_nosave_instance):
+    diff = 1e-15
     h, rxd, _ = neuron_nosave_instance
     dend1 = h.Section("dend1")
-    diff = 1e-15
     cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
     ca1 = rxd.Species(cyt, name="ca1", charge=2, initial=0)
     ca2 = rxd.Species(cyt, name="ca2", charge=2, initial=0)
@@ -22,3 +22,33 @@ def test_nodelist_include_flux(neuron_nosave_instance):
     assert abs(node1.concentration - 3.819718634205488e-10) < diff
     assert abs(node2.concentration - 3.819718634205488e-10) < diff
     h.fadvance()
+
+
+def test_arith_include_flux(neuron_nosave_instance):
+    diff = 1e-15
+    h, rxd, _ = neuron_nosave_instance
+    dend1 = h.Section("dend1")
+    dend2 = h.Section("dend2")
+    dend1.nseg = 4
+    dend2.nseg = 4
+
+    cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
+    cyt2 = rxd.Region(dend2.wholetree(), nrn_region="i")
+    ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
+    ca2 = rxd.Species(cyt2, name="ca1", charge=2, initial=1e-12)
+
+    node1 = ca1.nodes(dend1(0.5))[0]
+    node2 = ca2.nodes(dend2(0.5))[0]
+    node1.include_flux(ca1 * (1 - ca1))
+    r = rxd.Rate(ca2, ca2 * (1 - ca2))
+
+    h.finitialize(-65)
+    h.dt /= 512
+    h.load_file("stdrun.hoc")
+    h.continuerun(.025 / 4)
+    assert abs(node1.concentration - node2.concentration) < diff
+    h.continuerun(.025 / 2)
+    assert abs(node1.concentration - node2.concentration) < diff
+    h.continuerun(.025)
+    assert abs(node1.concentration - node2.concentration) < diff
+
