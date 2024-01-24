@@ -111,6 +111,7 @@ int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
+static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
                                            {"L", {1e-4, 1e20}},
@@ -381,6 +382,7 @@ void hoc_last_init(void) {
     SectionList_reg();
     SectionRef_reg();
     register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    hoc_register_parm_default(MORPHOLOGY, &morph_parm_default);
     neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
