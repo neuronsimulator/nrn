@@ -31,7 +31,7 @@ bool compare_spikes(const char* ref_csv, double* tvec, double* vvec, long n_volt
     while (std::getline(ref_file, line) && cur_line < n_voltages) {
         size_t end;
         auto tref = std::stod(line, &end);
-        auto vref = std::strtof(line.c_str() + end + 1, NULL);
+        auto vref = std::strtof(line.c_str() + end + 1, nullptr);
         // ref values have exponent around 0, so we compare absolute values
         // and our epsilon is relatively large
         if (!almost_equal(tvec[cur_line], tref, &t_drift)) {

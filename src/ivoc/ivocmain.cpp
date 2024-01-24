@@ -810,7 +810,7 @@ void hoc_notify_value() {}
 
 /// A top-level initialization of MPI given argc and argv.
 /// Sets stubs, load dyn lib, and initializes
-std::tuple<int, char**> nrn_mpi_setup(int argc, char** argv) {
+std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
 #if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
     nrn_noauto_dlopen_nrnmech = 1;
 #endif
@@ -826,8 +826,9 @@ std::tuple<int, char**> nrn_mpi_setup(int argc, char** argv) {
             break;
         }
     }
-#endif                             // NRNMPI_DYNAMICLOAD
-    nrnmpi_init(1, &argc, &argv);  // may change argc and argv
-#endif                             // NRNMPI
+#endif                                           // NRNMPI_DYNAMICLOAD
+    auto argv_ptr = const_cast<char***>(&argv);  // safe if individual strings not modified
+    nrnmpi_init(1, &argc, argv_ptr);             // may change argc and argv
+#endif                                           // NRNMPI
     return {argc, argv};
 }

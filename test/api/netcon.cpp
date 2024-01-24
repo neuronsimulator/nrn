@@ -11,8 +11,6 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
-
 constexpr std::array<double, 6> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
     -0x1.04p+6,
@@ -31,18 +29,14 @@ constexpr std::array<double, 6> EXPECTED_V{
 #endif
 };
 
-
 extern "C" void modl_reg(){};
 
 int main(void) {
-    Object* v;
-    Object* t;
-    char* temp_str;
-
+    static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = strdup("stdrun.hoc");
+    char* temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
@@ -82,7 +76,7 @@ int main(void) {
     // TODO: record probably put something on the stack that should be removed
 
     // setup recording
-    v = nrn_object_new(nrn_symbol("Vector"), 0);
+    Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
     nrn_double_push(20);
     nrn_method_call(v, nrn_method_symbol(v, "record"), 2);

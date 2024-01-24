@@ -14,7 +14,7 @@
 struct nrn_Item: public hoc_Item {};
 
 struct SectionListIterator {
-    SectionListIterator(nrn_Item*);
+    explicit SectionListIterator(nrn_Item*);
     Section* next(void);
     int done(void);
 
@@ -24,7 +24,7 @@ struct SectionListIterator {
 };
 
 struct SymbolTableIterator {
-    SymbolTableIterator(Symlist*);
+    explicit SymbolTableIterator(Symlist*);
     char const* next(void);
     int done(void);
 
@@ -43,7 +43,7 @@ int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void nrn_change_nseg(Section*, int);
-extern std::tuple<int, char**> nrn_mpi_setup(int argc, char** argv);
+extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
 
@@ -53,9 +53,9 @@ extern "C" {
 
 int nrn_init(int argc, const char** argv) {
     nrn_nobanner_ = 1;
-    auto [final_argc, final_argv] = nrn_mpi_setup(argc, const_cast<char**>(argv));
+    auto [final_argc, final_argv] = nrn_mpi_setup(argc, argv);
     errno = 0;
-    return ivocmain_session(final_argc, (const char**) final_argv, nullptr, 0);
+    return ivocmain_session(final_argc, final_argv, nullptr, 0);
 }
 
 void nrn_stdout_redirect(int (*myprint)(int, char*)) {
@@ -101,12 +101,12 @@ void nrn_section_length_set(Section* sec, const double length) {
     sec->recalc_area_ = 1;
 }
 
-double nrn_section_length_get(Section const* sec) {
-    return section_length(const_cast<Section*>(sec));
+double nrn_section_length_get(Section* sec) {
+    return section_length(sec);
 }
 
-double nrn_section_Ra_get(Section const* sec) {
-    return nrn_ra(const_cast<Section*>(sec));
+double nrn_section_Ra_get(Section* sec) {
+    return nrn_ra(sec);
 }
 
 void nrn_section_Ra_set(Section* sec, double const val) {
@@ -138,7 +138,7 @@ void nrn_mechanism_insert(Section* sec, Symbol* mechanism) {
  * Segments
  ****************************************/
 
-int nrn_nseg_get(Section const* const sec) {
+int nrn_nseg_get(Section const* sec) {
     // always one more node than nseg
     return sec->nnode - 1;
 }
@@ -160,15 +160,15 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
-double nrn_rangevar_get(const Symbol* sym, const Section* const sec, double x) {
-    return *nrn_rangepointer(const_cast<Section*>(sec), const_cast<Symbol*>(sym), x);
+double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
+    return *nrn_rangepointer(sec, sym, x);
 }
 
-void nrn_rangevar_set(Symbol* sym, Section* const sec, double x, double value) {
+void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value) {
     *nrn_rangepointer(sec, sym, x) = value;
 }
 
-void nrn_rangevar_push(Symbol* sym, Section* const sec, double x) {
+void nrn_rangevar_push(Symbol* sym, Section* sec, double x) {
     hoc_push(nrn_rangepointer(sec, sym, x));
 }
 
@@ -270,7 +270,7 @@ nrn_stack_types_t nrn_stack_type(void) {
     return STACK_UNKNOWN;
 }
 
-char const* const nrn_stack_type_name(nrn_stack_types_t id) {
+char const* nrn_stack_type_name(nrn_stack_types_t id) {
     switch (id) {
     case STACK_IS_STR:
         return "STRING";

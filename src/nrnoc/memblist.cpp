@@ -1,6 +1,7 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/model_data.hpp"
+#include "nrnassrt.h"
 #include "nrnoc_ml.h"
 
 #include <cassert>
@@ -34,11 +35,24 @@ void Memb_list::nodes_alloc(int node_count, bool also_pdata) {
 
 void Memb_list::nodes_free() {
     nodecount = 0;
+    nrn_assert(m_owns_nodes);
     free(std::exchange(nodelist, nullptr));
     free(std::exchange(nodeindices, nullptr));
     delete[] std::exchange(prop, nullptr);
     free(std::exchange(pdata, nullptr));
     m_owns_nodes = false;  // make potentially reusable for a view
+}
+
+Memb_list::Memb_list(Memb_list&& other) {
+    /// Other should not be used. But if it is, fine, but not the memory owner anymore
+    *this = other;
+    other.m_owns_nodes = false;
+}
+
+Memb_list& Memb_list::operator=(Memb_list&& rhs) {
+    *this = rhs;
+    rhs.m_owns_nodes = false;
+    return *this;
 }
 
 Memb_list::~Memb_list() {

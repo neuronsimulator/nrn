@@ -27,28 +27,21 @@ constexpr std::array<double, 3> EXPECTED_V{
 #endif
 };
 
-static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
-
 extern "C" void modl_reg(){};
 
 int main(void) {
-    Section* soma;
-    Object* iclamp;
-    Object* v;
-    Object* t;
-    char* temp_str;
-
+    static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
     nrn_init(3, argv);
 
     // load the stdrun library
-    temp_str = strdup("stdrun.hoc");
+    char* temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();
     free(temp_str);
 
     // topology
-    soma = nrn_section_new("soma");
+    Section* soma = nrn_section_new("soma");
     nrn_nseg_set(soma, 3);
 
     // define soma morphology with two 3d points
@@ -69,13 +62,13 @@ int main(void) {
 
     // current clamp at soma(0.5)
     nrn_double_push(0.5);
-    iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+    Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
     nrn_property_set(iclamp, "amp", 0.3);
     nrn_property_set(iclamp, "del", 1);
     nrn_property_set(iclamp, "dur", 0.1);
 
     // setup recording
-    v = nrn_object_new(nrn_symbol("Vector"), 0);
+    Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
     nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
     nrn_double_push(5.);
     nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
