@@ -148,7 +148,12 @@ jobs:
           curl -L -o MUSIC.zip https://codeload.github.com/INCF/MUSIC/zip/f33b66ea9348888eed1761738ab48c23ffc8a0d0
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
-          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          # workaround for MUSIC on MacOS 12
+          if [[ "${{matrix.os}}" == "macOS-12" ]]; then
+            MPI_CXXFLAGS="-g" MPI_CFLAGS="-g" MPI_LDFLAGS="-g" CC=mpicc CXX=mpicxx ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          else
+            ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          fi
           make -j install
           deactivate
         working-directory: ${{runner.temp}} 
