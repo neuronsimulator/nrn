@@ -45,10 +45,9 @@ def test_arith_include_flux(neuron_nosave_instance):
     h.finitialize(-65)
     h.dt /= 512
     h.load_file("stdrun.hoc")
-    h.continuerun(.025 / 4)
+    h.continuerun(0.025 / 4)
     assert abs(node1.concentration - node2.concentration) < diff
-    h.continuerun(.025 / 2)
+    h.continuerun(0.025 / 2)
     assert abs(node1.concentration - node2.concentration) < diff
-    h.continuerun(.025)
+    h.continuerun(0.025)
     assert abs(node1.concentration - node2.concentration) < diff
-

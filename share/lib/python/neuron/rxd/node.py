@@ -35,6 +35,7 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
+
 def _get_data():
     return (_volumes, _surface_area, _diffs)
 
