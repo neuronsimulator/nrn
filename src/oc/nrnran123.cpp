@@ -1,7 +1,5 @@
-#include <../../nrnconf.h>
 #include <cstdint>
-#include <nrnran123.h>
-#include <hocdec.h>
+#include "nrnran123.h"
 #include <cstdlib>
 #include <cmath>
 #include <Random123/philox.h>
