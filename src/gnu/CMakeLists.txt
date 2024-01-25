@@ -9,6 +9,8 @@ add_library(
   isaac64.cpp
   Isaac64RNG.cpp
   LogNorm.cpp
+  MCellRan4RNG.cpp
+  mcran4.cpp
   MLCG.cpp
   NegExp.cpp
   Normal.cpp
