@@ -263,3 +263,25 @@ test:neuron:nmodl:nvhpc:omp:legacy:
 test:neuron:nmodl:nvhpc:omp:
   extends: [.test_neuron, .gpu_node]
   needs: ["build:neuron:nmodl:nvhpc:omp"]
+
+
+# Container building
+mac_m1_container_build:
+  stage: .pre
+  tags:
+    - macos-arm64
+  script:
+    - cd packaging/python
+    - echo "Replacing symlinks with their targets to keep podman happy"
+    - find . -type l -exec cp $(realpath {}) ./TEMP \; -exec rm {} \; -exec mv TEMP {} \;
+    - ls -l
+    - machine_status=$(podman machine inspect | awk '/State/ {print $2}' | tr -d '",')
+    - if [[ "${machine_status}" != "running" ]]; then
+    -     echo "Machine is in ${machine_status} status - starting"
+    -     podman machine start
+    - fi
+    - podman build -t neuronsimulator/neuron_wheel:latest-gcc9-aarch64 --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+    - podman login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_AUTH_TOKEN} docker.io
+    - podman push neuronsimulator/neuron_wheel:latest-gcc9-aarch64
+    - podman rmi localhost/neuronsimulator/neuron_wheel:latest-gcc9-aarch64
+  when: manual
