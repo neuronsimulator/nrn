@@ -9,6 +9,7 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
+    gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
     nrnmpi/nrnmpidec.h
@@ -45,7 +46,6 @@ set(HEADER_FILES_TO_INSTALL
     oc/nrnisaac.h
     oc/nrnmpi.h
     oc/nrnrandom.h
-    oc/nrnran123.h
     oc/oc_ansi.h
     oc/ocfunc.h
     oc/ocmisc.h
@@ -80,7 +80,7 @@ set(NRN_HEADERS_INCLUDE_LIST)
 # =============================================================================
 # Lists of random number related files
 # =============================================================================
-set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp)
+set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp)
 
 # =============================================================================
 # Files in oc directory
