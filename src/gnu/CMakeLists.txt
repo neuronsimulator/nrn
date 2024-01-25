@@ -17,6 +17,7 @@ add_library(
   nrnisaac.cpp
   nrnran123.cpp
   Poisson.cpp
+  Rand.cpp
   Random.cpp
   RndInt.cpp
   RNG.cpp

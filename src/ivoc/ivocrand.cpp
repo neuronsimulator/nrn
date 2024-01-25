@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "random1.h"
+#include "Rand.hpp"
 
 #include <InterViews/resource.h>
 #include "classreg.h"
@@ -62,9 +62,6 @@ class RandomPlay: public Observer, public Resource {
 using RandomPlayList = std::vector<RandomPlay*>;
 static RandomPlayList* random_play_list_;
 
-#include <mcran4.h>
-
-
 RandomPlay::RandomPlay(Rand* r, neuron::container::data_handle<double> px)
     : r_{r}
     , px_{std::move(px)} {
@@ -89,20 +86,6 @@ void RandomPlay::update(Observable*) {
     // printf("RandomPlay::update\n");
     nrn_notify_pointer_disconnect(this);
     list_remove();
-}
-
-Rand::Rand(unsigned long seed, int size, Object* obj) {
-    // printf("Rand\n");
-    gen = new ACG(seed, size);
-    rand = new Normal(0., 1., gen);
-    type_ = 0;
-    obj_ = obj;
-}
-
-Rand::~Rand() {
-    // printf("~Rand\n");
-    delete gen;
-    delete rand;
 }
 
 // constructor for a random number generator based on the RNG class

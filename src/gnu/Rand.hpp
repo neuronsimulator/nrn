@@ -1,14 +1,20 @@
-#ifndef random1_h
-#define random1_h
+#pragma once
 
 #include "RNG.h"
 #include "Random.h"
 
 struct Object;
 
+/* type_:
+ * 0: ACG
+ * 1: MLCG
+ * 2: MCellRan4
+ * 3: Isaac64
+ * 4: Random123
+ */
 class Rand {
   public:
-    Rand(unsigned long seed = 0, int size = 55, Object* obj = NULL);
+    Rand(unsigned long seed = 0, int size = 55, Object* obj = nullptr);
     ~Rand();
     RNG* gen;
     Random* rand;
@@ -16,5 +22,3 @@ class Rand {
     // double* looks like random variable that gets changed on every fadvance
     Object* obj_;
 };
-
-#endif
