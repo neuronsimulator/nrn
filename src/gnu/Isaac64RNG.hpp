@@ -10,7 +10,7 @@ class Isaac64: public RNG {
     Isaac64(std::uint32_t seed = 0);
     ~Isaac64();
     std::uint32_t asLong() {
-        return (std::uint32_t) nrnisaac_uint32_pick(rng_);
+        return nrnisaac_uint32_pick(rng_);
     }
     void reset() {
         nrnisaac_init(rng_, seed_);

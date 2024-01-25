@@ -17,7 +17,6 @@
 #include "ocobserv.h"
 #include <nrnran123.h>
 
-#include <RNG.h>
 #include <ACG.h>
 #include <MLCG.h>
 #include <Random.h>
@@ -87,13 +86,6 @@ void RandomPlay::update(Observable*) {
     nrn_notify_pointer_disconnect(this);
     list_remove();
 }
-
-// constructor for a random number generator based on the RNG class
-// from the gnu c++ class library
-// defaults to the ACG generator (see below)
-
-// syntax:
-// a = new Rand([seed],[size])
 
 static void* r_cons(Object* obj) {
     unsigned long seed = 0;
