@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 ------------------------------------------------------------------------------
 isaac64.h: Definitions for a fast cryptographic random number generator
@@ -12,10 +14,7 @@ Jenkins, R.J. (1996) ISAAC, in Fast Software Encryption, vol. 1039,
 
 ------------------------------------------------------------------------------
 */
-#ifndef ISAAC64_H
-#define ISAAC64_H
 
-#include <nrnconf.h>
 #include <stdint.h>
 
 #define RANDSIZL (4) /* I recommend 8 for crypto, 4 for simulations */
@@ -87,5 +86,3 @@ Macros to get individual random numbers
                          rng->randcnt = RANDMAX - 2,                                          \
                          DBL64 * (*((ub8*) (((ub4*) (rng->randrsl)) + rng->randcnt)))))
 
-
-#endif /* ISAAC64_H */

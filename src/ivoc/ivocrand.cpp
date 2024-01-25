@@ -406,14 +406,22 @@ static double r_Isaac64(void* r) {
 
     uint32_t seed1 = 0;
 
-    if (ifarg(1))
-        seed1 = (uint32_t) (*getarg(1));
-    Isaac64* mcr = new Isaac64(seed1);
-    x->rand->generator(mcr);
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 3;
-    return (double) mcr->seed();
+    if (ifarg(1)) {
+        seed1 = static_cast<uint32_t>(*getarg(1));
+    }
+
+    double seed{};
+    try {
+        Isaac64* mcr = new Isaac64(seed1);
+        x->rand->generator(mcr);
+        delete x->gen;
+        x->gen = x->rand->generator();
+        x->type_ = 3;
+        seed = mcr->seed();
+    } catch (const std::bad_alloc& e) {
+        hoc_execerror("Bad allocation for Isaac64 generator", e.what());
+    }
+    return seed;
 }
 
 // Pick again from the distribution last used
