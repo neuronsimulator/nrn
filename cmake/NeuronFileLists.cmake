@@ -39,6 +39,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/hocparse.h
     oc/mcran4.h
     oc/mech_api.h
+    oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
     oc/nrnisaac.h
@@ -101,6 +102,7 @@ set(OC_FILE_LIST
     hoc_oop.cpp
     list.cpp
     math.cpp
+    memory.cpp
     mswinprt.cpp
     nonlin.cpp
     ocerf.cpp
@@ -220,7 +222,6 @@ set(NRNIV_FILE_LIST
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
-    geometry3d.cpp
     glinerec.cpp
     hocmech.cpp
     impedanc.cpp
