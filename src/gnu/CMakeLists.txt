@@ -7,6 +7,7 @@ add_library(
   Geom.cpp
   HypGeom.cpp
   isaac64.cpp
+  Isaac64RNG.cpp
   LogNorm.cpp
   MLCG.cpp
   NegExp.cpp

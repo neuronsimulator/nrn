@@ -33,6 +33,8 @@
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
+#include <Isaac64RNG.hpp>
+#include <NrnRandom123RNG.hpp>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -60,29 +62,6 @@ using RandomPlayList = std::vector<RandomPlay*>;
 static RandomPlayList* random_play_list_;
 
 #include <mcran4.h>
-
-class NrnRandom123: public RNG {
-  public:
-    NrnRandom123(uint32_t id1, uint32_t id2, uint32_t id3 = 0);
-    virtual ~NrnRandom123();
-    virtual uint32_t asLong() {
-        return nrnran123_ipick(s_);
-    }
-    virtual double asDouble() {
-        return nrnran123_dblpick(s_);
-    }
-    virtual void reset() {
-        nrnran123_setseq(s_, 0, 0);
-    }
-    nrnran123_State* s_;
-};
-NrnRandom123::NrnRandom123(uint32_t id1, uint32_t id2, uint32_t id3) {
-    s_ = nrnran123_newstream3(id1, id2, id3);
-}
-NrnRandom123::~NrnRandom123() {
-    nrnran123_deletestream(s_);
-}
-
 
 // The decision that has to be made is whether each generator instance
 // should have its own seed or only one seed for all. We choose separate
@@ -125,51 +104,6 @@ MCellRan4::MCellRan4(uint32_t ihigh, uint32_t ilow) {
 MCellRan4::~MCellRan4() {}
 
 uint32_t MCellRan4::cnt_ = 0;
-
-class Isaac64: public RNG {
-  public:
-    Isaac64(uint32_t seed = 0);
-    virtual ~Isaac64();
-    virtual uint32_t asLong() {
-        return (uint32_t) nrnisaac_uint32_pick(rng_);
-    }
-    virtual void reset() {
-        nrnisaac_init(rng_, seed_);
-    }
-    virtual double asDouble() {
-        return nrnisaac_dbl_pick(rng_);
-    }
-    uint32_t seed() {
-        return seed_;
-    }
-    void seed(uint32_t s) {
-        seed_ = s;
-        reset();
-    }
-
-  private:
-    uint32_t seed_;
-    void* rng_;
-    static uint32_t cnt_;
-};
-
-Isaac64::Isaac64(uint32_t seed) {
-    if (cnt_ == 0) {
-        cnt_ = 0xffffffff;
-    }
-    --cnt_;
-    seed_ = seed;
-    if (seed_ == 0) {
-        seed_ = cnt_;
-    }
-    rng_ = nrnisaac_new();
-    reset();
-}
-Isaac64::~Isaac64() {
-    nrnisaac_delete(rng_);
-}
-
-uint32_t Isaac64::cnt_ = 0;
 
 RandomPlay::RandomPlay(Rand* r, neuron::container::data_handle<double> px)
     : r_{r}
