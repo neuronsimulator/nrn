@@ -51,7 +51,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # Random123 does not play nicely with NVHPC 21.11+'s detection of ABM features, see:
     # https://github.com/BlueBrain/CoreNeuron/issues/724 and
     # https://github.com/DEShawResearch/random123/issues/6.
-    list(APPEND NRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
+    list(APPEND NRN_R123_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
 else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)
