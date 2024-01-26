@@ -35,7 +35,11 @@ Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
-### Building the docker image
+### Building the docker image automatically
+Any workflow that runs on gitlab will now have the `mac_m1_container_build` job added to it. This job needs to be started manually and will not affect the overal workflow status. It doesn't need to be run every time, just when a refresh of the container image is necessary.
+It will build the container image and push to docker hub on our M1 runner. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
+
+### Building the docker image manually
 After making updates to any of the docker files, you can build the image with:
 ```
 cd nrn/packaging/python
