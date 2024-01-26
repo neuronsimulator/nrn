@@ -814,6 +814,25 @@ int dparam_semantics_to_int(std::string_view name) {
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
+// Use this if string.c_str() causes possibility of
+// AddressSanitizer: stack-use-after-scope on address
+void register_data_fields(int mechtype,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_info) {
+    std::vector<std::pair<const char*, int>> params{};
+    std::vector<std::pair<const char*, const char*>> dparams{};
+
+    for (auto i = 0; i < param_info.size(); ++i) {
+        params.push_back({param_info[i].first.c_str(), param_info[i].second});
+    }
+    for (auto i = 0; i < dparam_info.size(); ++i) {
+        dparams.push_back({dparam_info[i].first.c_str(), dparam_info[i].second.c_str()});
+    }
+
+    register_data_fields(mechtype, params, dparams);
+}
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {

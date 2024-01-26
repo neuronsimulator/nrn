@@ -2250,10 +2250,9 @@ void KSChan::has_instances() const {
     if (mech_data.empty()) {  // (re)-registration allowed since no existing instances
         return;
     }
-    std::string s{};
-    throw std::runtime_error(
-        s + "KSChan:: Cannot change the names or number of mechanism variables while " +
-        std::to_string(neuron::model().mechanism_data(mechtype_).size()) + " instances are active");
+    std::string s = "KSChan:: Cannot change the names or number of mechanism variables while " +
+                    std::to_string(mech_data.size()) + " instances are active";
+    throw std::runtime_error(s);
 }
 
 void KSChan::register_data_fields() {  // or re-register
@@ -2261,7 +2260,7 @@ void KSChan::register_data_fields() {  // or re-register
     // prop.dparam for density is [5ion], [2ligands]
     // prop.dparam for point is area, pnt, [singledata], [5ion], [2ligands]
 
-    std::vector<std::pair<const char*, int>> params{};
+    std::vector<std::pair<std::string, int>> params{};
     if (is_single()) {
         params.push_back({"Nsingle", 1});
     }
@@ -2277,11 +2276,14 @@ void KSChan::register_data_fields() {  // or re-register
     // Dstate
     std::string d{"D"};
     for (int i = 0; i < nstate_; ++i) {
-        params.push_back({(d + state(i)).c_str(), 1});
+        params.push_back({d + state(i), 1});
     }
 
+    // Use strings instead of string.c_str() to keep alive and avoid
+    // AddressSanitizer: stack-use-after-scope on address
+    // Storing string.c_str() in param and dparam does not suffice.
 
-    std::vector<std::pair<const char*, const char*>> dparams{};
+    std::vector<std::pair<std::string, std::string>> dparams{};
     if (is_point()) {
         dparams.push_back({"_nd_area", "area"});
         dparams.push_back({"_pntproc", "pntproc"});
@@ -2292,16 +2294,16 @@ void KSChan::register_data_fields() {  // or re-register
     if (ion_sym_) {
         std::string name{ion_sym_->name};
         // the names don't matter
-        dparams.push_back({(name + "_erev").c_str(), name.c_str()});
-        dparams.push_back({(name + "_icur").c_str(), name.c_str()});
-        dparams.push_back({(name + "_didv").c_str(), name.c_str()});
-        dparams.push_back({(name + "_ci").c_str(), name.c_str()});
-        dparams.push_back({(name + "_co").c_str(), name.c_str()});
+        dparams.push_back({name + "_erev", name});
+        dparams.push_back({name + "_icur", name});
+        dparams.push_back({name + "_didv", name});
+        dparams.push_back({name + "_ci", name});
+        dparams.push_back({name + "_co", name});
     }
     for (int i = 0; i < nligand_; ++i) {
         std::string name{ligands_[i]->name};
-        dparams.push_back({(name + "_ligo").c_str(), name.c_str()});
-        dparams.push_back({(name + "_ligi").c_str(), name.c_str()});
+        dparams.push_back({name + "_ligo", name});
+        dparams.push_back({name + "_ligi", name});
     }
     nrn_delete_mechanism_prop_datum(mechtype_);
     neuron::mechanism::detail::register_data_fields(mechtype_, params, dparams);

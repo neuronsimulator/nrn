@@ -208,6 +208,9 @@ namespace detail {
 void register_data_fields(int mech_type,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_size);
+void register_data_fields(int mech_type,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_size);
 }  // namespace detail
 /**
  * @brief Type- and array-aware version of hoc_register_prop_size.
