@@ -9,7 +9,6 @@
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
-#include "nrnisaac.h"
 #include "utils/enumerate.h"
 
 #include <vector>
@@ -17,8 +16,6 @@
 #include "ocobserv.h"
 #include <nrnran123.h>
 
-#include <ACG.h>
-#include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
@@ -32,7 +29,6 @@
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
-#include <Isaac64RNG.hpp>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
@@ -106,27 +102,19 @@ static void r_destruct(void* r) {
     delete (Rand*) r;
 }
 
-// Use a variant of the Linear Congruential Generator (algorithm M)
-// described in Knuth, Art of Computer Programming, Vol. III in
-// combination with a Fibonacci Additive Congruential Generator.
-// This is a "very high quality" random number generator,
-// Default size is 55, giving a size of 1244 bytes to the structure
-// minimum size is 7 (total 100 bytes), maximum size is 98 (total 2440 bytes)
-// syntax:
-// r.ACG([seed],[size])
-
+// Was using an algorithm called ACG but use Random123 now
 static double r_ACG(void* r) {
     Rand* x = (Rand*) r;
 
-    unsigned long seed = 0;
-    int size = 55;
+    std::uint32_t id1 = 0;
+    std::uint32_t id2 = 55;
 
     if (ifarg(1))
-        seed = long(*getarg(1));
+        id1 = std::uint32_t(*getarg(1));
     if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
+        id2 = std::uint32_t(*getarg(2));
 
-    x->rand->generator(new ACG(seed, size));
+    x->rand->generator(new NrnRandom123(id1, id2));
     x->type_ = 0;
     delete x->gen;
     x->gen = x->rand->generator();
@@ -141,15 +129,15 @@ static double r_ACG(void* r) {
 static double r_MLCG(void* r) {
     Rand* x = (Rand*) r;
 
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
+    std::uint32_t id1 = 0;
+    std::uint32_t id2 = 0;
 
     if (ifarg(1))
-        seed1 = long(*getarg(1));
+        id1 = std::uint32_t(*getarg(1));
     if (ifarg(2))
-        seed2 = long(*getarg(2));
+        id2 = std::uint32_t(*getarg(2));
 
-    x->rand->generator(new MLCG(seed1, seed2));
+    x->rand->generator(new NrnRandom123(id1, id2));
     delete x->gen;
     x->gen = x->rand->generator();
     x->type_ = 1;
@@ -273,24 +261,18 @@ int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
 static double r_Isaac64(void* r) {
     Rand* x = (Rand*) r;
 
-    uint32_t seed1 = 0;
+    std::uint32_t id1 = 0;
+    std::uint32_t id2 = 0;
 
     if (ifarg(1)) {
-        seed1 = static_cast<uint32_t>(*getarg(1));
+        id1 = static_cast<uint32_t>(*getarg(1));
     }
 
     double seed{};
-    try {
-        Isaac64* mcr = new Isaac64(seed1);
-        x->rand->generator(mcr);
-        delete x->gen;
-        x->gen = x->rand->generator();
-        x->type_ = 3;
-        seed = mcr->seed();
-    } catch (const std::bad_alloc& e) {
-        hoc_execerror("Bad allocation for Isaac64 generator", e.what());
-    }
-    return seed;
+    x->rand->generator(new NrnRandom123(id1, 0));
+    delete x->gen;
+    x->gen = x->rand->generator();
+    return 1.;
 }
 
 // Pick again from the distribution last used

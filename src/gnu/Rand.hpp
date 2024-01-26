@@ -14,7 +14,7 @@ struct Object;
  */
 class Rand {
   public:
-    Rand(unsigned long seed = 0, int size = 55, Object* obj = nullptr);
+    Rand(std::uint32_t id1, std::uint32_t id2, Object* obj = nullptr);
     ~Rand();
     RNG* gen;
     Random* rand;
