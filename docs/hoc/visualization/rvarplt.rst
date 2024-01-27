@@ -1,4 +1,5 @@
-.. _rvarplt:
+
+.. _hoc_rvarplt:
 
          
 RangeVarPlot
@@ -6,7 +7,7 @@ RangeVarPlot
 
 
 
-.. class:: RangeVarPlot
+.. hoc:class:: RangeVarPlot
 
 
     Syntax:
@@ -39,7 +40,7 @@ RangeVarPlot
         currently accessed section.) 
 
     .. seealso::
-        :func:`distance`, :meth:`Graph.addobject`
+        :hoc:func:`distance`, :hoc:meth:`Graph.addobject`
 
     Example:
         An example is plotting the transfer impedance with 
@@ -62,7 +63,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.begin
+.. hoc:method:: RangeVarPlot.begin
 
 
     Syntax:
@@ -79,7 +80,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.end
+.. hoc:method:: RangeVarPlot.end
 
 
     Syntax:
@@ -96,7 +97,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.origin
+.. hoc:method:: RangeVarPlot.origin
 
 
     Syntax:
@@ -116,7 +117,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.left
+.. hoc:method:: RangeVarPlot.left
 
 
     Syntax:
@@ -132,7 +133,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.right
+.. hoc:method:: RangeVarPlot.right
 
 
     Syntax:
@@ -149,7 +150,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.list
+.. hoc:method:: RangeVarPlot.list
 
 
     Syntax:
@@ -157,7 +158,7 @@ RangeVarPlot
 
 
     Description:
-        append the path of sections to the :class:`SectionList` object argument. 
+        append the path of sections to the :hoc:class:`SectionList` object argument.
          
 
 
@@ -165,7 +166,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.color
+.. hoc:method:: RangeVarPlot.color
 
 
     Syntax:
@@ -174,7 +175,7 @@ RangeVarPlot
 
     Description:
         Change the color property. To see the change on an already plotted 
-        RangeVarPlot in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
+        RangeVarPlot in a Graph, the Graph should be :hoc:meth:`~Graph.flush`\ ed.
 
          
 
@@ -182,7 +183,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.to_vector
+.. hoc:method:: RangeVarPlot.to_vector
 
 
     Syntax:
@@ -192,13 +193,13 @@ RangeVarPlot
 
 
     Description:
-        Copy the range variable values to the :func:`Vector` yvec. yvec is resized 
+        Copy the range variable values to the :hoc:func:`Vector` yvec. yvec is resized
         to the number of range points. If the second arg is present then 
         the locations are copied to xvec. A plot of \ ``yvec.line(g, xvec)`` would 
         be identical to a plot using \ ``g.addobject(rvp)``. 
 
     .. seealso::
-        :meth:`Graph.addobject`
+        :hoc:meth:`Graph.addobject`
 
          
 
@@ -206,7 +207,7 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.from_vector
+.. hoc:method:: RangeVarPlot.from_vector
 
 
     Syntax:

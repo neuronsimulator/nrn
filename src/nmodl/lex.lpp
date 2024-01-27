@@ -28,11 +28,7 @@ extern int unput(int);
 static int input();
 static int yyinput();
 int newinput() {
-    #ifdef __cplusplus
     return yyinput();
-    #else
-    return input ();
-    #endif
 }
 
 
@@ -100,7 +96,7 @@ E	[Ee][-+]?{D}+
 	Symbol *base;
 
 	/* count the primes  and create SCoP name*/
-#if __TURBOC__ || SYSV || VMS || defined(MINGW)
+#if SYSV || defined(MINGW)
 #define index strchr
 #endif
 	cp = index(yytext, '\'');
@@ -225,7 +221,6 @@ REPRESENTS	{
 	yylval.qp = putintoken(yytext, 0);
 	if (lexcontext == NONLINEAR) return NONLIN1;
 	if (lexcontext == LINEAR) return LIN1;
-	if (lexcontext == PARTIAL) return yytext[0];
 	if (lexcontext == INT) return yytext[0];
 	if (lexcontext == KINETIC) return REACTION;
 	diag("equations can't occur in this type of block", (char *)0);

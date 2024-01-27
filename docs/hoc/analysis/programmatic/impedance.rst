@@ -1,4 +1,5 @@
-.. _impedanc:
+
+.. _hoc_impedanc:
 
          
 Impedance
@@ -6,7 +7,7 @@ Impedance
 
 
 
-.. class:: Impedance
+.. hoc:class:: Impedance
 
         For calculating input and transfer impedances at an instant of time.
         Usage involves first defining a location either 
@@ -35,7 +36,7 @@ Impedance
         and that would be the only way one could handle non-local interactions such 
         as gap junctions. (Note: Impedance has been extended to take
         into account the effect of parallel gap junctions. See
-        discussion in :meth:`Impedance.compute`.)
+        discussion in :hoc:meth:`Impedance.compute`.)
         The extension takes into account not only di/dv but also 
         di/ds, ds'/dv and ds'/ds contributions to the impedance where s are all the 
         other states of the membrane mechanisms. i.e the system can be written 
@@ -77,15 +78,15 @@ Impedance
          
         The extended full impedance calculation, as well as the effect of
         parallel gap junctions, is invoked with an extra argument 
-        to the :meth:`Impedance.compute` function. One should also review the 
-        :meth:`Impedance.deltafac` method which defines the accuracy of the calculation. 
+        to the :hoc:meth:`Impedance.compute` function. One should also review the
+        :hoc:meth:`Impedance.deltafac` method which defines the accuracy of the calculation.
          
 
 ----
 
 
 
-.. method:: Impedance.loc
+.. hoc:method:: Impedance.loc
 
 
     Syntax:
@@ -109,7 +110,7 @@ Impedance
 
 
 
-.. method:: Impedance.compute
+.. hoc:method:: Impedance.compute
 
 
     Syntax:
@@ -124,9 +125,9 @@ Impedance
         is computed -- \ ``v(x)/i(x)`` 
         Frequency specified in Hz. 
         All membrane conductances are computed and used in the 
-        calculation as if \ :func:`fcurrent()` was called. 
+        calculation as if \ :hoc:func:`fcurrent()` was called.
         The compute call is expensive but as a rule of thumb is not 
-        as expensive as \ :func:`fadvance()`. 
+        as expensive as \ :hoc:func:`fadvance()`.
          
         Since version 5.3, when the second argument is 1, an extended impedance 
         calculation is performed which takes into account the effect of 
@@ -134,7 +135,7 @@ Impedance
         where y is all the membrane potentials plus all the states in KINETIC and 
         DERIVATIVE blocks of membrane mechanisms. Currently, the system must 
         be computable with the Cvode method, i.e.extracellular and 
-        LinearMechanism are not allowed. See :meth:`Impedance.deltafac` 
+        LinearMechanism are not allowed. See :hoc:meth:`Impedance.deltafac`
          
         Note that the extended impedance calculation may involve a singular matrix 
         because of the negative resistance contributions of excitable channels. 
@@ -143,7 +144,7 @@ Impedance
         then parallel gap junction effects will be taken into account.
 	But for parallel gap junctions, there are several qualifications:
 
-        One and only one rank can have a stimulus location. :meth:`Impedance.loc`
+        One and only one rank can have a stimulus location. :hoc:meth:`Impedance.loc`
         can be used with an arg of -1 to remove the stimulus location on
         a rank.
 
@@ -154,27 +155,27 @@ Impedance
 
         Not more than 5 types of gap junction POINT_PROCESS mechanisms can be instantiated.
         If any POINT_PROCESS instance participates in a gap junction
-        (via :meth:`ParallelContext.target_var`) then all instances of that type
+        (via :hoc:meth:`ParallelContext.target_var`) then all instances of that type
         must participate in gap junctions.
 
-        Only :meth:`Impedance.transfer` and :meth:`Impedance.transfer_phase` can be used
+        Only :hoc:meth:`Impedance.transfer` and :hoc:meth:`Impedance.transfer_phase` can be used
         to access the impedance values.
         Ranks do not have to participate in the calls to the those two
         methods since no MPI collective calls are involved. After
-        :meth:`Impedance.compute` is called, the transfer impedance is available at any
+        :hoc:meth:`Impedance.compute` is called, the transfer impedance is available at any
         cell location and multiple calls from a rank are allowed. Note that if the stimulus
         location is at location x and the transfer impedance is obtained at location x and
         y, the input impedance is known only at location x (equal to the transfer impedance)
         and the voltage ratio is known only at x and y. Note that the voltage ratio at
         x is trivially 1.0, and the voltage at y, given that x is voltage clamped to a 1mV
         sine wave with freq, is transfer(y)/transfer(x) . Unfortunately this is the opposite
-        of the definition given for :meth:`Impedance.ratio` which voltage clamped y
+        of the definition given for :hoc:meth:`Impedance.ratio` which voltage clamped y
         and recorded at x. I regret
         the original convention which was an artifact of
-        :meth:`Impedance.compute` with args (freq, 0) calculating at one time, not only all the transfer
+        :hoc:meth:`Impedance.compute` with args (freq, 0) calculating at one time, not only all the transfer
         impedances, but also all the input impedances at every location.  The problem with
-        the original convention for :meth:`Impedance.ratio`, and also with
-        :meth:`Impedance.input`, when the second :meth:`Impedance.compute` arg is 1,
+        the original convention for :hoc:meth:`Impedance.ratio`, and also with
+        :hoc:meth:`Impedance.input`, when the second :hoc:meth:`Impedance.compute` arg is 1,
         is that their use necessitates a solve with a moved input stimulus location
         specified by their argument. This is very inconvenient in a parallel context, as
         that solve would require the participation of all the ranks where all the args except
@@ -217,7 +218,7 @@ Impedance
 
 
 
-.. method:: Impedance.transfer
+.. hoc:method:: Impedance.transfer
 
 
     Syntax:
@@ -244,7 +245,7 @@ Impedance
 
 
 
-.. method:: Impedance.transfer_phase
+.. hoc:method:: Impedance.transfer_phase
 
 
     Syntax:
@@ -264,7 +265,7 @@ Impedance
 
 
 
-.. method:: Impedance.input
+.. hoc:method:: Impedance.input
 
 
     Syntax:
@@ -276,7 +277,7 @@ Impedance
 
         This method does not work with parallel gap junctions when  nhost > 1.
         But note that .input(loc) where loc was the current stimulus location, is
-        the same as :meth:`Impedance.transfer` with an arg the same as the current
+        the same as :hoc:meth:`Impedance.transfer` with an arg the same as the current
         stimulus location.
 
 
@@ -284,7 +285,7 @@ Impedance
 
 
 
-.. method:: Impedance.ratio
+.. hoc:method:: Impedance.ratio
 
 
     Syntax:
@@ -297,18 +298,18 @@ Impedance
 
         This method does not work with parallel gap junctions when  nhost > 1.
         But note that .ratio(x) where loc was the current stimulus location, can be computed
-        using a pair of calls to :meth:`Impedance.transfer` and a pair of calls to
-        :meth:`Impedance.transfer_phase` with a fixed stimulus location x and an argument of
+        using a pair of calls to :hoc:meth:`Impedance.transfer` and a pair of calls to
+        :hoc:meth:`Impedance.transfer_phase` with a fixed stimulus location x and an argument of
         loc. That is, ratio(x) = | (Yreal(loc) + iYimag(loc)) / (Yreal(x) + Yimag(x)) |
         See the comment about the legacy convention for ratio(x) in
-        :meth:`Impedance.compute`.
+        :hoc:meth:`Impedance.compute`.
 
 
 ----
 
 
 
-.. method:: Impedance.input_phase
+.. hoc:method:: Impedance.input_phase
 
 
     Syntax:
@@ -326,13 +327,13 @@ Impedance
         of the way results of calculations are stored it is very efficient 
         to access amp and phase; reasonably efficient to change freq or loc, 
         and inefficient to vary neuron state, eg, diameters. The last case 
-        implies at least the overhead of a call like \ :func:`fcurrent()`.(actually 
-        the present implementation calls \ :func:`fcurrent()` on every \ ``compute()`` call 
+        implies at least the overhead of a call like \ :hoc:func:`fcurrent()`.(actually
+        the present implementation calls \ :hoc:func:`fcurrent()` on every \ ``compute()`` call
         but that could be fixed if increased performance was needed). 
 
         This method does not work with parallel gap junctions when  nhost > 1.
         But note that .input_phase(loc) where loc was the current stimulus location, is
-        the same as :meth:`Impedance.transfer_phase` with an arg the same as the current
+        the same as :hoc:meth:`Impedance.transfer_phase` with an arg the same as the current
         stimulus location.
 
 
@@ -340,7 +341,7 @@ Impedance
 
 
 
-.. method:: Impedance.deltafac
+.. hoc:method:: Impedance.deltafac
 
 
     Syntax:
@@ -356,7 +357,7 @@ Impedance
         delta is defined by fac * the state tolerance scale factor for cvode. 
         Note that default state tolerance scale factors are 1.0 except when 
         specifically declared in mod files or changed by calling 
-        :meth:`CVode.atolscale`. The default delta factor is 0.001 which is consistent 
+        :hoc:meth:`CVode.atolscale`. The default delta factor is 0.001 which is consistent
         with the factor used by the default impedance calculation. Note that the 
         factor for the default impedance calculation cannot be changed. 
 

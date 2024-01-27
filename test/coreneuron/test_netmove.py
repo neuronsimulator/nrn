@@ -1,11 +1,7 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
-
+from neuron.tests.utils.strtobool import strtobool
 import os
-import pytest
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -80,10 +76,9 @@ def test_netmove():
     stdlist = [cell.result() for cell in cells]
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     def runassert(mode):
         run(tstop, mode)
@@ -117,20 +112,13 @@ def test_netmove():
 
 
 if __name__ == "__main__":
-    try:
-        from neuron import gui
+    from neuron import gui
 
-        stdlist = test_netmove()
-        g = h.Graph()
-        print("n_netsend  n_netmove")
-        for result in stdlist:
-            print(result[0], result[1])
-            result[2].line(g)
-        g.exec_menu("View = plot")
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    stdlist = test_netmove()
+    g = h.Graph()
+    print("n_netsend  n_netmove")
+    for result in stdlist:
+        print(result[0], result[1])
+        result[2].line(g)
+    g.exec_menu("View = plot")
+    h.quit()

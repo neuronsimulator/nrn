@@ -1,0 +1,16 @@
+// pointer args ?
+
+double a[2][3]
+for i=0, 1 for j= 0, 2 a[i][j] = 10*i + j
+
+func foo() {
+  $&1 = $&1 + 100
+  return $&1
+}
+
+print foo(&a[1][2]), a[1][2]
+
+double a[6]
+for i=0,5 a[i] = 10*i
+
+print foo(&a[5]), a[5]

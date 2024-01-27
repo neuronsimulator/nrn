@@ -1,11 +1,12 @@
-.. _secref:
+
+.. _hoc_secref:
 
 SectionRef
 ----------
 
 
 
-.. class:: SectionRef
+.. hoc:class:: SectionRef
 
 
     Syntax:
@@ -25,7 +26,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.sec
+.. hoc:method:: SectionRef.sec
 
 
     Syntax:
@@ -65,7 +66,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.parent
+.. hoc:method:: SectionRef.parent
 
 
     Syntax:
@@ -77,7 +78,7 @@ SectionRef
         is used in a context like \ ``sref.parent { statement }`` just like a 
         normal section name and does NOT need a section_pop 
         If there is a chance that a section does not have a parent then 
-        :meth:`SectionRef.has_parent` should be called first to avoid an execution error. 
+        :hoc:meth:`SectionRef.has_parent` should be called first to avoid an execution error.
         Note that the parent is the current parent of sref.sec, not necessarily 
         the parent when the SectionRef was created. 
 
@@ -86,7 +87,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.trueparent
+.. hoc:method:: SectionRef.trueparent
 
 
     Syntax:
@@ -95,18 +96,18 @@ SectionRef
 
     Description:
         trueparent of sref.sec becomes the currently accessed section. 
-        This is normally identical to :meth:`SectionRef.parent` except when the 
-        parent's :func:`parent_connection` is equal to the parent's 
-        :func:`section_orientation`. 
+        This is normally identical to :hoc:meth:`SectionRef.parent` except when the
+        parent's :hoc:func:`parent_connection` is equal to the parent's
+        :hoc:func:`section_orientation`.
         If there is a chance that a section does not have a trueparent then 
-        :meth:`SectionRef.has_trueparent` should be called first to avoid an execution error. 
+        :hoc:meth:`SectionRef.has_trueparent` should be called first to avoid an execution error.
 
 
 ----
 
 
 
-.. method:: SectionRef.child
+.. hoc:method:: SectionRef.child
 
 
     Syntax:
@@ -132,7 +133,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.root
+.. hoc:method:: SectionRef.root
 
 
     Syntax:
@@ -147,7 +148,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.has_parent
+.. hoc:method:: SectionRef.has_parent
 
 
     Syntax:
@@ -164,7 +165,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.has_trueparent
+.. hoc:method:: SectionRef.has_trueparent
 
 
     Syntax:
@@ -181,7 +182,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.nchild
+.. hoc:method:: SectionRef.nchild
 
 
     Syntax:
@@ -197,7 +198,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.is_cas
+.. hoc:method:: SectionRef.is_cas
 
 
     Syntax:
@@ -213,7 +214,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.exists
+.. hoc:method:: SectionRef.exists
 
 
     Syntax:
@@ -224,7 +225,7 @@ SectionRef
         Returns 1 if the section has not been deleted, 0 otherwise. 
 
     .. seealso::
-        :func:`delete_section`, :func:`section_exists`
+        :hoc:func:`delete_section`, :hoc:func:`section_exists`
 
          
          

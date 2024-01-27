@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #if nrniv does not work then see if we can fix the problem
 if nrniv -c 'quit()' >& /dev/null ; then

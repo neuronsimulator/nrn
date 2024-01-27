@@ -1,11 +1,12 @@
-.. _shape:
+
+.. _hoc_shape:
 
 Shape
 -----
 
 
 
-.. class:: Shape
+.. hoc:class:: Shape
 
         Class for making a Shape window for executing a user defined action 
         when a section is clicked on. (When the section mode is selected 
@@ -20,7 +21,7 @@ Shape
 
 
 
-.. method:: Shape.view
+.. hoc:method:: Shape.view
 
 
     Syntax:
@@ -38,7 +39,7 @@ Shape
 
 
 
-.. method:: Shape.size
+.. hoc:method:: Shape.size
 
 
     Syntax:
@@ -55,7 +56,7 @@ Shape
         is decreased so that the first view window displays the entire bounding box 
         with the center of the bounding box in the center of the view. 
          
-        See :meth:`Graph.size` for other, more rarely use argument sequences. 
+        See :hoc:meth:`Graph.size` for other, more rarely use argument sequences.
 
          
 
@@ -63,7 +64,7 @@ Shape
 
 
 
-.. method:: Shape.show
+.. hoc:method:: Shape.show
 
 
     Syntax:
@@ -89,7 +90,7 @@ Shape
 
 
 
-.. method:: Shape.flush
+.. hoc:method:: Shape.flush
 
 
     Syntax:
@@ -105,7 +106,7 @@ Shape
 
 
 
-.. method:: Shape.observe
+.. hoc:method:: Shape.observe
 
 
     Syntax:
@@ -139,7 +140,7 @@ Shape
 
 
 
-.. method:: Shape.view_count
+.. hoc:method:: Shape.view_count
 
 
     Syntax:
@@ -158,7 +159,7 @@ Shape
 
 
 
-.. method:: Shape.select
+.. hoc:method:: Shape.select
 
 
     Syntax:
@@ -174,7 +175,7 @@ Shape
 
 
 
-.. method:: Shape.action
+.. hoc:method:: Shape.action
 
 
     Syntax:
@@ -184,7 +185,7 @@ Shape
     Description:
         command is executed whenever the user clicks on a section. 
         The clicked section is pushed before execution and popped after. 
-        \ :data:`hoc_ac_` contains the arc position 0 - 1 of the nearest node. 
+        \ :hoc:data:`hoc_ac_` contains the arc position 0 - 1 of the nearest node.
 
          
 
@@ -192,7 +193,7 @@ Shape
 
 
 
-.. method:: Shape.color
+.. hoc:method:: Shape.color
 
 
     Syntax:
@@ -201,7 +202,7 @@ Shape
 
     Description:
         colors the currently accessed section according to color index 
-        (index same as specified in :class:`Graph` class). If there are several 
+        (index same as specified in :hoc:class:`Graph` class). If there are several
         sections to color it is more efficient to make a SectionList and 
         use \ ``.color_list`` 
 
@@ -211,7 +212,7 @@ Shape
 
 
 
-.. method:: Shape.color_all
+.. hoc:method:: Shape.color_all
 
 
     Syntax:
@@ -227,7 +228,7 @@ Shape
 
 
 
-.. method:: Shape.color_list
+.. hoc:method:: Shape.color_list
 
 
     Syntax:
@@ -243,7 +244,7 @@ Shape
 
 
 
-.. method:: Shape.point_mark
+.. hoc:method:: Shape.point_mark
 
 
     Syntax:
@@ -262,7 +263,7 @@ Shape
         mark. (at least after a flush) 
          
         The optional arguments specify the style and size as in the 
-        :meth:`Graph.mark` method of :class:`Graph`. This extension was contributed 
+        :hoc:meth:`Graph.mark` method of :hoc:class:`Graph`. This extension was contributed
         by Yichun Wei ``yichunwe@usc.edu``.
 
          
@@ -271,7 +272,7 @@ Shape
 
 
 
-.. method:: Shape.point_mark_remove
+.. hoc:method:: Shape.point_mark_remove
 
 
     Syntax:
@@ -287,7 +288,7 @@ Shape
 
 
 
-.. method:: Shape.save_name
+.. hoc:method:: Shape.save_name
 
 
     Syntax:
@@ -304,7 +305,7 @@ Shape
 
 
 
-.. method:: Shape.unmap
+.. hoc:method:: Shape.unmap
 
 
     Syntax:
@@ -322,7 +323,7 @@ Shape
 
 
 
-.. method:: Shape.printfile
+.. hoc:method:: Shape.printfile
 
 
     Syntax:
@@ -338,11 +339,11 @@ Shape
 
 
 
-.. method:: Shape.menu_action
+.. hoc:method:: Shape.menu_action
 
 
     .. seealso::
-        :meth:`Graph.menu_action`
+        :hoc:meth:`Graph.menu_action`
 
          
 
@@ -350,87 +351,87 @@ Shape
 
 
 
-.. method:: Shape.exec_menu
+.. hoc:method:: Shape.exec_menu
 
 
     .. seealso::
-        :meth:`Graph.exec_menu`
+        :hoc:meth:`Graph.exec_menu`
 
 
 ----
 
 
 
-.. method:: Shape.erase
+.. hoc:method:: Shape.erase
 
 
     .. seealso::
-        :meth:`Graph.erase`
+        :hoc:meth:`Graph.erase`
 
 
 ----
 
 
 
-.. method:: Shape.erase_all
+.. hoc:method:: Shape.erase_all
 
 
     Description:
         Erases everything in the Shape, including all PointMarks and Sections. 
 
     .. seealso::
-        :meth:`Graph.erase_all`, :meth:`Shape.observe`, :meth:`Shape.point_mark`
+        :hoc:meth:`Graph.erase_all`, :hoc:meth:`Shape.observe`, :hoc:meth:`Shape.point_mark`
 
 
 ----
 
 
 
-.. method:: Shape.beginline
+.. hoc:method:: Shape.beginline
 
 
     .. seealso::
-        :meth:`Graph.beginline`
+        :hoc:meth:`Graph.beginline`
 
 
 ----
 
 
 
-.. method:: Shape.line
+.. hoc:method:: Shape.line
 
 
     .. seealso::
-        :meth:`Graph.line`
+        :hoc:meth:`Graph.line`
 
 
 ----
 
 
 
-.. method:: Shape.mark
+.. hoc:method:: Shape.mark
 
 
     .. seealso::
-        :meth:`Graph.mark`
+        :hoc:meth:`Graph.mark`
 
 
 ----
 
 
 
-.. method:: Shape.label
+.. hoc:method:: Shape.label
 
 
     .. seealso::
-        :meth:`Graph.label`
+        :hoc:meth:`Graph.label`
 
 
 ----
 
 
 
-.. method:: Shape.menu_tool
+.. hoc:method:: Shape.menu_tool
 
 
     Syntax:
@@ -438,7 +439,7 @@ Shape
 
 
     Description:
-        Same as :meth:`Graph.menu_tool` for the :func:`Graph` class. When procname is 
+        Same as :hoc:meth:`Graph.menu_tool` for the :hoc:func:`Graph` class. When procname is
         called it is given four arguments: type, x, y, keystate. Type = 1,2,3 means 
         move, press, release respectively and x and are in model coordinates. 
         Keystate reflects the 
@@ -447,7 +448,7 @@ Shape
          
 
     .. seealso::
-        :meth:`Graph.menu_tool`, :meth:`Shape.nearest`, :meth:`Shape.push_selected`
+        :hoc:meth:`Graph.menu_tool`, :hoc:meth:`Shape.nearest`, :hoc:meth:`Shape.push_selected`
 
     Example:
         The following example will work if executed in the context of the 
@@ -481,7 +482,7 @@ Shape
 
 
 
-.. method:: Shape.nearest
+.. hoc:method:: Shape.nearest
 
 
     Syntax:
@@ -493,7 +494,7 @@ Shape
         The section becomes the selected section of the Shape. It is NOT 
         pushed onto the section stack and it is NOT colored. The nearest 
         arc position of the selected section as well 
-        as the section is available from :func:`push_section`. 
+        as the section is available from :hoc:func:`push_section`.
 
          
 
@@ -501,7 +502,7 @@ Shape
 
 
 
-.. method:: Shape.push_selected
+.. hoc:method:: Shape.push_selected
 
 
     Syntax:
@@ -525,7 +526,7 @@ Shape
 
     .. warning::
         The arc position is relevant only if the section was selected using 
-        :meth:`Shape.nearest`. Note, e.g., that :meth:`Shape.select` does not 
+        :hoc:meth:`Shape.nearest`. Note, e.g., that :hoc:meth:`Shape.select` does not
         set the arc position. 
 
          
@@ -534,7 +535,7 @@ Shape
 
 
 
-.. method:: Shape.len_scale
+.. hoc:method:: Shape.len_scale
 
 
     Syntax:
@@ -553,7 +554,7 @@ Shape
 
 
 
-.. method:: Shape.rotate
+.. hoc:method:: Shape.rotate
 
 
     Syntax:

@@ -1,4 +1,5 @@
-.. _matrix:
+
+.. _hoc_matrix:
 
          
 Matrix
@@ -6,7 +7,7 @@ Matrix
 
 
 
-.. class:: Matrix
+.. hoc:class:: Matrix
 
 
     Syntax:
@@ -17,7 +18,7 @@ Matrix
 
     Description:
         A class for manipulation of two dimensional arrays of numbers. A companion 
-        to the :class:`Vector` class, Matrix contains routines for m*x=b, v1=m*v2, etc. 
+        to the :hoc:class:`Vector` class, Matrix contains routines for m*x=b, v1=m*v2, etc.
          
         Individual element values are assigned and evaluated 
         using the syntax: 
@@ -29,7 +30,7 @@ Matrix
 
         which may appear anywhere in an expression or on the left hand side of 
         an assignment statement. irow can range from 0 to m.nrow-1 and icol 
-        ranges from 0 to m.ncol-1 . (See :data:`~Matrix.x`) 
+        ranges from 0 to m.ncol-1 . (See :hoc:data:`~Matrix.x`)
          
         When possible, Matrix methods returning a Matrix use the form, 
         mobj = m.f(args, [mout]), where mobj is a newly constructed matrix (m 
@@ -52,20 +53,17 @@ Matrix
         By default, a new Matrix is of type MFULL (= 1) and allocates storage for 
         all nrow*ncol elements. Scaffolding is in place for matrices of storage 
         type MSPARSE (=2) and MBAND (=3) but not many methods have been interfaced 
-        to the meschach library at this time. If a method is called on a matrix type 
+        to the eigen library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
         m*x=b (``x = m.solv(b)`` ) will solve the linear system 
         regardless of the type of m and 
         v1 = m*v2 (``v1 = m.mulv(v2)`` ) will perform the vector multiplication. 
          
-        Matrix is implemented using the 
-        `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
-        (discovered at http://www.netlib.org/c/index.html\ ) which contains a large collection 
-        of routines for sparse, banded, and full matrices. Many of the useful 
-        routines  have not 
-        been interfaced with the hoc interpreter but can be easily added on request 
-        or you can add it yourself 
+        Matrix is implemented using the `eigen3 library <https://eigen.tuxfamily.org>`_ 
+        which contains a large collection of routines for sparse, banded, and full matrices. 
+        Many of the useful routines  have not been interfaced with the hoc 
+        interpreter but can be easily added on request or you can add it yourself 
         by analogy with the code in ``nrn/src/ivoc/(matrix.c ocmatrix.[ch])`` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
@@ -77,7 +75,7 @@ Matrix
 
 
 
-.. data:: Matrix.x
+.. hoc:data:: Matrix.x
 
 
     Syntax:
@@ -116,7 +114,7 @@ Matrix
          
         For sparse matrices an invocation of x[i][j] will create it if the 
         element does not exist. Therefore if you wish to access every element 
-        use :meth:`Matrix.getval` to avoid creating a very inefficient full matrix! 
+        use :hoc:meth:`Matrix.getval` to avoid creating a very inefficient full matrix!
 
     Example:
 
@@ -141,17 +139,17 @@ Matrix
     .. warning::
         When dealing with sparse matrices, be careful when using the m.x[][] notation 
         since the mere act of evaluating a zero element will create it if it does not 
-        exist. In this case it is better to use the :func:`getval` function. 
+        exist. In this case it is better to use the :hoc:func:`getval` function.
          
         In Python, the m.x[i][j] syntax does not work and one must use the 
-        :func:`setval` function 
+        :hoc:func:`setval` function
 
 
 ----
 
 
 
-.. method:: Matrix.nrow
+.. hoc:method:: Matrix.nrow
 
 
     Syntax:
@@ -166,7 +164,7 @@ Matrix
 
 
 
-.. method:: Matrix.ncol
+.. hoc:method:: Matrix.ncol
 
         n = m.ncol 
 
@@ -180,7 +178,7 @@ Matrix
 
 
 
-.. method:: Matrix.resize
+.. hoc:method:: Matrix.resize
 
 
     Syntax:
@@ -218,7 +216,7 @@ Matrix
 
 
 
-.. method:: Matrix.c
+.. hoc:method:: Matrix.c
 
 
     Syntax:
@@ -237,7 +235,7 @@ Matrix
 
 
 
-.. method:: Matrix.bcopy
+.. hoc:method:: Matrix.bcopy
 
 
     Syntax:
@@ -275,7 +273,7 @@ Matrix
 
 
 
-.. method:: Matrix.getval
+.. hoc:method:: Matrix.getval
 
 
     Syntax:
@@ -292,7 +290,7 @@ Matrix
 
 
 
-.. method:: Matrix.setval
+.. hoc:method:: Matrix.setval
 
 
     Syntax:
@@ -310,7 +308,7 @@ Matrix
 
 
 
-.. method:: Matrix.sprowlen
+.. hoc:method:: Matrix.sprowlen
 
 
     Syntax:
@@ -322,7 +320,7 @@ Matrix
         elements in the ith row of the sparse 
         matrix. Useful for iterating over a elements of a sparse matrix. 
         This function works only for sparse matrices. 
-        See :meth:`Matrix.spgetrowval` 
+        See :hoc:meth:`Matrix.spgetrowval`
 
          
 
@@ -330,7 +328,7 @@ Matrix
 
 
 
-.. method:: Matrix.spgetrowval
+.. hoc:method:: Matrix.spgetrowval
 
 
     Syntax:
@@ -375,7 +373,7 @@ Matrix
 
 
 
-.. method:: Matrix.printf
+.. hoc:method:: Matrix.printf
 
 
     Syntax:
@@ -399,7 +397,7 @@ Matrix
 
 
 
-.. method:: Matrix.fprint
+.. hoc:method:: Matrix.fprint
 
 
     Syntax:
@@ -413,11 +411,11 @@ Matrix
 
 
     Description:
-        Same as :func:`printf` but prints to the File object (must be open for writing) 
+        Same as :hoc:func:`printf` but prints to the File object (must be open for writing)
         with a first line consisting of the two integers, nrow ncol. 
         Print the matrix to the open file object with a default %-8g element format 
         and a default "\n" row format. 
-        Because of the "nrow ncol" first line, such a file can be read with :func:`scanf` . 
+        Because of the "nrow ncol" first line, such a file can be read with :hoc:func:`scanf` .
         If the first arg is a 0, then the nrow ncol pair of numbers will not 
         be printed. 
 
@@ -429,7 +427,7 @@ Matrix
 
 
 
-.. method:: Matrix.scanf
+.. hoc:method:: Matrix.scanf
 
 
     Syntax:
@@ -440,7 +438,7 @@ Matrix
 
     Description:
         Read a file, including sizes, into a Matrix. The File_object is 
-        an object of type :class:`File` and must be opened for reading prior to 
+        an object of type :hoc:class:`File` and must be opened for reading prior to
         the scanf. If nrow,ncol arguments are not present, 
         the first two numbers in the file must be nrow and mcol 
         respectively. In either case those values are used to resize the matrix. 
@@ -465,14 +463,14 @@ Matrix
         Works only for full matrix types 
 
     .. seealso::
-        :meth:`Vector.scanf`, :func:`fscan`
+        :hoc:meth:`Vector.scanf`, :hoc:func:`fscan`
 
 
 ----
 
 
 
-.. method:: Matrix.mulv
+.. hoc:method:: Matrix.mulv
 
 
     Syntax:
@@ -529,7 +527,7 @@ Matrix
 
 
 
-.. method:: Matrix.getrow
+.. hoc:method:: Matrix.getrow
 
 
     Syntax:
@@ -550,7 +548,7 @@ Matrix
 
 
 
-.. method:: Matrix.getcol
+.. hoc:method:: Matrix.getcol
 
 
     Syntax:
@@ -571,7 +569,7 @@ Matrix
 
 
 
-.. method:: Matrix.getdiag
+.. hoc:method:: Matrix.getdiag
 
 
     Syntax:
@@ -613,7 +611,7 @@ Matrix
 
 
 
-.. method:: Matrix.solv
+.. hoc:method:: Matrix.solv
 
 
     Syntax:
@@ -681,7 +679,7 @@ Matrix
 
 
 
-.. method:: Matrix.det
+.. hoc:method:: Matrix.det
 
 
     Syntax:
@@ -712,7 +710,7 @@ Matrix
 
 
 
-.. method:: Matrix.mulm
+.. hoc:method:: Matrix.mulm
 
 
     Syntax:
@@ -758,7 +756,7 @@ Matrix
 
 
 
-.. method:: Matrix.add
+.. hoc:method:: Matrix.add
 
 
     Syntax:
@@ -779,7 +777,7 @@ Matrix
 
 
 
-.. method:: Matrix.muls
+.. hoc:method:: Matrix.muls
 
 
     Syntax:
@@ -811,7 +809,7 @@ Matrix
 
 
 
-.. method:: Matrix.setrow
+.. hoc:method:: Matrix.setrow
 
 
     Syntax:
@@ -834,7 +832,7 @@ Matrix
 
 
 
-.. method:: Matrix.setcol
+.. hoc:method:: Matrix.setcol
 
 
     Syntax:
@@ -857,7 +855,7 @@ Matrix
 
 
 
-.. method:: Matrix.setdiag
+.. hoc:method:: Matrix.setdiag
 
 
     Syntax:
@@ -903,7 +901,7 @@ Matrix
 
 
 
-.. method:: Matrix.zero
+.. hoc:method:: Matrix.zero
 
 
     Syntax:
@@ -921,7 +919,7 @@ Matrix
 
 
 
-.. method:: Matrix.ident
+.. hoc:method:: Matrix.ident
 
 
     Syntax:
@@ -950,7 +948,7 @@ Matrix
 
 
 
-.. method:: Matrix.exp
+.. hoc:method:: Matrix.exp
 
 
     Syntax:
@@ -984,7 +982,7 @@ Matrix
 
 
 
-.. method:: Matrix.pow
+.. hoc:method:: Matrix.pow
 
 
     Syntax:
@@ -1021,7 +1019,7 @@ Matrix
 
 
 
-.. method:: Matrix.inverse
+.. hoc:method:: Matrix.inverse
 
 
     Syntax:
@@ -1058,7 +1056,7 @@ Matrix
 
 
 
-.. method:: Matrix.svd
+.. hoc:method:: Matrix.svd
 
 
     Syntax:
@@ -1127,7 +1125,7 @@ Matrix
 
 
 
-.. method:: Matrix.transpose
+.. hoc:method:: Matrix.transpose
 
 
     Syntax:
@@ -1160,7 +1158,7 @@ Matrix
 
 
 
-.. method:: Matrix.symmeig
+.. hoc:method:: Matrix.symmeig
 
 
     Syntax:
@@ -1214,7 +1212,7 @@ Matrix
 
 
 
-.. method:: Matrix.to_vector
+.. hoc:method:: Matrix.to_vector
 
 
     Syntax:
@@ -1250,7 +1248,7 @@ Matrix
 
 
 
-.. method:: Matrix.from_vector
+.. hoc:method:: Matrix.from_vector
 
 
     Syntax:
@@ -1281,7 +1279,7 @@ Matrix
 
 
 
-.. method:: Matrix.cholesky_factor
+.. hoc:method:: Matrix.cholesky_factor
 
 
     Syntax:

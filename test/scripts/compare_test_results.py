@@ -11,6 +11,7 @@ Positional arguments are of the form testname::type1::path1[::type2::path2]...
 """
 import collections
 import difflib
+import glob
 import itertools
 import string
 import sys
@@ -39,12 +40,13 @@ def parse_arguments(argv):
     return parsed_data
 
 
-def load_ascii_spikes(data_path):
+def load_ascii_spikes(data_pattern):
     spike_data = []
-    with open(data_path, "r") as data_file:
-        for line in data_file:
-            time, gid = line.strip().split(maxsplit=1)
-            spike_data.append((float(time), int(gid)))
+    for data_path in sorted(glob.glob(data_pattern)):
+        with open(data_path, "r") as data_file:
+            for line in data_file:
+                time, gid = line.strip().split(maxsplit=1)
+                spike_data.append((float(time), int(gid)))
     return spike_data
 
 

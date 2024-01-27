@@ -336,24 +336,6 @@ PWManager
 
 
 
-.. method:: PWManager.jwindow
-
-
-    Syntax:
-        ``index = p.jwindow(hoc_owner, mapORhide, x, y, w, h)``
-
-
-    Description:
-        Manipulate the position and size of a java window frame associated with the 
-        java object referenced by the hoc object. The mapORhide value may be 0 
-        or 1. The index of the window is returned. This is used by session file 
-        statements created by the java object in order to specify window attributes. 
-
-
-----
-
-
-
 .. method:: PWManager.scale
 
 

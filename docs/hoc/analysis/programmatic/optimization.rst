@@ -2,7 +2,7 @@ Optimization
 ============
 
 
-.. function:: fit_praxis
+.. hoc:function:: fit_praxis
 
 
     Syntax:
@@ -43,7 +43,7 @@ Optimization
         If the variable stoprun is set to 1 during a call to fit_praxis, it will 
         return immediately (when the current call to  funname returns) with 
         a return value and varx values set to the best minimum found so far. Use 
-        :func:`stop_praxis` to stop after finishing the current principal axis calculation. 
+        :hoc:func:`stop_praxis` to stop after finishing the current principal axis calculation.
          
         The fourth argument, if present, specifies a statement to be executed at 
         the end of each principal axis evaluation. 
@@ -101,7 +101,7 @@ Optimization
         list of *n* arguments. ie ``numarg()==n``. 
 
     .. seealso::
-        :func:`attr_praxis`, :func:`stop_praxis`, :func:`pval_praxis`
+        :hoc:func:`attr_praxis`, :hoc:func:`stop_praxis`, :hoc:func:`pval_praxis`
 
          
 
@@ -109,7 +109,7 @@ Optimization
 
 
 
-.. function:: attr_praxis
+.. hoc:function:: attr_praxis
 
 
     Syntax:
@@ -120,7 +120,7 @@ Optimization
 
     Description:
         Set the attributes of the praxis method. This must be called before 
-        the first call to :func:`fit_praxis`. 
+        the first call to :hoc:func:`fit_praxis`.
 
 
         tolerance 
@@ -140,7 +140,7 @@ Optimization
         The single argument form causes praxis to pick its random numbers from 
         the the mcellran4 generator beginning at the specified index. This 
         allows reproducible fitting. The return value is the previously picked 
-        index. (see :func:`mcell_ran4`) 
+        index. (see :hoc:func:`mcell_ran4`)
 
          
 
@@ -148,7 +148,7 @@ Optimization
 
 
 
-.. function:: pval_praxis
+.. hoc:function:: pval_praxis
 
 
     Syntax:
@@ -169,7 +169,7 @@ Optimization
 
 
 
-.. function:: stop_praxis
+.. hoc:function:: stop_praxis
 
 
     Syntax:
@@ -182,7 +182,7 @@ Optimization
         Set a flag in the praxis function that will cause it to stop after 
         it finishes the current (or ith subsequent) 
         principal axis calculation. If this function 
-        is called before :func:`fit_praxis`, then praxis will do a single 
+        is called before :hoc:func:`fit_praxis`, then praxis will do a single
         (or i) principal axis calculation and then exit. 
 
          

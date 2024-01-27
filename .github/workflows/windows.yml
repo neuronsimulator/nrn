@@ -1,12 +1,20 @@
 name: Windows Installer
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
+  merge_group:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release version (tag name)'
+        default: ''
+        required: true
+        type: string
   push:
-    branches: 
+    branches:
       - master
       - release/**
   pull_request:
@@ -27,26 +35,32 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
-        
+        ref: ${{ inputs.tag }}
+
+    - name: Retrieve rxd test data
+      run: |
+        git submodule update --init test/rxd/testdata
+      shell: powershell
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Set up Python3
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Download Dependencies
       run: |
         .\nrn\ci\win_download_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-       
+
     - name: Install Dependencies
       run: .\nrn\ci\win_install_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-      
+
     - name: Build and Create Installer
       run: |
         rm.exe C:\WINDOWS\system32\bash.EXE
@@ -57,13 +71,15 @@ jobs:
         BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
 
     # This step will set up an SSH connection on tmate.io for live debugging.
-    # To trigger it, simply add 'live-debug-win' to your last pushed commit message.
-    - name: live debug session on failure
-      if: failure() && contains(github.event.head_commit.message, 'live-debug-win')
+    # To enable it, you have to:
+    #   * add 'live-debug-win' to your PR title
+    #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
+      if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
       uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
@@ -77,3 +93,11 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
+
+    - name: Publish Release Installer
+      working-directory: ${{runner.workspace}}\nrn
+      if: inputs.tag != ''
+      run: |
+        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,38 @@
+After having installed MUSIC and NEURON and also having compiled
+nrn/src/neuronmusic and installed the neuronmusic.so file in the
+Python dist-packages or site-packages directory I do the following:
+
+  mpirun -np 2 music test2.music
+
+and get
+
+  numprocs=1
+  Rank 0: Event (0, 0.001175) detected at 0
+  Rank 0: Event (0, 0.013825) detected at 0
+
+and
+
+  mpirun -np 2 music test3.music
+
+and get
+
+  NEURON -- VERSION 9.0.dev-69-g871bc1c1+ hines/enable-music (871bc1c1+) 2022-08-26
+  Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022
+  See http://neuron.yale.edu/neuron/credits
+
+  NEURON -- VERSION 9.0.dev-69-g871bc1c1+ hines/enable-music (871bc1c1+) 2022-08-26
+  Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022
+  See http://neuron.yale.edu/neuron/credits
+
+  numprocs=1
+  numprocs=1
+  group= 2  rank= 0
+  group= 1  rank= 0
+  1 0  call stdinit
+  2 0  call stdinit
+  2 0  call psolve
+  1 0  call psolve
+  2 0  done
+  1 0  done
+
+(For some reason, it is not possible to add -nobanner for test3.)

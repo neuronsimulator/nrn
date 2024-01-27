@@ -1,11 +1,11 @@
 #include <../../nrnconf.h>
 
 #include <nrnmpi.h>
-#include <nrnrt.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
@@ -13,6 +13,7 @@
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
+
 #include <vector>
 
 /*
@@ -49,14 +50,10 @@ extern double nrnmpi_wtime();
 extern double* nrn_mech_wtime_;
 extern double t, dt;
 extern double chkarg(int, double low, double high);
-extern void nrn_fixed_step();
-extern void nrn_fixed_step_group(int);
-static void* nrn_fixed_step_thread(NrnThread*);
-static void* nrn_fixed_step_group_thread(NrnThread* nth);
-static void* nrn_fixed_step_lastpart(NrnThread*);
-extern void* setup_tree_matrix(NrnThread*);
+static void nrn_fixed_step_thread(neuron::model_sorted_token const&, NrnThread&);
+static void nrn_fixed_step_group_thread(neuron::model_sorted_token const&, NrnThread&);
 extern void nrn_solve(NrnThread*);
-extern void nonvint(NrnThread* nt);
+static void nonvint(neuron::model_sorted_token const&, NrnThread&);
 extern void nrncvode_set_t(double t);
 
 static void* nrn_ms_treeset_through_triang(NrnThread*);
@@ -69,36 +66,18 @@ extern void* nrn_multisplit_bksub(NrnThread*);
 extern void (*nrn_multisplit_setup_)();
 void (*nrn_allthread_handle)();
 
-extern int tree_changed;
-extern int diam_changed;
 extern int state_discon_allowed_;
 extern double hoc_epsilon;
 
-static void update(NrnThread*);
-
-#if 0
-/*
-  1 to save space, but must worry about other uses of the memb_list
-  such as in netcvode.cpp in fornetcon_prepare
-*/
-extern short* nrn_is_artificial_;
-extern cTemplate** nrn_pnt_template_;
-#endif
-#if NRN_DAQ
-extern void nrn_daq_scanstart();
-extern void nrn_daq_ai();
-extern void nrn_daq_ao();
-#endif
-
-#define NRNCTIME 1
+#define NRNCTIME          1
 #define NONVINT_ODE_COUNT 5
 
 #if NRNCTIME
-#define CTBEGIN double wt = nrnmpi_wtime();
-#define CTADD nth->_ctime += nrnmpi_wtime() - wt;
+#define CTBEGIN double wt = nrnmpi_wtime()
+#define CTADD   nth->_ctime += nrnmpi_wtime() - wt
 #else
 #define CTBEGIN /**/
-#define CTADD /**/
+#define CTADD   /**/
 #endif
 
 #define ELIMINATE_T_ROUNDOFF 0
@@ -113,20 +92,25 @@ there (hence nrn_tbase_)
 */
 double nrn_ndt_, nrn_tbase_, nrn_dt_;
 void nrn_chk_ndt() {
-	if (dt != nrn_dt_ || t != nrn_tbase_ + nrn_ndt_ * nrn_dt_) {
-if (nrnmpi_myid == 0) Printf("nrn_chk_ndt t=%g dt=%g old nrn_tbase_=%g nrn_ndt_=%g nrn_dt_=%g\n",
-t, dt, nrn_tbase_, nrn_ndt_, nrn_dt_);
-		nrn_dt_ = dt;
-		nrn_tbase_ = t;
-		nrn_ndt_ = 0.;
-	}
+    if (dt != nrn_dt_ || t != nrn_tbase_ + nrn_ndt_ * nrn_dt_) {
+        if (nrnmpi_myid == 0)
+            Printf("nrn_chk_ndt t=%g dt=%g old nrn_tbase_=%g nrn_ndt_=%g nrn_dt_=%g\n",
+                   t,
+                   dt,
+                   nrn_tbase_,
+                   nrn_ndt_,
+                   nrn_dt_);
+        nrn_dt_ = dt;
+        nrn_tbase_ = t;
+        nrn_ndt_ = 0.;
+    }
 }
 #endif /* ELIMINATE_T_ROUNDOFF */
 
 /*
 There are (too) many variants of nrn_fixed_step depending on
 nrnmpi_numprocs 1 or > 1, nrn_nthread 1 or > 1,
-nrnmpi_v_transfer nil or callable, nrn_multisplit_setup nil or callable,
+nrnmpi_v_transfer nullptr or callable, nrn_multisplit_setup nullptr or callable,
 and whether one step with fadvance
 or possibly many with ParallelContext.psolve before synchronizing with
 NetParEvent. The combination of simultaneous nrnmpi_numprocs > 1 and
@@ -149,57 +133,50 @@ is only done by thread 0. Fixed step and global variable step
 logic is limited to the case where an nrnmpi_v_transfer requires
 existence of nrnthread_v_transfer (even if one thread).
 */
-#if 1 || PARANEURON
+#if 1 || NRNMPI
 void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
 void (*nrnthread_v_transfer_)(NrnThread* nt);
 /* if at least one gap junction has a source voltage with extracellular inserted */
 void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
-#if VECTORIZE
-extern "C" int v_structure_change;
-#endif
-
-#if CVODE
 int cvode_active_;
-#endif
 
 int stoprun;
-int nrn_use_fast_imem;
+bool nrn_use_fast_imem;
 
 #define PROFILE 0
 #include "profile.h"
 
-void fadvance(void)
-{
-	tstopunset;
-#if CVODE
-	if (cvode_active_) {
-		cvode_fadvance(-1.);
-		tstopunset;
-		hoc_retpushx(1.);
-		return;
-	}
-#endif
-	if (tree_changed) {
-		setup_topology();
-	}
-	if (v_structure_change) {
-		v_setup_vectors();
-	}
-	if (diam_changed) {
-		recalc_diam();
-	}
-	nrn_fixed_step();
-	tstopunset;
-	hoc_retpushx(1.);
+void fadvance() {
+    nrn::Instrumentor::phase p_fadvance("fadvance");
+    tstopunset;
+    if (cvode_active_) {
+        cvode_fadvance(-1.);
+        tstopunset;
+        hoc_retpushx(1.);
+        return;
+    }
+    if (tree_changed) {
+        setup_topology();
+    }
+    if (v_structure_change) {
+        v_setup_vectors();
+    }
+    if (diam_changed) {
+        recalc_diam();
+    }
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
+    nrn_fixed_step(cache_token);
+    tstopunset;
+    hoc_retpushx(1.);
 }
 
 /*
   batch_save() initializes list of variables
   batch_save(&varname, ...) adds variable names to list for saving
   batch_save("varname", ...) adds variable names to the list and name
-  				will appear in header.
+                will appear in header.
   batch_run(tstop, tstep, "file") saves variables in file every tstep
 */
 
@@ -210,7 +187,7 @@ static int batch_size;
 static int batch_n;
 static double** batch_var;
 
-static void  batch_open(char* name, double tstop, double tstep, char* comment){
+static void batch_open(char* name, double tstop, double tstep, const char* comment) {
     if (batch_file) {
         batch_close();
     }
@@ -221,8 +198,14 @@ static void  batch_open(char* name, double tstop, double tstep, char* comment){
     if (!batch_file) {
         hoc_execerror("Couldn't open batch file", name);
     }
-    fprintf(batch_file, "%s\nbatch_run from t = %g to %g in steps of %g with dt = %g\n", comment, t, tstop, tstep, dt);
-    #if 0
+    fprintf(batch_file,
+            "%s\nbatch_run from t = %g to %g in steps of %g with dt = %g\n",
+            comment,
+            t,
+            tstop,
+            tstep,
+            dt);
+#if 0
     fprintf(batch_file, "variable names --\n");
         if (!batch_var) {
             batch_var = hoc_newlist();
@@ -243,146 +226,148 @@ static void  batch_open(char* name, double tstop, double tstep, char* comment){
         ITERATE(q, batch_varname) {
             batch_var[count++] = hoc_val_pointer(STR(q));
         }
-    #endif
+#endif
 }
 
 void batch_run(void) /* avoid interpreter overhead */
 {
-	double tstop, tstep, tnext;
-	char* filename;
-	char* comment;
+    double tstop, tstep, tnext;
+    char* filename;
 
-	tstopunset;
-	tstop = chkarg(1,0.,1e20);
-	tstep = chkarg(2, 0., 1e20);
-	if (ifarg(3)) {
-		filename = gargstr(3);
-	}else{
-		filename = 0;
-	}
-	if (ifarg(4)) {
-		comment = gargstr(4);
-	}else{
-		comment = "";
-	}
-	
-	if (tree_changed) {
-		setup_topology();
-	}
-#if VECTORIZE
-	if (v_structure_change) {
-		v_setup_vectors();
-	}
-#endif
-	batch_open(filename, tstop, tstep, comment);
-	batch_out();
-	if (cvode_active_) {
-		while (t < tstop) {
-			cvode_fadvance(t+tstep);
-			batch_out();
-		}
-	}else{
-		tstep -= dt/4.;
-		tstop -= dt/4.;
-		tnext = t + tstep;
-		while (t < tstop) {
-			nrn_fixed_step();
-			if (t > tnext) {
-				batch_out();
-				tnext = t + tstep;
-			}
-			if (stoprun) { tstopunset; break; }
-		}
-	}
-	batch_close();
-	hoc_retpushx(1.);
+    tstopunset;
+    tstop = chkarg(1, 0., 1e20);
+    tstep = chkarg(2, 0., 1e20);
+    if (ifarg(3)) {
+        filename = gargstr(3);
+    } else {
+        filename = 0;
+    }
+    auto* comment = ifarg(4) ? hoc_gargstr(4) : "";
+
+    if (tree_changed) {
+        setup_topology();
+    }
+    if (v_structure_change) {
+        v_setup_vectors();
+    }
+    batch_open(filename, tstop, tstep, comment);
+    batch_out();
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
+    if (cvode_active_) {
+        while (t < tstop) {
+            cvode_fadvance(t + tstep);
+            batch_out();
+        }
+    } else {
+        tstep -= dt / 4.;
+        tstop -= dt / 4.;
+        tnext = t + tstep;
+        while (t < tstop) {
+            nrn_fixed_step(cache_token);
+            if (t > tnext) {
+                batch_out();
+                tnext = t + tstep;
+            }
+            if (stoprun) {
+                tstopunset;
+                break;
+            }
+        }
+    }
+    batch_close();
+    hoc_retpushx(1.);
 }
 
 static void dt2thread(double adt) {
     if (adt != nrn_threads[0]._dt) {
-	int i;
-	for (i=0; i < nrn_nthread; ++i) {
-		NrnThread* nt = nrn_threads + i;
-		nt->_t = t;
-		nt->_dt = dt;
-		if (secondorder) {
-			nt->cj = 2.0/dt;
-		}else{
-			nt->cj = 1.0/dt;
-		}
-	}
+        int i;
+        for (i = 0; i < nrn_nthread; ++i) {
+            NrnThread* nt = nrn_threads + i;
+            nt->_t = t;
+            nt->_dt = dt;
+            if (secondorder) {
+                nt->cj = 2.0 / dt;
+            } else {
+                nt->cj = 1.0 / dt;
+            }
+        }
     }
 }
 
 static int _upd;
-static void* daspk_init_step_thread(NrnThread* nt) {
-	setup_tree_matrix(nt);
-	nrn_solve(nt);
-	if (_upd) {
-		update(nt);
-	}
-	return nullptr;
+static void daspk_init_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    setup_tree_matrix(cache_token, nt);
+    nrn_solve(&nt);
+    if (_upd) {
+        nrn_update_voltage(cache_token, nt);
+    }
 }
 
-void nrn_daspk_init_step(double tt, double dteps, int upd){
-	int i;
-	double dtsav = nrn_threads->_dt;
-	int so = secondorder;
-	dt = dteps;
-	t = tt;
-	secondorder = 0;
-	dt2thread(dteps);
-	nrn_thread_table_check();
-	_upd = upd;
-	nrn_multithread_job(daspk_init_step_thread);
-	dt = dtsav;
-	secondorder = so;
-	dt2thread(dtsav);
-	nrn_thread_table_check();
+void nrn_daspk_init_step(double tt, double dteps, int upd) {
+    int i;
+    double dtsav = nrn_threads->_dt;
+    int so = secondorder;
+    dt = dteps;
+    t = tt;
+    secondorder = 0;
+    dt2thread(dteps);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_thread_table_check(sorted_token);
+    _upd = upd;
+    nrn_multithread_job(sorted_token, daspk_init_step_thread);
+    dt = dtsav;
+    secondorder = so;
+    dt2thread(dtsav);
+    nrn_thread_table_check(sorted_token);
 }
 
-void nrn_fixed_step() {
-	int i;
+void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
+    nrn::Instrumentor::phase p_timestep("timestep");
+    int i;
 #if ELIMINATE_T_ROUNDOFF
-	nrn_chk_ndt();
+    nrn_chk_ndt();
 #endif
-	if (t != nrn_threads->_t) {
-		dt2thread(-1.);
-	}else{
-		dt2thread(dt);
-	}
-	nrn_thread_table_check();
-	if (nrn_multisplit_setup_) {
-		nrn_multithread_job(nrn_ms_treeset_through_triang);
-		// remove to avoid possible deadlock where some ranks do a
-		// v transfer and others do a spike exchange.
-		// i.e. must complete the full multisplit time step.
-		//if (!nrn_allthread_handle) {
-			nrn_multithread_job(nrn_ms_reduce_solve);
-			nrn_multithread_job(nrn_ms_bksub);
-			/* see comment below */
-			if (nrnthread_v_transfer_) {
-				if (nrnmpi_v_transfer_) {
-					(*nrnmpi_v_transfer_)();
-				}
-				nrn_multithread_job(nrn_fixed_step_lastpart);
-			}
+    if (t != nrn_threads->_t) {
+        dt2thread(-1.);
+    } else {
+        dt2thread(dt);
+    }
+    nrn_thread_table_check(cache_token);
+    if (nrn_multisplit_setup_) {
+        nrn_multithread_job(nrn_ms_treeset_through_triang);
+        // remove to avoid possible deadlock where some ranks do a
+        // v transfer and others do a spike exchange.
+        // i.e. must complete the full multisplit time step.
+        // if (!nrn_allthread_handle) {
+        nrn_multithread_job(nrn_ms_reduce_solve);
+        nrn_multithread_job(nrn_ms_bksub);
+        /* see comment below */
+        if (nrnthread_v_transfer_) {
+            if (nrnmpi_v_transfer_) {
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
+            }
+            nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+        }
         //}
-	}else{
-		nrn_multithread_job(nrn_fixed_step_thread);
-/* if there is no nrnthread_v_transfer then there cannot be
-   a nrnmpi_v_transfer and lastpart
-   will be done in above call.
-*/
-		if (nrnthread_v_transfer_) {
-			if (nrnmpi_v_transfer_) {
-				(*nrnmpi_v_transfer_)();
-			}
-			nrn_multithread_job(nrn_fixed_step_lastpart);
-		}
-	}
-	t = nrn_threads[0]._t;
-	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+    } else {
+        nrn_multithread_job(cache_token, nrn_fixed_step_thread);
+        /* if there is no nrnthread_v_transfer then there cannot be
+           a nrnmpi_v_transfer and lastpart
+           will be done in above call.
+        */
+        if (nrnthread_v_transfer_) {
+            if (nrnmpi_v_transfer_) {
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
+            }
+            nrn_multithread_job(cache_token, nrn_fixed_step_lastpart);
+        }
+    }
+    t = nrn_threads[0]._t;
+    if (nrn_allthread_handle) {
+        (*nrn_allthread_handle)();
+    }
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
@@ -392,458 +377,447 @@ static int step_group_n;
 static int step_group_begin;
 static int step_group_end;
 
-void nrn_fixed_step_group(int n) {
-	int i;
+void nrn_fixed_step_group(neuron::model_sorted_token const& cache_token, int n) {
+    int i;
 #if ELIMINATE_T_ROUNDOFF
-	nrn_chk_ndt();
+    nrn_chk_ndt();
 #endif
-	dt2thread(dt);
-	nrn_thread_table_check();
-	if (nrn_multisplit_setup_) {
-		int b = 0;
-		nrn_multithread_job(nrn_ms_treeset_through_triang);
-		step_group_n = 0; /* abort at bksub flag */
-		for (i=1; i < n; ++i) {
-			nrn_multithread_job(nrn_ms_reduce_solve);
-			nrn_multithread_job(nrn_ms_bksub_through_triang);
-			if (step_group_n) {
-				step_group_n = 0;
-				if (nrn_allthread_handle) {
-					(*nrn_allthread_handle)();
-				}
-				/* aborted step at bksub, so if not stopped
-				   must do the triang*/
-				b = 1;
-				if (!stoprun) {
-					nrn_multithread_job(nrn_ms_treeset_through_triang);
-				}
-			}
-			if (stoprun) { break; }
-			b = 0;
-		}
-		if (!b) {
-			nrn_multithread_job(nrn_ms_reduce_solve);
-			nrn_multithread_job(nrn_ms_bksub);
-		}
-		if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
-	}else{
-		step_group_n = n;
-		step_group_begin = 0;
-		step_group_end = 0;
-		while(step_group_end < step_group_n) {
-/*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
-			nrn_multithread_job(nrn_fixed_step_group_thread);
-			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
-			if (stoprun) { break; }
-			step_group_begin = step_group_end;
-		}
-	}
-	t = nrn_threads[0]._t;
+    dt2thread(dt);
+    nrn_thread_table_check(cache_token);
+    if (nrn_multisplit_setup_) {
+        int b = 0;
+        nrn_multithread_job(nrn_ms_treeset_through_triang);
+        step_group_n = 0; /* abort at bksub flag */
+        for (i = 1; i < n; ++i) {
+            nrn_multithread_job(nrn_ms_reduce_solve);
+            nrn_multithread_job(nrn_ms_bksub_through_triang);
+            if (step_group_n) {
+                step_group_n = 0;
+                if (nrn_allthread_handle) {
+                    (*nrn_allthread_handle)();
+                }
+                /* aborted step at bksub, so if not stopped
+                   must do the triang*/
+                b = 1;
+                if (!stoprun) {
+                    nrn_multithread_job(nrn_ms_treeset_through_triang);
+                }
+            }
+            if (stoprun) {
+                break;
+            }
+            b = 0;
+        }
+        if (!b) {
+            nrn_multithread_job(nrn_ms_reduce_solve);
+            nrn_multithread_job(nrn_ms_bksub);
+        }
+        if (nrn_allthread_handle) {
+            (*nrn_allthread_handle)();
+        }
+    } else {
+        step_group_n = n;
+        step_group_begin = 0;
+        step_group_end = 0;
+        while (step_group_end < step_group_n) {
+            /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
+            nrn_multithread_job(cache_token, nrn_fixed_step_group_thread);
+            if (nrn_allthread_handle) {
+                (*nrn_allthread_handle)();
+            }
+            if (stoprun) {
+                break;
+            }
+            step_group_begin = step_group_end;
+        }
+    }
+    t = nrn_threads[0]._t;
 }
 
-void* nrn_fixed_step_group_thread(NrnThread* nth) {
-	int i;
-	nth->_stop_stepping = 0;
-	for (i = step_group_begin; i < step_group_n; ++i) {
-		nrn_fixed_step_thread(nth);
-		if (nth->_stop_stepping) {
-			if (nth->id == 0) { step_group_end = i + 1; }
-			nth->_stop_stepping = 0;
-			return nullptr;
-		}
-	}
-	if (nth->id == 0) { step_group_end = step_group_n; }
-	return nullptr;
+static void nrn_fixed_step_group_thread(neuron::model_sorted_token const& cache_token,
+                                        NrnThread& nt) {
+    auto* const nth = &nt;
+    int i;
+    nth->_stop_stepping = 0;
+    for (i = step_group_begin; i < step_group_n; ++i) {
+        nrn::Instrumentor::phase p_timestep("timestep");
+        nrn_fixed_step_thread(cache_token, nt);
+        if (nth->_stop_stepping) {
+            if (nth->id == 0) {
+                step_group_end = i + 1;
+            }
+            nth->_stop_stepping = 0;
+            return;
+        }
+    }
+    if (nth->id == 0) {
+        step_group_end = step_group_n;
+    }
 }
 
-void* nrn_fixed_step_thread(NrnThread* nth) {
-	double wt;
-    nrn::Instrumentor::phase_begin("timestep");
-
+static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    auto* const nth = &nt;
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
-    wt = nrnmpi_wtime();
-	nrn_random_play();
+    CTBEGIN;
+    nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
-	nth->nrn_ndt_ += .5;
-	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+    nt.nrn_ndt_ += .5;
+    nt._t = nrn_tbase_ + nt.nrn_ndt_ * nrn_dt_;
 #else
-	nth->_t += .5 * nth->_dt;
+    nt._t += .5 * nt._dt;
 #endif
-	fixed_play_continuous(nth);
-	setup_tree_matrix(nth);
+    fixed_play_continuous(nth);
+    setup_tree_matrix(cache_token, nt);
     {
         nrn::Instrumentor::phase p("matrix-solver");
         nrn_solve(nth);
     }
     {
-        nrn::Instrumentor::phase p("second_order_cur");
+        nrn::Instrumentor::phase p("second-order-cur");
         second_order_cur(nth);
     }
     {
         nrn::Instrumentor::phase p("update");
-        update(nth);
+        nrn_update_voltage(cache_token, *nth);
     }
-    CTADD
-/*
-  To simplify the logic,
-  if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
-*/
-	if (!nrnthread_v_transfer_) {
-		nrn_fixed_step_lastpart(nth);
-	}
-    nrn::Instrumentor::phase_end("timestep");
-    return nullptr;
+    CTADD;
+    /*
+      To simplify the logic,
+      if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
+    */
+    if (!nrnthread_v_transfer_) {
+        nrn_fixed_step_lastpart(cache_token, nt);
+    }
 }
 
 extern void nrn_extra_scatter_gather(int direction, int tid);
-extern void nrn_ba(NrnThread*, int);
 
-void* nrn_fixed_step_lastpart(NrnThread* nth) {
-	CTBEGIN
-#if NRN_DAQ
-	nrn_daq_ao();
-#endif
+void nrn_fixed_step_lastpart(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
+    auto* const nth = &nt;
+    CTBEGIN;
 #if ELIMINATE_T_ROUNDOFF
-	nth->nrn_ndt_ += .5;
-	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+    nth->nrn_ndt_ += .5;
+    nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
 #else
-	nth->_t += .5 * nth->_dt;
+    nth->_t += .5 * nth->_dt;
 #endif
-	fixed_play_continuous(nth);
-#if NRN_DAQ
-	nrn_daq_scanstart();
-#endif
-	nrn_extra_scatter_gather(0, nth->id);
-	nonvint(nth);
-	nrn_ba(nth, AFTER_SOLVE);
-#if NRN_DAQ
-	nrn_daq_ai();
-#endif
-	fixed_record_continuous(nth);
-    CTADD
+    fixed_play_continuous(nth);
+    nrn_extra_scatter_gather(0, nth->id);
+    nonvint(cache_token, nt);
+    nrn_ba(cache_token, nt, AFTER_SOLVE);
+    fixed_record_continuous(cache_token, nt);
+    CTADD;
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
-    return nullptr;
 }
 
 /* nrn_fixed_step_thread is split into three pieces */
 
 void* nrn_ms_treeset_through_triang(NrnThread* nth) {
-	double wt;
-	deliver_net_events(nth);
-	wt = nrnmpi_wtime();
-	nrn_random_play();
+    deliver_net_events(nth);
+    CTBEGIN;
+    nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
-	nth->nrn_ndt_ += .5;
-	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+    nth->nrn_ndt_ += .5;
+    nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
 #else
-	nth->_t += .5 * nth->_dt;
+    nth->_t += .5 * nth->_dt;
 #endif
-	fixed_play_continuous(nth);
-	setup_tree_matrix(nth);
-	nrn_multisplit_triang(nth);
-	CTADD
-	return nullptr;
+    fixed_play_continuous(nth);
+    setup_tree_matrix(nrn_ensure_model_data_are_sorted(), *nth);
+    nrn_multisplit_triang(nth);
+    CTADD;
+    return nullptr;
 }
 void* nrn_ms_reduce_solve(NrnThread* nth) {
-	nrn_multisplit_reduce_solve(nth);
-	return nullptr;
+    nrn_multisplit_reduce_solve(nth);
+    return nullptr;
 }
 void* nrn_ms_bksub(NrnThread* nth) {
-	CTBEGIN
-	nrn_multisplit_bksub(nth);
-	second_order_cur(nth);
-	update(nth);
-	CTADD
-/* see above comment in nrn_fixed_step_thread */
-	if (!nrnthread_v_transfer_) {
-		nrn_fixed_step_lastpart(nth);
-	}
-	return nullptr;
+    CTBEGIN;
+    nrn_multisplit_bksub(nth);
+    second_order_cur(nth);
+    auto const cache_token = nrn_ensure_model_data_are_sorted();
+    nrn_update_voltage(cache_token, *nth);
+    CTADD;
+    /* see above comment in nrn_fixed_step_thread */
+    if (!nrnthread_v_transfer_) {
+        nrn_fixed_step_lastpart(cache_token, *nth);
+    }
+    return nullptr;
 }
 void* nrn_ms_bksub_through_triang(NrnThread* nth) {
-	nrn_ms_bksub(nth);
-	if (nth->_stop_stepping) {
-		nth->_stop_stepping = 0;
-		if (nth == nrn_threads) {
-			step_group_n = 1;
-		}
-		return nullptr;
-	}
-	nrn_ms_treeset_through_triang(nth);
-	return nullptr;
+    nrn_ms_bksub(nth);
+    if (nth->_stop_stepping) {
+        nth->_stop_stepping = 0;
+        if (nth == nrn_threads) {
+            step_group_n = 1;
+        }
+        return nullptr;
+    }
+    nrn_ms_treeset_through_triang(nth);
+    return nullptr;
 }
 
-#if NRN_REALTIME
-void nrn_fake_step() { /* get as much into cache as possible */
-	/* if we could do a full nrn_fixed_step we would save about 10 us */
 
-	/*Not nearly enough. This only saving a few */
-	setup_tree_matrix();
-	nrn_solve();
-
-#if 0
-	nonvint(); /* this is an important one, 2 more us,  but ... */
-#endif
-}
-#endif
-
-static void update(NrnThread* _nt)
-{
-	int i, i1, i2;
-	i1 = 0;
-	i2 = _nt->end;
-#if CACHEVEC
-    if (use_cachevec) {
-	/* do not need to worry about linmod or extracellular*/
-	if (secondorder) {
-		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += 2.*VEC_RHS(i);
-		}
-	}else{
-		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += VEC_RHS(i);
-		}
-	}
-    }else
-#endif
-    {	/* use original non-vectorized update */
- 	if (secondorder) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
-		for (i=i1; i < i2; ++i) {
-			NODEV(_nt->_v_node[i]) += 2.*NODERHS(_nt->_v_node[i]);
-		}
-	}else{
-#if _CRAY
-#pragma _CRI ivdep
-#endif
-		for (i=i1; i < i2; ++i) {
-			NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
-		}
-		if (use_sparse13) {
-			nrndae_update();
-		}
-	}
-    } /* end of non-vectorized update */
+void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    auto* const vec_rhs = nt.node_rhs_storage();
+    auto* const vec_v = nt.node_voltage_storage();
+    auto* const _nt = &nt;
+    int i, i1, i2;
+    i1 = 0;
+    i2 = _nt->end;
+    /* do not need to worry about linmod or extracellular*/
+    if (secondorder) {
+        for (i = i1; i < i2; ++i) {
+            vec_v[i] += 2. * vec_rhs[i];
+        }
+    } else {
+        for (i = i1; i < i2; ++i) {
+            vec_v[i] += vec_rhs[i];
+        }
+    }
+    if (use_sparse13) {
+        nrndae_update(_nt);
+    }
 
 #if EXTRACELLULAR
-	nrn_update_2d(_nt);
+    nrn_update_2d(_nt);
 #endif
-	if (nrnthread_vi_compute_) { (*nrnthread_vi_compute_)(_nt); }
+    if (nrnthread_vi_compute_) {
+        (*nrnthread_vi_compute_)(_nt);
+    }
 #if I_MEMBRANE
-	if (_nt->tml) {
-		assert(_nt->tml->index == CAP);
-		nrn_capacity_current(_nt, _nt->tml->ml);
-	}
+    if (_nt->tml) {
+        assert(_nt->tml->index == CAP);
+        nrn_capacity_current(sorted_token, _nt, _nt->tml->ml);
+    }
 #endif
-	if (nrn_use_fast_imem) { nrn_calc_fast_imem(_nt); }
-}
-
-void nrn_calc_fast_imem(NrnThread* _nt) {
-	int i;
-	int i1 = 0;
-	int i3 = _nt->end;
-	double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
-	double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-    if (use_cachevec) {
-	for (i = i1; i < i3 ; ++i) {
-		prhs[i] = (pd[i]*VEC_RHS(i) + prhs[i])*VEC_AREA(i)*0.01;
-	}
-    }else{
-	for (i = i1; i < i3 ; ++i) {
-		Node* nd = _nt->_v_node[i];
-		prhs[i] = (pd[i]*NODERHS(nd) + prhs[i])*NODEAREA(nd)*0.01;
-	}
+    if (nrn_use_fast_imem) {
+        nrn_calc_fast_imem(_nt);
     }
 }
 
-void fcurrent(void)
-{
-	int i;
-	if (tree_changed) {
-		setup_topology();
-	}
-	if (v_structure_change) {
-		v_setup_vectors();
-	}
-	if (diam_changed) {
-		recalc_diam();
-	}
+void nrn_calc_fast_imem(NrnThread* _nt) {
+    constexpr int i1 = 0;
+    auto const i3 = _nt->end;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_d = _nt->node_sav_d_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    assert(vec_sav_d);
+    assert(vec_sav_rhs);
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_sav_d[i] * vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
+    }
+}
 
-	dt2thread(-1.);
-	nrn_thread_table_check();
-	state_discon_allowed_ = 0;
-	nrn_multithread_job(setup_tree_matrix);
-	state_discon_allowed_ = 1;
-	hoc_retpushx(1.);
+void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
+    // nrn_rhs() is called near end of nrn_finitialize() via setup_tree_matrix()
+    // and nrn_rhs() sets up _nrn_sav_rhs as -total ionic_current (without
+    // ELECTRODE_CURRENT contributions) and RHS as axial + ionic + stim currents
+    // So sum, scaled by area, is i_membrane_ in nA.
+    // (Note: capacitance does not appear on rhs because delta_v is the
+    // variable in the current balance equations set up by setup_tree_matrix.)
+    // Warning: Have not thought deeply about extracellular or LinearMechanism.
+    //          But there is a good chance things are ok. But needs testing.
+    // I don't believe this is used by Cvode or IDA.
+    constexpr auto i1 = 0;
+    int i3 = _nt->end;
+    auto const vec_area = _nt->node_area_storage();
+    auto const vec_rhs = _nt->node_rhs_storage();
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    for (int i = i1; i < i3; ++i) {
+        vec_sav_rhs[i] = (vec_rhs[i] + vec_sav_rhs[i]) * vec_area[i] * 0.01;
+    }
+}
+
+void fcurrent(void) {
+    int i;
+    if (tree_changed) {
+        setup_topology();
+    }
+    if (v_structure_change) {
+        v_setup_vectors();
+    }
+    if (diam_changed) {
+        recalc_diam();
+    }
+
+    dt2thread(-1.);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_thread_table_check(sorted_token);
+    state_discon_allowed_ = 0;
+    nrn_multithread_job(sorted_token, setup_tree_matrix);
+    state_discon_allowed_ = 1;
+    hoc_retpushx(1.);
 }
 
 void nrn_print_matrix(NrnThread* _nt) {
-	extern int section_count;
-	extern Section** secorder;
-	int isec, inode;
-	Section* sec;
-	Node* nd;
+    extern int section_count;
+    extern Section** secorder;
+    int isec, inode;
+    Section* sec;
+    Node* nd;
     if (use_sparse13) {
-	if(ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-		spPrint(_nt->_sp13mat, 1, 0, 1);
-	}else{
-		int i, n = spGetSize(_nt->_sp13mat, 0);
-		spPrint(_nt->_sp13mat, 1, 1, 1);
-		for (i=1; i <= n; ++i) {
-			Printf("%d %g\n", i, _nt->_actual_rhs[i]);
-		}
-	}
-    }else if (_nt) {
-	for (inode = 0; inode <  _nt->end; ++inode) {
-		nd = _nt->_v_node[inode];
-Printf("%d %g %g %g %g\n", inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
-	}		
-    }else{
-	for (isec = 0; isec < section_count; ++isec) {
-		sec = secorder[isec];
-		for (inode = 0; inode < sec->nnode; ++inode) {
-			nd = sec->pnode[inode];
-Printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
-		}
-	}
+        if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+            spPrint(_nt->_sp13mat, 1, 0, 1);
+        } else {
+            int i, n = spGetSize(_nt->_sp13mat, 0);
+            spPrint(_nt->_sp13mat, 1, 1, 1);
+            for (i = 1; i <= n; ++i) {
+                Printf("%d %g\n", i, _nt->actual_rhs(i));
+            }
+        }
+    } else if (_nt) {
+        for (inode = 0; inode < _nt->end; ++inode) {
+            nd = _nt->_v_node[inode];
+            Printf("%d %g %g %g %g\n",
+                   inode,
+                   *nrn_classicalNodeB(nd),
+                   *nrn_classicalNodeA(nd),
+                   NODED(nd),
+                   NODERHS(nd));
+        }
+    } else {
+        for (isec = 0; isec < section_count; ++isec) {
+            sec = secorder[isec];
+            for (inode = 0; inode < sec->nnode; ++inode) {
+                nd = sec->pnode[inode];
+                Printf("%d %d %g %g %g %g\n",
+                       isec,
+                       inode,
+                       *nrn_classicalNodeB(nd),
+                       *nrn_classicalNodeA(nd),
+                       NODED(nd),
+                       NODERHS(nd));
+            }
+        }
     }
 }
 
 void fmatrix(void) {
-	if (ifarg(1)) {
-		double x;
-		Section* sec;
-		int id;
-		Node* nd;
-		NrnThread* _nt;
-		nrn_seg_or_x_arg(1, &sec, &x);
-		id = (int)chkarg(2, 1., 4.);
-		nd = node_exact(sec, x);
-		_nt = nd->_nt;
-		switch (id) {
-		case 1: hoc_retpushx(NODEA(nd)); break;
-		case 2: hoc_retpushx(NODED(nd)); break;
-		case 3: hoc_retpushx(NODEB(nd)); break;
-		case 4: hoc_retpushx(NODERHS(nd)); break;
-		}
-		return;
-	}
-	nrn_print_matrix(nrn_threads);
-	hoc_retpushx(1.);
-	return;
+    if (ifarg(1)) {
+        double x;
+        Section* sec;
+        int id;
+        Node* nd;
+        NrnThread* _nt;
+        nrn_seg_or_x_arg(1, &sec, &x);
+        id = (int) chkarg(2, 1., 4.);
+        nd = node_exact(sec, x);
+        _nt = nd->_nt;
+        switch (id) {
+        case 1:
+            hoc_retpushx(NODEA(nd));
+            break;
+        case 2:
+            hoc_retpushx(NODED(nd));
+            break;
+        case 3:
+            hoc_retpushx(NODEB(nd));
+            break;
+        case 4:
+            hoc_retpushx(NODERHS(nd));
+            break;
+        }
+        return;
+    }
+    nrn_print_matrix(nrn_threads);
+    hoc_retpushx(1.);
+    return;
 }
 
-void nonvint(NrnThread* _nt)
-{
-#if VECTORIZE
-	int i=0;
-	double w;
-	int measure = 0;
-	NrnThreadMembList* tml;
-#if 1 || PARANEURON
-	/* nrnmpi_v_transfer if needed was done earlier */
+static void nonvint(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    /* nrnmpi_v_transfer if needed was done earlier */
     if (nrnthread_v_transfer_) {
-        nrn::Instrumentor::phase p("gap-v-transfer");
-        (*nrnthread_v_transfer_)(_nt);
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        nrnthread_v_transfer_(&nt);
     }
-#endif
     nrn::Instrumentor::phase_begin("state-update");
-    if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
-	errno = 0;
-	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
+    bool const measure{nt.id == 0 && nrn_mech_wtime_};
+    errno = 0;
+    for (auto* tml = nt.tml; tml; tml = tml->next) {
+        if (memb_func[tml->index].state) {
             std::string mechname("state-");
             mechname += memb_func[tml->index].sym->name;
+            auto const w = measure ? nrnmpi_wtime() : -1.0;
             nrn::Instrumentor::phase_begin(mechname.c_str());
-            Pvmi s = memb_func[tml->index].state;
+            memb_func[tml->index].state(sorted_token, &nt, tml->ml, tml->index);
             nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
-                w = nrnmpi_wtime(); }
-		(*s)(_nt, tml->ml, tml->index);
-		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
-		if (errno) {
-			if (nrn_errno_check(i)) {
-hoc_warning("errno set during calculation of states", (char*)0);
-			}
-		}
-  	  }
-	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
-	nrn_nonvint_block_fixed_step_solve(_nt->id);
+                nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
+            }
+            if (errno && nrn_errno_check(0)) {
+                hoc_warning("errno set during calculation of states", nullptr);
+            }
+        }
+    }
+    long_difus_solve(sorted_token, 0, nt); /* if any longitudinal diffusion */
+    nrn_nonvint_block_fixed_step_solve(nt.id);
     nrn::Instrumentor::phase_end("state-update");
-#endif
 }
 
-#if VECTORIZE
-int nrn_errno_check(int i)
-{
-	int ierr;
-	ierr = hoc_errno_check();
-	if (ierr) {
-		fprintf(stderr, 
-"%d errno=%d at t=%g during call to mechanism %s\n", nrnmpi_myid, ierr, t, memb_func[i].sym->name);
-	}
-	return ierr;
+int nrn_errno_check(int i) {
+    int ierr = hoc_errno_check();
+    if (ierr) {
+        fprintf(stderr,
+                "%d errno=%d at t=%g during call to mechanism %s\n",
+                nrnmpi_myid,
+                ierr,
+                t,
+                memb_func[i].sym->name);
+    }
+    return ierr;
 }
-#else
-int nrn_errno_check(Prop* p, int inode, Section* sec)
-{
-	int ierr;
-	char* secname();
-	ierr = hoc_errno_check();
-	if (ierr) {
-		fprintf(stderr, 
-"%d errno set at t=%g during call to mechanism %s at node %d in section %s\n",
-nrnmpi_myid, t, memb_func[p->type].sym->name, inode, secname(sec));
-	}
-	return ierr;
-}
-#endif
 
 void frecord_init(void) { /* useful when changing states after an finitialize() */
-	int i;
-	dt2thread(-1);
-	nrn_record_init();
-	if (!cvode_active_) {
-		for (i=0; i < nrn_nthread; ++i) {
-			fixed_record_continuous(nrn_threads + i);
-		}
-	}
-	hoc_retpushx(1.);
+    int i;
+    dt2thread(-1);
+    nrn_record_init();
+    if (!cvode_active_) {
+        for (i = 0; i < nrn_nthread; ++i) {
+            fixed_record_continuous(nrn_ensure_model_data_are_sorted(), nrn_threads[i]);
+        }
+    }
+    hoc_retpushx(1.);
 }
 
 void verify_structure(void) {
-	if (tree_changed) {
-		setup_topology();
-	}
-	if (v_structure_change) {
-		v_setup_vectors();
-	}
-	if (diam_changed) {
-		recalc_diam();
-	}
-	nrn_solver_prepare(); /* cvode ready to be used */
+    if (tree_changed) {
+        setup_topology();
+    }
+    if (v_structure_change) {
+        v_setup_vectors();
+    }
+    if (diam_changed) {
+        recalc_diam();
+    }
+    nrn_solver_prepare(); /* cvode ready to be used */
 }
-	
+
 void nrn_finitialize(int setv, double v) {
     int iord, i;
-    NrnThread *_nt;
+    NrnThread* _nt;
     extern int _ninits;
-    extern short *nrn_is_artificial_;
+    extern short* nrn_is_artificial_;
     ++_ninits;
 
     nrn::Instrumentor::phase_begin("finitialize");
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
+    // Is this the right place to call this?
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
 #if ELIMINATE_T_ROUNDOFF
-    nrn_ndt_ = 0.; nrn_dt_ = dt; nrn_tbase_ = 0.;
+    nrn_ndt_ = 0.;
+    nrn_dt_ = dt;
+    nrn_tbase_ = 0.;
 #else
     t = 0.;
     dt2thread(-1.);
@@ -851,44 +825,40 @@ void nrn_finitialize(int setv, double v) {
     if (cvode_active_) {
         nrncvode_set_t(t);
     }
-    nrn_thread_table_check();
+    nrn_thread_table_check(sorted_token);
     clear_event_queue();
     nrn_spike_exchange_init();
     nrn_random_play();
-#if VECTORIZE
     nrn_play_init(); /* Vector.play */
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
-        FOR_THREADS(_nt)
-        for (i = 0; i < _nt->end; ++i) {
-            NODEV(_nt->_v_node[i]) = v;
+        FOR_THREADS(_nt) {
+            auto const vec_v = _nt->node_voltage_storage();
+            std::fill_n(vec_v, _nt->end, v);
         }
     }
-#if 1 || PARANEURON
-    if (nrnthread_vi_compute_) FOR_THREADS(_nt)
+#if 1 || NRNMPI
+    if (nrnthread_vi_compute_)
+        FOR_THREADS(_nt) {
+            (*nrnthread_vi_compute_)(_nt);
+        }
     {
-        (*nrnthread_vi_compute_)(_nt);
-    }
-    if (nrnmpi_v_transfer_) {
-        (nrnmpi_v_transfer_)();
-    }
-    if (nrnthread_v_transfer_) FOR_THREADS(_nt)
-    {
-        (*nrnthread_v_transfer_)(_nt);
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        if (nrnmpi_v_transfer_) {
+            (nrnmpi_v_transfer_)();
+        }
+        if (nrnthread_v_transfer_)
+            FOR_THREADS(_nt) {
+                (*nrnthread_v_transfer_)(_nt);
+            }
     }
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
     for (i = 0; i < nrn_nthread; ++i) {
-        nrn_ba(nrn_threads + i, BEFORE_INITIAL);
+        nrn_ba(sorted_token, nrn_threads[i], BEFORE_INITIAL);
     }
-#if _CRAY
-    cray_node_init();
-#endif
     /* the INITIAL blocks are ordered so that mechanisms that write
        concentrations are after ions and before mechanisms that read
        concentrations.
@@ -896,13 +866,12 @@ void nrn_finitialize(int setv, double v) {
     /* the memblist list in NrnThread is already so ordered */
 #if MULTICORE
     for (i = 0; i < nrn_nthread; ++i) {
-        NrnThread *nt = nrn_threads + i;
+        NrnThread* nt = nrn_threads + i;
         nrn_nonvint_block_init(nt->id);
-        NrnThreadMembList *tml;
+        NrnThreadMembList* tml;
         for (tml = nt->tml; tml; tml = tml->next) {
-            Pvmi s = memb_func[tml->index].initialize;
-            if (s) {
-                (*s)(nt, tml->ml, tml->index);
+            if (memb_func[tml->index].has_initialize()) {
+                memb_func[tml->index].invoke_initialize(sorted_token, nt, tml->ml, tml->index);
             }
         }
     }
@@ -911,47 +880,27 @@ void nrn_finitialize(int setv, double v) {
         i = memb_order_[iord];
         /* first clause due to MULTICORE */
         if (nrn_is_artificial_[i])
-            if (memb_func[i].initialize) {
-                Pvmi s = memb_func[i].initialize;
-#if 0
-                if (nrn_is_artificial_[i]) {
-                /*
-                     I hope the space saving of the memb_list arrays is worth
-                     doing this specifically. And if art cells are needed
-                     in the memb_list anywhere else we will have do do something
-                     similar to this. This gives up vectorization but this is only
-                     initialization and all the other use of artcell should be
-                     event driven.
-                */
-                Prop* p;
-                hoc_Item* q;
-                hoc_List* list = nrn_pnt_template_[i]->olist;
-                ITERATE(q, list) {
-                    Object* obj = OBJ(q);
-                    Prop* p = ((Point_process*)obj->u.this_pointer)->prop;
-                    (*s)((Node*)0, p->param, p->dparam);
-                }
-                }else if (memb_list[i].nodecount){
-#else
+            if (memb_func[i].has_initialize()) {
                 if (memb_list[i].nodecount) {
-#endif
-                    (*s)(nrn_threads, memb_list + i, i);
+                    // initialize all artificial cells in all threads at once
+                    auto& ml = memb_list[i];
+                    ml.set_storage_offset(0);
+                    memb_func[i].invoke_initialize(sorted_token, nrn_threads, &ml, i);
                 }
                 if (errno) {
                     if (nrn_errno_check(i)) {
-                        hoc_warning("errno set during call to INITIAL block", (char *) 0);
+                        hoc_warning("errno set during call to INITIAL block", (char*) 0);
                     }
                 }
             }
     }
-#endif
     if (use_sparse13) {
         nrndae_init();
     }
 
     init_net_events();
     for (i = 0; i < nrn_nthread; ++i) {
-        nrn_ba(nrn_threads + i, AFTER_INITIAL);
+        nrn_ba(sorted_token, nrn_threads[i], AFTER_INITIAL);
     }
     nrn_fihexec(1); /* after INITIAL blocks, before fcurrent*/
 
@@ -964,20 +913,15 @@ void nrn_finitialize(int setv, double v) {
     } else {
         state_discon_allowed_ = 0;
         for (i = 0; i < nrn_nthread; ++i) {
-            setup_tree_matrix(nrn_threads + i);
+            setup_tree_matrix(sorted_token, nrn_threads[i]);
             if (nrn_use_fast_imem) {
-                nrn_calc_fast_imem(nrn_threads + i);
+                nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
             }
         }
         state_discon_allowed_ = 1;
-#if 0 && NRN_DAQ
-        nrn_daq_ao();
-        nrn_daq_scanstart();
-        nrn_daq_ai();
-#endif
         nrn_record_init();
         for (i = 0; i < nrn_nthread; ++i) {
-            fixed_record_continuous(nrn_threads + i);
+            fixed_record_continuous(sorted_token, nrn_threads[i]);
         }
     }
     for (i = 0; i < nrn_nthread; ++i) {
@@ -986,7 +930,9 @@ void nrn_finitialize(int setv, double v) {
 #if NRNMPI
     nrn_spike_exchange(nrn_threads);
 #endif
-    if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+    if (nrn_allthread_handle) {
+        (*nrn_allthread_handle)();
+    }
 
     nrn_fihexec(2); /* just before return */
     nrn::Instrumentor::phase_end("finitialize");
@@ -1032,7 +978,7 @@ void batch_save(void) {
         for (i = 1; ifarg(i); ++i) {
             if (batch_size <= batch_n) {
                 batch_size += 20;
-                batch_var = (double **) erealloc(batch_var, batch_size * sizeof(double *));
+                batch_var = (double**) erealloc(batch_var, batch_size * sizeof(double*));
             }
             batch_var[batch_n] = hoc_pgetarg(i);
             ++batch_n;
@@ -1041,24 +987,22 @@ void batch_save(void) {
     hoc_retpushx(1.);
 }
 
-void nrn_ba(NrnThread *nt, int bat) {
-    NrnThreadBAList *tbl;
-    int i;
-    for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
-        nrn_bamech_t f = tbl->bam->f;
-        int type = tbl->bam->type;
-        Memb_list *ml = tbl->ml;
-        for (i = 0; i < ml->nodecount; ++i) {
-            (*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
+void nrn_ba(neuron::model_sorted_token const& cache_token, NrnThread& nt, int bat) {
+    for (NrnThreadBAList* tbl = nt.tbl[bat]; tbl; tbl = tbl->next) {
+        nrn_bamech_t const f{tbl->bam->f};
+        Memb_list* const ml{tbl->ml};
+        // TODO move this loop into the translated MOD file code
+        for (int i = 0; i < ml->nodecount; ++i) {
+            f(ml->nodelist[i], ml->pdata[i], ml->_thread, &nt, ml, i, cache_token);
         }
     }
 }
 
-typedef int (*NonVintBlockItem)(int method, int size, double *pd1, double *pd2, int tid);
+typedef int (*NonVintBlockItem)(int method, int size, double* pd1, double* pd2, int tid);
 /* list to store the nrn_nonvint_block functions */
 static std::vector<NonVintBlockItem> nonvint_block_list;
 
-int nrn_nonvint_block_exe(int method, int size, double *pd1, double *pd2, int tid) {
+int nrn_nonvint_block_exe(int method, int size, double* pd1, double* pd2, int tid) {
     /* execute all functions in nonvint_block_list and return the sum of the
      * return values
      */
@@ -1080,7 +1024,6 @@ int nrn_nonvint_block_exe(int method, int size, double *pd1, double *pd2, int ti
 }
 
 extern "C" int set_nonvint_block(NonVintBlockItem func) {
-
     /* store new_nrn_nonvint_block functions in a list */
     nonvint_block_list.push_back(func);
 
@@ -1106,7 +1049,7 @@ extern "C" int unset_nonvint_block(NonVintBlockItem func) {
     return 0;
 }
 
-int nrn_nonvint_block_helper(int method, int size, double *pd1, double *pd2, int tid) {
+int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int tid) {
     assert(nrn_nonvint_block);
     int rval = (*nrn_nonvint_block)(method, size, pd1, pd2, tid);
     if (rval == -1) {
@@ -1115,33 +1058,15 @@ int nrn_nonvint_block_helper(int method, int size, double *pd1, double *pd2, int
     return rval;
 }
 
-/*
-   Derived from scopmath/euler.cpp. Here because scopmath does not know
-   about NrnThread
-*/
-#include "nrniv_mf.h"
+// nrn_ensure_model_data_are_sorted_opaque() can be used in circumstances where
+// neuron:model_sorted_token const& is a forward ref and nrn_ensure_model_data_are_sorted() cannot
+// be used
+namespace neuron {
+opaque_model_sorted_token::opaque_model_sorted_token(model_sorted_token&& token)
+    : m_ptr{std::make_unique<model_sorted_token>(std::move(token))} {}
+opaque_model_sorted_token::~opaque_model_sorted_token() {}
+}  // namespace neuron
 
-#undef SUCCESS
-#define SUCCESS 0
-#define der_(arg)  p[der[arg]]
-#define var_(arg)  p[var[arg]]
-
-/* ARGSUSED */
-extern "C" int euler_thread(int neqn, int *var, int *der, double *p,
-                 int (*func)(double *, Datum *, Datum *, NrnThread *),
-                 Datum *ppvar, Datum *thread, NrnThread *nt) {
-    int i;
-    double dt = nt->_dt;
-
-    /* Calculate the derivatives */
-
-    (*func)(p, ppvar, thread, nt);
-
-    /* Update dependent variables --- note defines in euler above*/
-
-    for (i = 0; i < neqn; i++)
-        var_(i) += dt * (der_(i));
-
-    return (SUCCESS);
+neuron::opaque_model_sorted_token nrn_ensure_model_data_are_sorted_opaque() {
+    return nrn_ensure_model_data_are_sorted();
 }
-

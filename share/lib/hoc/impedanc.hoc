@@ -18,7 +18,7 @@ usage:
 				// each time inject or measure is moved
 	imp.extended = 1 // if you want to perform the extended impedance
 	// calculation described in
-	// http://neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/impedanc.html
+	// https://nrn.readthedocs.io/en/latest/python/analysis/programmatic/impedance.html
 Notes:
 	Impedance objects are expensive in terms of storage but efficiently
 	calculate input impedances everywhere and

@@ -1,7 +1,10 @@
-#ifndef nrnconfigargs_h
-#define nrnconfigargs_h
+#pragma once
+#include <map>
 
 /* define to the args passed to configure */
 #define NRN_CONFIG_ARGS "@neuron_config_args@"
 
-#endif
+namespace neuron::config {
+inline std::map<const char*, const char*> const arguments{
+  @neuron_config_args_all@};
+}

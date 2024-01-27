@@ -1,11 +1,7 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
+from neuron.tests.utils.strtobool import strtobool
 import os
-import pytest
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
-
 
 from neuron import h
 
@@ -58,6 +54,16 @@ def test_watchrange():
 
     cells = [Cell(gid) for gid in gids]
 
+    # complete the coverage of netcvode.cpp static void steer_val
+    # Just so happens that Bounce declares an x var that does not get
+    # mirrored by NetCon.x
+    nc = h.NetCon(cells[2].syn, None)
+    cells[2].syn.x = 0.1
+    nc.x = 2.0
+    assert nc.x == 0.0
+    assert cells[2].syn.x == 0.1
+    del nc
+
     # @olupton changed from 20 to trigger assert(datum==2) failure.
     tstop = 1.0
 
@@ -82,10 +88,9 @@ def test_watchrange():
     stdlist = [cell.result() for cell in cells]
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
     def runassert(mode):
         run(tstop, mode)
@@ -147,20 +152,13 @@ def test_watchrange():
 
 
 if __name__ == "__main__":
-    try:
-        from neuron import gui
+    from neuron import gui
 
-        stdlist, tvec = test_watchrange()
-        g = h.Graph()
-        print("n_high  n_mid  n_low")
-        for i, result in enumerate(stdlist):
-            print(result[0], result[1], result[2])
-            result[4].line(g, tvec, i, 2)
-        g.exec_menu("View = plot")
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    stdlist, tvec = test_watchrange()
+    g = h.Graph()
+    print("n_high  n_mid  n_low")
+    for i, result in enumerate(stdlist):
+        print(result[0], result[1], result[2])
+        result[4].line(g, tvec, i, 2)
+    g.exec_menu("View = plot")
+    h.quit()

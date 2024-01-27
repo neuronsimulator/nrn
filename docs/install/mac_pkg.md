@@ -1,26 +1,38 @@
 Mac Binary Package (Apple M1 and Mac x86_64)
 ------------------
 
-Binary packages are built with the ```nrnmacpkgcmake.sh``` script which,
-near the end of its operation,
+Macos binary packages are built with the
+[bldnrnmacpkgcmake.sh](https://github.com/neuronsimulator/nrn/blob/master/bldnrnmacpkgcmake.sh)
+script which, near the end of its operation,
 involves code signing, package signing, and notarization.
+The build will be universal2 and work on arm64 and x86_64 architectures
+(if the pythons used are themselves, universal2).
 Preparing your Mac development environment for correct functioning of
 the script requires installing a few extra [Dependencies](#Dependencies) beyond the
-[normal user source build](./install_instructions.html#Mac-OS-Depend), obtaining an Apple Developer Program membership,
+[normal user source build](./install_instructions.md#Mac-OS-Depend),
+obtaining an Apple Developer Program membership,
 and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
-On an Apple M1,
+On an Apple M1 or x86_64,
 the script, by default, creates, e.g.,
-```nrn-8.0a-427-g1a80b2cc-osx-arm64-py-38-39.pkg```
-where the information between nrn and osx comes from ```git describe```
+```nrn-8.0a-726-gb9a811a32-macosx-11-universal2-py-38-39-310.pkg```
+where the information between nrn and macosx comes from ```git describe```,
+the number after macosx refers to the ```MACOSX_DEPLOYMENT_TARGET=11```
+the next item(s) before py indicate the architectures on which
+the program can run (i.e. ```arm64```, ```x86_64```, or ```universal2```
+for both)
 and the numbers after the py indicate the python versions that are
 compatible with this package. Those python versions must be installed on
-the developer machine. On a Mac x86_64 architecture the script, by default,
-creates, e.g., ```nrn-8.0a-427-g1a80b2cc-osx-x86_64-py-27-36-37-38-39.pkg```
+the developer machine.
+The script will build a universal pkg only
+if all the Python's are themselves universal.
+Presently, one must manually make sure that all the python builds used
+the same MACOSX_DEPLOYMENT_TARGET. You can check both of these with
+```python3 -c 'import sysconfig; print(sysconfig.get_platform())'```
 
 A space separated list of python executable arguments can be used in
 place of the internal default lists. ```$NRN_SRC``` is the location of the
-repository, default ```$HOME/neuron/nrn```. The script makes sure ```$NRN_SRC/build```
+repository, default is the current working directory (hopefully you launch at the location of this script, e.g. ```$HOME/neuron/nrn```). The script makes sure ```$NRN_SRC/build```
 exists and uses that folder to configure and build the software. The
 software is installed in ```/Applications/NEURON```.
 
@@ -28,24 +40,36 @@ At time of writing, the cmake
 command in the script that is used to configure the build is
 ```
 cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
-  -DNRN_ENABLE_MPI_DYNAMIC=ON \ 
+  -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
-  -DCMAKE_OSX_ARCHITECTURES="$CPU" \
+  $archs_cmake \
+  -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+```
+[^1]
+[^1]: NRN_RX3D_OPT_LEVEL=2 can build VERY slowly (cython translated cpp file can take a half hour or more). So for testing, we generally copy the script to temp.sh and modify to NRN_RX3D_OPT_LEVEL=0
+
+The default variables above will be
+```
+pythons="python3.8;python3.9;python3.10;python3.11"
+archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 ```
 
 A universal build is possible with ```-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"```
-but the installations for openmpi and python on your machine must also be universal.
-I.e. configure with ```-DNRN_ENABLE_MPI_DYNAMIC=OFF -DNRN_PYTHON_DYNAMIC=/usr/bin/python3```.
-As we have been unable to find or build a universal openmpi, and
-only the Big Sur default Python 3.8 installaion is universal, we are
-currently building separate installers for arm64 and x86_64.
+but the installations of python on your machine must also be universal.
+The MPI library does not have to be universal if configuring with
+```-DNRN_ENABLE_MPI_DYNAMIC=ON``` as the library is not linked against
+during the build.
 
-```make -j install``` is used to build and install in ```/Applications/NEURON```
+```make -j install``` [^2] is used to build and install in ```/Applications/NEURON```
+
+[^2]: Instead of make, the script uses Ninja. ```ninja install``` and the cmake line begins with ```cmake .. -G Ninja ...```
+
+Runs some basic tests to verify a successful build
 
 ```make macpkg``` ( see ```src/mac/CMakeLists.txt``` ) is used to:
 
@@ -73,19 +97,47 @@ currently building separate installers for arm64 and x86_64.
 
 - request Apple to notarize NEURON.pkg ```src/macnrn_notarize.sh```
 
+  If notarization succeeds it will finish with a few lines of the form
+  ```
+  Current status: Accepted........Processing complete
+    id: bda82fa9-e0ab-4f86-aad8-3fee1d8c2369
+    status: Accepted
+  ```
+  and staple the package.
+
+  If notarizaton fails, it is occasionally due to Apple
+  changing the contracts and demanding that 
+  "You must first sign the relevant contracts online. (1048)". In that
+  case, go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
+  to accept the legal docs an try again. For other notarization failures, one must consult the LogFileURL which can be obtained with [^3]
+  [^3]: altool has been replaced by notarytool for purposes of notarization. See
+  https://developer.apple.com/documentation/technotes/tn3147-migrating-to-the-latest-notarization-tool
+  and ```nrn/src/mac/nrn_notarize.sh```
+
+  ```
+  % xcrun notarytool log \
+    --apple-id "$apple_id" \
+    --team-id "$team_id" \
+    --password "$app_specific_password" \
+    "$id"
+  ```
+  where $id was printed by the notarization request. The apple_id, team_id, and
+  app_specfic_password are set by the script to the contents of the files
+  ```
+  $HOME/.ssh/apple-id
+  $HOME/.ssh/apple-team-id
+  $HOME/.ssh/apple-notarization-password
+  ```
+  
+
 The script ends by printing:
 ```
-  Until we figure out how to automatically staple the notarization
-  the following two commands must be executed manually.
-  xcrun stapler staple $PACKAGE_FILE_NAME
   cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
+  Manually upload $HOME/nrn-9.0a-88-gc6d8b9af6-macosx-10.15-universal2-py-39-310-311.pkg to github
 ```
-where the variables are filled out and can be copy/pasted to your
-terminal after Apple sends an email declaring that notarization was successful.
 
-The email from Apple usually takes just a few minutes but can be hours.
 I've been uploading the ```$PACKAGE_FULL_NAME``` as an artifact for a
-Release version from https://github.com/neuronsimulatior/nrn by choosing
+Release version from https://github.com/neuronsimulator/nrn by choosing
 Releases, choosing the proper Release tag (e.g. Release 8.0a), Edit release,
 and clicking in the "Attach binaries ..." near the bottom of the page.
 
@@ -100,45 +152,51 @@ x86_64 arm64
 ```
 which is generally the case for all Big Sur mac software. On the other
 hand, ```brew install ...``` executables and libraries are 
-generally only for the architecture indicated by
-```
-uname -m
-```
+generally only for the architecture indicated by ```uname -m```. That is
+ok for openmpi but since the various python libraries are linked against
+during build to create the version specific neuron modules, those python
+installers also have to be universal. Fortunately, universal python versions
+can be found at [python.org](http://python.org/Downloads/macOS) at least for
+(as of 2022-01-01) python3.8, python3.9, and python3.10.
 
 - ```xcode-select --install```:
 
   - Sadly, notarization requires ```altool``` which is not distributed
     with the command line tools. So one needs to install the full xcode
     (at least version 12) from the App Store. That is very large and may
-    take an hour or so to download.
+    take an hour or so to download. (should be checked to see if this is
+    still the case.)
 
 - Install latest [XQuartz](http://xquartz.org) release. At least XQuartz-2.8.0_rc1
 
 - Install [PackagesBuild](http://s.sudre.free.fr/Software/Packages/about.html)
 
-- ```brew install cmake open-mpi python3.9```
+- ```brew install coreutils cmake bison flex open-mpi```
 
-  - Python 3.8 is already installed as /usr/bin/python3
+  - Python 3.8 is already installed as /usr/bin/python3 and is universal2.
 
-  - The [normal source build](./install_instructions.html#Mac-OS-Depend)
+  - The [normal source build](./install_instructions.md#Mac-OS-Depend)
     explains how to install brew and add it to the PATH.
-    ```
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/H$
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
     eval $(/opt/homebrew/bin/brew shellenv)
     ```
 
-  - Both pythons need numpy installed
+  - Default build uses universal pythons from python.org. I also redundantly
+    include their python3.8 as I find it more convenient to be able to
+    explicitly specify the full name as python3.8.
+
+  - All pythons used for building need numpy installed, e.g.
     ```
     pip3.9 install --user --upgrade pip
     pip3.9 install --user numpy
-    python3 -m pip install --user --upgrade pip
-    python3 -m pip install --user numpy
     ```
 
-  - At least the first python3 in your PATH needs cython installed
+  - At least one python3 in your PATH needs cython installed.
+    And, to avoid compile errors, the minimum version is 0.29.26
     ```
-    python3 -m pip install --user cython
+    python3.10 -m pip install --user cython
     ```
 
 #### Signing and Notarization

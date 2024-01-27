@@ -1,7 +1,7 @@
 Running and Saving Batch Jobs
 -----------------------------
 
-.. function:: batch_run
+.. hoc:function:: batch_run
 
 
     Syntax:
@@ -30,7 +30,7 @@ Running and Saving Batch Jobs
         This command will save selected variables, as they are changed in the run, 
         into a file whose name is given as the third argument. 
         The 4th comment argument is placed at the beginning of the file. 
-        The :func:`batch_save` command specifies which variable are to be saved. 
+        The :hoc:func:`batch_save` command specifies which variable are to be saved.
          
 
          
@@ -40,7 +40,7 @@ Running and Saving Batch Jobs
 
 
 
-.. function:: batch_save
+.. hoc:function:: batch_save
 
 
     Syntax:
@@ -53,7 +53,7 @@ Running and Saving Batch Jobs
 
 
         ``batch_save()`` 
-            starts a new list of variables to save in a :func:`batch_run` . 
+            starts a new list of variables to save in a :hoc:func:`batch_run` .
 
         ``batch_save(&var, &var, ...)`` 
             adds pointers to the list of variables to be saved in a ``batch_run``. 

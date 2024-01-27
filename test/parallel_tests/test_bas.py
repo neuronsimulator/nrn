@@ -234,10 +234,10 @@ class StarNet:
 
 
 out2in_sh = r"""
-#!/bin/bash
+#!/usr/bin/env bash
 out=bbss_out
 rm -f in/*
-mkdir in
+mkdir -p in
 cat $out/tmp > in/tmp
 for f in $out/tmp.*.* ; do
   i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
@@ -287,14 +287,12 @@ def prun(tstop, restore=False):
         sf.close()
 
         # BBSaveState Save
+        cnt = h.List("PythonObject").count()
         for i in range(1):
             bbss = h.BBSaveState()
             bbss.save_test()
             bbss = None
-        z = h.List("PythonObject")
-        for i, y in enumerate(z):
-            print(i, y)
-        h.allobjects()
+        assert h.List("PythonObject").count() == cnt
 
     pc.psolve(tstop)
 
@@ -337,6 +335,20 @@ def compare_dicts(dict1, dict2):
 
 
 def test_bas():
+
+    # h.execute1(...) does not call mpi_abort on failure
+    assert h.execute1("1/0") == 0
+    assert h.execute1("2/0", 0) == 0  # no error message printed
+
+    # MPI_Abort can be avoided on hoc errors.
+    oldflag = pc.mpiabort_on_error(0)
+    assert h("""3/0""") == 0
+    try:
+        x = h.log(-1)
+        assert False
+    except:
+        assert True
+    pc.mpiabort_on_error(oldflag)
 
     stdspikes = {
         0: [10.925000000099914, 143.3000000001066],
@@ -383,8 +395,10 @@ def test_starnet():
     h.CVode().queue_mode(1)
     prun(tstop)
     compare_dicts(get_all_spikes(starnet), stdspikes)
+    prun(tstop, "BBSaveState")
+    compare_dicts(get_all_spikes(starnet), stdspikes_half)
 
-    h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
+    h.dt = 1.0 / 64.0  # issue 1480
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}

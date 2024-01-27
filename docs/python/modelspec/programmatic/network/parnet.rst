@@ -243,7 +243,7 @@ ParallelNetManager
             .. code::
 
                 for spike, i in zip(pnm.spikevec, pnm.idvec):
-                    print('%g %g' % (spike, i))
+                    print(spike, i)
 
             If you save the stdout to a file you can sort the results. A nice idiom 
             is 

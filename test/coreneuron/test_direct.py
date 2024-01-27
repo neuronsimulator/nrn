@@ -1,9 +1,5 @@
+from neuron.tests.utils.strtobool import strtobool
 import os
-import pytest
-import sys
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -22,7 +18,6 @@ def test_direct_memory_transfer():
     h.soma.insert("Sample")
 
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     v = h.Vector()
     v.record(h.soma(0.5)._ref_v, sec=h.soma)
@@ -41,7 +36,9 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = enable_gpu
+    coreneuron.model_stats = True
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+    coreneuron.num_gpus = 1
 
     pc = h.ParallelContext()
 
@@ -51,10 +48,10 @@ def test_direct_memory_transfer():
         if mode == 0:
             pc.psolve(h.tstop)
         elif mode == 1:
-            while h.t < h.tstop:
+            while abs(h.t - h.tstop) > 0.1 * h.dt:
                 pc.psolve(h.t + 1.0)
         else:
-            while h.t < h.tstop:
+            while abs(h.t - h.tstop) > 0.1 * h.dt:
                 h.continuerun(h.t + 0.5)
                 pc.psolve(h.t + 0.5)
         tran = [h.t, h.soma(0.5).v, h.soma(0.5).hh.m]
@@ -77,22 +74,17 @@ def test_direct_memory_transfer():
 
     # print warning if HocEvent on event queue when CoreNEURON starts
     def test_hoc_event():
-       print("in test_hoc_event() at t=%g"%h.t)
-       if h.t < 1.001:
-           h.CVode().event(h.t + 1.0, test_hoc_event)
+        print("in test_hoc_event() at t=%g" % h.t)
+        if h.t < 1.001:
+            h.CVode().event(h.t + 1.0, test_hoc_event)
+
     fi = h.FInitializeHandler(2, test_hoc_event)
     coreneuron.enable = False
     run(0)
     coreneuron.enable = True
     run(0)
 
+
 if __name__ == "__main__":
-    try:
-        test_direct_memory_transfer()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    test_direct_memory_transfer()
+    h.quit()

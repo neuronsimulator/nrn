@@ -1,9 +1,10 @@
-.. _random:
+
+.. _hoc_random:
 
 Pseudo-Random Number Generation
 -------------------------------
 
-Pseudo-random numbers from a variety of distributions may be generated with the :class:`Random` class. Multiple random number generators are provided; low level access to the mcell_ran4 generator is described in:
+Pseudo-random numbers from a variety of distributions may be generated with the :hoc:class:`Random` class. Multiple random number generators are provided; low level access to the mcell_ran4 generator is described in:
 
 .. toctree:: :maxdepth: 1
 
@@ -13,7 +14,7 @@ Pseudo-random numbers from a variety of distributions may be generated with the 
 Random Class
 ============
 
-.. class:: Random
+.. hoc:class:: Random
 
     Syntax:
         ``Random()``
@@ -31,12 +32,12 @@ Random Class
          
         This class is an interface to the RNG class 
         from the gnu c++ class library. As of version 5.2, a cryptographic quality 
-        RNG class wrapper for :func:`mcell_ran4` was added and is available 
-        with the :meth:`Random.MCellRan4` method. The current default random generator 
-        is :meth:`Random.ACG`. 
+        RNG class wrapper for :hoc:func:`mcell_ran4` was added and is available
+        with the :hoc:meth:`Random.MCellRan4` method. The current default random generator
+        is :hoc:meth:`Random.ACG`.
          
         As of version 7.3, a more versatile cryptographic quality generator, 
-        Random123, is available with the :meth:`Random.Random123` method. This generator 
+        Random123, is available with the :hoc:meth:`Random.Random123` method. This generator
         uses a 34bit counter, up to 3 32 bit identifiers, and a 32 bit global index and 
         is most suitable for managing separate independent, reproducible, restartable 
         streams that are unique to individual cell and synapses in large parallel 
@@ -47,7 +48,7 @@ Random Class
         streams of random numbers only if their seeds are different. 
          
         One can switch distributions at any time but if the distribution is 
-        stationary then it is more efficient to use :meth:`Random.repick` to avoid 
+        stationary then it is more efficient to use :hoc:meth:`Random.repick` to avoid
         constructor/destructor overhead. 
          
 
@@ -70,7 +71,7 @@ Random Class
 
 
 
-.. method:: Random.ACG
+.. hoc:method:: Random.ACG
 
 
     Syntax:
@@ -95,7 +96,7 @@ Random Class
 
 
 
-.. method:: Random.MLCG
+.. hoc:method:: Random.MLCG
 
 
     Syntax:
@@ -116,7 +117,7 @@ Random Class
 
 
 
-.. method:: Random.MCellRan4
+.. hoc:method:: Random.MCellRan4
 
 
     Syntax:
@@ -128,7 +129,7 @@ Random Class
 
 
     Description:
-        Use the MCell variant of the Ran4 generator. See :func:`mcell_ran4`. 
+        Use the MCell variant of the Ran4 generator. See :hoc:func:`mcell_ran4`.
         In the no argument case or if the highindex is 0, then the system selects 
         an index which is the random 32 bit integer resulting from 
         an mcell_ran4 call with an index equal to the 
@@ -137,21 +138,21 @@ Random Class
         highindex values differ by more than the eventual length of the stream. 
         In any case, the 
         initial highindex is returned and can be used to restart an instance 
-        of the generator. Use :func:`mcell_ran4_init` to set the (global) 
-        low 32 bit index of the generator. The :meth:`Random.seq` method is useful 
+        of the generator. Use :hoc:func:`mcell_ran4_init` to set the (global)
+        low 32 bit index of the generator. The :hoc:meth:`Random.seq` method is useful
         for getting the current sequence number and restarting at that sequence 
         number (highindex). 
         If the lowindex arg is present and nonzero, then that lowindex is used 
-        instead of the global one specified by :func:`mcell_ran4_init`. 
+        instead of the global one specified by :hoc:func:`mcell_ran4_init`.
         This allows 2^32-1 independent streams that do not overlap. 
          
         Note that for reproducibility, 
         the distribution should be defined AFTER setting the seed since some 
-        distributions, such as :meth:`Random.normal`, hold state information from 
+        distributions, such as :hoc:meth:`Random.normal`, hold state information from
         a previous pick from the uniform distribution. 
 
     .. seealso::
-        :meth:`Random.Random123`
+        :hoc:meth:`Random.Random123`
 
     Example:
 
@@ -191,7 +192,7 @@ Random Class
 
 
 
-.. method:: Random.Random123
+.. hoc:method:: Random.Random123
 
     Syntax:
         ``0 = r.Random123(id1, id2, id3)``
@@ -199,8 +200,8 @@ Random Class
     Description:
         Use the Random123 generator (currently philox4x32 is the crypotgraphic hash 
         used) with the stream identified by the identifiers 0 <= id1,2,3 < 2^32 
-        and the global index (see :meth:`Random.Random123_globalindex`). The counter, 
-        which increments from 0 to 2^34-1, is initialized to 0 (see :meth:`Random.seq`). 
+        and the global index (see :hoc:meth:`Random.Random123_globalindex`). The counter,
+        which increments from 0 to 2^34-1, is initialized to 0 (see :hoc:meth:`Random.seq`).
         If any of the up to 3 arguments are missing, it is assumed 0.
          
         The generators should be usable in the context of threads as long as 
@@ -219,7 +220,7 @@ Random Class
 
 
 
-.. method:: Random.Random123_globalindex
+.. hoc:method:: Random.Random123_globalindex
 
     Syntax:
         ``uint32 = r.Random123_globalindex([uint32])``
@@ -234,7 +235,7 @@ Random Class
 
 
 
-.. method:: Random.seq
+.. hoc:method:: Random.seq
 
     Syntax:
         ``currenthighindex = r.seq()``
@@ -242,11 +243,11 @@ Random Class
 
     Description:
         For MCellRan4, 
-        Gets and sets the current highindex value when the :meth:`Random.MCellRan4` is 
+        Gets and sets the current highindex value when the :hoc:meth:`Random.MCellRan4` is
         in use. This allows restarting the generator at any specified point. 
-        Note that the currenthighindex value is incremented every :meth:`Random.repick`. 
-        Usually the increment is 1 but some distributions, e.g. :meth:`Random.poisson` 
-        can increment by more. Also, some distributions, e.g. :meth:`Random.normal`, 
+        Note that the currenthighindex value is incremented every :hoc:meth:`Random.repick`.
+        Usually the increment is 1 but some distributions, e.g. :hoc:meth:`Random.poisson`
+        can increment by more. Also, some distributions, e.g. :hoc:meth:`Random.normal`,
         pick twice on the first repick but once thereafter. 
          
         For Random123, 
@@ -292,7 +293,7 @@ Random Class
 
 
 
-.. method:: Random.repick
+.. hoc:method:: Random.repick
 
 
     Syntax:
@@ -308,7 +309,7 @@ Random Class
 
 
 
-.. method:: Random.play
+.. hoc:method:: Random.play
 
 
     Syntax:
@@ -316,7 +317,7 @@ Random Class
 
 
     Description:
-        At the beginning of every call to :func:`fadvance` and :func:`finitialize` var is set 
+        At the beginning of every call to :hoc:func:`fadvance` and :hoc:func:`finitialize` var is set
         to a new value equivalent to 
 
         .. code-block::
@@ -324,7 +325,7 @@ Random Class
 
             var = r.repick() 
 
-        (but with no interpreter overhead). This is similar in concept to :meth:`Vector.play`. 
+        (but with no interpreter overhead). This is similar in concept to :hoc:meth:`Vector.play`.
         Play may be called several times for different variables and each variable 
         will get an independent random value but with the same distribution. 
         To disconnect the Random object from its list of variables, either the variables 
@@ -351,7 +352,7 @@ Random Class
 
 
 
-.. method:: Random.uniform
+.. hoc:method:: Random.uniform
 
 
     Syntax:
@@ -387,7 +388,7 @@ Random Class
 
 
 
-.. method:: Random.discunif
+.. hoc:method:: Random.discunif
 
 
     Syntax:
@@ -404,7 +405,7 @@ Random Class
 
 
 
-.. method:: Random.normal
+.. hoc:method:: Random.normal
 
 
     Syntax:
@@ -447,7 +448,7 @@ Random Class
 
 
 
-.. method:: Random.lognormal
+.. hoc:method:: Random.lognormal
 
 
     Syntax:
@@ -496,7 +497,7 @@ Random Class
 
 
 
-.. method:: Random.poisson
+.. hoc:method:: Random.poisson
 
 
     Syntax:
@@ -547,7 +548,7 @@ Random Class
 
 
 
-.. method:: Random.binomial
+.. hoc:method:: Random.binomial
 
 
     Syntax:
@@ -588,7 +589,7 @@ Random Class
 
 
 
-.. method:: Random.geometric
+.. hoc:method:: Random.geometric
 
 
     Syntax:
@@ -630,7 +631,7 @@ Random Class
 
 
 
-.. method:: Random.hypergeo
+.. hoc:method:: Random.hypergeo
 
 
     Syntax:
@@ -646,7 +647,7 @@ Random Class
 
 
 
-.. method:: Random.negexp
+.. hoc:method:: Random.negexp
 
 
     Syntax:
@@ -686,7 +687,7 @@ Random Class
 
 
 
-.. method:: Random.erlang
+.. hoc:method:: Random.erlang
 
 
     Syntax:
@@ -702,7 +703,7 @@ Random Class
 
 
 
-.. method:: Random.weibull
+.. hoc:method:: Random.weibull
 
 
     Syntax:

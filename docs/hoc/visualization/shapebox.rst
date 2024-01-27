@@ -1,4 +1,5 @@
-.. _shapebox:
+
+.. _hoc_shapebox:
 
 
 MenuExplore

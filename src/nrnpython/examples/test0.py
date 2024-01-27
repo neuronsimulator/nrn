@@ -8,7 +8,7 @@ s = "mpi4py thinks I am %d of %d\
 \nNEURON thinks I am %d of %d"
 
 cw = MPI.COMM_WORLD
-print s % (cw.rank, cw.size, pc.id(), pc.nhost())
+print(s % (cw.rank, cw.size, pc.id(), pc.nhost()))
 
 pc.done()
 

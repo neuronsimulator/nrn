@@ -1,11 +1,12 @@
-.. _guimath:
+
+.. _hoc_guimath:
 
 GUIMath
 -------
 
 
 
-.. class:: GUIMath
+.. hoc:class:: GUIMath
 
 
     Syntax:
@@ -22,7 +23,7 @@ GUIMath
 
 
 
-.. method:: GUIMath.d2line
+.. hoc:method:: GUIMath.d2line
 
 
     Syntax:
@@ -39,7 +40,7 @@ GUIMath
 
 
 
-.. method:: GUIMath.d2line_seg
+.. hoc:method:: GUIMath.d2line_seg
 
 
     Syntax:
@@ -56,7 +57,7 @@ GUIMath
 
 
 
-.. method:: GUIMath.inside
+.. hoc:method:: GUIMath.inside
 
 
     Syntax:
@@ -72,7 +73,7 @@ GUIMath
 
 
 
-.. method:: GUIMath.feround
+.. hoc:method:: GUIMath.feround
 
 
     Syntax:

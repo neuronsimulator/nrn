@@ -34,7 +34,6 @@ proc init() {
 	lb = new LoadBalance(pc)
 	nthread_ = pc.nthread()
 	pct = this
-	cacheeffic_ = cvode.cache_efficient()
 	busywait_ = 0
 	
 	nprocstr = "?? useful processors"
@@ -55,7 +54,6 @@ proc build() {
 	xvarlabel(ldbalstr)
 	xpvalue("# threads", &nthread_, 1, "change_nthread(nthread_, ispar_)")
 	xcheckbox("Thread Parallel", &ispar_, "change_nthread(nthread_, ispar_)")
-	xcheckbox("Cache Efficient", &cacheeffic_, "cacheeffic(cacheeffic_)")
 	xcheckbox("Use busy waiting", &busywait_, "busywait(busywait_)")
 	xcheckbox("Multisplit", &multisplit_, "multisplit(multisplit_)")
 	xbutton("Refresh", "howmany() totalcx() ldbal()")
@@ -79,7 +77,6 @@ proc save() {
 	sprint(tstr, "{change_nthread(%d, %d)}", nthread_, ispar_)
 	box.save(tstr)
 	if (multisplit_) {box.save("{multisplit(1)}")}
-	if (multisplit_ == 0 && cacheeffic_) {box.save("{cacheeffic(1)}")}
 	if (busywait_) {box.save("{busywait(1)}")}
 	box.save("{object_pop()}")
 	box.save("{\n")
@@ -118,12 +115,6 @@ proc ldbal() {
 	sprint(npiecestr, "%d pieces", lb.npiece_)
 	sprint(ldbalstr, "Load imbalance: %.1f%%", (ldbal_ - 1)*100)
 }
-proc cacheeffic() {
-	if (!multisplit_) {
-		cvode.cache_efficient($1)
-	}
-	cacheeffic_ = cvode.cache_efficient()
-}
 
 proc busywait() {
 	if (!ispar_) {$1 = 0}
@@ -147,13 +138,6 @@ func pthread() {
 		change_nthread(nthread_, $1)
 	}
 	return ispar_
-}
-
-func cache() {
-	if (numarg()) {
-		cache_effic($1)
-	}
-	return cacheeffic_
 }
 
 proc change_nthread() {local ms
@@ -202,7 +186,6 @@ proc use_thread() {local cx, cellx  localobj b, ms, vs, cb, nc, nil, roots
 	cxtotal_ = lb.cpu_complexity()
 	ldbal()
 	pc.multisplit()
-	cacheeffic_ = cvode.cache_efficient()
 	multisplit_ = 1
 }
 
@@ -302,7 +285,6 @@ proc unsplit() {local i, j  localobj si, sil
 		}
 	}
     }
-	cacheeffic_ = cvode.cache_efficient(0)
 	multisplit_ = 0
 }
 

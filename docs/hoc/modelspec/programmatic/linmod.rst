@@ -1,4 +1,5 @@
-.. _linmod:
+
+.. _hoc_linmod:
 
          
 LinearMechanism
@@ -6,7 +7,7 @@ LinearMechanism
 
 
 
-.. class:: LinearMechanism
+.. hoc:class:: LinearMechanism
 
 
     Syntax:
@@ -57,7 +58,7 @@ LinearMechanism
          
         If some y variables correspond to membrane potential, the corresponding 
         initial values in the y0 vector are ignored and the initial values come 
-        from the values of v during the normal :func:`finitialize` call. If you change 
+        from the values of v during the normal :hoc:func:`finitialize` call. If you change
         the value of v after finitialize, then you should also change the 
         corresponding y values if the linear system involves derivatives of v. 
          

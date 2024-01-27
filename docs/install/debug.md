@@ -25,14 +25,14 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.html#nrn_fenableexcept)
+Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
 #### Different results with different nhost or nthread.
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.html?highlight=prcellstate#ParallelContext.prcellstate)
+Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
 for that gid at various times
 before spiketime to see why and when the prcellstate files become different.
 Time 0 after initialization is often a good place to start.
@@ -127,6 +127,81 @@ Every press of the 'c' key in the gdb shell will move to the location of
 the next valgrind error.
 
 
+#### Sanitizers
+The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan)
+and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
+that rely on compiler instrumentation to catch dangerous behaviour at runtime.
+Compiler support is widespread but not ubiquitous, but both Clang and GCC
+provide support.
+
+They are all enabled by passing extra compiler options (typically
+`-fsanitize=XXX`), and can be steered at runtime using environment variables
+(typically `{...}SAN_OPTIONS=...`).
+ASan in particular requires that its runtime library is loaded very early during
+execution -- this is typically not a problem if you are directly launching an
+executable that has been built with ASan enabled, but more care is required if
+the launched executable was not built with ASan.
+The typical example of this case is loading NEURON from Python, where the
+`python` executable is not built with ASan.
+
+As of [#1842](https://github.com/neuronsimulator/nrn/pull/1842), the NEURON
+build system is aware of ASan, LSan and UBSan, and it tries to configure the
+sanitizers correctly based on the `NRN_SANITIZERS` CMake variable.
+In [#2034](https://github.com/neuronsimulator/nrn/pull/2034) this was extended
+to TSan via `-DNRN_SANITIZERS=thread`, and support for GCC was added.
+For example, `cmake -DNRN_SANITIZERS=address,leak ...` will enable ASan and
+LSan, while `-DNRN_SANITIZERS=undefined` will enable UBSan.
+Not all combinations of sanitizers are possible, so far ASan, ASan+LSan, TSan
+and UBSan have been tested with Clang.
+Support for standalone LSan should be possible without major difficulties, but
+is not yet implemented.
+
+Depending on your system, you may also need to set the `LLVM_SYMBOLIZER_PATH`
+variable to point to the `llvm-symbolizer` executable matching your Clang.
+On systems where multiple LLVM versions are installed, such as Ubuntu, this may
+need to be the path to the actual executable named `llvm-symbolizer` and not the
+path to a versioned symlink such as `llvm-symbolizer-14`.
+
+NEURON should automatically add the relevant compiler flags and configure the
+CTest suite with the extra environment variables that are needed; `ctest` should
+work as expected.
+
+If `NRN_SANITIZERS` is set then an additional helper script will be written to
+`bin/nrn-enable-sanitizer` under the build and installation directories.
+This contains the relevant environment variable settings, and if `--preload` is
+passed as the first argument then it also sets `LD_PRELOAD` to point to the
+relevant sanitizer runtime library.
+For example if you have a NEURON installation with sanitizers enabled, you might
+use `nrn-enable-sanitizer special -python path/to/script.py` or
+`nrn-enable-sanitizer --preload python path/to/script.py` (`--preload` required
+because the `python` binary is (presumably) not linked against the sanitizer
+runtime library.
+
+LSan, TSan and UBSan support suppression files, which can be used to prevent
+tests failing due to known issues.
+NEURON includes a suppression file for TSan under `.sanitizers/thread.supp` and
+one for UBSan under `.sanitizers/undefined.supp` in the GitHub repository, no
+LSan equivalent exists for the moment.
+
+Note that LSan and MPI implementations typically do not play nicely together, so
+if you want to use LSan with NEURON, you may need to disable MPI or add a
+suppression file that is tuned to your MPI implementation.
+
+Similarly, TSan does not work very well with MPI and (especially) OpenMP
+implementations that were not compiled with TSan instrumentation (which they
+are typically not).
+
+The GitHub Actions CI for NEURON at the time of writing includes three jobs
+using Ubuntu 22.04: ASan (but not LSan) using Clang 14, UBSan using Clang 14,
+and TSan using GCC 12.
+In addition, there is a macOS-based ASan build using AppleClang, which has the
+advantage that it uses `libc++` instead of `libstdc++`.
+
+NMODL supports the sanitizers in a similar way, but this has to be enabled
+explicitly: `-DNRN_SANITIZERS=undefined` will not compile NMODL code with UBSan
+enabled, you must additionally pass `-DNMODL_SANITIZERS=undefined` to enable
+instrumentation of NMODL code.
+
 Profiling and performance benchmarking
 --------------------------------------
 
@@ -141,7 +216,12 @@ NEURON has recently gained built-in support for performance profilers. Many mode
 
 #### Instrumentation
 
-NEURONs code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
+Many performance-critical regions of the NEURON codebase have been instrumented
+for profiling.
+The existing regions have been given the same names as in CoreNEURON to allow
+side-by-side comparision when running simulations with and without CoreNEURON
+enabled.
+More regions can easily be added into the code in one of two ways:
 
 1. using calls to `phase_begin()`, `phase_end()`
 
@@ -174,45 +254,118 @@ To enable a profiler, one needs to rebuild NEURON with the appropriate flags set
 ```bash
 mkdir build && cd build
 cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/share/cmake/caliper -DNRN_ENABLE_TESTS=ON
-make
+cmake --build . --parallel
 ```
+or if you are building CoreNEURON standalone:
+```bash
+mkdir build && cd build
+cmake .. -DCORENRN_ENABLE_CALIPER_PROFILING=ON -DCORENRN_ENABLE_UNIT_TESTS=ON
+cmake --build . --parallel
+```
+in both cases you might need to add something like `/path/to/caliper/share/cmake/caliper` to the `CMAKE_PREFIX_PATH` variable to help CMake find your installed version of Caliper.
 
 Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described [here](https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling).
 
-```
-$ CALI_CONFIG=runtime-report,calc.inclusive NRNHOME=/Users/awile/projects/cellular/nrn/build2 NEURONHOME=/Users/awile/projects/cellular/nrn/build2/share/nrn /Users/awile/projects/cellular/nrn/build2/bin/nrniv ring.hoc
-NEURON -- VERSION 8.0a-658-g07fc295af+ enh/1421 (07fc295af+) 2021-09-07
+```bash
+$ CALI_CONFIG=runtime-report,calc.inclusive nrniv ring.hoc
+NEURON -- VERSION 8.0a-693-gabe0abaac+ magkanar/instrumentation (abe0abaac+) 2021-10-12
 Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021
 See http://neuron.yale.edu/neuron/credits
 
-Path                  Time (E) Time (I) Time % (E) Time % (I)
-psolve                0.022743 1.047956   2.119599  97.667258
-  timestep            0.189271 1.025213  17.639652  95.547659
-    state-update      0.116918 0.208878  10.896508  19.466983
-      state-IClamp    0.012888 0.012888   1.201134   1.201134
-      state-hh        0.026252 0.026252   2.446630   2.446630
-      state-ExpSyn    0.026171 0.026171   2.439081   2.439081
-      state-pas       0.026649 0.026649   2.483630   2.483630
-    update            0.027531 0.027531   2.565830   2.565830
-    second_order_cur  0.026720 0.026720   2.490247   2.490247
-    matrix-solver     0.031381 0.031381   2.924642   2.924642
-    setup_tree_matrix 0.240728 0.483874  22.435335  45.096022
-      cur-IClamp      0.026415 0.026415   2.461821   2.461821
-      cur-hh          0.053054 0.053054   4.944519   4.944519
-      cur-ExpSyn      0.053927 0.053927   5.025881   5.025881
-      cur-k_ion       0.026331 0.026331   2.453993   2.453993
-      cur-na_ion      0.026849 0.026849   2.502269   2.502269
-      cur-pas         0.056570 0.056570   5.272203   5.272203
-    deliver_events    0.057558 0.057558   5.364282   5.364282
-finitialize           0.000655 0.000881   0.061045   0.082107
-  setup_tree_matrix   0.000120 0.000226   0.011184   0.021063
-    cur-hh            0.000022 0.000022   0.002050   0.002050
-    cur-ExpSyn        0.000023 0.000023   0.002144   0.002144
-    cur-IClamp        0.000011 0.000011   0.001025   0.001025
-    cur-k_ion         0.000010 0.000010   0.000932   0.000932
-    cur-na_ion        0.000013 0.000013   0.001212   0.001212
-    cur-pas           0.000027 0.000027   0.002516   0.002516
+Path                     Min time/rank Max time/rank Avg time/rank Time %    
+psolve                        0.145432      0.145432      0.145432 99.648498 
+  spike-exchange              0.000002      0.000002      0.000002  0.001370 
+  timestep                    0.142800      0.142800      0.142800 97.845079 
+    state-update              0.030670      0.030670      0.030670 21.014766 
+      state-IClamp            0.001479      0.001479      0.001479  1.013395 
+      state-hh                0.002913      0.002913      0.002913  1.995957 
+      state-ExpSyn            0.002908      0.002908      0.002908  1.992531 
+      state-pas               0.003067      0.003067      0.003067  2.101477 
+    update                    0.003941      0.003941      0.003941  2.700332 
+    second-order-cur          0.002994      0.002994      0.002994  2.051458 
+    matrix-solver             0.006994      0.006994      0.006994  4.792216 
+    setup-tree-matrix         0.062940      0.062940      0.062940 43.125835 
+      cur-IClamp              0.003172      0.003172      0.003172  2.173421 
+      cur-hh                  0.007137      0.007137      0.007137  4.890198 
+      cur-ExpSyn              0.007100      0.007100      0.007100  4.864846 
+      cur-k_ion               0.003138      0.003138      0.003138  2.150125 
+      cur-na_ion              0.003269      0.003269      0.003269  2.239885 
+      cur-pas                 0.007921      0.007921      0.007921  5.427387 
+    deliver-events            0.013076      0.013076      0.013076  8.959540 
+      net-receive-ExpSyn      0.000021      0.000021      0.000021  0.014389 
+      spike-exchange          0.000037      0.000037      0.000037  0.025352 
+      check-threshold         0.003804      0.003804      0.003804  2.606461 
+finitialize                   0.000235      0.000235      0.000235  0.161020 
+  spike-exchange              0.000002      0.000002      0.000002  0.001370 
+  setup-tree-matrix           0.000022      0.000022      0.000022  0.015074 
+    cur-hh                    0.000003      0.000003      0.000003  0.002056 
+    cur-ExpSyn                0.000001      0.000001      0.000001  0.000685 
+    cur-IClamp                0.000001      0.000001      0.000001  0.000685 
+    cur-k_ion                 0.000001      0.000001      0.000001  0.000685 
+    cur-na_ion                0.000002      0.000002      0.000002  0.001370 
+    cur-pas                   0.000002      0.000002      0.000002  0.001370 
+  gap-v-transfer              0.000003      0.000003      0.000003  0.002056
 ```
 
+#### Running GPU benchmarks
 
+Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en/latest/) annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA's tools.
+In a GPU build with Caliper support (`-DCORENRN_ENABLE_GPU=ON -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper`), you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
 
+A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be:
+
+```bash
+ nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0,CALI_CONFIG=nvtx,OMP_NUM_THREADS=1 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <exe>
+```
+where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs. The `<exe>` command is likely to be something similar to
+
+```bash
+# with python
+path/to/x86_64/special -python your_sim.py
+# or, with hoc
+path/to/x86_64/special your_sim.hoc
+# or, if you are executing coreneuron directly
+path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
+```
+
+You may like to experiment with setting `OMP_NUM_THREADS` to a value larger than
+1, but the profiling tools can struggle if there are too many CPU threads
+launching GPU kernels in parallel.
+
+For a more detailed analysis of a certain kernel you can use [NVIDIA Nsight
+Compute](https://developer.nvidia.com/nsight-compute). This is a kernel profiler
+for applications executed on NVIDIA GPUs and supports the OpenACC and OpenMP
+backends of CoreNEURON.
+This tool provides more detailed information in a nice graphical environment
+about the kernel execution on the GPU including metrics like SM throughput, memory
+bandwidth utilization, automatic roofline model generation, etc.
+To provide all this information the tool needs to rerun the kernel you're interested in
+multiple times, which makes execution ~20-30 times slower.
+For this reason we recommend running first Caliper with Nsight Systems to find
+the name of the kernel you're interested in and then select on this kernel for
+analysis with Nsight Compute.
+In case you're interested in multiple kernels you can relaunch Nsight Compute with the other
+kernels separately.
+
+To launch Nsight Compute you can use the following command:
+```bash
+ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <section_set> <exe>
+```
+
+where
+* `kernel_name`: The name of the kernel you want to profile. You may also provide a regex with `regex:<name>`.
+* `section_set`: Provides set of sections of the kernel you want to be analyzed. To get the list of sections you can run `ncu --list-sets`.
+
+The most commonly used is `detailed` which provides most information about the kernel execution and `full` which provides all the details
+about the kernel execution and memory utilization in the GPU but takes more time to run.
+For more information about Nsight Compute options you can consult the [Nsight Compute Documentation](https://docs.nvidia.com/nsight-compute/2021.3/NsightComputeCli/index.html).
+
+Notes:
+- CoreNEURON allocates a large number of small objects separately in CUDA
+  managed memory to record the state of the Random123 pseudorandom number
+  generator. This makes the Nsight Compute profiler very slow, and makes it
+  impractical to use Nsight Systems during the initialization phase. If the
+  Boost library is available then CoreNEURON will use a memory pool for these
+  small objects to dramatically reduce the number of calls to the CUDA runtime
+  API to allocate managed memory. It is, therefore, highly recommended to make
+  Boost available when using GPU profiling tools.

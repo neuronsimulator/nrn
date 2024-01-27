@@ -14,7 +14,7 @@ See also:
 Functions
 ---------
 
-.. function:: initnrn
+.. hoc:function:: initnrn
 
 
     Syntax:
@@ -33,7 +33,7 @@ Functions
         ``forall Ra=...`` 
 
     .. warning::
-        Not very useful. No way to completely restart neuron except to :func:`quit` and 
+        Not very useful. No way to completely restart neuron except to :hoc:func:`quit` and
         re-load. 
 
 
@@ -41,7 +41,7 @@ Functions
 
 
 
-.. function:: fadvance
+.. hoc:function:: fadvance
 
 
     Syntax:
@@ -49,10 +49,10 @@ Functions
 
 
     Description:
-        Integrate all section equations over the interval :data:`dt` . 
-        The value of :data:`t` is incremented by dt. 
+        Integrate all section equations over the interval :hoc:data:`dt` .
+        The value of :hoc:data:`t` is incremented by dt.
         The default method is first order implicit but may be changed to 
-        Crank-Nicolson by changing :data:`secondorder` = 2.
+        Crank-Nicolson by changing :hoc:data:`secondorder` = 2.
          
         fadvance integrates the equation over the dt step by 
         calling all the BREAKPOINT blocks of models at t+dt/2 twice with 
@@ -72,7 +72,7 @@ Functions
 
 
 
-.. function:: finitialize
+.. hoc:function:: finitialize
 
 
     Syntax:
@@ -86,7 +86,7 @@ Functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        :data:`t` is set to 0. 
+        :hoc:data:`t` is set to 0.
          
         The order of principal actions during an finitialize call is:
         
@@ -115,7 +115,7 @@ Functions
 
 
     .. seealso::
-        :class:`FInitializeHandler`, :ref:`runcontrol_Init`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`
+        :hoc:class:`FInitializeHandler`, :ref:`hoc_runcontrol_Init`, :hoc:meth:`CVode.re_init`, :hoc:func:`fcurrent`, :hoc:func:`frecord_init`
 
          
 
@@ -123,7 +123,7 @@ Functions
 
 
 
-.. function:: frecord_init
+.. hoc:function:: frecord_init
 
 
     Syntax:
@@ -133,11 +133,11 @@ Functions
     Description:
         Initializes the Vectors which are recording variables. i.e. resize to 0 and 
         append the current values of the variables.  This is done at the end 
-        of an :func:`finitialize` call but needs to be done again to complete initialization 
+        of an :hoc:func:`finitialize` call but needs to be done again to complete initialization
         if the user changes states or assigned variables that are being recorded.. 
 
     .. seealso::
-        :meth:`Vector.record`, :ref:`runcontrol_Init`
+        :hoc:meth:`Vector.record`, :ref:`hoc_runcontrol_Init`
 
 ----
 
@@ -145,7 +145,7 @@ Functions
 
 
 
-.. function:: fcurrent
+.. hoc:function:: fcurrent
 
 
     Syntax:
@@ -155,7 +155,7 @@ Functions
     Description:
         Make all assigned variables (currents, conductances, etc) 
         consistent with the values of the states. Useful in combination 
-        with :func:`finitialize`. 
+        with :hoc:func:`finitialize`.
 
     Example:
 
@@ -184,7 +184,7 @@ Functions
 
 
 
-.. function:: fmatrix
+.. hoc:function:: fmatrix
 
 
     Syntax:
@@ -206,14 +206,14 @@ Functions
         The right hand side of the matrix equation for this location. These are the 
         values of NODEA, NODED NODEB, and NODERHS respectively in 
         nrn/src/nrnoc/section.h . The matrix elements are properly setup on return 
-        from a call to the :func:`fcurrent` function. For the fixed step method 
-        :func:`fadvance` modifies NODED and NODERHS 
+        from a call to the :hoc:func:`fcurrent` function. For the fixed step method
+        :hoc:func:`fadvance` modifies NODED and NODERHS
         but leaves NODEA and NODEB unchanged. 
 
          
 ----
 
-.. data:: secondorder
+.. hoc:data:: secondorder
 
 
     Syntax:
@@ -227,11 +227,11 @@ Functions
         =0 
             default fully implicit backward euler. Very numerically stable. 
             gives steady state in one step when *dt=1e10*. Numerical errors 
-            are proportional to :data:`dt`. 
+            are proportional to :hoc:data:`dt`.
 
         =1 
             crank-nicholson Can give large (but damped) numerical error 
-            oscillations. For small :data:`dt` the numerical errors are proportional 
+            oscillations. For small :hoc:data:`dt` the numerical errors are proportional
             to ``dt^2``. Cannot be used with voltage clamps. Ionic currents 
             are first order correct. Channel conductances are second order 
             correct when plotted at ``t+dt/2`` 
@@ -248,7 +248,7 @@ Functions
 
 
 
-.. data:: t
+.. hoc:data:: t
 
 
     Syntax:
@@ -264,7 +264,7 @@ Functions
 
 
 
-.. data:: dt
+.. hoc:data:: dt
 
 
     Syntax:
@@ -272,9 +272,9 @@ Functions
 
 
     Description:
-        The integration interval for :func:`fadvance`. 
+        The integration interval for :hoc:func:`fadvance`.
          
-        When using the default implicit integration method (:data:`secondorder` = 0) 
+        When using the default implicit integration method (:hoc:data:`secondorder` = 0)
         there is no upper limit on dt for numerical stability and in fact for 
         passive models it is often convenient to use dt=1.9 to obtain the 
         steady state in a single time step. 
@@ -291,7 +291,7 @@ Functions
 
 
 
-.. data:: clamp_resist
+.. hoc:data:: clamp_resist
 
 
     Syntax:
@@ -307,7 +307,7 @@ Functions
 
 
 
-.. data:: celsius
+.. hoc:data:: celsius
 
 
     Syntax:
@@ -327,7 +327,7 @@ Functions
 
 
 
-.. data:: stoprun
+.. hoc:data:: stoprun
 
 
     Syntax:
@@ -335,18 +335,18 @@ Functions
 
 
     Description:
-        A flag which is watched by :func:`fit_praxis`, :class:`CVode`, and other procedures 
+        A flag which is watched by :hoc:func:`fit_praxis`, :hoc:class:`CVode`, and other procedures
         during a run or family of runs. 
         When stoprun==1 they will immediately return without completing 
         normally. This allows safe stopping in the middle of a long run. Procedures 
         that do multiple runs should check stoprun after each run and exit 
-        gracefully. The :meth:`RunControl.Stop` of the RunControl GUI sets this variable. 
+        gracefully. The :hoc:meth:`RunControl.Stop` of the RunControl GUI sets this variable.
         It is cleared at the beginning of a run or when continuing a run. 
 
 
 ----
 
-.. function:: checkpoint
+.. hoc:function:: checkpoint
 
     Syntax:
         :samp:`checkpoint("{filename}")`
@@ -369,14 +369,15 @@ Functions
          
     .. warning::
         There is not enough implementation at this time to make this 
-        facility useful. Use the :class:`SaveState` class instead.
+        facility useful. Use the :hoc:class:`SaveState` class instead.
 
 
 
          
 ----
 
-.. _finithnd:
+
+.. _hoc_finithnd:
 
          
 FInitializeHandler
@@ -384,7 +385,7 @@ FInitializeHandler
 
 
 
-.. class:: FInitializeHandler
+.. hoc:class:: FInitializeHandler
 
 
     Syntax:
@@ -395,7 +396,7 @@ FInitializeHandler
 
     Description:
         Install an initialization handler statement to be called during a call to 
-        :func:`finitialize`. The default type is 1. The 
+        :hoc:func:`finitialize`. The default type is 1. The
         statement will be executed at the top level of the interpreter 
         or else in the context of the optional obj arg. 
          
@@ -410,11 +411,11 @@ FInitializeHandler
         Type 3 handlers are called at the beginning of finitialize. 
         At this point it is allowed to change the structure of the model. 
          
-        See :func:`finitialize` for more details about the order of initialization processes 
+        See :hoc:func:`finitialize` for more details about the order of initialization processes
         within that function. 
          
         This class helps alleviate the administrative problems of maintaining variations 
-        of the proc :ref:`RunControl_Init`. 
+        of the proc :ref:`hoc_RunControl_Init`.
 
     Example:
 
@@ -478,7 +479,7 @@ FInitializeHandler
 
 
 
-.. method:: FInitializeHandler.allprint
+.. hoc:method:: FInitializeHandler.allprint
 
 
     Syntax:
@@ -487,6 +488,6 @@ FInitializeHandler
 
     Description:
         Prints all the FInitializeHandler statements along with their object context 
-        in the order they will be executed during an :func:`finitialize` call. 
+        in the order they will be executed during an :hoc:func:`finitialize` call.
 
 

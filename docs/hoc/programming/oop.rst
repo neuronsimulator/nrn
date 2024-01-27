@@ -1,13 +1,19 @@
-.. _oop:
+
+.. _hoc_oop:
 
 Object Oriented Programming
 ---------------------------
 See `Object Oriented Programming <http://www.neuron.yale.edu/neuron/static/docs/refman/obj.html>`_ 
 in the reference manual.
 
+.. note::
+
+    Classes defined in HOC may be accessed in Python via ``h.ClassName``.
+
 .. index:: begintemplate (keyword)
 
-.. _begintemplate:
+
+.. _hoc_begintemplate:
 
 begintemplate
 ~~~~~~~~~~~~~
@@ -47,7 +53,8 @@ begintemplate
          
 .. index:: endtemplate (keyword)
 
-.. _endtemplate:
+
+.. _hoc_endtemplate:
 
 endtemplate
 ~~~~~~~~~~~
@@ -60,12 +67,13 @@ endtemplate
         Closes the class declaration 
 
     .. seealso::
-        :ref:`begintemplate`
+        :ref:`hoc_begintemplate`
 
          
 .. index:: objectvar (keyword)
 
-.. _objectvar:
+
+.. _hoc_objectvar:
 
 objectvar
 ~~~~~~~~~
@@ -75,13 +83,14 @@ objectvar
 
 
     Description:
-        Synonym for :ref:`objref`. 
+        Synonym for :ref:`hoc_objref`.
 
 
 
 .. index:: objref (keyword)
 
-.. _objref:
+
+.. _hoc_objref:
 
 objref
 ~~~~~~
@@ -116,12 +125,13 @@ objref
          
 
     .. seealso::
-        :ref:`new`, :ref:`begintemplate`, :class:`List`, :ref:`mech`, :class:`SectionList`
+        :ref:`hoc_new`, :ref:`hoc_begintemplate`, :hoc:class:`List`, :ref:`hoc_mech`, :hoc:class:`SectionList`
         
 
 .. index:: public (keyword)
 
-.. _keyword_public:
+
+.. _hoc_keyword_public:
 
 public
 ~~~~~~
@@ -137,13 +147,14 @@ public
          
 
     .. seealso::
-        :ref:`begintemplate`
+        :ref:`hoc_begintemplate`
 
          
 
 .. index:: external (keyword)
 
-.. _external:
+
+.. _hoc_external:
 
 external
 ~~~~~~~~
@@ -177,12 +188,13 @@ external
             endtemplate Cell 
 
          
-        :func:`execute1` can be used to obtain external information as well. 
+        :hoc:func:`execute1` can be used to obtain external information as well.
          
 
 .. index:: new (keyword)
 
-.. _new:
+
+.. _hoc_new:
 
 new
 ~~~
@@ -215,7 +227,7 @@ new
 
 
 
-.. function:: init
+.. hoc:function:: init
 
 
     Syntax:
@@ -227,7 +239,7 @@ new
         an instance of the template is created. 
 
     .. seealso::
-        :ref:`new`
+        :ref:`hoc_new`
 
          
 
@@ -235,7 +247,7 @@ new
 
 
 
-.. function:: unref
+.. hoc:function:: unref
 
 
     Syntax:
@@ -259,7 +271,8 @@ new
 
 .. index:: NULLobject
 
-.. _nil:
+
+.. _hoc_nil:
 
 NULLobject
 ~~~~~~~~~~
@@ -271,7 +284,7 @@ NULLobject
     Description:
         When an object variable is first declared, it refers to NULLobject 
         until it has been associated with an instance of some object class 
-        by a :ref:`new` statement. 
+        by a :ref:`hoc_new` statement.
         A NULLobject object variable can 
         be useful as an argument to certain class methods. 
 
@@ -290,7 +303,7 @@ NULLobject
 
 
 
-.. data:: this
+.. hoc:data:: this
 
 
     Syntax:
@@ -299,7 +312,7 @@ NULLobject
 
     Description:
         Declared inside a template 
-        (see :ref:`begintemplate`). 
+        (see :ref:`hoc_begintemplate`).
         Allows the object to call a procedure 
         with itself as one of the arguments. 
 

@@ -6,15 +6,10 @@ CFLAGS = -mno-cygwin -DHOC=1 -I/cygdrive/c/nrn/lib -I../mswin -I/cygdrive/c/nrn/
 
 OBJ = \
  abort.o\
- adams.o\
- adeuler.o\
- adrunge.o\
  advance.o\
  boundary.o\
  crank.o\
  crout.o\
- csoda.o\
- csodabnc.o\
  deflate.o\
  dimplic.o\
  euler.o\
@@ -27,7 +22,6 @@ OBJ = \
  gear.o\
  getmem.o\
  harmonic.o\
- heun.o\
  hyperbol.o\
  invert.o\
  lag.o\
@@ -49,10 +43,8 @@ OBJ = \
  runge.o\
  sawtooth.o\
  schedule.o\
- seidel.o\
  sigmoid.o\
  simeq.o\
- simplex.o\
  sparse.o\
  spline.o\
  squarewa.o\

@@ -103,8 +103,8 @@ n_gate = rxd.Rate(ngate, (ninf - ngate) / ntau)
 ena = 1e3 * h.R * (h.celsius + 273.15) * log(nao / nai) / h.FARADAY
 ek = 1e3 * h.R * (h.celsius + 273.15) * log(ko / ki) / h.FARADAY
 
-gna = pA * gnabar * mgate ** 3 * hgate
-gk = pA * gkbar * ngate ** 4
+gna = pA * gnabar * mgate**3 * hgate
+gk = pA * gkbar * ngate**4
 
 na_current = rxd.MultiCompartmentReaction(
     nai, nao, gna * (v - ena), mass_action=False, membrane=mem, membrane_flux=True

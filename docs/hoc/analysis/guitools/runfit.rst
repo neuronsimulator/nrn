@@ -1,4 +1,5 @@
-.. _runfit:
+
+.. _hoc_runfit:
 
 
 RunFitter
@@ -6,18 +7,18 @@ RunFitter
 
 A tool for fitting the output of a simulation to data. 
 Simulation output variable(s), and parameters can be specified by the user. 
-This tool may be saved in a session. This tool uses the :func:`fit_praxis` 
+This tool may be saved in a session. This tool uses the :hoc:func:`fit_praxis`
 method and the least squares error function calls run(). 
  
 The minimization function used by the fitter calls the hoc "run" 
-procedure (see :ref:`runcontrol_initrun`). 
+procedure (see :ref:`hoc_runcontrol_initrun`).
 The output simulation variable data is stored using the 
-:meth:`Vector.record` function, ie values are copied from the variable to the 
-vector at the end of :func:`finitialize` and at the end of :func:`fadvance` whenever 
+:hoc:meth:`Vector.record` function, ie values are copied from the variable to the
+vector at the end of :hoc:func:`finitialize` and at the end of :hoc:func:`fadvance` whenever
 t passes the x values of the data.  Fitting parameters are varied using 
-one element vectors registered with :meth:`Vector.play`, ie the value is 
+one element vectors registered with :hoc:meth:`Vector.play`, ie the value is
 copied from the vector to the parameter at the beginning of 
-:func:`finitialize`. The notion of a fitting parameter has been extended so 
+:hoc:func:`finitialize`. The notion of a fitting parameter has been extended so
 that one can call an arbitrary statement so that the fit value can 
 be used to assign values to a collection of hoc variables. Eg. 
 globally setting a range variable. 
@@ -36,7 +37,7 @@ that the widget is executing.
     it is necessary that on retrieval the necessary variables exist that 
     are used by the fitter. In the case of extra fit variables this means 
     that the master fitter should be selected prior to the slave fitters 
-    when using the :ref:`PWM`.
+    when using the :ref:`hoc_PWM`.
      
     When a parameter is very close to 0, its limited resolution in 
     a field editor may cause problems. In this case define 
@@ -60,7 +61,7 @@ ReadData
 Pops up a filechooser for reading the data file. The first number in the file is 
 the number of points. Subsequent pairs of numbers are x and y values of 
 the data. Alternativly the Graph menu can be used to invoke the 
-:guilabel:`DataFromClipboard` item (see :ref:`stdrun_retrievefromfile`).
+:guilabel:`DataFromClipboard` item (see :ref:`hoc_stdrun_retrievefromfile`).
  
 When data is read from the clipboard, that data is saved when the 
 tool is saved in a session. However, if the :guilabel:`ReadData` button is used 
@@ -207,7 +208,7 @@ StopatnextQuadForm
 Cause praxis to stop after it finishes its current principal axis/value 
 computation. Be patient, it may be necessary to wait for several runs 
 before the computation completes. To immediately quit, press 
-the :ref:`runctrl_stop` button on the RunControl. This will stop the fit immediately 
+the :ref:`hoc_runctrl_stop` button on the RunControl. This will stop the fit immediately
 and set parameters to the best fit found so far. 
 Only do a :kbd:`^C` if necessity demands and then 
 remove the check by pressing :guilabel:`SingleRunFit`. 
@@ -236,6 +237,6 @@ BeQuiet
 ~~~~~~~
 
 Turns off printing by the praxis function and does not flush 
-the graphs after :func:`run` is called. 
+the graphs after :hoc:func:`run` is called.
  
 

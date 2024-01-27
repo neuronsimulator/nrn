@@ -1,7 +1,6 @@
+from neuron.tests.utils.strtobool import strtobool
+from neuron.expect_hocerr import expect_err
 import os
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -9,6 +8,12 @@ pc = h.ParallelContext()
 
 
 def test_units():
+    # should just emit warning
+    h.nrnunit_use_legacy(0)
+
+    # should generate an error
+    expect_err("h.nrnunit_use_legacy(1)")
+
     s = h.Section()
     pp = h.UnitsTest(s(0.5))
     h.ion_style("na_ion", 1, 2, 1, 1, 0, sec=s)
@@ -20,9 +25,8 @@ def test_units():
 
     from neuron import coreneuron
 
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)
@@ -35,12 +39,5 @@ def test_units():
 
 
 if __name__ == "__main__":
-    try:
-        model = test_units()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    test_units()
+    h.quit()

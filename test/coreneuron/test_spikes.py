@@ -1,10 +1,14 @@
+from neuron.tests.utils.strtobool import strtobool
 import os
+import tempfile
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
-mpi4py_option = bool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", ""))
-file_mode_option = bool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", ""))
-nrnmpi_init_option = bool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", ""))
+enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
+mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
+file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false")))
+nrnmpi_init_option = bool(
+    strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
+)
 
 # following at top level and early enough avoids...
 # *** The MPI_Iprobe() function was called after MPI_FINALIZE was invoked.
@@ -15,16 +19,14 @@ if mpi4py_option:
     from neuron import h, gui
 # without mpi4py we need to call nrnmpi_init explicitly
 elif nrnmpi_init_option:
-    from neuron import h, gui
+    from neuron import h
 
     h.nrnmpi_init()
+    # if mpi is active, don't ask for gui til it is turned off for all ranks > 0
+    from neuron import gui
 # otherwise serial execution
 else:
     from neuron import h, gui
-
-import pytest
-import sys
-import traceback
 
 
 def test_spikes(
@@ -54,7 +56,6 @@ def test_spikes(
 
     h.tstop = 10
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     pc = h.ParallelContext()
 
@@ -75,13 +76,6 @@ def test_spikes(
     nrn_spike_t = nrn_spike_t.to_python()
     nrn_spike_gids = nrn_spike_gids.to_python()
 
-    # CORENEURON run
-    from neuron import coreneuron
-
-    coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
-    coreneuron.file_mode = file_mode
-    coreneuron.verbose = 0
     corenrn_all_spike_t = h.Vector()
     corenrn_all_spike_gids = h.Vector()
 
@@ -122,23 +116,27 @@ def test_spikes(
         assert nrn_spike_t == corenrn_all_spike_t_py
         assert nrn_spike_gids == corenrn_all_spike_gids_py
 
-    if file_mode is False:
-        for mode in [0, 1, 2]:
+    # CORENEURON run
+    from neuron import coreneuron
+
+    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
+        run_modes = [0] if file_mode else [0, 1, 2]
+        for mode in run_modes:
             run(mode)
-    else:
-        run(0)
+        # Make sure that file mode also works with custom coreneuron.data_path
+        if file_mode:
+            temp_coreneuron_data_folder = tempfile.TemporaryDirectory(
+                "coreneuron_input"
+            )  # auto removed
+            coreneuron.data_path = temp_coreneuron_data_folder.name
+            run(0)
 
     return h
 
 
 if __name__ == "__main__":
-    try:
-        h = test_spikes()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    pc = h.ParallelContext()
-    pc.barrier()
+    h = test_spikes()
+    if mpi4py_option or nrnmpi_init_option:
+        pc = h.ParallelContext()
+        pc.barrier()
     h.quit()

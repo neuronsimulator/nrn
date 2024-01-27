@@ -8,7 +8,7 @@ generated-at-runtime string or load code from a file potentially chosen at runti
 code-executing
 --------------
 
-.. function:: execute
+.. hoc:function:: execute
 
     Syntax:
         ``execute("statement")``
@@ -24,12 +24,12 @@ code-executing
         one to create a  func or proc dynamically. 
 
     .. seealso::
-        :func:`execute1`
+        :hoc:func:`execute1`
 
 
 ----
 
-.. function:: execute1
+.. hoc:function:: execute1
 
     Syntax:
         ``err = execute1("statement")``
@@ -41,7 +41,7 @@ code-executing
         ``err = execute1("statement", objref, show_err_mes``
 
     Description:
-        Same as :func:`execute` but returns 0 if there was an interpreter error 
+        Same as :hoc:func:`execute` but returns 0 if there was an interpreter error
         during execution of the statement and returns 1 if successful. 
         Does not surround the command with {}. 
          
@@ -50,7 +50,7 @@ code-executing
         statement. 
          
         Error messages can be turned on even inside the statement 
-        with :func:`show_errmess_always`. 
+        with :hoc:func:`show_errmess_always`.
          
         Parse and execute the command in the context 
         of the object. If second arg not present then execute it at the 
@@ -75,7 +75,7 @@ code-executing
 code-loading
 ------------
 
-.. function:: load_proc
+.. hoc:function:: load_proc
 
     Syntax:
         ``load_proc("name1", ...)``
@@ -112,7 +112,7 @@ code-loading
 
 ----
 
-.. function:: load_file
+.. hoc:function:: load_file
 
     Syntax:
         ``load_file("filename")``
@@ -122,13 +122,13 @@ code-loading
         ``load_file(0or1, "filename")``
 
     Description:
-        Similar to :func:`load_proc` but loads files and so does not have the 
+        Similar to :hoc:func:`load_proc` but loads files and so does not have the
         search overhead. Suitable for loading packages of files. 
          
-        The functionality is identical to :func:`xopen` except that the xopen takes 
+        The functionality is identical to :hoc:func:`xopen` except that the xopen takes
         place only if 
         if a file of that name has not already been loaded with the load_file, 
-        :func:`load_proc`, :func:`load_template`, or :func:`load_func` functions. 
+        :hoc:func:`load_proc`, :hoc:func:`load_template`, or :hoc:func:`load_func` functions.
         The file is searched for in the current working 
         directory, $HOC_LIBRARY_PATH (a colon or space separated list of directories), 
         and `$NEURONHOME/lib/hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc>`_ directories (in that order) for 
@@ -151,13 +151,13 @@ code-loading
 
 ----
 
-.. function:: load_func
+.. hoc:function:: load_func
 
-        see :func:`load_proc` 
+        see :hoc:func:`load_proc`
 
 ----
 
-.. function:: load_template
+.. hoc:function:: load_template
 
-        see :func:`load_proc` 
+        see :hoc:func:`load_proc`
 

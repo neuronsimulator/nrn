@@ -1,6 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
-from .nodelist import NodeList
 from .node import _point_indices
 import weakref
 import numpy
@@ -11,7 +10,7 @@ from .rxdException import RxDException
 from . import initializer
 import collections
 import os
-from distutils import sysconfig
+import sysconfig
 import uuid
 import sys
 import itertools
@@ -21,11 +20,8 @@ import platform
 from warnings import warn
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
-_numpy_array = numpy.array
-_numpy_zeros = numpy.zeros
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
-_section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
 
@@ -94,6 +90,7 @@ register_rate.argtypes = [
         ctypes.c_double, flags="contiguous"
     ),  # multicompartment multipliers
     ctypes.POINTER(ctypes.py_object),  # voltage pointers
+    ctypes._CFuncPtr,
 ]  # Reaction rate function
 
 setup_currents = nrn_dll_sym("setup_currents")
@@ -117,7 +114,8 @@ ics_register_reaction.argtypes = [
     _int_ptr,
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(dtype=numpy.float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    ctypes._CFuncPtr,
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -126,6 +124,7 @@ ecs_register_reaction.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     _int_ptr,
+    ctypes._CFuncPtr,
 ]
 
 
@@ -137,10 +136,10 @@ set_hybrid_data.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 # ics_register_reaction = nrn_dll_sym('ics_register_reaction')
@@ -192,6 +191,7 @@ _c_headers = """#include <math.h>
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py
  */
+extern "C" {
 double factorial(const double);
 double degrees(const double);
 void radians(const double, double*);
@@ -254,15 +254,11 @@ _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
-last_nrn_legacy_units = h.nrnunit_use_legacy()
-
 
 _all_reactions = []
 
 nrn_tree_solve = nrn_dll_sym("nrn_tree_solve")
 nrn_tree_solve.restype = None
-
-_dptr = _double_ptr
 
 _dimensions = {1: h.SectionList(), 3: h.SectionList()}
 _dimensions_default = 1
@@ -395,7 +391,6 @@ def _setup_memb_currents():
         num = len(curr_ptrs)
         if num:
             curr_ptr_vector = _h_ptrvector(num)
-            curr_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(curr_ptrs):
                 curr_ptr_vector.pset(i, ptr)
                 curr_ptr_storage_nrn = _h_vector(num)
@@ -456,16 +451,6 @@ def _setup_memb_currents():
         num_fluxes = numpy.array(cur_counts).sum()
         num_currents = len(memb_cur_ptrs)
         memb_cur_ptrs = list(itertools.chain.from_iterable(memb_cur_ptrs))
-        """print("num_currents",num_currents)
-        print("num_fluxes",num_fluxes)
-        print("num_nodes",curr_indices)
-        print("num_species",cur_counts)
-        print("cur_idxs",curr_indices)
-        print("node_idxs",cur_node_indices)
-        print("scales",rxd_memb_scales)
-        print("ptrs",memb_cur_ptrs)
-        print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",ecs_map,max(ecs_map))"""
         setup_currents(
             num_currents,
             num_fluxes,
@@ -494,8 +479,6 @@ def _setup():
 
 
 def _find_librxdmath():
-    import glob
-
     # cmake doesn't create x86_64 directory under install prefix
     base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine())
     if not os.path.exists(base_path):
@@ -519,36 +502,35 @@ def _find_librxdmath():
     return dll
 
 
-def _c_compile(formula):
+def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    with open(filename + ".c", "w") as f:
+    with open(filename + ".cpp", "w") as f:
         f.write(formula)
     math_library = "-lm"
     fpic = "-fPIC"
     try:
-        gcc = os.environ["CC"]
+        gcc = os.environ["CXX"]
     except:
         # when running on windows try and used the gcc included with NEURON
         if sys.platform.lower().startswith("win"):
             math_library = ""
             fpic = ""
             gcc = os.path.join(
-                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-gcc.exe"
+                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
             )
             if not os.path.isfile(gcc):
                 raise RxDException(
-                    "unable to locate a C compiler. Please `set CC=<path to C compiler>`"
+                    "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
                 )
         else:
-            gcc = "gcc"
+            gcc = "g++"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = "%s -I%s -I%s " % (
+    gcc_cmd = "%s -I%s " % (
         gcc,
-        sysconfig.get_python_inc(),
-        os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
+        sysconfig.get_path("include"),
     )
-    gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
-    gcc_cmd += "-o %s.so %s" % (filename, math_library)
+    gcc_cmd += f"-shared {fpic} {filename}.cpp {_find_librxdmath()}"
+    gcc_cmd += f" -o {filename}.so {math_library}"
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
         os.putenv(
@@ -559,22 +541,22 @@ def _c_compile(formula):
         os.putenv("PATH", my_path)
     else:
         os.system(gcc_cmd)
-    # TODO: Find a better way of letting the system locate librxdmath.so.0
+    # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll["%s.so" % os.path.abspath(filename)]
+    dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
     reaction = dll.reaction
     reaction.argtypes = [
         ctypes.POINTER(ctypes.c_double),
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(filename + ".c")
+    os.remove(f"{filename}.cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
-        _windows_dll_files.append(filename + ".so")
+        _windows_dll_files.append(f"{filename}.so")
     else:
-        os.remove(filename + ".so")
+        os.remove(f"{filename}.so")
     return reaction
 
 
@@ -585,15 +567,9 @@ _structure_change_count = nrn_dll_sym("structure_change_cnt", _ctypes_c_int)
 _diam_change_count = nrn_dll_sym("diam_change_cnt", _ctypes_c_int)
 
 
-def _donothing():
-    pass
-
-
 def _setup_units(force=False):
-    global last_nrn_legacy_units
     if initializer.is_initialized():
-        if force or last_nrn_legacy_units != h.nrnunit_use_legacy():
-            last_nrn_legacy_units = h.nrnunit_use_legacy()
+        if force:
             clear_rates()
             _setup_memb_currents()
             _compile_reactions()
@@ -608,7 +584,6 @@ def _update_node_data(force=False, newspecies=False):
         or _structure_change_count.value != last_structure_change_cnt
         or force
     ):
-
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         # if not species._has_3d:
@@ -638,16 +613,16 @@ def _update_node_data(force=False, newspecies=False):
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
                 _setup_units(force=True)
-
-            # end#if
-
-            # _curr_scales = _numpy_array(_curr_scales)
+            else:
+                # don't call _setup_memb_currents if nsegs changed -- because
+                # it is called by change units.
+                _setup_memb_currents()
 
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
     nonzero_i, nonzero_j = list(zip(*list(m.keys())))
-    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
+    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=float)
 
     # number of rows
     n = m.shape[1]
@@ -661,10 +636,70 @@ def _matrix_to_rxd_sparse(m):
     )
 
 
+def _get_root(sec):
+    while sec is not None:
+        last_sec = sec
+        # technically this is the segment, but need to check non-None
+        sec = sec.trueparentseg()
+        if sec is not None:
+            sec = sec.sec
+    return last_sec
+
+
+def _do_sections_border_each_other(sec1, sec2):
+    # two basic ways they could border each other:
+    # (1) the distance between a section and the ends
+    #     of another section is zero (note: this includes
+    #     the case that the sections are the same)
+    # (2) a section connects to the interior of another
+    for x1, x2 in itertools.product([0, 1], repeat=2):
+        if h.distance(sec1(x1), sec2(x2)) == 0:
+            # need this check in case the trueparentseg isn't in either
+            return True
+    if sec1.trueparentseg() in sec2 or sec2.trueparentseg() in sec1:
+        return True
+    return False
+
+
+def _do_section_groups_border(groups):
+    for g1, g2 in itertools.combinations(groups, 2):
+        for sec1 in g1:
+            for sec2 in g2:
+                if _do_sections_border_each_other(sec1, sec2):
+                    return True
+    return False
+
+
+def _check_multigridding_supported_3d():
+    # if there are no 3D sections, then all is well
+    if not species._has_3d:
+        return True
+
+    # if any different dxs are directly connected, then not okay
+    groups_by_root_and_dx = {}
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            if s._intracellular_instances:
+                for r in s._intracellular_instances:
+                    dx = r.dx
+                    for sec in r._secs3d:
+                        root = _get_root(sec)
+                        groups_by_root_and_dx.setdefault(root, {})
+                        groups_by_root_and_dx[root].setdefault(dx, [])
+                        groups_by_root_and_dx[root][dx].append(sec)
+    for root, groups in groups_by_root_and_dx.items():
+        if _do_section_groups_border(groups.values()):
+            return False
+
+    return True
+
+
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-
     with initializer._init_lock:
+        if not _check_multigridding_supported_3d():
+            raise RxDException("unsupported multigridding case")
 
         # update _node_fluxes in C
         _include_flux()
@@ -673,38 +708,16 @@ def _setup_matrices():
 
         n = len(_node_get_states())
 
-        # TODO: Replace with ADI version
-        """
-        if species._has_3d:
-            _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
-    
-            for sr in list(_species_get_all_species().values()):
-                s = sr()
-                if s is not None: s._setup_matrices3d(_euler_matrix)
-    
-            _diffusion_matrix = -_euler_matrix
-    
-            _euler_matrix = _euler_matrix.tocsr()
-            _update_node_data(True)
-    
-            # NOTE: if we also have 1D, this will be replaced with the correct values below
-            _zero_volume_indices = []
-            _nonzero_volume_indices = list(range(len(_node_get_states())))
-            
-        """
         volumes = node._get_data()[0]
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
             # TODO: initialization is slow. track down why
-
-            _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._assign_parents()
 
             # remove old linearmodeladdition
-            _linmodadd_cur = None
             n = species._1d_submatrix_n()
             if n:
                 # create sparse matrix for C in cy'+gy=b
@@ -735,16 +748,6 @@ def _setup_matrices():
                     == len(euler_matrix_j)
                     == len(euler_matrix_nonzero)
                 )
-                # modify C for cases where no diffusive coupling of 0, 1 ends
-                # TODO: is there a better way to handle no diffusion?
-                # for i in range(n):
-                #    if not _diffusion_matrix[i, i]:
-                #        _linmodadd_c[i, i] = 1
-
-                # _cvode_object.re_init()
-
-                # if species._has_3d:
-                #    _euler_matrix = -_diffusion_matrix
 
         # Hybrid logic
         if species._has_1d and species._has_3d:
@@ -855,7 +858,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx ** 3)
+                grids_dx.append(sp._dx**3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
@@ -867,7 +870,7 @@ def _setup_matrices():
                         if neigh not in neighbors3d:
                             neighbors3d.append(neigh)
                             vols3d.append(vol)
-                    if len(neighbors3d) < 1:
+                    if not neighbors3d:
                         raise RxDException(
                             "No 3D neighbors detected for 1D segment. Try perturbing dx"
                         )
@@ -905,10 +908,10 @@ def _setup_matrices():
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
-            rates = numpy.asarray(rates, dtype=numpy.float_)
-            volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
-            volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-            dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
+            rates = numpy.asarray(rates, dtype=float)
+            volumes1d = numpy.asarray(volumes1d, dtype=float)
+            volumes3d = numpy.asarray(volumes3d, dtype=float)
+            dxs = numpy.asarray(grids_dx, dtype=float)
             set_hybrid_data(
                 num_1d_indices_per_grid,
                 num_3d_indices_per_grid,
@@ -1005,7 +1008,7 @@ def _setup_matrices():
         else:
             rxd_set_no_diffusion()
 
-        if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
+        if section1d._all_cindices is not None and section1d._all_cindices:
             rxd_setup_conc_ptrs(
                 len(section1d._all_cindices),
                 _list_to_cint_array(section1d._all_cindices),
@@ -1379,6 +1382,12 @@ def _compile_reactions():
                 r = rptr()
                 if isinstance(r, rate.Rate):
                     s = r._species()
+                    if s._id in creg._params_ids:
+                        warn(
+                            "Parameters values are fixed, %r will not change the value of %r"
+                            % (r, s)
+                        )
+                        continue
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
@@ -1478,9 +1487,9 @@ def _compile_reactions():
                             continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
-                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                        for mult, sp in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
-                        for idx in sorted(summed_mults.keys()):
+                        for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (
@@ -1489,7 +1498,7 @@ def _compile_reactions():
                                 operator,
                                 summed_mults[idx],
                             )
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             register_rate(
                 creg.num_species,
                 creg.num_params,
@@ -1503,7 +1512,7 @@ def _compile_reactions():
                 mc_mult_count,
                 numpy.array(mc_mult_list, dtype=ctypes.c_double),
                 _list_to_pyobject_array(creg._vptrs),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
     # Setup intracellular 3D reactions
@@ -1580,9 +1589,7 @@ def _compile_reactions():
                 ]
             else:
                 mc3d_region_size = 0
-                mc3d_indices_start = [
-                    0 for i in range(len(all_ics_gids + ics_param_gids))
-                ]
+                mc3d_indices_start = [0] * (len(all_ics_gids) + len(ics_param_gids))
             mults = [[] for i in range(len(all_ics_gids + ics_param_gids))]
             for rptr in regions_inv[reg]:
                 r = rptr()
@@ -1700,7 +1707,7 @@ def _compile_reactions():
 
                 else:
                     idx = 0
-                    fxn_string += "\n\trate = %s;" % rate_str
+                    fxn_string += f"\n\trate = {rate_str};"
                     for sp in r._sources + r._dests:
                         s = sp()
                         # Get underlying rxd._IntracellularSpecies for the grid_id
@@ -1732,7 +1739,7 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             for i, ele in enumerate(mults):
                 if ele == []:
                     mults[i] = numpy.ones(len(reg._xs))
@@ -1745,7 +1752,7 @@ def _compile_reactions():
                 numpy.asarray(mc3d_indices_start, dtype=numpy.uint64),
                 mc3d_region_size,
                 numpy.asarray(mults),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
     # Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
@@ -1825,10 +1832,10 @@ def _compile_reactions():
                     pid = [
                         pid for pid, gid in enumerate(all_gids) if gid == s._grid_id
                     ][0]
-                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                    fxn_string += f"\n\trhs[{pid}] {operator} {rate_str};"
                 else:
                     idx = 0
-                    fxn_string += "\n\trate = %s;" % rate_str
+                    fxn_string += f"\n\trate = {rate_str};"
                     for sp in r._sources + r._dests:
                         s = sp()
                         # Get underlying rxd._ExtracellularSpecies for the grid_id
@@ -1855,18 +1862,18 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             ecs_register_reaction(
                 0,
                 len(all_gids),
                 len(param_gids),
                 _list_to_cint_array(all_gids + param_gids),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
 
 def _init():
-    if len(species._all_species) == 0:
+    if not species._all_species:
         return None
     initializer._do_init()
     # TODO: check about the 0<x<1 problem alluded to in the documentation
@@ -1950,7 +1957,7 @@ def _include_flux(force=False):
 
 
 def _init_concentration():
-    if len(species._all_species) == 0:
+    if not species._all_species:
         return None
     for sr in _species_get_all_species():
         s = sr()
@@ -1997,6 +2004,16 @@ def _do_nbs_register():
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
 
+        # register save state mechanism
+        import neuron
+        from neuron import rxd
+
+        neuron.register_savestate(
+            "rxd-9e015bfa-93ba-485c-9dd2-09857ae58e4d",
+            rxd.save_state,
+            rxd.restore_state,
+        )
+
 
 # register the Python callbacks
 do_setup_fptr = fptr_prototype(_setup)
@@ -2013,7 +2030,7 @@ def _windows_remove_dlls():
             kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         else:
             kernel32 = ctypes.windll.kernel32
-    for (dll_ptr, filepath) in zip(_windows_dll, _windows_dll_files):
+    for dll_ptr, filepath in zip(_windows_dll, _windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle

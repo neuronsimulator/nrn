@@ -53,20 +53,17 @@ Matrix
         By default, a new Matrix is of type MFULL (= 1) and allocates storage for 
         all nrow*ncol elements. Scaffolding is in place for matrices of storage 
         type MSPARSE (=2) and MBAND (=3) but not many methods have been interfaced 
-        to the meschach library at this time. If a method is called on a matrix type 
+        to the eigen library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
         m*x=b (``x = m.solv(b)`` ) will solve the linear system 
         regardless of the type of m and 
         v1 = m*v2 (``v1 = m.mulv(v2)`` ) will perform the vector multiplication. 
          
-        Matrix is implemented using the 
-        `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
-        (discovered at http://www.netlib.org/c/index.html\ ) which contains a large collection 
-        of routines for sparse, banded, and full matrices. Many of the useful 
-        routines  have not 
-        been interfaced with the hoc interpreter but can be easily added on request 
-        or you can add it yourself 
+        Matrix is implemented using the `eigen3 library <https://eigen.tuxfamily.org>`_ 
+        which contains a large collection of routines for sparse, banded, and full matrices. 
+        Many of the useful routines  have not been interfaced with the hoc 
+        interpreter but can be easily added on request or you can add it yourself 
         by analogy with the code in ``nrn/src/ivoc/(matrix.c ocmatrix.[ch])`` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
@@ -326,11 +323,11 @@ Matrix
                 m.printf()
                 print('m.nrow()', m.nrow())
                 for i in range(m.nrow()):    
-                    print("%d  " % i, end='')
+                    print(f"{i}  ", end='')
                     for jx in range(m.sprowlen(i)):
                         j = h.ref(0)
                         x=m.spgetrowval(i, jx, j) 
-                        print("  %d:%f" % (j[0], x), end='')
+                        print(f"  {j[0]}:{x}", end='')
                     print()
 
 
@@ -432,7 +429,7 @@ Matrix
             f.ropen() 
             m = h.Matrix() 
             m.scanf(f) 
-            print('{} {}'.format(m.nrow(), m.ncol()))
+            print(m.nrow(), m.ncol())
 
     .. warning::
         Works only for full matrix types 
@@ -467,8 +464,7 @@ Matrix
 
             from neuron import h
 
-            v1 = h.Vector(4) 
-            v1.indgen(1,1) 
+            v1 = h.Vector([1, 2, 3, 4]) 
             m = h.Matrix(3, 4) 
             for i in range(3):
                 for j in range(3):
@@ -477,9 +473,9 @@ Matrix
         .. code-block::
             python
 
-            print("v1 {}".format(v1))
+            print("v1", v1)
             v1.printf() 
-            print("m {}".format(m))
+            print("m", m)
             m.printf()
             print("m * v1")
             m.mulv(v1).printf()
@@ -491,8 +487,7 @@ Matrix
 
             from neuron import h
 
-            v1 = h.Vector(100) 
-            v1.indgen(1,1) 
+            v1 = h.Vector(range(1, 101)) 
             m = h.Matrix(100, 100, 2) ##sparse matrix 
             ##reverse permutation 
             for i in range(100): 
@@ -500,10 +495,6 @@ Matrix
 
             m.mulv(v1).printf()
 
-
-
-    .. warning::
-        Implemented only for full and sparse matrices. 
 
 
 ----
@@ -586,7 +577,7 @@ Matrix
             m.printf()
 
             for i in range(1 - m.nrow(), m.ncol()):
-                print("diagonal %d: " % i, end='')
+                print(f"diagonal {i}: ", end='')
                 print(list(m.getdiag(i))[max(0, -i) : (m.nrow() - i)])
 
 
@@ -661,9 +652,6 @@ Matrix
             b[499] = 1 
             print()
             m.solv(b,1).printf("%8.3f", 475, 535) 
-
-    .. warning::
-        Implemented only for full and sparse matrices. 
 
 
 ----
@@ -792,9 +780,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -815,9 +800,6 @@ Matrix
          
         Otherwise fill the matrix row with a constant. 
 
-    .. warning::
-        Implemented only for full matrices and sparse. 
-
 
 ----
 
@@ -837,9 +819,6 @@ Matrix
         The vector must have size msrcdest.mrow 
          
         Otherwise fill the matrix column with a constant. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -885,9 +864,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -902,9 +878,6 @@ Matrix
 
     Description:
         Fills the matrix with 0. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -929,10 +902,6 @@ Matrix
             m = h.Matrix(4, 6) 
             m.ident() 
             m.printf() 
-
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----

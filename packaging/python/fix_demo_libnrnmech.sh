@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -ex
 
 # On Mac, update neurondemo libnrnmech to point to relative libnrniv.
@@ -9,7 +9,11 @@ set -ex
 
 instdir=$1
 REL_RPATH=$2
-libnrnmech_dir=$instdir/share/nrn/demo/release/x86_64
+if [[ `uname -m` == 'arm64' ]]; then
+  libnrnmech_dir=$instdir/share/nrn/demo/release/arm64
+else
+  libnrnmech_dir=$instdir/share/nrn/demo/release/x86_64
+fi
 
 if test "`uname -s`" = "Darwin" ; then
   if test -h "$libnrnmech_dir/.libs/libnrnmech.so" ; then

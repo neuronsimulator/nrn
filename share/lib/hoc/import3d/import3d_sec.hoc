@@ -197,7 +197,7 @@ obfunc contourcenter() {local i localobj mean, pts, perim, d
 	perim = new Vector(pts.ncol)
 	for i=1, pts.ncol-1 { perim.x[i] = perim.x[i-1] + pts.getcol(i-1).mag }
 	d = new Vector(101)
-	d.indgen(perim.x(perim.size-1)/100)
+	d.indgen(perim.x[perim.size-1]/100)
 	for i=1,3 $oi.interpolate(d, perim)
 	mean = new Vector(3)
 	for i=1, 3 { mean.x[i-1] = $oi.mean }

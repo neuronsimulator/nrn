@@ -1,11 +1,12 @@
-.. _read:
+
+.. _hoc_read:
 
 Read from Terminal and Files
 ----------------------------
 
 
 
-.. function:: xred
+.. hoc:function:: xred
 
 
     Syntax:
@@ -24,7 +25,7 @@ Read from Terminal and Files
 
 
 
-.. function:: getstr
+.. hoc:function:: getstr
 
 
     Syntax:
@@ -35,21 +36,21 @@ Read from Terminal and Files
 
     Description:
         ``Getstr()`` reads a string up to and including the next newline from the file 
-        opened with the :meth:`~File.ropen` command (or the currently executing file or 
+        opened with the :hoc:meth:`~File.ropen` command (or the currently executing file or
         the standard input) and places it 
         in its string variable argument. With a second arg equal to 1, getstr reads 
         a single word starting at the next non-whitespace character up to 
         but not including the following whitespace (similar to fscan). 
 
     .. seealso::
-        :class:`StringFunctions`, :func:`sscanf`, :class:`File`
+        :hoc:class:`StringFunctions`, :hoc:func:`sscanf`, :hoc:class:`File`
 
 
 ----
 
 
 
-.. function:: sred
+.. hoc:function:: sred
 
 
     Syntax:
@@ -79,7 +80,7 @@ Read from Terminal and Files
 
 
 
-.. function:: fscan
+.. hoc:function:: fscan
 
 
     Syntax:
@@ -87,7 +88,7 @@ Read from Terminal and Files
 
 
     Description:
-        ``fscan()`` reads the next number from the file opened with the :meth:`~File.ropen` 
+        ``fscan()`` reads the next number from the file opened with the :hoc:meth:`~File.ropen`
         command. If no file is opened the number is read from the currently 
         executing file. If no file is being executed the number is read from 
         the standard input. 
@@ -138,6 +139,6 @@ Read from Terminal and Files
          
 
     .. seealso::
-        :meth:`File.scanvar`, :ref:`read <keyword_read>`, :meth:`File.ropen`, :func:`File`, :func:`sscanf`, :class:`StringFunctions`, :func:`getstr`
+        :hoc:meth:`File.scanvar`, :ref:`read <hoc_keyword_read>`, :hoc:meth:`File.ropen`, :hoc:func:`File`, :hoc:func:`sscanf`, :hoc:class:`StringFunctions`, :hoc:func:`getstr`
 
 

@@ -95,8 +95,8 @@ def test_savestate_basic(neuron_nosave_instance):
     ena = 1e3 * h.R * (h.celsius + 273.15) * log(nao / nai) / h.FARADAY
     ek = 1e3 * h.R * (h.celsius + 273.15) * log(ko / ki) / h.FARADAY
 
-    gna = paramA * gnabar * mgate ** 3 * hgate
-    gk = paramA * gkbar * ngate ** 4
+    gna = paramA * gnabar * mgate**3 * hgate
+    gk = paramA * gkbar * ngate**4
 
     na_current = rxd.MultiCompartmentReaction(
         nai, nao, gna * (v - ena), mass_action=False, membrane=mem, membrane_flux=True

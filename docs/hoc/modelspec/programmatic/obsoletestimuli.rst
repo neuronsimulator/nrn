@@ -1,7 +1,7 @@
 Obsolete Stimuli
 ----------------
 
-.. function:: fstim
+.. hoc:function:: fstim
 
 
     Syntax:
@@ -18,7 +18,7 @@ Obsolete Stimuli
 
 
 
-.. function:: fstimi
+.. hoc:function:: fstimi
 
 
     Syntax:
@@ -35,7 +35,7 @@ Obsolete Stimuli
 
 
 
-.. function:: fclamp
+.. hoc:function:: fclamp
 
 
     Syntax:
@@ -43,7 +43,7 @@ Obsolete Stimuli
 
 
     Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+        obsolete. Use the :hoc:class:`VClamp` or :hoc:class:`SEClamp` point process.
 
          
 
@@ -51,7 +51,7 @@ Obsolete Stimuli
 
 
 
-.. function:: fclampi
+.. hoc:function:: fclampi
 
 
     Syntax:
@@ -59,7 +59,7 @@ Obsolete Stimuli
 
 
     Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+        obsolete. Use the :hoc:class:`VClamp` or :hoc:class:`SEClamp` point process.
 
          
 
@@ -67,7 +67,7 @@ Obsolete Stimuli
 
 
 
-.. function:: fclampv
+.. hoc:function:: fclampv
 
 
     Syntax:
@@ -75,7 +75,7 @@ Obsolete Stimuli
 
 
     Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+        obsolete. Use the :hoc:class:`VClamp` or :hoc:class:`SEClamp` point process.
 
          
 
@@ -83,7 +83,7 @@ Obsolete Stimuli
 
 
 
-.. function:: prstim
+.. hoc:function:: prstim
 
 
     Syntax:

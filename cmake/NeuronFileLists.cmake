@@ -1,48 +1,76 @@
-# =============================================================================
-# Lists of header files to install
-# =============================================================================
+# =======================================================================================
+# Lists of header files to install. Difference is whether the dir structure is preserved.
+#
+# * HEADER_FILES_TO_INSTALL: ${src}/src/dir/header.h -> {bld}/include/header.h
+# * STRUCTURED_HEADER_FILES_TO_INSTALL: {src}/src/a/b.h -> {bld}/include/a/b.h
+# =======================================================================================
+set(STRUCTURED_HEADER_FILES_TO_INSTALL
+    neuron/cache/mechanism_range.hpp neuron/container/data_handle.hpp
+    neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
+    neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
-    cabvars.h
-    cspmatrix.h
-    cspredef.h
-    hoc.h
-    hoc_membf.h
-    hocassrt.h
-    hocdec.h
-    hocgetsym.h
-    hoclist.h
-    hocparse.h
-    isoc99.h
-    ivstream.h
-    md1redef.h
-    md2redef.h
-    membdef.h
-    membfunc.h
-    multicore.h
-    multisplit.h
-    neuron.h
-    nmodlmutex.h
-    nrn_ansi.h
-    nrnapi.h
-    nrnassrt.h
-    nrncvode.h
-    nrnisaac.h
-    nrniv_mf.h
-    nrnjava.h
-    nrnoc_ml.h
-    nrnmpi.h
-    nrnmpidec.h
-    nrnran123.h
-    nrnredef.h
-    oc_ansi.h
-    ocfunc.h
-    ocmisc.h
-    options.h
-    scoplib.h
-    scoplib_ansi.h
-    section.h
-    spconfig.h
-    spmatrix.h)
+    gnu/mcran4.h
+    gnu/nrnisaac.h
+    gnu/nrnran123.h
+    nrniv/backtrace_utils.h
+    nrniv/bbsavestate.h
+    nrnmpi/nrnmpidec.h
+    nrnoc/cabvars.h
+    nrnoc/md1redef.h
+    nrnoc/md2redef.h
+    nrnoc/membdef.h
+    nrnoc/membfunc.h
+    nrnoc/multicore.h
+    nrnoc/multisplit.h
+    nrnoc/neuron.h
+    nrnoc/nmodlmutex.h
+    nrnoc/nrn_ansi.h
+    nrnoc/nrncvode.h
+    nrnoc/nrniv_mf.h
+    nrnoc/nrnoc_ml.h
+    nrnoc/nrnredef.h
+    nrnoc/nrnversionmacros.h
+    nrnoc/options.h
+    nrnoc/section_fwd.hpp
+    nrnoc/treeset.h
+    oc/hoc.h
+    oc/hoc_membf.h
+    oc/hocassrt.h
+    oc/hocdec.h
+    oc/hocgetsym.h
+    oc/hoclist.h
+    oc/hocparse.h
+    oc/mech_api.h
+    oc/memory.hpp
+    oc/nrnapi.h
+    oc/nrnassrt.h
+    oc/nrnmpi.h
+    oc/nrnrandom.h
+    oc/oc_ansi.h
+    oc/ocfunc.h
+    oc/ocmisc.h
+    oc/parse_with_deps.hpp
+    oc/wrap_sprintf.h
+    scopmath/crout.hpp
+    scopmath/crout_thread.hpp
+    scopmath/deflate.hpp
+    scopmath/dimplic.hpp
+    scopmath/errcodes.hpp
+    scopmath/euler.hpp
+    scopmath/euler_thread.hpp
+    scopmath/newton.hpp
+    scopmath/newton_struct.h
+    scopmath/newton_thread.hpp
+    scopmath/row_view.hpp
+    scopmath/runge.hpp
+    scopmath/scoplib.h
+    scopmath/simeq.hpp
+    scopmath/sparse.hpp
+    scopmath/sparse_thread.hpp
+    scopmath/ssimplic.hpp
+    scopmath/ssimplic_thread.hpp
+    sparse13/spconfig.h
+    sparse13/spmatrix.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files
@@ -50,23 +78,15 @@ set(HEADER_FILES_TO_INSTALL
 set(NRN_HEADERS_INCLUDE_LIST)
 
 # =============================================================================
-# Lists of random number related files
-# =============================================================================
-set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp)
-
-# =============================================================================
 # Files in oc directory
 # =============================================================================
 set(OC_FILE_LIST
-    ${RAN_FILE_LIST}
     audit.cpp
     axis.cpp
     code.cpp
     code2.cpp
-    cygwinprt.cpp
     debug.cpp
     fileio.cpp
-    fmenu.cpp
     ftime.cpp
     functabl.cpp
     getsym.cpp
@@ -74,14 +94,13 @@ set(OC_FILE_LIST
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
-    isoc99.cpp
     list.cpp
     math.cpp
+    oc_mcran4.cpp
+    memory.cpp
+    mswinprt.cpp
     nonlin.cpp
-    nrnfilewrap.cpp
     ocerf.cpp
-    parallel.cpp
-    parse.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
@@ -99,6 +118,7 @@ set(NRNOC_FILE_LIST
     cabcode.cpp
     capac.cpp
     clamp.cpp
+    container.cpp
     eion.cpp
     extcelln.cpp
     fadvance.cpp
@@ -106,11 +126,11 @@ set(NRNOC_FILE_LIST
     hocprax.cpp
     init.cpp
     ldifus.cpp
-    method3.cpp
+    membfunc.cpp
+    memblist.cpp
     nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
-    nrnversion.h
     passive0.cpp
     point.cpp
     psection.cpp
@@ -118,7 +138,10 @@ set(NRNOC_FILE_LIST
     secref.cpp
     solve.cpp
     synapse.cpp
-    treeset.cpp)
+    treeset.cpp
+    multicore.cpp)
+
+set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
 
 # =============================================================================
 # Files in ivoc directory
@@ -190,12 +213,10 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    cachevec.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
-    geometry3d.cpp
     glinerec.cpp
     hocmech.cpp
     impedanc.cpp
@@ -204,6 +225,7 @@ set(NRNIV_FILE_LIST
     linmod.cpp
     linmod1.cpp
     matrixmap.cpp
+    memory_usage.cpp
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp
@@ -217,7 +239,6 @@ set(NRNIV_FILE_LIST
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
-    nrnrtime.cpp
     nrnste.cpp
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
@@ -233,7 +254,6 @@ set(NRNIV_FILE_LIST
     secbrows.cpp
     shape.cpp
     shapeplt.cpp
-    singlech.cpp
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
@@ -290,182 +310,48 @@ nrn_create_file_list(
   sundialsmath.c)
 set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
 
-# meschach matrix sources
-set(MESCH_FILES_LIST
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    conjgrad.c
-    copy.c
-    dmacheps.c
-    err.c
-    extras.c
-    fft.c
-    givens.c
-    hessen.c
-    hsehldr.c
-    init.c
-    iter0.c
-    iternsym.c
-    itersym.c
-    ivecop.c
-    lanczos.c
-    lufactor.c
-    machine.c
-    matlab.c
-    matop.c
-    matrixio.c
-    meminfo.c
-    memory.c
-    memstat.c
-    mfunc.c
-    norm.c
-    otherio.c
-    pxop.c
-    qrfactor.c
-    schur.c
-    solve.c
-    sparse.c
-    sparseio.c
-    spbkp.c
-    spchfctr.c
-    splufctr.c
-    sprow.c
-    spswap.c
-    submat.c
-    svd.c
-    symmeig.c
-    update.c
-    vecop.c
-    version.c
-    zcopy.c
-    zfunc.c
-    zgivens.c
-    zhessen.c
-    zhsehldr.c
-    zlufctr.c
-    zmachine.c
-    zmatio.c
-    zmatlab.c
-    zmatop.c
-    zmemory.c
-    znorm.c
-    zqrfctr.c
-    zschur.c
-    zsolve.c
-    zvecop.c)
-
-
-set(SPARSE_FILES_LIST
-    bksub.cpp
-    getelm.cpp
-    lineq.cpp
-    prmat.cpp
-    subrows.cpp)
-
-# sparse13 matrix sources
-set(SPARSE13_FILES_LIST
-    spalloc.c
-    spbuild.c
-    spfactor.c
-    spoutput.c
-    spsolve.c
-    sputils.c
-    cspalloc.c
-    cspbuild.c
-    cspfactor.c
-    cspoutput.c
-    cspsolve.c
-    csputils.c)
+set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # scopmath sources
 set(SCOPMATH_FILES_LIST
-    abort.c
-    adams.c
-    adeuler.c
-    adrunge.c
-    advance.c
-    boundary.c
-    crank.c
-    crout.c
-    csoda.c
-    csodabnc.c
-    deflate.c
-    dimplic.c
-    scoperf.c
-    euler.c
-    expfit.c
-    exprand.c
-    f2cmisc.c
-    factoria.c
-    force.c
-    gauss.c
-    gear.c
-    getmem.c
-    harmonic.c
-    heun.c
-    hyperbol.c
-    invert.c
-    lag.c
-    legendre.c
-    newton.c
-    normrand.c
-    perpulse.c
-    perstep.c
-    poisrand.c
-    poisson.c
-    praxis.c
-    pulse.c
-    quad.c
-    ramp.c
-    revhyper.c
-    revsawto.c
-    revsigmo.c
-    romberg.c
-    runge.c
-    sawtooth.c
-    schedule.c
-    seidel.c
-    sigmoid.c
-    simeq.c
-    simplex.c
-    sparse.c
-    vsparse.c
-    spline.c
-    squarewa.c
-    ssimplic.c
-    step.c
-    threshol.c
-    tridiag.c
-    sparse_thread.c
-    newton_thread.c
-    crout_thread.c
-    ssimplic_thread.c)
+    abort.cpp
+    advance.cpp
+    boundary.cpp
+    crank.cpp
+    scoperf.cpp
+    expfit.cpp
+    exprand.cpp
+    f2cmisc.cpp
+    factoria.cpp
+    force.cpp
+    gauss.cpp
+    getmem.cpp
+    harmonic.cpp
+    hyperbol.cpp
+    invert.cpp
+    lag.cpp
+    legendre.cpp
+    normrand.cpp
+    perpulse.cpp
+    perstep.cpp
+    poisrand.cpp
+    poisson.cpp
+    praxis.cpp
+    pulse.cpp
+    ramp.cpp
+    revhyper.cpp
+    revsawto.cpp
+    revsigmo.cpp
+    romberg.cpp
+    sawtooth.cpp
+    sigmoid.cpp
+    spline.cpp
+    squarewa.cpp
+    step.cpp
+    threshol.cpp
+    tridiag.cpp)
 
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
-
-set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
-    HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
-    RNG.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -484,26 +370,24 @@ set(NRNPYTHON_FILES_LIST
 # built-in mod files
 set(MODFILE_BASE_NAMES
     apcount
-    feature
-    intfire2
-    oclmp
-    ppmark
-    syn
     exp2syn
-    hh
-    intfire4
-    passive
-    stim
-    vclmp
     expsyn
+    feature
+    hh
     intfire1
+    intfire2
+    intfire4
     netstim
+    oclmp
+    passive
     pattern
-    svclmp)
+    ppmark
+    stim
+    svclmp
+    syn
+    vclmp)
 
 set(MODLUNIT_FILES_LIST
-    parse1.cpp
-    lex.cpp
     consist.cpp
     declare.cpp
     init.cpp
@@ -519,9 +403,6 @@ set(MODLUNIT_FILES_LIST
     version.cpp)
 
 set(NMODL_FILES_LIST
-    parse1.cpp
-    diffeq.cpp
-    lex.cpp
     consist.cpp
     deriv.cpp
     discrete.cpp
@@ -534,44 +415,38 @@ set(NMODL_FILES_LIST
     noccout.cpp
     parsact.cpp
     netrec_discon.cpp
-    partial.cpp
-    sens.cpp
     simultan.cpp
     solve.cpp
     symbol.cpp
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST
-    file.cpp
-    listimpl.cpp
-    math.cpp
-    memory.cpp
-    string.cpp
-    ustring.cpp
-    observe.cpp
-    regexp.cpp
-    resource.cpp)
+set(IVOS_FILES_LIST observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
+
+set(NRN_MUSIC_FILES_LIST nrnmusic.cpp)
 
 # =============================================================================
 # Top level directories under src
 # =============================================================================
 set(NRN_OC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/oc)
 set(NRN_NRNOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrnoc)
+set(NRN_NRNOC_BUILD_DIR ${PROJECT_BINARY_DIR}/src/nrnoc)
 set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
+set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 
 # =============================================================================
 # Create source file lists by gathering from various directories
 # =============================================================================
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
+nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
@@ -579,18 +454,13 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
-nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
-                     ${SPARSE_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
-                     ${SPARSE13_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
-nrn_create_file_list(NRN_MODFILE_BASE_NAMES ${PROJECT_SOURCE_DIR}/src/nrnoc ${MODFILE_BASE_NAMES})
+nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
@@ -598,6 +468,7 @@ nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
+nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
 # =============================================================================

@@ -8,98 +8,91 @@
 
 #define DEBUG 0
 #if DEBUG
-static int debugtoken=1;
+static int debugtoken = 1;
 #else
-static int debugtoken=0;
+static int debugtoken = 0;
 #endif
 
-Item *lex_tok;
-int parse_pass=0;
-int restart_pass=0;
+Item* lex_tok;
+int parse_pass = 0;
+int restart_pass = 0;
 extern int yylex();
 
-void parsepass(int n)
-{
-	unitonflag = 1;
-	parse_pass = n;
-	if (parse_pass != 1) {
-		lex_tok = intoken;
-	}
+void parsepass(int n) {
+    unitonflag = 1;
+    parse_pass = n;
+    if (parse_pass != 1) {
+        lex_tok = intoken;
+    }
 }
 
-void parse_restart(Item* q, int i)
-{
-	if (i == restart_pass) {
-		restart_pass = 0;
-		return;
-	}
-	restart_pass = i;
-	lex_tok = prev_parstok(q);
-	if (!lex_tok) {
-		lex_tok = intoken;
-	}
+void parse_restart(Item* q, int i) {
+    if (i == restart_pass) {
+        restart_pass = 0;
+        return;
+    }
+    restart_pass = i;
+    lex_tok = prev_parstok(q);
+    if (!lex_tok) {
+        lex_tok = intoken;
+    }
 }
 
-int next_intoken(Item** pitem)
-{
-	if (parse_pass == 1) {
-		return yylex();
-	}
-	lex_tok = next_parstok(lex_tok);
-	if (lex_tok) {
-		*pitem = lex_tok;
-		if (debugtoken) {
-			debugitem(*pitem);
-		}
-		return (*pitem)->itemsubtype;
-	}
-	return 0;
+int next_intoken(Item** pitem) {
+    if (parse_pass == 1) {
+        return yylex();
+    }
+    lex_tok = next_parstok(lex_tok);
+    if (lex_tok) {
+        *pitem = lex_tok;
+        if (debugtoken) {
+            debugitem(*pitem);
+        }
+        return (*pitem)->itemsubtype;
+    }
+    return 0;
 }
 
-Item *
-next_parstok(Item* intok)
-{
-	if (!intok) {
-		return ITEM0;
-	}
-	while ((intok = intok->next) != intoken) {
-		/*EMPTY*/
-		if (intok->itemtype == NEWLINE) {
-			;
-		}else{
-			switch (intok->itemsubtype) {
-			case STUFF:
-			case SPACE:
-				break;
-			default:
-				return intok;
-			}
-		}
-	}
-	return ITEM0;
+Item* next_parstok(Item* intok) {
+    if (!intok) {
+        return ITEM0;
+    }
+    while ((intok = intok->next) != intoken) {
+        /*EMPTY*/
+        if (intok->itemtype == NEWLINE) {
+            ;
+        } else {
+            switch (intok->itemsubtype) {
+            case STUFF:
+            case SPACE:
+                break;
+            default:
+                return intok;
+            }
+        }
+    }
+    return ITEM0;
 }
 
-Item *
-prev_parstok(Item* intok)
-{
-	if (!intok) {
-		return ITEM0;
-	}
-	while ((intok = intok->prev) != intoken) {
-		/*EMPTY*/
-		if (intok->itemtype == NEWLINE) {
-			;
-		}else{
-			switch (intok->itemsubtype) {
-			case STUFF:
-			case SPACE:
-				break;
-			default:
-				return intok;
-			}
-		}
-	}
-	return ITEM0;
+Item* prev_parstok(Item* intok) {
+    if (!intok) {
+        return ITEM0;
+    }
+    while ((intok = intok->prev) != intoken) {
+        /*EMPTY*/
+        if (intok->itemtype == NEWLINE) {
+            ;
+        } else {
+            switch (intok->itemsubtype) {
+            case STUFF:
+            case SPACE:
+                break;
+            default:
+                return intok;
+            }
+        }
+    }
+    return ITEM0;
 }
 
 /* passn.c,v
@@ -108,7 +101,7 @@ prev_parstok(Item* intok)
  *
  * Revision 1.2  91/01/07  14:17:12  hines
  * in kinunit, wrong itemsubtype.  Fix lint messages
- * 
+ *
  * Revision 1.1  90/11/13  16:10:22  hines
  * Initial revision
  *  */

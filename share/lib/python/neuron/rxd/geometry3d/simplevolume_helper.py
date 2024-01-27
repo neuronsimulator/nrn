@@ -103,12 +103,34 @@ def Put(flist, voxel, v0, verts_in, res, g):
 
 
 def simplevolume(flist, distances, voxel, g):
-    """return the number of vertices of this voxel that are contained within the surface"""
+    """estimate the volume by the fraction of interior points"""
     res = options.ics_partial_volume_resolution
-    verts = get_verts(voxel, g)
-    verts_in = []
-    for i in range(8):
-        if distances[i] <= options.ics_distance_threshold:
-            verts_in.append(i)
-    Vol = Put(flist, voxel, verts[0], verts_in, res, g)
-    return Vol
+    distance_threshold = options.ics_distance_threshold
+
+    sx, sy, sz = g["dx"] / res, g["dy"] / res, g["dz"] / res
+
+    res1 = res + 1
+
+    # count up the interior points on the boundary
+    if res == 1:
+        count = sum(1 if d <= distance_threshold else 0 for d in distances)
+
+    else:
+        vi, vj, vk = voxel
+        startx, starty, startz = (
+            g["xlo"] + vi * g["dx"],
+            g["ylo"] + vj * g["dy"],
+            g["zlo"] + vk * g["dz"],
+        )
+
+        count = 0
+        for i in range(res1):
+            vx = startx + i * sx
+            for j in range(res1):
+                vy = starty + j * sy
+                for k in range(res1):
+                    vz = startz + k * sz
+                    if any(f.distance(vx, vy, vz) <= distance_threshold for f in flist):
+                        count += 1
+    volume = count * g["dx"] * g["dy"] * g["dz"] / (res1**3)
+    return volume

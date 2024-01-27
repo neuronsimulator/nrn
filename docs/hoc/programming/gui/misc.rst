@@ -1,7 +1,7 @@
 Style Settings
 --------------
 
-.. function:: ivoc_style
+.. hoc:function:: ivoc_style
 
     Syntax:
         ``ivoc_style("name", "attribute")``
@@ -30,7 +30,7 @@ Style Settings
 Domain Restrictions for Fields
 ------------------------------
 
-.. function:: variable_domain
+.. hoc:function:: variable_domain
 
     Syntax:
         ``variable_domain(&variable, lower_limit, upper_limit)``
@@ -58,7 +58,7 @@ Domain Restrictions for Fields
 PrintWindowManager Placement
 ----------------------------
 
-.. function:: pwman_place
+.. hoc:function:: pwman_place
 
     Syntax:
         ``pwman_place(left, top)``
@@ -78,6 +78,6 @@ PrintWindowManager Placement
 
     .. seealso::
     
-        :class:`PWManager`
+        :hoc:class:`PWManager`
 
 

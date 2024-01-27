@@ -22,13 +22,13 @@ proc sesstr1() {
 	sprint($s2, "pt3dadd(%g, %g, %g, %g)", x.x[$1], y.x[$1], z.x[$1], d.x[$1])
 }
 func id() {
-	return idvec.x($1)
+	return idvec.x[$1]
 }
 proc setid() {
-	idvec.x($1) = $2
+	idvec.x[$1] = $2
 }
 proc xmlwrite() {
-	sprint($s2, "<Point id=\"%d\"><x value=\"%g\"/><y value=\"%g\"/><z value=\"%g\"/><diam value=\"%g\"/></Point>", idvec.x($1), x.x[$1], y.x[$1], z.x[$1], d.x[$1])
+	sprint($s2, "<Point id=\"%d\"><x value=\"%g\"/><y value=\"%g\"/><z value=\"%g\"/><diam value=\"%g\"/></Point>", idvec.x[$1], x.x[$1], y.x[$1], z.x[$1], d.x[$1])
 }
 endtemplate P3D
 

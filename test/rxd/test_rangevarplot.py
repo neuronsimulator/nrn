@@ -35,7 +35,7 @@ def test_rangevarplot(model_rangevarplot):
     dend, cyt, c, g = make_rvp()
     vec = h.Vector()
     g.to_vector(vec)
-    assert vec.to_python() == [0, 1, 1, 0, 0]
+    assert vec.to_python() == [1, 1, 1, 0, 0]
 
 
 def test_rangevarplot_no_species(model_rangevarplot):

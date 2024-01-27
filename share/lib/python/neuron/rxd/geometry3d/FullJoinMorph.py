@@ -22,34 +22,18 @@ from neuron import h, _sec_db
 
 
 def find_parent_seg(join, sdict, objects):
-
-    if not join:
-        return None
-    elif join[0] not in objects:
-        pseg = sdict[
-            (
-                join[0]._x0,
-                join[0]._y0,
-                join[0]._z0,
-                join[0]._x1,
-                join[0]._y1,
-                join[0]._z1,
-            )
-        ]
-        # better be all in same cell; so just set root once
-        h.distance(0, h.SectionRef(sec=pseg.sec).root(0))
-        closest = h.distance(pseg)
-
-    # any other possible instance?
-
+    root = None
+    pseg = None
+    closest = float("inf")
     for item in join:
         if item not in objects:
             s = sdict[(item._x0, item._y0, item._z0, item._x1, item._y1, item._z1)]
-            d = h.distance(s)
+            if root is None:
+                root = h.SectionRef(sec=s.sec).root(0)
+            d = h.distance(root, s)
             if d < closest:
                 pseg = s
                 closest = d
-
     return pseg
 
 
@@ -69,9 +53,6 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)
-    morphology = constructive_neuronal_geometry(
-        source, soma_step, dx, relevant_pts=relevant_pts
-    )
     (
         join_objects,
         cones,
@@ -79,7 +60,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         join_groups,
         object_pts,
         soma_objects,
-    ) = morphology
+    ) = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
 
     # grid setup
     if mesh_grid:
@@ -219,7 +200,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                         ) and not isinstance(item, Sphere):
                             final_intern_voxels[i][1] = seg
                     else:
-                        final_intern_voxels[i] = [dx ** 3, seg]
+                        final_intern_voxels[i] = [dx**3, seg]
 
                 for i in surface.keys():
                     if i in total_surface_voxels.keys():
@@ -248,12 +229,17 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         [itemlist, distances, seg] = total_surface_voxels[vox]
         # check if the surface voxel is actually internal after updating all vertex distances:
         if all_in(distances):
-            final_intern_voxels[vox] = [dx ** 3, seg]
+            final_intern_voxels[vox] = [dx**3, seg]
             # no need to delete from surface voxels, it is never added to final surface voxels
         else:
             V = simplevolume(itemlist, distances, vox, grid)
             A = surface_area(itemlist, vox, grid)
-            final_surface_voxels[vox] = [V, A, seg]
+            # if the voxel form a corner of itemlist it may have no surface
+            # area
+            if A == 0:
+                final_intern_voxels[vox] = [dx**3, seg]
+            else:
+                final_surface_voxels[vox] = [V, A, seg]
 
     def has_vox(*vox):
         return vox in final_surface_voxels or vox in final_intern_voxels
@@ -267,17 +253,17 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         i, j, k = vox
         area = 0
         if not has_vox(i + 1, j, k):
-            area += dx ** 2
+            area += dx**2
         if not has_vox(i - 1, j, k):
-            area += dx ** 2
+            area += dx**2
         if not has_vox(i, j + 1, k):
-            area += dx ** 2
+            area += dx**2
         if not has_vox(i, j - 1, k):
-            area += dx ** 2
+            area += dx**2
         if not has_vox(i, j, k + 1):
-            area += dx ** 2
+            area += dx**2
         if not has_vox(i, j, k - 1):
-            area += dx ** 2
+            area += dx**2
         if area:
             final_surface_voxels[vox] = [vol, area, seg]
             actually_surface_voxels.append(vox)

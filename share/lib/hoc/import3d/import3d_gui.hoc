@@ -1227,14 +1227,24 @@ proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max,
 	tobj = m.symmeig(m)
 	// major axis is the one with largest eigenvalue
 	major = m.getcol(tobj.max_ind)
+	// For plotting and round-off error consistency
+	// between meschach and eigen use the heuristic that
+	// major axis points in positive direction.
+	// i.e. if greatest value is negative, reverse orientation.
+	if (major.x[major.c.abs().max_ind()] < 0) {
+		major.mul(-1)
+	}
 	// minor is normal and in xy plane
 	minor = m.getcol(3-tobj.min_ind-tobj.max_ind)
 	minor.x[2] = 0
+	if (minor.mag / (major.mag + 1e-100) < 1e-6) {
+		execerror("Failed to compute soma centroid from contour.")
+	}
 	minor.div(minor.mag)
-if (g != nil) {
-g.beginline(4, 3) g.line(mean.x[0], mean.x[1])
-g.line(mean.x[0] + 20*major.x[0], mean.x[1] + 20*major.x[1]) g.flush
-}
+	if (g != nil) {
+		g.beginline(4, 3) g.line(mean.x[0], mean.x[1])
+		g.line(mean.x[0] + 20*major.x[0], mean.x[1] + 20*major.x[1]) g.flush
+	}
 	d = new Vector(pts.ncol)
 	rad = new Vector(pts.ncol)
 	for i=0, pts.ncol-1 {

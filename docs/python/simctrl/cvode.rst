@@ -233,6 +233,47 @@ CVode
 
 
 
+.. method:: CVode.free_event_queues
+
+
+    Syntax:
+        ``cvode.free_event_queues()``
+
+
+    Description:
+        This function takes cares of clearing and free all the event queues allocated in NEURON.
+        More specifically, it frees the `TQItemPool`, `SelfEventPool` and `SelfQueue` members of
+        the `NetCvodeThreadData`.
+        This method should be called only after the end of the NEURON simulation since calling it
+        will clear all the Event Queues and it should only be used for freeing up memory.
+
+----
+
+
+
+.. method:: CVode.poolshrink
+
+
+    Syntax:
+        ``cvode.poolshrink()``
+
+        ``cvode.poolshrink(1)``
+
+
+    Description:
+        This function is used to either print or free the `DoubleArrayPool` s and `DatumArrayPool` s
+        used by the mechanisms' data.
+        If the function is called with argument `1` it deletes the pools if the number of items used
+        is 0.
+        If the function is called without arguments or with argument `0` it prints current number of
+        items used and number of items allocated for double arrays and Datum arrays.
+        This method should be called only after the end of the NEURON simulation for freeing up
+        memory.
+
+----
+
+
+
 .. method:: CVode.rtol
 
 
@@ -853,10 +894,10 @@ CVode
         .. code-block::
             python
     
-    	    from neuron import h, gui
+    	    from neuron import h
      
     	    def hi():
-    	        print('hello from hi, h.t = %g' % h.t)
+    	        print(f'hello from hi, h.t = {h.t}')
 
     	    h.finitialize(-65)
 
@@ -1256,12 +1297,53 @@ CVode
         membrane current out of the segment), is available
         at 0 area nodes (locations 0 and 1 of every section), does not require
         that extracellular be inserted (and so is much faster), and works
-        during parallel simuations with variable step methods. (ie. does not
+        during parallel simulations with variable step methods. (ie. does not
         require IDA which is currently not available in parallel).
-        i_membrane\_ exists as a range variable only when this function has
-        been called with an argument of 1.
+        i_membrane\_ exists as a range variable only when ``use_fast_imem`` has
+        been called with an argument of 1. Conversely, i_membrane\_ is
+        not computed when ``use_fast_imem`` is not called or with an
+        argument of 0.
 
-         
+        i_membrane\_ include capacity current and all transmembrane
+        ionic currents but not stimulus currents. POINT_PROCESS synaptic
+        currents are considered ionic currents and so are included
+        in i_membrane\_. From charge conservation
+        a fundamental property is that the sum of all i_membrane\_ is
+        identical to the sum of all ELECTRODE_CURRENT (Current cannot
+        flow axially out of a cell since the root and leaves of each
+        cell tree have sealed end boundary conditions.)
+
+        The following tests this conservation law, assuming that the only
+        ELECTRODE_CURRENTs are IClamp. Note the idiom that visits all segments
+        of a model but only once each segment to sum up i_membrane\_
+
+        .. code:: python
+
+            from neuron import h
+            h.CVode().use_fast_imem(1)
+
+            def assert_whole_model_charge_conservation():
+                # sum over all membrane current
+                total_imem = 0.0
+                for sec in h.allsec():
+                    for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
+                        if seg.x == sec.orientation() and sec.parentseg() is not None:
+                            continue # skip segment shared with parent
+                        total_imem += seg.i_membrane_
+
+                # sum over all ELECTRODE_CURRENT (if only using IClamp)
+                total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
+
+                print(f"total_imem={total_imem} total_iclamp_cur={total_iclamp_cur}")
+                assert(abs(total_imem - total_iclamp_cur) < 1e-12)
+
+
+        In the above fragment ``sec.parentseg()`` is needed to count
+        the root and use of ``sec.trueparentseg()`` would count all sections
+        that connect to the root section at 0 because all those sections have
+        a trueparentseg of None.
+        Also, although an extremely rare edge case, ``sec.orientation()``
+        is needed to match which segment is closest to root.
 
 ----
 
@@ -1462,15 +1544,15 @@ CVode
 
 
     Description:
-        When set, G*v = R matrix and vectors are reallocated in tree order so that 
-        all the elements of each type are contiguous in memory. Pointers to these 
-        elements used by the GUI, Vector, Pointer, etc. are updated. 
+        Deprecated method.
+        This used to cause the G*v = R matrix and vectors to be reallocated in
+        tree order so that all the elements of each type are contiguous in
+        memory.
+        This is no longer required because this scheme is now used all the time
+        and cannot be disabled.
+        Pointers to these elements used by the GUI, Vector, Pointer, etc. are updated.
          
-        Much of the implementation was contributed by Hubert Eichner <eichnerh@in.tum.de> 
-         
-        :meth:`ParallelContext.multisplit` automatically sets h.CVode().cache_efficient(True) 
-        
-        0 or 1 can be used instead of ``False`` or ``True``, respectively.
+        0 or 1 could be used instead of ``False`` or ``True``, respectively.
 
          
 

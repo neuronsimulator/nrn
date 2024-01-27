@@ -1,10 +1,11 @@
-.. _vbox:
+
+.. _hoc_vbox:
 
 Layout
 ======
 
 
-.. class:: Deck
+.. hoc:class:: Deck
 
 
     Syntax:
@@ -72,7 +73,7 @@ Layout
 
 
 
-.. method:: Deck.intercept
+.. hoc:method:: Deck.intercept
 
 
     Syntax:
@@ -120,7 +121,7 @@ Layout
 
 
 
-.. method:: Deck.map
+.. hoc:method:: Deck.map
 
 
     Syntax:
@@ -155,7 +156,7 @@ Layout
 
 
 
-.. method:: Deck.unmap
+.. hoc:method:: Deck.unmap
 
 
     Syntax:
@@ -174,7 +175,7 @@ Layout
 
 
 
-.. method:: Deck.save
+.. hoc:method:: Deck.save
 
 
     Syntax:
@@ -194,7 +195,7 @@ Layout
 
 
 
-.. method:: Deck.flip_to
+.. hoc:method:: Deck.flip_to
 
 
     Syntax:
@@ -210,7 +211,7 @@ Layout
 
 
 
-.. method:: Deck.remove_last
+.. hoc:method:: Deck.remove_last
 
 
     Syntax:
@@ -226,7 +227,7 @@ Layout
 
 
 
-.. method:: Deck.move_last
+.. hoc:method:: Deck.move_last
 
 
     Syntax:
@@ -243,7 +244,7 @@ Layout
 
 
 
-.. method:: Deck.remove
+.. hoc:method:: Deck.remove
 
 
     Syntax:
@@ -258,17 +259,17 @@ Layout
 
 
 
-.. class:: HBox
+.. hoc:class:: HBox
 
 
     .. seealso::
-        :class:`VBox`
+        :hoc:class:`VBox`
 
 
 ----
 
 
-.. class:: VBox
+.. hoc:class:: VBox
 
 
     Syntax:
@@ -332,7 +333,7 @@ Layout
 
 
 
-.. method:: VBox.intercept
+.. hoc:method:: VBox.intercept
 
 
     Syntax:
@@ -369,7 +370,7 @@ Layout
 
 
 
-.. method:: VBox.map
+.. hoc:method:: VBox.map
 
 
     Syntax:
@@ -402,7 +403,7 @@ Layout
 
 
 
-.. method:: VBox.unmap
+.. hoc:method:: VBox.unmap
 
 
     Syntax:
@@ -417,7 +418,7 @@ Layout
         reference 
         to the box is destroyed. 
          
-        If the box is in a :meth:`VBox.dialog` the argument refers to the 
+        If the box is in a :hoc:meth:`VBox.dialog` the argument refers to the
         desired return value of the dialog, 1 means accept, 0 means cancel. 
 
          
@@ -426,7 +427,7 @@ Layout
 
 
 
-.. method:: VBox.ismapped
+.. hoc:method:: VBox.ismapped
 
 
     Syntax:
@@ -442,7 +443,7 @@ Layout
 
 
 
-.. method:: VBox.size
+.. hoc:method:: VBox.size
 
 
     Syntax:
@@ -477,7 +478,7 @@ Layout
 
 
 
-.. method:: VBox.save
+.. hoc:method:: VBox.save
 
 
     Syntax:
@@ -510,7 +511,7 @@ Layout
 
 
 
-.. method:: VBox.ref
+.. hoc:method:: VBox.ref
 
 
     Syntax:
@@ -530,7 +531,7 @@ Layout
         they can still be manipulated from the interpreter through use of 
         their instance name, ie the class name followed by some integer in 
         brackets. As an  alternative one may also 
-        use the :func:`dismiss_action` to properly set the state of an 
+        use the :hoc:func:`dismiss_action` to properly set the state of an
         object when a box it manages is dismissed from the screen. 
 
          
@@ -539,7 +540,7 @@ Layout
 
 
 
-.. method:: VBox.dismiss_action
+.. hoc:method:: VBox.dismiss_action
 
 
     Syntax:
@@ -549,8 +550,8 @@ Layout
     Description:
         Execute the action when the user dismisses the window. Not executed 
         if the box is not the owner of the window (ie is a part of another 
-        deck or box, :meth:`VBox.intercept`). Not executed if 
-        the window is dismissed with an :meth:`VBox.unmap` command. 
+        deck or box, :hoc:meth:`VBox.intercept`). Not executed if
+        the window is dismissed with an :hoc:meth:`VBox.unmap` command.
         For the window to actually close, the command should call unmap 
         on the box. 
 
@@ -560,7 +561,7 @@ Layout
 
 
 
-.. method:: VBox.dialog
+.. hoc:method:: VBox.dialog
 
 
     Syntax:
@@ -574,7 +575,7 @@ Layout
         clicks on :guilabel:`Accept` (return 1) or :guilabel:`Cancel` (return 0). 
          
         The box may be dismissed under program control by calling 
-        b.unmap(boolean) where the argument to :meth:`VBox.unmap` 
+        b.unmap(boolean) where the argument to :hoc:meth:`VBox.unmap`
         is the desired value of the return from the dialog. 
 
          
@@ -583,7 +584,7 @@ Layout
 
 
 
-.. method:: VBox.adjuster
+.. hoc:method:: VBox.adjuster
 
 
     Syntax:
@@ -591,13 +592,13 @@ Layout
 
 
     Description:
-        When the next item is mapped (see :meth:`VBox.intercept`), its size is fixed at 
+        When the next item is mapped (see :hoc:meth:`VBox.intercept`), its size is fixed at
         start_size in the sense that resizing the box will preserve the vertical 
         size of the item. Also an adjuster item in the form of a narrow 
         horizontal space is placed just below this item 
         and the "fixed" size can be changed by dragging this space. 
-        (also see :meth:`VBox.adjust`).  When adjusters 
-        are used, then the :func:`full_request` method should be called on the top level 
+        (also see :hoc:meth:`VBox.adjust`).  When adjusters
+        are used, then the :hoc:func:`full_request` method should be called on the top level
         box which is actually mapped to the screen before that top level box is 
         mapped. If full_request is not called then the box will get confused about 
         the proper size of items during window resizing or box adjusting. 
@@ -608,7 +609,7 @@ Layout
 
 
 
-.. method:: VBox.adjust
+.. hoc:method:: VBox.adjust
 
 
     Syntax:
@@ -619,7 +620,7 @@ Layout
 
     Description:
         Change the vertical size of the item mapped just before the first 
-        :meth:`VBox.adjuster` was invoked. If multiple adjusters are at the same box level, 
+        :hoc:meth:`VBox.adjuster` was invoked. If multiple adjusters are at the same box level,
         the index can be used to specify which one is to be adjusted. 
 
          
@@ -628,7 +629,7 @@ Layout
 
 
 
-.. method:: VBox.full_request
+.. hoc:method:: VBox.full_request
 
 
     Syntax:
@@ -637,7 +638,7 @@ Layout
 
     Description:
         This works around an error in box management during resize for complicated 
-        boxes involving panels with sliders, graphs, and/or :meth:`VBox.adjuster` . 
+        boxes involving panels with sliders, graphs, and/or :hoc:meth:`VBox.adjuster` .
         If the drawing of boxes does not work properly, this method can be called 
         on the top level box (the one that owns the window) before mapping in 
         order to force a recalculation of internal component request sizes during resize 
@@ -649,7 +650,7 @@ Layout
 
 
 
-.. method:: VBox.priority
+.. hoc:method:: VBox.priority
 
 
     Syntax:

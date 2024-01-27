@@ -1,9 +1,5 @@
+from neuron.tests.utils.strtobool import strtobool
 import os
-import pytest
-import sys
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -51,8 +47,7 @@ def test_psolve():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = enable_gpu
-    h.CVode().cache_efficient(True)
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:
         for i, x in enumerate(vvec_std):
@@ -62,13 +57,62 @@ def test_psolve():
     coreneuron.enable = False
 
 
+def test_NetStim_noise():
+    # Can use noiseFromRandom
+    use_noiseFromRandom123 = False
+
+    cells = {gid: (h.NetStim(), h.Random()) for gid in range(pc.id(), 5, pc.nhost())}
+    for gid, cell in cells.items():
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(cell[0], None))
+        cell[1].Random123(gid, 2, 3)
+        cell[1].negexp(1)
+        if use_noiseFromRandom123:
+            cell[0].noiseFromRandom123(gid, 2, 3)
+        else:
+            cell[0].noiseFromRandom(cell[1])
+        cell[0].interval = gid + 1
+        cell[0].number = 100
+        cell[0].start = 0
+        cell[0].noise = 1
+
+    spiketime = h.Vector()
+    spikegid = h.Vector()
+    pc.spike_record(-1, spiketime, spikegid)
+
+    pc.set_maxstep(10)
+    tstop = 100
+    for cell in cells.values():
+        cell[1].seq(0)  # only _ran_compat==2 initializes the streams
+    h.finitialize()
+    pc.psolve(tstop)
+    spiketime_std = spiketime.c()
+    spikegid_std = spikegid.c()
+    print("spiketime_std.size %d" % spiketime_std.size())
+
+    spiketime.resize(0)
+    spikegid.resize(0)
+    from neuron import coreneuron
+
+    coreneuron.verbose = 0
+    coreneuron.enable = True
+    for cell in cells.values():
+        cell[1].seq(0)
+    h.finitialize()
+    while h.t < tstop:
+        h.continuerun(h.t + 5)
+        pc.psolve(h.t + 5)
+
+    print("spiketime.size %d" % spiketime.size())
+    assert spiketime.eq(spiketime_std)
+    assert spikegid.eq(spikegid_std)
+
+    pc.gid_clear()
+
+
 if __name__ == "__main__":
-    try:
-        test_psolve()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    test_psolve()
+    test_NetStim_noise()
+    for i in range(0):
+        test_NetStim_noise()  # for checking memory leak
+    h.quit()
