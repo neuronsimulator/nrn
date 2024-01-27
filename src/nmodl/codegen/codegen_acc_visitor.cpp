@@ -62,17 +62,8 @@ void CodegenAccVisitor::print_atomic_reduction_pragma() {
 
 
 void CodegenAccVisitor::print_backend_includes() {
-    /**
-     * Artificial cells are executed on CPU. As Random123 is allocated on GPU by default,
-     * we have to disable GPU allocations using `DISABLE_OPENACC` macro.
-     */
-    if (info.artificial_cell) {
-        printer->add_line("#undef DISABLE_OPENACC");
-        printer->add_line("#define DISABLE_OPENACC");
-    } else {
-        printer->add_line("#include <coreneuron/utils/offload.hpp>");
-        printer->add_line("#include <cuda_runtime_api.h>");
-    }
+    printer->add_line("#include <coreneuron/utils/offload.hpp>");
+    printer->add_line("#include <cuda_runtime_api.h>");
 }
 
 
