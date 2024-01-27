@@ -5,5 +5,5 @@
 {"random_negexp", "nrnran123_negexp"},
 {"random_normal", "nrnran123_normal"},
 {"random_ipick", "nrnran123_ipick"},
-{"random_dblpick", "nrnran123_dblpick"},
+{"random_dpick", "nrnran123_dblpick"},
     // clang-format on
