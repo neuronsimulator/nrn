@@ -54,7 +54,7 @@ if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY https://github.com/bluebrain/nmodlbench.git
-    GIT_TAG b44e4cc546890032d833fd31d06fcfe40f37d430
+    GIT_TAG f032eb5a8393d6880bc347eb61f38aa0aa50b133
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
