@@ -9,6 +9,9 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
+    gnu/mcran4.h
+    gnu/nrnisaac.h
+    gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
     nrnmpi/nrnmpidec.h
@@ -37,15 +40,12 @@ set(HEADER_FILES_TO_INSTALL
     oc/hocgetsym.h
     oc/hoclist.h
     oc/hocparse.h
-    oc/mcran4.h
     oc/mech_api.h
     oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
-    oc/nrnisaac.h
     oc/nrnmpi.h
     oc/nrnrandom.h
-    oc/nrnran123.h
     oc/oc_ansi.h
     oc/ocfunc.h
     oc/ocmisc.h
@@ -78,15 +78,9 @@ set(HEADER_FILES_TO_INSTALL
 set(NRN_HEADERS_INCLUDE_LIST)
 
 # =============================================================================
-# Lists of random number related files
-# =============================================================================
-set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp)
-
-# =============================================================================
 # Files in oc directory
 # =============================================================================
 set(OC_FILE_LIST
-    ${RAN_FILE_LIST}
     audit.cpp
     axis.cpp
     code.cpp
@@ -102,6 +96,7 @@ set(OC_FILE_LIST
     hoc_oop.cpp
     list.cpp
     math.cpp
+    oc_mcran4.cpp
     memory.cpp
     mswinprt.cpp
     nonlin.cpp
