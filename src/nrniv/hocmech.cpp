@@ -134,7 +134,7 @@ static void alloc_pnt(Prop* p) {
         p->ob = nrn_point_prop_->ob;
         // printf("p->ob comes from nrn_point_prop_ %s\n", hoc_object_name(p->ob));
     } else {
-        p->dparam = (Datum*) hoc_Ecalloc(2, sizeof(Datum));
+        nrn_prop_datum_alloc(p->_type, 2, p);
         if (last_created_pp_ob_) {
             p->ob = last_created_pp_ob_;
             // printf("p->ob comes from last_created %s\n", hoc_object_name(p->ob));
