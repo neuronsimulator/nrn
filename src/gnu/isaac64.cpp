@@ -1,8 +1,3 @@
-#include <../../nrnconf.h>
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
 /*
 ------------------------------------------------------------------------------
 isaac64.cpp: A Fast cryptographic random number generator
