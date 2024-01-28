@@ -1136,13 +1136,13 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             size_t ix{};
             uint32_t n_randomvar = r[ix++];
             assert(r.size() == 1 + n_randomvar + 5 * n_randomvar * n);
-            std::vector<uint32_t> indices{};
+            std::vector<uint32_t> indices(n_randomvar);
             for (uint32_t i = 0; i < n_randomvar; ++i) {
-                indices.push_back(r[ix++]);
+                indices[i] = r[ix++];
             }
             int cnt = ml->nodecount;
             for (auto index: indices) {
-                // should we also verify that index on cn side same as on nrn side?
+                // should we also verify that index on corenrn side same as on nrn side?
                 // sonarcloud thinks ml_pdata can be nullptr, so ...
                 assert(index >= 0 && index < szdp);
                 for (int i = 0; i < n; ++i) {

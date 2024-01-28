@@ -571,7 +571,7 @@ int core2nrn_nmodlrandom(int tid,
     assert(nmodlrandom.size() == indices.size() * ml->nodecount);
 
     int ir = 0;  // into nmodlrandom
-    for (auto ix: nrnindices) {
+    for (const auto ix: nrnindices) {
         for (int i = 0; i < ml->nodecount; ++i) {
             auto& datum = ml->pdata[i][ix];
             nrnran123_State* state = (nrnran123_State*) datum.get<void*>();

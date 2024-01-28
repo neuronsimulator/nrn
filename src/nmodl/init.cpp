@@ -156,7 +156,13 @@ static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 
 /* random to nrnran123 functions */
 std::map<std::string, const char*> extdef_rand = {
-#include "extdef_rand.h"
+    {"random_setseq", "nrnran123_setseq1"},
+    {"random_setids", "nrnran123_setids"},
+    {"random_uniform", "nrnran123_uniform"},
+    {"random_negexp", "nrnran123_negexp"},
+    {"random_normal", "nrnran123_normal"},
+    {"random_ipick", "nrnran123_ipick"},
+    {"random_dpick", "nrnran123_dblpick"},
 };
 
 List *constructorfunc, *destructorfunc;

@@ -61,6 +61,9 @@ void nrnran123_setseq(nrnran123_State* s, std::uint32_t seq, char which) {
     s->r = philox4x32(s->c, k);
 }
 
+/** @brief seq4which is 34 bit uint encoded as double(seq)*4 + which
+ *  More convenient to get and set from interpreter
+*/
 void nrnran123_setseq1(nrnran123_State* s, double seq4which) {
     // at least 64 bits even on 32 bit machine (could be more)
     unsigned long long x = ((unsigned long long) seq4which) & 0X3ffffffff;

@@ -841,8 +841,21 @@ NMODLRandom Class
     Description:
         Returns as a float, the uniform random value in the open interval 0 to 1 at the current sequence
         position of the nrnran123_State (the current sequence position is then incremented by 1)
+        This is, for testing purposes, the only distribution exposed to
+        the interpreter. We don't forsee any practical use of
+        NMODLRandom within the interpreter in regard to sampling. The purpose
+        of NMODLRandom is to allow setting of stream properties for a
+        mod file RANDOM variable. Indeed, if one explicitly constructs an NMODLRandom
+        from the interpreter, then
 
+        .. code-block::
+            python
 
+            from neuron import h
+            r = h.NMODLRandom()
+            print(r.uniform())
+
+            NEURON: NMODLRandom wrapped handle is not valid
 
 
 
