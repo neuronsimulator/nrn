@@ -10,6 +10,7 @@ import ctypes
 
 from collections.abc import Callable
 
+_sources = []
 
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
@@ -349,9 +350,10 @@ class Node(object):
                     f = float(args[0])
                     source = f
                     success = True
-                except:
+                except ValueError:
                     arith = rxdmath._ensure_arithmeticed(args[0])
                     source = lambda: eval_arith_flux(arith, self.region, self)
+                    _sources.append(source)
                     scale = 1 / self.volume
                     success = True
             if not success:
