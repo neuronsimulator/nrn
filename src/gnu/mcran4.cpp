@@ -39,16 +39,18 @@ contained the header:
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <../../nrnconf.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
-#include <mcran4.h>
-#include "hocdec.h"
+#include "mcran4.h"
 
 static uint32_t lowindex = 0;
+
+double mcell_lowindex() {
+    return static_cast<double>(lowindex);
+}
 
 void mcell_ran4_init(uint32_t low) {
     lowindex = low;
@@ -68,40 +70,6 @@ double mcell_ran4a(uint32_t* high) {
 
 uint32_t mcell_iran4(uint32_t* high) {
     return nrnRan4int(high, lowindex);
-}
-
-/* Hoc interface */
-extern double chkarg();
-extern int use_mcell_ran4_;
-
-
-void hoc_mcran4() {
-    uint32_t idx;
-    double* xidx;
-    double x;
-    xidx = hoc_pgetarg(1);
-    idx = (uint32_t) (*xidx);
-    x = mcell_ran4a(&idx);
-    *xidx = idx;
-    hoc_ret();
-    hoc_pushx(x);
-}
-void hoc_mcran4init() {
-    double prev = (double) lowindex;
-    if (ifarg(1)) {
-        uint32_t idx = (uint32_t) chkarg(1, 0., 4294967295.);
-        mcell_ran4_init(idx);
-    }
-    hoc_ret();
-    hoc_pushx(prev);
-}
-void hoc_usemcran4() {
-    double prev = (double) use_mcell_ran4_;
-    if (ifarg(1)) {
-        use_mcell_ran4_ = (int) chkarg(1, 0., 1.);
-    }
-    hoc_ret();
-    hoc_pushx(prev);
 }
 
 uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
