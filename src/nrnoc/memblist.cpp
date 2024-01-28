@@ -43,13 +43,13 @@ void Memb_list::nodes_free() {
     m_owns_nodes = false;  // make potentially reusable for a view
 }
 
-Memb_list::Memb_list(Memb_list&& other) {
+Memb_list::Memb_list(Memb_list&& other) noexcept {
     /// Other should not be used. But if it is, fine, but not the memory owner anymore
     *this = other;
     other.m_owns_nodes = false;
 }
 
-Memb_list& Memb_list::operator=(Memb_list&& rhs) {
+Memb_list& Memb_list::operator=(Memb_list&& rhs) noexcept {
     *this = rhs;
     rhs.m_owns_nodes = false;
     return *this;

@@ -812,17 +812,16 @@ void hoc_notify_value() {}
 /// Sets stubs, load dyn lib, and initializes
 std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
 #if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+    extern int nrn_noauto_dlopen_nrnmech;
     nrn_noauto_dlopen_nrnmech = 1;
 #endif
 
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
     nrnmpi_stubs();
-    bool mpi_loaded = false;
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         if (strcmp("-mpi", argv[i]) == 0) {
             nrnmpi_load_or_exit();
-            mpi_loaded = true;
             break;
         }
     }

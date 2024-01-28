@@ -15,7 +15,7 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-extern "C" void modl_reg(){};
+extern "C" void modl_reg(){/* No modl_reg */};
 
 constexpr std::array<double, 7> EXPECTED_V{
     -0x1.04p+6,
@@ -28,13 +28,11 @@ constexpr std::array<double, 7> EXPECTED_V{
 };
 
 int main(void) {
-    char* temp_str;
-
-    static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
-    nrn_init(3, argv);
+    static std::array<const char*, 4> argv = {"vclamp", "-nogui", "-nopython", nullptr};
+    nrn_init(3, argv.data());
 
     // load the stdrun library
-    temp_str = strdup("stdrun.hoc");
+    char* temp_str = strdup("stdrun.hoc");
     nrn_str_push(&temp_str);
     nrn_function_call(nrn_symbol("load_file"), 1);
     nrn_double_pop();

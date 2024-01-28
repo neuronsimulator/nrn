@@ -27,11 +27,11 @@ constexpr std::array<double, 3> EXPECTED_V{
 #endif
 };
 
-extern "C" void modl_reg(){};
+extern "C" void modl_reg(){/* No modl_reg */};
 
 int main(void) {
-    static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
-    nrn_init(3, argv);
+    static std::array<const char*, 4> argv = {"hh_sim", "-nogui", "-nopython", nullptr};
+    nrn_init(3, argv.data());
 
     // load the stdrun library
     char* temp_str = strdup("stdrun.hoc");

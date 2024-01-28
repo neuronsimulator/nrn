@@ -35,7 +35,7 @@ int main(void) {
     /* loop over allsec, print out */
     printf("allsec:\n");
     SectionListIterator* sli = nrn_sectionlist_iterator_new(nrn_allsec());
-    for (; !nrn_sectionlist_iterator_done(sli);) {
+    while (!nrn_sectionlist_iterator_done(sli)) {
         Section* sec = nrn_sectionlist_iterator_next(sli);
         printf("    %s\n", nrn_secname(sec));
     }
@@ -43,7 +43,7 @@ int main(void) {
 
     printf("\ndend1's subtree:\n");
     sli = nrn_sectionlist_iterator_new(nrn_sectionlist_data(seclist));
-    for (; !nrn_sectionlist_iterator_done(sli);) {
+    while (!nrn_sectionlist_iterator_done(sli)) {
         Section* sec = nrn_sectionlist_iterator_next(sli);
         printf("    %s\n", nrn_secname(sec));
     }

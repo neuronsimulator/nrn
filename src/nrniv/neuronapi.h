@@ -19,9 +19,8 @@ typedef enum {
     STACK_IS_NUM = 3,
     STACK_IS_OBJVAR = 4,
     STACK_IS_OBJTMP = 5,
-    STACK_IS_USERINT = 6,
+    STACK_IS_INT = 6,
     STACK_IS_SYM = 7,
-    STACK_IS_OBJUNREF = 8,
     STACK_UNKNOWN = -1
 } nrn_stack_types_t;
 
@@ -43,7 +42,7 @@ void nrn_section_Ra_set(Section* sec, double val);
 char const* nrn_secname(Section* sec);
 void nrn_section_push(Section* sec);
 void nrn_section_pop(void);
-void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
+void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(Object* obj);
 
@@ -63,7 +62,6 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
-// double* (*nrn_get_symbol_ptr)(Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);

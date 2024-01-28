@@ -48,11 +48,11 @@ struct Memb_list {
     /**
      * @brief Uninitialize, freeing any allocated mem for nodes.
      */
-    ~Memb_list();
+    ~Memb_list() noexcept;
 
     // Move is ok. Copy is restricted
-    Memb_list(Memb_list&&);
-    Memb_list& operator=(Memb_list&&);
+    Memb_list(Memb_list&&) noexcept;
+    Memb_list& operator=(Memb_list&&) noexcept;
 
     /**
      * @brief Allocate memory for node_count nodes.

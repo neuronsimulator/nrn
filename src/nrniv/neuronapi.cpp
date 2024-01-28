@@ -16,7 +16,7 @@ struct nrn_Item: public hoc_Item {};
 struct SectionListIterator {
     explicit SectionListIterator(nrn_Item*);
     Section* next(void);
-    int done(void);
+    int done(void) const;
 
   private:
     hoc_Item* initial;
@@ -26,7 +26,7 @@ struct SectionListIterator {
 struct SymbolTableIterator {
     explicit SymbolTableIterator(Symlist*);
     char const* next(void);
-    int done(void);
+    int done(void) const;
 
   private:
     Symbol* current;
@@ -43,6 +43,7 @@ int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
 extern void nrn_change_nseg(Section*, int);
+extern Section* section_new(Symbol* sym);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {
@@ -70,16 +71,13 @@ void nrn_stdout_redirect(int (*myprint)(int, char*)) {
  ****************************************/
 
 Section* nrn_section_new(char const* const name) {
-    // TODO: check for memory leaks; should we free the symbol, pitm, etc?
-    Symbol* symbol = new Symbol;
+    auto* symbol = new Symbol;
     symbol->name = strdup(name);
     symbol->type = 1;
     symbol->u.oboff = 0;
     symbol->arayinfo = 0;
     hoc_install_object_data_index(symbol);
-    hoc_Item* itm;
-    new_sections(nullptr, symbol, &itm, 1);
-    return itm->element.sec;
+    return section_new(symbol);
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
@@ -129,7 +127,7 @@ void nrn_section_pop(void) {
     nrn_sec_pop();
 }
 
-void nrn_mechanism_insert(Section* sec, Symbol* mechanism) {
+void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     // TODO: throw exception if mechanism is not an insertable mechanism?
     mech_insert1(sec, mechanism->subtype);
 }
@@ -199,10 +197,6 @@ void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
 
-/*double* nrn_get_symbol_ptr(Symbol* sym) {
-    return sym->u.pval;
-}*/
-
 void nrn_double_push(double val) {
     hoc_pushx(val);
 }
@@ -261,11 +255,9 @@ nrn_stack_types_t nrn_stack_type(void) {
     case OBJECTTMP:
         return STACK_IS_OBJTMP;
     case USERINT:
-        return STACK_IS_USERINT;
+        return STACK_IS_INT;
     case SYMBOL:
         return STACK_IS_SYM;
-    case STKOBJ_UNREF:
-        return STACK_IS_OBJUNREF;
     }
     return STACK_UNKNOWN;
 }
@@ -282,12 +274,10 @@ char const* nrn_stack_type_name(nrn_stack_types_t id) {
         return "OBJECTVAR";
     case STACK_IS_OBJTMP:
         return "OBJECTTMP";
-    case STACK_IS_USERINT:
-        return "USERINT";
+    case STACK_IS_INT:
+        return "INT";
     case STACK_IS_SYM:
         return "SYMBOL";
-    case STACK_IS_OBJUNREF:
-        return "STKOBJ_UNREF";
     default:
         return "UNKNOWN";
     }
@@ -330,10 +320,9 @@ int nrn_hoc_call(char const* const command) {
     return hoc_oc(command);
 }
 
-SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist) {
-    initial = my_sectionlist;
-    current = my_sectionlist->next;
-}
+SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)
+    : initial(my_sectionlist)
+    , current(my_sectionlist->next) {}
 
 Section* SectionListIterator::next(void) {
     // NOTE: if no next element, returns nullptr
@@ -353,16 +342,15 @@ Section* SectionListIterator::next(void) {
     }
 }
 
-int SectionListIterator::done(void) {
+int SectionListIterator::done(void) const {
     if (initial == current) {
         return 1;
     }
     return 0;
 }
 
-SymbolTableIterator::SymbolTableIterator(Symlist* list) {
-    current = list->first;
-}
+SymbolTableIterator::SymbolTableIterator(Symlist* list)
+    : current(list->first) {}
 
 char const* SymbolTableIterator::next(void) {
     auto result = current->name;
@@ -370,7 +358,7 @@ char const* SymbolTableIterator::next(void) {
     return result;
 }
 
-int SymbolTableIterator::done(void) {
+int SymbolTableIterator::done(void) const {
     if (!current) {
         return 1;
     }
