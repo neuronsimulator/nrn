@@ -857,6 +857,3 @@ NMODLRandom Class
 
             NEURON: NMODLRandom wrapped handle is not valid
 
-
-
-

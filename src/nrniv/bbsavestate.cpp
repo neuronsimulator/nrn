@@ -2058,9 +2058,8 @@ void BBSaveState::mech(Prop* p) {
     {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
         auto& random_indices = nrn_mech_random_indices(p->_type);
-        int size_random = int(random_indices.size());
-        std::vector<double*> tmp{};
-        tmp.reserve(size + size_random);
+        auto size_random = random_indices.size();
+        std::vector<double*> tmp(size + size_random);
         for (auto i = 0; i < size; ++i) {
             tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
         }

@@ -458,7 +458,7 @@ Description:
         * x = random_normal(ranvar1) : mean 1.0, std 1.0
         * x = random_normal(ranvar1, mean, std)
         * x = random_ipick(ranvar1) : range 0 to 2^32-1
-
+        * x = random_dpick(ranvar1)
   
 
 EXTERNAL

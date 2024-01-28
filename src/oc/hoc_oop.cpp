@@ -954,7 +954,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         double x{0.5};
         if (narg) {
             if (narg > 1) {
-                hoc_execerr_ext("%s range object can have only one arc length parameter",
+                hoc_execerr_ext("%s range object can have only one arg length parameter",
                                 sym->name);
             }
             x = xpop();
