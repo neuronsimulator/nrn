@@ -553,8 +553,8 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
 // NMODL RANDOM seq34 data return from coreneuron
 int core2nrn_nmodlrandom(int tid,
                          int type,
-                         std::vector<int>& indices,
-                         std::vector<double>& nmodlrandom) {
+                         const std::vector<int>& indices,
+                         const std::vector<double>& nmodlrandom) {
     if (tid >= nrn_nthread) {
         return 0;
     }
