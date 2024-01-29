@@ -77,12 +77,12 @@ static Item* linkitem(Item* item) {
     return i;
 }
 
-Item* next(Item* item) {
+Item* hoc_l_next(Item* item) {
     assert(item->next->element.lst); /* never return the list item */
     return item->next;
 }
 
-Item* prev(Item* item) {
+Item* hoc_l_prev(Item* item) {
     assert(item->prev->element.lst); /* never return the list item */
     return item->prev;
 }
@@ -195,7 +195,7 @@ Item* lappendvoid(List* list, void* obj) {
     return insertvoid(list, obj);
 }
 
-void delete (Item* item) {
+void hoc_l_delete(Item* item) {
     assert(item->itemtype); /* can't delete list */
     item->next->prev = item->prev;
     item->prev->next = item->next;
@@ -218,12 +218,12 @@ void delitems(Item* q1, Item* q2) { /* delete tokens from q1 to q2 */
     Item* q;
     for (q = q1; q != q2;) {
         q = q->next;
-        delete (q->prev);
+        hoc_l_delete(q->prev);
     }
-    delete (q2);
+    hoc_l_delete(q2);
 }
 
-void move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*/
+void hoc_l_move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*/
     /* it is a serious error if q2 precedes q1 */
     assert(q1 && q2);
     assert(q1->itemtype && q2->itemtype);
@@ -238,7 +238,7 @@ void move(Item* q1, Item* q2, Item* q3) { /* move q1 to q2 and insert before q3*
 
 void movelist(Item* q1, Item* q2, List* s) {
     /* move q1 to q2 from old list to end of list s*/
-    move(q1, q2, s);
+    hoc_l_move(q1, q2, s);
 }
 
 void replacstr(Item* q, const char* s) {

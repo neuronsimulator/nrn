@@ -336,7 +336,7 @@ General
             s3 = h.Section(name='s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert('hh')
+                sec.insert('hh')   # equivalently: sec.insert(h.hh)
                 sec.L = sec.diam = 3
 
             c1 = h.IClamp(s1(0.5))
@@ -349,8 +349,7 @@ General
             c3.dur[0] = 1
 
             # record an action potential
-            ap = h.Vector()
-            ap.record(s1(0.5)._ref_v)
+            ap = h.Vector().record(s1(0.5)._ref_v)
             h.finitialize(-65)
             while h.t < 1:
                 h.fadvance()
@@ -597,11 +596,11 @@ General
             ns2.number = 3
             ns2.start=30
             nctrig = h.NetCon(ns2, ns)
-            nctrig.delay = .1
+            nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
             h.tstop=500
-            h.cvode_active(1)
+            h.cvode_active(True)
             h.run()
             
     Output:
@@ -669,7 +668,7 @@ General
       
       from neuron import h
       pc = h.ParallelContext()
-      
+
       #Model
       cell = h.IntFire1()
       cell.refrac = 0 # no limit on spike rate
@@ -679,13 +678,14 @@ General
       for i, nc in enumerate(nclist):
         nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
         nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
-      
+
       # Record all spikes (cell is the only one generating output spikes)
-      out = [h.Vector() for _ in range(2)]
-      pc.spike_record(-1, out[0], out[1])
-      
+      spike_ts = h.Vector()
+      spike_ids = h.Vector()
+      pc.spike_record(-1, spike_ts, spike_ids)
+
       #PatternStim
-      tvec =   h.Vector(range(10))
+      tvec = h.Vector(range(10))
       gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
       ps = h.PatternStim()
       ps.play(tvec, gidvec)
@@ -695,9 +695,10 @@ General
       pc.set_maxstep(10.)
       h.finitialize(-65)
       pc.psolve(7)
-      
-      for i, tsp in enumerate(out[0]):
-        print ("%g %d" %(tsp, int(out[1][i])))
+
+      for spike_t, spike_cell_id in zip(spike_ts, spike_ids):
+        print(f"{spike_t} {int(spike_cell_id)}")
+
 
   Output:
     Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim
@@ -705,6 +706,7 @@ General
     (1, 1) is the first spike that gets passed into a NetCon (with delay 1.1) so the
     first output spike is generated at 2.2 and that spike gets recursively regenerated every
     1.0 ms. PatternStim spikes with gid > 3 are discarded.
+    
     .. code-block::
 
         2.1 0
@@ -760,6 +762,63 @@ General
          
         See `<nrn src dir>/src/nrnoc/intfire1.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/intfire1.mod>`_
 
+    Example:
+    
+        .. code-block::
+            python
+
+            from neuron import h
+            from neuron.units import ms, mV
+            import matplotlib.pyplot as plt
+            h.load_file("stdrun.hoc")
+
+            my_cell = h.IntFire1()
+            my_cell.tau = 4 * ms
+            my_cell.refrac = 10 * ms
+
+            # stimuli
+            e_stims = h.NetStim()
+            e_stims.noise = True
+            e_stims.interval = 3 * ms
+            e_stims.start = 0 * ms
+            e_stims.number = 1e10
+            nc = h.NetCon(e_stims, my_cell)
+            nc.weight[0] = 0.5
+            nc.delay = 0 * ms
+
+            # setup recording
+            stim_times = h.Vector()
+            output_times = h.Vector()
+            stim_times_nc = h.NetCon(e_stims, None)
+            stim_times_nc.record(stim_times)
+            output_times_nc = h.NetCon(my_cell, None)
+            output_times_nc.record(output_times)
+
+            # run the simulation
+            h.finitialize(-65 * mV)
+            h.continuerun(100 * ms)
+
+
+            # show a raster plot of the output spikes and the stimulus times
+            fig, ax = plt.subplots(figsize=(8, 2))
+
+            for c, (color, data) in enumerate([("red", stim_times), ("black", output_times)]):
+                ax.vlines(data, c - 0.4, c + 0.4, colors=color)
+
+            ax.set_yticks([0, 1])
+            ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
+
+            ax.set_xlim([0, h.t])
+            ax.set_xlabel('time (ms)')
+            
+        `Click here <https://colab.research.google.com/drive/1c02kKjinPAfwdabxMv79fErlqugFVOPo?usp=sharing>`_
+        for a runnable version of this example. 
+        (To interactively run it, either make a copy or choose
+        File - Open in playground mode.)
+
+    .. seealso:
+    
+         IntFire1 is used in the example for :class:`PatternStim`
 
 ----
 
@@ -888,7 +947,10 @@ Mechanisms
     Syntax:
         ``h.setdata_suffix(section(x))``
 
-
+    Deprecated for Python:
+        In Python one can use the syntax ``section(x).suffix.fname(args)`` to call a FUNCTION
+        or PROCEDURE regardless of whether the function uses RANGE variables.
+        
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 
@@ -947,6 +1009,8 @@ Mechanisms
     Syntax:
         ``section.insert('hh')``
 
+        ``section.insert(h.hh)``
+
 
     Description:
         See `<nrn src dir>/src/nrnoc/hh.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/hh.mod>`_
@@ -984,6 +1048,8 @@ Mechanisms
 
     Syntax:
         ``section.insert('pas')``
+
+        ``section.insert(h.pas)``
 
         ``section(x).pas.g -- mho/cm2	conductance``
 

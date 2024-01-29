@@ -2,10 +2,13 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
 #include <math.h>
+#include "nrncvode.h"
+#include "nrniv_mf.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <netpar.h>
 #include <unordered_map>
 #include <bbs.h>
 
@@ -21,12 +24,16 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <netcon.h>
 #include <cvodeobj.h>
 #include <netcvode.h>
-#include <vector>
 #include "ivocvect.h"
 
-#define BGP_INTERVAL 2
-#if BGP_INTERVAL == 2
-static int n_bgp_interval;
+#include <atomic>
+#include <vector>
+
+static int n_multisend_interval;
+
+#if NRN_MUSIC
+#include "nrnmusicapi.h"
+int nrnmusic;
 #endif
 
 static Symbol* netcon_sym_;
@@ -36,28 +43,34 @@ static IvocVect* all_spiketvec = NULL;
 static IvocVect* all_spikegidvec = NULL;
 static double t_exchange_;
 static double dt1_;  // 1/dt
+static int localgid_size_;
+static int ag_send_size_;
+static int ag_send_nspike_;
+static int ovfl_capacity_;
+static int ovfl_;
+static unsigned char* spfixout_;
+static unsigned char* spfixin_;
+static unsigned char* spfixin_ovfl_;
+static int nout_;
+static int* nin_;
+static NRNMPI_Spike* spikeout_;
+static NRNMPI_Spike* spikein_;
+static int icapacity_;
 static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern int cvode_active_;
-extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
-extern int vector_capacity(IvocVect*);  // ivocvect.h conflicts with STL
-extern double* vector_vec(IvocVect*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
-extern "C" {
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-}  // extern "C"
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
 void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
-extern double nrn_bgp_receive_time(int);
+extern double nrn_multisend_receive_time(int);
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern Object* nrn_gid2obj(int);
@@ -75,19 +88,13 @@ extern double nrnmpi_step_wait_;  // barrier at beginning of spike exchange.
 extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec,
                                                   std::vector<int>& spikegidvec);
 
-// BGPDMA can be 0 or 1
-// (BGPDMA & 1) > 0 means multisend ISend allowed
-#if !defined(BGPDMA)
-#define BGPDMA 0
-#endif
-
-#if BGPDMA == 0
-double nrn_bgp_receive_time(int) {
+#if NRNMPI == 0
+double nrn_multisend_receive_time(int) {
     return 0.;
 }
 #endif
 
-#if PARANEURON
+#if NRNMPI
 extern void nrnmpi_split_clear();
 #endif
 extern void nrnmpi_multisplit_clear();
@@ -99,7 +106,6 @@ static double set_mindelay(double maxdelay);
 #include "../nrnmpi/mpispike.h"
 
 void nrn_timeout(int);
-void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -107,14 +113,14 @@ bool nrn_use_compress_;  // global due to bbsavestate
 #define use_compress_ nrn_use_compress_
 
 #ifdef USENCS
-extern int ncs_bgp_sending_info(int**);
-extern int ncs_bgp_target_hosts(int, int**);
-extern int ncs_bgp_target_info(int**);
-extern int ncs_bgp_mindelays(int**, double**);
+extern int ncs_multisend_sending_info(int**);
+extern int ncs_multisend_target_hosts(int, int**);
+extern int ncs_multisend_target_info(int**);
+extern int ncs_multisend_mindelays(int**, double**);
 
 // get minimum delays for all presyn objects in gid2in_
 int ncs_netcon_mindelays(int** hosts, double** delays) {
-    return ncs_bgp_mindelays(hosts, delays);
+    return ncs_multisend_mindelays(hosts, delays);
 }
 
 double ncs_netcon_localmindelay(int srcgid) {
@@ -159,16 +165,16 @@ void ncs_netcon_inject(int srcgid, int netconIndex, double spikeTime, bool local
 }
 
 int ncs_gid_receiving_info(int** presyngids) {
-    return ncs_bgp_target_info(presyngids);
+    return ncs_multisend_target_info(presyngids);
 }
 
 // given the gid of a cell, retrieve its target count
 int ncs_gid_sending_count(int** sendlist2build) {
-    return ncs_bgp_sending_info(sendlist2build);
+    return ncs_multisend_sending_info(sendlist2build);
 }
 
 int ncs_target_hosts(int gid, int** targetnodes) {
-    return ncs_bgp_target_hosts(gid, targetnodes);
+    return ncs_multisend_target_hosts(gid, targetnodes);
 }
 
 #endif
@@ -178,11 +184,8 @@ bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
 static std::vector<std::unique_ptr<Gid2PreSyn>> localmaps_;
 
-#define NRNSTAT 1
 static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
-#if NRNSTAT
 static IvocVect* max_histogram_;
-#endif
 
 static int ocapacity_;  // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
@@ -193,13 +196,13 @@ static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
 #endif  // NRNMPI
 
-#if BGPDMA
-bool use_bgpdma_;  // false: allgather, true: multisend (ISend, bgpdma)
-static void bgp_dma_setup();
-static void bgp_dma_init();
-static void bgp_dma_receive(NrnThread*);
-extern void bgp_dma_send(PreSyn*, double t);
-static void bgpdma_cleanup_presyn(PreSyn*);
+#if NRNMPI
+bool use_multisend_;  // false: allgather, true: multisend (MPI_ISend)
+static void nrn_multisend_setup();
+static void nrn_multisend_init();
+static void nrn_multisend_receive(NrnThread*);
+extern void nrn_multisend_send(PreSyn*, double t);
+static void nrn_multisend_cleanup_presyn(PreSyn*);
 #endif
 
 static int active_;
@@ -210,17 +213,23 @@ static double last_maxstep_arg_;
 static NetParEvent* npe_;  // nrn_nthread of them
 static int n_npe_;         // just to compare with nrn_nthread
 
+double nrn_usable_mindelay() {
+    return usable_mindelay_;
+}
+Symbol* nrn_netcon_sym() {
+    return netcon_sym_;
+}
+Gid2PreSyn& nrn_gid2out() {
+    return gid2out_;
+}
+
 #if NRNMPI
 // for combination of threads and mpi.
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    static int seqcnt_;
+static std::atomic<int> seqcnt_;
 static NrnThread* last_nt_;
-#endif
-
-#if NRN_MUSIC
-#include "nrnmusic.cpp"
 #endif
 
 NetParEvent::NetParEvent() {
@@ -246,14 +255,12 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     nt->_t = tt;
 #if NRNMPI
     if (nrnmpi_numprocs > 0) {
-        MUTLOCK
         seq = ++seqcnt_;
-        MUTUNLOCK
         if (seq == nrn_nthread) {
             last_nt_ = nt;
-#if BGPDMA
-            if (use_bgpdma_) {
-                bgp_dma_receive(nt);
+#if NRNMPI
+            if (use_multisend_) {
+                nrn_multisend_receive(nt);
             } else {
                 nrn_spike_exchange(nt);
             }
@@ -438,9 +445,9 @@ static int nrn_need_npe() {
 
 static void calc_actual_mindelay() {
     // reasons why mindelay_ can be smaller than min_interprocessor_delay
-    // are use_bgpdma_ when BGP_INTERVAL == 2
-#if BGPDMA && (BGP_INTERVAL == 2)
-    if (use_bgpdma_ && n_bgp_interval == 2) {
+    // are use_multisend_
+#if NRNMPI
+    if (use_multisend_ && n_multisend_interval == 2) {
         mindelay_ = min_interprocessor_delay_ / 2.;
     } else {
         mindelay_ = min_interprocessor_delay_;
@@ -448,8 +455,8 @@ static void calc_actual_mindelay() {
 #endif
 }
 
-#if BGPDMA
-#include "bgpdma.cpp"
+#if NRNMPI
+#include "multisend.cpp"
 #else
 #define TBUFSIZE 0
 #define TBUF     /**/
@@ -460,7 +467,7 @@ void nrn_spike_exchange_init() {
         nrnmpi_step_wait_ = 0.0;
     }
 #ifdef USENCS
-    bgp_dma_setup();
+    nrn_multisend_setup();
     return;
 #endif
     // printf("nrn_spike_exchange_init\n");
@@ -493,9 +500,9 @@ void nrn_spike_exchange_init() {
     itbuf_ = 0;
 #endif
 
-#if BGPDMA
-    if (use_bgpdma_) {
-        bgp_dma_init();
+#if NRNMPI
+    if (use_multisend_) {
+        nrn_multisend_init();
     }
 #endif
 
@@ -530,7 +537,7 @@ void nrn_spike_exchange_init() {
     nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
     if (nrnmpi_numprocs > 0) {
         if (nrn_nthread > 0) {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
             if (!mut_) {
                 MUTCONSTRUCT(1)
             }
@@ -543,15 +550,17 @@ void nrn_spike_exchange_init() {
         // if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
 
-#if NRNMPI
+#if !NRNMPI
+void nrn_spike_exchange(NrnThread*) {}
+#else
 void nrn_spike_exchange(NrnThread* nt) {
     nrn::Instrumentor::phase p_spike_exchange("spike-exchange");
     if (!active_) {
         return;
     }
-#if BGPDMA
-    if (use_bgpdma_) {
-        bgp_dma_receive(nt);
+#if NRNMPI
+    if (use_multisend_) {
+        nrn_multisend_receive(nt);
         return;
     }
 #endif
@@ -563,14 +572,13 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    TBUF double wt;
+    TBUF
+    double wt;
     int i, n;
-#if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
         nsendmax_ = nout_;
     }
-#endif
 #if nrn_spikebuf_size > 0
     spbufout_->nspike = nout_;
 #endif
@@ -579,12 +587,12 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange();
+    n = nrnmpi_spike_exchange(&ovfl_, &nout_, nin_, spikeout_, &spikein_, &icapacity_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
 #if TBUFSIZE
-        tbuf_[itbuf_++] = (unsigned long) nout_;
+    tbuf_[itbuf_++] = (unsigned long) nout_;
     tbuf_[itbuf_++] = (unsigned long) n;
 #endif
 
@@ -594,14 +602,12 @@ void nrn_spike_exchange(NrnThread* nt) {
     //}
     nout_ = 0;
     if (n == 0) {
-#if NRNSTAT
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-#endif
-        TBUF return;
+        TBUF
+        return;
     }
-#if NRNSTAT
     nrecv_ += n;
     if (max_histogram_) {
         int mx = 0;
@@ -622,7 +628,6 @@ void nrn_spike_exchange(NrnThread* nt) {
         mx = (mx < ms) ? mx : ms;
         vector_vec(max_histogram_)[mx] += 1.;
     }
-#endif  // NRNSTAT
 #if nrn_spikebuf_size > 0
     for (i = 0; i < nrnmpi_numprocs; ++i) {
         int j;
@@ -635,9 +640,7 @@ void nrn_spike_exchange(NrnThread* nt) {
             if (iter != gid2in_.end()) {
                 PreSyn* ps = iter->second;
                 ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
-#if NRNSTAT
                 ++nrecv_useful_;
-#endif
             }
         }
     }
@@ -648,9 +651,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         if (iter != gid2in_.end()) {
             PreSyn* ps = iter->second;
             ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
-#if NRNSTAT
             ++nrecv_useful_;
-#endif
         }
     }
     wt1_ = nrnmpi_wtime() - wt;
@@ -665,15 +666,14 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    TBUF assert(!cvode_active_);
+    TBUF
+    assert(!cvode_active_);
     double wt;
     int i, n, idx;
-#if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
         nsendmax_ = nout_;
     }
-#endif
     assert(nout_ < 0x10000);
     spfixout_[1] = (unsigned char) (nout_ & 0xff);
     spfixout_[0] = (unsigned char) (nout_ >> 8);
@@ -683,12 +683,20 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed();
+    n = nrnmpi_spike_exchange_compressed(localgid_size_,
+                                         ag_send_size_,
+                                         ag_send_nspike_,
+                                         &ovfl_capacity_,
+                                         &ovfl_,
+                                         spfixout_,
+                                         spfixin_,
+                                         &spfixin_ovfl_,
+                                         nin_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
 #if TBUFSIZE
-        tbuf_[itbuf_++] = (unsigned long) nout_;
+    tbuf_[itbuf_++] = (unsigned long) nout_;
     tbuf_[itbuf_++] = (unsigned long) n;
 #endif
     errno = 0;
@@ -698,15 +706,13 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     nout_ = 0;
     idxout_ = 2;
     if (n == 0) {
-#if NRNSTAT
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-#endif
-        t_exchange_ = nrn_threads->_t;
-        TBUF return;
+        t_exchange_ = nt->_t;
+        TBUF
+        return;
     }
-#if NRNSTAT
     nrecv_ += n;
     if (max_histogram_) {
         int mx = 0;
@@ -721,7 +727,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         mx = (mx < ms) ? mx : ms;
         vector_vec(max_histogram_)[mx] += 1.;
     }
-#endif  // NRNSTAT
     if (nrn_use_localgid_) {
         int idxov = 0;
         for (i = 0; i < nrnmpi_numprocs; ++i) {
@@ -750,9 +755,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     if (iter != gps->end()) {
                         PreSyn* ps = iter->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                         ++nrecv_useful_;
-#endif
                     }
                 }
                 for (; j < nn; ++j) {
@@ -763,9 +766,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     if (iter != gps->end()) {
                         PreSyn* ps = iter->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                         ++nrecv_useful_;
-#endif
                     }
                 }
             }
@@ -787,9 +788,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                 if (iter != gid2in_.end()) {
                     PreSyn* ps = iter->second;
                     ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                     ++nrecv_useful_;
-#endif
                 }
             }
         }
@@ -803,13 +802,11 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (iter != gid2in_.end()) {
                 PreSyn* ps = iter->second;
                 ps->send(firetime + 1e-10, net_cvode_instance, nt);
-#if NRNSTAT
                 ++nrecv_useful_;
-#endif
             }
         }
     }
-    t_exchange_ = nrn_threads->_t;
+    t_exchange_ = nt->_t;
     wt1_ = nrnmpi_wtime() - wt;
     TBUF
 }
@@ -902,7 +899,7 @@ static void mk_localgid_rep() {
 // ensures that all the target cells, regardless of what rank they are on
 // will get the spike delivered and nobody gets it twice.
 
-extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+void nrn_fake_fire(int gid, double spiketime, int fake_out) {
     PreSyn* ps{nullptr};
     if (fake_out < 2) {
         auto iter = gid2in_.find(gid);
@@ -910,7 +907,7 @@ extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
-#if NRNSTAT
+#if NRNMPI
             ++nrecv_useful_;
 #endif
         }
@@ -920,7 +917,7 @@ extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
             ps = iter->second;
             // printf("nrn_fake_fire fake_out %d %g\n", gid, spiketime);
             ps->send(spiketime, net_cvode_instance, nrn_threads);
-#if NRNSTAT
+#if NRNMPI
             ++nrecv_useful_;
 #endif
         }
@@ -957,15 +954,14 @@ void BBS::set_gid2node(int gid, int nid) {
     {
 #endif
         // printf("gid %d defined on %d\n", gid, nrnmpi_myid);
-        char m[200];
         if (gid2in_.find(gid) != gid2in_.end()) {
-            sprintf(m, "gid=%d already exists as an input port", gid);
-            hoc_execerror(
-                m, "Setup all the output ports on this process before using them as input ports.");
+            hoc_execerr_ext(
+                "gid=%d already exists as an input port. Setup all the output ports on this "
+                "process before using them as input ports.",
+                gid);
         }
         if (gid2out_.find(gid) != gid2out_.end()) {
-            sprintf(m, "gid=%d already exists on this process as an output port", gid);
-            hoc_execerror(m, 0);
+            hoc_execerr_ext("gid=%d already exists on this process as an output port", gid);
         }
         gid2out_[gid] = nullptr;
     }
@@ -974,8 +970,8 @@ void BBS::set_gid2node(int gid, int nid) {
 static int gid_donot_remove = 0;  // avoid  gid2in_, gid2out removal when iterating
 
 void nrn_cleanup_presyn(PreSyn* ps) {
-#if BGPDMA
-    bgpdma_cleanup_presyn(ps);
+#if NRNMPI
+    nrn_multisend_cleanup_presyn(ps);
 #endif
     if (gid_donot_remove) {
         return;
@@ -994,7 +990,7 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 void nrnmpi_gid_clear(int arg) {
     if (arg == 0 || arg == 3 || arg == 4) {
         nrn_partrans_clear();
-#if PARANEURON
+#if NRNMPI
         nrnmpi_split_clear();
 #endif
     }
@@ -1011,8 +1007,8 @@ void nrnmpi_gid_clear(int arg) {
             if (arg == 4) {
                 delete ps;
             } else {
-#if BGPDMA
-                bgpdma_cleanup_presyn(ps);
+#if NRNMPI
+                nrn_multisend_cleanup_presyn(ps);
 #endif
                 ps->gid_ = -1;
                 ps->output_index_ = -1;
@@ -1027,8 +1023,8 @@ void nrnmpi_gid_clear(int arg) {
         if (arg == 4) {
             delete ps;
         } else {
-#if BGPDMA
-            bgpdma_cleanup_presyn(ps);
+#if NRNMPI
+            nrn_multisend_cleanup_presyn(ps);
 #endif
             ps->gid_ = -1;
             ps->output_index_ = -1;
@@ -1077,14 +1073,12 @@ void BBS::cell() {
     int gid = int(chkarg(1, 0., MD));
     alloc_space();
     if (gid2in_.find(gid) != gid2in_.end()) {
-        char buf[100];
-        sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
-        hoc_execerror(buf, 0);
+        hoc_execerr_ext(
+            "gid=%d is in the input list. Must register with pc.set_gid2node prior to connecting",
+            gid);
     }
     if (gid2out_.find(gid) == gid2out_.end()) {
-        char buf[100];
-        sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
-        hoc_execerror(buf, 0);
+        hoc_execerr_ext("gid=%d has not been set on rank %d", gid, nrnmpi_myid);
     }
     Object* ob = *hoc_objgetarg(2);
     if (!ob || ob->ctemplate != netcon_sym_->u.ctemplate) {
@@ -1092,8 +1086,14 @@ void BBS::cell() {
     }
     NetCon* nc = (NetCon*) ob->u.this_pointer;
     PreSyn* ps = nc->src_;
-    // printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ?
-    // nrn_sec2cell(ps->ssrc_) : ps->osrc_));
+    if (!ps) {
+        hoc_execerr_ext("pc.cell second arg, %s, has no source", hoc_object_name(ob));
+    }
+    if (ps->gid_ >= 0 && ps->gid_ != gid) {
+        hoc_execerr_ext("Can't associate gid %d. PreSyn already associated with gid %d.",
+                        gid,
+                        ps->gid_);
+    }
     gid2out_[gid] = ps;
     ps->gid_ = gid;
     if (ifarg(3) && !chkarg(3, 0., 1.)) {
@@ -1204,9 +1204,7 @@ Object** BBS::gid_connect(int gid) {
         // the gid is owned by this machine so connect directly
         ps = iter_out->second;
         if (!ps) {
-            char buf[100];
-            sprintf(buf, "gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
-            hoc_execerror(buf, 0);
+            hoc_execerr_ext("gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
         }
     } else {
         auto iter_in = gid2in_.find(gid);
@@ -1218,7 +1216,7 @@ Object** BBS::gid_connect(int gid) {
         } else {
             // printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid,
             // hoc_object_name(target), gid);
-            ps = new PreSyn(NULL, NULL, NULL);
+            ps = new PreSyn({}, nullptr, nullptr);
             net_cvode_instance->psl_append(ps);
             gid2in_[gid] = ps;
             ps->gid_ = gid;
@@ -1254,7 +1252,6 @@ int nrn_set_timeout(int timeout) {
 
 void BBS::netpar_solve(double tstop) {
     // temporary check to be eventually replaced by verify_structure()
-    extern int tree_changed, v_structure_change, diam_changed;
     if (tree_changed) {
         setup_topology();
     }
@@ -1296,15 +1293,11 @@ void BBS::netpar_solve(double tstop) {
     }
     impl_->integ_time_ += nrnmpi_wtime() - wt;
     impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
-#if BGPDMA
-    if (use_bgpdma_) {
-#if BGP_INTERVAL == 2
-        for (int i = 0; i < n_bgp_interval; ++i) {
-            bgp_dma_receive(nrn_threads);
+#if NRNMPI
+    if (use_multisend_) {
+        for (int i = 0; i < n_multisend_interval; ++i) {
+            nrn_multisend_receive(nrn_threads);
         }
-#else
-        bgp_dma_receive(nrn_threads);
-#endif
     } else {
         nrn_spike_exchange(nrn_threads);
     }
@@ -1420,8 +1413,8 @@ static double set_mindelay(double maxdelay) {
 }
 
 double BBS::netpar_mindelay(double maxdelay) {
-#if BGPDMA
-    bgp_dma_setup();
+#if NRNMPI
+    nrn_multisend_setup();
 #endif
     double tt = set_mindelay(maxdelay);
     return tt;
@@ -1438,7 +1431,7 @@ void BBS::netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int*
 
 // unfortunately, ivocvect.h conflicts with STL
 IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
-#if NRNMPI && NRNSTAT
+#if NRNMPI
     IvocVect* h = max_histogram_;
     if (max_histogram_) {
         max_histogram_ = NULL;
@@ -1448,7 +1441,7 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
     }
     return h;
 #else
-    return NULL;
+    return nullptr;
 #endif
 }
 
@@ -1466,7 +1459,7 @@ The situation that needs to be captured by xchng_meth is
 0: Allgather
 1: multisend implemented as MPI_ISend
 
-n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
+n_multisend_interval 1 or 2 per minimum interprocessor NetCon delay
  that concept valid for all methods
 
 Note that Allgather allows spike compression and an allgather spike buffer
@@ -1479,7 +1472,7 @@ Note that, in principle, MPI_ISend allows the source to send the index
  variant)
 
 Not all variation are useful. e.g. it is pointless to combine Allgather and
-n_bgp_interval=2.
+n_multisend_interval=2.
 The whole point is to make the
 spike transfer initiation as lowcost as possible since that is what causes
 most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
@@ -1488,7 +1481,7 @@ balanced than spikes sent per processor per interval. And presently
 DCMF multisend injects 10000 messages per spike into the network which
 is quite expensive.
 
-See case 8 of nrn_bgp_receive_time for the xchng_meth properties
+See case 8 of nrn_multisend_receive_time for the xchng_meth properties
 */
 
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
@@ -1497,19 +1490,13 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
         return 0;
     }
     if (nspike >= 0) {  // otherwise don't set any multisend properties
-#if BGP_INTERVAL == 2
-        n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
-#endif
-#if BGPDMA
-        use_bgpdma_ = (xchng_meth & 1) == 1;
+        n_multisend_interval = (xchng_meth & 4) ? 2 : 1;
+        use_multisend_ = (xchng_meth & 1) == 1;
         use_phase2_ = (xchng_meth & 8) ? 1 : 0;
-        if (use_bgpdma_) {
-            assert(BGPDMA);
+        if (use_multisend_) {
+            assert(NRNMPI);
         }
-        bgpdma_cleanup();
-#else  // BGPDMA == 0
-        assert(xchng_meth == 0);
-#endif
+        nrn_multisend_cleanup();
     }
     if (nspike >= 0) {
         ag_send_nspike_ = 0;
@@ -1601,11 +1588,10 @@ void nrn_gidout_iter(PFIO callback) {
 
 #include "nrncore_write.h"
 extern int* nrn_prop_param_size_;
-extern int* pnt_receive_size;
 extern short* nrn_is_artificial_;
 static int weightcnt(NetCon* nc) {
     return nc->cnt_;
-    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->type]: 1;
+    //  return nc->target_ ? pnt_receive_size[nc->target_->prop->_type]: 1;
 }
 
 size_t nrncore_netpar_bytes() {
@@ -1625,9 +1611,8 @@ size_t nrncore_netpar_bytes() {
             nout += 1;
             int n = ps->dil_.size();
             nnet += n;
-            for (int i = 0; i < n; ++i) {
-                nweight += weightcnt(ps->dil_[i]);
-                NetCon* nc = ps->dil_[i];
+            for (auto nc: ps->dil_) {
+                nweight += weightcnt(nc);
                 if (nc->target_) {
                     npnt += 1;
                 }
@@ -1641,9 +1626,8 @@ size_t nrncore_netpar_bytes() {
             nin += 1;
             int n = ps->dil_.size();
             nnet += n;
-            for (int i = 0; i < n; ++i) {
-                nweight += weightcnt(ps->dil_[i]);
-                NetCon* nc = ps->dil_[i];
+            for (auto nc: ps->dil_) {
+                nweight += weightcnt(nc);
                 if (nc->target_) {
                     npnt += 1;
                 }
@@ -1655,38 +1639,4 @@ size_t nrncore_netpar_bytes() {
     //  printf("%d rank output Presyn %ld  input Presyn %ld  NetCon %ld  bytes %ld\n",
     //    nrnmpi_myid, nout, nin, nnet, ntot);
     return ntot;
-}
-
-void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
-    // printf("nrncore_netpar_cellgroups_helper\n");
-
-    // for the real cells in each thread (all have output gid and voltage spike
-    // detector) fill the cgs output_ps, output_gid, and output_vindex
-    // All the other (acell) gids have already been processed.
-    int* gidcnt = new int[nrn_nthread];  // real only
-    for (int i = 0; i < nrn_nthread; ++i) {
-        gidcnt[i] = 0;
-    }
-
-    for (const auto& iter: gid2out_) {
-        PreSyn* ps = iter.second;
-        if (ps && ps->thvar_) {
-            int ith = ps->nt_->id;
-            assert(ith >= 0 && ith < nrn_nthread);
-            int i = gidcnt[ith];
-            cgs[ith].output_ps[i] = ps;
-            cgs[ith].output_gid[i] = ps->output_index_;
-            assert(ps->thvar_ >= ps->nt_->_actual_v);
-            int inode = ps->thvar_ - ps->nt_->_actual_v;
-            assert(inode <= ps->nt_->end);
-            cgs[ith].output_vindex[i] = inode;
-            ++gidcnt[ith];
-        }
-    }
-#if 0  // allow real cells to NOT have a direct voltage threshold.
-  for (int i=0; i < nrn_nthread; ++ i) {
-    assert(nrn_threads[i].ncell == gidcnt[i]);
-  }
-#endif
-    delete[] gidcnt;
 }

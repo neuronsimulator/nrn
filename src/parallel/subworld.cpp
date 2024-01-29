@@ -27,7 +27,7 @@ void BBSImpl::subworld_worker_execute() {
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         char* s = new char[size];
         nrnmpi_char_broadcast(s, size, 0);
-        hoc_obj_run(s, nil);
+        hoc_obj_run(s, nullptr);
         delete[] s;
         // printf("%d leave subworld_worker_execute\n", nrnmpi_myid_world);
         return;
@@ -36,7 +36,7 @@ void BBSImpl::subworld_worker_execute() {
     int npickle;
     char* s;
     Symbol* fname = 0;
-    Object* ob = nil;
+    Object* ob = nullptr;
     char* sarg[20];  // up to 20 arguments may be strings
     int ns = 0;      // number of args that are strings
     int narg = 0;    // total number of args
@@ -49,7 +49,7 @@ void BBSImpl::subworld_worker_execute() {
         int size;
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         // printf("%d subworld hoc function string size = %d\n", nrnmpi_myid_world, size);
-        s = new char(size);
+        s = new char[size];
         nrnmpi_char_broadcast(s, size, 0);
         fname = hoc_lookup(s);
         if (!fname) {
@@ -73,7 +73,7 @@ void BBSImpl::subworld_worker_execute() {
         } else if (i == 2) {  // string
             int size;
             nrnmpi_int_broadcast(&size, 1, 0);
-            sarg[ns] = new char(size);
+            sarg[ns] = new char[size];
             nrnmpi_char_broadcast(sarg[ns], size, 0);
             hoc_pushstr(sarg + ns);
             ns++;
@@ -89,7 +89,7 @@ void BBSImpl::subworld_worker_execute() {
             char* s;
             s = new char[n];
             nrnmpi_char_broadcast(s, n, 0);
-            Object* po = nrnpy_pickle2po(s, size_t(n));
+            Object* po = neuron::python::methods.pickle2po(s, size_t(n));
             delete[] s;
             hoc_pushobj(hoc_temp_objptr(po));
         }
@@ -97,7 +97,7 @@ void BBSImpl::subworld_worker_execute() {
 
     if (style == 3) {
         size_t size;
-        char* rs = (*nrnpy_callpicklef)(s, size_t(npickle), narg, &size);
+        char* rs = neuron::python::methods.call_picklef(s, size_t(npickle), narg, &size);
         assert(rs);
         delete[] rs;
     } else {

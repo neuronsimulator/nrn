@@ -1,8 +1,8 @@
 #include <../../nrnconf.h>
 #define HOC_L_LIST 1
-#include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
+#include "nrnpy.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
@@ -132,19 +132,19 @@ static double allroots(void* v) {
     List* sl;
     Item* qsec;
     sl = (List*) v;
-    ForAllSections(sec) if (!sec->parentsec) {
-        lappendsec(sl, sec);
-        section_ref(sec);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (!sec->parentsec) {
+            lappendsec(sl, sec);
+            section_ref(sec);
+        }
     }
-}
 
-return 1.;
+    return 1.;
 }
 
 static double seclist_remove(void* v) {
-#if USE_PYTHON
-    extern Symbol* nrnpy_pyobj_sym_;
-#endif
     Section *sec, *s;
     Item *q, *q1;
     List* sl;
@@ -160,7 +160,7 @@ static double seclist_remove(void* v) {
         sec = nrn_secarg(1);
         ITERATE_REMOVE(q, q1, sl) /*{*/
         if (sec == q->element.sec) {
-            delete (q);
+            hoc_l_delete(q);
             section_unref(sec);
             return 1.;
         }
@@ -186,7 +186,7 @@ for (q = sl->next; q != sl; q = q1) {
     q1 = q->next;
     s = hocSEC(q);
     if (s->volatile_mark) {
-        delete (q);
+        hoc_l_delete(q);
         section_unref(s);
         ++i;
     }
@@ -210,7 +210,7 @@ for (q = sl->next; q != sl; q = q1) {
     q1 = q->next;
     s = hocSEC(q);
     if (s->volatile_mark++) {
-        delete (q);
+        hoc_l_delete(q);
         section_unref(s);
         ++i;
     }
@@ -243,11 +243,16 @@ static double printnames(void* v) {
 return 1.;
 }
 
-static Member_func members[] = {"append",     append,     "remove",   seclist_remove,
-                                "wholetree",  wholetree,  "subtree",  subtree,
-                                "children",   children,   "unique",   unique,
-                                "printnames", printnames, "contains", contains,
-                                "allroots",   allroots,   0,          0};
+static Member_func members[] = {{"append", append},
+                                {"remove", seclist_remove},
+                                {"wholetree", wholetree},
+                                {"subtree", subtree},
+                                {"children", children},
+                                {"unique", unique},
+                                {"printnames", printnames},
+                                {"contains", contains},
+                                {"allroots", allroots},
+                                {0, 0}};
 
 
 extern void class2oc(const char*,
@@ -269,7 +274,7 @@ extern int hoc_returning;
 
 static void check(Object* ob) {
     if (!ob) {
-        hoc_execerror("nil object is not a SectionList", (char*) 0);
+        hoc_execerror("nullptr object is not a SectionList", nullptr);
     }
     if (ob->ctemplate->constructor != constructor) {
         hoc_execerror(ob->ctemplate->sym->name, " is not a SectionList");
@@ -299,7 +304,7 @@ void forall_sectionlist(void) {
         q1 = q->next;
         sec = q->element.sec;
         if (!sec->prop) {
-            delete (q);
+            hoc_l_delete(q);
             section_unref(sec);
             continue;
         }

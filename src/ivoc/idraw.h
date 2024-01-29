@@ -3,7 +3,6 @@
 /*
 Hooks for special processing make use of the request() method in Glyphs.
 */
-#include <ivstream.h>
 
 class Canvas;
 class Transformer;
@@ -82,7 +81,7 @@ class OcIdraw {
                       bool fill = false);
 
   public:
-    static ostream* idraw_stream;
+    static std::ostream* idraw_stream;
 
   private:
     static void rcurve(int level, Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2);

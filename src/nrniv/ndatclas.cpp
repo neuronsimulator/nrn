@@ -25,7 +25,7 @@ extern Symlist* hoc_top_level_symlist;
 NrnPropertyImpl::NrnPropertyImpl(Prop* p) {
     p_ = p;
     iterator_ = -1;
-    sym_ = memb_func[p_->type].sym;
+    sym_ = memb_func[p_->_type].sym;
     del_ = false;
 }
 
@@ -113,11 +113,11 @@ const char* NrnProperty::name() const {
 }
 
 bool NrnProperty::is_point() const {
-    return memb_func[npi_->p_->type].is_point;
+    return memb_func[npi_->p_->_type].is_point;
 }
 
 int NrnProperty::type() const {
-    return npi_->p_->type;
+    return npi_->p_->_type;
 }
 
 Prop* NrnProperty::prop() const {
@@ -155,41 +155,44 @@ int NrnProperty::var_type(Symbol* sym) const {
 }
 
 bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
-    int n;
     assert(vartype != NRNPOINTER);
-    if (src && dest && src != dest && src->type == dest->type) {
+    if (src && dest && src != dest && src->_type == dest->_type) {
         if (src->ob) {
-            Symbol* msym = memb_func[src->type].sym;
-            int i, j, jmax, cnt = msym->s_varn;
-            for (i = 0; i < cnt; ++i) {
+            Symbol* msym = memb_func[src->_type].sym;
+            auto const cnt = msym->s_varn;
+            for (int i = 0; i < cnt; ++i) {
                 Symbol* sym = msym->u.ppsym[i];
                 if (vartype == 0 || nrn_vartype(sym) == vartype) {
-                    jmax = hoc_total_array_data(sym, 0);
-                    n = sym->u.rng.index;
-                    double *x, *y;
-                    y = dest->ob->u.dataspace[n].pval;
-                    x = src->ob->u.dataspace[n].pval;
-                    for (j = 0; j < jmax; ++j) {
+                    auto const jmax = hoc_total_array_data(sym, 0);
+                    auto const n = sym->u.rng.index;
+                    auto* const y = dest->ob->u.dataspace[n].pval;
+                    auto* const x = src->ob->u.dataspace[n].pval;
+                    for (int j = 0; j < jmax; ++j) {
                         y[j] = x[j];
                     }
                 }
             }
         } else {
             if (vartype == 0) {
-                n = src->param_size;
+                assert(dest->param_num_vars() == src->param_num_vars());
+                auto const n = src->param_num_vars();
                 for (int i = 0; i < n; ++i) {
-                    dest->param[i] = src->param[i];
+                    assert(dest->param_array_dimension(i) == src->param_array_dimension(i));
+                    for (auto j = 0; j < src->param_array_dimension(i); ++j) {
+                        dest->param(i, j) = src->param(i, j);
+                    }
                 }
             } else {
-                Symbol* msym = memb_func[src->type].sym;
-                int i, j, jmax, cnt = msym->s_varn;
-                for (i = 0; i < cnt; ++i) {
+                Symbol* msym = memb_func[src->_type].sym;
+                auto const cnt = msym->s_varn;
+                for (int i = 0; i < cnt; ++i) {
                     Symbol* sym = msym->u.ppsym[i];
                     if (nrn_vartype(sym) == vartype) {
-                        jmax = hoc_total_array_data(sym, 0);
-                        n = sym->u.rng.index;
-                        for (j = 0; j < jmax; ++j) {
-                            dest->param[n + j] = src->param[n + j];
+                        auto const jmax = hoc_total_array_data(sym, 0);
+                        auto const n = sym->u.rng.index;
+                        assert(src->param_size() == dest->param_size());
+                        for (int j = 0; j < jmax; ++j) {
+                            dest->param_legacy(n + j) = src->param_legacy(n + j);
                         }
                     }
                 }
@@ -220,14 +223,16 @@ int NrnProperty::prop_index(const Symbol* s) const {
     return s->u.rng.index;
 }
 
-double* NrnProperty::prop_pval(const Symbol* s, int index) const {
+neuron::container::data_handle<double> NrnProperty::prop_pval(const Symbol* s, int index) const {
     if (npi_->p_->ob) {
-        return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
+        return neuron::container::data_handle<double>{
+            npi_->p_->ob->u.dataspace[prop_index(s)].pval + index};
     } else {
         if (s->subtype == NRNPOINTER) {
-            return npi_->p_->dparam[prop_index(s) + index].pval;
+            return static_cast<neuron::container::data_handle<double>>(
+                npi_->p_->dparam[prop_index(s) + index]);
         } else {
-            return npi_->p_->param + prop_index(s) + index;
+            return npi_->p_->param_handle_legacy(prop_index(s) + index);
         }
     }
 }

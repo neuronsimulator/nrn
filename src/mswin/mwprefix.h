@@ -1,10 +1,5 @@
 /* auto include file for metrowerks codewarrior for all nrn */
-#if __MWERKS__ >= 7
-#define _MSL_DIRENT_H
-#else
 #include <Win32Headers.mch>
-#endif
-#define HAVE_LIMITS_H 1
 #pragma once off
 #ifndef __WIN32__
 #define __WIN32__ 1
@@ -16,11 +11,9 @@
 #ifndef _Windows
 #define _Windows 1
 #endif
-#if __cplusplus
 struct Section;
 struct Object;
 struct Symbol;
-#endif
 #define motif_kit
 #define sgi_motif_kit
 #define printf  myprintf
@@ -39,10 +32,8 @@ struct Symbol;
 //#define system mysystem
 #undef DELETE
 #undef IGNORE
-#define CABLE      1
 #define HOC        1
 #define OOP        1
 #define OC_CLASSES "nrnclass.h"
 #define USECVODE   1
-#define CVODE      1
 #define USEMATRIX  1

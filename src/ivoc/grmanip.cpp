@@ -44,7 +44,7 @@ class LineRubberMarker: public Rubberband {
     Label* label_;
     Coord x_, y_;
     int index_;
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     CopyString def_str_;
 #endif
 };
@@ -62,7 +62,6 @@ class MoveLabelBand: public Rubberband {
     GLabel* label_;
     GlyphIndex index_;
     Allocation a_;
-    Cursor* cursor_;
     Coord x0_, y0_;
 };
 
@@ -281,7 +280,7 @@ bool LineRubberMarker::event(Event& e) {
         }
         return true;
     } else {
-#if defined(WIN32) || MAC
+#if defined(WIN32)
         if (e.type() == Event::down) {
             def_str_ = ((DismissableWindow*) canvas()->window())->name();
         } else if (e.type() == Event::up) {
@@ -298,7 +297,7 @@ void LineRubberMarker::undraw(Coord, Coord) {
     Transformer identity;
     c->push_transform();
     c->transformer(identity);
-#if !defined(WIN32) && !MAC
+#if !defined(WIN32)
     Allocation a;
     a.allot_x(Allotment(x + 20, 0, 0));
     a.allot_y(Allotment(y, 0, 0));
@@ -321,11 +320,11 @@ void LineRubberMarker::draw(Coord x, Coord y) {
     }
     char s[50];
 
-#if defined(WIN32) || MAC
-    sprintf(s, "crosshair x=%g y=%g", x_, y_);
+#if defined(WIN32)
+    Sprintf(s, "crosshair x=%g y=%g", x_, y_);
     ((DismissableWindow*) canvas()->window())->name(s);
 #else
-    sprintf(s, "(%g,%g)", x_, y_);
+    Sprintf(s, "(%g,%g)", x_, y_);
     Resource::unref(label_);
     label_ = new Label(s, WidgetKit::instance()->font(), Rubberband::color());
 #endif
@@ -514,11 +513,7 @@ void MoveLabelBand::press(Event&) {
     }
     x0_ -= x_begin();
     y0_ -= y_begin();
-#if 0 && !defined(WIN32)
-	cursor_ = canvas()->window()->cursor();
-	canvas()->window()->cursor(noCursor);
-#endif
-#if !defined(WIN32) && !MAC
+#if !defined(WIN32)
     undraw(x(), y());  // so initial draw does not make it disappear
 #endif
 }
@@ -548,9 +543,6 @@ void MoveLabelBand::release(Event&) {
     }
     // printf("move to %g %g\n", x1, y1);
     gr->move(index_, x1, y1);
-#if 0 && !defined(WIN32)
-	canvas()->window()->cursor(cursor_);
-#endif
 }
 
 void MoveLabelBand::draw(Coord x, Coord y) {
@@ -561,7 +553,7 @@ void MoveLabelBand::draw(Coord x, Coord y) {
     // printf("MoveLabelBand::draw(%g, %g)\n", x, y);
     a_.x_allotment().origin(x + x0_);
     a_.y_allotment().origin(y + y0_);
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     c->rect(a_.x_allotment().begin(),
             a_.y_allotment().begin(),
             a_.x_allotment().end(),

@@ -46,7 +46,6 @@ void consistency() {
         con("NONLINEAR", NLINF, 0);
         con("DISCRETE", DISCF, 0);
         con("PARTIAL", PARF, 0);
-        con("STEPPED", STEP1, 0);
         tu = s->usage;
         if ((tu & DEP) && (tu & FUNCT))
             diag(s->name, "used as both variable and function");

@@ -16,8 +16,8 @@ PtrVector
     all pointers point to an internal dummy variable. So it is possible
     to scatter from a larger Vector into a smaller Vector.
 
-    If :hoc:meth:`CVode.cache_efficient` is used, a callback should be registered
-    with the :hoc:meth:`PtrVector.ptr_update_callback` method in order to prevent
+    A callback should be registered with the
+    :hoc:meth:`PtrVector.ptr_update_callback` method in order to prevent
     memory segfaults when internal memory is reallocated.
 
   Python Example:
@@ -125,7 +125,6 @@ PtrVector
 
   Description:
     The statement or pythoncallback is executed whenever range variables
-    are re-allocated in order to establish cache efficiency.
-    (see :hoc:meth:`CVode.cache_efficient`)  Within the callback, the
+    are re-allocated. Within the callback, the
     :hoc:meth:`PtrVector.resize` method may be called but the PtrVector should
     not be destroyed.

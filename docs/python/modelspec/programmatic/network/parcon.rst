@@ -230,7 +230,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             h.nrnmpi_init()
 
             pc = h.ParallelContext()
-            print ("I am %d of %d" % (pc.id(), pc.nhost()))
+            print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
             h.quit()            
@@ -268,7 +268,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             if pc.nhost() == 1:
                for i in range(20):
-                  print('%d %g' % (i, sin(i)))
+                  print(i, math.sin(i))
                
             else: 
                for i in range(20):
@@ -276,7 +276,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                
              
                while pc.working():
-                  print('%d %g' % (pc.userid(), pc.pyret()))
+                  print(pc.userid(), pc.pyret())
 
     .. note::
 
@@ -446,7 +446,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                 id = pc.working()
                 if id == 0: break
                 # gather results of previous pc.submit calls
-                print('{} {}'.format(id, pc.pyret()))
+                print(id, pc.pyret())
         
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
@@ -1560,7 +1560,7 @@ Description:
             if rank == 0:
                 print('source data')
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             data = pc.py_alltoall(data)
 
@@ -1568,7 +1568,7 @@ Description:
                 print('destination data')
 
             for r in serialize():
-                print('{} {}'.format(rank, data))
+                print(rank, data)
 
             pc.runworker()
             pc.done()
@@ -1631,7 +1631,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(0.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("allgather src", src)  
           pr("allgather dest", dest)
@@ -1713,7 +1713,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("gather src", src)     
           pr("gather dest", dest)
@@ -1799,7 +1799,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("scatter src", src)     
           pr("scatter dest", dest)
@@ -1883,7 +1883,7 @@ Description:
           def pr(label, val):
             from time import sleep
             sleep(.1) # try to avoid mixing different pr output
-            print("%d: %s: %s" % (rank, label, val))
+            print(f"{rank}: {label}: {val}")
 
           pr("broadcast src", src)
           pr("broadcast dest", dest)
@@ -2628,7 +2628,7 @@ Description:
 .. method:: ParallelContext.spike_compress
 
     Syntax:
-        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress})`
+        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress}, {xchng_meth})`
 
     Description:
         If nspike > 0, selects an alternative implementation of spike exchange 
@@ -2658,6 +2658,13 @@ Description:
         interprocessor spikes, the real 4 byte integer gids are used in the 
         (spiketime, gid) pairs and only the spiketime is compressed to 1 byte. i.e. 
         instead of 2 bytes the pair consists of 5 bytes. 
+
+        xchng_meth is a bit-field.
+        bits | usage
+           0 | 0: Allgather, 1: Multisend (MPI_ISend)
+           1 | unused
+           2 | 0: multisend_interval = 1, 1: multisend_interval = 2
+           3 | 0: don't use phase2, 1: use phase2
 
     .. seealso::
         :meth:`CVode.queue_mode`
@@ -3025,9 +3032,6 @@ Parallel Transfer
         a single cpu. It does not matter if a one sid subtree is declared short 
         or not; it is solved exactly in any case. 
          
-        Note: using multisplit automatically sets 
-        ``CVode.cache_efficient(1)``
-
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
         be used with variable step 
@@ -3134,6 +3138,54 @@ Parallel Transfer
 
 
 
+.. method:: ParallelContext.nworker
+
+
+    Syntax:
+        ``n = pc.nworker()``
+
+
+    Description:
+        Queries the number of active **worker** threads, that is to say the
+        number of system threads that are executing work in parallel. If no
+        work is being processed in parallel, this returns **zero**. This is
+        related to, but sometimes different from, the number of threads that
+        is set by :func:`ParallelContext.nthread`. That function sets (and
+        queries) the number of thread data structures (``NrnThread``) that the
+        model is partitioned into, and its second argument determines whether
+        or not worker threads are launched to actually process those data in
+        parallel.
+
+        .. code-block:: python
+
+            from neuron import config, h
+            pc = h.ParallelContext()
+            threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
+
+            # single threaded mode, no workers
+            pc.nthread(1)
+            assert pc.nworker() == 0
+
+            # second argument specifies serial execution, no workers (but
+            # there are two thread data structures)
+            pc.nthread(2, False)
+            assert pc.nworker() == 0
+
+            # second argument specifies parallel execution, two workers if
+            # threading was enabled at compile time
+            pc.nthread(2, True)
+            assert pc.nworker() == 2 * threads_enabled
+
+
+        In the current implementation, ``nworker - 1`` extra threads are
+        launched, and the final thread data structure is processed by the main
+        application thread in parallel.
+
+
+----
+
+
+
 .. method:: ParallelContext.partition
 
 
@@ -3149,6 +3201,21 @@ Parallel Transfer
         indicated by the first arg index. Either all or no thread can have 
         an associated seclist. The no arg form of pc.partition() unrefs the seclist 
         for all the threads. 
+
+
+----
+
+
+.. method:: ParallelContext.get_partition
+
+
+    Syntax:
+        ``seclist = pc.get_partition(i)``
+
+
+    Description:
+        Returns a new :func:`SectionList` with references to all the root sections
+        of the ith thread.
 
 
 ----
@@ -3196,10 +3263,13 @@ Parallel Transfer
 
 
     Description:
-        Returns the number of cores/processors available for parallel simulation. 
-        The number is determined experimentally by repeatedly doubling the number 
-        of test threads each doing a count to 1e8 until the test time significantly 
-        increases. 
+        Returns the number of concurrent threads supported by the hardware. This
+        is the value returned by `std::thread::hardware_concurrency()
+        <https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency>`_.
+        On a system that supports hyperthreading this will typically be double
+        the number of physical cores available, and it may not take into account
+        constraints such as MPI processes being bound to specific cores in a
+        cluster environment.
 
 
 ----
@@ -3235,7 +3305,7 @@ Parallel Transfer
         The high resolution walltime time in seconds the indicated thread 
         used during time step integration. Note that this does not include 
         reduced tree computation time used by thread 0 when :func:`multisplit` is 
-        active. 
+        active. With no arg, sets thread_ctime of all threads to 0.
 
          
 ----
@@ -3357,8 +3427,8 @@ Parallel Transfer
         teardown is the test_submodel.py in
         http://github.com/neuronsimulator/ringtest.
 
-        This function requires cvode.cache_efficient(1) . Multisplit is not
-        supported. The model cannot be more complicated than a spike or gap
+        Multisplit is not supported.
+        The model cannot be more complicated than a spike or gap
         junction coupled parallel network model of real and artificial cells.
         Real cells must have gids, Artificial cells without gids connect
         only to cells in the same thread. No POINTER to data outside of the
@@ -3393,7 +3463,6 @@ Parallel Transfer
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.cvode.cache_efficient(1)
             h.stdinit()
             pc.psolve(h.tstop)
 

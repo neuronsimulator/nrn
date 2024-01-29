@@ -1,0 +1,6 @@
+proc expect_err() {
+    print "checking: ", $s1
+    if (execute1($s1) != 0) {
+        execerror("expect_err did not fail", "")
+    }
+}

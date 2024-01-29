@@ -1,11 +1,10 @@
 #include <../../nrnconf.h>
-#include <OS/string.h>
-#include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
+#include <regex>
 // for alias
 #include <symdir.h>
 #include <oclist.h>
@@ -21,12 +20,7 @@ extern int nrn_is_artificial(int);
 
 extern int hoc_return_type_code;
 
-inline unsigned long key_to_hash(String& s) {
-    return s.hash();
-}
-implementTable(SymbolTable, String, Symbol*)
-
-    static double l_substr(void*) {
+static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);
     char* p = strstr(s1, s2);
@@ -44,51 +38,94 @@ static double l_len(void*) {
 }
 
 static double l_head(void*) {
-    String text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
-    int i = r.BeginningOfMatch();
-    //	text.set_to_left(i); doesnt work
-    char** head = hoc_pgargstr(3);
-    if (i > 0) {
-        char* buf = new char[i + 1];
-        strncpy(buf, text.string(), i);
-        buf[i] = '\0';
-        hoc_assign_str(head, buf);
-        delete[] buf;
-    } else {
-        hoc_assign_str(head, "");
+    std::string text(gargstr(1));
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
     }
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2), std::regex::egrep);
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
+            i = sm.position();
+            result = sm.prefix().str();
+        }
+    } catch (const std::regex_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    char** head = hoc_pgargstr(3);
+    hoc_assign_str(head, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
 
 static double l_tail(void*) {
-    CopyString text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.string(), text.length(), 0, text.length());
-    int i = r.EndOfMatch();
-    char** tail = hoc_pgargstr(3);
-    if (i >= 0) {
-        hoc_assign_str(tail, text.string() + i);
-    } else {
-        hoc_assign_str(tail, "");
+    std::string text(gargstr(1));
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
     }
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2), std::regex::egrep);
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
+            i = sm.position() + sm.length();
+            result = sm.suffix().str();
+        }
+    } catch (const std::regex_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    char** tail = hoc_pgargstr(3);
+    hoc_assign_str(tail, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
 
+static double l_ltrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(0, s.find_first_not_of(chars));
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
+static double l_rtrim(void*) {
+    std::string s(gargstr(1));
+    std::string chars = " \r\n\t\f\v";
+    if (ifarg(3)) {
+        chars = gargstr(3);
+    }
+    s.erase(s.find_last_not_of(chars) + 1);
+
+    char** ret = hoc_pgargstr(2);
+    hoc_assign_str(ret, s.c_str());
+    return 0.;
+}
+
 static double l_left(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.left(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(0, int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
 static double l_right(void*) {
-    CopyString text(gargstr(1));
-    CopyString newtext = text.right(int(chkarg(2, 0, strlen(gargstr(1)))));
-    hoc_assign_str(hoc_pgargstr(1), newtext.string());
+    std::string text(gargstr(1));
+    std::string newtext = text.substr(int(chkarg(2, 0, strlen(gargstr(1)))));
+    hoc_assign_str(hoc_pgargstr(1), newtext.c_str());
     return 1.;
 }
 
@@ -103,11 +140,12 @@ extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_top_level_symlist;
 
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob) {
+    Symbol* s{};
     IvocAliases* a = (IvocAliases*) ob->aliases;
     if (a) {
-        return a->lookup(name);
+        s = a->lookup(name);
     }
-    return NULL;
+    return s;
 }
 
 extern void ivoc_free_alias(Object* ob) {
@@ -160,16 +198,14 @@ static Object** l_alias_list(void*) {
     Symbol* sl = hoc_lookup("List");
     Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
     if (!st || st->type != TEMPLATE) {
-        printf("st=%p %s %d\n", st, st ? st->name : "NULL", st ? st->type : 0);
-        hoc_execerror("String is not a template", 0);
+        hoc_execerror("String is not a HOC template", 0);
     }
     Object** po = hoc_temp_objvar(sl, list);
     (*po)->refcount++;
     int id = (*po)->index;
     if (a) {
-        char buf[256];
-        for (TableIterator(SymbolTable) i(*a->symtab_); i.more(); i.next()) {
-            Symbol* sym = i.cur_value();
+        for (auto& kv: a->symtab_) {
+            Symbol* sym = kv.second;
             hoc_pushstr(&sym->name);
             Object* sob = hoc_newobj1(st, 1);
             list->append(sob);
@@ -318,67 +354,52 @@ static double l_is_artificial(void*) {
     return nrn_is_artificial(type) ? type : 0;
 }
 
-static Member_func l_members[] = {"substr",
-                                  l_substr,
-                                  "len",
-                                  l_len,
-                                  "head",
-                                  l_head,
-                                  "tail",
-                                  l_tail,
-                                  "right",
-                                  l_right,
-                                  "left",
-                                  l_left,
-                                  "is_name",
-                                  l_is_name,
-                                  "alias",
-                                  l_alias,
-                                  "references",
-                                  l_ref,
-                                  "is_point_process",
-                                  l_is_point,
-                                  "is_artificial",
-                                  l_is_artificial,
-                                  0,
-                                  0};
+static Member_func l_members[] = {{"substr", l_substr},
+                                  {"len", l_len},
+                                  {"head", l_head},
+                                  {"tail", l_tail},
+                                  {"ltrim", l_ltrim},
+                                  {"rtrim", l_rtrim},
+                                  {"right", l_right},
+                                  {"left", l_left},
+                                  {"is_name", l_is_name},
+                                  {"alias", l_alias},
+                                  {"references", l_ref},
+                                  {"is_point_process", l_is_point},
+                                  {"is_artificial", l_is_artificial},
+                                  {0, 0}};
 
-static Member_ret_obj_func l_obj_members[] = {"alias_list", l_alias_list, 0, 0};
+static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
 
 static void* l_cons(Object*) {
-    return NULL;
+    return nullptr;
 }
 
-static void l_destruct(void*) {}
-
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
 }
 
 
 IvocAliases::IvocAliases(Object* ob) {
     ob_ = ob;
     ob_->aliases = (void*) this;
-    symtab_ = new SymbolTable(20);
 }
 
 IvocAliases::~IvocAliases() {
-    ob_->aliases = NULL;
-    for (TableIterator(SymbolTable) i(*symtab_); i.more(); i.next()) {
-        Symbol* sym = i.cur_value();
+    ob_->aliases = nullptr;
+    for (auto& kv: symtab_) {
+        Symbol* sym = kv.second;
         hoc_free_symspace(sym);
         free(sym->name);
         free(sym);
     }
-    delete symtab_;
 }
 Symbol* IvocAliases::lookup(const char* name) {
-    String s(name);
-    Symbol* sym;
-    if (!symtab_->find(sym, s)) {
-        sym = NULL;
+    const auto& it = symtab_.find(name);
+    if (it != symtab_.end()) {
+        return it->second;
     }
-    return sym;
+    return nullptr;
 }
 Symbol* IvocAliases::install(const char* name) {
     Symbol* sp;
@@ -387,16 +408,15 @@ Symbol* IvocAliases::install(const char* name) {
     strcpy(sp->name, name);
     sp->type = VARALIAS;
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
-    sp->extra = 0;
-    sp->arayinfo = 0;
-    String s(sp->name);
-    symtab_->insert(s, sp);
+    sp->extra = nullptr;
+    sp->arayinfo = nullptr;
+    symtab_.try_emplace(sp->name, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
-    String s(sym->name);
-    symtab_->remove(s);
+    auto it = symtab_.find(sym->name);
+    symtab_.erase(it);
     free(sym->name);
     free(sym);
 }

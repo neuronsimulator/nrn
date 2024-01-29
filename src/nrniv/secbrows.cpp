@@ -16,10 +16,8 @@
 #endif
 
 #include "nrnoc2iv.h"
+#include "nrnpy.h"
 #include "membfunc.h"
-void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 //-----------------------------------------
 static double sb_select(void* v) {
@@ -66,14 +64,10 @@ static double sb_accept_action(void* v) {
 #endif
     return 1.;
 }
-static Member_func sb_members[] = {"select",
-                                   sb_select,
-                                   "select_action",
-                                   sb_select_action,
-                                   "accept_action",
-                                   sb_accept_action,
-                                   0,
-                                   0};
+static Member_func sb_members[] = {{"select", sb_select},
+                                   {"select_action", sb_select_action},
+                                   {"accept_action", sb_accept_action},
+                                   {0, 0}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;
@@ -129,21 +123,24 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
     } else {
         struct hoc_Item* qsec;
         scnt_ = 0;
-        ForAllSections(sec)  //{
-            ++ scnt_;
+        // ForAllSections(sec)  //{
+        ITERATE(qsec, section_list) {
+            ++scnt_;
+        }
+        psec_ = new Section*[scnt_];
+        scnt_ = 0;
+        // ForAllSections(sec)  //{
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            psec_[scnt_++] = sec;
+        }
     }
-    psec_ = new Section*[scnt_];
-    scnt_ = 0;
-    ForAllSections(sec)  //{
-        psec_[scnt_++] = sec;
-}
-}
-for (i = 0; i < scnt_; ++i) {
-    append_item(secname(psec_[i]));
-    section_ref(psec_[i]);
-}
-select_ = NULL;
-accept_ = NULL;
+    for (i = 0; i < scnt_; ++i) {
+        append_item(secname(psec_[i]));
+        section_ref(psec_[i]);
+    }
+    select_ = NULL;
+    accept_ = NULL;
 }
 
 OcSectionBrowser::~OcSectionBrowser() {
@@ -168,8 +165,8 @@ void OcSectionBrowser::accept() {
         }
         nrn_pushsec(psec_[i]);
         if (accept_is_pycallback_) {
-            if (nrnpy_call_python_with_section) {
-                (*nrnpy_call_python_with_section)(accept_pycallback_, psec_[i]);
+            if (neuron::python::methods.call_python_with_section) {
+                neuron::python::methods.call_python_with_section(accept_pycallback_, psec_[i]);
             } else {
                 // should not be able to get here
             }
@@ -225,8 +222,8 @@ void OcSectionBrowser::select(GlyphIndex i) {
         if (psec_[i]->prop) {
             nrn_pushsec(psec_[i]);
             if (select_is_pycallback_) {
-                if (nrnpy_call_python_with_section) {
-                    (*nrnpy_call_python_with_section)(select_pycallback_, psec_[i]);
+                if (neuron::python::methods.call_python_with_section) {
+                    neuron::python::methods.call_python_with_section(select_pycallback_, psec_[i]);
                 } else {
                     // should not be able to get here
                 }
@@ -364,19 +361,23 @@ void BrowserAccept::execute() {
 SectionBrowserImpl::SectionBrowserImpl() {
     struct hoc_Item* qsec;
     scnt_ = 0;
-    ForAllSections(sec)  //{
-        ++ scnt_;
-}
-psec_ = new Section*[scnt_];
-scnt_ = 0;
-ForAllSections(sec)  //{
-    psec_[scnt_++] = sec;
-section_ref(sec);
-}
-ms_ = new MechSelector();
-ms_->ref();
-mvt_ = new MechVarType();
-mvt_->ref();
+    // ForAllSections(sec)  //{
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        ++scnt_;
+    }
+    psec_ = new Section*[scnt_];
+    scnt_ = 0;
+    // ForAllSections(sec)  //{
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        psec_[scnt_++] = sec;
+        section_ref(sec);
+    }
+    ms_ = new MechSelector();
+    ms_->ref();
+    mvt_ = new MechVarType();
+    mvt_->ref();
 }
 SectionBrowserImpl::~SectionBrowserImpl() {
     for (int i = 0; i < scnt_; ++i) {

@@ -198,19 +198,13 @@ void activclamp_lhs(void) {
 static double clampval(void) {
     gtemp = 1.e2 / clamp_resist / NODEAREA(pnd);
     for (;;) {
-#if CVODE
         at_time(nrn_threads, tswitch[oldsw]);
-#endif
         if (nt_t < tswitch[oldsw]) {
             if (oldsw == 0) {
                 break;
             }
-#if CVODE
             /* for cvode the other was inefficient since t is non-monotonic */
             --oldsw;
-#else
-            oldsw = 0;
-#endif
         } else {
             if (nt_t < tswitch[oldsw + 1]) {
                 break;

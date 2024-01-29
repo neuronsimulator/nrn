@@ -1,4 +1,4 @@
-import distutils.util
+from neuron.tests.utils.strtobool import strtobool
 import os
 
 from neuron import h, gui
@@ -18,7 +18,6 @@ def test_direct_memory_transfer():
     h.soma.insert("Sample")
 
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     v = h.Vector()
     v.record(h.soma(0.5)._ref_v, sec=h.soma)
@@ -38,9 +37,7 @@ def test_direct_memory_transfer():
     coreneuron.enable = True
     coreneuron.verbose = 0
     coreneuron.model_stats = True
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
     coreneuron.num_gpus = 1
 
     pc = h.ParallelContext()

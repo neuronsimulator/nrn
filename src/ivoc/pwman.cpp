@@ -5,13 +5,13 @@ extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if (MAC && !defined(carbon)) || defined(WIN32)
+#if defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
 #endif
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 #define SNAPSHOT 0
 #else
 #define SNAPSHOT 1
@@ -19,7 +19,6 @@ extern int hoc_return_type_code;
 
 #define DECO 2  // 1 means default on, 2 off. for Carnvale,Hines book figures
 
-#include <ivstream.h>
 #include <string.h>
 #include "ivoc.h"
 #endif  // HAVE_IV
@@ -27,6 +26,7 @@ extern int hoc_return_type_code;
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
+#include <cmath>
 
 #if HAVE_IV
 #include "utility.h"
@@ -34,48 +34,17 @@ extern int hoc_return_type_code;
 void single_event_run();
 extern char** hoc_strpop();
 
-#if defined(CYGWIN)
+#ifdef MINGW
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-extern "C" char* hoc_back2forward(char*);
+char* hoc_back2forward(char*);
 #endif
 
-#if defined(WIN32) && !defined(CYGWIN)
-#include <IV-Win/mprinter.h>
-#include "../winio/debug.h"
-void iv_display_scale(float);
-void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-#if defined(__MWERKS__)
-#include <OS/dirent.h>
-extern char* mktemp(char*);
-extern int unlink(const char*);
-
-#else  //!__MWERKS__
-#include <dir.h>
-#endif  // __MWERKS__
-
-#include <fstream.h>
-// there seems to be a bug here in that writing goes to the beginning
-// but any existing trailing info remains! So be sure to unlink first.
-#undef IOS_OUT
-#define IOS_OUT (ios::out)
-extern "C" char* hoc_back2forward(char*);
-#else  //! WIN32
-#if MAC && !defined(carbon)
-#include <fstream.h>
-#include <file_io.h>
-#undef IOS_OUT
-#define IOS_OUT (ios::out | ios::trunc)
-extern char* mktemp(char*);
-extern int unlink(const char*);
-#include <IV-Mac/mprinter.h>
-extern void debugfile(const char*, ...);
-#else  //! MAC
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#define Output output
-#endif  // MAC
-#endif  // WIN32
+#endif
+#define IOS_OUT std::ios::out
 
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
@@ -92,6 +61,7 @@ extern void debugfile(const char*, ...);
 #include <InterViews/style.h>
 #include <InterViews/background.h>
 #include <InterViews/label.h>
+#include <InterViews/resource.h>
 #include <OS/string.h>
 #include "apwindow.h"
 #include "scenevie.h"
@@ -137,7 +107,7 @@ static bool ivoc_snapshot(const Event*);
 #define pwm_impl PrintableWindowManager::current()->pwmi_
 class HocPanel {
   public:
-    static void save_all(ostream&);
+    static void save_all(std::ostream&);
 };
 
 int inside(Coord x, Coord y, const Allocation& a) {
@@ -182,43 +152,12 @@ void print_alloc(Canvas* c, char* s, const Allocation& a) {
     Coord x_, y_;
 };
 
-extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
-extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
-const char* (*p_java2nrn_classname)(Object* ho);
-bool (*p_java2nrn_identity)(Object* o1, Object* o2);
-
-// just enough info to get a java window represented in the PWM.
-// The distinction is that window() is NULL for these.
-/*static*/ class JavaWindow {
-  public:
-    JavaWindow(const char*, Object*);
-    virtual ~JavaWindow();
-    virtual void map();
-    virtual void hide();
-    virtual void move(Coord l, Coord b);
-    virtual void pmove(int l, int t);
-    virtual void presize(int w, int h);
-    virtual int priority();
-    virtual void save_session(const char* fname, ostream& o);
-    void ref();
-    void unref();
-    Coord l();
-    Coord b();
-    Coord w();
-    Coord h();
-    char* title;
-    int pl, pt, pw, ph;  // pixel coords straight from java
-    bool is_mapped, reffing_, closing_;
-    Object* ho;
-};
-
 class PaperItem;
 
 /*static*/ class ScreenItem: public Glyph {
   public:
     friend class PaperItem;
     ScreenItem(PrintableWindow*);
-    ScreenItem(JavaWindow*);
     ~ScreenItem();
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
@@ -226,9 +165,6 @@ class PaperItem;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
     PrintableWindow* window() {
         return w_;
-    }
-    JavaWindow* jwindow() {
-        return jw_;
     }
     void relabel(GlyphIndex);
     //	void reconfigured(Scene*);
@@ -245,7 +181,6 @@ class PaperItem;
     Glyph* label_;
     GlyphIndex i_;
     PrintableWindow* w_;
-    JavaWindow* jw_;
     PaperItem* pi_;
 };
 
@@ -358,9 +293,7 @@ class PaperItem;
     FileChooser* fc_save_;
     const Color* window_outline_;
     CopyString cur_ses_name_;
-#if carbon
-    void all2front();
-#endif
+
   private:
     friend class PrintableWindowManager;
     PWMImpl(ScreenScene*, PaperScene*, Rect*);
@@ -370,10 +303,10 @@ class PaperItem;
     GlyphIndex upper_left();
     void redraw(Window*);
     bool none_selected(const char*, const char*) const;
-    void ses_group(ScreenItem* si, ostream& o);
+    void ses_group(ScreenItem* si, std::ostream& o);
     int ses_group_first_;
-    void save_begin(ostream&);
-    void save_list(int, ScreenItem**, ostream&);
+    void save_begin(std::ostream&);
+    void save_list(int, ScreenItem**, std::ostream&);
 
   private:
     StandardWindow* w_;
@@ -486,14 +419,10 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#if defined(CYGWIN)
-extern "C" char* hoc_back2forward(char*);
+#ifdef MINGW
+char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 
 static void* pwman_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("PWManager", NULL);
@@ -531,8 +460,6 @@ static double pwman_is_mapped(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         return double(si->window()->is_mapped());
-    } else {
-        return double(si->jwindow()->is_mapped);
     }
     ENDGUI
 #endif
@@ -547,8 +474,6 @@ static double pwman_map(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->map();
-    } else {
-        si->jwindow()->map();
     }
     ENDGUI
 #endif
@@ -563,8 +488,6 @@ static double pwman_hide(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->hide();
-    } else {
-        si->jwindow()->hide();
     }
     ENDGUI
 #endif
@@ -580,8 +503,6 @@ static const char** pwman_name(void* v) {
     char** ps = hoc_temp_charptr();
     if (si->window()) {
         *ps = (char*) si->window()->name();
-    } else {
-        *ps = si->jwindow()->title;
     }
     return (const char**) ps;
     ENDGUI
@@ -603,7 +524,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#if defined(MINGW)
+#ifdef MINGW
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     IFGUI((PrintableWindow*) v)->dismiss();
@@ -617,7 +538,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     IFGUI
     PrintableWindow* pw = PrintableWindow::leader();
-#if defined(MINGW)
+#ifdef MINGW
     if (!nrn_is_gui_thread()) {
         nrn_gui_exec(pwman_iconify1, pw);
         return 0.;
@@ -732,37 +653,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-// position size and show/hide a java window on session retrieve
-static double pwman_jwindow(void* v) {
-    hoc_return_type_code = 1;  // integer
-    TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.jwindow", v);
-#if HAVE_IV
-    IFGUI
-    PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-    // arg order is objref, map/hide, x, y, w, h
-    // get java window owner object
-    Object* ho = *hoc_objgetarg(1);
-    // which java window is associated with this.
-    int i, cnt = p->screen()->count();
-    for (i = 0; i < cnt; ++i) {
-        ScreenItem* si = (ScreenItem*) p->screen()->component(i);
-        JavaWindow* jw = si->jwindow();
-        if (jw && (*p_java2nrn_identity)(jw->ho, ho)) {
-            jw->pmove((int) *getarg(3), (int) *getarg(4));
-            jw->presize((int) *getarg(5), (int) *getarg(6));
-            if (chkarg(2, 0, 1) == 0.) {
-                jw->hide();
-            }
-            // printf("pwman_jwindow for %d\n", i);
-            return i;
-        }
-    }
-    ENDGUI
-#endif
-    return -1;
-}
-
-#if defined(MINGW)
+#ifdef MINGW
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -779,7 +670,7 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     IFGUI
 #if defined(WIN32)
-#if defined(MINGW)
+#ifdef MINGW
     if (!nrn_is_gui_thread()) {
         scale_ = scale;
         nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
@@ -803,8 +694,6 @@ static double pwman_window_place(void* v) {
     ScreenItem* si = (ScreenItem*) p->screen()->component(i);
     if (si->window()) {
         si->window()->xmove(int(*getarg(2)), int(*getarg(3)));
-    } else {
-        si->jwindow()->pmove(int(*getarg(2)), int(*getarg(3)));
     }
     ENDGUI
 #endif
@@ -887,48 +776,28 @@ static double pwman_deco(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"count",
-                                pwman_count,
-                                "is_mapped",
-                                pwman_is_mapped,
-                                "map",
-                                pwman_map,
-                                "hide",
-                                pwman_hide,
-                                "close",
-                                pwman_close,
-                                "iconify",
-                                pwman_iconify,
-                                "deiconify",
-                                pwman_deiconify,
-                                "leader",
-                                pwman_leader,
-                                "manager",
-                                pwman_manager,
-                                "save",
-                                pwman_save,
-                                "snap",
-                                pwman_snap,
-                                "jwindow",
-                                pwman_jwindow,
-                                "scale",
-                                pwman_scale,
-                                "window_place",
-                                pwman_window_place,
-                                "paper_place",
-                                pwman_paper_place,
-                                "printfile",
-                                pwman_printfile,
-                                "landscape",
-                                pwman_landscape,
-                                "deco",
-                                pwman_deco,
-                                0,
-                                0};
+static Member_func members[] = {{"count", pwman_count},
+                                {"is_mapped", pwman_is_mapped},
+                                {"map", pwman_map},
+                                {"hide", pwman_hide},
+                                {"close", pwman_close},
+                                {"iconify", pwman_iconify},
+                                {"deiconify", pwman_deiconify},
+                                {"leader", pwman_leader},
+                                {"manager", pwman_manager},
+                                {"save", pwman_save},
+                                {"snap", pwman_snap},
+                                {"scale", pwman_scale},
+                                {"window_place", pwman_window_place},
+                                {"paper_place", pwman_paper_place},
+                                {"printfile", pwman_printfile},
+                                {"landscape", pwman_landscape},
+                                {"deco", pwman_deco},
+                                {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {"group", pwman_group, 0, 0};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
 
-static Member_ret_str_func s_memb[] = {"name", pwman_name, 0, 0};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
 
 void PWManager_reg() {
     class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
@@ -1006,13 +875,13 @@ void PaperItem_handler::resize_action(Coord x, Coord y) {
     pwm_impl->paper()->allotment(index_, Dimension_Y, ay);
     Coord xs, ys;
     t_.transform(x, y, xs, ys);
-    float scl = Math::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
+    float scl = std::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
     // printf("scl = %g\n", scl);
     scl = pi_->scale() * scl;
     scl = (scl > .1) ? scl : .1;
     Coord w1;
     w1 = pwm_impl->round(scl * pi_->width());
-    w1 = Math::max(w1, pwm_impl->round_factor());
+    w1 = std::max(w1, pwm_impl->round_factor());
     scl = w1 / pi_->width();
     pi_->scale(scl);
     pwm_impl->paper()->modified(index_);
@@ -1059,7 +928,7 @@ VirtualWindow::~VirtualWindow() {
     view_->unref();
     virt_win_ = NULL;
 }
-#if defined(WIN32) || carbon
+#if defined(WIN32)
 extern void ivoc_bring_to_top(Window*);
 #endif
 
@@ -1155,8 +1024,6 @@ void ScreenItemHandler::move_action(bool doit, Coord x, Coord y) {
     if (doit) {
         if (si_->window()) {
             si_->window()->move(xs * Scl, ys * Scl);
-        } else {
-            si_->jwindow()->move(xs * Scl, ys * Scl);
         }
     } else {
         pwm_impl->screen()->move(si_->index(), xs, ys);
@@ -1199,9 +1066,10 @@ bool ScreenSceneHandler::event(Event&) {
 
 // PrintableWindowManager
 
-declareActionCallback(PWMImpl) implementActionCallback(PWMImpl)
+declareActionCallback(PWMImpl)
+implementActionCallback(PWMImpl)
 
-    PrintableWindowManager* PrintableWindowManager::current() {
+PrintableWindowManager* PrintableWindowManager::current() {
     if (!current_) {
         current_ = new PrintableWindowManager();
     }
@@ -1254,11 +1122,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Coord wp = pagewidth / pr_scl;
     Coord hp = pageheight / pr_scl;
-    Coord max = Math::max(wp, hp);
+    Coord max = std::max(wp, hp);
     Rect* r = new Rect(0, 0, wp, hp, outline_color);
     //        wp1 = wp1*1.2;
     //	Scene* paper = new Scene(-5, -1, hp*1.2, hp+1, r);
-    PaperScene* paper = new PaperScene(-5, -2, Math::max(max, d->width() / Scl), max + 2, r);
+    PaperScene* paper = new PaperScene(-5, -2, std::max(max, d->width() / Scl), max + 2, r);
 
     // PGH end
     pwmi_ = new PWMImpl(screen, paper, r);
@@ -1285,13 +1153,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Menu *mbar, *mprint, *mses, *mother;
 #if 0
-#if !MAC
 	if (q->value_is_on("pwm_help")) {
 		vb->append(kit.push_button("Help",
 			new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::help)
 		));
 	}
-#endif
 #endif
     hb->append(mbar = kit.menubar());
 
@@ -1331,7 +1197,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("To Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::do_print0));
-#if 1 || !MAC
+
     mi = K::menu_item("PostScript");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::file_control));
@@ -1341,7 +1207,6 @@ PrintableWindowManager::PrintableWindowManager() {
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::snapshot_control));
 #endif
-#endif
 
     mi = K::menu_item("Idraw");
     mprint->append_item(mi);
@@ -1350,15 +1215,10 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC && !defined(carbon)
-    mi = K::menu_item("Setup Printer");
-    mprint->append_item(mi);
-    mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
-#else
+
     mi = K::menu_item("Select Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::printer_control));
-#endif
 
     mi = K::check_menu_item("Window Titles Printed");
     mprint->append_item(mi);
@@ -1392,11 +1252,9 @@ PrintableWindowManager::PrintableWindowManager() {
     mses->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::virt_screen));
 
-#if 1 || !MAC
     mi = K::menu_item("Land/Port");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::landscape));
-#endif
 
     mi = K::menu_item("Tray");
     mses->append_item(mi);
@@ -1416,11 +1274,7 @@ PrintableWindowManager::PrintableWindowManager() {
 #if OCSMALL
         pwmi_->w_->xplace(-800, 0);
 #else
-#if MAC
-        pwmi_->w_->xplace(0, 40);
-#else
         pwmi_->w_->xplace(0, 0);
-#endif
 #endif
         //		pwmi_->w_->map();
         PrintableWindow::intercept(ocg);
@@ -1549,20 +1403,12 @@ void PrintableWindowManager::xplace(int left, int top, bool m) {
     } else {
         w->hide();
     }
-#if MAC
-    reconfigured(w);
-#endif
 }
 
 void PrintableWindowManager::update(Observable* o) {
     PrintableWindow* w = (PrintableWindow*) o;
     // printf("PrintableWindowManager::update(%p)\n", w);
     reconfigured(w);
-#if carbon
-    if (w->leader() == w) {
-        pwmi_->all2front();
-    }
-#endif
 }
 
 void PrintableWindowManager::disconnect(Observable* o) {
@@ -1589,14 +1435,6 @@ void PrintableWindowManager::append(PrintableWindow* w) {
     }
 }
 
-void PrintableWindowManager::append(JavaWindow* w) {
-    // printf("PrintableWindowManager::append(%p)\n", w);
-    if (w == NULL) {
-        return;
-    }
-    pwmi_->screen_->append(new ScreenItem(w));
-    pwmi_->relabel();
-}
 
 void PrintableWindowManager::remove(PrintableWindow* w) {
     // printf("PrintableWindowManager::remove(%p)\n", w);
@@ -1614,19 +1452,6 @@ void PrintableWindowManager::remove(PrintableWindow* w) {
     }
     impl->relabel();
 }
-void PrintableWindowManager::remove(JavaWindow* w) {
-    // printf("PrintableWindowManager::remove(%p)\n", w);
-    PWMImpl* impl = pwmi_;
-    //	printf("remove %p\n", w);
-    Scene* s = impl->screen_;
-    if (s) {
-        GlyphIndex i = impl->index(w);
-        if (i >= 0)
-            s->remove(i);
-    }
-    impl->relabel();
-}
-
 
 #define PIXROUND(x, y, r) x = int((y + r / 2) / r) * r
 
@@ -1637,6 +1462,7 @@ void PrintableWindow::map_notify() {
     }
 }
 
+// LCOV_EXCL_START
 void PrintableWindow::reconfigured() {
     if (!pixres) {
         return;
@@ -1650,6 +1476,7 @@ void PrintableWindow::reconfigured() {
         xmove(x, y);
     }
 }
+// LCOV_EXCL_END
 
 void ViewWindow::reconfigured() {
     if (!pixres) {
@@ -1701,40 +1528,6 @@ void PrintableWindowManager::reconfigured(PrintableWindow* w) {
     impl->screen_->location(i, x, y);
     printf("reconfigured %d %d %g %g\n", i, impl->screen_->showing(i), x, y);
 #endif
-}
-
-void PrintableWindowManager::reconfigured(JavaWindow* w) {
-    PWMImpl* impl = pwmi_;
-
-    // printf("reconfigured %g %g %g %g mapped=%d\n", w->l, w->b, w->w, w->h,w->is_mapped);
-    GlyphIndex i = impl->index(w);
-    if (i < 0)
-        return;  // mswin after a ShowWindow(hwnd, SW_HIDE);
-    Coord l = w->l();
-    Coord r = l + w->w();
-    Coord b = w->b();
-    Coord t = b + w->h();
-    impl->screen_->move(i, l / Scl, b / Scl);
-    impl->screen_->change(i);
-    impl->screen_->show(i, w->is_mapped);
-    ScreenItem* si = (ScreenItem*) impl->screen_->component(i);
-    PaperItem* pi = si->paper_item();
-    if (pi) {
-        impl->paper_->change(impl->paper_index(pi));
-    }
-    Extension e;
-    impl->all_window_bounding_box(e);
-    impl->screen_->new_size(e.left() / Scl - 5,
-                            e.bottom() / Scl - 2,
-                            e.right() / Scl + 5,
-                            e.top() / Scl + 2);
-    VirtualWindow::view();
-#if DBG
-    Coord x, y;
-    impl->screen_->location(i, x, y);
-    printf("reconfigured %d %d %g %g\n", i, impl->screen_->showing(i), x, y);
-#endif
-    single_event_run();
 }
 
 void PrintableWindowManager::doprint() {
@@ -1795,12 +1588,6 @@ void PWMImpl::view_screen(Coord x, Coord y) {
             if (w != window()) {
                 w->xmove(w->xleft() + xp, w->xtop() + yp);
             }
-        } else {
-            JavaWindow* jw = si->jwindow();
-            Coord l, b;
-            l = jw->l() + d->to_coord(xp);
-            b = jw->b() - d->to_coord(yp);
-            jw->move(l, b);
         }
     }
 }
@@ -1814,13 +1601,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC && !defined(carbon)
-        if (!mprinter_) {
-            continue_dialog("First select SetupPrinter");
-        } else {
-            mac_do_print();
-        }
-#else
+
         if (!b_printer_) {
             printer_control();
             if (!printer_control_accept_) {
@@ -1831,7 +1612,6 @@ void PWMImpl::do_print0() {
         }
         CopyString name(b_printer_->text()->string());
         do_print(use_printer, name.string());
-#endif
     } else {
         if (!fc_print_) {
             file_control();
@@ -1842,12 +1622,6 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC && !defined(carbon)
-    if (use_printer) {
-        mac_do_print();
-        return;
-    }
-#endif
 #if defined(WIN32)
     if (use_printer && strcmp(name, "Windows") == 0) {
         mac_do_print();
@@ -1882,12 +1656,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC && !defined(carbon)
-    mprinter()->prolog();
-    t.scale(sfac, sfac);
-#else
     mprinter()->prolog(sfac);
-#endif
     mprinter()->push_transform();
     mprinter()->transform(t);
     common_print(mprinter(), false, true);
@@ -1895,7 +1664,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     mprinter()->epilog();
 #endif
 
-#if (!MAC || DARWIN) && !defined(WIN32)
+#if !defined(WIN32)
     // must be a postscript printer so can use landscape mode
     if (!b_printer_) {
         printer_control();
@@ -1925,10 +1694,7 @@ void PWMImpl::do_print_session(bool use_printer, const char* name) {
 void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style, bool ses_style) {
     Style* s = Session::instance()->style();
     static char* tmpfile = (char*) 0;
-    filebuf obuf;
-#if MAC && !DARWIN
-    obuf.open(name, IOS_OUT);
-#else
+    std::filebuf obuf;
     if (!tmpfile) {
         tmpfile = ivoc_get_temp_file();
     }
@@ -1936,8 +1702,7 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     unlink(tmpfile);
 #endif
     obuf.open(tmpfile, IOS_OUT);
-#endif
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
 
@@ -1978,22 +1743,24 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     }
     pr->epilog();
     obuf.close();
-#if !MAC || DARWIN
+
     String filt("cat");
     s->find_attribute("pwm_postscript_filter", filt);
-    char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile)];
+    auto const buf_size = 200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile);
+    char* buf = new char[buf_size];
 
     if (use_printer) {
 #ifdef WIN32
-        sprintf(buf, "%s %s %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(
+            buf, buf_size, "%s < %s |  %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     } else {
 #ifdef WIN32
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, name);
+        std::snprintf(buf, buf_size, "%s %s > %s", filt.string(), tmpfile, name);
 #else
-        sprintf(buf, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
+        std::snprintf(buf, buf_size, "%s < %s > %s ; rm %s", filt.string(), tmpfile, name, tmpfile);
 #endif
     }
     // printf("%s\n", buf);
@@ -2001,7 +1768,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     delete[] buf;
 #ifdef WIN32
     unlink(tmpfile);
-#endif
 #endif
     delete pr;  // input handlers later crash doing pr->damage()
 }
@@ -2115,9 +1881,7 @@ void PWMImpl::common_print(Printer* pr, bool land_style, bool ses_style) {
         // flush the allocation tables for InputHandler glyphs so
         // no glyphs try to use the Printer after it has been deleted
         pw->print_glyph()->undraw();
-#if !MAC
         redraw(pw);
-#endif
         // print the window titles
         if ((ses_style || p_title_->test(TelltaleState::is_chosen) == true)
 #if DECO
@@ -2232,22 +1996,14 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-#if defined(WIN32) && !defined(CYGWIN)
-        if (!hoc_copyfile(filename, tmpfile)) {
-            hoc_warning("CopyFile failed.", "Did not run pwm_postscript_filter");
-            return;
-        }
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, filename);
-#else
-        sprintf(
+        Sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
-#endif
         nrnignore = system(buf);
         unlink(tmpfile);
     }
 }
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 void pwmimpl_redraw(Window* pw);
 #endif
 
@@ -2258,7 +2014,7 @@ void PWMImpl::redraw(Window* pw) {
     }
     Canvas* c = pw->canvas();
     c->damage_all();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     pwmimpl_redraw(pw);
 #else
     Requisition req;
@@ -2281,16 +2037,6 @@ void PWMImpl::redraw(Window* pw) {
 // ScreenItem
 ScreenItem::ScreenItem(PrintableWindow* w) {
     w_ = w;
-    jw_ = NULL;
-    label_ = NULL;
-    pi_ = NULL;
-    i_ = -1;
-    group_obj_ = NULL;
-    iconify_via_hide_ = false;
-}
-ScreenItem::ScreenItem(JavaWindow* w) {
-    w_ = NULL;
-    jw_ = w;
     label_ = NULL;
     pi_ = NULL;
     i_ = -1;
@@ -2314,7 +2060,7 @@ ScreenItem::~ScreenItem() {
 
 void ScreenItem::relabel(GlyphIndex i) {
     char buf[10];
-    sprintf(buf, "%ld", i);
+    Sprintf(buf, "%ld", i);
     i_ = i;
     Glyph* g = WidgetKit::instance()->label(buf);
     Resource::ref(g);
@@ -2345,9 +2091,6 @@ void ScreenItem::request(Requisition& req) const {
     if (w_) {
         w = w_->width_pw() / Scl;
         h = w_->height_pw() / Scl;
-    } else {
-        w = jw_->w() / Scl;
-        h = jw_->h() / Scl;
     }
     Requirement rx(w + 2);
     Requirement ry(h + 2);
@@ -2380,8 +2123,6 @@ void ScreenItem::draw(Canvas* c, const Allocation& a) const {
                 y + (w_->height_pw()) / Scl,
                 pwm_impl->window_outline_,
                 NULL);
-    } else {
-        c->rect(x, y, x + (jw_->w()) / Scl, y + (jw_->h()) / Scl, pwm_impl->window_outline_, NULL);
     }
     label_->draw(c, a);
 }
@@ -2438,7 +2179,7 @@ Coord PaperItem::fsize_;
 
 void PaperItem::request(Requisition& req) const {
     Requirement rx(scale_ * si_->w_->width_pw() / Scl);
-    Requirement ry(Math::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
+    Requirement ry(std::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
     req.require_x(rx);
     req.require_y(ry);
 #if DBG
@@ -2572,21 +2313,6 @@ MacPrinter* PWMImpl::mprinter() {
 }
 #endif
 
-#if carbon
-void PWMImpl::all2front() {
-    int i;
-    PrintableWindow* w;
-    if (screen_)
-        for (i = 0; i < screen_->count(); ++i) {
-            ScreenItem* si = (ScreenItem*) (screen_->component(i));
-            w = si->window();
-            if (w && w != w->leader() && w->is_mapped()) {
-                ivoc_bring_to_top(w);
-            }
-        }
-}
-#endif
-
 void PWMImpl::map_all() {
     GlyphIndex i;
     PrintableWindow* pw = PrintableWindow::leader();
@@ -2603,8 +2329,6 @@ void PWMImpl::map_all() {
                 } else {
                     //			w->deiconify();
                 }
-            } else {
-                si->jwindow()->map();
             }
         }
 }
@@ -2627,8 +2351,6 @@ void PWMImpl::unmap_all() {
                 } else {
                     w->iconify();
                 }
-            } else {
-                si->jwindow()->hide();
             }
         }
 }
@@ -2638,7 +2360,7 @@ GlyphIndex PWMImpl::index(void* w) {
     if (screen_)
         for (i = 0; i < screen_->count(); i++) {
             ScreenItem* si = (ScreenItem*) screen_->component(i);
-            if (w == (void*) si->window() || w == (void*) si->jwindow()) {
+            if (w == (void*) si->window()) {
                 return i;
             }
         }
@@ -2700,7 +2422,7 @@ GlyphIndex PWMImpl::paper_index(PaperItem* pi) {
 }
 
 float PWMImpl::round(float x) {
-    return Math::round(x / round_factor_) * round_factor_;
+    return std::round(x / round_factor_) * round_factor_;
 }
 
 #if MACPRINT
@@ -2777,9 +2499,9 @@ static const char* DefaultPrintCmd() {
         const char* printer_name = getenv("PRINTER");
 
         if (printer_name == NULL) {
-            sprintf(buf, "lpr");
+            Sprintf(buf, "lpr");
         } else {
-            sprintf(buf, "lpr -P%s", printer_name);
+            Sprintf(buf, "lpr -P%s", printer_name);
         }
         print_cmd = buf;
     }
@@ -2882,9 +2604,9 @@ void PWMImpl::file_control() {
 #if SNAPSHOT
 void PWMImpl::snapshot(const Event* e) {
     snap_event_ = e;
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fc_print_->selected()->string(), IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
     pr->resize(0, 0, 1200, 1000);
@@ -2923,24 +2645,24 @@ void PWMImpl::snap(Printer* pr, Window* w) {
     }
     char buf[256];
     if (pd) {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left() - 3,
                 w->bottom() - 3,
                 w->left() + w->width() + 3,
                 w->bottom() + w->height() + 20 + 3);
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width() + 6, w->height() + 23);
         pr->comment(buf);
     } else {
-        sprintf(buf,
+        Sprintf(buf,
                 "BoundingBox: %g %g %g %g",
                 w->left(),
                 w->bottom(),
                 w->left() + w->width(),
                 w->bottom() + w->height());
         pr->comment(buf);
-        sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
+        Sprintf(buf, "\\begin{picture}(%g, %g)", w->width(), w->height());
         pr->comment(buf);
     }
     pr->push_transform();
@@ -3031,9 +2753,9 @@ void PWMImpl::idraw_write(const char* fname, bool ses_style) {
 #ifdef WIN32
     unlink(fname);
 #endif
-    filebuf obuf;
+    std::filebuf obuf;
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     OcIdraw::idraw_stream = &o;
     OcIdraw::prologue();
     Scene* p = paper();
@@ -3087,12 +2809,12 @@ void PWMImpl::ascii_control() {
 }
 
 void PWMImpl::ascii_write(const char* fname, bool ses_style) {
-    filebuf obuf;
+    std::filebuf obuf;
 #ifdef WIN32
     unlink(fname);
 #endif
     obuf.open(fname, IOS_OUT);
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     Graph::ascii(&o);
     Scene* p = paper();
     GlyphIndex count = p->count();
@@ -3114,7 +2836,7 @@ void PWMImpl::ascii_write(const char* fname, bool ses_style) {
     Graph::ascii(NULL);
 }
 
-ostream* Oc::save_stream;
+std::ostream* Oc::save_stream;
 
 void PWMImpl::save_selected_control() {
     save_control(1);
@@ -3189,12 +2911,12 @@ int PWMImpl::save_group(Object* ho, const char* filename) {
     }
     if (nwin > 0) {
         cur_ses_name_ = filename;
-        filebuf obuf;
+        std::filebuf obuf;
 #ifdef WIN32
         unlink(filename);
 #endif
         obuf.open(filename, IOS_OUT);
-        ostream o(&obuf);
+        std::ostream o(&obuf);
         save_begin(o);
         save_list(nwin, sivec, o);
         obuf.close();
@@ -3210,7 +2932,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     ScreenItem* si;
     ScreenItem** sivec = NULL;
 
-    filebuf obuf;
+    std::filebuf obuf;
     cur_ses_name_ = filename;
 #ifdef WIN32
     unlink(filename);
@@ -3219,9 +2941,9 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     if (!obuf.is_open()) {
         hoc_execerror(filename, "is not open for writing");
     }
-    ostream o(&obuf);
+    std::ostream o(&obuf);
     if (head) {
-        o << head << endl;
+        o << head << std::endl;
     }
     save_begin(o);
 
@@ -3239,7 +2961,7 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf,
+                            Sprintf(buf,
                                     "{pwman_place(%d,%d,%d)}\n",
                                     w->xleft(),
                                     w->xtop(),
@@ -3247,8 +2969,6 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             o << buf;
                         }
                     }
-                } else if (si->jwindow()) {
-                    sivec[nwin++] = si;
                 }
             }
         }
@@ -3264,11 +2984,9 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
                             sivec[nwin++] = si;
                         } else {
                             char buf[100];
-                            sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
+                            Sprintf(buf, "{pwman_place(%d,%d)}\n", w->xleft(), w->xtop());
                             o << buf;
                         }
-                    } else if (si->jwindow()) {
-                        sivec[nwin++] = si;
                     }
                 }
             }
@@ -3281,15 +2999,15 @@ void PWMImpl::save_session(int mode, const char* filename, const char* head) {
     }
 }
 
-void PWMImpl::save_begin(ostream& o) {
+void PWMImpl::save_begin(std::ostream& o) {
     Oc::save_stream = &o;
     Scene::save_all(o);
     HocPanel::save_all(o);
-    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << endl;
-    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << endl;
+    o << "objectvar ocbox_, ocbox_list_, scene_, scene_list_" << std::endl;
+    o << "{ocbox_list_ = new List()  scene_list_ = new List()}" << std::endl;
 }
 
-void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
+void PWMImpl::save_list(int nwin, ScreenItem** sivec, std::ostream& o) {
     // save highest first, only a few priorities
     OcGlyph* ocg;
     int i, pri, max, working;
@@ -3302,15 +3020,11 @@ void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
             if (sivec[i]->window()) {
                 ocg = (OcGlyph*) sivec[i]->window()->glyph();
                 pri = ocg->session_priority();
-            } else {
-                pri = sivec[i]->jwindow()->priority();
             }
             if (pri == working) {
                 // printf("saving item %d with priority %d\n", i, pri);
                 if (sivec[i]->window()) {
                     ocg->save(o);
-                } else {
-                    sivec[i]->jwindow()->save_session(cur_ses_name_.string(), o);
                 }
                 ses_group(sivec[i], o);
             }
@@ -3320,15 +3034,15 @@ void PWMImpl::save_list(int nwin, ScreenItem** sivec, ostream& o) {
         }
     }
     Oc::save_stream = NULL;
-    o << "objectvar scene_vector_[1]\n{doNotify()}" << endl;
+    o << "objectvar scene_vector_[1]\n{doNotify()}" << std::endl;
 }
 
-void PWMImpl::ses_group(ScreenItem* si, ostream& o) {
+void PWMImpl::ses_group(ScreenItem* si, std::ostream& o) {
     char buf[512];
     char* name;
     if (si->group_obj_) {
         name = Oc2IV::object_str("name", si->group_obj_);
-        sprintf(buf,
+        Sprintf(buf,
                 "{WindowMenu[0].ses_gid(%d, %d, %d, \"%s\")}\n",
                 ses_group_first_,
                 si->group_obj_->index,
@@ -3361,7 +3075,7 @@ void PWMImpl::retrieve_control() {
         if (ok_to_read(*fc_retrieve_->selected(), w_)) {
             Oc oc;
             char buf[256];
-            sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
+            Sprintf(buf, "{load_file(1, \"%s\")}\n", fc_retrieve_->selected()->string());
             if (!oc.run(buf)) {
                 break;
             }
@@ -3373,7 +3087,7 @@ class OcLabelGlyph: public OcGlyph {
   public:
     OcLabelGlyph(const char*, OcGlyph*, Glyph*);
     virtual ~OcLabelGlyph();
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
 
   private:
     CopyString label_;
@@ -3393,12 +3107,12 @@ OcLabelGlyph::~OcLabelGlyph() {
     Resource::unref(og_);
 }
 
-void OcLabelGlyph::save(ostream& o) {
+void OcLabelGlyph::save(std::ostream& o) {
     char buf[256];
-    o << "{xpanel(\"\")" << endl;
-    sprintf(buf, "xlabel(\"%s\")", label_.string());
-    o << buf << endl;
-    o << "xpanel()}" << endl;
+    o << "{xpanel(\"\")" << std::endl;
+    Sprintf(buf, "xlabel(\"%s\")", label_.string());
+    o << buf << std::endl;
+    o << "xpanel()}" << std::endl;
     og_->save(o);
 }
 
@@ -3597,7 +3311,7 @@ bool ivoc_snapshot(const Event* e) {
 declareTable(WindowTable, XWindow, Window*)
 
 
-    Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
+Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
     WindowTable* wt = Session::instance()->default_display()->rep()->wtable_;
     for (TableIterator(WindowTable) i(*wt); i.more(); i.next()) {
         Window* w = i.cur_value();
@@ -3610,219 +3324,25 @@ declareTable(WindowTable, XWindow, Window*)
 #endif
 #endif  // SNAPSHOT
 
-JavaWindow::JavaWindow(const char* s, Object* o) {
-    // printf("JavaWindow %s %s\n", s, hoc_object_name(o));
-    title = new char[strlen(s) + 1];
-    strcpy(title, s);
-    is_mapped = false;
-    pl = pt = 0;
-    pw = ph = 100;
-    ho = o;
-    closing_ = false;
-    reffing_ = false;
-    ref();
-}
-JavaWindow::~JavaWindow() {
-    // printf("~JavaWindow\n");
-    delete[] title;
-    unref();
-}
-
-void (*nrnjava_pwm_setwin)(void*, int, int, int);
-
-Coord JavaWindow::l() {
-    return Session::instance()->default_display()->to_coord(pl);
-}
-
-Coord JavaWindow::b() {
-    Display* d = Session::instance()->default_display();
-    return d->to_coord(d->pheight() - (pt + ph));
-}
-
-Coord JavaWindow::w() {
-    return Session::instance()->default_display()->to_coord(pw);
-}
-
-Coord JavaWindow::h() {
-    return Session::instance()->default_display()->to_coord(ph);
-}
-
-void JavaWindow::map() {
-    (*nrnjava_pwm_setwin)(this, 1, 0, 0);
-}
-void JavaWindow::hide() {
-    (*nrnjava_pwm_setwin)(this, 2, 0, 0);
-}
-void JavaWindow::move(Coord x, Coord y) {
-    Display* d = Session::instance()->default_display();
-    int left = d->to_pixels(x);
-    int top = d->pheight() - d->to_pixels(y) - ph;
-    (*nrnjava_pwm_setwin)(this, 3, left, top);
-}
-void JavaWindow::pmove(int l, int t) {
-    (*nrnjava_pwm_setwin)(this, 3, l, t);
-}
-void JavaWindow::presize(int w, int h) {
-    (*nrnjava_pwm_setwin)(this, 4, w, h);
-}
-
-void JavaWindow::ref() {
-    if (!reffing_) {
-        // printf("JavaWindow ref %s\n", hoc_object_name(ho));
-        hoc_obj_ref(ho);
-        reffing_ = true;
-    }
-}
-
-void JavaWindow::unref() {
-    if (reffing_) {
-        // printf("JavaWindow unref %s\n", hoc_object_name(ho));
-        hoc_obj_unref(ho);
-        reffing_ = false;
-    }
-}
-
-int JavaWindow::priority() {
-    // check for save_session method
-    Symbol* s = NULL;
-    if (ho) {
-        s = hoc_table_lookup("hocSessionPriority", ho->ctemplate->symtable);
-    }
-    int i = 1;
-    if (s) {
-        i = (int) ((*p_java2nrn_dmeth)(ho, s));
-    }
-    // printf("%s priority %d\n", hoc_object_name(ho), i);
-    return i;
-}
-
-void JavaWindow::save_session(const char* fname, ostream& o) {
-    // minimum save is, if ho is not NULL, to
-    // load_java and create an object ocbox_ with the noarg constructor,
-    // which is then unreffed.
-    // after creation and before move/resize/hide and
-    // unreffing, if the hoc_save_session
-    // method exists, that is called with the session file name.
-    if (!ho) {
-        return;
-    }
-    char buf[256];
-    o << "/*Begin " << title << " */\n";
-    sprintf(buf,
-            "{load_java(\"%s\", \"%s\")}\n",
-            (*p_java2nrn_classname)(ho),
-            ho->ctemplate->sym->name);
-    o << buf;
-    sprintf(buf, "ocbox_ = new %s()\n", ho->ctemplate->sym->name);
-    o << buf;
-
-    // check for save_session method
-    Symbol* s = hoc_table_lookup("hocSessionSave", ho->ctemplate->symtable);
-    if (s) {
-        // arguments are the session file name
-        char* b2 = new char[strlen(fname) + 1];
-        strcpy(b2, fname);
-        hoc_pushstr(&b2);
-        char** cpp = (*p_java2nrn_smeth)(ho, s);
-        hoc_strpop();
-        delete[] b2;
-        // printf("%s.hocSessionSave(\"%s\") returned |%s|\n", hoc_object_name(ho), fname, *cpp);
-        o << *cpp;
-    }
-    sprintf(buf,
-            "{PWManager[0].jwindow(ocbox_, %d, %d, %d, %d, %d)}\n",
-            is_mapped ? 1 : 0,
-            pl,
-            pt,
-            pw,
-            ph);
-    o << buf;
-    o << "objref ocbox_\n";
-    o << "/*End " << title << " */\n";
-}
-
-void* nrnjava_pwm_listen(const char* s, Object* ho) {
-    JavaWindow* jw = new JavaWindow(s, ho);
-    PrintableWindowManager::current()->append(jw);
-    return jw;
-}
-
-// see src/nrnjava/PWMListener.java for the types
-void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
-    JavaWindow* jw = (JavaWindow*) ic;
-    PrintableWindowManager* pwm = PrintableWindowManager::current();
-    if (type >= 3 && type <= 6) {
-        jw->pl = l;
-        jw->pt = t;
-        jw->pw = w;
-        jw->ph = h;
-    }
-    switch (type) {
-    case 1:  // windowClosing
-             // printf("windowClosing\n");
-        jw->closing_ = true;
-        break;
-    case 2:  // windowIconified
-             // printf("windowIconified\n");
-        jw->is_mapped = false;
-        pwm->reconfigured(jw);
-        jw->hide();
-        break;
-    case 3:  // componentHidden
-             // printf("componentHidden\n");
-        if (jw->closing_) {
-            jw->unref();
-            pwm->remove(jw);
-            delete jw;
-        } else {
-            jw->is_mapped = false;
-            pwm->reconfigured(jw);
-        }
-        break;
-    case 4:  // componentMoved
-    case 5:  // componentResized
-        jw->is_mapped = true;
-        pwm->reconfigured(jw);
-        break;
-    case 6:  // componentShown
-             // printf("componentShown\n");
-        jw->is_mapped = true;
-        pwm->reconfigured(jw);
-        jw->ref();
-        break;
-    }
-}
-
 #else
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 
 #endif  // HAVE_IV
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC && !defined(carbon)
-    FSSpec spec;
-    tmpfile = new char[512];
-    __temp_file_name(tmpfile, &spec);
-#else
     const char* tdir = getenv("TEMP");
     if (!tdir) {
         tdir = "/tmp";
     }
-#if defined(WIN32) && defined(__MWERKS__)
-    char tname[L_tmpnam + 1];
-    tmpnam(tname);
-    tmpfile = new char[strlen(tdir) + 1 + strlen(tname) + 1];
-    sprintf(tmpfile, "%s/%s", tdir, tname);
-#else
-    tmpfile = new char[strlen(tdir) + 1 + 9 + 1];
-    sprintf(tmpfile, "%s/nrnXXXXXX", tdir);
+    auto const length = strlen(tdir) + 1 + 9 + 1;
+    tmpfile = new char[length];
+    std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
 #if HAVE_MKSTEMP
     int fd;
     if ((fd = mkstemp(tmpfile)) == -1) {
@@ -3832,10 +3352,8 @@ char* ivoc_get_temp_file() {
 #else
     mktemp(tmpfile);
 #endif
-#endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
-#endif
 #endif
     return tmpfile;
 }

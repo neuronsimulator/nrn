@@ -1,8 +1,11 @@
 #include <../../nrnconf.h>
 // solver CVode stub to allow cvode as dll for mswindows version.
 
-#include <InterViews/resource.h>
+#include <cmath>
 #include "classreg.h"
+#include "cvodeobj.h"
+#include "nrncvode.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #if USECVODE
@@ -12,26 +15,20 @@
 class Cvode;
 #endif
 
-extern "C" void cvode_fadvance(double);
 void cvode_finitialize(double t0);
 void nrncvode_set_t(double);
-extern "C" bool at_time(NrnThread*, double);
 
 extern double dt, t;
 #define nt_t  nrn_threads->_t
 #define nt_dt nrn_threads->_dt
-extern "C" void nrn_random_play();
-extern int cvode_active_;
 extern int nrn_use_daspk_;
 
 NetCvode* net_cvode_instance;
 void deliver_net_events(NrnThread*);
 void nrn_deliver_events(NrnThread*);
-extern "C" void clear_event_queue();
 void init_net_events();
 void nrn_record_init();
 void nrn_play_init();
-void fixed_record_continuous(NrnThread* nt);
 void fixed_play_continuous(NrnThread* nt);
 void nrn_solver_prepare();
 static void check_thresh(NrnThread*);
@@ -54,9 +51,15 @@ void nrn_deliver_events(NrnThread* nt) {
     nt->_t = tsav;
 }
 
-extern "C" void clear_event_queue() {
+void clear_event_queue() {
     if (net_cvode_instance) {
         net_cvode_instance->clear_events();
+    }
+}
+
+void free_event_queues() {
+    if (net_cvode_instance) {
+        net_cvode_instance->free_event_pools();
     }
 }
 
@@ -84,9 +87,9 @@ void fixed_play_continuous(NrnThread* nt) {
     }
 }
 
-void fixed_record_continuous(NrnThread* nt) {
+void fixed_record_continuous(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (net_cvode_instance) {
-        net_cvode_instance->fixed_record_continuous(nt);
+        net_cvode_instance->fixed_record_continuous(cache_token, nt);
     }
 }
 
@@ -96,13 +99,9 @@ void nrn_solver_prepare() {
     }
 }
 
-extern "C" int v_structure_change;
-
-extern "C" void cvode_fadvance(double tstop) {  // tstop = -1 means single step
+void cvode_fadvance(double tstop) {  // tstop = -1 means single step
 #if USECVODE
     int err;
-    extern int tree_changed;
-    extern int diam_changed;
     if (net_cvode_instance) {
         if (tree_changed || v_structure_change || diam_changed) {
             net_cvode_instance->re_init();
@@ -127,7 +126,7 @@ void cvode_finitialize(double t0) {
 #endif
 }
 
-extern "C" bool at_time(NrnThread* nt, double te) {
+bool at_time(NrnThread* nt, double te) {
 #if USECVODE
     if (cvode_active_ && nt->_vcv) {
         return ((Cvode*) nt->_vcv)->at_time(te, nt);
@@ -135,9 +134,9 @@ extern "C" bool at_time(NrnThread* nt, double te) {
 #endif
     double x = te - 1e-11;
     if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 void nrncvode_set_t(double tt) {

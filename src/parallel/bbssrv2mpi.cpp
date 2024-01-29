@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <nrnmpi.h>
 #if NRNMPI  // to end of file
 #include <stdio.h>
@@ -14,17 +13,8 @@ void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;
 
-#if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
 #include <set>
-#else
-#include <pair.h>
-#include <multimap.h>
-#include <map.h>
-#include <set.h>
-#include <multiset.h>
-#endif
 
 #define debug 0
 
@@ -78,7 +68,7 @@ WorkItem::WorkItem(int id, bbsmpibuf* buf, int cid) {
     id_ = id;
     buf_ = buf;
     cid_ = cid;
-    parent_ = nil;
+    parent_ = nullptr;
 }
 
 WorkItem::~WorkItem() {
@@ -109,17 +99,8 @@ class WorkList: public std::map<int, const WorkItem*, ltint> {};
 class LookingToDoList: public std::set<int, ltint> {};
 class ReadyList: public std::set<const WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
-#else
-class MessageList {};
-class PendingList {};
-class WorkList {};
-class LookingToDoList {};
-class ReadyList {};
-class ResultList {};
-#endif
 
 BBSDirectServer::BBSDirectServer() {
-#if defined(HAVE_STL)
     messages_ = new MessageList();
     work_ = new WorkList();
     todo_ = new ReadyList();
@@ -128,13 +109,11 @@ BBSDirectServer::BBSDirectServer() {
     looking_todo_ = new LookingToDoList();
     send_context_ = new LookingToDoList();
     next_id_ = FIRSTID;
-    context_buf_ = nil;
+    context_buf_ = nullptr;
     remaining_context_cnt_ = 0;
-#endif
 }
 
 BBSDirectServer::~BBSDirectServer() {
-#if defined(HAVE_STL)
     delete todo_;
     delete results_;
     delete looking_todo_;
@@ -144,7 +123,6 @@ BBSDirectServer::~BBSDirectServer() {
     delete messages_;
     delete work_;
     delete send_context_;
-#endif
 }
 
 bool BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
@@ -152,9 +130,8 @@ bool BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
     printf("DirectServer::look_take |%s|\n", key);
 #endif
     bool b = false;
-#if defined(HAVE_STL)
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
         b = true;
@@ -167,7 +144,6 @@ bool BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
 #if debug
     printf("DirectServer::look_take |%s| recv=%p return %d\n", key, (*recv), b);
 #endif
-#endif
     return b;
 }
 
@@ -177,8 +153,7 @@ bool BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
 #endif
     bool b = false;
     nrnmpi_unref(*recv);
-    *recv = nil;
-#if defined(HAVE_STL)
+    *recv = nullptr;
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
         b = true;
@@ -190,23 +165,19 @@ bool BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
 #if debug
     printf("DirectServer::look |%s| recv=%p return %d\n", key, (*recv), b);
 #endif
-#endif
     return b;
 }
 
 void BBSDirectServer::put_pending(const char* key, int cid) {
-#if defined(HAVE_STL)
 #if debug
     printf("put_pending |%s| %d\n", key, cid);
 #endif
     char* s = newstr(key);
     pending_->insert(std::pair<const char* const, const int>(s, cid));
-#endif
 }
 
 bool BBSDirectServer::take_pending(const char* key, int* cid) {
     bool b = false;
-#if defined(HAVE_STL)
     PendingList::iterator p = pending_->find(key);
     if (p != pending_->end()) {
         *cid = (*p).second;
@@ -218,12 +189,10 @@ bool BBSDirectServer::take_pending(const char* key, int* cid) {
         delete[] s;
         b = true;
     }
-#endif
     return b;
 }
 
 void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
-#if defined(HAVE_STL)
     int cid;
 #if debug
     printf("DirectServer::post |%s| send=%p\n", key, send);
@@ -235,17 +204,13 @@ void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
             std::pair<const char* const, bbsmpibuf*>(newstr(key), send));
         nrnmpi_ref(send);
     }
-#endif
 }
 
 void BBSDirectServer::add_looking_todo(int cid) {
-#if defined(HAVE_STL)
     looking_todo_->insert(cid);
-#endif
 }
 
 void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send) {
-#if defined(HAVE_STL)
 #if debug
     printf("BBSDirectServer::post_todo pid=%d cid=%d send=%p\n", pid, cid, send);
 #endif
@@ -271,11 +236,9 @@ void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send) {
 #endif
         todo_->insert(w);
     }
-#endif
 }
 
 void BBSDirectServer::context(bbsmpibuf* send) {
-#if defined(HAVE_STL)
     int cid, j;
 #if debug
     printf("numprocs_bbs=%d\n", nrnmpi_numprocs_bbs);
@@ -291,7 +254,7 @@ void BBSDirectServer::context(bbsmpibuf* send) {
         Printf("some workers did not receive previous context\n");
         send_context_->erase(send_context_->begin(), send_context_->end());
         nrnmpi_unref(context_buf_);
-        context_buf_ = nil;
+        context_buf_ = nullptr;
     }
     remaining_context_cnt_ = nrnmpi_numprocs_bbs - 1;
     for (j = 1; j < nrnmpi_numprocs_bbs; ++j) {
@@ -315,7 +278,6 @@ void BBSDirectServer::context(bbsmpibuf* send) {
         nrnmpi_ref(context_buf_);
         handle();
     }
-#endif
 }
 
 void nrnbbs_context_wait() {
@@ -333,7 +295,6 @@ void BBSDirectServer::context_wait() {
 }
 
 bool BBSDirectServer::send_context(int cid) {
-#if defined(HAVE_STL)
     LookingToDoList::iterator i = send_context_->find(cid);
     if (i != send_context_->end()) {
         send_context_->erase(i);
@@ -343,16 +304,14 @@ bool BBSDirectServer::send_context(int cid) {
         nrnmpi_bbssend(cid, CONTEXT + 1, context_buf_);
         if (--remaining_context_cnt_ <= 0) {
             nrnmpi_unref(context_buf_);
-            context_buf_ = nil;
+            context_buf_ = nullptr;
         }
         return true;
     }
-#endif
     return false;
 }
 
 void BBSDirectServer::post_result(int id, bbsmpibuf* send) {
-#if defined(HAVE_STL)
 #if debug
     printf("DirectServer::post_result id=%d send=%p\n", id, send);
 #endif
@@ -362,16 +321,14 @@ void BBSDirectServer::post_result(int id, bbsmpibuf* send) {
     nrnmpi_unref(w->buf_);
     w->buf_ = send;
     results_->insert(std::pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
-#endif
 }
 
 int BBSDirectServer::look_take_todo(bbsmpibuf** recv) {
-#if defined(HAVE_STL)
 #if debug
     printf("DirectServer::look_take_todo\n");
 #endif
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     ReadyList::iterator i = todo_->begin();
     if (i != todo_->end()) {
         WorkItem* w = (WorkItem*) (*i);
@@ -388,18 +345,14 @@ int BBSDirectServer::look_take_todo(bbsmpibuf** recv) {
     } else {
         return 0;
     }
-#else
-    return 0;
-#endif
 }
 
 int BBSDirectServer::look_take_result(int pid, bbsmpibuf** recv) {
 #if debug
     printf("DirectServer::look_take_result pid=%d\n", pid);
 #endif
-#if defined(HAVE_STL)
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     ResultList::iterator i = results_->find(pid);
     if (i != results_->end()) {
         WorkItem* w = (WorkItem*) ((*i).second);
@@ -416,9 +369,6 @@ int BBSDirectServer::look_take_result(int pid, bbsmpibuf** recv) {
     } else {
         return 0;
     }
-#else
-    return 0;
-#endif
 }
 
 #endif  // NRNMPI

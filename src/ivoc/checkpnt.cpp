@@ -86,8 +86,6 @@ data depending on type. eg for VAR && NOTUSER it is
 
 */
 
-#ifndef MAC
-
 #define HAVE_XDR 0
 
 #include <OS/list.h>
@@ -110,196 +108,107 @@ extern int hoc_resize_toplevel(int);
 static struct HocInst {
     Pfrv pi;
     const char* signature;
-} hoc_inst_[] = {0,
-                 0,  // 0
-                 nopop,
-                 0,
-                 eval,
-                 0,
-                 add,
-                 0,
-                 hoc_sub,
-                 0,
-                 mul,
-                 0,
-                 hoc_div,
-                 0,
-                 negate,
-                 0,
-                 power,
-                 0,
-                 assign,
-                 0,
-                 bltin,
-                 "s",  // requires change
-                 varpush,
-                 "s",  // 10
-                 constpush,
-                 "s",
-                 pushzero,
-                 0,
-                 print,
-                 0,
-                 varread,
-                 "s",
-                 prexpr,
-                 0,
-                 prstr,
-                 0,
-                 gt,
-                 0,
-                 lt,
-                 0,
-                 eq,
-                 0,  // 20
-                 ge,
-                 0,
-                 le,
-                 0,
-                 ne,
-                 0,
-                 hoc_and,
-                 0,
-                 hoc_or,
-                 0,
-                 hoc_not,
-                 0,
-                 ifcode,
-                 "iii",
-                 forcode,
-                 "iii",
-                 shortfor,
-                 "ii",
-                 call,
-                 "si",  // 30
-                 arg,
-                 "i",
-                 argassign,
-                 "i",
-                 funcret,
-                 0,
-                 procret,
-                 0,
-                 hoc_stringarg,
-                 "i",
-                 hoc_push_string,
-                 "s",
-                 Break,
-                 0,
-                 Continue,
-                 0,
-                 Stop,
-                 0,
-                 assstr,
-                 0,  // 40
-                 hoc_evalpointer,
-                 0,
-                 hoc_newline,
-                 0,
-                 hoc_delete_symbol,
-                 "s",
-                 hoc_cyclic,
-                 0,
-                 hoc_parallel_begin,
-                 0,
-                 hoc_parallel_end,
-                 0,
-                 dep_make,
-                 0,
-                 eqn_name,
-                 0,
-                 eqn_init,
-                 0,
-                 eqn_lhs,
-                 0,  // 50
-                 eqn_rhs,
-                 0,
-                 hoc_objectvar,
-                 "s",
-                 hoc_object_component,
-                 "siis",
-                 hoc_object_eval,
-                 0,
-                 hoc_object_asgn,
-                 0,
-                 hoc_objvardecl,
-                 "si",
-                 hoc_cmp_otype,
-                 "i",
-                 hoc_newobj,
-                 "si",
-                 hoc_asgn_obj_to_str,
-                 0,
-                 hoc_known_type,
-                 "i",  // 60
-                 hoc_push_string,
-                 "s",
-                 hoc_objectarg,
-                 "i",
-                 hoc_ob_pointer,
-                 0,
-                 connectsection,
-                 0,
-                 simpleconnectsection,
-                 0,
-                 connectpointer,
-                 "s",
-                 add_section,
-                 "si",
-                 range_const,
-                 "s",
-                 range_interpolate,
-                 "s",
-                 range_interpolate_single,
-                 "s",  // 70
-                 rangevareval,
-                 "s",
-                 rangepoint,
-                 "s",
-                 sec_access,
-                 "s",
-                 ob_sec_access,
-                 0,
-                 mech_access,
-                 "s",
-                 for_segment,
-                 "ii",
-                 sec_access_push,
-                 "s",
-                 sec_access_pop,
-                 0,
-                 forall_section,
-                 "ii",
-                 hoc_ifsec,
-                 "ii",  // 80
-                 hoc_ifseclist,
-                 "ii",
-                 forall_sectionlist,
-                 "ii",
-                 connect_point_process_pointer,
-                 0,
-                 nrn_cppp,
-                 0,
-                 rangevarevalpointer,
-                 "s",
-                 sec_access_object,
-                 0,
-                 mech_uninsert,
-                 "s",
-                 hoc_arayinstal,
-                 "i",
-                 0,
-                 0};
+} hoc_inst_[] = {{0, 0},  // 0
+                 {nopop, 0},
+                 {eval, 0},
+                 {add, 0},
+                 {hoc_sub, 0},
+                 {mul, 0},
+                 {hoc_div, 0},
+                 {hoc_negate, nullptr},
+                 {power, 0},
+                 {hoc_assign, nullptr},
+                 {bltin, "s"},    // requires change
+                 {varpush, "s"},  // 10
+                 {constpush, "s"},
+                 {pushzero, 0},
+                 {print, 0},
+                 {varread, "s"},
+                 {prexpr, 0},
+                 {prstr, 0},
+                 {gt, 0},
+                 {hoc_lt, nullptr},
+                 {hoc_eq, nullptr},  // 20
+                 {ge, 0},
+                 {le, 0},
+                 {ne, 0},
+                 {hoc_and, 0},
+                 {hoc_or, 0},
+                 {hoc_not, 0},
+                 {ifcode, "iii"},
+                 {forcode, "iii"},
+                 {shortfor, "ii"},
+                 {call, "si"},  // 30
+                 {hoc_arg, "i"},
+                 {argassign, "i"},
+                 {funcret, 0},
+                 {procret, 0},
+                 {hoc_stringarg, "i"},
+                 {hoc_push_string, "s"},
+                 {Break, 0},
+                 {Continue, 0},
+                 {Stop, 0},
+                 {assstr, 0},  // 40
+                 {hoc_evalpointer, 0},
+                 {hoc_newline, 0},
+                 {hoc_delete_symbol, "s"},
+                 {hoc_cyclic, 0},
+                 {dep_make, 0},
+                 {eqn_name, 0},
+                 {eqn_init, 0},
+                 {eqn_lhs, 0},  // 50
+                 {eqn_rhs, 0},
+                 {hoc_objectvar, "s"},
+                 {hoc_object_component, "siis"},
+                 {hoc_object_eval, 0},
+                 {hoc_object_asgn, 0},
+                 {hoc_objvardecl, "si"},
+                 {hoc_cmp_otype, "i"},
+                 {hoc_newobj, "si"},
+                 {hoc_asgn_obj_to_str, 0},
+                 {hoc_known_type, "i"},  // 60
+                 {hoc_push_string, "s"},
+                 {hoc_objectarg, "i"},
+                 {hoc_ob_pointer, 0},
+                 {connectsection, 0},
+                 {simpleconnectsection, 0},
+                 {connectpointer, "s"},
+                 {add_section, "si"},
+                 {range_const, "s"},
+                 {range_interpolate, "s"},
+                 {range_interpolate_single, "s"},  // 70
+                 {rangevareval, "s"},
+                 {rangepoint, "s"},
+                 {sec_access, "s"},
+                 {ob_sec_access, 0},
+                 {mech_access, "s"},
+                 {for_segment, "ii"},
+                 {sec_access_push, "s"},
+                 {sec_access_pop, 0},
+                 {forall_section, "ii"},
+                 {hoc_ifsec, "ii"},  // 80
+                 {hoc_ifseclist, "ii"},
+                 {forall_sectionlist, "ii"},
+                 {connect_point_process_pointer, 0},
+                 {nrn_cppp, 0},
+                 {rangevarevalpointer, "s"},
+                 {sec_access_object, 0},
+                 {mech_uninsert, "s"},
+                 {hoc_arayinstal, "i"},
+                 {0, 0}};
 
 #define VPfri void*
 declareTable(InstTable, VPfri, short)
-    implementTable(InstTable, VPfri, short) static InstTable* inst_table_;
+implementTable(InstTable, VPfri, short)
+static InstTable* inst_table_;
 
-declareTable(Symbols, Symbol*, int) implementTable(Symbols, Symbol*, int)
+declareTable(Symbols, Symbol*, int)
+implementTable(Symbols, Symbol*, int)
 
-    declareTable(Objects, Object*, int) implementTable(Objects, Object*, int)
+declareTable(Objects, Object*, int)
+implementTable(Objects, Object*, int)
 
-        class PortablePointer {
+class PortablePointer {
   public:
     PortablePointer();
     PortablePointer(void* address, int type, unsigned long size = 1);
@@ -339,9 +248,7 @@ void PortablePointer::set(void* address, int type, unsigned long s) {
 }
 PortablePointer::~PortablePointer() {}
 
-declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
-
-    class OcCheckpoint {
+class OcCheckpoint {
   public:
     OcCheckpoint();
     virtual ~OcCheckpoint();
@@ -387,7 +294,6 @@ declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
     int cnt_;
     int nobj_;
     Objects* otable_;
-    PPList* ppl_;
     bool (OcCheckpoint::*func_)(Symbol*);
     Symbols* stable_;
 #if HAVE_XDR
@@ -465,18 +371,7 @@ bool Checkpoint::xdr(Object*& o) {
     }
 }
 
-
-#else
-void hoc_checkpoint();
-int hoc_readcheckpoint(char*);
-void hoc_ret();
-void hoc_pushx(double);
-
-
-#endif  // from top of file
-
 void hoc_checkpoint() {
-#ifndef MAC
     if (!cp_) {
         cp_ = new OcCheckpoint();
     }
@@ -484,14 +379,9 @@ void hoc_checkpoint() {
     b = cp_->write(gargstr(1));
     hoc_ret();
     hoc_pushx(double(b));
-#else
-    hoc_ret();
-    hoc_pushx(0.);
-#endif
 }
 
 int hoc_readcheckpoint(char* fname) {
-#ifndef MAC
     f_ = fopen(fname, "r");
     if (!f_) {
         return 0;
@@ -516,14 +406,9 @@ int hoc_readcheckpoint(char* fname) {
     delete rdckpt_;
     rdckpt_ = NULL;
     return rval;
-#else
-    return 0;
-#endif
 }
 
-#ifndef MAC
 OcCheckpoint::OcCheckpoint() {
-    ppl_ = NULL;
     func_ = NULL;
     stable_ = NULL;
     otable_ = NULL;
@@ -540,9 +425,6 @@ OcCheckpoint::OcCheckpoint() {
 }
 
 OcCheckpoint::~OcCheckpoint() {
-    if (ppl_) {
-        delete ppl_;
-    }
     if (stable_) {
         delete stable_;
     }
@@ -1507,5 +1389,4 @@ bool OcReadChkPnt::get(Object*& o) {
     o = pobj_[i];
     return true;
 }
-#endif
 #endif

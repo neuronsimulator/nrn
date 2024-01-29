@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 /* this was removed from the scopmath library since there could be
 multiple copies of the static value below. One in neuron.exe and the
@@ -21,7 +23,9 @@ static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
 #endif
 
 #include <math.h>
-#include <mcran4.h>
+#include "oc_mcran4.hpp"
+#include "mcran4.h"
+#include "scoplib.h"
 static uint32_t value = 1;
 
 /*-----------------------------------------------------------------------------
@@ -54,9 +58,8 @@ static uint32_t value = 1;
  *
  *--------------------------------------------------------------------------- */
 
-extern "C" double scop_random(void) {
-    extern int use_mcell_ran4_;
-    if (use_mcell_ran4_) {
+double scop_random(void) {
+    if (use_mcran4()) {
         /*perhaps 4 times slower but much higher quality*/
         return mcell_ran4a(&value);
     } else {
@@ -92,6 +95,6 @@ extern "C" double scop_random(void) {
  *
  */
 
-extern "C" void set_seed(double seed) {
+void set_seed(double seed) {
     value = (uint32_t) seed;
 }

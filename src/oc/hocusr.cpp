@@ -44,8 +44,8 @@ void nrn_load_name_check(const char* name) {
 
 static void arayinstal(Symbol* sp, int nsub, int sub1, int sub2, int sub3);
 
-extern "C" void hoc_spinit(void) /* install user variables and functions */
-{
+/* install user variables and functions */
+void hoc_spinit() {
     int i;
     Symbol* s;
 
@@ -151,7 +151,7 @@ static void arayinstal(Symbol* sp, int nsub, int sub1, int sub2, int sub3) {
         sp->arayinfo->sub[2] = sub3;
 }
 
-extern "C" void hoc_retpushx(double x) { /* utility return for user functions */
+void hoc_retpushx(double x) { /* utility return for user functions */
     hoc_ret();
     hoc_pushx(x);
 }

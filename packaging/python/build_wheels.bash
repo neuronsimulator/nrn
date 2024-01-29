@@ -6,10 +6,10 @@ set -xe
 # Note: It should be invoked from nrn directory
 #
 # PREREQUESITES:
-#  - cmake (>=3.5)
+#  - cmake (>=3.15.0)
 #  - flex
 #  - bison
-#  - python >= 3.7
+#  - python >= 3.8
 #  - cython
 #  - MPI
 #  - X11
@@ -24,6 +24,13 @@ if [ ! -f setup.py ]; then
 fi
 
 py_ver=""
+
+clone_install_nmodl_requirements() {
+    git config --global --add safe.directory /root/nrn
+    git submodule update --init --recursive --force --depth 1 -- external/nmodl
+    pip install -r external/nmodl/requirements.txt
+}
+
 
 setup_venv() {
     local py_bin="$1"
@@ -54,11 +61,13 @@ pip_numpy_install() {
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
       310) numpy_ver="numpy==1.21.3" ;;
+      311) numpy_ver="numpy==1.23.5" ;;
+      312) numpy_ver="numpy==1.26.0" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
     # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' ]]; then
+    if [[ `uname -m` == 'arm64' && "$py_ver" == "39" ]]; then
       numpy_ver="numpy==1.21.3"
     fi
 
@@ -73,9 +82,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    #auditwheel needs to be installed with python3
-    # see upstream WIP PR https://github.com/pypa/auditwheel/pull/368
-    pip install git+https://github.com/neuronsimulator/auditwheel.git@exclude_so_files
+    pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -84,24 +91,17 @@ build_wheel_linux() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-    elif [ "$2" == "coreneuron-gpu" ]; then
-        setup_args="--enable-coreneuron --enable-gpu"
-        # nvhpc is required for GPU support but make sure
-        # CC and CXX are unset for building python extensions
-        source ~/.bashrc
-        module load nvhpc
-        unset CC CXX
-        # make the NVIDIA compilers default to targeting haswell CPUs
-        # the default is currently 70;80, partly because NVHPC does not
-        # support OpenMP target offload with 60. Wheels use mod2c and
-        # OpenACC for now, so we can be a little more generic.
-        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
+        clone_install_nmodl_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
+
+    # Workaround for https://github.com/pypa/manylinux/issues/1309
+    git config --global --add safe.directory "*"
 
     python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
@@ -113,10 +113,15 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
-	# TODO: still need work to make sure this robust and usable
-	# currently this will break when coreneuron is used and when
-	# dev environment is not installed.
-        auditwheel repair dist/*.whl --exlude "libgomp.so.1"
+        # NOTE:
+        #   libgomp:  still need work to make sure this robust and usable
+        #             currently this will break when coreneuron is used and when
+        #             dev environment is not installed. Note that on aarch64 we have
+        #             seen issue with libgomp.so and hence we started excluding it.
+        #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+        #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+        #             ships an extra copy of libnrniv.so and hence exclude it here.
+        auditwheel -v repair dist/*.whl --exclude "libgomp.so.1" --exclude "libnrniv.so"
     fi
 
     deactivate
@@ -138,14 +143,12 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-    elif [ "$2" == "coreneuron-gpu" ]; then
-        echo "Error: GPU support on MacOS is not available!"
-        exit 1
+        clone_install_nmodl_requirements
     fi
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     # We need to "fix" the platform tag if the Python installer is universal2
@@ -161,6 +164,9 @@ build_wheel_osx() {
         echo " - Python installation is universal2 and we are on arm64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
         export ARCHFLAGS="-arch arm64"
         echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
+        # This is a shortcut to have a successful delocate-wheel. See:
+        # https://github.com/matthew-brett/delocate/issues/153
+        python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"  | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
       else
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
         echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
@@ -189,7 +195,7 @@ if [ ! -z "$2" ]; then
   python_wheel_version=$2
 fi
 
-# enable coreneuron support: "coreneuron" or "coreneuron-gpu"
+# enable coreneuron support: "coreneuron"
 # this should be removed/improved once wheel is stable
 coreneuron=$3
 
@@ -226,14 +232,14 @@ case "$1" in
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
-        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"
+        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/x86_64-linux-gnu/mpich"
         build_wheel_linux $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
     ;;
 
   *)
-    echo "Usage: $(basename $0) < linux | osx > [python version 36|37|38|39|3*]  [coreneuron | coreneuron-gpu]"
+    echo "Usage: $(basename $0) < linux | osx > [python version 36|37|38|39|3*]  [coreneuron]"
     exit 1
     ;;
 

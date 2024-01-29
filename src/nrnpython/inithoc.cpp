@@ -1,9 +1,8 @@
+#include "../../nrnconf.h"
 #include "nrnmpiuse.h"
-#include "nrnpthread.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
-#include "nrnpython_config.h"
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
@@ -11,12 +10,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
-// when compiled with different Python.h, force correct value
-#undef NRNPYTHON_DYNAMICLOAD
-#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
-#endif
-
+#include <iostream>
+#include <string>
 
 extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
@@ -26,22 +21,17 @@ extern int nrn_main_launch;
 
 // int nrn_global_argc;
 extern char** nrn_global_argv;
-
-extern void nrnpy_augment_path();
 extern void (*p_nrnpython_finalize)();
 extern PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern char* nrnmpi_load(int is_python);
-#endif
-#if NRNPYTHON_DYNAMICLOAD
-extern int nrnpy_site_problem;
+extern std::string nrnmpi_load();
 #endif
 
-#if USE_PTHREAD
-#include <pthread.h>
-static pthread_t main_thread_;
+#if NRN_ENABLE_THREADS
+#include <thread>
+static std::thread::id main_thread_;
 #endif
 
 /**
@@ -216,9 +206,8 @@ static int have_opt(const char* arg) {
 }
 
 void nrnpython_finalize() {
-#if USE_PTHREAD
-    pthread_t now = pthread_self();
-    if (pthread_equal(main_thread_, now)) {
+#if NRN_ENABLE_THREADS
+    if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
 #endif
@@ -233,10 +222,8 @@ void nrnpython_finalize() {
 static char* env[] = {0};
 
 extern "C" PyObject* PyInit_hoc() {
-    char buf[200];
-
-#if USE_PTHREAD
-    main_thread_ = pthread_self();
+#if NRN_ENABLE_THREADS
+    main_thread_ = std::this_thread::get_id();
 #endif
 
     if (nrn_global_argv) {  // ivocmain was already called so already loaded
@@ -252,7 +239,7 @@ extern "C" PyObject* PyInit_hoc() {
     int flag = 0;                 // true if MPI_Initialized is called
     int mpi_mes = 0;              // for printing mpi message only once
     int libnrnmpi_is_loaded = 1;  // becomes 0 if NEURON_INIT_MPI == 0 with dynamic mpi
-    char* pmes = NULL;            // error message
+    std::string pmes;             // error message
     char* env_mpi = getenv("NEURON_INIT_MPI");
 
 #if NRNMPI_DYNAMICLOAD
@@ -261,24 +248,23 @@ extern "C" PyObject* PyInit_hoc() {
      * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
      * and there is no '-mpi' arg.
      * We call nrnmpi_load to load MPI library which returns:
-     *  - nil if loading is successfull
+     *  - nullptr if loading is successfull
      *  - error message in case of loading error
      */
     if (env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {
         libnrnmpi_is_loaded = 0;
     }
     if (libnrnmpi_is_loaded) {
-        pmes = nrnmpi_load(1);
-        if (pmes && env_mpi == NULL) {
+        pmes = nrnmpi_load();
+        if (!pmes.empty() && env_mpi == NULL) {
             // common case on MAC distribution is no NEURON_INIT_MPI and
             // no MPI installed (so nrnmpi_load fails)
             libnrnmpi_is_loaded = 0;
         }
-        if (pmes && libnrnmpi_is_loaded) {
-            printf(
-                "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot initialize MPI "
-                "because:\n%s\n",
-                pmes);
+        if (!pmes.empty() && libnrnmpi_is_loaded) {
+            std::cout << "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot "
+                         "initialize MPI because:\n"
+                      << pmes << std::endl;
             exit(1);
         }
     }
@@ -309,21 +295,19 @@ extern "C" PyObject* PyInit_hoc() {
     }
 
     // merely avoids unused variable warning
-    if (pmes && mpi_mes == 2) {
+    if (!pmes.empty() && mpi_mes == 2) {
         exit(1);
     }
 
 #endif  // NRNMPI
-
-#if !defined(__CYGWIN__)
-    sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
+    std::string buf{neuron::config::system_processor};
+    buf += "/.libs/libnrnmech.so";
     // printf("buf = |%s|\n", buf);
     FILE* f;
-    if ((f = fopen(buf, "r")) != 0) {
+    if ((f = fopen(buf.c_str(), "r")) != 0) {
         fclose(f);
-        add_arg("-dll", buf);
+        add_arg("-dll", buf.c_str());
     }
-#endif  // !defined(__CYGWIN__)
     nrn_is_python_extension = 1;
     nrn_nobanner_ = 1;
     const char* pyver = Py_GetVersion();
@@ -353,9 +337,6 @@ extern "C" PyObject* PyInit_hoc() {
 		}
 	}
 #endif  // 0 && !defined(NRNMPI_DYNAMICLOAD)
-    if (pmes) {
-        free(pmes);
-    }
 #endif  // NRNMPI
 
     char* env_nframe = getenv("NEURON_NFRAME");
@@ -383,13 +364,9 @@ extern "C" PyObject* PyInit_hoc() {
 
     nrn_main_launch = 2;
     ivocmain(argc, (const char**) argv, (const char**) env);
-//	nrnpy_augment_path();
-#if NRNPYTHON_DYNAMICLOAD
-    nrnpy_site_problem = 0;
-#endif  // NRNPYTHON_DYNAMICLOAD
     return nrnpy_hoc();
 }
 
-#if !defined(CYGWIN)
+#if !defined(MINGW)
 extern "C" void modl_reg() {}
-#endif  // !defined(CYGWIN)
+#endif  // !defined(MINGW)

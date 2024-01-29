@@ -21,8 +21,7 @@
 #include <InterViews/layout.h>
 #include <IV-look/kit.h>
 #include <OS/list.h>
-#include <ivstream.h>
-#include <math.h>
+#include <cmath>
 #include "mymath.h"
 #include "apwindow.h"
 // really only need colors from graph.h
@@ -31,6 +30,7 @@
 #include "rubband.h"
 #include "scenepic.h"
 #include "rot3band.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 #include "idraw.h"
@@ -45,12 +45,8 @@
 
 void nrn_define_shape();
 extern int nrn_shape_changed_;
-extern "C" int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
-extern "C" Point_process* ob2pntproc(Object*);
-extern "C" Point_process* ob2pntproc_0(Object*);
-extern "C" double* nrn_recalc_ptr(double*);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 
 #if BEVELJOIN
@@ -146,7 +142,7 @@ class OcShapeHandler;
     }
     virtual void set_select_action(const char*);
     virtual void set_select_action(Object*);
-    virtual void save_phase1(ostream&);
+    virtual void save_phase1(std::ostream&);
     virtual PointMark* point_mark(Object*,
                                   const Color*,
                                   const char style = 'O',
@@ -183,9 +179,6 @@ bool OcShapeHandler::event(Event&) {
     return true;
 }
 #endif  // HAVE_IV
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 // Shape class registration for oc
 static double sh_view(void* v) {
@@ -528,75 +521,43 @@ extern double ivoc_gr_erase(void*);
 extern double ivoc_gr_gif(void*);
 extern double ivoc_erase_all(void*);
 
-static Member_func sh_members[] = {"nearest",
-                                   nrniv_sh_nearest,
-                                   "push_selected",
-                                   nrniv_sh_push,
-                                   "view",
-                                   sh_view,
-                                   "size",
-                                   ivoc_gr_size,
-                                   "flush",
-                                   sh_flush,
-                                   "begin",
-                                   sh_begin,
-                                   "view_count",
-                                   sh_view_count,
-                                   "select",
-                                   sh_select,
-                                   "action",
-                                   sh_select_action,
-                                   "save_name",
-                                   sh_save_name,
-                                   "unmap",
-                                   sh_unmap,
-                                   "color",
-                                   nrniv_sh_color,
-                                   "color_all",
-                                   nrniv_sh_color_all,
-                                   "color_list",
-                                   nrniv_sh_color_list,
-                                   "point_mark",
-                                   sh_point_mark,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "printfile",
-                                   sh_printfile,
-                                   "show",
-                                   sh_show,
-                                   "menu_action",
-                                   ivoc_gr_menu_action,
-                                   "menu_tool",
-                                   ivoc_gr_menu_tool,
-                                   "exec_menu",
-                                   exec_menu,
-                                   "observe",
-                                   nrniv_sh_observe,
-                                   "rotate",
-                                   nrniv_sh_rotate,
-                                   "beginline",
-                                   ivoc_gr_begin_line,
-                                   "line",
-                                   ivoc_gr_line,
-                                   "label",
-                                   ivoc_gr_label,
-                                   "mark",
-                                   ivoc_gr_mark,
-                                   "erase",
-                                   ivoc_gr_erase,
-                                   "erase_all",
-                                   ivoc_erase_all,
-                                   "len_scale",
-                                   nrniv_len_scale,
-                                   "gif",
-                                   ivoc_gr_gif,
-                                   0,
-                                   0};
+static Member_func sh_members[] = {{"nearest", nrniv_sh_nearest},
+                                   {"push_selected", nrniv_sh_push},
+                                   {"view", sh_view},
+                                   {"size", ivoc_gr_size},
+                                   {"flush", sh_flush},
+                                   {"begin", sh_begin},
+                                   {"view_count", sh_view_count},
+                                   {"select", sh_select},
+                                   {"action", sh_select_action},
+                                   {"save_name", sh_save_name},
+                                   {"unmap", sh_unmap},
+                                   {"color", nrniv_sh_color},
+                                   {"color_all", nrniv_sh_color_all},
+                                   {"color_list", nrniv_sh_color_list},
+                                   {"point_mark", sh_point_mark},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"printfile", sh_printfile},
+                                   {"show", sh_show},
+                                   {"menu_action", ivoc_gr_menu_action},
+                                   {"menu_tool", ivoc_gr_menu_tool},
+                                   {"exec_menu", exec_menu},
+                                   {"observe", nrniv_sh_observe},
+                                   {"rotate", nrniv_sh_rotate},
+                                   {"beginline", ivoc_gr_begin_line},
+                                   {"line", ivoc_gr_line},
+                                   {"label", ivoc_gr_label},
+                                   {"mark", ivoc_gr_mark},
+                                   {"erase", ivoc_gr_erase},
+                                   {"erase_all", ivoc_erase_all},
+                                   {"len_scale", nrniv_len_scale},
+                                   {"gif", ivoc_gr_gif},
+                                   {0, 0}};
 
-static Member_ret_obj_func retobj_members[] =
-    {"nearest_seg", nrniv_sh_nearest_seg, "selected_seg", nrniv_sh_selected_seg, NULL, NULL};
+static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg},
+                                               {NULL, NULL}};
 
 
 static void* sh_cons(Object* ho) {
@@ -809,8 +770,8 @@ void OcShape::handle_picked() {
     }
 }
 
-void OcShape::save_phase1(ostream& o) {
-    o << "{" << endl;
+void OcShape::save_phase1(std::ostream& o) {
+    o << "{" << std::endl;
     save_class(o, "Shape");
 }
 
@@ -820,10 +781,10 @@ void OcShape::save_phase1(ostream& o) {
 ShapeView::ShapeView(ShapeScene* s)
     : View((s->x1() + s->x2()) / 2,
            (s->y1() + s->y2()) / 2,
-           Math::max(s->x2() - s->x1(), s->y2() - s->y1()) * 1.1,
+           std::max(s->x2() - s->x1(), s->y2() - s->y1()) * 1.1,
            s
-           //	,150*(s->x2() - s->x1())/Math::max(s->x2() - s->x1(), s->y2() - s->y1()),
-           //	150*(s->y2() - s->y1())/Math::max(s->x2() - s->x1(), s->y2() - s->y1())
+           //	,150*(s->x2() - s->x1())/std::max(s->x2() - s->x1(), s->y2() - s->y1()),
+           //	150*(s->y2() - s->y1())/std::max(s->x2() - s->x1(), s->y2() - s->y1())
       ) {}
 
 ShapeView::ShapeView(ShapeScene* s, Coord* x)
@@ -858,12 +819,12 @@ void ShapeType::execute() {
 }
 
 
-// declareHandlerCallback(ShapeScene)
-// implementHandlerCallback(ShapeScene)
-declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
-    declareActionCallback(ShapeScene) implementActionCallback(ShapeScene)
+declareRubberCallback(ShapeScene)
+implementRubberCallback(ShapeScene)
+declareActionCallback(ShapeScene)
+implementActionCallback(ShapeScene)
 
-        void ShapeScene::observe(SectionList* sl) {
+void ShapeScene::observe(SectionList* sl) {
     GlyphIndex i, cnt;
     hoc_Item* qsec;
     Section* sec;
@@ -883,19 +844,22 @@ declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
         }
     } else {
         view_all_ = true;
-        ForAllSections(sec) gl = new ShapeSection(sec);
-        append(new FastGraphItem(gl, 0));
-        sg_->append(gl);
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            gl = new ShapeSection(sec);
+            append(new FastGraphItem(gl, 0));
+            sg_->append(gl);
+        }
     }
-}
-recalc_diam();
-selected_ = NULL;
-volatile_ptr_ref = NULL;
-transform3d();
-if (shape_changed_) {
-    force();
-    flush();
-}
+    recalc_diam();
+    selected_ = NULL;
+    volatile_ptr_ref = NULL;
+    transform3d();
+    if (shape_changed_) {
+        force();
+        flush();
+    }
 }
 
 void ShapeScene::force() {
@@ -914,7 +878,6 @@ ShapeScene::ShapeScene(SectionList* sl)
     r3b_ = new Rotate3Band(NULL, new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
     r3b_->ref();
     observe(sl);
-    var_name_ = NULL;
     wk.style()->find_attribute("shape_beveljoin", beveljoin_);
 
     MenuItem* mi;
@@ -961,10 +924,10 @@ ShapeScene::ShapeScene(SectionList* sl)
     for (i = 0; i < cnt; ++i) {
         component(i)->request(req);
         MyMath::box(req, x1, y1, x2, y2);
-        xt1 = Math::min(x1, xt1);
-        yt1 = Math::min(y1, yt1);
-        xt2 = Math::max(x2, xt2);
-        yt2 = Math::max(y2, yt2);
+        xt1 = std::min(x1, xt1);
+        yt1 = std::min(y1, yt1);
+        xt2 = std::max(x2, xt2);
+        yt2 = std::max(y2, yt2);
     }
     Scene::new_size(xt1, yt1, xt2, yt2);
     color_value_ = new ColorValue();
@@ -997,9 +960,6 @@ ShapeScene::~ShapeScene() {
     Resource::unref(sg_);
     Resource::unref(r3b_);
     delete shape_changed_;
-    if (var_name_) {
-        delete var_name_;
-    }
 }
 
 void ShapeScene::erase_all() {
@@ -1058,10 +1018,10 @@ void ShapeScene::wholeplot(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
     x2 = y2 = -1e9;
     for (i = 0; i < n; ++i) {
         ((ShapeSection*) sg_->component(i))->size(l, b, r, t);
-        x1 = Math::min(x1, l);
-        x2 = Math::max(x2, r);
-        y1 = Math::min(y1, b);
-        y2 = Math::max(y2, t);
+        x1 = std::min(x1, l);
+        x2 = std::max(x2, r);
+        y1 = std::min(y1, b);
+        y2 = std::max(y2, t);
     }
     if (x1 >= x2 || y1 >= y2) {
         Scene::wholeplot(x1, y1, x2, y2);
@@ -1076,24 +1036,17 @@ PolyGlyph* ShapeScene::shape_section_list() {
 }
 
 void ShapeScene::name(const char* s) {
-    if (!var_name_) {
-        var_name_ = new CopyString(s);
-    } else {
-        *var_name_ = s;
-    }
+    var_name_ = s;
 }
 
-void ShapeScene::save_phase2(ostream& o) {
-    char buf[256];
-    if (var_name_) {
-        if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            sprintf(buf, "%sappend(save_window_)", var_name_->string());
+void ShapeScene::save_phase2(std::ostream& o) {
+    if (!var_name_.empty()) {
+        if (var_name_.back() == '.') {
+            o << var_name_ << "append(save_window_)" << std::endl;
         } else {
-            sprintf(buf, "%s = save_window_", var_name_->string());
+            o << var_name_ << " = save_window_" << std::endl;
         }
-        o << buf << endl;
-        sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
-        o << buf << endl;
+        o << "save_window_.save_name(\"" << var_name_ << "\")" << std::endl;
     }
     Graph::save_phase2(o);
 }
@@ -1306,8 +1259,6 @@ ShapeSection::ShapeSection(Section* sec) {
     section_ref(sec_);
     color_ = Scene::default_foreground();
     color_->ref();
-    old_ = NULL;
-    pvar_ = NULL;
     colorseg_ = NULL;
     colorseg_size_ = 0;
     scale(1.);
@@ -1403,7 +1354,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     }
     Coord x = x_[0];
     Coord y = y_[0];
-    Coord d2 = Math::abs(sec_->pt3d[0].d) / 2 + 1;
+    Coord d2 = std::abs(sec_->pt3d[0].d) / 2 + 1;
 
     xmin_ = x - d2;
     xmax_ = x + d2;
@@ -1413,12 +1364,12 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     for (i = 1; i < n_; i++) {
         x = x_[i];
         y = y_[i];
-        d2 = Math::abs(sec_->pt3d[i].d) / 2 + 1;
+        d2 = std::abs(sec_->pt3d[i].d) / 2 + 1;
 
-        xmin_ = Math::min(xmin_, x - d2);
-        xmax_ = Math::max(xmax_, x + d2);
-        ymin_ = Math::min(ymin_, y - d2);
-        ymax_ = Math::max(ymax_, y + d2);
+        xmin_ = std::min(xmin_, x - d2);
+        xmax_ = std::max(xmax_, x + d2);
+        ymin_ = std::min(ymin_, y - d2);
+        ymax_ = std::max(ymax_, y + d2);
     }
 }
 
@@ -1514,11 +1465,11 @@ void ShapeSection::selectMenu() {  // popup menu item selected
     hoc_ivpanel(name);
     char buf[200];
     hoc_ivmenu(name);
-    sprintf(buf, "%s nrnsecmenu(.5, 1)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 1)", name);
     hoc_ivbutton("Parameters", buf);
-    sprintf(buf, "%s nrnsecmenu(.5, 2)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 2)", name);
     hoc_ivbutton("Assigned", buf);
-    sprintf(buf, "%s nrnsecmenu(.5, 3)", name);
+    Sprintf(buf, "%s nrnsecmenu(.5, 3)", name);
     hoc_ivbutton("States", buf);
     hoc_ivmenu(0);
     hoc_ivpanel(0);
@@ -1532,50 +1483,26 @@ bool ShapeSection::good() const {
     return sec_->prop != 0;
 }
 
-void ShapeSection::update_ptrs() {
-    if (!pvar_) {
-        return;
-    }
-    int i, n = section()->nnode - 1;
-    for (i = 0; i < n; ++i) {
-        pvar_[i] = nrn_recalc_ptr(pvar_[i]);
-    }
-}
-
 void ShapeSection::set_range_variable(Symbol* sym) {
     clear_variable();
     if (!good()) {
         return;
     }
-    int i, n = section()->nnode - 1;
-    pvar_ = new double*[n];
-    old_ = new const Color*[n];
-    bool any = false;
-    if (nrn_exists(sym, section()->pnode[0])) {
-        for (i = 0; i < n; ++i) {
-            pvar_[i] =
-                nrn_rangepointer(section(), sym, nrn_arc_position(section(), section()->pnode[i]));
-            old_[i] = NULL;
-            if (pvar_[i]) {
-                any = true;
-            }
-        }
-    } else {
-        for (i = 0; i < n; ++i) {
-            pvar_[i] = 0;
-            old_[i] = NULL;
+    auto* const sec = section();
+    auto const n = sec->nnode - 1;
+    pvar_.clear();
+    old_.clear();
+    pvar_.resize(n);
+    old_.resize(n);
+    if (nrn_exists(sym, sec->pnode[0])) {
+        for (int i = 0; i < n; ++i) {
+            pvar_[i] = nrn_rangepointer(sec, sym, nrn_arc_position(sec, sec->pnode[i]));
         }
     }
 }
 void ShapeSection::clear_variable() {
-    if (pvar_) {
-        delete[] pvar_;
-        pvar_ = NULL;
-    }
-    if (old_) {
-        delete[] old_;
-        old_ = NULL;
-    }
+    pvar_.clear();
+    old_.clear();
     if (colorseg_) {
         for (int i = 0; i < colorseg_size_; ++i) {
             colorseg_[i]->unref();
@@ -1610,10 +1537,10 @@ xmin_, a.left(),ymin_,a.bottom(),xmax_,a.right());
 void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
     Section* sec = section();
     IfIdraw(pict());
-    if (pvar_ || (colorseg_ && colorseg_size_ == sec_->nnode - 1)) {
+    if (!pvar_.empty() || (colorseg_ && colorseg_size_ == sec_->nnode - 1)) {
         const Color* color;
         ColorValue* cv;
-        if (pvar_) {
+        if (!pvar_.empty()) {
             cv = ShapeScene::current_draw_scene()->color_value();
         }
         if (sec->nnode == 2) {
@@ -1627,7 +1554,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                 }
                 if (color != old_[0] || b) {
                     b = true;
-                    ((ShapeSection*) this)->old_[0] = color;
+                    const_cast<ShapeSection*>(this)->old_[0] = color;
                 }
             }
             if (b) {
@@ -1671,7 +1598,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                         color = cv->no_value();
                     }
                     if (color != old_[iseg] || b) {
-                        ((ShapeSection*) this)->old_[iseg] = color;
+                        const_cast<ShapeSection*>(this)->old_[iseg] = color;
                         b = true;
                     }
                 }
@@ -1701,7 +1628,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                     }
                 }
             }
-            assert(Math::equal(xend, sec_->pt3d[sec_->npt3d - 1].arc, 1e-6));
+            assert(MyMath::eq(xend, sec_->pt3d[sec_->npt3d - 1].arc, 1e-6));
 #endif  // FASTIDIOUS
         ///////////////////////////////////////
         } else {
@@ -1715,7 +1642,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                         color = cv->no_value();
                     }
                     if (color != old_[iseg] || b) {
-                        ((ShapeSection*) this)->old_[iseg] = color;
+                        const_cast<ShapeSection*>(this)->old_[iseg] = color;
                         b = true;
                     }
                 }
@@ -1758,8 +1685,8 @@ void ShapeSection::fastidious_draw(Canvas* c,
     switch (ShapeScene::current_draw_scene()->shape_type()) {
     case ShapeScene::show_diam:
         float d1, d2, t1, t2;
-        t1 = Math::abs(sec_->pt3d[i].d) / 2.;
-        t2 = Math::abs(sec_->pt3d[i1].d) / 2.;
+        t1 = std::abs(sec_->pt3d[i].d) / 2.;
+        t2 = std::abs(sec_->pt3d[i1].d) / 2.;
         d1 = f1 * (t2 - t1) + t1;
         d2 = f2 * (t2 - t1) + t1;
         trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1838,8 +1765,8 @@ void ShapeSection::draw_seg(Canvas* c, const Color* color, int iseg) const {
         switch (ShapeScene::current_draw_scene()->shape_type()) {
         case ShapeScene::show_diam:
             float d1, d2, t1, t2;
-            t1 = Math::abs(sec_->pt3d[0].d) / 2.;
-            t2 = Math::abs(sec_->pt3d[1].d) / 2.;
+            t1 = std::abs(sec_->pt3d[0].d) / 2.;
+            t2 = std::abs(sec_->pt3d[1].d) / 2.;
             d1 = darc * iseg * (t2 - t1) + t1;
             d2 = darc * (iseg + 1) * (t2 - t1) + t1;
             trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1877,7 +1804,7 @@ void ShapeSection::draw_points(Canvas* c, const Color* color, int i, int j) cons
             trapezoid(c, color, i);
 #if BEVELJOIN
             if (beveljoin_) {
-                bevel_join(c, color, i - 1, Math::abs(sec_->pt3d[i - 1].d) / 2);
+                bevel_join(c, color, i - 1, std::abs(sec_->pt3d[i - 1].d) / 2);
             }
 #endif
         }
@@ -1906,8 +1833,8 @@ void ShapeSection::trapezoid(Canvas* c, const Color* color, int i) const {
               y_[i - 1],
               x_[i],
               y_[i],
-              Math::abs(sec_->pt3d[i - 1].d) / 2.,
-              Math::abs(sec_->pt3d[i].d) / 2.);
+              std::abs(sec_->pt3d[i - 1].d) / 2.,
+              std::abs(sec_->pt3d[i].d) / 2.);
 }
 
 void ShapeSection::trapezoid(Canvas* c,
@@ -2030,8 +1957,8 @@ bool ShapeSection::near_section(Coord x, Coord y, Coord mineps) const {
                                       y_[i - 1],
                                       x_[i],
                                       y_[i],
-                                      Math::max(float(Math::abs(sec_->pt3d[i - 1].d) / 2.),
-                                                float(mineps)))) {
+                                      std::max(float(std::abs(sec_->pt3d[i - 1].d) / 2.),
+                                               float(mineps)))) {
             return true;
         }
     }

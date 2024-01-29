@@ -1,7 +1,7 @@
 from .rxdmath import _Arithmeticed
 import weakref
 from .section1d import Section1D
-from neuron import h, nrn, nrn_dll_sym
+from neuron import h, nrn_dll_sym
 from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
@@ -133,6 +133,10 @@ _delete_by_id.argtypes = [ctypes.c_int]
 _set_tortuosity = nrn_dll_sym("set_tortuosity")
 _set_tortuosity.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
 
+# function to change extracellular volume fraction
+_set_volume_fraction = nrn_dll_sym("set_volume_fraction")
+_set_volume_fraction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
+
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -160,11 +164,14 @@ def _update_tortuosity(region):
     for s, r in _extracellular_diffusion_objects.items():
         if (
             r == region
-            and hasattr(s, "_id")
+            and hasattr(s, "_grid_id")
             and not hasattr(s, "_deleted")
             and not s._diffusion_characteristic
         ):
-            _set_tortuosity(s._id, region._permeability_vector)
+            if hasattr(region._permeability_vector, "_ref_x"):
+                _set_tortuosity(0, s._grid_id, region._permeability_vector._ref_x[0])
+            else:
+                _set_tortuosity(0, s._grid_id, region._permeability_vector)
 
 
 def _update_volume_fraction(region):
@@ -173,11 +180,16 @@ def _update_volume_fraction(region):
     for s, r in _extracellular_diffusion_objects.items():
         if (
             r == region
-            and hasattr(s, "_id")
+            and hasattr(s, "_grid_id")
             and not hasattr(s, "_deleted")
             and not s._diffusion_characteristic
         ):
-            _set_volume_fraction(s._id, region._volume_faction_vector)
+            if hasattr(region._volume_fraction_vector, "_ref_x"):
+                _set_volume_fraction(
+                    0, s._grid_id, region._volume_fraction_vector._ref_x[0]
+                )
+            else:
+                _set_volume_fraction(0, s._grid_id, region._volume_fraction_vector)
 
 
 def _1d_submatrix_n():
@@ -399,12 +411,15 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         e = self._extracellular()._region
         if numpy.isscalar(e.alpha):
             return e.alpha
-        alphas = []
-        for loc in locs:
-            i = int((loc[0] - e._xlo) / e._dx[0])
-            j = int((loc[1] - e._ylo) / e._dx[1])
-            k = int((loc[2] - e._zlo) / e._dx[2])
-            alphas.append(e.alpha[i, j, k])
+        elif hasattr(e.alpha, "nodes"):
+            alphas = [e.alpha.nodes((x, y, z)).value[0] for (x, y, z) in locs]
+        else:
+            alphas = []
+            for loc in locs:
+                i = int((loc[0] - e._xlo) / e._dx[0])
+                j = int((loc[1] - e._ylo) / e._dx[1])
+                k = int((loc[2] - e._zlo) / e._dx[2])
+                alphas.append(e.alpha[i, j, k])
         return numpy.array(alphas)
 
     def node_by_ijk(self, i, j, k):
@@ -975,9 +990,9 @@ class _IntracellularSpecies(_SpeciesMathable):
                         sp = s()
                         break
             if isinstance(sp, Parameter):
-                return "params_3d[%d]" % (self._grid_id)
+                return f"params_3d[{self._grid_id}]"
             else:
-                return "species_3d[%d]" % (self._grid_id)
+                return f"species_3d[{self._grid_id}]"
         raise RxDException("_semi_compile received inconsistent state")
 
     def _register_cptrs(self):
@@ -1176,7 +1191,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
 
         """
-        _extracellular_diffusion_objects[self] = None
+        _extracellular_diffusion_objects[self] = region
 
         # ensure 3D points exist
         h.define_shape()
@@ -1502,13 +1517,12 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     sp = s()
                     break
         if isinstance(sp, Parameter):
-            return "params_3d[%d]" % (self._grid_id)
+            return f"params_3d[{self._grid_id}]"
         else:
-            return "species_3d[%d]" % (self._grid_id)
+            return f"species_3d[{self._grid_id}]"
 
     @property
     def d(self):
-
         self._isalive()
         return self._d
 
@@ -1632,6 +1646,7 @@ class Species(_SpeciesMathable):
             # initialize self if the rest of rxd is already initialized
             if initializer.is_initialized():
                 self._do_init()
+                self._finitialize()
                 rxd._update_node_data(True, True)
 
     def _do_init(self):
@@ -1932,7 +1947,7 @@ class Species(_SpeciesMathable):
         metadata_array.frombytes(oldstate[:16])
         version, length = metadata_array
         if version != 0:
-            raise RxdException("Unsupported state data version")
+            raise RxDException("Unsupported state data version")
         data = array.array("d")
         try:
             data.frombytes(oldstate[16:])
@@ -1999,7 +2014,6 @@ class Species(_SpeciesMathable):
         data = numpy.array(r._mesh.values, dtype=float)
         # things outside of the volume will be NaN
         data[:] = numpy.NAN
-        max_concentration = -1
         for node in self.nodes:
             data[node._i, node._j, node._k] = node.concentration
         return data

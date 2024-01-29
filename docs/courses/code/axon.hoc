@@ -1,0 +1,3 @@
+load_file("nrngui.hoc")
+load_file("$(NEURONHOME)/../course/lincir1/axon.ses")
+

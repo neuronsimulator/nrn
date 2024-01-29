@@ -1,4 +1,8 @@
+from neuron.tests.utils.strtobool import strtobool
 from neuron import h
+import os
+import platform
+import shutil
 import subprocess
 from subprocess import PIPE
 
@@ -9,6 +13,9 @@ cvode = h.CVode()
 def sortspikes(spiketime, gidvec):
     return sorted(zip(spiketime, gidvec))
 
+
+# Set globally so we can ensure the IClamp duration is shorter
+tstop = 1
 
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
@@ -42,7 +49,7 @@ class Cell:
         # im_axial should be done after ic completes.
         ic = h.IClamp(self.secs[2](0))
         ic.delay = 0.0
-        ic.dur = 0.2
+        ic.dur = min(0.2, tstop / 2)
         ic.amp = 5.0
         self.ic = ic
 
@@ -121,31 +128,10 @@ class Model:
     def __init__(self, ncell, nsec):
         self.cells = [Cell(i, nsec) for i in range(ncell)]
         self.update_pointers()
-        # Setup callback to update dipole POINTER for cache_efficiency
-        # The PtrVector is used only to support the callback.
-        self._callback_setup = h.PtrVector(1)
-        self._callback_setup.ptr_update_callback(self.update_pointers)
 
     def update_pointers(self):
         for cell in self.cells:
             cell.update_pointers()
-
-
-def srun(cmd):
-    print("--------------------")
-    print(cmd)
-    r = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    if r.returncode != 0:
-        print(r)
-    r.check_returncode()
-
-
-def runcn(args):
-    import platform
-
-    cpu = platform.machine()
-    cmd = cpu + "/special-core " + args
-    srun(cmd)
 
 
 def test_axial():
@@ -196,22 +182,61 @@ def test_axial():
         pc.psolve(tstop)
         return result(m)
 
-    std = run(1)
+    std = run(tstop)
 
-    cvode.cache_efficient(1)
-    chk(std, run(1))
+    chk(std, run(tstop))
 
     from neuron import coreneuron
 
     coreneuron.verbose = 0
     coreneuron.enable = True
-    coreneuron.cell_permute = 0
-    for coreneuron.cell_permute in [0, 1]:
-        chk(std, run(1))
-    coreneuron.enable = False
+    coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 
-    m._callback_setup = None  # get rid of the callback first.
+    # test (0,1) for CPU and (1,2) for GPU
+    for perm in coreneuron.valid_cell_permute():
+        coreneuron.cell_permute = perm
+        chk(std, run(tstop))
+    coreneuron.enable = False
     del m
+
+
+def run_coreneuron_offline_checkpoint_restore(spikes_std):
+    # standard to compare with checkpoint series
+    tpnts = [5.0, 10.0]
+    for perm in [0, 1]:
+        print("\n\ncell_permute ", perm)
+        common = [
+            "-d",
+            "coredat",
+            "--voltage",
+            "1000",
+            "--verbose",
+            "0",
+            "--cell-permute",
+            str(perm),
+        ]
+
+        def run(tstop, args):
+            exe = os.path.join(os.getcwd(), platform.machine(), "special-core")
+            subprocess.run(
+                [exe] + ["--tstop", "{:g}".format(tstop)] + common + args,
+                check=True,
+                shell=False,
+            )
+
+        # standard full run
+        run(tpnts[-1], ["-o", "coredat"])
+        # sequence of checkpoints
+        for i, tpnt in enumerate(tpnts):
+            restore = ["--restore", "coredat/chkpnt{}".format(i)] if i > 0 else []
+            checkpoint = ["--checkpoint", "coredat/chkpnt{}".format(i + 1)]
+            outpath = ["-o", "coredat/chkpnt{}".format(i + 1)]
+            run(tpnt, outpath + restore + checkpoint)
+
+        # compare spikes
+        cmp_spks(
+            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
+        )
 
 
 def test_checkpoint():
@@ -219,7 +244,7 @@ def test_checkpoint():
         return
 
     # clear out the old
-    srun("rm -r -f coredat")
+    shutil.rmtree("coredat", ignore_errors=True)
 
     m = Model(5, 5)
     # file mode CoreNEURON real cells need gids
@@ -239,7 +264,6 @@ def test_checkpoint():
     spktime = h.Vector()
     spkgid = h.Vector()
     pc.spike_record(-1, spktime, spkgid)
-    cvode.cache_efficient(1)
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.nrncore_write("coredat")
@@ -257,7 +281,7 @@ def test_checkpoint():
     from neuron import coreneuron
 
     coreneuron.enable = True
-    for perm in [0, 1]:
+    for perm in coreneuron.valid_cell_permute():
         coreneuron.cell_permute = perm
         run(5)
         pc.psolve(10)
@@ -265,51 +289,57 @@ def test_checkpoint():
         assert spikes_std == spikes
     coreneuron.enable = False
 
-    # standard to compare with checkpoint series
-    tpnts = [5.0, 10.0]
-    for perm in [0, 1]:
-        print("\n\ncell_permute ", perm)
-        common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
-        # standard full run
-        runcn(common + " --tstop %g" % float(tpnts[-1]) + " -o coredat")
-        # sequence of checkpoints
-        for i, tpnt in enumerate(tpnts):
-            tend = tpnt
-            restore = " --restore coredat/chkpnt%d" % (i,) if i > 0 else ""
-            checkpoint = " --checkpoint coredat/chkpnt%d" % (i + 1,)
-            outpath = " -o coredat/chkpnt%d" % (i + 1,)
-            runcn(
-                common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint
-            )
-
-        # compare spikes
-        cmp_spks(
-            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
-        )
-
-    m._callback_setup = None
+    # Delete model before launching the CoreNEURON simulation offline
     pc.gid_clear()
     del m
+
+    # Shrink memory pools of mechanisms
+    h.CVode().poolshrink(1)
+    # Free event queues
+    h.CVode().free_event_queues()
+    # After clearing the above data structures it's not possible to proceed with the NEURON
+    # simulation again or edit the Model
+
+    # Execute CoreNEURON checkpoint-restore simulation in offline mode using the `coredat` dumped
+    # to disk above
+    run_coreneuron_offline_checkpoint_restore(spikes_std)
 
 
 def cmp_spks(spikes, dir, chkpntdirs):
     # sorted nrn standard spikes into dir/out.spk
-    f = open(dir + "/temp", "w")
-    for spike in spikes:
-        f.write("%.8g\t%d\n" % (spike[0], int(spike[1])))
-    f.close()
+    with open(os.path.join(dir, "temp"), "w") as f:
+        for spike in spikes:
+            f.write("{:.8g}\t{}\n".format(spike[0], int(spike[1])))
     # sometimes roundoff to %.8g gives different sort.
-    srun("sortspike {}/temp {}/nrn.spk".format(dir, dir))
+    def help(cmd, name_in, name_out):
+        # `cmd` is some generic utility, which does not need to have a
+        # sanitizer runtime pre-loaded. LD_PRELOAD=/path/to/libtsan.so can
+        # cause problems for *nix utilities, so drop it if it was present.
+        env = os.environ.copy()
+        try:
+            del env["LD_PRELOAD"]
+        except KeyError:
+            pass
+        subprocess.run(
+            [
+                shutil.which(cmd),
+                os.path.join(dir, name_in),
+                os.path.join(dir, name_out),
+            ],
+            check=True,
+            env=env,
+            shell=False,
+        )
 
-    srun("sortspike {}/out.dat {}/out.spk".format(dir, dir))
-    srun("cmp {}/out.spk {}/nrn.spk".format(dir, dir))
-
-    cmd = "cat"
-    for i in chkpntdirs:
-        cmd = cmd + " " + i + "/out.dat"
-    srun(cmd + " > " + dir + "/temp")
-    srun("sortspike {}/temp {}/chkptout.spk".format(dir, dir))
-    srun("cmp {}/out.spk {}/chkptout.spk".format(dir, dir))
+    help("sortspike", "temp", "nrn.spk")
+    help("sortspike", "out.dat", "out.spk")
+    help("cmp", "out.spk", "nrn.spk")
+    with open(os.path.join(dir, "temp"), "wb") as ofile:
+        for subdir in chkpntdirs:
+            with open(os.path.join(subdir, "out.dat"), "rb") as ifile:
+                shutil.copyfileobj(ifile, ofile)
+    help("sortspike", "temp", "chkptout.spk")
+    help("cmp", "out.spk", "chkptout.spk")
 
 
 if __name__ == "__main__":

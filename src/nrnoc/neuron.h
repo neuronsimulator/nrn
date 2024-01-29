@@ -1,10 +1,5 @@
 #include "options.h"
 
-
-#if METHOD3
-extern int spatial_method();
-#endif
-
 #if NEMO
 extern int neuron2nemo(), nemo2neuron();
 #endif
@@ -46,3 +41,4 @@ extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
 extern void this_section(), this_node(), parent_section(), parent_node();
 extern void parent_connection(), section_orientation();
+extern void print_local_memory_usage();

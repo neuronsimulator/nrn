@@ -31,7 +31,7 @@ Open and Write to Files (Obsolete)
             ### 12 9                                  #
             ###########################################
 
-            from neuron import h, gui
+            from neuron import h
 
             def r_open(ndat):
                 h.ropen("file.dat")
@@ -87,12 +87,12 @@ Open and Write to Files (Obsolete)
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import h
 
             def w_open(ndat, x, y):
                 h.wopen("file.dat") 
                 for i in range(ndat):
-                    h.fprint("%g %g\n", x[i], y[i])
+                    h.fprint(f"{x[i]} {y[i]}\n")
                 h.wopen()
 
             # ndat is number of data points

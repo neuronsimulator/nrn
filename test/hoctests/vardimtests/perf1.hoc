@@ -1,0 +1,13 @@
+objref o
+func p1() {local i, tbegin  localobj nil
+    tbegin = startsw()
+    for i = 1, 100000 {
+        o = nil
+    }
+    return startsw() - tbegin
+}
+
+objref results
+results = new Vector()
+for i=1, 10 {results.append(p1())}
+print results.min(), results.mean(), results.max()

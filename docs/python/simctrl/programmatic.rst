@@ -8,6 +8,7 @@ See also:
     cvode.rst
     batch.rst
     savstate.rst
+    bbsavestate.rst
     sessionsave.rst
 
 Functions
@@ -164,8 +165,8 @@ Functions
             from neuron import h
 
             soma = h.Section(name="soma")
-            soma.insert('hh')
-            print("default el_hh = %g" % soma.el_hh)
+            soma.insert(h.hh)
+            print(f"default el_hh = {soma.el_hh}")
 
             # set el_hh so that the steady state is exactly -70 mV 
             h.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
@@ -175,7 +176,7 @@ Functions
             # use current balance: 0 = ina + ik + gl_hh*(v - el_hh)		 
             soma.el_hh = (soma.ina + soma.ik + soma.gl_hh * soma.v) / soma.gl_hh 
              
-            print("-70 mV steady state el_hh = %g" % soma.el_hh)
+            print(f"-70 mV steady state el_hh = {soma.el_hh}")
             h.fcurrent()       # recalculate currents (il_hh) 
 
 
@@ -210,22 +211,6 @@ Functions
         from a call to the :func:`fcurrent` function. For the fixed step method 
         :func:`fadvance` modifies NODED and NODERHS 
         but leaves NODEA and NODEB unchanged. 
-
-----
-
-.. function:: nrnunit_use_legacy
-
-  Syntax:
-    ``bool = h.nrnunit_use_legacy(bool)``
-
-  Description:
-    | Return current units usage as 0 or 1.
-    | An argument is not required.
-    | Arg, False uses modern codata2018 units for FARADAY, R, etc. (default as of version 8.0)
-    | Arg, True uses legacy units (default prior to October, 2020)
-
-  .. seealso::
-    :ref:`NRNUNIT_USE_LEGACY` :ref:`CONSTANTS`
 
 ----
 
@@ -442,27 +427,27 @@ FInitializeHandler
             b = h.Section(name="b")
 
             for sec in h.allsec():
-                sec.insert('hh')
+                sec.insert(h.hh)
 
             def fi0():
                 print('fi0 called after v set but before INITIAL blocks')
-                print('  a.v=%g a.m_hh=%g' % (a.v, a.m_hh))
+                print(f'  a.v={a.v} a.m_hh={a.m_hh}')
                 a.v = 10
 
             def fi1():
                 print('fi1() called after INITIAL blocks but before BREAKPOINT blocks')
                 print('     or variable step initialization.')
                 print('     Good place to change any states.')
-                print('  a.v=%g a.m_hh=%g' % (a.v, a.m_hh))
-                print('  b.v=%g b.m_hh=%g' % (b.v, b.m_hh))
+                print(f'  a.v={a.v} a.m_hh={a.m_hh}')
+                print(f'  b.v={b.v} b.m_hh={b.m_hh}')
                 b.v = 10 
 
             def fi2():
                 print('fi2() called after everything initialized. Just before return')
                 print('     from finitialize.')
                 print('     Good place to record or plot initial values')
-                print('  a.v=%g a.m_hh=%g' % (a.v, a.m_hh))
-                print('  b.v=%g b.m_hh=%g' % (b.v, b.m_hh))
+                print(f'  a.v={a.v} a.m_hh={a.m_hh}')
+                print(f'  b.v={b.v} b.m_hh={b.m_hh}')
 
             fih = [h.FInitializeHandler(0, fi0),
                    h.FInitializeHandler(1, fi1),

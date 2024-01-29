@@ -1,9 +1,7 @@
 #ifndef nrnmenu_h
 #define nrnmenu_h
 
-#include <OS/string.h>
 #include "ndatclas.h"
-#include <ivstream.h>
 class MechTypeImpl;
 
 class MechanismStandard: public Resource {
@@ -40,7 +38,7 @@ class MechanismStandard: public Resource {
     int name_cnt_;
     int offset_;
     int vartype_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Symbol** glosym_;
     void mschk(const char*);
@@ -54,6 +52,7 @@ class MechanismType: public Resource {
     bool is_netcon_target(int);
     bool has_net_event(int);
     bool is_artificial(int);
+    bool is_ion();
     void select(const char*);
     const char* selected();
     void insert(Section*);

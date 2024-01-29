@@ -5,11 +5,11 @@ access cable
 	nseg = 10
 	L = 1
 	diam = 1
-	insert cadifus
+	insert cadif
 }
 proc init() {
 	finitialize(v_init)
-	ca_cadifus[0](.001) = 1e-2
+	ca_cadif[0](.001) = 1e-2
 	cvode.re_init()
 }
 xopen("cadif.ses")

@@ -6,12 +6,12 @@
 #include <InterViews/session.h>
 #include <OS/string.h>
 #include <stdio.h>
-#include <ivstream.h>
 #include "gui-redirect.h"
 extern int nrn_err_dialog_active_;
 
+#include <ostream>
 
-#if defined(MINGW)
+#ifdef MINGW
 extern bool nrn_is_gui_thread();
 extern void nrn_gui_exec(void (*)(void*), void*);
 #endif
@@ -56,7 +56,6 @@ class Oc {
 
     void notify_freed(void (*pf)(void*, int));  // register a callback func
     void notify_when_freed(void* p, Observer*);
-    void notify_when_freed(double* p, Observer*);
     void notify_pointer_disconnect(Observer*);
 
     static Session* getSession();
@@ -74,7 +73,7 @@ class Oc {
     static void helpmode(Window*);
     static void help(const char*);
 
-    static ostream* save_stream;
+    static std::ostream* save_stream;
     static void cleanup();
 
   private:

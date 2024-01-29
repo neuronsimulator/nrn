@@ -93,12 +93,13 @@ class FieldStringSEditor: public StringEditor {
     void do_rate_scroll(Event&);
 };
 
-declareSelectionCallback(FieldStringSEditor) implementSelectionCallback(FieldStringSEditor)
+declareSelectionCallback(FieldStringSEditor)
+implementSelectionCallback(FieldStringSEditor)
 
-    FieldStringSEditor::FieldStringSEditor(ButtonState* bs,
-                                           const char* sample,
-                                           WidgetKit* kit,
-                                           Style* style)
+FieldStringSEditor::FieldStringSEditor(ButtonState* bs,
+                                       const char* sample,
+                                       WidgetKit* kit,
+                                       Style* style)
     : StringEditor(bs, sample) {
     kit_ = kit;
     style_ = style;
@@ -319,12 +320,13 @@ class FieldSEditorImpl {
     void stop_blinking();
 };
 
-declareIOCallback(FieldSEditorImpl) implementIOCallback(FieldSEditorImpl)
+declareIOCallback(FieldSEditorImpl)
+implementIOCallback(FieldSEditorImpl)
 
-    FieldSEditor::FieldSEditor(const String& sample,
-                               WidgetKit* kit,
-                               Style* s,
-                               FieldSEditorAction* action)
+FieldSEditor::FieldSEditor(const String& sample,
+                           WidgetKit* kit,
+                           Style* s,
+                           FieldSEditorAction* action)
     : InputHandler(NULL, s) {
     impl_ = new FieldSEditorImpl;
     impl_->kit_ = kit;

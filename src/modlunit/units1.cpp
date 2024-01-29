@@ -8,7 +8,7 @@ void unit_push(Item* q) {
     Unit_push(decode_units(SYM(q)));
 }
 
-char* decode_units(Symbol* sym) {
+const char* decode_units(Symbol* sym) {
     if (sym->u.str) {
         return sym->u.str;
     }
@@ -70,19 +70,6 @@ void unit_cmp(Item* q1, Item* q2, Item* q3) {
     qexpr[2] = q3;
     Unit_cmp();
 }
-
-void print_unit_expr(int i) {
-    if (i == 1) {
-        if (qexpr[0]) {
-            printitems(qexpr[0], qexpr[1]->prev);
-        }
-    } else {
-        if (qexpr[1]) {
-            printitems(qexpr[1]->next, qexpr[2]);
-        }
-    }
-}
-
 
 void unit_logic(int type, Item* q1, Item* q2, Item* q3) {
     /* if type is 1 then it doesn't matter what the
@@ -160,14 +147,11 @@ void func_unit(Item* q1, Item* q2) {
 
 void unit_del(int i) /* push 1/delta_x ^ i units */
 {
-    Symbol* s;
-    char* cp;
-
-    s = lookup("delta_x");
+    Symbol* s = lookup("delta_x");
     if (!s) {
         diag("delta_x not declared", (char*) 0);
     }
-    cp = decode_units(s);
+    const char* cp = decode_units(s);
     Unit_push("");
     while (i--) {
         Unit_push(cp);

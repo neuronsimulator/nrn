@@ -1,39 +1,39 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
-#include <InterViews/resource.h>
 
 #include "nrnmpi.h"
 
-extern "C" void cvode_fadvance();
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
 extern int hoc_return_type_code;
 
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 #include "classreg.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
 #include "netcvode.h"
 #include "membfunc.h"
+#include "nrn_ansi.h"
+#include "nrncvode.h"
 #include "nrndaspk.h"
+#include "nrniv_mf.h"
+#include "nrnpy.h"
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
-#include <OS/list.h>
 #include <nrnmutdec.h>
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
 
-    // Use of the above static mutex was broken by changeset 7ffd95c in 2014
-    // when a MUTDEC was added explicitly to the NetCvode class namespace to
-    // handle interthread send events.
-    static void
-    static_mutex_for_at_time(bool b) {
+// Use of the above static mutex was broken by changeset 7ffd95c in 2014
+// when a MUTDEC was added explicitly to the NetCvode class namespace to
+// handle interthread send events.
+static void static_mutex_for_at_time(bool b) {
     if (b) {
         MUTCONSTRUCT(1)
     } else {
@@ -59,26 +59,19 @@ static MUTDEC
 extern double dt, t;
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
-extern int diam_changed;
 extern int secondorder;
 extern int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
-extern int use_cachevec;
-extern void nrn_cachevec(int);
-extern "C" Point_process* ob2pntproc(Object*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern short* nrn_is_artificial_;
-extern "C" int structure_change_cnt;
-extern "C" int diam_change_cnt;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif  // USENCS
-#if PARANEURON
+#if NRNMPI
 extern "C" {
 extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
 extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
@@ -127,7 +120,7 @@ static double spikestat(void* v) {
 }
 static double queue_mode(void* v) {
     hoc_return_type_code = 1;  // integer
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     if (ifarg(1)) {
         nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -187,7 +180,6 @@ static double abstol(void* v) {
     if (hoc_is_str_arg(1)) {
         sym = d->name2sym(gargstr(1));
     } else {
-        hoc_pgetarg(1);
         sym = hoc_get_last_pointer_symbol();
         if (!sym) {
             hoc_execerror(
@@ -213,8 +205,7 @@ static double active(void* v) {
     if (ifarg(1)) {
         cvode_active_ = (int) chkarg(1, 0, 1);
         if (cvode_active_) {
-            NetCvode* d = (NetCvode*) v;
-            d->re_init(nt_t);
+            static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
     hoc_return_type_code = 2;  // boolean
@@ -308,7 +299,7 @@ static double statename(void* v) {
     if (ifarg(3)) {
         style = (int) chkarg(3, 0, 2);
     }
-    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style));
+    hoc_assign_str(hoc_pgargstr(2), d->statename(i, style).c_str());
     return 0.;
 }
 
@@ -345,7 +336,6 @@ static double dae_init_dteps(void* v) {
 }
 
 static double use_mxb(void* v) {
-    NetCvode* d = (NetCvode*) v;
     hoc_return_type_code = 2;  // boolean
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
@@ -358,13 +348,10 @@ static double use_mxb(void* v) {
 }
 
 static double cache_efficient(void* v) {
-    NetCvode* d = (NetCvode*) v;
-    if (ifarg(1)) {
-        int i = (int) chkarg(1, 0, 1);
-        nrn_cachevec(i);
-    }
+    // Perhaps a warning on cache_efficient(True) and an error on cache_efficient(False) would be
+    // justified.
     hoc_return_type_code = 2;  // boolean
-    return (double) use_cachevec;
+    return 1.0;
 }
 
 static double use_long_double(void* v) {
@@ -373,7 +360,7 @@ static double use_long_double(void* v) {
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
-        recalc_diam();
+        d->structure_change();
     }
     return (double) d->use_long_double_;
 }
@@ -433,23 +420,22 @@ static double tstop_event(void* v) {
         }
     }
     if (ifarg(2)) {
-        Object* ppobj = nil;
+        Object* ppobj = nullptr;
         int reinit = 0;
         if (ifarg(3)) {
             ppobj = *hoc_objgetarg(3);
             if (!ppobj || ppobj->ctemplate->is_point_ <= 0 ||
-                nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]) {
+                nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type]) {
                 hoc_execerror(hoc_object_name(ppobj), "is not a POINT_PROCESS");
             }
             reinit = int(chkarg(4, 0, 1));
         }
         if (hoc_is_object_arg(2)) {
-            d->hoc_event(x, nil, ppobj, reinit, *hoc_objgetarg(2));
+            d->hoc_event(x, nullptr, ppobj, reinit, *hoc_objgetarg(2));
         } else {
             d->hoc_event(x, gargstr(2), ppobj, reinit);
         }
     } else {
-        // d->tstop_event(x);
         d->hoc_event(x, 0, 0, 0);
     }
     return x;
@@ -504,7 +490,7 @@ static double ncs_netcons(void* v) {
 // for testing when there is actually no pc.transfer or pc.multisplit present
 // forces the global step to be truly global across processors.
 static double use_parallel(void* v) {
-#if PARANEURON
+#if NRNMPI
     // assume single thread and global step
     NetCvode* d = (NetCvode*) v;
     assert(d->gcv_);
@@ -526,20 +512,15 @@ static double nrn_diam_change_count(void* v) {
     return double(diam_change_cnt);
 }
 
-int (*nrnpy_pysame)(Object*, Object*);
-extern int (*nrnpy_hoccommand_exec)(Object*);
-
-declarePtrList(ExtraScatterList, Object)
-    implementPtrList(ExtraScatterList,
-                     Object) static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
+using ExtraScatterList = std::vector<Object*>;
+static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (int i = 0; i < esl->count(); ++i) {
-            Object* callable = esl->item(i);
-            if (!(*nrnpy_hoccommand_exec)(callable)) {
+        for (Object* callable: *esl) {
+            if (!neuron::python::methods.hoccommand_exec(callable)) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
         }
@@ -552,10 +533,10 @@ static double extra_scatter_gather(void* v) {
     check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
-        esl = new ExtraScatterList(2);
+        esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->append(o);
+    esl->push_back(o);
     hoc_obj_ref(o);
     return 0.;
 }
@@ -564,129 +545,100 @@ static double extra_scatter_gather_remove(void* v) {
     Object* o = *hoc_objgetarg(1);
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
-        if (esl)
-            for (int i = esl->count() - 1; i >= 0; --i) {
-                Object* o1 = esl->item(i);
+        if (esl) {
+            for (auto it = esl->begin(); it != esl->end();) {
+                Object* o1 = *it;
                 // if esl exists then python exists
-                if ((*nrnpy_pysame)(o, o1)) {
-                    esl->remove(i);
+                if (neuron::python::methods.pysame(o, o1)) {
+                    it = esl->erase(it);
                     hoc_obj_unref(o1);
+                } else {
+                    ++it;
                 }
             }
+        }
     }
     return 0.;
 }
 
 static double use_fast_imem(void* v) {
-    int i = nrn_use_fast_imem;
+    auto i = nrn_use_fast_imem;
     hoc_return_type_code = 2;  // boolean
     if (ifarg(1)) {
-        nrn_use_fast_imem = int(chkarg(1, 0., 1.));
+        nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();
     }
+    return i;
+}
+
+static double poolshrink(void*) {
+    extern void nrn_poolshrink(int);
+    int i = 0;
+    if (ifarg(1)) {
+        i = int(chkarg(1, 0., 1.));
+    }
+    nrn_poolshrink(i);
     return double(i);
 }
 
-static Member_func members[] = {"solve",
-                                solve,
-                                "atol",
-                                nrn_atol,
-                                "rtol",
-                                rtol,
-                                "re_init",
-                                re_init,
-                                "stiff",
-                                stiff,
-                                "active",
-                                active,
-                                "maxorder",
-                                maxorder,
-                                "minstep",
-                                minstep,
-                                "maxstep",
-                                maxstep,
-                                "jacobian",
-                                jacobian,
-                                "states",
-                                states,
-                                "dstates",
-                                dstates,
-                                "error_weights",
-                                error_weights,
-                                "acor",
-                                acor,
-                                "statename",
-                                statename,
-                                "atolscale",
-                                abstol,
-                                "use_local_dt",
-                                use_local_dt,
-                                "record",
-                                n_record,
-                                "record_remove",
-                                n_remove,
-                                "debug_event",
-                                debug_event,
-                                "order",
-                                order,
-                                "use_daspk",
-                                use_daspk,
-                                "event",
-                                tstop_event,
-                                "current_method",
-                                current_method,
-                                "use_mxb",
-                                use_mxb,
-                                "print_event_queue",
-                                peq,
-                                "event_queue_info",
-                                event_queue_info,
-                                "store_events",
-                                store_events,
-                                "condition_order",
-                                condition_order,
-                                "dae_init_dteps",
-                                dae_init_dteps,
-                                "simgraph_remove",
-                                simgraph_remove,
-                                "state_magnitudes",
-                                state_magnitudes,
-                                "ncs_netcons",
-                                ncs_netcons,
-                                "statistics",
-                                statistics,
-                                "spike_stat",
-                                spikestat,
-                                "queue_mode",
-                                queue_mode,
-                                "cache_efficient",
-                                cache_efficient,
-                                "use_long_double",
-                                use_long_double,
-                                "use_parallel",
-                                use_parallel,
-                                "f",
-                                nrn_hoc2fun,
-                                "yscatter",
-                                nrn_hoc2scatter_y,
-                                "ygather",
-                                nrn_hoc2gather_y,
-                                "fixed_step",
-                                nrn_hoc2fixed_step,
-                                "structure_change_count",
-                                nrn_structure_change_count,
-                                "diam_change_count",
-                                nrn_diam_change_count,
-                                "extra_scatter_gather",
-                                extra_scatter_gather,
-                                "extra_scatter_gather_remove",
-                                extra_scatter_gather_remove,
-                                "use_fast_imem",
-                                use_fast_imem,
-                                0,
-                                0};
+static double free_event_queues(void*) {
+    free_event_queues();
+    return 0;
+}
 
-static Member_ret_obj_func omembers[] = {"netconlist", netconlist, 0, 0};
+static Member_func members[] = {{"solve", solve},
+                                {"atol", nrn_atol},
+                                {"rtol", rtol},
+                                {"re_init", re_init},
+                                {"stiff", stiff},
+                                {"active", active},
+                                {"maxorder", maxorder},
+                                {"minstep", minstep},
+                                {"maxstep", maxstep},
+                                {"jacobian", jacobian},
+                                {"states", states},
+                                {"dstates", dstates},
+                                {"error_weights", error_weights},
+                                {"acor", acor},
+                                {"statename", statename},
+                                {"atolscale", abstol},
+                                {"use_local_dt", use_local_dt},
+                                {"record", n_record},
+                                {"record_remove", n_remove},
+                                {"debug_event", debug_event},
+                                {"order", order},
+                                {"use_daspk", use_daspk},
+                                {"event", tstop_event},
+                                {"current_method", current_method},
+                                {"use_mxb", use_mxb},
+                                {"print_event_queue", peq},
+                                {"event_queue_info", event_queue_info},
+                                {"store_events", store_events},
+                                {"condition_order", condition_order},
+                                {"dae_init_dteps", dae_init_dteps},
+                                {"simgraph_remove", simgraph_remove},
+                                {"state_magnitudes", state_magnitudes},
+                                {"ncs_netcons", ncs_netcons},
+                                {"statistics", statistics},
+                                {"spike_stat", spikestat},
+                                {"queue_mode", queue_mode},
+                                {"cache_efficient", cache_efficient},
+                                {"use_long_double", use_long_double},
+                                {"use_parallel", use_parallel},
+                                {"f", nrn_hoc2fun},
+                                {"yscatter", nrn_hoc2scatter_y},
+                                {"ygather", nrn_hoc2gather_y},
+                                {"fixed_step", nrn_hoc2fixed_step},
+                                {"structure_change_count", nrn_structure_change_count},
+                                {"diam_change_count", nrn_diam_change_count},
+                                {"extra_scatter_gather", extra_scatter_gather},
+                                {"extra_scatter_gather_remove", extra_scatter_gather_remove},
+                                {"use_fast_imem", use_fast_imem},
+                                {"poolshrink", poolshrink},
+                                {"free_event_queues", free_event_queues},
+                                {nullptr, nullptr}};
+
+static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
 #if 0
@@ -697,7 +649,7 @@ static void* cons(Object*) {
 		d = new NetCvode(1);
 		net_cvode_instance = d;
 	}
-	active(nil);
+	active(nullptr);
 	return (void*) d;
 #else
     return (void*) net_cvode_instance;
@@ -738,14 +690,13 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static CVRhsFn pf_;
 
-static void* msetup_thread(NrnThread*);
-static void* msolve_thread(NrnThread*);
+static void msolve_thread(neuron::model_sorted_token const&, NrnThread&);
 static void* msolve_thread_part1(NrnThread*);
 static void* msolve_thread_part2(NrnThread*);
 static void* msolve_thread_part3(NrnThread*);
-static void* f_thread(NrnThread*);
-static void* f_thread_transfer_part1(NrnThread*);
-static void* f_thread_transfer_part2(NrnThread*);
+static void f_thread(neuron::model_sorted_token const&, NrnThread&);
+static void f_thread_transfer_part1(neuron::model_sorted_token const&, NrnThread&);
+static void f_thread_transfer_part2(neuron::model_sorted_token const&, NrnThread&);
 static void* f_thread_ms_part1(NrnThread*);
 static void* f_thread_ms_part2(NrnThread*);
 static void* f_thread_ms_part3(NrnThread*);
@@ -760,30 +711,30 @@ Cvode::Cvode() {
     cvode_constructor();
 }
 void Cvode::cvode_constructor() {
-    nthsizes_ = nil;
-    nth_ = nil;
-    ncv_ = nil;
-    ctd_ = nil;
-    tqitem_ = nil;
-    mem_ = nil;
+    nthsizes_ = nullptr;
+    nth_ = nullptr;
+    ncv_ = nullptr;
+    ctd_ = nullptr;
+    tqitem_ = nullptr;
+    mem_ = nullptr;
 #if NEOSIMorNCS
-    neosim_self_events_ = nil;
+    neosim_self_events_ = nullptr;
 #endif
     initialize_ = false;
     can_retreat_ = false;
     tstop_begin_ = 0.;
     tstop_end_ = 0.;
     use_daspk_ = false;
-    daspk_ = nil;
+    daspk_ = nullptr;
 
-    mem_ = nil;
-    y_ = nil;
-    atolnvec_ = nil;
-    maxstate_ = nil;
-    maxacor_ = nil;
+    mem_ = nullptr;
+    y_ = nullptr;
+    atolnvec_ = nullptr;
+    maxstate_ = nullptr;
+    maxacor_ = nullptr;
     neq_ = 0;
     structure_change_ = true;
-#if PARANEURON
+#if NRNMPI
     use_partrans_ = false;
     global_neq_ = 0;
     opmode_ = 0;
@@ -850,7 +801,7 @@ void Cvode::set_init_flag() {
 }
 
 N_Vector Cvode::nvnew(long int n) {
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         if (net_cvode_instance->use_long_double_) {
             return N_VNew_NrnParallelLD(0, n, global_neq_);
@@ -935,19 +886,19 @@ void Cvode::init_prepare() {
     if (init_global()) {
         if (y_) {
             N_VDestroy(y_);
-            y_ = nil;
+            y_ = nullptr;
         }
         if (mem_) {
             CVodeFree(mem_);
-            mem_ = nil;
+            mem_ = nullptr;
         }
         if (atolnvec_) {
             N_VDestroy(atolnvec_);
-            atolnvec_ = nil;
+            atolnvec_ = nullptr;
         }
         if (daspk_) {
             delete daspk_;
-            daspk_ = nil;
+            daspk_ = nullptr;
         }
         init_eqn();
         if (neq_ > 0) {
@@ -969,11 +920,10 @@ void Cvode::activate_maxstate(bool on) {
     if (maxstate_) {
         N_VDestroy(maxstate_);
         N_VDestroy(maxacor_);
-        maxstate_ = nil;
-        maxacor_ = nil;
+        maxstate_ = nullptr;
+        maxacor_ = nullptr;
     }
     if (on && neq_ > 0) {
-        int i;
         maxstate_ = nvnew(neq_);
         maxacor_ = nvnew(neq_);
         N_VConst(0.0, maxstate_);
@@ -1006,7 +956,7 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
     double* y = n_vector_data(y_, nt->id);
     double* m = n_vector_data(maxstate_, nt->id);
     for (i = 0; i < z.nvsize_; ++i) {
-        x = Math::abs(y[i]);
+        x = std::abs(y[i]);
         if (m[i] < x) {
             m[i] = x;
         }
@@ -1015,7 +965,7 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
         y = n_vector_data(acorvec(), nt->id);
         m = n_vector_data(maxacor_, nt->id);
         for (i = 0; i < z.nvsize_; ++i) {
-            x = Math::abs(y[i]);
+            x = std::abs(y[i]);
             if (m[i] < x) {
                 m[i] = x;
             }
@@ -1105,7 +1055,7 @@ void Cvode::maxstep(double x) {
 void Cvode::free_cvodemem() {
     if (mem_) {
         CVodeFree(mem_);
-        mem_ = nil;
+        mem_ = nullptr;
     }
 }
 
@@ -1124,7 +1074,6 @@ void NetCvode::set_CVRhsFn() {
 }
 
 int Cvode::cvode_init(double) {
-    int iter;
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
     gather_y(y_);
@@ -1132,7 +1081,6 @@ int Cvode::cvode_init(double) {
     nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
     if (mem_) {
         err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-        CVodeSetFdata(mem_, (void*) this);
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
@@ -1146,8 +1094,10 @@ int Cvode::cvode_init(double) {
         if (!mem_) {
             hoc_execerror("CVodeCreate error", 0);
         }
+        maxorder(ncv_->maxorder());  // Memory Leak if changed after CVodeMalloc
+        minstep(ncv_->minstep());
+        maxstep(ncv_->maxstep());
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-        CVodeSetFdata(mem_, (void*) this);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    this,
@@ -1155,17 +1105,16 @@ int Cvode::cvode_init(double) {
                    err);
             return err;
         }
-        maxorder(ncv_->maxorder());
-        minstep(ncv_->minstep());
-        maxstep(ncv_->maxstep());
         //		CVodeSetInitStep(mem_, .01);
     }
     matmeth();
     ((CVodeMem) mem_)->cv_gamma = 0.;
     ((CVodeMem) mem_)->cv_h = 0.;  // fun called before cvode sets this (though fun does not need it
                                    // really)
-    // fun(t_, N_VGetArrayPointer(y_), nil);
-    (*pf_)(t_, y_, nil, (void*) this);
+    // fun(t_, N_VGetArrayPointer(y_), nullptr);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    pf_(t_, y_, nullptr, &opaque);
     can_retreat_ = false;
     return err;
 }
@@ -1184,7 +1133,7 @@ void Cvode::alloc_daspk() {
     // nodes may or may not have capacitors to ground.
 }
 
-int Cvode::advance_tn() {
+int Cvode::advance_tn(neuron::model_sorted_token const& sorted_token) {
     int err = SUCCESS;
     if (neq_ == 0) {
         t_ += 1e9;
@@ -1218,14 +1167,14 @@ int Cvode::advance_tn() {
         } else {
             nt_t = t_;
         }
-        do_nonode(nth_);
-#if PARANEURON
+        do_nonode(sorted_token, nth_);
+#if NRNMPI
         opmode_ = 1;
 #endif
         if (use_daspk_) {
             err = daspk_advance_tn();
         } else {
-            err = cvode_advance_tn();
+            err = cvode_advance_tn(sorted_token);
         }
         can_retreat_ = true;
         maxstate(true);
@@ -1250,7 +1199,7 @@ int Cvode::solve() {
             err = init(t_);
         }
     } else {
-        err = advance_tn();
+        err = advance_tn(nrn_ensure_model_data_are_sorted());
     }
     // printf("Cvode::solve exit %p current_time=%g tn=%g\n", this, t_, tn());
     return err;
@@ -1267,7 +1216,7 @@ int Cvode::init(double tout) {
     next_at_time_ = t_ + 1e5;
     init_prepare();
     if (neq_) {
-#if PARANEURON
+#if NRNMPI
         opmode_ = 3;
 #endif
         if (use_daspk_) {
@@ -1277,7 +1226,7 @@ int Cvode::init(double tout) {
         }
     }
     tstop_ = next_at_time_ - NetCvode::eps(next_at_time_);
-#if PARANEURON
+#if NRNMPI
     if (use_partrans_) {
         tstop_ = nrnmpi_dbl_allmin(tstop_);
     }
@@ -1357,7 +1306,7 @@ int Cvode::interpolate(double tout) {
     assert(tout >= t0() && tout <= tn());
 
     ++interpolate_calls_;
-#if PARANEURON
+#if NRNMPI
     opmode_ = 2;
 #endif
     if (use_daspk_) {
@@ -1367,7 +1316,7 @@ int Cvode::interpolate(double tout) {
     }
 }
 
-int Cvode::cvode_advance_tn() {
+int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
@@ -1378,9 +1327,12 @@ int Cvode::cvode_advance_tn() {
                t_);
     }
 #endif
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    CVodeSetFdata(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_);
     // printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
     int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP_TSTOP);
+    CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("t_=%.20g\n", t_);
@@ -1391,17 +1343,12 @@ int Cvode::cvode_advance_tn() {
                this,
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
-        (*pf_)(t_, y_, nil, (void*) this);
+        pf_(t_, y_, nullptr, &opaque);
         return err;
     }
     // this is very bad, performance-wise. However cvode modifies its states
     // after a call to fun with the proper t.
-#if 1
-    (*pf_)(t_, y_, nil, (void*) this);
-#else
-    NrnThread* _nt;
-    scatter_y(y_);
-#endif
+    pf_(t_, y_, nullptr, &opaque);
     tn_ = ((CVodeMem) mem_)->cv_tn;
     t0_ = tn_ - ((CVodeMem) mem_)->cv_h;
     // printf("t=%.15g t_=%.15g tn()=%.15g tstop_=%.15g t0_=%.15g\n", nrn_threads->t, t_, tn(),
@@ -1423,8 +1370,12 @@ int Cvode::cvode_interpolate(double tout) {
 #endif
     // avoid CVode-- tstop = 0.5 is behind  current t = 0.5
     // is this really necessary anymore. Maybe NORMAL mode ignores tstop
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
+    CVodeSetFdata(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_ + tstop_);
     int err = CVode(mem_, tout, y_, &t_, CV_NORMAL);
+    CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("%.20g\n", t_);
@@ -1437,15 +1388,14 @@ int Cvode::cvode_interpolate(double tout) {
                err);
         return err;
     }
-    (*pf_)(t_, y_, nil, (void*) this);
+    pf_(t_, y_, nullptr, &opaque);
     //	printf("t_=%g h=%g q=%d y=%g\n", t_, ((CVodeMem)mem_)->cv_h, ((CVodeMem)mem_)->cv_q,
     // N_VIth(y_,0));
     return SUCCESS;
 }
 
 int Cvode::daspk_advance_tn() {
-    int flag, err;
-    double tin;
+    int err;
     // printf("Cvode::solve test stop time t=%.20g tstop-t=%g\n", t, tstop_-t);
     // printf("in Cvode::solve t_=%g tstop=%g calling  daspk_->solve(%g)\n", t_, tstop_,
     // daspk_->tout_);
@@ -1517,6 +1467,12 @@ void Cvode::matmeth() {
         CVDiag(mem_);
         break;
     default:
+        // free previous method
+        if (((CVodeMem) mem_)->cv_lfree) {
+            ((CVodeMem) mem_)->cv_lfree((CVodeMem) mem_);
+            ((CVodeMem) mem_)->cv_lfree = NULL;
+        }
+
         ((CVodeMem) mem_)->cv_linit = minit;
         ((CVodeMem) mem_)->cv_lsetup = msetup;
         ((CVodeMem) mem_)->cv_setupNonNull = TRUE;  // but since our's does not do anything...
@@ -1545,7 +1501,8 @@ static int msetup(CVodeMem m,
                   N_Vector) {
     //	printf("msetup\n");
     *jcurPtr = true;
-    Cvode* cv = (Cvode*) m->cv_f_data;
+    auto* const cv =
+        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
     return cv->setup(yp, fp);
 }
 
@@ -1557,7 +1514,10 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     //	N_VIth(b, 0) /= (1. + m->cv_gamma);
     //	N_VIth(b, 0) /= (1. + m->cv_gammap);
     //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
-    msolve_cv_ = (Cvode*) m->cv_f_data;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        m->cv_f_data);
+    msolve_cv_ = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     Cvode& cv = *msolve_cv_;
     ++cv.mxb_calls_;
     if (cv.ncv_->stiff() == 0) {
@@ -1573,12 +1533,15 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
         nrn_multithread_job(msolve_thread_part2);
         nrn_multithread_job(msolve_thread_part3);
     } else {
-        nrn_multithread_job(msolve_thread);
+        nrn_multithread_job(sorted_token, msolve_thread);
     }
     return 0;
 }
 static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
-    Cvode* cv = (Cvode*) m->cv_f_data;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        m->cv_f_data);
+    auto* const cv = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     ++cv->mxb_calls_;
     if (cv->ncv_->stiff() == 0) {
         return 0;
@@ -1587,17 +1550,19 @@ static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur,
         return 0;
     }
     cv->nth_->_vcv = cv;
-    cv->solvex_thread(cv->n_vector_data(b, 0), cv->n_vector_data(ycur, 0), cv->nth_);
+    cv->solvex_thread(sorted_token, cv->n_vector_data(b, 0), cv->n_vector_data(ycur, 0), cv->nth_);
     cv->nth_->_vcv = 0;
     return 0;
 }
-static void* msolve_thread(NrnThread* nt) {
-    int i = nt->id;
+static void msolve_thread(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
+    int i = nt.id;
     Cvode* cv = msolve_cv_;
-    nt->_vcv = cv;
-    cv->solvex_thread(cv->n_vector_data(msolve_b_, i), cv->n_vector_data(msolve_ycur_, i), nt);
-    nt->_vcv = 0;
-    return 0;
+    nt._vcv = cv;
+    cv->solvex_thread(sorted_token,
+                      cv->n_vector_data(msolve_b_, i),
+                      cv->n_vector_data(msolve_ycur_, i),
+                      &nt);
+    nt._vcv = 0;
 }
 static void* msolve_thread_part1(NrnThread* nt) {
     int i = nt->id;
@@ -1607,7 +1572,6 @@ static void* msolve_thread_part1(NrnThread* nt) {
     return 0;
 }
 static void* msolve_thread_part2(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = msolve_cv_;
     cv->solvex_thread_part2(nt);
     return 0;
@@ -1629,10 +1593,12 @@ static N_Vector f_y_;
 static N_Vector f_ydot_;
 static Cvode* f_cv_;
 static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        f_data);
+    f_cv_ = f_typed_data->first;
     // ydot[0] = -y[0];
     //	N_VIth(ydot, 0) = -N_VIth(y, 0);
     // printf("f(%g, %p, %p)\n", t, y, ydot);
-    f_cv_ = (Cvode*) f_data;
     ++f_cv_->f_calls_;
     f_t_ = t;
     f_y_ = y;
@@ -1651,47 +1617,53 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
                 nrn_multithread_job(f_thread_ms_part34);
             }
         } else if (nrnthread_v_transfer_) {
-            nrn_multithread_job(f_thread_transfer_part1);
+            nrn_multithread_job(f_typed_data->second, f_thread_transfer_part1);
             if (nrnmpi_v_transfer_) {
                 (*nrnmpi_v_transfer_)();
             }
-            nrn_multithread_job(f_thread_transfer_part2);
+            nrn_multithread_job(f_typed_data->second, f_thread_transfer_part2);
         } else {
-            nrn_multithread_job(f_thread);
+            nrn_multithread_job(f_typed_data->second, f_thread);
         }
     } else {
-        nrn_multithread_job(f_thread);
+        nrn_multithread_job(f_typed_data->second, f_thread);
     }
 }
 static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
-    Cvode* cv = (Cvode*) f_data;
+    auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
+        f_data);
+    auto* const cv = f_typed_data->first;
+    auto const& sorted_token = f_typed_data->second;
     ++cv->f_calls_;
     cv->nth_->_vcv = cv;
-    cv->fun_thread(t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);
+    cv->fun_thread(sorted_token, t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);
     cv->nth_->_vcv = 0;
 }
 
-static void* f_thread(NrnThread* nt) {
+static void f_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
     nt->_vcv = cv;
-    cv->fun_thread(f_t_, cv->n_vector_data(f_y_, i), cv->n_vector_data(f_ydot_, i), nt);
+    cv->fun_thread(
+        sorted_token, f_t_, cv->n_vector_data(f_y_, i), cv->n_vector_data(f_ydot_, i), &ntr);
     nt->_vcv = 0;
-    return 0;
 }
-static void* f_thread_transfer_part1(NrnThread* nt) {
+static void f_thread_transfer_part1(neuron::model_sorted_token const& sorted_token,
+                                    NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
     nt->_vcv = cv;
-    cv->fun_thread_transfer_part1(f_t_, cv->n_vector_data(f_y_, i), nt);
-    return 0;
+    cv->fun_thread_transfer_part1(sorted_token, f_t_, cv->n_vector_data(f_y_, i), nt);
 }
-static void* f_thread_transfer_part2(NrnThread* nt) {
+static void f_thread_transfer_part2(neuron::model_sorted_token const& sorted_token,
+                                    NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i = nt->id;
     Cvode* cv = f_cv_;
-    cv->fun_thread_transfer_part2(cv->n_vector_data(f_ydot_, i), nt);
+    cv->fun_thread_transfer_part2(sorted_token, cv->n_vector_data(f_ydot_, i), &ntr);
     nt->_vcv = 0;
-    return 0;
 }
 static void* f_thread_ms_part1(NrnThread* nt) {
     int i = nt->id;
@@ -1701,13 +1673,11 @@ static void* f_thread_ms_part1(NrnThread* nt) {
     return 0;
 }
 static void* f_thread_ms_part2(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = f_cv_;
     cv->fun_thread_ms_part2(nt);
     return 0;
 }
 static void* f_thread_ms_part3(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = f_cv_;
     cv->fun_thread_ms_part3(nt);
     return 0;

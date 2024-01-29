@@ -36,9 +36,10 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.autosectionlabel",
-    "recommonmark",
+    "myst_parser",
     "sphinx.ext.mathjax",
     "nbsphinx",
+    "sphinx_design",
 ]
 
 source_suffix = {
@@ -55,6 +56,8 @@ def setup(app):
     # Set-up HOC domain
     hocdomain.setup(app)
 
+
+myst_heading_anchors = 3
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

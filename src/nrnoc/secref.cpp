@@ -19,7 +19,7 @@ access s1.sec	// soma becomes the default section
 #include "section.h"
 #include "parse.hpp"
 #include "hoc_membf.h"
-#include <nrnpython_config.h>
+#include "oc_ansi.h"
 
 extern int hoc_return_type_code;
 
@@ -28,15 +28,12 @@ Symbol* nrn_trueparent_sym;
 
 static hoc_Item** sec2pitm(Section* sec) {
     extern Objectdata* hoc_top_level_data;
-    Symbol* sym;
-    Object* ob;
-    int i;
-    if (!sec || !sec->prop || !sec->prop->dparam[0].sym) {
+    if (!sec || !sec->prop || !sec->prop->dparam[0].get<Symbol*>()) {
         hoc_execerror("section is unnamed", (char*) 0);
     }
-    sym = sec->prop->dparam[0].sym;
-    ob = sec->prop->dparam[6].obj;
-    i = sec->prop->dparam[5].i;
+    auto* sym = sec->prop->dparam[0].get<Symbol*>();
+    auto* ob = sec->prop->dparam[6].get<Object*>();
+    auto i = sec->prop->dparam[5].get<int>();
     if (ob) {
         return ob->u.dataspace[sym->u.oboff].psecitm + i;
     } else {
@@ -70,17 +67,15 @@ static double s_unname(void* v) {
     sec = (Section*) v;
 #if USE_PYTHON
     /* Python Sections cannot be unnamed, return 0.0 */
-    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         return 0.0;
     }
 #endif
     pitm = sec2pitm(sec);
     *pitm = (hoc_Item*) 0;
-    sec->prop->dparam[0].sym = (Symbol*) 0;
+    sec->prop->dparam[0] = static_cast<Symbol*>(nullptr);
     return 1.;
 }
-
-extern "C" Object* ivoc_list_item(Object*, int);
 
 static double s_rename(void* v) {
     extern Objectdata* hoc_top_level_data;
@@ -102,12 +97,12 @@ static double s_rename(void* v) {
     }
 #if USE_PYTHON
     /* Python Sections cannot be renamed, return 0.0 */
-    if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    if (sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         return 0.;
     }
 #endif
-    qsec = sec->prop->dparam[8].itm;
-    if (sec->prop->dparam[0].sym) {
+    qsec = sec->prop->dparam[8].get<hoc_Item*>();
+    if (sec->prop->dparam[0].get<Symbol*>()) {
         Printf("%s must first be unnamed\n", secname(sec));
         return 0.;
     }
@@ -160,9 +155,9 @@ static double s_rename(void* v) {
 
     if (size == 0) {
         pitm[index] = qsec;
-        sec->prop->dparam[0].sym = sym;
-        sec->prop->dparam[5].i = index;
-        sec->prop->dparam[6].obj = nullptr;
+        sec->prop->dparam[0] = {neuron::container::do_not_search, sym};
+        sec->prop->dparam[5] = index;
+        sec->prop->dparam[6] = static_cast<Object*>(nullptr);
         OPSECITM(sym)[0] = qsec;
     } else {
         for (i = 0; i < size; ++i) {
@@ -174,10 +169,10 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
-            qsec = sec->prop->dparam[8].itm;
-            sec->prop->dparam[0].sym = sym;
-            sec->prop->dparam[5].i = i;
-            sec->prop->dparam[6].obj = nullptr;
+            qsec = sec->prop->dparam[8].get<hoc_Item*>();
+            sec->prop->dparam[0] = sym;
+            sec->prop->dparam[5] = i;
+            sec->prop->dparam[6] = static_cast<Object*>(nullptr);
             OPSECITM(sym)[i] = qsec;
         }
     }
@@ -281,32 +276,19 @@ static double s_cas(void* v) { /* return 1 if currently accessed section */
     return 0.;
 }
 
-static Member_func members[] = {"sec",
-                                s_rename, /* will actually become a SECTIONREF below */
-                                "parent",
-                                s_rename,
-                                "trueparent",
-                                s_rename,
-                                "root",
-                                s_rename,
-                                "child",
-                                s_rename,
-                                "nchild",
-                                s_nchild,
-                                "has_parent",
-                                s_has_parent,
-                                "has_trueparent",
-                                s_has_trueparent,
-                                "exists",
-                                s_exists,
-                                "rename",
-                                s_rename,
-                                "unname",
-                                s_unname,
-                                "is_cas",
-                                s_cas,
-                                0,
-                                0};
+static Member_func members[] = {{"sec", s_rename}, /* will actually become a SECTIONREF below */
+                                {"parent", s_rename},
+                                {"trueparent", s_rename},
+                                {"root", s_rename},
+                                {"child", s_rename},
+                                {"nchild", s_nchild},
+                                {"has_parent", s_has_parent},
+                                {"has_trueparent", s_has_trueparent},
+                                {"exists", s_exists},
+                                {"rename", s_rename},
+                                {"unname", s_unname},
+                                {"is_cas", s_cas},
+                                {0, 0}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;
@@ -345,6 +327,12 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
             } else {
                 hoc_execerror("SectionRef.child[index]", (char*) 0);
             }
+        }
+        // modeldb 114355 uses legacy syntax SectionRef.child(i). Allow
+        // though there is no ndim on stack.
+        bool ok = hoc_stack_type_is_ndim() ? (hoc_pop_ndim() == 1) : (*pnindex == 1);
+        if (!ok) {
+            hoc_execerror("SectionRef.child[index] must have only one dimension", NULL);
         }
         index = (int) hoc_xpop();
         --*pnindex;

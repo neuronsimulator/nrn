@@ -3,11 +3,8 @@
 #include "classreg.h"
 
 
-#include <OS/list.h>
-#include <OS/string.h>
-#include <OS/math.h>
+#include <vector>
 #include <string.h>
-#include <ivstream.h>
 #if HAVE_IV
 #include "graph.h"
 #include "scenepic.h"
@@ -15,13 +12,13 @@
 #include "ivoc.h"
 #endif
 #include "ivocvect.h"
+#include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "objcmd.h"
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int node_index(Section*, double);
-extern "C" int structure_change_cnt;
 extern int nrn_shape_changed_;
 extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
@@ -33,8 +30,7 @@ class SecPos {
     Section* sec;
 };
 
-declareList(SecPosList, SecPos);
-implementList(SecPosList, SecPos);
+using SecPosList = std::vector<SecPos>;
 
 class RangeExpr {
   public:
@@ -54,58 +50,29 @@ class RangeExpr {
 };
 
 #if !HAVE_IV
-class NoIVGraphVector {
-  public:
-    NoIVGraphVector(const char*);
-    virtual ~NoIVGraphVector();
+struct NoIVGraphVector {
+    NoIVGraphVector(const char* /* name */) {}
+    virtual ~NoIVGraphVector() {}
     void begin();
-    void add(float, double*);
+    void add(float, neuron::container::data_handle<double>);
     int count();
-    CopyString name_;
-    int count_, size_;
-    double** py_;
-    float* x_;
+    std::vector<float> x_{};
+    std::vector<neuron::container::data_handle<double>> py_{};
 };
-NoIVGraphVector::NoIVGraphVector(const char* name) {
-    name_ = name;
-    size_ = 0;
-    count_ = 0;
-    py_ = NULL;
-    x_ = NULL;
-}
-NoIVGraphVector::~NoIVGraphVector() {
-    if (py_) {
-        delete[] py_;
-        delete[] x_;
-    }
-}
 int NoIVGraphVector::count() {
-    return count_;
+    auto const s = x_.size();
+    assert(s == py_.size());
+    return s;
 }
 void NoIVGraphVector::begin() {
-    count_ = 0;
-    if (!size_) {
-        size_ = 20;
-        py_ = new double*[size_];
-        x_ = new float[size_];
-    }
+    x_.clear();
+    py_.clear();
+    x_.reserve(20);
+    py_.reserve(20);
 }
-void NoIVGraphVector::add(float x, double* y) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** py = new double*[size_];
-        float* px = new float[size_];
-        for (int i = 0; i < count_; i++) {
-            py[i] = py_[i];
-            px[i] = x_[i];
-        }
-        delete[] py_;
-        delete[] x_;
-        py_ = py;
-        x_ = px;
-    }
-    py_[count_] = y;
-    x_[count_++] = x;
+void NoIVGraphVector::add(float x, neuron::container::data_handle<double> y) {
+    x_.push_back(x);
+    py_.push_back(std::move(y));
 }
 #endif
 
@@ -118,7 +85,7 @@ class RangeVarPlot: public NoIVGraphVector {
     RangeVarPlot(const char*, Object* pyobj);
     virtual ~RangeVarPlot();
 #if HAVE_IV
-    virtual void save(ostream&);
+    virtual void save(std::ostream&);
     virtual void request(Requisition& req) const;
     virtual bool choose_sym(Graph*);
     virtual void update(Observable*);
@@ -144,7 +111,7 @@ class RangeVarPlot: public NoIVGraphVector {
     Section *begin_section_, *end_section_;
     float x_begin_, x_end_, origin_;
     SecPosList* sec_list_;
-    CopyString expr_;
+    std::string expr_;
     int shape_changed_;
     int struc_changed_;
     double d2root_;  // distance to root of closest point to root
@@ -278,14 +245,19 @@ static double from_vector(void* v) {
     return double(cnt);
 }
 
-static Member_func s_members[] = {"begin",     s_begin,   "end",         s_end,
-                                  "origin",    s_origin,  "d2root",      s_d2root,
-                                  "left",      s_left,    "right",       s_right,
-                                  "list",      s_list,    "color",       s_color,
-                                  "to_vector", to_vector, "from_vector", from_vector,
-                                  0,           0};
+static Member_func s_members[] = {{"begin", s_begin},
+                                  {"end", s_end},
+                                  {"origin", s_origin},
+                                  {"d2root", s_d2root},
+                                  {"left", s_left},
+                                  {"right", s_right},
+                                  {"list", s_list},
+                                  {"color", s_color},
+                                  {"to_vector", to_vector},
+                                  {"from_vector", from_vector},
+                                  {0, 0}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {"vector", rvp_vector, 0, 0};
+static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -333,7 +305,7 @@ RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj)
     color_ = 1;
     begin_section_ = 0;
     end_section_ = 0;
-    sec_list_ = new SecPosList(50);
+    sec_list_ = new SecPosList;
     struc_changed_ = structure_change_cnt;
     shape_changed_ = nrn_shape_changed_;
 #if HAVE_IV
@@ -434,16 +406,16 @@ void RangeVarPlot::x_end(float x, Section* sec) {
 }
 
 float RangeVarPlot::left() {
-    if (sec_list_->count()) {
-        return sec_list_->item(0).len + origin_;
+    if (!sec_list_->empty()) {
+        return sec_list_->front().len + origin_;
     } else {
         return origin_;
     }
 }
 
 float RangeVarPlot::right() {
-    if (sec_list_->count()) {
-        return sec_list_->item(sec_list_->count() - 1).len + origin_;
+    if (!sec_list_->empty()) {
+        return sec_list_->back().len + origin_;
     } else {
         return origin_;
     }
@@ -465,26 +437,26 @@ void RangeVarPlot::request(Requisition& req) const {
 #endif
 
 #if HAVE_IV
-void RangeVarPlot::save(ostream& o) {
+void RangeVarPlot::save(std::ostream& o) {
     char buf[256];
-    o << "objectvar rvp_" << endl;
-    sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.string());
-    o << buf << endl;
-    sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
-    o << buf << endl;
-    sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
-    o << buf << endl;
-    sprintf(buf, "rvp_.origin(%g)", origin_);
-    o << buf << endl;
+    o << "objectvar rvp_" << std::endl;
+    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.c_str());
+    o << buf << std::endl;
+    Sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
+    o << buf << std::endl;
+    Sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
+    o << buf << std::endl;
+    Sprintf(buf, "rvp_.origin(%g)", origin_);
+    o << buf << std::endl;
     Coord x, y;
     label_loc(x, y);
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.addobject(rvp_, %d, %d, %g, %g)",
             colors->color(color()),
             brushes->brush(brush()),
             x,
             y);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 #endif
 
@@ -534,7 +506,7 @@ void SpacePlot::expr(const char* expr) {
 #endif
 
 void RangeVarPlot::fill_pointers() {
-    long xcnt = sec_list_->count();
+    long xcnt = sec_list_->size();
     if (xcnt) {
         Symbol* sym;
         char buf[200];
@@ -542,19 +514,19 @@ void RangeVarPlot::fill_pointers() {
         if (rexp_) {
             rexp_->fill();
         } else {
-            sscanf(expr_.string(), "%[^[]", buf);
+            sscanf(expr_.c_str(), "%[^[]", buf);
             sym = hoc_lookup(buf);
             if (!sym) {
                 return;
             }
-            sprintf(buf, "%s(hoc_ac_)", expr_.string());
+            Sprintf(buf, "%s(hoc_ac_)", expr_.c_str());
         }
         int noexist = 0;  // don't plot single points that don't exist
         bool does_exist;
-        double* pval = NULL;
+        neuron::container::data_handle<double> pval{};
         for (long i = 0; i < xcnt; ++i) {
-            Section* sec = sec_list_->item(i).sec;
-            hoc_ac_ = sec_list_->item(i).x;
+            Section* sec = (*sec_list_)[i].sec;
+            hoc_ac_ = (*sec_list_)[i].x;
             if (rexp_) {
                 does_exist = rexp_->exists(int(i));
             } else {
@@ -564,26 +536,27 @@ void RangeVarPlot::fill_pointers() {
             }
             if (does_exist) {
                 if (rexp_) {
-                    pval = rexp_->pval(int(i));
+                    // TODO avoid conversion
+                    pval = neuron::container::data_handle<double>{rexp_->pval(int(i))};
                 } else {
-                    pval = hoc_val_pointer(buf);
+                    pval = hoc_val_handle(buf);
                 }
                 if (noexist > 1) {
-                    add(sec_list_->item(i - 1).len + origin_, 0);
-                    add(sec_list_->item(i - 1).len + origin_, pval);
+                    add((*sec_list_)[i - 1].len + origin_, {});
+                    add((*sec_list_)[i - 1].len + origin_, pval);
                 }
                 if (i == 1 && noexist == 1) {
-                    add(sec_list_->item(i - 1).len + origin_, pval);
+                    add((*sec_list_)[i - 1].len + origin_, pval);
                 }
-                add(sec_list_->item(i).len + origin_, pval);
+                add((*sec_list_)[i].len + origin_, pval);
                 noexist = 0;
             } else {
                 if (noexist == 1) {
-                    add(sec_list_->item(i - 1).len + origin_, pval);
-                    add(sec_list_->item(i - 1).len + origin_, 0);
+                    add((*sec_list_)[i - 1].len + origin_, pval);
+                    add((*sec_list_)[i - 1].len + origin_, {});
                 }
                 if (i == xcnt - 1 && noexist == 0) {
-                    add(sec_list_->item(i).len + origin_, pval);
+                    add((*sec_list_)[i].len + origin_, pval);
                 }
                 ++noexist;
             }
@@ -594,11 +567,10 @@ void RangeVarPlot::fill_pointers() {
 
 void RangeVarPlot::list(Object* ob) {
     hoc_List* l = (hoc_List*) ob->u.this_pointer;
-    long i, cnt = sec_list_->count();
-    Section* sec = NULL;
-    for (i = 0; i < cnt; ++i) {
-        if (sec_list_->item(i).sec != sec) {
-            sec = sec_list_->item(i).sec;
+    Section* sec = nullptr;
+    for (SecPos p: *sec_list_) {
+        if (p.sec != sec) {
+            sec = p.sec;
             if (sec) {
                 hoc_l_lappendsec(l, sec);
                 section_ref(sec);
@@ -631,7 +603,7 @@ void SpacePlot::plot() {
 
 void RangeVarPlot::set_x() {
     if (!begin_section_ || !end_section_ || !begin_section_->prop || !end_section_->prop) {
-        sec_list_->remove_all();
+        sec_list_->clear();
         return;
     }
     SecPos spos;
@@ -641,7 +613,7 @@ void RangeVarPlot::set_x() {
     sec1 = begin_section_;
     sec2 = end_section_;
     v_setup_vectors();
-    sec_list_->remove_all();  // v_setup_vectors() may recurse once.
+    sec_list_->clear();  // v_setup_vectors() may recurse once.
     nd1 = node_exact(sec1, x_begin_);
     nd2 = node_exact(sec2, x_end_);
 
@@ -669,7 +641,7 @@ void RangeVarPlot::set_x() {
         spos.x = nrn_arc_position(sec, nd);
         spos.len = d - x;
         // printf("%s(%g) at %g  %g\n", secname(spos.sec), spos.x, spos.len, x);
-        sec_list_->append(spos);
+        sec_list_->push_back(spos);
         if (x == 0.) {
             sec = nrn_trueparent(sec);
             d += node_dist(sec, nd);
@@ -685,9 +657,9 @@ void RangeVarPlot::set_x() {
     spos.x = nrn_arc_position(spos.sec, nd);
     spos.len = 0.;
     // printf("%s(%g) at %g root\n", secname(spos.sec), spos.x, spos.len);
-    sec_list_->append(spos);
+    sec_list_->push_back(spos);
 
-    long indx = sec_list_->count();
+    long indx = sec_list_->size();
 
     nd = nd2;
     sec = sec2;
@@ -698,7 +670,7 @@ void RangeVarPlot::set_x() {
         spos.x = nrn_arc_position(sec, nd);
         spos.len = d + x;
         // printf("%s(%g) at %g\n", secname(spos.sec), spos.x, spos.len);
-        sec_list_->insert(indx, spos);
+        sec_list_->insert(sec_list_->begin() + indx, spos);
         if (x == 0.) {
             sec = nrn_trueparent(sec);
             d -= node_dist(sec, nd);
@@ -737,7 +709,7 @@ RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
     char buf[256];
     const char* p1;
     char* p2;
-    sprintf(buf, "hoc_ac_ = ");
+    Sprintf(buf, "hoc_ac_ = ");
     p2 = buf + strlen(buf);
     for (p1 = expr; *p1;) {
         if (p1[0] == '$' && p1[1] == '1') {
@@ -762,12 +734,12 @@ RangeExpr::~RangeExpr() {
 
 
 void RangeExpr::fill() {
-    if (n_ != spl_->count()) {
+    if (n_ != spl_->size()) {
         if (val_) {
             delete[] val_;
             delete[] exist_;
         }
-        n_ = spl_->count();
+        n_ = spl_->size();
         if (n_) {
             val_ = new double[n_];
             exist_ = new bool[n_];
@@ -775,8 +747,8 @@ void RangeExpr::fill() {
     }
     int temp = hoc_execerror_messages;
     for (long i = 0; i < n_; ++i) {
-        nrn_pushsec(spl_->item(i).sec);
-        hoc_ac_ = spl_->item(i).x;
+        nrn_pushsec((*spl_)[i].sec);
+        hoc_ac_ = (*spl_)[i].x;
         hoc_execerror_messages = 0;
         if (cmd_->pyobject()) {
             hoc_pushx(hoc_ac_);
@@ -796,8 +768,8 @@ void RangeExpr::fill() {
             exist_[i] = false;
 #if 0
 			printf("RangeExpr: %s no exist at %s(%g)\n",
-				cmd_->name(), secname(spl_->item(i).sec),
-				spl_->item(i).x
+				cmd_->name(), secname((*spl_)[i].sec),
+				(*spl_)[i].x
 			);
 #endif
         }
@@ -809,8 +781,8 @@ void RangeExpr::fill() {
 void RangeExpr::compute() {
     for (long i = 0; i < n_; ++i) {
         if (exist_[i]) {
-            nrn_pushsec(spl_->item(i).sec);
-            hoc_ac_ = spl_->item(i).x;
+            nrn_pushsec((*spl_)[i].sec);
+            hoc_ac_ = (*spl_)[i].x;
             if (cmd_->pyobject()) {
                 hoc_pushx(hoc_ac_);
                 int err = 1;  // messages

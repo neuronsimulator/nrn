@@ -26,36 +26,28 @@
  *
  */
 
-/*
- * In order to interface this process with merge, a second argument is
- * allowed which gives the complete input filename.  The first argument
- * still gives the prefix of the .c and .var files.
- */
-
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
 
-#include <getopt.h>
+#include <CLI/CLI.hpp>
 
-#if MAC
-#include <sioux.h>
-#endif
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #include "modl.h"
+
+#include <cstring>
+#include <string>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
     *fparout, /* output file descriptor for filename.var */
     *fcout;   /* output file descriptor for filename.c */
-#if SIMSYS
-FILE *fctlout, /* filename.ctl */
-    *fnumout;  /* filename.num */
-#endif
 
 
 char* modprefix;
 
-char* finname;
+char finname[NRN_BUFSIZE];
 
 #if LINT
 char* clint;
@@ -67,72 +59,33 @@ int nmodl_text = 1;
 List* filetxtlist;
 
 extern int yyparse();
-extern int mkdir_p(const char*);
 
-#if NMODL && VECTORIZE
 extern int vectorize;
 extern int numlist;
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 extern int usederivstatearray;
-#endif
 
 /*SUPPRESS 763*/
-static char pgm_name[] = "nmodl";
-extern char* RCS_version;
-extern char* RCS_date;
+static const char* pgm_name = "nmodl";
+extern const char* RCS_version;
+extern const char* RCS_date;
 
-static struct option long_options[] = {{"version", no_argument, 0, 'v'},
-                                       {"help", no_argument, 0, 'h'},
-                                       {"outdir", required_argument, 0, 'o'},
-                                       {0, 0, 0, 0}};
-
-static void show_options(char** argv) {
-    fprintf(stderr, "Source to source compiler from NMODL to C\n");
-    fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr,
-            "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
-    fprintf(stderr, "\t-h | --help                         print this message\n");
-    fprintf(stderr, "\t-v | --version                      print version number\n");
-}
-
-static void openfiles(char* given_filename, char* output_dir);
+static void openfiles(const char* given_filename, const char* output_dir);
 
 int main(int argc, char** argv) {
-    int option = -1;
-    int option_index = 0;
-    char* output_dir = NULL;
+    std::string output_dir{};
+    std::string inputfile{};
 
-    if (argc < 2) {
-        show_options(argv);
-        exit(1);
-    }
+    CLI::App app{"Source to source compiler from NMODL to C++"};
+    app.add_option("-o,--outdir", output_dir, "directory where output files will be written");
+    app.set_version_flag("-v,--version", nmodl_version_, "print version number");
+    app.set_help_flag("-h,--help", "print this message");
+    app.add_option("Inputfile", inputfile)->required();
+    app.allow_extras();
 
-    while ((option = getopt_long(argc, argv, ":vho:", long_options, &option_index)) != -1) {
-        switch (option) {
-        case 'v':
-            printf("%s\n", nmodl_version_);
-            exit(0);
+    CLI11_PARSE(app, argc, argv);
 
-        case 'o':
-            output_dir = strdup(optarg);
-            break;
-
-        case 'h':
-            show_options(argv);
-            exit(0);
-
-        case ':':
-            fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
-            exit(-1);
-
-        case '?':
-        default:
-            fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
-            exit(-1);
-        }
-    }
-    if ((argc - optind) > 1) {
+    if (!app.remaining().empty()) {
         fprintf(stderr,
                 "%s: Warning several input files specified on command line but only one will be "
                 "processed\n",
@@ -141,25 +94,12 @@ int main(int argc, char** argv) {
 
     filetxtlist = newlist();
 
-#if MAC
-    SIOUXSettings.asktosaveonclose = false;
-#if !SIMSYS
-    Fprintf(stderr, "%s   %s   %s\n", pgm_name, RCS_version, RCS_date);
-#endif
-#endif
-
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    finname = argv[optind];
-
-    openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
-#if NMODL || HMODL
-#else
-#if !SIMSYS
-    Fprintf(stderr, "Translating %s into %s.c and %s.var\n", finname, modprefix, modprefix);
-#endif
-#endif
+    std::strcpy(finname, inputfile.c_str());
+    openfiles(inputfile.c_str(),
+              output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
@@ -182,33 +122,20 @@ int main(int argc, char** argv) {
      *
      */
     consistency();
-#if 0 && !_CRAY && NMODL && VECTORIZE
-/* allowing Kinetic models to be vectorized on cray. So nonzero numlist is
-no longer adequate for saying we can not */
-	if (numlist) {
-		vectorize = 0;
-	}
-#endif
     chk_thread_safe();
     chk_global_state();
+    check_useion_variables();
+
     parout(); /* print .var file.
                * Also #defines which used to be in defs.h
                * are printed into .c file at beginning.
                */
     c_out();  /* print .c file */
-#if HMODL || NMODL
-#else
-    IGNORE(fclose(fparout));
-#endif
-#if SIMSYS
-    IGNORE(fclose(fctlout));
-    IGNORE(fclose(fnumout));
-#endif
 
 #if !defined NMODL_TEXT
 #define NMODL_TEXT 1
 #endif
-#if NMODL && NMODL_TEXT
+#if NMODL_TEXT
 #if 0
 /* test: temp.txt should be identical to text of input file except for INCLUDE */
 {
@@ -224,17 +151,18 @@ no longer adequate for saying we can not */
 #endif
     if (nmodl_text) {
         Item* q;
-        char* pf = NULL;
+        char* pf{nullptr};
 #if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+        pf = realpath(finname, nullptr);
 #endif
-        fprintf(fcout,
-                "\n#if NMODL_TEXT\nstatic const char* nmodl_filename = \"%s\";\nstatic const char* "
-                "nmodl_file_text = \n",
-                pf ? pf : finname);
+        fprintf(
+            fcout,
+            "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
         if (pf) {
             free(pf);
         }
+        fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
             char* s = STR(q);
             char* cp;
@@ -250,13 +178,16 @@ no longer adequate for saying we can not */
                 fputc(*cp, fcout);
             }
         }
-        fprintf(fcout, "  ;\n#endif\n");
+        fprintf(fcout, "  ;\n");
+        fprintf(fcout, "    hoc_reg_nmodl_filename(mech_type, nmodl_filename);\n");
+        fprintf(fcout, "    hoc_reg_nmodl_text(mech_type, nmodl_file_text);\n");
+        fprintf(fcout, "}\n");
+        fprintf(fcout, "#endif\n");
     }
 #endif
 
     IGNORE(fclose(fcout));
 
-#if NMODL && VECTORIZE
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
     }
@@ -264,9 +195,8 @@ no longer adequate for saying we can not */
         fprintf(stderr,
                 "Derivatives of STATE array variables are not translated correctly and compile "
                 "time errors will be generated.\n");
-        fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", modprefix);
+        fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
     }
-#endif
 
 #if LINT
     { /* for lex */
@@ -280,15 +210,11 @@ no longer adequate for saying we can not */
         yyoutput(ilint);
     }
 #endif
-#if MAC
-    printf("Done\n");
-    SIOUXSettings.autocloseonquit = true;
-#endif
     free(modprefix); /* allocated in openfiles below */
     return 0;
 }
 
-static void openfiles(char* given_filename, char* output_dir) {
+static void openfiles(const char* given_filename, const char* output_dir) {
     char s[NRN_BUFSIZE];
 
     char output_filename[NRN_BUFSIZE];
@@ -317,62 +243,29 @@ static void openfiles(char* given_filename, char* output_dir) {
         }
     }
     if (output_dir) {
-        if (mkdir_p(output_dir) != 0) {
+        try {
+            fs::create_directories(output_dir);
+        } catch (...) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }
         char* basename = strrchr(modprefix, '/');
         if (basename) {
-            Sprintf(output_filename, "%s%s.c", output_dir, basename);
+            Sprintf(output_filename, "%s%s.cpp", output_dir, basename);
         } else {
-            Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
+            Sprintf(output_filename, "%s/%s.cpp", output_dir, modprefix);
         }
     } else {
-        Sprintf(output_filename, "%s.c", modprefix);
+        Sprintf(output_filename, "%s.cpp", modprefix);
     }
 
     if ((fcout = fopen(output_filename, "w")) == (FILE*) 0) {
         diag("Can't create C file: ", output_filename);
     }
     Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
-
-#if HMODL || NMODL
-#else
-    Sprintf(s, "%s.var", modprefix);
-    if ((fparout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-#endif
-#if SIMSYS
-    Sprintf(s, "%s.ctl", modprefix);
-    if ((fctlout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create variable file: ", s);
-    }
-    Sprintf(s, "%s.num", modprefix);
-    if ((fnumout = fopen(s, "w")) == (FILE*) 0) {
-        diag("Can't create C file: ", s);
-    }
-#endif
-}
-
-static std::string str_replace(std::string str,
-                               const std::string& search_str,
-                               const std::string& replace_str) {
-    if (search_str.empty()) {
-        return str;
-    }
-
-    size_t pos;
-    while ((pos = str.find(search_str)) != std::string::npos) {
-        str.replace(pos, search_str.size(), replace_str);
-    }
-
-    return str;
 }
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
-    // template is a reserved CPP keyword
-    const std::string repl = str_replace(q, "u.template", "u.ctemplate");
-    Fprintf(fcout, "%s", repl.c_str());
+    Fprintf(fcout, "%s", q);
 }

@@ -1,13 +1,8 @@
 #include <../../nrnconf.h>
 // interface c++ class to oc
-#if defined(__GO32__)
-#define HAVE_IV    0
-#define OC_CLASSES "nrnclass.h"
-#endif
 
 #include <InterViews/resource.h>
 #include <stdio.h>
-#include <nrnpython_config.h>
 #include "classreg.h"
 #ifndef OC_CLASSES
 #define OC_CLASSES "occlass.h"

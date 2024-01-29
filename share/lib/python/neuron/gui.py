@@ -8,6 +8,7 @@ the NEURON GUI event loop.
 
 from neuron import h
 
+from contextlib import contextmanager
 import threading
 import time
 
@@ -21,6 +22,24 @@ def stop():
 
 def start():
     _lock.release()
+
+
+"""
+This allows one to temporarily disable the process_events loop using a construct
+like:
+from neuron import gui
+with gui.disabled():
+    something_that_would_interact_badly_with_process_events()
+"""
+
+
+@contextmanager
+def disabled():
+    stop()
+    try:
+        yield None
+    finally:
+        start()
 
 
 def process_events():
@@ -76,8 +95,7 @@ class LoopTimer(threading.Thread):
         self.started = False
         self.interval = interval
         self.fun = fun
-        threading.Thread.__init__(self)
-        self.setDaemon(True)
+        threading.Thread.__init__(self, daemon=True)
 
     def run(self):
         h.nrniv_bind_thread(threading.current_thread().ident)

@@ -1,17 +1,17 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <stdio.h>
-#include <ivstream.h>
+#include <cstdio>
 #include <InterViews/background.h>
 #include <InterViews/canvas.h>
 #include <InterViews/printer.h>
 #include <InterViews/label.h>
 #include <IV-look/kit.h>
-#include <math.h>
+#include <cmath>
 #include "scenevie.h"
 #include "mymath.h"
 #include "axis.h"
+#include "hocdec.h"
 #include "rect.h"
 #include "graph.h"
 #include "idraw.h"
@@ -21,7 +21,7 @@
     GAxisItem(Glyph* g)
         : GraphItem(g) {}
     virtual ~GAxisItem(){};
-    virtual void save(ostream&, Coord, Coord) {}
+    virtual void save(std::ostream&, Coord, Coord) {}
     virtual void erase(Scene* s, GlyphIndex i, int type) {
         if (type & GraphItem::ERASE_AXIS) {
             s->remove(i);
@@ -85,7 +85,7 @@ void Axis::size(float& min, float& max) {
     max = float(amax_);
 }
 
-void Axis::save(ostream& o) {
+void Axis::save(std::ostream& o) {
     char buf[256];
     int c;
     if (d_ == Dimension_X) {
@@ -93,7 +93,7 @@ void Axis::save(ostream& o) {
     } else {
         c = 'y';
     }
-    sprintf(buf,
+    Sprintf(buf,
             "save_window_.%caxis(%g,%g,%g,%d,%d,%d,%d)",
             c,
             amin_,
@@ -103,7 +103,7 @@ void Axis::save(ostream& o) {
             nminor_,
             invert_,
             number_);
-    o << buf << endl;
+    o << buf << std::endl;
 }
 
 void Axis::update(Observable*) {}
@@ -190,9 +190,9 @@ void Axis::install() {
 
     if (d_ == Dimension_X) {
         if (logstep >= 0 && logstep <= 5) {
-            sprintf(pform, "%%0.%.0ff", logstep + addprec);
+            Sprintf(pform, "%%0.%.0ff", logstep + addprec);
         } else {
-            sprintf(pform, "%%g");
+            Sprintf(pform, "%%g");
         }
         y = pos_;
         s_->append(new GAxisItem(new Line(amax_ - amin_, 0)));
@@ -207,7 +207,7 @@ void Axis::install() {
 
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * tic_space;
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             if (invert_ >= 0) {
@@ -226,7 +226,7 @@ void Axis::install() {
                     y_align = -0.3;
                 else
                     y_align = 1.5;
-                sprintf(str, pform, x);
+                Sprintf(str, pform, x);
                 s_->append_fixed(new GAxisItem(
                     new GLabel(str, Appear::default_color(), true, 1, x_align, y_align)));
                 gi = s_->count() - 1;
@@ -244,9 +244,9 @@ void Axis::install() {
         }
     } else {
         if (logstep >= 0 && logstep <= 5) {
-            sprintf(pform, " %%0.%.0ff ", logstep + 1);
+            Sprintf(pform, " %%0.%.0ff ", logstep + 1);
         } else {
-            sprintf(pform, " %%g ");
+            Sprintf(pform, " %%g ");
         }
         x = pos_;
         s_->append(new GAxisItem(new Line(0, amax_ - amin_)));
@@ -268,7 +268,7 @@ void Axis::install() {
             }
 
             if (number_) {
-                sprintf(str, pform, y);
+                Sprintf(str, pform, y);
                 y_align = 0.5;
                 // if (i==0) y_align = 0.;
                 // else if (i==ntic_) y_align = .66;
@@ -314,13 +314,13 @@ void Axis::install() {
         tic->ref();
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * (amax_ - amin_) / float(ntic_);
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             s_->append_fixed(new GAxisItem(tic));
             gi = s_->count() - 1;
             s_->move(gi, x, y);
-            sprintf(str, "%g", x);
+            Sprintf(str, "%g", x);
             s_->append_fixed(
                 new GAxisItem(new GLabel(str, Appear::default_color(), true, 1, .5, 1.1)));
             gi = s_->count() - 1;
@@ -339,7 +339,7 @@ void Axis::install() {
             s_->append_fixed(new GAxisItem(tic));
             gi = s_->count() - 1;
             s_->move(gi, x, y);
-            sprintf(str, "%g", y);
+            Sprintf(str, "%g", y);
             s_->append_fixed(
                 new GAxisItem(new GLabel(str, Appear::default_color(), true, 1, 1, .5)));
             gi = s_->count() - 1;
@@ -424,7 +424,7 @@ void BoxBackground::draw_help(Canvas* c, const Allocation&) const {
 
 void BoxBackground::tic_label(Coord x1, Coord y1, Coord val, float xa, float ya, Canvas* c) const {
     char buf[20];
-    sprintf(buf, "%g", val);
+    Sprintf(buf, "%g", val);
     Glyph* g = new Label(buf, WidgetKit::instance()->font(), Appear::default_color());
     g->ref();
     Requisition req;
@@ -516,7 +516,7 @@ void AxisBackground::draw_help(Canvas* c, const Allocation&) const {
 
 void AxisBackground::tic_label(Coord x1, Coord y1, Coord val, float xa, float ya, Canvas* c) const {
     char buf[20];
-    sprintf(buf, "%g", val);
+    Sprintf(buf, "%g", val);
     Glyph* g = new Label(buf, WidgetKit::instance()->font(), Appear::default_color());
     g->ref();
     Requisition req;

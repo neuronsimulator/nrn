@@ -4,24 +4,27 @@
 #define PRINT_EVENT 1
 
 #include "mymath.h"
+
+#include "cvodeobj.h"
+#include "neuron/container/data_handle.hpp"
 #include "tqueue.h"
+
+#include <cmath>
 #include <vector>
+#include <unordered_map>
 
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-class PreSynTable;
+using PreSynTable = std::unordered_map<neuron::container::data_handle<double>, PreSyn*>;
 class NetCon;
 class DiscreteEvent;
-class TQItemPool;
-class SelfEventPool;
 class SelfEvent;
-class hoc_Item;
+using SelfEventPool = MutexPool<SelfEvent>;
+struct hoc_Item;
 class PlayRecord;
-class PlayRecList;
 class IvocVect;
-class BAMechList;
-class MaxStateTable;
+struct BAMechList;
 class HTList;
 // nrn_nthread vectors of HTList* for fixed step method
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
@@ -30,9 +33,10 @@ class HTList;
 using HTListList = std::vector<std::vector<HTList*>>;
 class NetCvode;
 class MaxStateItem;
+typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
 class CvodeThreadData;
 class HocEvent;
-class HocEventList;
+typedef std::vector<HocEvent*> HocEventList;
 struct BAMech;
 struct Section;
 struct InterThreadEvent;
@@ -73,7 +77,7 @@ class NetCvode {
     int fun(double t, double* y, double* ydot);
     void error_weights();
     void acor();
-    const char* statename(int, int style = 1);
+    std::string statename(int, int style = 1);
     void localstep(bool);
     bool localstep();
     bool is_local();
@@ -82,7 +86,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 3 || BBTQ == 4
+#if BBTQ == 4
     TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
 #if BBTQ == 5
@@ -91,13 +95,12 @@ class NetCvode {
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
-    void handle_tstop_event(double, NrnThread* nt);
     void hoc_event(double,
                    const char* hoc_stmt,
-                   Object* ppobj = nil,
+                   Object* ppobj = nullptr,
                    int reinit = 0,
-                   Object* pyact = nil);
-    NetCon* install_deliver(double* psrc,
+                   Object* pyact = nullptr);
+    NetCon* install_deliver(neuron::container::data_handle<double> psrc,
                             Section* ssrc,
                             Object* osrc,
                             Object* target,
@@ -110,6 +113,7 @@ class NetCvode {
     void deliver_events(double til, NrnThread*);  // for initialization events
     void solver_prepare();
     void clear_events();
+    void free_event_pools();
     void init_events();
     void print_event_queue();
     void event_queue_info();
@@ -117,27 +121,27 @@ class NetCvode {
     void local_retreat(double, Cvode*);
     void retreat(double, Cvode*);
     Object** netconlist();
-    int owned_by_thread(double*);
+    int owned_by_thread(neuron::container::data_handle<double> const&);
     PlayRecord* playrec_uses(void*);
     void playrec_add(PlayRecord*);
     void playrec_remove(PlayRecord*);
     int playrec_item(PlayRecord*);
     PlayRecord* playrec_item(int);
-    PlayRecList* playrec_list() {
+    std::vector<PlayRecord*>* playrec_list() {
         return prl_;
     }
     void simgraph_remove();
     // fixed step continuous play and record
-    PlayRecList* fixed_play_;
-    PlayRecList* fixed_record_;
+    std::vector<PlayRecord*>* fixed_play_;
+    std::vector<PlayRecord*>* fixed_record_;
     void vecrecord_add();  // hoc interface functions
     void vec_remove();
     void record_init();
     void play_init();
-    void fixed_record_continuous(NrnThread*);
+    void fixed_record_continuous(neuron::model_sorted_token const&, NrnThread& nt);
     void fixed_play_continuous(NrnThread*);
     static double eps(double x) {
-        return eps_ * Math::abs(x);
+        return eps_ * std::abs(x);
     }
     int condition_order() {
         return condition_order_;
@@ -147,7 +151,6 @@ class NetCvode {
     }
     TQueue* event_queue(NrnThread* nt);
     void psl_append(PreSyn*);
-    void recalc_ptrs();
 
   public:
     void rtol(double);
@@ -185,7 +188,7 @@ class NetCvode {
     //	int nlist() { return nlist_; }
     //	Cvode* list() { return list_; }
     bool initialized_;  // for global step solve.
-    void consist_sec_pd(const char*, Section*, double*);
+    void consist_sec_pd(const char*, Section*, neuron::container::data_handle<double> const&);
     double state_magnitudes();
     Symbol* name2sym(const char*);
     const char* sym2name(Symbol*);
@@ -199,7 +202,7 @@ class NetCvode {
     // private:
   public:
     static double eps_;
-    int local_microstep(NrnThread*);
+    int local_microstep(neuron::model_sorted_token const&, NrnThread&);
     int global_microstep();
     void deliver_least_event(NrnThread*);
     void evaluate_conditions();
@@ -220,7 +223,7 @@ class NetCvode {
     void fill_local_ba_cnt(int, int*, NetCvodeThreadData&);
     BAMechList* cvbml(int, BAMech*, Cvode*);
     void maxstate_analyse();
-    void maxstate_analyze_1(int, Cvode&, MaxStateItem*, CvodeThreadData&);
+    void maxstate_analyze_1(int, Cvode&, CvodeThreadData&);
     void fornetcon_prepare();
     int fornetcon_change_cnt_;
     double maxstate_analyse(Symbol*, double*);
@@ -238,9 +241,9 @@ class NetCvode {
     PreSynTable* pst_;
     int pst_cnt_;
     int playrec_change_cnt_;
-    PlayRecList* prl_;
+    std::vector<PlayRecord*>* prl_;
     IvocVect* vec_event_store_;
-    HocDataPaths* hdp_;
+    HocDataPaths create_hdp(int style);
 
   public:
     Cvode* gcv_;
@@ -255,8 +258,7 @@ class NetCvode {
 
   public:
     MUTDEC  // only for enqueueing_ so far.
-        void
-        set_enqueueing();
+    void set_enqueueing();
     double allthread_least_t(int& tid);
     int solve_when_threads(double);
     void deliver_events_when_threads(double);

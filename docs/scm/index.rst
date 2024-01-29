@@ -6,6 +6,7 @@ NEURON SCM and Release
 
    ./guidelines/SCMGuidelines.md
    ./guide/SCMGuide.md
+   ./policies/policies.md
 
 
 

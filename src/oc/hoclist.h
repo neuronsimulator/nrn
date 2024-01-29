@@ -6,8 +6,6 @@
 #define newitem     hoc_l_newitem
 #define newlist     hoc_l_newlist
 #define freelist    hoc_l_freelist
-#define next        hoc_l_next
-#define prev        hoc_l_prev
 #define insertstr   hoc_l_insertstr
 #define insertitem  hoc_l_insertitem
 #define insertlist  hoc_l_insertlist
@@ -24,33 +22,32 @@
 #define lappendsec  hoc_l_lappendsec
 #define lappendobj  hoc_l_lappendobj
 #define lappendvoid hoc_l_lappendvoid
-#define delete hoc_l_delete
-#define delitems  hoc_l_delitems
-#define move      hoc_l_move
-#define movelist  hoc_l_movelist
-#define replacstr hoc_l_replacstr
-#define Item      hoc_Item
-#define List      hoc_List
-
-typedef struct hoc_Item hoc_List; /* list of mixed items */
-#else
-#define hoc_List struct hoc_Item
+#define delitems    hoc_l_delitems
+#define movelist    hoc_l_movelist
+#define replacstr   hoc_l_replacstr
+#define Item        hoc_Item
+#define List        hoc_List
 #endif
 
-typedef struct hoc_Item {
+struct Object;
+struct Section;
+struct Symbol;
+struct hoc_Item {
     union {
-        struct hoc_Item* itm;
-        hoc_List* lst;
+        hoc_Item* itm;
+        hoc_Item* lst;
         char* str;
-        struct Symbol* sym;
-        struct Section* sec;
-        struct Object* obj;
+        Symbol* sym;
+        Section* sec;
+        Object* obj;
         void* vd;
     } element; /* pointer to the actual item */
-    struct hoc_Item* next;
-    struct hoc_Item* prev;
+    hoc_Item* next;
+    hoc_Item* prev;
     short itemtype;
-} hoc_Item;
+};
+using hoc_List = hoc_Item;
+
 #define ITEM0 (hoc_Item*) 0
 #define LIST0 (hoc_List*) 0
 

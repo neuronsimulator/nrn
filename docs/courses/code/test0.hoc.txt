@@ -1,0 +1,7 @@
+objref pc
+pc = new ParallelContext()
+{
+printf("I am %d of %d\n", pc.id, pc.nhost)
+}
+{pc.done()}
+quit()

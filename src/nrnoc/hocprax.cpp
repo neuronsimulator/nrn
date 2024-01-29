@@ -38,38 +38,13 @@ pval = pval_praxis(i, Vector)
 
 #include <stdlib.h>
 #include "hocdec.h"
+#include "nrnpy.h"
 #include "parse.hpp"
+#include "scoplib.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-extern double praxis(double* t0,
-                     double* machep,
-                     double* h0,
-                     long int nval,
-                     long int* prin,
-                     double* x,
-                     double (*f)(double*, long int),
-                     double* fmin,
-                     char* after_quad);
-extern double praxis_pval(int), *praxis_paxis(int);
-extern int praxis_stop(int);
-
-#if defined(__cplusplus)
-}
-#endif
-
-extern int stoprun;
 extern double chkarg(int, double, double);
-
-extern void vector_resize(IvocVect*, int);
-extern double* vector_vec(IvocVect*);
-extern IvocVect* vector_arg(int);  // TODO: IvocVect?
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
-extern int vector_capacity(IvocVect*);
-extern Object** vector_pobj(IvocVect* v);
 extern int nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 
@@ -83,7 +58,6 @@ at return of previous prax call
 */
 static long int nvar;
 
-double (*nrnpy_praxis_efun)(Object* pycallable, Object* hvec);
 static Object* efun_py;
 static Object* efun_py_arg;
 static void* vec_py_save;
@@ -139,7 +113,7 @@ void fit_praxis(void) {
     fmin = 0.;
 
     if (hoc_is_object_arg(1)) {
-        assert(nrnpy_praxis_efun);
+        assert(neuron::python::methods.praxis_efun);
         efun_py_ = *hoc_objgetarg(1);
         hoc_obj_ref(efun_py_);
         efun_py_arg_ = *vector_pobj(vector_arg(2));
@@ -236,7 +210,7 @@ void fit_praxis(void) {
     hoc_retpushx(err);
 }
 
-extern "C" void hoc_after_prax_quad(char* s) {
+void hoc_after_prax_quad(char* s) {
     efun(minarg, nvar);
     hoc_obj_run(s, hoc_thisobject);
 }
@@ -285,7 +259,7 @@ static double efun(double* v, long int n) {
         for (i = 0; i < n; ++i) {
             px[i] = v[i];
         }
-        err = nrnpy_praxis_efun(efun_py, efun_py_arg);
+        err = neuron::python::methods.praxis_efun(efun_py, efun_py_arg);
         for (i = 0; i < n; ++i) {
             v[i] = px[i];
         }

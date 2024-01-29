@@ -1,7 +1,8 @@
+.. _hoc_prog_ref:
 
 NEURON HOC documentation
 ========================
-(`Switch to Python documentation <../python/index.html>`_)
+(:ref:`Switch to Python documentation <python_prog_ref>`)
 
 Quick Links
 -----------
@@ -43,7 +44,6 @@ Basic Programming
 .. toctree::
     :maxdepth: 1
     
-    programming/python.rst
     programming/hoc.rst
     programming/mathematics.rst
     programming/strings.rst
@@ -54,6 +54,7 @@ Basic Programming
     programming/errors.rst
     programming/dynamiccode.rst
     programming/projectmanagement.rst
+    programming/python-from-hoc.rst
     programming/internals.rst
 
 Model Specification

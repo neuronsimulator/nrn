@@ -23,6 +23,8 @@ Basic NEURON Usage
 * Use the GUI tools as much as possible. You'll get more done, faster, and you won't have to write any code. Some of the GUI tools are described in the tutorials; others are demoed in the :ref:`course videos <training_videos>`. Save the GUI tools to session files; these files contain HOC and can be modified, adapted, and reused.
 * Examine `ModelDB <https://modeldb.yale.edu>`_ and the list of :ref:`publications about NEURON <publications_about_neuron>` to find models of interest. Many authors have deposited their model code in ModelDB, posted it somewhere else on the WWW, or will provide code upon request.
 
+.. _extending_neuron_with_nmodl:
+
 Using NMODL to add new mechanisms to NEURON
 -------------------------------------------
 
@@ -31,3 +33,20 @@ Using NMODL to add new mechanisms to NEURON
 * NEURON comes with a bunch of mod files that can serve as starting points for "programming by example." Under MSWin the default mechanisms (hh, pas, expsyn etc.) are in `github.com/neuronsimulator/nrn/tree/master/src/nrnoc <https://github.com/neuronsimulator/nrn/tree/master/src/nrnoc>`_. A large collection of mod files is at `github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nmodl <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nmodl>`_.
 * You may also find useful examples in `ModelDB <https://modeldb.yale.edu>`_.
 
+.. include:: ../rst_substitutions.txt
+
+.. note::
+  Starting in |neuron_with_cpp_mechanisms|, NMODL is translated into C++ code
+  instead of C.
+  This change is not fully backwards compatible, and you may find that older
+  NMODL code needs to be updated to work with |neuron_with_cpp_mechanisms|.
+  This is principally an issue for MOD files that include ``VERBATIM`` blocks.
+  For more information, see :ref:`porting-mechanisms-to-cpp`.
+
+.. note::
+  Starting in |neuron_with_soa_data|, the model data structures used by NEURON
+  have been completely overhauled.
+  This change is not fully backwards compatible, and you may find that older
+  NMODL code needs to be updated to work with |neuron_with_soa_data|.
+  This is principally an issue for MOD files that include ``VERBATIM`` blocks.
+  For more information, see :ref:`porting-mechanisms-to-new-data-structures`.

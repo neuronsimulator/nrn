@@ -125,7 +125,7 @@ static void netrec_discon1(Item* varname, Item* equal, Item* expr, Item* lastok)
     if (case_cnexp) {
         char* state = items_as_string(varname, equal);
         char* e = items_as_string(expr, lastok->prev);
-        sprintf(buf,
+        Sprintf(buf,
                 "  if (nrn_netrec_state_adjust && !cvode_active_){\n"
                 "    /* discon state adjustment for cnexp case (rate uses no local variable) */\n"
                 "    double __state = %s;\n"
@@ -193,7 +193,7 @@ static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* 
     } else {
         needthread = strdup("");
     }
-    sprintf(buf,
+    Sprintf(buf,
             "  if (nrn_netrec_state_adjust && !cvode_active_){\n"
             "    /* discon state adjustment for general derivimplicit and KINETIC case */\n"
             "    int __i, __neq = %d;\n"
@@ -201,15 +201,15 @@ static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* 
             "    double __primary_delta = (%s) - __state;\n"
             "    double __dtsav = dt;\n"
             "    for (__i = 0; __i < __neq; ++__i) {\n"
-            "      _p[_dlist%d[__i]] = 0.0;\n"
+            "      _ml->data(_iml, _dlist%d[__i]) = 0.0;\n"
             "    }\n"
-            "    _p[_dlist%d[%d]] = __primary_delta;\n"
+            "    _ml->data(_iml, _dlist%d[%d]) = __primary_delta;\n"
             "    dt *= 0.5;\n"
             "%s%s"
             "    _ode_matsol_instance%d(_threadargs_);\n"
             "    dt = __dtsav;\n"
             "    for (__i = 0; __i < __neq; ++__i) {\n"
-            "      _p[_slist%d[__i]] += _p[_dlist%d[__i]];\n"
+            "      _ml->data(_iml, _slist%d[__i]) += _ml->data(_iml, _dlist%d[__i]);\n"
             "    }\n"
             "  } else {\n",
             neq,

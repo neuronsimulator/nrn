@@ -2,6 +2,8 @@ additional_commands:
   nrn_add_test_group:
     pargs: 0
     kwargs:
+      CORENEURON: 0
+      ENVIRONMENT: '+'
       NAME: 1
       MODFILE_PATTERNS: '+'
       NRNIVMODL_ARGS: '+'
@@ -15,16 +17,15 @@ additional_commands:
       GROUP: 1
       NAME: 1
       COMMAND: '+'
+      ENVIRONMENT: '+'
       CONFLICTS: '+'
       PRECOMMAND: '+'
+      PRELOAD_SANITIZER: 0
       PROCESSORS: 1
       REQUIRES: '+'
-      MODFILE_PATTERNS: '*'
-      NRNIVMODL_ARGS: '*'
       OUTPUT: '*'
       SCRIPT_PATTERNS: '*'
       SIM_DIRECTORY: '?'
-      SUBMODULE: '?'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

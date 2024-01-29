@@ -45,7 +45,6 @@ class MessageValue: public Resource {
     MessageItem* link();
 
   private:
-    int type_;
     MessageItem* first_;
     MessageItem* last_;
     MessageItem* unpack_;

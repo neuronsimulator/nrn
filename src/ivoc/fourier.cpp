@@ -16,26 +16,15 @@
 #undef DEBUG_SPCTRM
 
 #undef myfabs
-#if MAC
-#if __GNUC__ < 4
-#define myfabs std::fabs
-#else
-#define myfabs ::fabs
-#endif
-#else
 #define myfabs fabs
-#endif
+
+#include "oc_ansi.h"
 
 // Apple LLVM version 5.1 (clang-503.0.38) generates "unsequenced modification warning".
 // #define SQUARE(a) ((x_=(a)) == 0.0 ? 0.0 : x_*x_)
 static inline double SQUARE(double a) {
     return a * a;
 }
-
-extern "C" {
-void hoc_execerror(const char*, const char*);
-extern void nrn_exit(int);
-}  // extern "C"
 
 #include "nrngsl_real_radix2.cpp"
 #include "nrngsl_hc_radix2.cpp"

@@ -17,12 +17,10 @@ List* watch_alloc;       /* text of the void _watch_alloc(Datum*) function */
 extern List* syminorder; /* Order in which variables are output to
                           * .var file */
 
-#if CVODE
 extern List* state_discon_list_;
 extern int net_send_seen_;
 extern int net_event_seen_;
 extern int watch_seen_;
-#endif
 
 int protect_;
 int protect_include_;
@@ -31,122 +29,23 @@ extern int artificial_cell;
 extern int vectorize;
 extern int assert_threadsafe;
 
-int type_change(Symbol* sym, int level);
+void explicit_decl(Item* q) {
+    // give an error message if a variable is explicitly declared
+    // more than once.
 
-static long previous_subtype; /* subtype at the sym->level */
-static char* previous_str;    /* u.str on last install */
+    Symbol* sym = SYM(q);
 
-void explicit_decl(int level, Item* q) {
-    /* used to be inside parse1.ypp without the lastvars condition
-       Without the condition it served two purposes.
-       1) variables explicitly declared were so marked so that they
-          would appear first in the .var file.  Unmarked variables
-          appear last.
-       2) Give error message if a variable was explicitly declared
-          more than once.
-       Now, the merge program produces declaration blocks from
-       submodels with a prepended LAST_VARS keyword.  This implies
-       1) that variables in such blocks should appear last (if they
-          don't appear at the top level) and
-       2) multiple declarations are not errors.
-       Hence we merely enclose the old code in an if statement
-       The question arises, on multiple declarations, which value
-       does the .var file get.  In the current implementation it
-       is the last one seen. If this is not right (and a better
-       method would be keep the value declared closest to the root)
-       then it will be the responsibility of merge to delete
-       multiple declarations.
-    */
-    /* Solving the multiple declaration problem.
-       merge now gives the level number of the declaration with
-       the root file having level number 0, all its submodels having
-       level number 1, submodels of level 1 submodels having level 2,
-       etc.  The rule is that the lowest level declaration is used.
-       If two declarations exist at the same level then it is an
-       error unless their u.str are identical.  Since, by the time
-       this routine is called the latest declaration has already been
-       installed, each installation routine saves the previous u.str
-       in a static variable. Also a new field is added to the
-       symbol structure to keep track of its level. At this time
-       we retain the EXPLICIT_DECL field for explicit declarations
-       at the root level. The default level when the symbol is
-       allocated is 100.
-     */
-
-    Symbol* sym;
-
-    sym = SYM(q);
-    if (!level) { /* No multiple declarations at the root level and
-            the symbol is marked explicitly declared */
-        if (sym->usage & EXPLICIT_DECL) {
-            diag("Multiple declaration of ", sym->name);
-        }
-        sym->usage |= EXPLICIT_DECL;
+    if (sym->usage & EXPLICIT_DECL) {
+        diag("Multiple declaration of ", sym->name);
     }
+    sym->usage |= EXPLICIT_DECL;
     /* this ensures that declared PRIMES will appear in .var file */
     sym->usage |= DEP;
-
-    if (level >= sym->level) {
-        assert(previous_str);
-    }
-    /* resolve possible type conflicts */
-    if (type_change(sym, level)) {
-        return;
-    }
-    /* resolve which declaration takes precedence */
-    if (level < sym->level) { /* new one takes precedence */
-        sym->level = level;
-    } else if (level > sym->level) { /* old one takes precedence */
-        sym->u.str = previous_str;
-    } else if (strcmp(sym->u.str, previous_str) != 0) { /* not identical */
-        diag(sym->name, "has different values at same level");
-    }
 }
 
-/* restricted type changes are allowed in hierarchical models with each
-one producing a message. Notice that multiple declarations at level 0 are
-caught as errors in the function above. */
-
-int type_change(Symbol* sym, int level) /*return 1 if type change, 0 otherwise*/
-{
-    long s, d, c;
-
-    s = sym->subtype & STAT;
-    d = sym->subtype & DEP;
-    c = sym->subtype & PARM;
-
-    if (s && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (s && d) {
-        sym->subtype &= ~d;
-        Fprintf(stderr, "WARNING: %s is promoted from an ASSIGNED to a STATE\n", sym->name);
-        if (previous_subtype & STAT) {
-            sym->u.str = previous_str;
-        }
-    } else if (d && c) {
-        sym->subtype &= ~c;
-        Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym->name);
-        if (previous_subtype & DEP) {
-            sym->u.str = previous_str;
-        }
-    } else {
-        return 0;
-    }
-    if (level < sym->level) {
-        sym->level = level;
-    }
-    return 1;
-}
-
-void parm_array_install(Symbol* n, char* num, char* units, char* limits, int index) {
+void parm_array_install(Symbol* n, const char* num, char* units, char* limits, int index) {
     char buf[NRN_BUFSIZE];
 
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     n->subtype |= PARM;
@@ -156,11 +55,9 @@ void parm_array_install(Symbol* n, char* num, char* units, char* limits, int ind
     n->u.str = stralloc(buf, (char*) 0);
 }
 
-void parminstall(Symbol* n, char* num, char* units, char* limits) {
+void parminstall(Symbol* n, const char* num, const char* units, const char* limits) {
     char buf[NRN_BUFSIZE];
 
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     n->subtype |= PARM;
@@ -171,7 +68,10 @@ void parminstall(Symbol* n, char* num, char* units, char* limits) {
 /* often we want to install a parameter by default but only
 if the user hasn't declared it herself.
 */
-Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
+Symbol* ifnew_parminstall(const char* name,
+                          const char* num,
+                          const char* units,
+                          const char* limits) {
     Symbol* s;
 
     if ((s = lookup(name)) == SYM0) {
@@ -182,7 +82,7 @@ Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
         /* can happen when PRIME used in MATCH */
         parminstall(s, num, units, limits);
     }
-    if (!(s->subtype & (PARM | STEP1))) {
+    if (!(s->subtype & PARM)) {
         /* special case is scop_indep can be a PARM but not indepsym */
         if (scop_indep == indepsym || s != scop_indep) {
             diag(s->name, "can't be declared a parameter by default");
@@ -191,96 +91,37 @@ Symbol* ifnew_parminstall(char* name, char* num, char* units, char* limits) {
     return s;
 }
 
-void steppedinstall(Symbol* n, Item* q1, Item* q2, char* units) {
-    int i;
-
-    char buf[NRN_BUFSIZE];
-    static int seestep = 0;
-
-    previous_subtype = n->subtype;
-    previous_str = n->u.str;
-    if (seestep) {
-        diag("Only one STEPPED variable can be defined", (char*) 0);
-    }
-    seestep = 1;
-    stepsym = n;
-    i = 0;
-    Strcpy(buf, "\n");
-    Strcat(buf, STR(q1));
-    while (q1 != q2) {
-        q1 = q1->next;
-        Strcat(buf, SYM(q1)->name); /* , is a symbol */
-        q1 = q1->next;
-        Strcat(buf, STR(q1));
-        i++;
-        if (i > 5) {
-            diag("Maximum of 5 steps in a stepped variable", (char*) 0);
-        }
-    }
-    Strcat(buf, "\n");
-    Strcat(buf, units);
-    Strcat(buf, "\n");
-    n->subtype |= STEP1;
-    n->u.str = stralloc(buf, (char*) 0);
-}
-
-static char* indepunits = "";
-#if NMODL
-int using_default_indep;
-#endif
+static const char* indepunits = "";
 
 void indepinstall(Symbol* n,
-                  char* from,
-                  char* to,
-                  char* with,
-                  Item* qstart,
-                  char* units,
-                  int scop) {
+                  const char* from,
+                  const char* to,
+                  const char* with,
+                  const char* units) {
     char buf[NRN_BUFSIZE];
 
     /* scop_indep may turn out to be different from indepsym. If this is the case
        then indepsym will be a constant in the .var file (see parout.c).
        If they are the same, then u.str gets the info from SCOP.
     */
-    if (!scop) {
-#if NMODL
-        if (using_default_indep) {
-            using_default_indep = 0;
-            if (indepsym != n) {
-                indepsym->subtype &= ~INDEP;
-                parminstall(indepsym, "0", "ms", "");
-            }
-            indepsym = (Symbol*) 0;
-        }
-#endif
-        if (indepsym) {
-            diag("Only one independent variable can be defined", (char*) 0);
-        }
-        indeplist = newlist();
-        Lappendstr(indeplist, from);
-        Lappendstr(indeplist, to);
-        Lappendstr(indeplist, with);
-        if (qstart) {
-            Lappendstr(indeplist, STR(qstart));
-        } else {
-            Lappendstr(indeplist, from);
-        }
-        Lappendstr(indeplist, units);
-        n->subtype |= INDEP;
-        indepunits = stralloc(units, (char*) 0);
-        if (n != scop_indep) {
-            Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
-            n->u.str = stralloc(buf, (char*) 0);
-        }
-        indepsym = n;
-        if (!scop_indep) {
-            scop_indep = indepsym;
-        }
-    } else {
-        n->subtype |= INDEP;
+    if (indepsym) {
+        diag("Only one independent variable can be defined", (char*) 0);
+    }
+    indeplist = newlist();
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, to);
+    Lappendstr(indeplist, with);
+    Lappendstr(indeplist, from);
+    Lappendstr(indeplist, units);
+    n->subtype |= INDEP;
+    indepunits = stralloc(units, (char*) 0);
+    if (n != scop_indep) {
         Sprintf(buf, "\n%s*%s(%s)\n%s\n", from, to, with, units);
         n->u.str = stralloc(buf, (char*) 0);
-        scop_indep = n;
+    }
+    indepsym = n;
+    if (!scop_indep) {
+        scop_indep = indepsym;
     }
 }
 
@@ -295,20 +136,19 @@ void indepinstall(Symbol* n,
 void depinstall(int type,
                 Symbol* n,
                 int index,
-                char* from,
-                char* to,
-                char* units,
+                const char* from,
+                const char* to,
+                const char* units,
                 Item* qs,
                 int makeconst,
-                char* abstol) {
-    char buf[NRN_BUFSIZE], *pstr;
+                const char* abstol) {
+    char buf[NRN_BUFSIZE];
     int c;
 
     if (!type && strlen(abstol) > 0) {
         printf("abstol = |%s|\n", abstol);
         diag(n->name, "tolerance can be specified only for a STATE");
     }
-    pstr = n->u.str; /* make it work even if recursive */
     if (n->u.str == (char*) 0)
         Lappendsym(syminorder, n);
     if (type) {
@@ -330,11 +170,9 @@ void depinstall(int type,
         Sprintf(buf, "\n%s%c%s\n%s\n%s\n", from, c, to, units, abstol);
     }
     n->u.str = stralloc(buf, (char*) 0);
-    previous_subtype = n->subtype;
-    previous_str = pstr;
 }
 
-void statdefault(Symbol* n, int index, char* units, Item* qs, int makeconst) {
+void statdefault(Symbol* n, int index, const char* units, Item* qs, int makeconst) {
     char nam[256], *un;
     Symbol* s;
 
@@ -379,8 +217,7 @@ static int func_arg_examine(Item* qpar, Item* qend) {
 }
 
 void vectorize_scan_for_func(Item* q1, Item* q2) {
-    Item *q, *qq;
-    int b;
+    Item* q;
     return;
     for (q = q1; q != q2; q = q->next) {
         if (q->itemtype == SYMBOL) {
@@ -389,9 +226,9 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt");
+                        vectorize_substitute(q->next, "(_threadargs_");
                     } else if (b == 1) { /* real args */
-                        vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt,");
+                        vectorize_substitute(q->next, "(_threadargscomma_");
                     } /* else no _p.._nt already there */
                 }
             }
@@ -401,12 +238,10 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
 
 void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
 {
-    Item *q3, *q;
+    Item* q;
 
     if (q1->next == q2) {
-#if VECTORIZE
-        vectorize_substitute(insertstr(q2, ""), "_threadargsproto_");
-#endif
+        vectorize_substitute(insertstr(q2, ""), "_internalthreadargsproto_");
         return;
     }
     for (q = q1->next; q != q2; q = q->next) {
@@ -414,9 +249,7 @@ void defarg(Item* q1, Item* q2) /* copy arg list and define as doubles */
             insertstr(q, "double");
         }
     }
-#if VECTORIZE
-    vectorize_substitute(insertstr(q1->next, ""), "_threadargsprotocomma_");
-#endif
+    vectorize_substitute(insertstr(q1->next, ""), "_internalthreadargsprotocomma_");
 }
 
 void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
@@ -475,33 +308,6 @@ void lag_stmt(Item* q1, int blocktype) /* LAG name1 BY name2 */
                 name2->name);
     }
     replacstr(q1, buf);
-}
-
-void queue_stmt(Item* q1, Item* q2) {
-    Symbol* s;
-    static int first = 1;
-
-    if (first) {
-        first = 0;
-        Linsertstr(initfunc, "initqueue();\n");
-    }
-    if (SYM(q1)->type == PUTQ) {
-        replacstr(q1, "enqueue(");
-    } else {
-        replacstr(q1, "dequeue(");
-    }
-
-    s = SYM(q2);
-    s->usage |= DEP;
-    if (!(s->subtype)) {
-        diag(s->name, "not declared");
-    }
-    if (s->subtype & ARRAY) {
-        Sprintf(buf, "%s, %d);\n", s->name, s->araydim);
-    } else {
-        Sprintf(buf, "&(%s), 1);\n", s->name);
-    }
-    replacstr(q2, buf);
 }
 
 void add_reset_args(Item* q) {
@@ -565,17 +371,23 @@ int check_tables_threads(List* p) {
     Item* q;
     if (check_table_thread_list) {
         ITERATE(q, check_table_thread_list) {
-            sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, NrnThread*);", STR(q));
+            Sprintf(buf, "\nstatic void %s(_internalthreadargsproto_);", STR(q));
             lappendstr(p, buf);
         }
         lappendstr(p,
-                   "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, "
-                   "NrnThread* _nt, int _type) {\n");
+                   "\n"
+                   "static void _check_table_thread(_threadargsprotocomma_ int _type, "
+                   "_nrn_model_sorted_token const& _sorted_token) {\n"
+                   "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml, _type};\n"
+                   "  {\n"
+                   "    auto* const _ml = &_lmr;\n");
         ITERATE(q, check_table_thread_list) {
-            sprintf(buf, "  %s(_p, _ppvar, _thread, _nt);\n", STR(q));
+            Sprintf(buf, "  %s(_threadargs_);\n", STR(q));
             lappendstr(p, buf);
         }
-        lappendstr(p, "}\n");
+        lappendstr(p,
+                   "  }\n"
+                   "}\n");
         return 1;
     }
     return 0;
@@ -605,9 +417,9 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     if (!check_table_statements) {
         check_table_statements = newlist();
     }
-    sprintf(buf, "_check_%s();\n", fname);
+    Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(check_table_statements, buf);
-    sprintf(buf, "_check_%s(_p, _ppvar, _thread, _nt);\n", fname);
+    Sprintf(buf, "_check_%s(_threadargs_);\n", fname);
     vectorize_substitute(q, buf);
     /*checking*/
     if (type == FUNCTION1) {
@@ -640,18 +452,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
         fsym->subtype |= FUNCT;
         Sprintf(buf, "static double _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-#if VECTORIZE
-        Sprintf(buf, "static double _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "static double _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
-#endif
     } else {
         fsym->subtype |= PROCED;
         Sprintf(buf, "static void _n_%s(double);\n", fname);
         q = linsertstr(procfunc, buf);
-#if VECTORIZE
-        Sprintf(buf, "static void _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+        Sprintf(buf, "static void _n_%s(_internalthreadargsprotocomma_ double _lv);\n", fname);
         vectorize_substitute(q, buf);
-#endif
     }
     fsym->usage |= FUNCT;
 
@@ -663,16 +471,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     if (!check_table_thread_list) {
         check_table_thread_list = newlist();
     }
-    sprintf(buf, "_check_%s", fname);
+    Sprintf(buf, "_check_%s", fname);
     lappendstr(check_table_thread_list, buf);
     Sprintf(buf, "static void _check_%s();\n", fname);
     q = insertstr(procfunc, buf);
     vectorize_substitute(q, "");
     Sprintf(buf, "static void _check_%s() {\n", fname);
     q = lappendstr(procfunc, buf);
-    Sprintf(buf,
-            "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n",
-            fname);
+    Sprintf(buf, "static void _check_%s(_internalthreadargsproto_) {\n", fname);
     vectorize_substitute(q, buf);
     Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
     Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -719,18 +525,14 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
             s = SYM(q);
             Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
             Lappendstr(procfunc, buf);
-#if VECTORIZE
-            Sprintf(buf, "   _t_%s[_i] = _f_%s(_p, _ppvar, _thread, _nt, _x);\n", s->name, fname);
+            Sprintf(buf, "   _t_%s[_i] = _f_%s(_threadargscomma_ _x);\n", s->name, fname);
             vectorize_substitute(procfunc->prev, buf);
-#endif
         }
     } else {
         Sprintf(buf, "   _f_%s(_x);\n", fname);
         Lappendstr(procfunc, buf);
-#if VECTORIZE
-        Sprintf(buf, "   _f_%s(_p, _ppvar, _thread, _nt, _x);\n", fname);
+        Sprintf(buf, "   _f_%s(_threadargscomma_ _x);\n", fname);
         vectorize_substitute(procfunc->prev, buf);
-#endif
         ITERATE(q, table) {
             s = SYM(q);
             if (s->subtype & ARRAY) {
@@ -760,38 +562,26 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /*declaration*/
     if (type == FUNCTION1) {
 #define GLOBFUNC 1
-#if !GLOBFUNC
-        Lappendstr(procfunc, "static int");
-#endif
         Lappendstr(procfunc, "double");
     } else {
         Lappendstr(procfunc, "static int");
     }
     Sprintf(buf, "%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
-    Sprintf(buf,
-            "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
-            fname,
-            arg->name);
+    Sprintf(buf, "%s(_internalthreadargsprotocomma_ double %s) {", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     /* check the table */
     Sprintf(buf, "_check_%s();\n", fname);
     q = lappendstr(procfunc, buf);
-#if VECTORIZE
-    Sprintf(buf, "\n#if 0\n_check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", fname);
+    Sprintf(buf, "\n#if 0\n_check_%s(_threadargs_);\n#endif\n", fname);
     vectorize_substitute(q, buf);
-#endif
     if (type == FUNCTION1) {
         Lappendstr(procfunc, "return");
     }
     Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
-    Sprintf(buf, "_n_%s(_p, _ppvar, _thread, _nt, %s);\n", fname, arg->name);
+    Sprintf(buf, "_n_%s(_threadargscomma_ %s);\n", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return 0;\n");
     }
@@ -805,13 +595,8 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_n_%s(double %s){", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
-    Sprintf(buf,
-            "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
-            fname,
-            arg->name);
+    Sprintf(buf, "_n_%s(_internalthreadargsprotocomma_ double %s){", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     Lappendstr(procfunc, "int _i, _j;\n");
     Lappendstr(procfunc, "double _xi, _theta;\n");
 
@@ -822,10 +607,8 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     }
     Sprintf(buf, "_f_%s(%s);", fname, arg->name);
     Lappendstr(procfunc, buf);
-#if VECTORIZE
-    Sprintf(buf, "_f_%s(_p, _ppvar, _thread, _nt, %s);", fname, arg->name);
+    Sprintf(buf, "_f_%s(_threadargscomma_ %s);", fname, arg->name);
     vectorize_substitute(procfunc->prev, buf);
-#endif
     if (type != FUNCTION1) {
         Lappendstr(procfunc, "return;");
     }
@@ -834,7 +617,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     /* table lookup */
     Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n", fname, arg->name, fname);
     Lappendstr(procfunc, buf);
-    Lappendstr(procfunc, "if (isnan(_xi)) {\n");
+    Lappendstr(procfunc, "if (std::isnan(_xi)) {\n");
     if (type == FUNCTION1) {
         Lappendstr(procfunc, " return _xi; }\n");
     } else {
@@ -948,50 +731,69 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist) {
     freelist(&to);
 }
 
-#if HMODL || NMODL
-void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
-#if NOCMODL
-    extern int point_process;
-#endif
+extern int point_process;
+
+// Original hocfunchack modified to handle _npy_name definitions.
+static void funchack(Symbol* n, bool ishoc, int hack) {
     Item* q;
     int i;
-#if VECTORIZE
     Item* qp = 0;
-#endif
 
     if (point_process) {
         Sprintf(buf, "\nstatic double _hoc_%s(void* _vptr) {\n double _r;\n", n->name);
-    } else {
+    } else if (ishoc) {
         Sprintf(buf, "\nstatic void _hoc_%s(void) {\n  double _r;\n", n->name);
+    } else {  // _npy_...
+        Sprintf(buf,
+                "\nstatic double _npy_%s(Prop* _prop) {\n"
+                "    double _r{0.0};\n",
+                n->name);
     }
     Lappendstr(procfunc, buf);
     vectorize_substitute(lappendstr(procfunc, ""),
-                         "\
-  double* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\
-");
+                         "Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n");
     if (point_process) {
-        vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"),
-                             "\
-  _p = ((Point_process*)_vptr)->_prop->param;\n\
-  _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
-  _thread = _extcall_thread;\n\
-  _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
-");
-    } else {
-        vectorize_substitute(lappendstr(procfunc, ""),
-                             "\
-  if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }\n\
-  _thread = _extcall_thread;\n\
-  _nt = nrn_threads;\n\
-");
+        Lappendstr(procfunc,
+                   "  auto* const _pnt = static_cast<Point_process*>(_vptr);\n"
+                   "  auto* const _p = _pnt->_prop;\n"
+                   "  if (!_p) {\n"
+                   "    hoc_execerror(\"POINT_PROCESS data instance not valid\", NULL);\n"
+                   "  }\n");
+        q = lappendstr(procfunc, "  _setdata(_p);\n");
+        vectorize_substitute(q,
+                             "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
+                             "  auto* const _ml = &_ml_real;\n"
+                             "  size_t const _iml{};\n"
+                             "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
+                             "  _thread = _extcall_thread.data();\n"
+                             "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
+    } else if (ishoc) {
+        hocfunc_setdata_item(n, lappendstr(procfunc, ""));
+        vectorize_substitute(
+            lappendstr(procfunc, ""),
+            "_nrn_mechanism_cache_instance _ml_real{_local_prop};\n"
+            "auto* const _ml = &_ml_real;\n"
+            "size_t const _iml{};\n"
+            "_ppvar = _local_prop ? _nrn_mechanism_access_dparam(_local_prop) : nullptr;\n"
+            "_thread = _extcall_thread.data();\n"
+            "_nt = nrn_threads;\n");
+    } else {  // _npy_...
+        q = lappendstr(procfunc,
+                       "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
+                       "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        vectorize_substitute(q,
+                             "_nrn_mechanism_cache_instance _ml_real{_prop};\n"
+                             "auto* const _ml = &_ml_real;\n"
+                             "size_t const _iml{};\n"
+                             "_ppvar = _nrn_mechanism_access_dparam(_prop);\n"
+                             "_thread = _extcall_thread.data();\n"
+                             "_nt = nrn_threads;\n");
     }
-#if VECTORIZE
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
-        sprintf(buf, "\n#if 1\n _check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", n->name);
+        Sprintf(buf, "\n#if 1\n _check_%s(_threadargs_);\n#endif\n", n->name);
         vectorize_substitute(qp, buf);
     }
-#endif
     if (n->subtype & FUNCT) {
         Lappendstr(procfunc, "_r = ");
     } else {
@@ -999,9 +801,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
     }
     Lappendsym(procfunc, n);
     lappendstr(procfunc, "(");
-#if VECTORIZE
     qp = lappendstr(procfunc, "");
-#endif
     for (i = 0; i < n->varnum; ++i) {
         Sprintf(buf, "*getarg(%d)", i + 1);
         Lappendstr(procfunc, buf);
@@ -1009,19 +809,27 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
             Lappendstr(procfunc, ",");
         }
     }
-#if NOCMODL
-    if (point_process) {
+    if (point_process || !ishoc) {
         Lappendstr(procfunc, ");\n return(_r);\n}\n");
-    } else
-#endif
+    } else if (ishoc) {
         Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
-#if VECTORIZE
-    if (i) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
-    } else if (!hack) {
-        vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
     }
-#endif
+    if (i) {
+        vectorize_substitute(qp, "_threadargscomma_");
+    } else if (!hack) {
+        vectorize_substitute(qp, "_threadargs_");
+    }
+}
+
+void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack) {
+    funchack(n, true, hack);
+}
+
+static void npyfunc(Symbol* n, int hack) {  // supports seg.mech.n(...)
+    if (point_process) {
+        return;
+    }                          // direct calls from python from hocfunchack
+    funchack(n, false, hack);  // direct calls from python via _npy_.... wrapper.
 }
 
 void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and hoc for proc and func
@@ -1030,17 +838,24 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
     /* Hack prevents FUNCTION_TABLE bug of 'double table_name()' extra args
        replacing the double in 'double name(...) */
     hocfunchack(n, qpar1, qpar2, 0);
+    // wrapper for direct call from python
+    npyfunc(n, 0);  // shares most of hocfunchack code (factored out).
 }
 
-#if VECTORIZE
 /* ARGSUSED */
 void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int blocktype) {
     Item* q;
     if (SYM(qname)->subtype & EXTDEF) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
+            // TODO: this relies on undefined behaviour in C++. &*foo is not
+            // guaranteed to be equivalent to foo if foo is null. See
+            // https://stackoverflow.com/questions/51691273/is-null-well-defined-in-c,
+            // https://en.cppreference.com/w/cpp/language/operator_member_access#Built-in_address-of_operator
+            // also confirms that the special case here in C does not apply to
+            // C++. All of that said, neither GCC nor Clang even produces a
+            // warning and it seems to work.
             Insertstr(qpar1->next, "&");
         } else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
-#if CVODE
             if (blocktype == NETRECEIVE) {
                 Item* qeq = NULL;
                 /* convert to state = expr form and process with netrec_discon(...) */
@@ -1070,7 +885,6 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
                 lappenditem(state_discon_list_, qpar1->next);
                 Insertstr(qpar1->next, "-1, &");
             }
-#endif
         } else if (strcmp(SYM(qname)->name, "net_send") == 0) {
             net_send_seen_ = 1;
             if (artificial_cell) {
@@ -1080,7 +894,7 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             if (blocktype == NETRECEIVE) {
                 Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
             } else if (blocktype == INITIAL1) {
-                Insertstr(qpar1->next, "_tqitem, (double*)0, _ppvar[1]._pvoid,");
+                Insertstr(qpar1->next, "_tqitem, nullptr, _ppvar[1].get<Point_process*>(),");
             } else {
                 diag("net_send allowed only in INITIAL and NET_RECEIVE blocks", (char*) 0);
             }
@@ -1103,24 +917,13 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
         }
         return;
     }
-#if 1
     if (qexpr) {
         q = insertstr(qpar1->next, "_threadargscomma_");
     } else {
         q = insertstr(qpar1->next, "_threadargs_");
     }
-#else
-    q = insertstr(qpar1->next, "");
-    if (qexpr) {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt,");
-    } else {
-        vectorize_substitute(q, "_p, _ppvar, _thread, _nt");
-    }
-#endif
 }
-#endif
 
-#endif
 
 void function_table(Symbol* s, Item* qpar1, Item* qpar2, Item* qb1, Item* qb2) /* s ( ... ) { ... }
                                                                                 */
@@ -1129,41 +932,40 @@ void function_table(Symbol* s, Item* qpar1, Item* qpar2, Item* qb1, Item* qb2) /
     int i;
     Item *q, *q1, *q2;
     for (i = 0, q = qpar1->next; q != qpar2; q = q->next) {
-#if VECTORIZE
         if (q->itemtype == STRING || SYM(q)->name[0] != '_') {
             continue;
         }
-#endif
-        sprintf(buf, "_arg[%d] = %s;\n", i, SYM(q)->name);
+        Sprintf(buf, "_arg[%d] = %s;\n", i, SYM(q)->name);
         insertstr(qb2, buf);
         ++i;
     }
     if (i == 0) {
         diag("FUNCTION_TABLE declaration must have one or more arguments:", s->name);
     }
-    sprintf(buf, "double _arg[%d];\n", i);
+    Sprintf(buf, "double _arg[%d];\n", i);
     insertstr(qb1->next, buf);
-    sprintf(buf, "return hoc_func_table(_ptable_%s, %d, _arg);\n", s->name, i);
+    Sprintf(buf, "return hoc_func_table(_ptable_%s, %d, _arg);\n", s->name, i);
     insertstr(qb2, buf);
     insertstr(qb2, "}\n/* "); /* kludge to avoid a bad vectorize_substitute */
     insertstr(qb2->next, " */\n");
 
-    sprintf(buf, "table_%s", s->name);
+    Sprintf(buf, "table_%s", s->name);
     t = install(buf, NAME);
     t->subtype |= FUNCT;
     t->usage |= FUNCT;
     t->no_threadargs = 1;
     t->varnum = 0;
 
-    sprintf(buf, "double %s", t->name);
+    Sprintf(buf, "double %s", t->name);
     lappendstr(procfunc, buf);
     q1 = lappendsym(procfunc, SYM(qpar1));
     q2 = lappendsym(procfunc, SYM(qpar2));
-    sprintf(buf, "{\n\thoc_spec_table(&_ptable_%s, %d);\n\treturn 0.;\n}\n", s->name, i);
+    Sprintf(buf, "{\n\thoc_spec_table(&_ptable_%s, %d);\n\treturn 0.;\n}\n", s->name, i);
     lappendstr(procfunc, buf);
-    sprintf(buf, "\nstatic void* _ptable_%s = (void*)0;\n", s->name);
+    Sprintf(buf, "\nstatic void* _ptable_%s = (void*)0;\n", s->name);
     linsertstr(procfunc, buf);
     hocfunchack(t, q1, q2, 1);
+    npyfunc(t, 1);
 }
 
 void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
@@ -1173,12 +975,19 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     if (blocktype != NETRECEIVE) {
         diag("\"WATCH\" statement only allowed in NET_RECEIVE block", (char*) 0);
     }
-    sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
+    Sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n", watch_seen_);
     lappendstr(procfunc, buf);
-    vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");
-    sprintf(buf,
-            "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = "
-            "NODEV(_pnt->node);\n	return ");
+    vectorize_substitute(lappendstr(procfunc, ""),
+                         "  Datum* _ppvar; Datum* _thread{};\n"
+                         "  NrnThread* _nt{static_cast<NrnThread*>(_pnt->_vnt)};\n");
+    Sprintf(buf,
+            "  auto* const _prop = _pnt->_prop;\n"
+            "  _nrn_mechanism_cache_instance _ml_real{_prop};\n"
+            "  auto* const _ml = &_ml_real;\n"
+            "  size_t _iml{};\n"
+            "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n"
+            "  v = NODEV(_pnt->node);\n"
+            "	return ");
     lappendstr(procfunc, buf);
     movelist(par1, par2, procfunc);
     movelist(dir->next, par2, procfunc);
@@ -1194,16 +1003,16 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
         watch_alloc = newlist();
         lappendstr(watch_alloc,
                    "\nstatic void _watch_alloc(Datum* _ppvar) {\n"
-                   "  Point_process* _pnt = (Point_process*)_ppvar[1]._pvoid;\n");
+                   "  auto* _pnt = _ppvar[1].get<Point_process*>();\n");
     }
-    sprintf(buf,
+    Sprintf(buf,
             "  _nrn_watch_allocate(_watch_array, _watch%d_cond, %d, _pnt, %s);\n",
             watch_seen_,
             watch_seen_,
             STR(flag));
     lappendstr(watch_alloc, buf);
 
-    sprintf(buf,
+    Sprintf(buf,
             "  _nrn_watch_activate(_watch_array, _watch%d_cond, %d, _pnt, _watch_rm++, %s);\n",
             watch_seen_,
             watch_seen_,
@@ -1213,7 +1022,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype) {
     ++watch_seen_;
 }
 
-void threadsafe(char* s) {
+void threadsafe(const char* s) {
     if (!assert_threadsafe) {
         fprintf(stderr, "Notice: %s\n", s);
         vectorize = 0;

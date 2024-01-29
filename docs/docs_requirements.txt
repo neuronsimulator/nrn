@@ -1,10 +1,12 @@
 sphinx
+# do not check import of next line
 sphinx_rtd_theme
 jupyter
 nbconvert
-recommonmark
+myst_parser
 matplotlib
-bokeh
+# bokeh 3 seems to break docs notebooks
+bokeh<3
 # do not check import of next line
 ipython
 plotnine
@@ -12,3 +14,4 @@ numpy
 plotly
 nbsphinx
 jinja2
+sphinx-design

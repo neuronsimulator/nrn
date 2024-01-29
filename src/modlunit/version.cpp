@@ -1,8 +1,8 @@
 #include <../../nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/version.c,v 1.1.1.1 1994/10/12 17:22:51 hines Exp */
 
-char* RCS_version = "1.1.1.1";
-char* RCS_date = "1994/10/12 17:22:51";
+const char* RCS_version = "1.1.1.1";
+const char* RCS_date = "1994/10/12 17:22:51";
 
 /* version.c,v
  * Revision 1.1.1.1  1994/10/12  17:22:51  hines

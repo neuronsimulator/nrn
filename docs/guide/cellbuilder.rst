@@ -1,3 +1,5 @@
+.. _cell_builder:
+
 Using the Cell Builder GUI
 ==========================
 
@@ -19,3 +21,4 @@ These are the same things we would have to do, and pretty much the same sequence
    cellbuilder3
 
 .. You might also be interested in our video on :ref:`???` from the 2021 NEURON course webinar.
+

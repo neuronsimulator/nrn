@@ -1,47 +1,38 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
-
+#include "nrn_ansi.h"
+#include "nrncore_write/io/nrncore_io.h"
+#include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
 #include "cabvars.h"
 #include "neuron.h"
+#include "neuron/container/data_handle.hpp"
 #include "membdef.h"
+#include "multicore.h"
 #include "nrnmpi.h"
 
+#include <vector>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
 
 static char banner[] =
-    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021\n\
+    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
-#ifdef WIN32
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#else
-#define RTLD_NOW 0
-extern "C" {
-extern void* dlopen(const char* name, int mode);
-extern void* dlsym(void* handle, char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#endif
-/*#include "../mswin/windll/dll.h"*/
-/*static struct DLL* dll;*/
-#endif  // WIN32
-
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
+extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
-#endif
+#endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
 #if defined(WIN32)
 #undef DLL_DEFAULT_FNAME
@@ -53,22 +44,22 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
-#endif
+#endif  // DLL_DEFAULT_FNAME
 
 // error message hint with regard to mismatched arch
 void nrn_possible_mismatched_arch(const char* libname) {
-    if (strncmp(NRNHOSTCPU, "arm64", 5) == 0) {
+    if (neuron::config::system_processor == "arm64") {
         // what arch are we running on
 #if __arm64__
         const char* we_are{"arm64"};
 #elif __x86_64__
         const char* we_are{"x86_64"};
-#endif
+#endif  // !__arm64__
 
         // what arch did we try to dlopen
-        char* cmd;
-        cmd = new char[strlen(libname) + 100];
-        sprintf(cmd, "lipo -archs %s 2> /dev/null", libname);
+        auto const cmd_size = strlen(libname) + 100;
+        auto* cmd = new char[cmd_size];
+        std::snprintf(cmd, cmd_size, "lipo -archs %s 2> /dev/null", libname);
         char libname_arch[20]{0};
         FILE* p = popen(cmd, "r");
         delete[] cmd;
@@ -88,28 +79,16 @@ void nrn_possible_mismatched_arch(const char* libname) {
     }
 }
 
-#if __GNUC__ < 4
-#include "osxdlfcn.h"
-#include "osxdlfcn.cpp"
-#else
-#include <dlfcn.h>
-#endif  // __GNUC__
-
-#else
-
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#endif
+#else  // ! DARWIN
 
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "./libnrnmech.so"
-#endif
-#endif
-#else  // !defined(NRNMECH_DLL_STYLE)
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#endif
-#endif
+#endif  // DLL_DEFAULT_FNAME
+
+#endif  // ! DARWIN
+#endif  // NRNMECH_DLL_STYLE
+
+#include "nrnwrap_dlfcn.h"
 
 #define CHECK(name)                            \
     if (hoc_lookup(name) != (Symbol*) 0) {     \
@@ -133,23 +112,33 @@ extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
 
-static HocParmLimits _hoc_parm_limits[] = {"Ra",   1e-6,   1e9,          "L",       1e-4,
-                                           1e20,   "diam", 1e-9,         1e9,       "cm",
-                                           0.,     1e9,    "rallbranch", 1.,        1e9,
-                                           "nseg", 1.,     1e9,          "celsius", -273.,
-                                           1e6,    "dt",   1e-9,         1e15,      0,
-                                           0.,     0.};
+static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
+                                           {"L", {1e-4, 1e20}},
+                                           {"diam", {1e-9, 1e9}},
+                                           {"cm", {0., 1e9}},
+                                           {"rallbranch", {1., 1e9}},
+                                           {"nseg", {1., 1e9}},
+                                           {"celsius", {-273., 1e6}},
+                                           {"dt", {1e-9, 1e15}},
+                                           {nullptr, {0., 0.}}};
 
-static HocParmUnits _hoc_parm_units[] = {"Ra",     "ohm-cm",  "L",     "um",     "diam", "um", "cm",
-                                         "uF/cm2", "celsius", "degC",  "dt",     "ms",   "t",  "ms",
-                                         "v",      "mV",      "i_cap", "mA/cm2", 0,      0};
+static HocParmUnits _hoc_parm_units[] = {{"Ra", "ohm-cm"},
+                                         {"L", "um"},
+                                         {"diam", "um"},
+                                         {"cm", "uF/cm2"},
+                                         {"celsius", "degC"},
+                                         {"dt", "ms"},
+                                         {"t", "ms"},
+                                         {"v", "mV"},
+                                         {"i_cap", "mA/cm2"},
+                                         {nullptr, nullptr}};
 
 extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
-Memb_func* memb_func;
-Memb_list* memb_list;
+std::vector<Memb_func> memb_func;
+std::vector<Memb_list> memb_list;
 short* memb_order_;
 Symbol** pointsym;
 Point_process** point_process;
@@ -171,37 +160,35 @@ int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
 
-extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
+void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
 }
 
-// also for read
-using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
-extern "C" void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
-    nrn_bbcore_write_[type] = f;
+void hoc_reg_bbcore_write(int mechtype, bbcore_write_t f) {
+    nrn_bbcore_write_[mechtype] = f;
 }
 
-extern "C" void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
-    nrn_bbcore_read_[type] = f;
+void hoc_reg_bbcore_read(int mechtype, bbcore_write_t f) {
+    nrn_bbcore_read_[mechtype] = f;
 }
 
 const char** nrn_nmodl_text_;
-extern "C" void hoc_reg_nmodl_text(int type, const char* txt) {
-    nrn_nmodl_text_[type] = txt;
+void hoc_reg_nmodl_text(int mechtype, const char* txt) {
+    nrn_nmodl_text_[mechtype] = txt;
 }
 
 const char** nrn_nmodl_filename_;
-extern "C" void hoc_reg_nmodl_filename(int type, const char* filename) {
-    nrn_nmodl_filename_[type] = filename;
+void hoc_reg_nmodl_filename(int mechtype, const char* filename) {
+    nrn_nmodl_filename_[mechtype] = filename;
 }
 
-extern "C" void add_nrn_has_net_event(int type) {
+void add_nrn_has_net_event(int mechtype) {
     ++nrn_has_net_event_cnt_;
     nrn_has_net_event_ = (int*) erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_ * sizeof(int));
-    nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
+    nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = mechtype;
 }
 
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
@@ -209,7 +196,7 @@ int nrn_fornetcon_cnt_;    /* how many models have a FOR_NETCONS statement */
 int* nrn_fornetcon_type_;  /* what are the type numbers */
 int* nrn_fornetcon_index_; /* what is the index into the ppvar array */
 
-extern "C" void add_nrn_fornetcons(int type, int indx) {
+void add_nrn_fornetcons(int type, int indx) {
     int i = nrn_fornetcon_cnt_++;
     nrn_fornetcon_type_ = (int*) erealloc(nrn_fornetcon_type_, (i + 1) * sizeof(int));
     nrn_fornetcon_index_ = (int*) erealloc(nrn_fornetcon_index_, (i + 1) * sizeof(int));
@@ -221,9 +208,9 @@ extern "C" void add_nrn_fornetcons(int type, int indx) {
 short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
-extern "C" void add_nrn_artcell(int type, int qi) {
-    nrn_is_artificial_[type] = 1;
-    nrn_artcell_qindex_[type] = qi;
+void add_nrn_artcell(int mechtype, int qi) {
+    nrn_is_artificial_[mechtype] = 1;
+    nrn_artcell_qindex_[mechtype] = qi;
 }
 
 int nrn_is_artificial(int pnttype) {
@@ -255,7 +242,7 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
         if (!handle) {
             nrn_possible_mismatched_arch(abspath);
         }
-#endif
+#endif  // DARWIN
         free(abspath);
     } else {
         int patherr = errno;
@@ -268,7 +255,7 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
                     relpath);
 #if DARWIN
             nrn_possible_mismatched_arch(abspath);
-#endif
+#endif  // DARWIN
         }
     }
     return handle;
@@ -282,15 +269,15 @@ int mswin_load_dll(const char* cp1) {
         }
 #if DARWIN
     handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
-#else
+#else   // not DARWIN
     handle = dlopen(cp1, RTLD_NOW);
-#endif
+#endif  // not DARWIN
     if (handle) {
         Pfrv mreg = (Pfrv) dlsym(handle, "modl_reg");
         if (mreg) {
             (*mreg)();
         } else {
-            fprintf(stderr, "dlsym _modl_reg failed\n%s\n", dlerror());
+            fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
             dlclose(handle);
             return 0;
         }
@@ -323,9 +310,7 @@ void hoc_nrn_load_dll(void) {
     }
 }
 
-extern void nrn_threads_create(int, int);
-
-static DoubScal scdoub[] = {"t", &t, "dt", &dt, 0, 0};
+static DoubScal scdoub[] = {{"t", &t}, {"dt", &dt}, {nullptr, nullptr}};
 
 void hoc_last_init(void) {
     int i;
@@ -333,18 +318,17 @@ void hoc_last_init(void) {
     Symbol* s;
 
     hoc_register_var(scdoub, (DoubVec*) 0, (VoidFunc*) 0);
-    nrn_threads_create(1, 0);  // single thread
+    nrn_threads_create(1, false);  // single thread
 
     if (nrnmpi_myid < 1)
         if (nrn_nobanner_ == 0) {
-            extern char* nrn_version(int i);
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
             IGNORE(fflush(stderr));
         }
-    memb_func_size_ = 30;
-    memb_func = (Memb_func*) ecalloc(memb_func_size_, sizeof(Memb_func));
-    memb_list = (Memb_list*) ecalloc(memb_func_size_, sizeof(Memb_list));
+    memb_func_size_ = 30;  // initial allocation size
+    memb_list.reserve(memb_func_size_);
+    memb_func.resize(memb_func_size_);  // we directly resize because it is used below
     pointsym = (Symbol**) ecalloc(memb_func_size_, sizeof(Symbol*));
     point_process = (Point_process**) ecalloc(memb_func_size_, sizeof(Point_process*));
     pnt_map = static_cast<char*>(ecalloc(memb_func_size_, sizeof(char)));
@@ -374,7 +358,7 @@ void hoc_last_init(void) {
         extern int keep_nseg_parm_;
         keep_nseg_parm_ = 1;
     }
-#endif
+#endif  // KEEP_NSEG_PARM
 
     section_list = hoc_l_newlist();
 
@@ -396,14 +380,15 @@ void hoc_last_init(void) {
     }
     SectionList_reg();
     SectionRef_reg();
-    register_mech(morph_mech, morph_alloc, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, (Pvmi) 0, -1, 0);
+    register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
         (*m)();
     }
-#if !MAC && !defined(WIN32)
+#if !defined(WIN32)
     modl_reg();
-#endif
+#endif  // not WIN32
     hoc_register_limits(0, _hoc_parm_limits);
     hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
@@ -416,7 +401,6 @@ void hoc_last_init(void) {
         }
     }
     if (nrn_mech_dll) {
-        char *cp1, *cp2;
         hoc_default_dll_loaded_ = 1.;
 #if defined(WIN32)
         /* Sometimes (windows 10 and launch recent enthought canopy) it seems that
@@ -432,7 +416,9 @@ void hoc_last_init(void) {
             }
         } else {
 #endif /*WIN32*/
-            for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+            char *cp1{}, *cp2{};
+            std::string tmp{nrn_mech_dll};
+            for (cp1 = tmp.data(); *cp1; cp1 = cp2) {
                 for (cp2 = cp1; *cp2; ++cp2) {
                     if (*cp2 == ';') {
                         *cp2 = '\0';
@@ -467,26 +453,163 @@ void initnrn(void) {
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
 
+
+void reallocate_mech_data(int mechtype);
+void initialize_memb_func(int mechtype,
+                          nrn_cur_t cur,
+                          nrn_jacob_t jacob,
+                          Pvmp alloc,
+                          nrn_state_t stat,
+                          nrn_init_t initialize,
+                          int vectorized);
+void check_mech_version(const char** m);
+std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax);
+void register_mech_vars(const char** var_buffers,
+                        int modltypemax,
+                        Symbol* mech_symbol,
+                        int mechtype,
+                        int nrnpointerindex);
+
 /* if vectorized then thread_data_size added to it */
 void nrn_register_mech_common(const char** m,
                               Pvmp alloc,
-                              Pvmi cur,
-                              Pvmi jacob,
-                              Pvmi stat,
-                              Pvmi initialize,
+                              nrn_cur_t cur,
+                              nrn_jacob_t jacob,
+                              nrn_state_t stat,
+                              nrn_init_t initialize,
                               int nrnpointerindex, /* if -1 then there are none */
                               int vectorized) {
-    static int type = 2; /* 0 unused, 1 for cable section */
-    int j, k, modltype, pindx, modltypemax;
-    Symbol* s;
+    // initialize at first entry, it will be incremented at exit of the function
+    static int mechtype = 2; /* 0 unused, 1 for cable section */
+    int modltype;
+    int modltypemax;
+    Symbol* mech_symbol;
     const char** m2;
 
     nrn_load_name_check(m[1]);
 
-    if (type >= memb_func_size_) {
+    reallocate_mech_data(mechtype);
+
+    initialize_memb_func(mechtype, cur, jacob, alloc, stat, initialize, vectorized);
+
+    check_mech_version(m);
+
+    mech_symbol = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
+    mech_symbol->subtype = mechtype;
+    memb_func[mechtype].sym = mech_symbol;
+    m2 = m + 2;
+    if (nrnpointerindex == -1) {
+        modltypemax = STATE;
+    } else {
+        modltypemax = NRNPOINTER;
+    }
+    auto [nvartypes, nvars] = count_variables_in_mechanism(m2, modltypemax);
+    mech_symbol->s_varn = nvars;
+    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
+
+    register_mech_vars(m2, modltypemax, mech_symbol, mechtype, nrnpointerindex);
+    ++mechtype;
+    n_memb_func = mechtype;
+    // n_memb_func has changed, so any existing NrnThread do not know about the
+    // new mechanism
+    v_structure_change = 1;
+}
+
+void register_mech_vars(const char** var_buffers,
+                        int modltypemax,
+                        Symbol* mech_symbol,
+                        int mechtype,
+                        int nrnpointerindex) {
+    /* this is set up for the possiblility of overloading range variables.
+    We are currently not allowing this. Hence the #if.
+    If never overloaded then no reason for list of symbols for each mechanism.
+    */
+    /* the indexing is confusing because k refers to index in the range indx list
+    and j refers to index in mechanism list which has 0 elements to separate
+    nrnocCONST, DEPENDENT, and STATE */
+    /* variable pointers added on at end, if they exist */
+    /* allowing range variable arrays. Must extract dimension info from name[%d]*/
+    /* pindx refers to index into the p-array */
+    int pindx = 0;
+    int modltype;
+    int j, k;
+    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++, j++) {
+        for (; var_buffers[j]; j++, k++) {
+            Symbol* var_symbol;
+            std::string varname(var_buffers[j]);  // copy out the varname to allow modifying it
+            int index = 1;
+            unsigned nsub = 0;
+            auto subscript = varname.find('[');
+            if (subscript != varname.npos) {
+#if EXTRACELLULAR
+                if (varname[subscript + 1] == 'N') {
+                    index = nlayer;
+                } else
+#endif  // EXTRACELLULAR
+                {
+                    index = std::stoi(varname.substr(subscript + 1));
+                }
+                nsub = 1;
+                varname.erase(subscript);
+            }
+            /*SUPPRESS 624*/
+            if ((var_symbol = hoc_lookup(varname.c_str()))) {
+#if 0
+                if (var_symbol->subtype != RANGEVAR) {
+                    IGNORE(fprintf(stderr, CHKmes,
+                    varname.c_str()));
+                }
+#else   // not 0
+                IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
+#endif  // not 0
+            } else {
+                var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
+                var_symbol->subtype = modltype;
+                var_symbol->u.rng.type = mechtype;
+                var_symbol->cpublic = 1;
+                if (modltype == NRNPOINTER) { /* not in p array */
+                    var_symbol->u.rng.index = nrnpointerindex;
+                } else {
+                    var_symbol->u.rng.index = pindx;
+                }
+                if (nsub) {
+                    var_symbol->arayinfo = (Arrayinfo*) emalloc(sizeof(Arrayinfo) +
+                                                                nsub * sizeof(int));
+                    var_symbol->arayinfo->a_varn = nullptr;
+                    var_symbol->arayinfo->refcount = 1;
+                    var_symbol->arayinfo->nsub = nsub;
+                    var_symbol->arayinfo->sub[0] = index;
+                }
+                if (modltype == NRNPOINTER) {
+                    if (nrn_dparam_ptr_end_[mechtype] == 0) {
+                        nrn_dparam_ptr_start_[mechtype] = nrnpointerindex;
+                    }
+                    nrnpointerindex += index;
+                    nrn_dparam_ptr_end_[mechtype] = nrnpointerindex;
+                } else {
+                    pindx += index;
+                }
+            }
+            mech_symbol->u.ppsym[k] = var_symbol;
+        }
+    }
+}
+
+std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax) {
+    int j, k, modltype;
+    // count the number of variables registered in this mechanism
+    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
+        // while we have not encountered a 0 (sentinel for variable type)
+        while (m2[j++]) {
+            k++;
+        }
+    }
+    return std::make_pair(j, k);
+}
+
+void reallocate_mech_data(int mechtype) {
+    if (mechtype >= memb_func_size_) {
         memb_func_size_ += 20;
-        memb_func = (Memb_func*) erealloc(memb_func, memb_func_size_ * sizeof(Memb_func));
-        memb_list = (Memb_list*) erealloc(memb_list, memb_func_size_ * sizeof(Memb_list));
         pointsym = (Symbol**) erealloc(pointsym, memb_func_size_ * sizeof(Symbol*));
         point_process = (Point_process**) erealloc(point_process,
                                                    memb_func_size_ * sizeof(Point_process*));
@@ -520,7 +643,7 @@ void nrn_register_mech_common(const char** m,
         nrn_watch_allocate_ =
             (NrnWatchAllocateFunc_t*) erealloc(nrn_watch_allocate_,
                                                memb_func_size_ * sizeof(NrnWatchAllocateFunc_t));
-        for (j = memb_func_size_ - 20; j < memb_func_size_; ++j) {
+        for (int j = memb_func_size_ - 20; j < memb_func_size_; ++j) {
             pnt_map[j] = 0;
             point_process[j] = (Point_process*) 0;
             pointsym[j] = (Symbol*) 0;
@@ -539,45 +662,52 @@ void nrn_register_mech_common(const char** m,
         }
         nrn_mk_prop_pools(memb_func_size_);
     }
+}
 
-    nrn_prop_param_size_[type] = 0;  /* fill in later */
-    nrn_prop_dparam_size_[type] = 0; /* fill in later */
-    nrn_dparam_ptr_start_[type] = 0; /* fill in later */
-    nrn_dparam_ptr_end_[type] = 0;   /* fill in later */
-    memb_func[type].current = cur;
-    memb_func[type].jacob = jacob;
-    memb_func[type].alloc = alloc;
-    memb_func[type].state = stat;
-    memb_func[type].initialize = initialize;
-    memb_func[type].destructor = nullptr;
-#if VECTORIZE
-    memb_func[type].vectorized = vectorized ? 1 : 0;
-    memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
-    memb_func[type].thread_mem_init_ = nullptr;
-    memb_func[type].thread_cleanup_ = nullptr;
-    memb_func[type].thread_table_check_ = nullptr;
-    memb_func[type]._update_ion_pointers = nullptr;
-    memb_func[type].is_point = 0;
-    memb_func[type].hoc_mech = nullptr;
-    memb_func[type].setdata_ = nullptr;
-    memb_func[type].dparam_semantics = (int*) 0;
-    memb_list[type].nodecount = 0;
-    memb_list[type]._thread = (Datum*) 0;
-    memb_order_[type] = type;
-#endif
-#if CVODE
-    memb_func[type].ode_count = nullptr;
-    memb_func[type].ode_map = nullptr;
-    memb_func[type].ode_spec = nullptr;
-    memb_func[type].ode_matsol = nullptr;
-    memb_func[type].ode_synonym = nullptr;
-    memb_func[type].singchan_ = nullptr;
-#endif
+void initialize_memb_func(int mechtype,
+                          nrn_cur_t cur,
+                          nrn_jacob_t jacob,
+                          Pvmp alloc,
+                          nrn_state_t stat,
+                          nrn_init_t initialize,
+                          int vectorized) {
+    assert(mechtype >= memb_list.size());
+    memb_list.resize(mechtype + 1);
+    memb_func.resize(mechtype + 1);
+    nrn_prop_param_size_[mechtype] = 0;  /* fill in later */
+    nrn_prop_dparam_size_[mechtype] = 0; /* fill in later */
+    nrn_dparam_ptr_start_[mechtype] = 0; /* fill in later */
+    nrn_dparam_ptr_end_[mechtype] = 0;   /* fill in later */
+    memb_func[mechtype].current = cur;
+    memb_func[mechtype].jacob = jacob;
+    memb_func[mechtype].alloc = alloc;
+    memb_func[mechtype].state = stat;
+    memb_func[mechtype].set_initialize(initialize);
+    memb_func[mechtype].destructor = nullptr;
+    memb_func[mechtype].vectorized = vectorized ? 1 : 0;
+    memb_func[mechtype].thread_size_ = vectorized ? (vectorized - 1) : 0;
+    memb_func[mechtype].thread_mem_init_ = nullptr;
+    memb_func[mechtype].thread_cleanup_ = nullptr;
+    memb_func[mechtype].thread_table_check_ = nullptr;
+    memb_func[mechtype].is_point = 0;
+    memb_func[mechtype].hoc_mech = nullptr;
+    memb_func[mechtype].setdata_ = nullptr;
+    memb_func[mechtype].dparam_semantics = nullptr;
+    memb_order_[mechtype] = mechtype;
+    memb_func[mechtype].ode_count = nullptr;
+    memb_func[mechtype].ode_map = nullptr;
+    memb_func[mechtype].ode_spec = nullptr;
+    memb_func[mechtype].ode_matsol = nullptr;
+    memb_func[mechtype].ode_synonym = nullptr;
+    memb_func[mechtype].singchan_ = nullptr;
+}
+
+void check_mech_version(const char** m) {
     /* as of 5.2 nmodl translates so that the version string
-       is the first string in m. This allows the neuron application
-       to determine if nmodl c files are compatible with this version
-       Note that internal mechanisms have a version of "0" and are
-       by nature consistent.
+        is the first string in m. This allows the neuron application
+        to determine if nmodl c files are compatible with this version
+        Note that internal mechanisms have a version of "0" and are
+        by nature consistent.
     */
 
     /*printf("%s %s\n", m[0], m[1]);*/
@@ -604,210 +734,196 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
             nrn_exit(1);
         }
     }
-
-    s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
-    s->subtype = type;
-    memb_func[type].sym = s;
-    /*	printf("%s type=%d\n", s->name, type);*/
-    m2 = m + 2;
-    if (nrnpointerindex == -1) {
-        modltypemax = STATE;
-    } else {
-        modltypemax = NRNPOINTER;
-    }
-    for (k = 0, j = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++, j++) {
-        /*EMPTY*/
-        for (; m2[j]; j++, k++) {
-            ;
-        }
-    }
-    s->s_varn = k;
-    s->u.ppsym = (Symbol**) emalloc((unsigned) (j * sizeof(Symbol*)));
-    /* this is set up for the possiblility of overloading range variables.
-    We are currently not allowing this. Hence the #if.
-    If never overloaded then no reason for list of symbols for each mechanism.
-    */
-    /* the indexing is confusing because k refers to index in the range indx list
-    and j refers to index in mechanism list which has 0 elements to separate
-    nrnocCONST, DEPENDENT, and STATE */
-    /* variable pointers added on at end, if they exist */
-    /* allowing range variable arrays. Must extract dimension info from name[%d]*/
-    /* pindx refers to index into the p-array */
-    pindx = 0;
-    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++, j++) {
-        for (; m2[j]; j++, k++) {
-            Symbol* s2;
-            char buf[200], *cp;
-            int indx;
-            unsigned nsub = 0;
-            strcpy(buf, m2[j]); /* not allowed to change constant string */
-            indx = 1;
-            cp = strchr(buf, '[');
-            if (cp) {
-#if EXTRACELLULAR
-                if (cp[1] == 'N') {
-                    indx = nlayer;
-                } else
-#endif
-                {
-                    sscanf(cp + 1, "%d", &indx);
-                }
-                nsub = 1;
-                *cp = '\0';
-            }
-            /*SUPPRESS 624*/
-            if ((s2 = hoc_lookup(buf))) {
-#if 0
-				if (s2->subtype != RANGEVAR) {
-					IGNORE(fprintf(stderr, CHKmes,
-					buf));
-				}
-#else
-                IGNORE(fprintf(stderr, CHKmes, buf));
-#endif
-            } else {
-                s2 = hoc_install(buf, RANGEVAR, 0.0, &hoc_symlist);
-                s2->subtype = modltype;
-                s2->u.rng.type = type;
-                s2->cpublic = 1;
-                if (modltype == NRNPOINTER) { /* not in p array */
-                    s2->u.rng.index = nrnpointerindex;
-                } else {
-                    s2->u.rng.index = pindx;
-                }
-                if (nsub) {
-                    s2->arayinfo = (Arrayinfo*) emalloc(sizeof(Arrayinfo) + nsub * sizeof(int));
-                    s2->arayinfo->a_varn = (unsigned*) 0;
-                    s2->arayinfo->refcount = 1;
-                    s2->arayinfo->nsub = nsub;
-                    s2->arayinfo->sub[0] = indx;
-                }
-                if (modltype == NRNPOINTER) {
-                    if (nrn_dparam_ptr_end_[type] == 0) {
-                        nrn_dparam_ptr_start_[type] = nrnpointerindex;
-                    }
-                    nrnpointerindex += indx;
-                    nrn_dparam_ptr_end_[type] = nrnpointerindex;
-                } else {
-                    pindx += indx;
-                }
-            }
-            s->u.ppsym[k] = s2;
-        }
-    }
-    ++type;
-    n_memb_func = type;
 }
 
-extern "C" void register_mech(const char** m,
-                              Pvmp alloc,
-                              Pvmi cur,
-                              Pvmi jacob,
-                              Pvmi stat,
-                              Pvmi initialize,
-                              int nrnpointerindex, /* if -1 then there are none */
-                              int vectorized) {
-    int type = n_memb_func;
+void register_mech(const char** m,
+                   Pvmp alloc,
+                   nrn_cur_t cur,
+                   nrn_jacob_t jacob,
+                   nrn_state_t stat,
+                   nrn_init_t initialize,
+                   int nrnpointerindex, /* if -1 then there are none */
+                   int vectorized) {
+    int mechtype = n_memb_func;
     nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
     if (nrnpy_reg_mech_p_) {
-        (*nrnpy_reg_mech_p_)(type);
+        (*nrnpy_reg_mech_p_)(mechtype);
     }
 }
 
-extern "C" void nrn_writes_conc(int type, int unused) {
+void nrn_writes_conc(int mechtype, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;
     for (i = n_memb_func - 2; i >= lastion; --i) {
         memb_order_[i + 1] = memb_order_[i];
     }
-    memb_order_[lastion] = type;
+    memb_order_[lastion] = mechtype;
 #if 0
-	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
-#endif
-    if (nrn_is_ion(type)) {
+	printf("%s reordered from %d to %d\n", memb_func[mechtype].sym->name, mechtype, lastion);
+#endif  // 0
+    if (nrn_is_ion(mechtype)) {
         ++lastion;
     }
 }
 
-extern "C" void hoc_register_prop_size(int type, int psize, int dpsize) {
-    nrn_prop_param_size_[type] = psize;
-    nrn_prop_dparam_size_[type] = dpsize;
-    if (memb_func[type].dparam_semantics) {
-        free(memb_func[type].dparam_semantics);
-        memb_func[type].dparam_semantics = (int*) 0;
-    }
-    if (dpsize) {
-        memb_func[type].dparam_semantics = (int*) ecalloc(dpsize, sizeof(int));
+namespace {
+/**
+ * @brief Translate a dparam semantic string to integer form.
+ *
+ * This logic used to live inside hoc_register_dparam_semantics.
+ */
+int dparam_semantics_to_int(std::string_view name) {
+    // only interested in area, iontype, cvode_ieq, netsend, pointer, pntproc, bbcorepointer, watch,
+    // diam, fornetcon, xx_ion and #xx_ion which will get a semantics value of -1, -2, -3, -4, -5,
+    // -6, -7, -8, -9, -10 type, and type+1000 respectively
+    if (name == "area") {
+        return -1;
+    } else if (name == "iontype") {
+        return -2;
+    } else if (name == "cvodeieq") {
+        return -3;
+    } else if (name == "netsend") {
+        return -4;
+    } else if (name == "pointer") {
+        return -5;
+    } else if (name == "pntproc") {
+        return -6;
+    } else if (name == "bbcorepointer") {
+        return -7;
+    } else if (name == "watch") {
+        return -8;
+    } else if (name == "diam") {
+        return -9;
+    } else if (name == "fornetcon") {
+        return -10;
+    } else {
+        bool const i{name[0] == '#'};
+        Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
+        if (s && s->type == MECHANISM) {
+            return s->subtype + i * 1000;
+        }
+        throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
 }
-extern "C" void hoc_register_dparam_semantics(int type, int ix, const char* name) {
-    /* only interested in area, iontype, cvode_ieq,
-       netsend, pointer, pntproc, bbcorepointer, watch, diam,
-       fornetcon,
-       xx_ion and #xx_ion which will get
-       a semantics value of -1, -2, -3,
-       -4, -5, -6, -7, -8, -9, -10
-       type, and type+1000 respectively
-    */
-    if (strcmp(name, "area") == 0) {
-        memb_func[type].dparam_semantics[ix] = -1;
-    } else if (strcmp(name, "iontype") == 0) {
-        memb_func[type].dparam_semantics[ix] = -2;
-    } else if (strcmp(name, "cvodeieq") == 0) {
-        memb_func[type].dparam_semantics[ix] = -3;
-    } else if (strcmp(name, "netsend") == 0) {
-        memb_func[type].dparam_semantics[ix] = -4;
-    } else if (strcmp(name, "pointer") == 0) {
-        memb_func[type].dparam_semantics[ix] = -5;
-    } else if (strcmp(name, "pntproc") == 0) {
-        memb_func[type].dparam_semantics[ix] = -6;
-    } else if (strcmp(name, "bbcorepointer") == 0) {
-        memb_func[type].dparam_semantics[ix] = -7;
-    } else if (strcmp(name, "watch") == 0) {
-        memb_func[type].dparam_semantics[ix] = -8;
-    } else if (strcmp(name, "diam") == 0) {
-        memb_func[type].dparam_semantics[ix] = -9;
-    } else if (strcmp(name, "fornetcon") == 0) {
-        memb_func[type].dparam_semantics[ix] = -10;
-    } else {
-        int i = 0;
-        if (name[0] == '#') {
-            i = 1;
-        }
-        Symbol* s = hoc_lookup(name + i);
-        if (s && s->type == MECHANISM) {
-            memb_func[type].dparam_semantics[ix] = s->subtype + i * 1000;
-        } else {
-            fprintf(stderr,
-                    "mechanism %s : unknown semantics for %s\n",
-                    memb_func[type].sym->name,
-                    name);
-            assert(0);
+}  // namespace
+
+namespace neuron::mechanism::detail {
+void register_data_fields(int mechtype,
+                          std::vector<std::pair<const char*, int>> const& param_info,
+                          std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    nrn_prop_param_size_[mechtype] = param_info.size();
+    nrn_prop_dparam_size_[mechtype] = dparam_info.size();
+    delete[] std::exchange(memb_func[mechtype].dparam_semantics, nullptr);
+    if (!dparam_info.empty()) {
+        memb_func[mechtype].dparam_semantics = new int[dparam_info.size()];
+        for (auto i = 0; i < dparam_info.size(); ++i) {
+            // dparam_info[i].first is the name of the variable, currently unused...
+            memb_func[mechtype].dparam_semantics[i] = dparam_semantics_to_int(
+                dparam_info[i].second);
         }
     }
-#if 0
-	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
-	  ix, name, memb_func[type].dparam_semantics[ix]);
-#endif
+    // Translate param_info into the type we want to use internally now we're fully inside NEURON
+    // library code (wheels...)
+    std::vector<container::Mechanism::Variable> param_info_new{};
+    std::transform(param_info.begin(),
+                   param_info.end(),
+                   std::back_inserter(param_info_new),
+                   [](auto const& old) -> container::Mechanism::Variable {
+                       return {old.first, old.second};
+                   });
+    // Create a per-mechanism data structure as part of the top-level
+    // neuron::model() structure.
+    auto& model = neuron::model();
+    model.delete_mechanism(mechtype);  // e.g. extracellular can call hoc_register_prop_size
+                                       // multiple times
+    auto& mech_data = model.add_mechanism(mechtype,
+                                          memb_func[mechtype].sym->name,  // the mechanism name
+                                          std::move(param_info_new));  // names and array dimensions
+                                                                       // of double-valued
+                                                                       // per-instance variables
+    memb_list[mechtype].set_storage_pointer(&mech_data);
+}
+}  // namespace neuron::mechanism::detail
+namespace neuron::mechanism {
+template <>
+int const* get_array_dims<double>(int mech_type) {
+    if (mech_type < 0) {
+        return nullptr;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_array_dims<container::Mechanism::field::FloatingPoint>();
+}
+template <>
+double* const* get_data_ptrs<double>(int mech_type) {
+    if (mech_type < 0) {
+        return nullptr;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_data_ptrs<container::Mechanism::field::FloatingPoint>();
+}
+template <>
+int get_field_count<double>(int mech_type) {
+    if (mech_type < 0) {
+        return -1;
+    }
+    return neuron::model()
+        .mechanism_data(mech_type)
+        .get_tag<container::Mechanism::field::FloatingPoint>()
+        .num_variables();
+}
+}  // namespace neuron::mechanism
+
+/**
+ * @brief Support mechanism FUNCTION/PROCEDURE python syntax seg.mech.f()
+ *
+ * Python (density) mechanism registration uses nrn_mechs2func_map to
+ * create a per mechanism map of f members that can be called directly
+ * without prior call to setmech.
+ */
+void hoc_register_npy_direct(int mechtype, NPyDirectMechFunc* f) {
+    auto& fmap = nrn_mech2funcs_map[mechtype] = {};
+    for (int i = 0; f[i].name; ++i) {
+        fmap[f[i].name] = &f[i];
+    }
+}
+std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+/**
+ * @brief Legacy way of registering mechanism data/pdata size.
+ *
+ * Superseded by neuron::mechanism::register_data_fields.
+ */
+void hoc_register_prop_size(int mechtype, int psize, int dpsize) {
+    assert(nrn_prop_param_size_[mechtype] == psize);
+    assert(nrn_prop_dparam_size_[mechtype] == dpsize);
 }
 
-#if CVODE
-extern "C" void hoc_register_cvode(int i,
-                                   nrn_ode_count_t cnt,
-                                   nrn_ode_map_t map,
-                                   Pvmi spec,
-                                   Pvmi matsol) {
+/**
+ * @brief Legacy way of registering pdata semantics.
+ *
+ * Superseded by neuron::mechanism::register_data_fields.
+ */
+void hoc_register_dparam_semantics(int mechtype, int ix, const char* name) {
+    assert(memb_func[mechtype].dparam_semantics[ix] == dparam_semantics_to_int(name));
+}
+
+void hoc_register_cvode(int i,
+                        nrn_ode_count_t cnt,
+                        nrn_ode_map_t map,
+                        nrn_ode_spec_t spec,
+                        nrn_ode_matsol_t matsol) {
     memb_func[i].ode_count = cnt;
     memb_func[i].ode_map = map;
     memb_func[i].ode_spec = spec;
     memb_func[i].ode_matsol = matsol;
 }
-extern "C" void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
+void hoc_register_synonym(int i, nrn_ode_synonym_t syn) {
     memb_func[i].ode_synonym = syn;
 }
-#endif
 
-extern "C" void register_destructor(Pvmp d) {
+void register_destructor(Pvmp d) {
     memb_func[n_memb_func - 1].destructor = d;
 }
 
@@ -822,32 +938,31 @@ int point_reg_helper(Symbol* s2) {
     return pointtype++;
 }
 
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     int (*checkpoint)(void**),
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
+extern void class2oc_base(const char*,
+                          void* (*cons)(Object*),
+                          void (*destruct)(void*),
+                          Member_func*,
+                          int (*checkpoint)(void**),
+                          Member_ret_obj_func*,
+                          Member_ret_str_func*);
 
 
-extern "C" int point_register_mech(const char** m,
-                                   Pvmp alloc,
-                                   Pvmi cur,
-                                   Pvmi jacob,
-                                   Pvmi stat,
-                                   Pvmi initialize,
-                                   int nrnpointerindex,
-                                   int vectorized,
+int point_register_mech(const char** m,
+                        Pvmp alloc,
+                        nrn_cur_t cur,
+                        nrn_jacob_t jacob,
+                        nrn_state_t stat,
+                        nrn_init_t initialize,
+                        int nrnpointerindex,
+                        int vectorized,
 
-                                   void* (*constructor)(Object*),
-                                   void (*destructor)(void*),
-                                   Member_func* fmember) {
-    extern void steer_point_process(void* v);
+                        void* (*constructor)(Object*),
+                        void (*destructor)(void*),
+                        Member_func* fmember) {
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -869,44 +984,37 @@ double* makevector(int nrows)
         v = (double*)emalloc((unsigned)(nrows*sizeof(double)));
         return v;
 }
-#endif
+#endif  // 0
 
 int _ninits;
-extern "C" void _modl_cleanup(void) {}
 
-#if 1
-extern "C" void _modl_set_dt(double newdt) {
+void _modl_set_dt(double newdt) {
     dt = newdt;
     nrn_threads->_dt = newdt;
 }
-extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
+void _modl_set_dt_thread(double newdt, NrnThread* nt) {
     nt->_dt = newdt;
 }
-extern "C" double _modl_get_dt_thread(NrnThread* nt) {
+double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
-}
-#endif
-
-extern "C" int nrn_pointing(double* pd) {
-    return pd ? 1 : 0;
 }
 
 int state_discon_flag_ = 0;
-extern "C" void state_discontinuity(int i, double* pd, double d) {
+void state_discontinuity(int i, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
         *pd = d;
         /*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/
     }
 }
 
-extern "C" void hoc_register_limits(int type, HocParmLimits* limits) {
+void hoc_register_limits(int mechtype, HocParmLimits* limits) {
     int i;
     Symbol* sym;
     for (i = 0; limits[i].name; ++i) {
         sym = (Symbol*) 0;
-        if (type && memb_func[type].is_point) {
+        if (mechtype && memb_func[mechtype].is_point) {
             Symbol* t;
-            t = hoc_lookup(memb_func[type].sym->name);
+            t = hoc_lookup(memb_func[mechtype].sym->name);
             sym = hoc_table_lookup(limits[i].name, t->u.ctemplate->symtable);
         }
         if (!sym) {
@@ -916,14 +1024,14 @@ extern "C" void hoc_register_limits(int type, HocParmLimits* limits) {
     }
 }
 
-extern "C" void hoc_register_units(int type, HocParmUnits* units) {
+void hoc_register_units(int mechtype, HocParmUnits* units) {
     int i;
     Symbol* sym;
     for (i = 0; units[i].name; ++i) {
         sym = (Symbol*) 0;
-        if (type && memb_func[type].is_point) {
+        if (mechtype && memb_func[mechtype].is_point) {
             Symbol* t;
-            t = hoc_lookup(memb_func[type].sym->name);
+            t = hoc_lookup(memb_func[mechtype].sym->name);
             sym = hoc_table_lookup(units[i].name, t->u.ctemplate->symtable);
         }
         if (!sym) {
@@ -972,8 +1080,7 @@ void hoc_reg_ba(int mt, nrn_bamech_t f, int type) {
     }
 }
 
-extern "C" void _cvode_abstol(Symbol** s, double* tol, int i) {
-#if CVODE
+void _cvode_abstol(Symbol** s, double* tol, int i) {
     if (s && s[i]->extra) {
         double x;
         x = s[i]->extra->tolerance;
@@ -981,20 +1088,16 @@ extern "C" void _cvode_abstol(Symbol** s, double* tol, int i) {
             tol[i] *= x;
         }
     }
-#endif
 }
 
-extern Node** node_construct(int);
-
-extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol) {
-#if CVODE
+void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol) {
     int i;
     Symbol* sym;
-    /*printf("register tolerance for %s\n", memb_func[type].sym->name);*/
+    /*printf("register tolerance for %s\n", memb_func[mechtype].sym->name);*/
     for (i = 0; tol[i].name; ++i) {
-        if (memb_func[type].is_point) {
+        if (memb_func[mechtype].is_point) {
             Symbol* t;
-            t = hoc_lookup(memb_func[type].sym->name);
+            t = hoc_lookup(memb_func[mechtype].sym->name);
             sym = hoc_table_lookup(tol[i].name, t->u.ctemplate->symtable);
         } else {
             sym = hoc_lookup(tol[i].name);
@@ -1002,81 +1105,77 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
         hoc_symbol_tolerance(sym, tol[i].tolerance);
     }
 
-    if (memb_func[type].ode_count) {
-        Symbol **psym, *msym, *vsym;
-        double** pv;
-        Node** pnode;
-        Prop* p;
-        int i, j, k, n, na, index = 0;
-
-        n = (*memb_func[type].ode_count)(type);
-        if (n > 0) {
-            psym = (Symbol**) ecalloc(n, sizeof(Symbol*));
-            pv = (double**) ecalloc(2 * n, sizeof(double*));
-            pnode = node_construct(1);
-            prop_alloc(&(pnode[0]->prop), MORPHOLOGY, pnode[0]); /* in case we need diam */
-            p = prop_alloc(&(pnode[0]->prop), type, pnode[0]);   /* this and any ions */
-            (*memb_func[type].ode_map)(0, pv, pv + n, p->param, p->dparam, (double*) 0, type);
-            for (i = 0; i < n; ++i) {
-                for (p = pnode[0]->prop; p; p = p->next) {
-                    if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
-                        index = pv[i] - p->param;
-                        break;
+    if (memb_func[mechtype].ode_count) {
+        if (auto const n = memb_func[mechtype].ode_count(mechtype); n > 0) {
+            auto* const psym = new Symbol* [n] {};
+            Node node{};  // dummy node
+            node.sec_node_index_ = 0;
+            prop_alloc(&(node.prop), MORPHOLOGY, &node);         /* in case we need diam */
+            auto* p = prop_alloc(&(node.prop), mechtype, &node); /* this and any ions */
+            // Fill `pv` with pointers to `2*n` parameters inside `p`
+            std::vector<neuron::container::data_handle<double>> pv(2 * n);
+            memb_func[mechtype].ode_map(p, 0, pv.data(), pv.data() + n, nullptr, mechtype);
+            // The first n elements of `pv` are "pv", the second n are "pvdot"
+            for (int i = 0; i < n; ++i) {
+                // `index` is the legacy index of `pv[i]` inside mechanism instance `p`
+                auto const [p, index] = [&h = pv[i]](Prop* p) {
+                    for (; p; p = p->next) {
+                        int legacy_index{};
+                        auto const num_params = p->param_num_vars();
+                        for (auto i_param = 0; i_param < num_params; ++i_param) {
+                            auto const array_dim = p->param_array_dimension(i_param);
+                            for (auto j = 0; j < array_dim; ++j, ++legacy_index) {
+                                if (h == p->param_handle(i_param, j)) {
+                                    return std::make_pair(p, legacy_index);
+                                }
+                            }
+                        }
                     }
-                }
-
-                /* p is the prop and index is the index
-                    into the p->param array */
-                assert(p);
+                    std::ostringstream oss;
+                    oss << "could not find " << h << " starting from " << *p;
+                    throw std::runtime_error(oss.str());
+                }(node.prop);
                 /* need to find symbol for this */
-                msym = memb_func[p->type].sym;
-                for (j = 0; j < msym->s_varn; ++j) {
-                    vsym = msym->u.ppsym[j];
+                auto* msym = memb_func[p->_type].sym;
+                for (int j = 0; j < msym->s_varn; ++j) {
+                    auto* vsym = msym->u.ppsym[j];
                     if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
                         if (ISARRAY(vsym)) {
-                            na = vsym->arayinfo->sub[0];
-                            for (k = 1; k < na; ++k) {
+                            int const na = vsym->arayinfo->sub[0];
+                            for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;
                             }
                         }
                         break;
                     }
                 }
-                assert(j < msym->s_varn);
             }
-
-            node_destruct(pnode, 1);
             *stol = psym;
-            free(pv);
         }
     }
-#endif
 }
 
-extern "C" void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
+void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     if (cons == 1) {
         memb_func[i].thread_mem_init_ = f;
     } else if (cons == 0) {
         memb_func[i].thread_cleanup_ = f;
-    } else if (cons == 2) {
-        memb_func[i]._update_ion_pointers = f;
     }
 }
 
-extern "C" void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
+void _nrn_thread_table_reg(int i, nrn_thread_table_check_t f) {
     memb_func[i].thread_table_check_ = f;
 }
 
-extern "C" void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
+void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
     memb_func[i].setdata_ = call;
 }
 /* there is some question about the _extcall_thread variables, if any. */
-extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
-    extern double hoc_call_func(Symbol*, int);
-    void (*call)(Prop*) = memb_func[type].setdata_;
+double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int mechtype) {
+    void (*call)(Prop*) = memb_func[mechtype].setdata_;
     if (call) {
         (*call)(p);
     }
@@ -1084,9 +1183,15 @@ extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 }
 
 void nrnunit_use_legacy() {
+    hoc_warning("nrnunit_use_legacy() is deprecated as only modern units are supported.",
+                "If you want to still use legacy unit you can use a version of nrn < 9.");
     if (ifarg(1)) {
         int arg = (int) chkarg(1, 0, 1);
-        _nrnunit_use_legacy_ = arg;
+        if (arg == 1) {
+            hoc_execerror(
+                "'nrnunit_use_legacy(1)' have been called but legacy units are no more supported.",
+                nullptr);
+        }
     }
-    hoc_retpushx((double) _nrnunit_use_legacy_);
+    hoc_retpushx(0.);  // This value means modern unit
 }

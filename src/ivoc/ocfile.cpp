@@ -1,11 +1,8 @@
 #include <../../nrnconf.h>
-#if defined(__GO32__)
-#define HAVE_IV 0
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#if MAC || defined(HAVE_UNISTD_H)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -16,13 +13,13 @@ extern int hoc_return_type_code;
 #include <io.h>
 #include <fcntl.h>
 #endif
-#include <InterViews/resource.h>
 #if HAVE_IV
 #include "utility.h"
 #include <IV-look/dialogs.h>
 #include <InterViews/session.h>
 #include <InterViews/display.h>
 #include <InterViews/style.h>
+#include <InterViews/resource.h>
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
@@ -39,9 +36,6 @@ extern int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
@@ -51,9 +45,7 @@ int ivoc_unlink(const char* s) {
 }
 
 #include "hocstr.h"
-extern "C" FILE* hoc_obj_file_arg(int i);
-
-extern "C" FILE* hoc_obj_file_arg(int i) {
+std::FILE* hoc_obj_file_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
     check_obj_type(ob, "File");
     OcFile* f = (OcFile*) (ob->u.this_pointer);
@@ -100,7 +92,7 @@ static double f_aopen(void* v) {
         f->set_name(gargstr(1));
     }
     int err = f->open(f->get_name(), "a");
-#if defined(CYGWIN)
+#ifdef MINGW
     /* ignore illegal seek */
     if (err && errno == 29) {
         errno = 0;
@@ -139,13 +131,7 @@ static double f_gets(void* v) {
     OcFile* f = (OcFile*) v;
     char** pbuf = hoc_pgargstr(1);
     char* buf;
-#if USE_NRNFILEWRAP
-    NrnFILEWrap nfw, *fw;
-    nfw.f = f->file();
-    fw = &nfw;
-#else
     FILE* fw = f->file();
-#endif
     if ((buf = fgets_unlimited(hoc_tmpbuf, fw)) != 0) {
         hoc_assign_str(pbuf, buf);
         return double(strlen(buf));
@@ -290,15 +276,27 @@ static void f_destruct(void* v) {
     delete (OcFile*) v;
 }
 
-Member_func f_members[] = {"ropen",   f_ropen,   "wopen",   f_wopen,   "aopen",   f_aopen,
-                           "printf",  f_printf,  "scanvar", f_scanvar, "scanstr", f_scanstr,
-                           "gets",    f_gets,    "eof",     f_eof,     "isopen",  f_is_open,
-                           "chooser", f_chooser, "close",   f_close,   "vwrite",  f_vwrite,
-                           "vread",   f_vread,   "seek",    f_seek,    "tell",    f_tell,
-                           "mktemp",  f_mktemp,  "unlink",  f_unlink,  "flush",   f_flush,
-                           0,         0};
+Member_func f_members[] = {{"ropen", f_ropen},
+                           {"wopen", f_wopen},
+                           {"aopen", f_aopen},
+                           {"printf", f_printf},
+                           {"scanvar", f_scanvar},
+                           {"scanstr", f_scanstr},
+                           {"gets", f_gets},
+                           {"eof", f_eof},
+                           {"isopen", f_is_open},
+                           {"chooser", f_chooser},
+                           {"close", f_close},
+                           {"vwrite", f_vwrite},
+                           {"vread", f_vread},
+                           {"seek", f_seek},
+                           {"tell", f_tell},
+                           {"mktemp", f_mktemp},
+                           {"unlink", f_unlink},
+                           {"flush", f_flush},
+                           {0, 0}};
 
-static Member_ret_str_func f_retstr_members[] = {"getname", f_get_name, "dir", f_dir, 0, 0};
+static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {0, 0}};
 
 void OcFile_reg() {
     class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
@@ -313,7 +311,7 @@ void OcFile::close() {
 }
 void OcFile::set_name(const char* s) {
     close();
-    if (s != filename_.string()) {
+    if (s != filename_.c_str()) {
         filename_ = s;
     }
 }
@@ -327,14 +325,7 @@ void OcFile::binary_mode() {
  Use File.seek(0) after opening or use a binary style read/write as first\n\
  access to file.");
         }
-#if defined(__MWERKS__)
-        // printf("can't switch to binary mode. No setmode\n");
-        mode_[1] = 'b';
-        mode_[2] = '\0';
-        file_ = freopen(filename_.string(), mode_, file());
-#else
         setmode(fileno(file()), O_BINARY);
-#endif
         binary_ = true;
     }
 }
@@ -347,20 +338,6 @@ bool OcFile::open(const char* name, const char* type) {
     strcpy(mode_, type);
 #endif
     file_ = fopen(expand_env_var(name), type);
-#if defined(FILE_OPEN_RETRY) && FILE_OPEN_RETRY > 0
-    int i;
-    for (i = 0; !file_ && i < FILE_OPEN_RETRY; ++i) {
-        // retry occasionally needed on BlueGene
-        file_ = fopen(expand_env_var(name), type);
-    }
-    if (i > 0) {
-        if (file_) {
-            printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
-        } else {
-            printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
-        }
-    }
-#endif
     return is_open();
 }
 
@@ -473,13 +450,13 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir();
+        dirname_ = *fc_->dir()->string();
     } else
 #endif
     {
         dirname_ = "";
     }
-    return dirname_.string();
+    return dirname_.c_str();
 }
 
 bool OcFile::file_chooser_popup() {

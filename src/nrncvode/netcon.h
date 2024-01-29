@@ -2,17 +2,17 @@
 #define netcon_h
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
+
+#include "htlist.h"
+#include "neuron/container/data_handle.hpp"
+#include "nrnmpi.h"
+#include "nrnneosm.h"
+#include "pool.h"
 
 #include <InterViews/observe.h>
-#include <OS/list.h>
-#include "htlist.h"
-#include "nrnneosm.h"
-#include "nrnmpi.h"
-#include <unordered_map>
+
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #if 0
@@ -28,20 +28,21 @@ class TQueue;
 class TQItem;
 struct NrnThread;
 class NetCvode;
-class HocEventPool;
+class HocEvent;
+using HocEventPool = MutexPool<HocEvent>;
 class HocCommand;
-class NetConSaveWeightTable;
-class NetConSaveIndexTable;
-class PreSynSaveIndexTable;
-class STETransition;
+struct STETransition;
 class IvocVect;
-class BGP_DMASend;
-class BGP_DMASend_Phase2;
-class Point_process;
+class Multisend_Send;
+class Multisend_Send_Phase2;
+struct hoc_Item;
+struct Object;
+struct Point_process;
+struct Section;
 using SelfEventPPTable = std::unordered_map<long, Point_process*>;
 
 #define DiscreteEventType   0
-#define TstopEventType      1
+#define TstopEventType      1  // no longer used
 #define NetConType          2
 #define SelfEventType       3
 #define PreSynType          4
@@ -86,7 +87,6 @@ class DiscreteEvent {
 
 class NetCon: public DiscreteEvent {
   public:
-    NetCon();
     NetCon(PreSyn* src, Object* target);
     virtual ~NetCon();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
@@ -123,6 +123,10 @@ class NetCon: public DiscreteEvent {
     static unsigned long netcon_send_inactive_;
     static unsigned long netcon_deliver_;
 };
+
+typedef std::unordered_map<void*, NetCon*> NetConSaveWeightTable;
+typedef std::unordered_map<long, NetCon*> NetConSaveIndexTable;
+
 class NetConSave: public DiscreteEvent {
   public:
     NetConSave(NetCon*);
@@ -165,7 +169,7 @@ class SelfEvent: public DiscreteEvent {
     double flag_;
     Point_process* target_;
     double* weight_;
-    void** movable_;  // actually a TQItem**
+    Datum* movable_;  // pointed-to Datum holds TQItem*
 
     static unsigned long selfevent_send_;
     static unsigned long selfevent_move_;
@@ -255,7 +259,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nullptr);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -275,15 +279,15 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
+        assert(thvar_);
         return *thvar_ - threshold_;
     }
 
     void update(Observable*);
     void disconnect(Observable*);
-    void update_ptr(double*);
     void record_stmt(const char*);
     void record_stmt(Object*);
-    void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
+    void record(IvocVect*, IvocVect* idvec = nullptr, int rec_id = 0);
     void record(double t);
     void init();
     double mindelay();
@@ -292,7 +296,7 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    double* thvar_;
+    neuron::container::data_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;
@@ -312,11 +316,11 @@ class PreSyn: public ConditionEvent {
 #if NRN_MUSIC
     void* music_port_;
 #endif
-#if BGPDMA
+#if NRNMPI
     union {  // A PreSyn cannot be both a source spike generator
         // and a receiver of off-host spikes.
-        BGP_DMASend* dma_send_;
-        BGP_DMASend_Phase2* dma_send_phase2_;
+        Multisend_Send* multisend_send_;
+        Multisend_Send_Phase2* multisend_send_phase2_;
         int srchost_;
     } bgp;
 #endif
@@ -327,6 +331,9 @@ class PreSyn: public ConditionEvent {
     static unsigned long presyn_deliver_direct_;
     static unsigned long presyn_deliver_ncsend_;
 };
+
+typedef std::unordered_map<long, PreSyn*> PreSynSaveIndexTable;
+
 class PreSynSave: public DiscreteEvent {
   public:
     PreSynSave(PreSyn*);
@@ -349,7 +356,7 @@ class HocEvent: public DiscreteEvent {
     HocEvent();
     virtual ~HocEvent();
     virtual void pr(const char*, double t, NetCvode*);
-    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nil);
+    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nullptr);
     void hefree();
     void clear();  // called by hepool_->free_all
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -381,27 +388,6 @@ class HocEvent: public DiscreteEvent {
     int reinit_;
     static HocEvent* next_del_;
     static HocEventPool* hepool_;
-};
-
-class TstopEvent: public DiscreteEvent {
-  public:
-    TstopEvent();
-    virtual ~TstopEvent();
-    virtual void deliver(double t, NetCvode*, NrnThread*);
-    virtual void pr(const char*, double t, NetCvode*);
-    virtual int pgvts_op(int& i) {
-        i = 0;
-        return 2;
-    }
-    virtual void pgvts_deliver(double t, NetCvode*);
-
-    virtual int type() {
-        return TstopEventType;
-    }
-    virtual DiscreteEvent* savestate_save();
-    virtual void savestate_restore(double deliverytime, NetCvode*);
-    virtual void savestate_write(FILE*);
-    static DiscreteEvent* savestate_read(FILE*);
 };
 
 class NetParEvent: public DiscreteEvent {

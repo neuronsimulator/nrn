@@ -22,10 +22,6 @@ extern int hoc_return_type_code;
 
 #include "gui-redirect.h"
 
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
-
 #if HAVE_IV
 class OcText: public Text {
   public:
@@ -105,9 +101,9 @@ static const char** v_text(void* v) {
 }
 
 
-static Member_func members[] = {"readonly", readonly, "map", map, 0, 0};
+static Member_func members[] = {{"readonly", readonly}, {"map", map}, {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {"text", v_text, 0, 0};
+static Member_ret_str_func retstr_members[] = {{"text", v_text}, {0, 0}};
 
 static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);

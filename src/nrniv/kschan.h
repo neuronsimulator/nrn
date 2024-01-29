@@ -2,10 +2,9 @@
 #define kschan_h
 
 #include <math.h>
-#include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "ivocvect.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include "spmatrix.h"
 
@@ -95,10 +94,7 @@ class KSChanSigmoid: public KSChanFunction {
 };
 
 
-// e/(kT) e/k=11.604589 from hoc's FARADAY and R values (legacy units)
-#define _e_over_k _e_over_k_[_nrnunit_use_legacy_]
-static double _e_over_k_[2] = {_e_over_k_codata2018, 11.604589}; /* K/mV */
-#define ebykt (_e_over_k / (273.15 + celsius))
+#define ebykt (_e_over_k_codata2018 / (273.15 + celsius))
 
 // from MODELING NEURONAL BIOPHYSICS Lyle J Graham
 // A Chapter in the Handbook of Brain Theory and Neural Networks, Volume 2
@@ -223,7 +219,7 @@ class KSGateComplex {
   public:
     KSGateComplex();
     virtual ~KSGateComplex();
-    double conductance(double* state, KSState* st);
+    double conductance(Memb_list* ml, std::size_t instance, std::size_t offset, KSState* st);
 
   public:
     Object* obj_;
@@ -234,43 +230,94 @@ class KSGateComplex {
     int power_;   // eg. n^4, or m^3
 };
 
-class KSIv {
-  public:
+struct KSIv {
+    virtual ~KSIv() = default;
     // this one for ionic ohmic and nernst.
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    virtual double cur(double g,
+                       Datum* pd,
+                       double v,
+                       Memb_list* ml,
+                       std::size_t instance,
+                       std::size_t offset);
+    virtual double jacob(Datum* pd,
+                         double v,
+                         Memb_list* ml,
+                         std::size_t instance,
+                         std::size_t offset);
 };
-class KSIvghk: public KSIv {
-  public:
+struct KSIvghk: KSIv {
     // this one for ionic Goldman-Hodgkin-Katz
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
+    double jacob(Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
     double z;
 };
-class KSIvNonSpec: public KSIv {
+struct KSIvNonSpec: KSIv {
     // this one for non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
+    double jacob(Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
 };
 
-class KSPPIv: public KSIv {
-  public:
+struct KSPPIv: KSIv {
     // this one for POINT_PROCESS ionic ohmic and nernst.
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
+    double jacob(Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
     int ppoff_;
 };
-class KSPPIvghk: public KSPPIv {
-  public:
+struct KSPPIvghk: KSPPIv {
     // this one for POINT_PROCESS ionic Goldman-Hodgkin-Katz
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
+    double jacob(Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
     double z;
 };
-class KSPPIvNonSpec: public KSPPIv {
+struct KSPPIvNonSpec: KSPPIv {
     // this one for POINT_PROCESS non-specific ohmic. There will be a PARAMETER e_suffix at p[1]
-    virtual double cur(double g, double* p, Datum* pd, double v);
-    virtual double jacob(double* p, Datum* pd, double v);
+    double cur(double g,
+               Datum* pd,
+               double v,
+               Memb_list* ml,
+               std::size_t instance,
+               std::size_t offset) override;
+    double jacob(Datum* pd,
+                 double v,
+                 Memb_list* ml,
+                 std::size_t instance,
+                 std::size_t offset) override;
 };
 
 class KSState {
@@ -278,10 +325,10 @@ class KSState {
     KSState();
     virtual ~KSState();
     const char* string() {
-        return name_.string();
+        return name_.c_str();
     }
     double f_;  // normalized conductance
-    CopyString name_;
+    std::string name_;
     int index_;  // into state_ array
     KSChan* ks_;
     Object* obj_;
@@ -290,33 +337,30 @@ class KSState {
 class KSChan {
   public:
     KSChan(Object*, bool is_point = false);
-    virtual ~KSChan();
+    virtual ~KSChan() {}
     virtual void alloc(Prop*);
-    virtual void init(int, Node**, double**, Datum**, NrnThread*);
-    virtual void cur(int, Node**, double**, Datum**);
-    virtual void jacob(int, Node**, double**, Datum**);
-    virtual void state(int, Node**, double**, Datum**, NrnThread*);
-#if CACHEVEC != 0
-    virtual void cur(int, int*, double**, Datum**, NrnThread*);
-    virtual void jacob(int, int*, double**, Datum**, NrnThread*);
-    virtual void state(int, int*, Node**, double**, Datum**, NrnThread*);
-#endif /* CACHEVEC */
+    virtual void init(NrnThread*, Memb_list*);
+    virtual void state(NrnThread*, Memb_list*);
+    virtual void cur(NrnThread*, Memb_list*);
+    virtual void jacob(NrnThread*, Memb_list*);
     void add_channel(const char**);
     // for cvode
     virtual int count();
-    virtual void map(int, double**, double**, double*, Datum*, double*);
-    virtual void spec(int, Node**, double**, Datum**);
-    virtual void matsol(int, Node**, double**, Datum**, NrnThread*);
-    virtual void cv_sc_update(int, Node**, double**, Datum**, NrnThread*);
-    double conductance(double gmax, double* state);
+    virtual void map(Prop*,
+                     int,
+                     neuron::container::data_handle<double>*,
+                     neuron::container::data_handle<double>*,
+                     double*);
+    virtual void spec(Memb_list*);
+    virtual void matsol(NrnThread*, Memb_list*);
+    virtual void cv_sc_update(NrnThread*, Memb_list*);
+    double conductance(double gmax, Memb_list* ml, std::size_t instance, std::size_t offset);
 
   public:
     // hoc accessibilty
-    int state(const char* name);
     const char* state(int index);
-    int trans_index(const char* src, const char* target);  // index of the transition
-    int trans_index(int src, int target);                  // index of the transition
-    int gate_index(int state_index);                       // index of the gate
+    int trans_index(int src, int target);  // index of the transition
+    int gate_index(int state_index);       // index of the gate
     bool is_point() {
         return is_point_;
     }
@@ -337,7 +381,6 @@ class KSChan {
     void setname(const char*);
     void setsname(int, const char*);
     void setion(const char*);
-    void setligand(int i, const char*);
     void settype(KSTransition*, int type, const char*);
     void setivrelation(int);
     // hoc incremental management
@@ -346,7 +389,7 @@ class KSChan {
     void remove_state(int);
     // these are only for kinetic scheme transitions since an hh
     // always has one and only one transition.
-    KSTransition* add_transition(int src, int target, const char* ligand);
+    KSTransition* add_transition(int src, int target);
     void remove_transition(int);
     void setcond();
     void power(KSGateComplex*, int);
@@ -360,16 +403,14 @@ class KSChan {
 
   private:
     void free1();
-    void build();
     void setupmat();
     void fillmat(double v, Datum* pd);
-    void mat_dt(double dt, double* p);
-    void solvemat(double*);
-    void mulmat(double*, double*);
+    void mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset);
+    void solvemat(Memb_list*, std::size_t instance, std::size_t offset);
+    void mulmat(Memb_list* ml, std::size_t instance, std::size_t offset_s, std::size_t offset_ds);
     void ion_consist();
     void ligand_consist(int, int, Prop*, Node*);
     Prop* needion(Symbol*, Node*, Prop*);
-    void state_consist(int shift = 0);
     void sname_install();
     Symbol* looksym(const char*, Symbol* tmplt = NULL);
     Symbol* installsym(const char*, int, Symbol* tmplt = NULL);
@@ -378,6 +419,8 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
+    void update_size();
+    void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);
@@ -396,8 +439,8 @@ class KSChan {
     int mechtype_;
 
   public:
-    CopyString name_;  // name of channel
-    CopyString ion_;   // name of ion , "" means non-specific
+    std::string name_;  // name of channel
+    std::string ion_;   // name of ion , "" means non-specific
     double gmax_deflt_;
     double erev_deflt_;
     int cond_model_;

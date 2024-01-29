@@ -16,8 +16,8 @@ PtrVector
     all pointers point to an internal dummy variable. So it is possible
     to scatter from a larger Vector into a smaller Vector.
 
-    If :meth:`CVode.cache_efficient` is used, a callback should be registered
-    with the :meth:`PtrVector.ptr_update_callback` method in order to prevent
+    A callback should be registered with the
+    :meth:`PtrVector.ptr_update_callback` method in order to prevent
     memory segfaults when internal memory is reallocated.
 
   Example:
@@ -26,8 +26,8 @@ PtrVector
       python
       
       from neuron import h
-      a = h.Vector(5).indgen()
-      b = h.Vector(5).fill(0)
+      a = h.Vector(range(5))
+      b = h.Vector([0] * 5)
       pv = h.PtrVector(5)
       for i in range(len(a)):
         pv.pset(i, b._ref_x[i])
@@ -128,10 +128,10 @@ PtrVector
 
   Description:
     The statement or pythoncallback is executed whenever range variables
-    are re-allocated in order to establish cache efficiency.
-    (see :meth:`CVode.cache_efficient`)  Within the callback, the
-    :meth:`PtrVector.resize` method may be called but the PtrVector should
-    not be destroyed. The return value is 0.
+    are re-allocated.
+    Within the callback, the :meth:`PtrVector.resize` method may be called but
+    the PtrVector should not be destroyed.
+    The return value is 0.
 
 ----
 
@@ -193,8 +193,7 @@ PtrVector
             
             g = h.Graph() 
             g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
+            vec = h.Vector().indgen(0, 10, 0.1) 
             vec.apply("sin")
 
             pv = h.PtrVector(len(vec))

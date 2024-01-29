@@ -2,13 +2,13 @@
 
 #include <stdio.h>
 #include <hocparse.h>
-#include <nrnpython_config.h>
 
 #include <parse.hpp>
 
 #include <nrnoc2iv.h>
 
 #include "nrnsymdiritem.h"
+#include "utils/enumerate.h"
 
 #include <string>
 #include <map>
@@ -28,11 +28,14 @@ static void activate() {
         // printf("first activation\n");
         activated = true;
         hoc_Item* qsec;
-        ForAllSections(sec) if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-            nrnpy_pysecname2sec_add(sec);
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+                nrnpy_pysecname2sec_add(sec);
+            }
         }
     }
-}
 #endif
 }
 
@@ -243,29 +246,26 @@ void nrnpy_pysecname2sec_remove(Section* sec) {
 #endif
 }
 
-void nrn_symdir_load_pysec(SymbolList& sl, void* v) {
+void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void* v) {
     activate();
     if (!v) {
         // top level items are any of the four types
-        for (Name2CellorSec::iterator it = n2cs.begin(); it != n2cs.end(); ++it) {
-            CellorSec& cs = it->second;
+        for (auto&& [symbol, cs]: n2cs) {
             if (cs.first != NONETYPE && cs.first != OVERLOADCOUNT) {
-                SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
+                SymbolItem* si = new SymbolItem(symbol.c_str(), 0);
                 si->pysec_type_ = cs.first == CELLTYPE ? PYSECOBJ : PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
-                sl.append(si);
+                sl.push_back(si);
             }
         }
     } else {
         // in cell items are either OVERLOADCOUNT or SECTYPE
-        Name2CellorSec* n2s = (Name2CellorSec*) v;
-        for (Name2CellorSec::iterator it = n2s->begin(); it != n2s->end(); ++it) {
-            CellorSec& cs = it->second;
+        for (auto&& [symbol, cs]: *static_cast<Name2CellorSec*>(v)) {
             if (cs.first == SECTYPE) {
-                SymbolItem* si = new SymbolItem(it->first.c_str(), 0);
+                auto* si = new SymbolItem(symbol.c_str(), 0);
                 si->pysec_type_ = PYSECNAME;
                 si->pysec_ = (Section*) cs.second;
-                sl.append(si);
+                sl.push_back(si);
             }
         }
     }

@@ -62,9 +62,9 @@ void freelist(List** plist) /*free the list but not the elements*/
     }
     for (i1 = (*plist)->next; i1 != *plist; i1 = i2) {
         i2 = i1->next;
-        Free(i1);
+        free(i1);
     }
-    Free(*plist);
+    free(*plist);
     *plist = (List*) 0;
 }
 
@@ -95,7 +95,7 @@ Item* prev(Item* item) {
     return item->prev;
 }
 
-Item* insertstr(Item* item, char* str) /* insert a copy of the string before item */
+Item* insertstr(Item* item, const char* str) /* insert a copy of the string before item */
 /* a copy is made because strings are often assembled into a reusable buffer*/
 {
     Item* i;
@@ -127,11 +127,11 @@ Item* insertsym(Item* item, Symbol* sym) /* insert a symbol before item */
     return i;
 }
 
-Item* linsertstr(List* list, char* str) {
+Item* linsertstr(List* list, const char* str) {
     return insertstr(list->next, str);
 }
 
-Item* lappendstr(List* list, char* str) {
+Item* lappendstr(List* list, const char* str) {
     return insertstr(list, str);
 }
 
@@ -151,18 +151,12 @@ void remove(Item* item) {
     assert(item->itemtype); /* can't delete list */
     item->next->prev = item->prev;
     item->prev->next = item->next;
-    Free(item);
+    free(item);
 }
 
 static long mallocsize = 0;
 static long mallocpieces = 0;
 
-#if LINT
-double* emalloc(unsigned n) { /* check return from malloc */
-    assert(0);
-    return (double*) 0;
-}
-#else
 char* emalloc(unsigned n) { /* check return from malloc */
     char* p;
 
@@ -175,19 +169,18 @@ char* emalloc(unsigned n) { /* check return from malloc */
     mallocpieces++;
     return p;
 }
-#endif /*LINT*/
 
 void memory_usage() {
     Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n", mallocsize, mallocpieces);
 }
 
-char* stralloc(char* buf, char* rel) {
+char* stralloc(const char* buf, char* rel) {
     /* allocate space, copy buf, and free rel */
     char* s;
     s = (char*) emalloc((unsigned) (strlen(buf) + 1));
     Strcpy(s, buf);
     if (rel) {
-        Free(rel);
+        free(rel);
     }
     return s;
 }
@@ -222,12 +215,12 @@ void movelist(Item* q1, Item* q2, List* s) /* move q1 to q2 from old list to end
     move(q1, q2, s);
 }
 
-void replacstr(Item* q, char* s) {
+void replacstr(Item* q, const char* s) {
     q->itemtype = STRING;
     q->element = (void*) stralloc(s, (char*) 0);
 }
 
-Item* putintoken(char* s, short type, short toktype) { /* make sure a symbol exists for s and
+Item* putintoken(const char* s, short type, short toktype) { /* make sure a symbol exists for s and
                                                        append to intoken list */
     Symbol* sym;
     Item* q;
@@ -265,32 +258,14 @@ Item* putintoken(char* s, short type, short toktype) { /* make sure a symbol exi
     return q;
 }
 
-#if MAC || defined(__TURBOC__)
-#undef HAVE_STDARG_H
-#define HAVE_STDARG_H 1
-#endif
-
-#if HAVE_STDARG_H
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 /* make a list of item pointers: notice that the items themselves remain
 in whatever list they happen to be in. */
 /* usage is q = makelist(n, q1, q2,..., qn); and q is of type LIST and
    is not in any list */
 
-Item *
-#if HAVE_STDARG_H
-makelist(int narg, ...)
-{
-#else
-makelist(va_alist)
-	va_dcl
-{
-    int narg;
-#endif
+Item* makelist(int narg, ...) {
     va_list ap;
     int i;
     List* l;
@@ -300,12 +275,7 @@ makelist(va_alist)
     ql = newitem();
     ql->itemtype = LIST;
     ql->element = (void*) l;
-#if HAVE_STDARG_H
     va_start(ap, narg);
-#else
-    va_start(ap);
-    narg = va_arg(ap, int);
-#endif
     for (i = 0; i < narg; i++) {
         q = va_arg(ap, Item*);
         append(ql, q);
@@ -332,26 +302,13 @@ Item* prepend(Item* ql, Item* q) {
 /* An item which is an array of item pointers. Note where the size of
 the array is held. */
 
-Item *
-#if HAVE_STDARG_H
-itemarray(int narg, ...) {
-#else
-itemarray(va_alist)
-	va_dcl
-{
-    int narg;
-#endif
+Item* itemarray(int narg, ...) {
     va_list ap;
     int i;
     Item *ql, *q, **qa;
 
     ql = newitem();
-#if HAVE_STDARG_H
     va_start(ap, narg);
-#else
-    va_start(ap);
-    narg = va_arg(ap, int);
-#endif
     ql->itemtype = ITEMARRAY;
     qa = (Item**) emalloc((unsigned) (narg + 1) * sizeof(Item*));
     qa++;

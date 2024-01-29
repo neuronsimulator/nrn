@@ -6,18 +6,15 @@ added plots in fig format      \
 */
 #include "hoc.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern void Fig_file(const char*, int);
 
-#if !defined(CYGWIN)
+#ifndef MINGW
 
 void Plt(void) {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
     int mode;
     double x, y;
-#ifndef WIN32
     mode = *getarg(1);
     if (mode >= 0 || ifarg(2)) {
         if ((x = *getarg(2)) > 2047)
@@ -32,7 +29,6 @@ void Plt(void) {
         x = y = 0.;
     }
     plt(mode, x, y);
-#endif
     ret();
     pushx(1.);
 }
@@ -48,7 +44,6 @@ void Setcolor(void) {
 void hoc_Lw(void) {
     char* s;
     static int dev = 2;
-#ifndef WIN32
     if (ifarg(1)) {
         s = gargstr(1);
         if (ifarg(2)) {
@@ -62,9 +57,8 @@ void hoc_Lw(void) {
     } else {
         Fig_file((char*) 0, dev);
     }
-#endif
     ret();
     pushx(0.);
 }
 
-#endif /*!defined(CYGWIN)*/
+#endif /*!defined(MINGW)*/

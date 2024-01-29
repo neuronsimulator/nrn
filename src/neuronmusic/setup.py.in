@@ -1,5 +1,5 @@
 #setup.py for neuronmusic extension
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 nrn_srcdir = "@NRN_SRCDIR@"
 instdir = "@prefix@"
@@ -12,22 +12,28 @@ import os
 os.environ["CC"]=mpicc_bin
 os.environ["CXX"]=mpicxx_bin
 
-include_dirs = ['@MUSIC_INCDIR@', nrn_srcdir+'/src/neuronmusic', '.']
-libdirs = ['@MUSIC_LIBDIR@']
+include_dirs = ['@MUSIC_INCDIR@', nrn_srcdir+'/src/neuronmusic', nrn_srcdir + '/src/nrnpython', '.'] + '@MPI_INCLUDE_PATH@'.split(';')
+libdirs = ['@MUSIC_LIBDIR@', @NRN_LIBDIR@]
+
+
+
+# as neuronmusic module will be built during make, add build/lib
+# directory for linking. Note that build/lib shouldn't be
+# added to rpath to avoid issues with dlopen.
+libdirs.append("@CMAKE_BINARY_DIR@/lib")
+
+nrnmusic_lib = [@NRNMUSIC_DYNAM_LIB@]
 
 neuronmusic_module = Extension(
     'neuronmusic',
     ['neuronmusic.cpp'],
     library_dirs = libdirs,
-    libraries = ['music'],
-    runtime_library_dirs = ['@NRN_LIBDIR@', '@IV_LIBDIR@'],
-    extra_objects = ['@NRN_LIBDIR@/libnrniv.so.0',
-                     '@IV_LIBDIR@/libIVhines.so.3' \
-                     if len ('@IV_LIBDIR@') else ''],
+    libraries = ['nrniv'] + nrnmusic_lib,
+    runtime_library_dirs = [@NRN_LIBDIR@],
     include_dirs = include_dirs
 )
 
-setup(name="neuronmusic", version="@PACKAGE_VERSION@",
+setup(name="neuronmusic", version=@PACKAGE_VERSION@,
     description = "NEURON+MUSIC python interface",
     package_dir = {'':instdir+'/share/nrn/lib/python'},
     ext_modules=[neuronmusic_module]

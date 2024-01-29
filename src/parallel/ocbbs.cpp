@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include "bbsconf.h"
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
@@ -11,6 +10,8 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "multicore.h"
+#include "nrnpy.h"
 #include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -31,31 +32,15 @@ extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 extern int nrn_set_timeout(int timeout);
 extern void nrnmpi_gid_clear(int);
 double nrnmpi_rtcomp_time_;
-extern double nrn_bgp_receive_time(int);
-char* (*nrnpy_po2pickle)(Object*, size_t*);
-Object* (*nrnpy_pickle2po)(char*, size_t);
-char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
-Object* (*nrnpympi_alltoall_type)(int, int);
+extern double nrn_multisend_receive_time(int);
 extern void nrn_prcellstate(int gid, const char* suffix);
 double nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
 double nrnmpi_transfer_wait_;
 double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
-extern "C" {
-void nrnmpi_barrier();
-double nrnmpi_dbl_allreduce(double, int);
-void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-void nrnmpi_dbl_allgather(double*, double*, int);
-void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
-double nrmpi_wtime();
-void nrnmpi_int_broadcast(int*, int, int);
-void nrnmpi_char_broadcast(char*, int, int);
-void nrnmpi_dbl_broadcast(double*, int, int);
-extern void nrnmpi_subworld_size(int n);
-}  // extern "C"
+#include "nrnmpidec.h"
 #else
 static void nrnmpi_int_broadcast(int*, int, int) {}
 static void nrnmpi_char_broadcast(char*, int, int) {}
@@ -63,9 +48,8 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
-extern void nrn_threads_create(int, int);
 extern void nrn_thread_partition(int, Object*);
-extern void nrn_thread_stat();
+extern Object** nrn_get_thread_partition(int);
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
@@ -140,8 +124,8 @@ static int submit_help(OcBBS* bbs) {
         } else {
             Object* ob = *hoc_objgetarg(i++);
             size_t size;
-            if (nrnpy_po2pickle) {
-                pname = (*nrnpy_po2pickle)(ob, &size);
+            if (neuron::python::methods.po2pickle) {
+                pname = neuron::python::methods.po2pickle(ob, &size);
             }
             if (pname) {
                 style = 3;
@@ -178,9 +162,9 @@ static int submit_help(OcBBS* bbs) {
         if (hoc_is_str_arg(i)) {
             bbs->pkint(0);  // hoc statement style
             bbs->pkstr(gargstr(i));
-        } else if (nrnpy_po2pickle) {
+        } else if (neuron::python::methods.po2pickle) {
             size_t size;
-            pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i), &size);
+            pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
             bbs->pkint(3);  // pyfun with no arg style
             bbs->pkpickle(pname, size);
             bbs->pkint(0);  // argtypes
@@ -303,7 +287,7 @@ static void pack_help(int i, OcBBS* bbs) {
             bbs->pkvec(n, px);
         } else {  // must be a PythonObject
             size_t size;
-            char* s = nrnpy_po2pickle(*hoc_objgetarg(i), &size);
+            char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
             bbs->pkpickle(s, size);
             delete[] s;
         }
@@ -324,7 +308,7 @@ static double post(void* v) {
         bbs->post(gargstr(1));
     } else {
         char key[50];
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         bbs->post(key);
     }
     return 1.;
@@ -389,8 +373,8 @@ static Object** upkpyobj(void* v) {
     OcBBS* bbs = (OcBBS*) v;
     size_t n;
     char* s = bbs->upkpickle(&n);
-    assert(nrnpy_pickle2po);
-    Object* po = (*nrnpy_pickle2po)(s, n);
+    assert(neuron::python::methods.pickle2po);
+    Object* po = neuron::python::methods.pickle2po(s, n);
     delete[] s;
     return hoc_temp_objptr(po);
 }
@@ -401,8 +385,8 @@ static Object** pyret(void* v) {
 }
 Object** BBS::pyret() {
     assert(impl_->pickle_ret_);
-    assert(nrnpy_pickle2po);
-    Object* po = (*nrnpy_pickle2po)(impl_->pickle_ret_, impl_->pickle_ret_size_);
+    assert(neuron::python::methods.pickle2po);
+    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_, impl_->pickle_ret_size_);
     delete[] impl_->pickle_ret_;
     impl_->pickle_ret_ = 0;
     impl_->pickle_ret_size_ = 0;
@@ -410,14 +394,14 @@ Object** BBS::pyret() {
 }
 
 static Object** py_alltoall_type(int type) {
-    assert(nrnpympi_alltoall_type);
+    assert(neuron::python::methods.mpi_alltoall_type);
     // for py_gather, py_broadcast, and py_scatter,
     // the second arg refers to the root rank of the operation (default 0)
     int size = 0;
     if (ifarg(2)) {
         size = int(chkarg(2, -1, 2.14748e9));
     }
-    Object* po = (*nrnpympi_alltoall_type)(size, type);
+    Object* po = neuron::python::methods.mpi_alltoall_type(size, type);
     return hoc_temp_objptr(po);
 }
 
@@ -446,7 +430,7 @@ static char* key_help() {
     if (hoc_is_str_arg(1)) {
         return gargstr(1);
     } else {
-        sprintf(key, "%g", *getarg(1));
+        Sprintf(key, "%g", *getarg(1));
         return key;
     }
 }
@@ -486,7 +470,7 @@ static double vtransfer_time(void* v) {
     int mode = ifarg(1) ? int(chkarg(1, 0., 2.)) : 0;
     if (mode == 2) {
         return nrnmpi_rtcomp_time_;
-#if PARANEURON
+#if NRNMPI
     } else if (mode == 1) {
         return nrnmpi_splitcell_wait_;
     } else {
@@ -527,7 +511,7 @@ static double wait_time(void* v) {
 
 static double step_time(void* v) {
     double w = ((OcBBS*) v)->integ_time();
-#if PARANEURON
+#if NRNMPI
     w -= nrnmpi_transfer_wait_ + nrnmpi_splitcell_wait_;
 #endif
     return w;
@@ -538,7 +522,7 @@ static double step_wait(void* v) {
         nrnmpi_step_wait_ = chkarg(1, -1.0, 0.0);
     }
     double w = nrnmpi_step_wait_;
-#if PARANEURON
+#if NRNMPI
     // sadly, no calculation of transfer and multisplit barrier times.
 #endif
     if (w < 0.) {
@@ -550,7 +534,7 @@ static double step_wait(void* v) {
 static double send_time(void* v) {
     int arg = ifarg(1) ? int(chkarg(1, 0, 20)) : 0;
     if (arg) {
-        return nrn_bgp_receive_time(arg);
+        return nrn_multisend_receive_time(arg);
     }
     return ((OcBBS*) v)->send_time();
 }
@@ -715,7 +699,7 @@ static double spike_stat(void* v) {
 
 static double maxhist(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    IvocVect* vec = ifarg(1) ? vector_arg(1) : nil;
+    IvocVect* vec = ifarg(1) ? vector_arg(1) : nullptr;
     if (vec) {
         hoc_obj_ref(vec->obj_);
     }
@@ -915,15 +899,20 @@ static double broadcast(void*) {
 }
 
 static double nthrd(void*) {
-    int ip = 1;
+    bool ip{true};
     hoc_return_type_code = 1;  // integer
     if (ifarg(1)) {
         if (ifarg(2)) {
-            ip = int(chkarg(2, 0, 1));
+            ip = bool(chkarg(2, 0, 1));
         }
         nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
     }
     return double(nrn_nthread);
+}
+
+static double number_of_worker_threads(void*) {
+    hoc_return_type_code = 1;  // integer
+    return nof_worker_threads();
 }
 
 static double partition(void*) {
@@ -946,8 +935,13 @@ static double partition(void*) {
     return 0.0;
 }
 
+static Object** get_partition(void*) {
+    return nrn_get_thread_partition(int(chkarg(1, 0, nrn_nthread - 1)));
+    ;
+}
+
 static double thread_stat(void*) {
-    nrn_thread_stat();
+    // nrn_thread_stat was called here but didn't do anything
     return 0.0;
 }
 
@@ -1002,6 +996,20 @@ static double nrncorewrite_argvec(void*) {
     return double(nrncore_write());
 }
 
+static double print_memory_stats(void*) {
+    neuron::container::MemoryUsage local_memory_usage = neuron::container::local_memory_usage();
+
+#if NRNMPI
+    neuron::container::MemoryStats memory_stats;
+    nrnmpi_memory_stats(memory_stats, local_memory_usage);
+    nrnmpi_print_memory_stats(memory_stats);
+#else
+    print_memory_usage(local_memory_usage);
+#endif
+
+    return 1.0;
+}
+
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
@@ -1036,161 +1044,101 @@ static Object** gid_connect(void* v) {
     return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
-static Member_func members[] = {"submit",
-                                submit,
-                                "working",
-                                working,
-                                "retval",
-                                retval,
-                                "userid",
-                                userid,
-                                "pack",
-                                pack,
-                                "post",
-                                post,
-                                "unpack",
-                                unpack,
-                                "upkscalar",
-                                upkscalar,
-                                "take",
-                                take,
-                                "look",
-                                look,
-                                "look_take",
-                                look_take,
-                                "runworker",
-                                worker,
-                                "master_works_on_jobs",
-                                master_works,
-                                "done",
-                                done,
-                                "id",
-                                nrn_rank,
-                                "nhost",
-                                nhost,
-                                "id_world",
-                                rank_world,
-                                "nhost_world",
-                                nhost_world,
-                                "id_bbs",
-                                rank_bbs,
-                                "nhost_bbs",
-                                nhost_bbs,
-                                "subworlds",
-                                subworlds,
-                                "context",
-                                context,
+static Member_func members[] = {{"submit", submit},
+                                {"working", working},
+                                {"retval", retval},
+                                {"userid", userid},
+                                {"pack", pack},
+                                {"post", post},
+                                {"unpack", unpack},
+                                {"upkscalar", upkscalar},
+                                {"take", take},
+                                {"look", look},
+                                {"look_take", look_take},
+                                {"runworker", worker},
+                                {"master_works_on_jobs", master_works},
+                                {"done", done},
+                                {"id", nrn_rank},
+                                {"nhost", nhost},
+                                {"id_world", rank_world},
+                                {"nhost_world", nhost_world},
+                                {"id_bbs", rank_bbs},
+                                {"nhost_bbs", nhost_bbs},
+                                {"subworlds", subworlds},
+                                {"context", context},
 
-                                "time",
-                                pctime,
-                                "wait_time",
-                                wait_time,
-                                "step_time",
-                                step_time,
-                                "step_wait",
-                                step_wait,
-                                "send_time",
-                                send_time,
-                                "event_time",
-                                event_time,
-                                "integ_time",
-                                integ_time,
-                                "vtransfer_time",
-                                vtransfer_time,
-                                "mech_time",
-                                mech_time,
-                                "timeout",
-                                set_timeout,
-                                "mpiabort_on_error",
-                                set_mpiabort_on_error,
+                                {"time", pctime},
+                                {"wait_time", wait_time},
+                                {"step_time", step_time},
+                                {"step_wait", step_wait},
+                                {"send_time", send_time},
+                                {"event_time", event_time},
+                                {"integ_time", integ_time},
+                                {"vtransfer_time", vtransfer_time},
+                                {"mech_time", mech_time},
+                                {"timeout", set_timeout},
+                                {"mpiabort_on_error", set_mpiabort_on_error},
 
-                                "set_gid2node",
-                                set_gid2node,
-                                "gid_exists",
-                                gid_exists,
-                                "outputcell",
-                                outputcell,
-                                "cell",
-                                cell,
-                                "threshold",
-                                threshold,
-                                "spike_record",
-                                spike_record,
-                                "psolve",
-                                psolve,
-                                "set_maxstep",
-                                set_maxstep,
-                                "spike_statistics",
-                                spike_stat,
-                                "max_histogram",
-                                maxhist,
-                                "spike_compress",
-                                spcompress,
-                                "gid_clear",
-                                gid_clear,
-                                "prcellstate",
-                                prcellstate,
+                                {"set_gid2node", set_gid2node},
+                                {"gid_exists", gid_exists},
+                                {"outputcell", outputcell},
+                                {"cell", cell},
+                                {"threshold", threshold},
+                                {"spike_record", spike_record},
+                                {"psolve", psolve},
+                                {"set_maxstep", set_maxstep},
+                                {"spike_statistics", spike_stat},
+                                {"max_histogram", maxhist},
+                                {"spike_compress", spcompress},
+                                {"gid_clear", gid_clear},
+                                {"prcellstate", prcellstate},
 
-                                "source_var",
-                                source_var,
-                                "target_var",
-                                target_var,
-                                "setup_transfer",
-                                setup_transfer,
-                                "splitcell_connect",
-                                splitcell_connect,
-                                "multisplit",
-                                multisplit,
+                                {"source_var", source_var},
+                                {"target_var", target_var},
+                                {"setup_transfer", setup_transfer},
+                                {"splitcell_connect", splitcell_connect},
+                                {"multisplit", multisplit},
 
-                                "barrier",
-                                barrier,
-                                "allreduce",
-                                allreduce,
-                                "allgather",
-                                allgather,
-                                "alltoall",
-                                alltoall,
-                                "broadcast",
-                                broadcast,
+                                {"barrier", barrier},
+                                {"allreduce", allreduce},
+                                {"allgather", allgather},
+                                {"alltoall", alltoall},
+                                {"broadcast", broadcast},
 
-                                "nthread",
-                                nthrd,
-                                "partition",
-                                partition,
-                                "thread_stat",
-                                thread_stat,
-                                "thread_busywait",
-                                thread_busywait,
-                                "thread_how_many_proc",
-                                thread_how_many_proc,
-                                "sec_in_thread",
-                                sec_in_thread,
-                                "thread_ctime",
-                                thread_ctime,
-                                "dt",
-                                thread_dt,
-                                "t",
-                                nrn_thread_t,
+                                {"nthread", nthrd},
+                                {"nworker", number_of_worker_threads},
+                                {"partition", partition},
+                                {"thread_stat", thread_stat},
+                                {"thread_busywait", thread_busywait},
+                                {"thread_how_many_proc", thread_how_many_proc},
+                                {"sec_in_thread", sec_in_thread},
+                                {"thread_ctime", thread_ctime},
+                                {"dt", thread_dt},
+                                {"t", nrn_thread_t},
 
-                                "nrnbbcore_write",
-                                nrncorewrite_argvec,
-                                "nrncore_write",
-                                nrncorewrite_argappend,
-                                "nrnbbcore_register_mapping",
-                                nrnbbcore_register_mapping,
-                                "nrncore_run",
-                                nrncorerun,
+                                {"nrnbbcore_write", nrncorewrite_argvec},
+                                {"nrncore_write", nrncorewrite_argappend},
+                                {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
+                                {"nrncore_run", nrncorerun},
+                                {"print_memory_stats", print_memory_stats},
 
-                                0,
-                                0};
+                                {0, 0}};
 
-static Member_ret_str_func retstr_members[] = {"upkstr", upkstr, 0, 0};
+static Member_ret_str_func retstr_members[] = {{"upkstr", upkstr}, {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {
-    "upkvec",       upkvec,       "gid2obj",      gid2obj,      "gid2cell",  gid2cell,
-    "gid_connect",  gid_connect,  "upkpyobj",     upkpyobj,     "pyret",     pyret,
-    "py_alltoall",  py_alltoall,  "py_allgather", py_allgather, "py_gather", py_gather,
-    "py_broadcast", py_broadcast, "py_scatter",   py_scatter,   0,           0};
+static Member_ret_obj_func retobj_members[] = {{"upkvec", upkvec},
+                                               {"gid2obj", gid2obj},
+                                               {"gid2cell", gid2cell},
+                                               {"gid_connect", gid_connect},
+                                               {"get_partition", get_partition},
+                                               {"upkpyobj", upkpyobj},
+                                               {"pyret", pyret},
+                                               {"py_alltoall", py_alltoall},
+                                               {"py_allgather", py_allgather},
+                                               {"py_gather", py_gather},
+                                               {"py_broadcast", py_broadcast},
+                                               {"py_scatter", py_scatter},
+                                               {0, 0}};
 
 static void* cons(Object*) {
     // not clear at moment what is best way to handle nested context
@@ -1209,7 +1157,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nil, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
 }
 
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
@@ -1233,7 +1181,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             nrnmpi_int_broadcast(&size, 1, 0);
             nrnmpi_char_broadcast(s, size, 0);
         }
-        hoc_obj_run(s, nil);
+        hoc_obj_run(s, nullptr);
         delete[] s;
         break;
     default: {
@@ -1241,7 +1189,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         int i, j;
         size_t npickle;
         Symbol* fname = 0;
-        Object* ob = nil;
+        Object* ob = nullptr;
         char* sarg[20];    // upto 20 argument may be strings
         int ns = 0;        // number of args that are strings
         int narg = 0;      // total number of args
@@ -1263,7 +1211,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 if (ob->index == i) {
                     break;
                 }
-                ob = nil;
+                ob = nullptr;
             }
             if (!ob) {
                 fprintf(stderr, "%s[%d] is not an Object in this process\n", s, i);
@@ -1343,21 +1291,21 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                     nrnmpi_int_broadcast(&size, 1, 0);
                     nrnmpi_char_broadcast(s, size, 0);
                 }
-                assert(nrnpy_pickle2po);
-                Object* po = nrnpy_pickle2po(s, n);
+                assert(neuron::python::methods.pickle2po);
+                Object* po = neuron::python::methods.pickle2po(s, n);
                 delete[] s;
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
         if (style == 3) {
-            assert(nrnpy_callpicklef);
+            assert(neuron::python::methods.call_picklef);
             if (pickle_ret_) {
                 delete[] pickle_ret_;
                 pickle_ret_ = 0;
                 pickle_ret_size_ = 0;
             }
             if (exec) {
-                rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(s, npickle, narg, size);
             }
             hoc_ac_ = 0.;
         } else {

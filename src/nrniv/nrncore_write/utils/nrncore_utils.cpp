@@ -2,6 +2,7 @@
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include "nrnconf.h"
+#include "nrniv_mf.h"
 #include <cstdlib>
 #include "nrndae_c.h"
 #include "section.h"
@@ -10,28 +11,14 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <algorithm>
 #include <cerrno>
+#include <filesystem>
 
-
-#ifdef MINGW
-#define RTLD_NOW      0
-#define RTLD_GLOBAL   0
-#define RTLD_NOLOAD   0
-#define RTLD_NODELETE 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
-#endif
+#include "nrnwrap_dlfcn.h"
 
 // RTLD_NODELETE is used with dlopen
 // if not defined it's safe to define as 0
@@ -40,7 +27,6 @@ extern char* dlerror();
 #endif
 
 extern bool corenrn_direct;
-extern int diam_changed, v_structure_change, tree_changed;
 extern const char* bbcore_write_version;
 extern NrnMappingInfo mapinfo;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -49,9 +35,6 @@ extern short* nrn_is_artificial_;
 
 // prerequisites for a NEURON model to be transferred to CoreNEURON.
 void model_ready() {
-    // Do the model type checks first as some of them prevent the success
-    // of cvode.cache_efficient(1) and the error message associated with
-    // !use_cachevec would be misleading.
     if (!nrndae_list_is_empty()) {
         hoc_execerror(
             "CoreNEURON cannot simulate a model that contains extra LinearMechanism or RxD "
@@ -67,14 +50,10 @@ void model_ready() {
             hoc_execerror("CoreNEURON can only use fixed step method.", NULL);
         }
     }
-
-    if (!use_cachevec) {
-        hoc_execerror("NEURON model for CoreNEURON requires cvode.cache_efficient(1)", NULL);
-    }
     if (tree_changed || v_structure_change || diam_changed) {
         hoc_execerror(
             "NEURON model internal structures for CoreNEURON are out of date. Make sure call to "
-            "finitialize(...) is after cvode.cache_efficient(1))",
+            "finitialize(...)",
             NULL);
     }
 }
@@ -102,6 +81,7 @@ int count_distinct(double* data, int len) {
  *      nsec : number of sections
  *      sections : list of sections
  *      segments : list of segments
+ *      seg_lfp_factors: list of lfp factors
  */
 void nrnbbcore_register_mapping() {
     // gid of a cell
@@ -113,12 +93,16 @@ void nrnbbcore_register_mapping() {
     // hoc vectors: sections and segments
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
+    Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
+    int electrodes_per_segment = ifarg(6) ? *hoc_getarg(6) : 0;
 
     double* sections = vector_vec(sec);
     double* segments = vector_vec(seg);
+    double* seg_lfp_factors = vector_vec(lfp);
 
     int nsec = vector_capacity(sec);
     int nseg = vector_capacity(seg);
+    int nlfp = vector_capacity(lfp);
 
     if (nsec != nseg) {
         std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
@@ -131,49 +115,49 @@ void nrnbbcore_register_mapping() {
     SecMapping* smap = new SecMapping(nsec, name);
     smap->sections.assign(sections, sections + nseg);
     smap->segments.assign(segments, segments + nseg);
+    smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
+    smap->num_electrodes = electrodes_per_segment;
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
 }
 
-/** Check if file with given path exist */
-bool file_exist(const std::string& path) {
-    std::ifstream f(path.c_str());
-    return f.good();
-}
-
-
 // This function is related to stdindex2ptr in CoreNeuron to determine which values should
 // be transferred from CoreNeuron. Types correspond to the value to be transferred based on
 // mech_type enum or non-artificial cell mechanisms.
-// Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
+// Limited to pointers to voltage, nt.node_sav_rhs_storage() (fast_imem value) or
 // data of non-artificial cell mechanisms.
-// Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
-    assert(use_cachevec);
+int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
+                        NrnThread& nt,
+                        int& type,
+                        int& index) {
     int nnode = nt.end;
     type = 0;
-    if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-        type = voltage;  // signifies an index into voltage array portion of _data
-        index = pd - nt._actual_v;
-    } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs &&
-               pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+    if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
+        type = voltage;
+        // In the CoreNEURON world this is an offset into the voltage array part
+        // of _data
+        index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        return 0;
+    }
+    if (dh.refers_to<neuron::container::Node::field::FastIMemSavRHS>(neuron::model().node_data())) {
+        auto const cache_token = nrn_ensure_model_data_are_sorted();
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
-        index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
-    } else {
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_artificial_[tml->index]) {
-                continue;
-            }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
-                type = tml->index;
-                index = pd - ml1->data[0];
-                break;
-            }
+        index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        return 0;
+    }
+    auto* const pd = static_cast<double*>(dh);
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        if (nrn_is_artificial_[tml->index]) {
+            continue;
+        }
+        if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
+            type = tml->index;
+            index = maybe_index;
+            break;
         }
     }
     return type == 0 ? 1 : 0;
@@ -182,7 +166,6 @@ extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& in
 
 #if defined(HAVE_DLFCN_H)
 
-extern int nrn_use_fast_imem;
 extern char* neuron_home;
 
 /** Check if coreneuron is loaded into memory */
@@ -200,12 +183,13 @@ bool is_coreneuron_loaded() {
 
 
 /** Open library with given path and return dlopen handle **/
-void* get_handle_for_lib(const char* path) {
-    void* handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+void* get_handle_for_lib(std::filesystem::path const& path) {
+    // On windows path.c_str() is wchar_t*
+    void* handle = dlopen(path.string().c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!handle) {
         fputs(dlerror(), stderr);
         fputs("\n", stderr);
-        hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", path);
+        hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", path.string().c_str());
     }
     return handle;
 }
@@ -217,50 +201,56 @@ void* get_coreneuron_handle() {
         return dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
     }
 
+    // record what we tried so we can give a helpful error message
+    std::vector<std::filesystem::path> paths_tried;
+    paths_tried.reserve(3);
+
     // env variable get highest preference
-    const char* corenrn_lib = getenv("CORENEURONLIB");
-    if (corenrn_lib && file_exist(corenrn_lib)) {
-        return get_handle_for_lib(corenrn_lib);
+    const char* corenrn_lib = std::getenv("CORENEURONLIB");
+    if (corenrn_lib) {
+        std::filesystem::path const corenrn_lib_path{corenrn_lib};
+        paths_tried.push_back(corenrn_lib_path);
+        if (std::filesystem::exists(corenrn_lib_path)) {
+            return get_handle_for_lib(corenrn_lib_path);
+        }
     }
 
-    // name of coreneuron library based on platform
-#if defined(MINGW)
-    std::string corenrn_mechlib_name("libcorenrnmech.dll");
-#elif defined(DARWIN)
-    std::string corenrn_mechlib_name("libcorenrnmech.dylib");
-#else
-    std::string corenrn_mechlib_name("libcorenrnmech.so");
-#endif
+    auto const corenrn_lib_name = std::string{neuron::config::shared_library_prefix}
+                                      .append("corenrnmech")
+                                      .append(neuron::config::shared_library_suffix);
 
     // first check if coreneuron specific library exist in <arch>/.libs
     // note that we need to get full path especially for OSX
-    char pwd[FILENAME_MAX];
-    if (getcwd(pwd, FILENAME_MAX) == NULL) {
-        hoc_execerror("getcwd failed:", strerror(errno));
-    }
-    std::stringstream s_path;
-    s_path << pwd << "/" << NRNHOSTCPU << "/" << corenrn_mechlib_name;
-    std::string path = s_path.str();
-
-    if (file_exist(path)) {
-        return get_handle_for_lib(path.c_str());
+    {
+        auto const corenrn_lib_path = std::filesystem::current_path() /
+                                      neuron::config::system_processor / corenrn_lib_name;
+        paths_tried.push_back(corenrn_lib_path);
+        if (std::filesystem::exists(corenrn_lib_path)) {
+            return get_handle_for_lib(corenrn_lib_path);
+        }
     }
 
     // last fallback is minimal library with internal mechanisms
-    s_path.str("");
-#if defined(MINGW)
-    s_path << neuron_home << "/lib/" << corenrn_mechlib_name;
-#else
-    s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
+    // named libcorenrnmech_internal
+    std::filesystem::path corenrn_lib_path{neuron_home};
+    auto const corenrn_internal_lib_name = std::string{neuron::config::shared_library_prefix}
+                                               .append("corenrnmech_internal")
+                                               .append(neuron::config::shared_library_suffix);
+#ifndef MINGW
+    (corenrn_lib_path /= "..") /= "..";
 #endif
-    path = s_path.str();
-
-    // if this last path doesn't exist then it's an error
-    if (!file_exist(path)) {
-        hoc_execerror("Could not find CoreNEURON library", NULL);
+    (corenrn_lib_path /= "lib") /= corenrn_internal_lib_name;
+    paths_tried.push_back(corenrn_lib_path);
+    if (std::filesystem::exists(corenrn_lib_path)) {
+        return get_handle_for_lib(corenrn_lib_path);
     }
-
-    return get_handle_for_lib(path.c_str());
+    // Nothing worked => error
+    std::ostringstream oss;
+    oss << "Could not find CoreNEURON library, tried:";
+    for (auto const& path: paths_tried) {
+        oss << ' ' << path;
+    }
+    throw std::runtime_error(oss.str());
 }
 
 /** Check if neuron & coreneuron are compatible */
@@ -278,18 +268,6 @@ void check_coreneuron_compatibility(void* handle) {
         std::stringstream s_path;
         s_path << bbcore_write_version << " vs " << cn_bbcore_read_version;
         hoc_execerror("Incompatible NEURON and CoreNEURON versions :", s_path.str().c_str());
-    }
-
-    // Make sure legacy vs modern units are consistent.
-    // Would be nice to check in coreneuron set_globals but that would abort
-    // if inconsistent.
-    void* cn_nrnunit_use_legacy_sym = dlsym(handle, "corenrn_units_use_legacy");
-    if (!cn_nrnunit_use_legacy_sym) {
-        hoc_execerror("Could not get symbol corenrn_units_use_legacy from CoreNEURON", NULL);
-    }
-    bool cn_nrnunit_use_legacy = (*(bool (*)()) cn_nrnunit_use_legacy_sym)();
-    if (cn_nrnunit_use_legacy != (_nrnunit_use_legacy_ == 1)) {
-        hoc_execerror("nrnunit_use_legacy() inconsistent with CORENRN_ENABLE_LEGACY_UNITS", NULL);
     }
 }
 

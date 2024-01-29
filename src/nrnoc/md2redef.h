@@ -12,16 +12,12 @@
 #undef i
 #undef sec
 
-#undef Memb_list
 #undef nodelist
 #undef nodeindices
-#undef data
 #undef pdata
 #undef prop
 #undef nodecount
-#undef pval
 
-#undef type
 #undef id
 
 #endif

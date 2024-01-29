@@ -20,8 +20,8 @@ typedef struct core2nrn_callback_t {
 // mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };
 
-class Memb_list;
-class NrnThread;
+struct Memb_list;
+struct NrnThread;
 class CellGroup;
 class DatumIndices;
 
@@ -38,10 +38,11 @@ void nrnthread_group_ids(int* groupids);
 int nrnthread_dat1(int tid,
                    int& n_presyn,
                    int& n_netcon,
-                   int*& output_gid,
+                   std::vector<int>& output_gid,
                    int*& netcon_srcgid,
                    std::vector<int>& netcon_negsrcgid_tid);
 int nrnthread_dat2_1(int tid,
+                     int& n_real_cell,
                      int& ngid,
                      int& n_real_gid,
                      int& nnode,
@@ -120,7 +121,7 @@ extern "C" {
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec,
                                        std::vector<int>& spikegidvec);
 void nrnthreads_all_weights_return(std::vector<double*>& weights);
-size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata);
+size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata);
 int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iarray, double* darray);
 }
 
@@ -162,13 +163,14 @@ struct NrnCoreTransferEvents {
 typedef std::vector<std::pair<int, bool>> Core2NrnWatchInfoItem;
 typedef std::vector<Core2NrnWatchInfoItem> Core2NrnWatchInfo;
 
+void nrn_watch_clear();
+
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
 
 // per item direct transfer of WatchCondition
 void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int));
 
-void nrn_watch_clear();
 void core2nrn_watch_activate(int tid, int type, int wbegin, Core2NrnWatchInfo&);
 
 // per VecPlayContinous direct transfer of instance indices.
@@ -180,6 +182,13 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
 
 // Direct transfer with respect to PatternStim
 void nrn2core_patternstim(void** info);
+
+// Info from NEURON subworlds at beginning of psolve.
+void nrn2core_subworld_info(int& cnt,
+                            int& subworld_index,
+                            int& subworld_rank,
+                            int& subworld_size,
+                            int& numprocs_world);
 
 }  // end of extern "C"
 
@@ -224,6 +233,8 @@ static core2nrn_callback_t cnbs[] = {
     {"core2nrn_PreSyn_flag_", (CNB) core2nrn_PreSyn_flag},
 
     {"nrn2core_patternstim_", (CNB) nrn2core_patternstim},
+
+    {"nrn2core_subworld_info_", (CNB) nrn2core_subworld_info},
 
     {NULL, NULL}};
 

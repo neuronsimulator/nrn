@@ -9,10 +9,10 @@
       assignment. It will be executed (and p.val assigned) when
     p.assign(val)
 */
-#include <InterViews/resource.h>
 #include <InterViews/observe.h>
 #include <string.h>
 #include "classreg.h"
+#include "oc_ansi.h"
 #include "oc2iv.h"
 #include "ocpointer.h"
 #include "parse.hpp"
@@ -21,12 +21,6 @@
 #if HAVE_IV
 #include "ivoc.h"
 #endif
-
-extern "C" {
-extern void hoc_free_list(Symlist**);
-extern Symbol* hoc_parse_stmt(const char*, Symlist**);
-extern void hoc_run_stmt(Symbol*);
-}  // extern "C"
 
 OcPointer::OcPointer(const char* st, double* d)
     : Observer() {
@@ -72,14 +66,11 @@ static const char** pname(void* v) {
     return (const char**) &ocp->s_;
 }
 
-static Member_func members[] = {"val",
-                                0,  // will be changed below
-                                "assign",
-                                assign,  // will call assign_stmt if it exists
-                                0,
-                                0};
+static Member_func members[] = {{"val", 0},          // will be changed below
+                                {"assign", assign},  // will call assign_stmt if it exists
+                                {0, 0}};
 
-static Member_ret_str_func s_memb[] = {"s", pname, 0, 0};
+static Member_ret_str_func s_memb[] = {{"s", pname}, {nullptr, nullptr}};
 
 
 static void* cons(Object*) {
@@ -126,13 +117,12 @@ void OcPointer_reg() {
     sv->u.ctemplate->steer = steer_val;
 }
 
-StmtInfo::StmtInfo(const char* s) {
-    stmt_ = new CopyString(s);
+StmtInfo::StmtInfo(const char* s)
+    : stmt_(s) {
     parse();
 }
 
 StmtInfo::~StmtInfo() {
-    delete stmt_;
     hoc_free_list(&symlist_);
 }
 
@@ -143,7 +133,7 @@ void StmtInfo::parse() {
     symlist_ = NULL;
     ParseTopLevel ptl;
     bool see_arg = false;
-    for (s = stmt_->string(), d = buf; *s; ++s, ++d) {
+    for (s = stmt_.c_str(), d = buf; *s; ++s, ++d) {
         if (*s == '$' && s[1] == '1') {
             strcpy(d, "hoc_ac_");
             s++;

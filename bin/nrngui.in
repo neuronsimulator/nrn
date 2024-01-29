@@ -18,12 +18,7 @@ if test "${NRNHOME_EXEC}" != "" ; then
 	NRNBIN="${exec_prefix}/bin/"
 fi
 
-if test "@enable_carbon@" = "yes" ; then
-	NRNIV="${exec_prefix}/bin/nrniv.app/Contents/MacOS/nrniv"
-else
-	NRNIV="${NRNBIN}nrniv"
-fi
-
+NRNIV="${NRNBIN}nrniv"
 NEURONHOME="${prefix}/share/nrn"
 export NEURONHOME
 

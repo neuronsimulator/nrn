@@ -18,7 +18,7 @@ void symbol_init() {
     }
 }
 
-Symbol* lookup(char* s) /* find s in symbol table */
+Symbol* lookup(const char* s) /* find s in symbol table */
 {
     Item* sp;
 
@@ -46,7 +46,7 @@ Symbol* checklocal(Symbol* sym) {
     return sym;
 }
 
-Symbol* install(char* s, int t) /* install s in the list symbol table with type t*/
+Symbol* install(const char* s, int t) /* install s in the list symbol table with type t*/
 {
     Symbol* sp;
     List* sl;
@@ -70,7 +70,6 @@ Symbol* install(char* s, int t) /* install s in the list symbol table with type 
     sp->usage = 0;
     sp->araydim = 0;
     sp->discdim = 0;
-    sp->level = 100;    /* larger than any reasonable submodel level */
     Linsertsym(sl, sp); /*insert at head of list*/
     return sp;
 }

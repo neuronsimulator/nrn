@@ -309,7 +309,7 @@ If you have models with ``POINTER`` variables and user allocated memory then thi
 * https://github.com/neuronsimulator/testcorenrn/tree/master/mod
 * https://github.com/neuronsimulator/reduced_dentate/tree/master/mechanisms
 
-Have Question?
+Have a question?
 ~~~~~~~~~~~~~~~
 
 If you have any questions to make your model compatible with CoreNEURON, reach out to us via `GitHub issue <https://github.com/neuronsimulator/nrn/issues>`_.

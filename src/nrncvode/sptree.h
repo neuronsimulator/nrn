@@ -1157,7 +1157,7 @@ const char* spstats(SPTREE<SPBLK>* q) {
     elen = q->enqs ? (float) q->enqcmps / q->enqs : 0;
     sloops = q->splays ? (float) q->splayloops / q->splays : 0;
 
-    sprintf(buf,
+    Sprintf(buf,
             "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
             q->lookups,
             llen,

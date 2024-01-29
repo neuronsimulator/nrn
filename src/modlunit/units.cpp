@@ -1,6 +1,8 @@
 #include <../../nmodlconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
+#include "model.h"
+#include "nrnassrt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -8,33 +10,9 @@
 #include "units.h"
 #include <assert.h>
 
-/**
-  The strategy for dynamic units selection between Legacy and modern units
-  is to maintain two complete tables respectively. Legacy and modern in the
-  nrnunits.lib.in file are distinquished by, e.g.,
-  @LegacyY@faraday                        9.6485309+4 coul
-  @LegacyN@faraday                        96485.3321233100184 coul
-  The reason for two complete tables, as opposed to a main table and several
-  short legacy and modern tables, is that units are often defined in terms
-  of modified units. eg, "R = (k-mole) (joule/degC)"
+#include <cstring>
 
-  Nmodl, via the parser, uses only unit_pop, unit_mag, Unit_push,
-  install_units, unit_div, and modl_units.
-
-  The issue of unit magnitude arises only when declaring a unit factor as in
-  the gasconstant (R) above or with the equivalent "name = (unit) -> (unit)"
-  syntax. If the magnitude difers between legacy and modern, then instead of
-  emitting code like "static double FARADAY = 96485.3;\n" we can emit
-  #define FARADAY _nrnunit_FARADAY_[_nrnunit_use_legacy_]
-  static double _nrnunit_FARADAY_[2] = {96485.3321233100184, 96485.3};
-**/
-
-/* modlunit can do its thing in the old way */
-#if !defined(NRN_DYNAMIC_UNITS)
-#define NRN_DYNAMIC_UNITS 0
-#endif
-
-#if defined(CYGWIN)
+#ifdef MINGW
 #include "../mswin/extra/d2upath.cpp"
 #endif
 #if defined(WIN32)
@@ -46,7 +24,7 @@ static int UnitsOn = 0;
 extern "C" {
 extern double fabs(double);
 }  // extern "C"
-extern void diag(char*, char*);
+extern void diag(const char*, const char*);
 #define IFUNITS       \
     {                 \
         if (!UnitsOn) \
@@ -56,36 +34,18 @@ extern void diag(char*, char*);
 
 #define NTAB 601
 
-#if NRN_DYNAMIC_UNITS
-#define SUFFIX ".in"
-#else
-#define SUFFIX ""
-#endif
-
 /* if MODLUNIT environment variable not set then look in the following places*/
-#if MAC
-static char* dfile = ":lib:nrnunits.lib" SUFFIX;
-#else
 #if defined(NEURON_DATA_DIR)
-static char* dfile = NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
+static char const* const dfile = NEURON_DATA_DIR "/lib/nrnunits.lib";
 #else
-static char* dfile = "/usr/lib/units";
+static char const* const dfile = "/usr/lib/units";
 #endif
-#endif
-#if defined(__TURBOC__) || defined(__GO32__)
-static char* dfilealt = "/nrn/lib/nrnunits.lib" SUFFIX;
-#else
-#if MAC
-static char* dfilealt = "::lib:nrnunits.lib" SUFFIX;
-#else
-static char* dfilealt = "../../share/lib/nrnunits.lib" SUFFIX;
-#endif
-#endif
+static char const* const dfilealt = "../../share/lib/nrnunits.lib";
 static char* unames[NDIM];
 double getflt();
 void fperr(int);
 int lookup(char* name, unit* up, int den, int c);
-struct table* hash_table(char*);
+struct table* hash_table(const char*);
 
 void chkfperror();
 void units(unit*);
@@ -94,7 +54,7 @@ int convr(unit*);
 void units_cpp_init();
 int get();
 
-extern void Unit_push(char*);
+extern void Unit_push(const char*);
 
 static struct table {
     double factor;
@@ -108,38 +68,36 @@ static struct table {
 
 static char* names;
 
-#if NRN_DYNAMIC_UNITS
-static struct dynam {
-    struct table* table; /* size NTAB */
-    char* names;         /* size NTAB*10 */
-} dynam[2];
-#endif
-
 static struct prefix {
     double factor;
-    char* pname;
-} prefix[] = {1e-18,   "atto",  1e-15,   "femto", 1e-12,   "pico", 1e-9,   "nano", 1e-6,
-              "micro", 1e-3,    "milli", 1e-2,    "centi", 1e-1,   "deci", 1e1,    "deka",
-              1e2,     "hecta", 1e2,     "hecto", 1e3,     "kilo", 1e6,    "mega", 1e6,
-              "meg",   1e9,     "giga",  1e12,    "tera",  0.0,    0};
+    const char* pname;
+} prefix[] = {{1e-18, "atto"},
+              {1e-15, "femto"},
+              {1e-12, "pico"},
+              {1e-9, "nano"},
+              {1e-6, "micro"},
+              {1e-3, "milli"},
+              {1e-2, "centi"},
+              {1e-1, "deci"},
+              {1e1, "deka"},
+              {1e2, "hecta"},
+              {1e2, "hecto"},
+              {1e3, "kilo"},
+              {1e6, "mega"},
+              {1e6, "meg"},
+              {1e9, "giga"},
+              {1e12, "tera"},
+              {0.0, nullptr}};
 static FILE* inpfile;
 static int fperrc;
 static int peekc;
 static int dumpflg;
 
-static char* pc;
+static const char* pc;
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
-#if MAC
-        int c = getc(inp);
-        if (c == '\r') {
-            c = '\n';
-        }
-        return c;
-#else
         return getc(inp);
-#endif
     } else if (pc && *pc) {
         return (int) (*pc++);
     } else {
@@ -164,13 +122,11 @@ static char* neuronhome() {
         ;
     }
     buf[i] = '\0';  // /bin gone
-#if defined(CYGWIN)
     {
         char* u = hoc_dos2unixpath(buf);
         strcpy(buf, hoc_dos2unixpath(u));
         free(u);
     }
-#endif
     return buf;
 #else
     return getenv("NEURONHOME");
@@ -179,13 +135,13 @@ static char* neuronhome() {
 
 
 static char* ucp;
-char* Unit_str(unit* up) {
+const char* Unit_str(unit* up) {
     struct unit* p;
     int f, i;
     static char buf[256];
 
     p = up;
-    sprintf(buf, "%g ", p->factor);
+    Sprintf(buf, "%g ", p->factor);
     {
         int seee = 0;
         for (ucp = buf; *ucp; ucp++) {
@@ -275,7 +231,7 @@ void ucopypush(unit* up) {
     usp->isnum = up->isnum;
 }
 
-void Unit_push(char* str) {
+void Unit_push(const char* str) {
     IFUNITS
     assert(usp < unit_stack + (UNIT_STK_SIZE - 1));
     if (usp) {
@@ -304,13 +260,11 @@ void unitcheck(char* s) {
     unit_pop();
 }
 
-char* unit_str() {
+const char* unit_str() {
     /* return top of stack as units string */
-    char* s;
     if (!UnitsOn)
         return "";
-    s = Unit_str(usp);
-    return s;
+    return Unit_str(usp);
 }
 
 static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
@@ -337,23 +291,8 @@ static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
     unit_pop();
 }
 
-static void switch_units(int legacy) {
-#if NRN_DYNAMIC_UNITS
-    table = dynam[legacy].table;
-    names = dynam[legacy].names;
-#endif
-}
-
 void install_units(char* s1, char* s2) {
-#if NRN_DYNAMIC_UNITS
-    int i;
-    for (i = 0; i < 2; ++i) {
-        switch_units(i);
-        install_units_help(s1, s2);
-    }
-#else
     install_units_help(s1, s2);
-#endif
 }
 
 void check_num() {
@@ -441,9 +380,6 @@ int unit_cmp_exact() { /* returns 1 if top two units on stack are same */
     return 1;
 }
 
-/* ARGSUSED */
-static void print_unit_expr(int i) {}
-
 void Unit_cmp() {
     /*compares top two units on stack. If not conformable then
     gives error. If not same factor then gives error.
@@ -469,10 +405,8 @@ void Unit_cmp() {
         for (i = 0; i < NDIM; i++) {
             if (up->dim[i] != usp->dim[i]) {
                 chkfperror();
-                print_unit_expr(2);
                 fprintf(stderr, "\nunits:");
                 units(usp);
-                print_unit_expr(1);
                 fprintf(stderr, "\nunits:");
                 units(up);
                 diag("The units of the previous two expressions are not conformable", (char*) "\n");
@@ -485,7 +419,6 @@ void Unit_cmp() {
 is missing a conversion factor and should read:\n  (%g)*(",
                     Unit_str(usp),
                     usp->factor / up->factor);
-            print_unit_expr(2);
             diag(")\n", (char*) 0);
         }
     }
@@ -580,24 +513,13 @@ static void units_alloc() {
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
-#if NRN_DYNAMIC_UNITS
-        for (i = 0; i < 2; ++i) {
-            dynam[i].table = (struct table*) calloc(NTAB, sizeof(struct table));
-            assert(dynam[i].table);
-            dynam[i].names = (char*) calloc(NTAB * 10, sizeof(char));
-            assert(dynam[i].names);
-            switch_units(i);
-        }
-#else
         table = (struct table*) calloc(NTAB, sizeof(struct table));
         assert(table);
         names = (char*) calloc(NTAB * 10, sizeof(char));
         assert(names);
-#endif
     }
 }
 
-#if MODL || NMODL || HMODL || SIMSYS
 extern void unit_init();
 
 void modl_units() {
@@ -606,19 +528,10 @@ void modl_units() {
     unitonflag = 1;
     if (first) {
         units_alloc();
-#if NRN_DYNAMIC_UNITS
-        for (i = 0; i < 2; ++i) {
-            switch_units(i);
-            unit_init();
-        }
-#else
         unit_init();
-#endif
         first = 0;
     }
 }
-
-#endif
 
 void unit_init() {
     char* s;
@@ -631,7 +544,7 @@ void unit_init() {
         /* note that on mingw, even if MODLUNIT set to /cygdrive/c/...
          * it ends up here as c:/... and that is good*/
         /* printf("MODLUNIT=|%s|\n", s); */
-        sprintf(buf, "%s%s", s, SUFFIX);
+        Sprintf(buf, "%s", s);
         if ((inpfile = fopen(buf, "r")) == (FILE*) 0) {
             diag("Bad MODLUNIT environment variable. Cant open:", buf);
         }
@@ -642,9 +555,9 @@ void unit_init() {
         if (s) {
             if (strncmp(s, "/cygdrive/", 10) == 0) {
                 /* /cygdrive/x/... to c:/... */
-                sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s + 11);
+                Sprintf(buf, "%c:%s/lib/nrnunits.lib", s[10], s + 11);
             } else {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib", s);
             }
             inpfile = fopen(buf, "r");
             free(s);
@@ -655,7 +568,7 @@ void unit_init() {
         if ((inpfile = fopen(dfilealt, "r")) == (FILE*) 0) {
             s = neuronhome();
             if (s) {
-                sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
+                Sprintf(buf, "%s/lib/nrnunits.lib", s);
                 inpfile = fopen(buf, "r");
             }
         }
@@ -672,65 +585,6 @@ void unit_init() {
     unit_stk_clean();
 }
 
-#if 0
-void main(argc, argv)
-char *argv[];
-{
-	register i;
-	register char *file;
-	struct unit u1, u2;
-	double f;
-
-	if(argc>1 && *argv[1]=='-') {
-		argc--;
-		argv++;
-		dumpflg++;
-	}
-	file = dfile;
-	if(argc > 1)
-		file = argv[1];
-	if ((inpfile = fopen(file, "r")) == NULL) {
-		printf("no table\n");
-		exit(1);
-	}
-	signal(8, fperr);
-	units_cpp_init();
-
-loop:
-	fperrc = 0;
-	printf("you have: ");
-	if(convr(&u1))
-		goto loop;
-	if(fperrc)
-		goto fp;
-loop1:
-	printf("you want: ");
-	if(convr(&u2))
-		goto loop1;
-	for(i=0; i<NDIM; i++)
-		if(u1.dim[i] != u2.dim[i])
-			goto conform;
-	f = u1.factor/u2.factor;
-	if(fperrc)
-		goto fp;
-	printf("\t* %e\n", f);
-	printf("\t/ %e\n", 1./f);
-	goto loop;
-
-conform:
-	if(fperrc)
-		goto fp;
-	printf("conformability\n");
-	units(&u1);
-	units(&u2);
-	goto loop;
-
-fp:
-	printf("underflow or overflow\n");
-	goto loop;
-}
-#endif
-
 void units(unit* up) {
     printf("\t%s\n", Unit_str(up));
 }
@@ -740,19 +594,20 @@ int pu(int u, int i, int f) {
         if (f & 2)
             *ucp++ = '-';
         if (unames[i]) {
-            sprintf(ucp, "%s", unames[i]);
+            std::strcpy(ucp, unames[i]);
             ucp += strlen(ucp);
         } else {
-            sprintf(ucp, "*%c*", i + 'a');
-            ucp += strlen(ucp);
+            *ucp++ = '*';
+            *ucp++ = 'a' + i;
+            *ucp++ = '*';
         }
         if (u > 1)
             *ucp++ = (u + '0');
-        return (2);
+        return 2;
     }
     if (u < 0)
-        return (1);
-    return (0);
+        return 1;
+    return 0;
 }
 
 int convr(unit* up) {
@@ -797,7 +652,7 @@ loop:
         if (c == '/')
             den++;
         if (c == '\n')
-            return (err);
+            return err;
         goto loop;
     }
     *cp++ = c;
@@ -808,7 +663,7 @@ int lookup(char* name, unit* up, int den, int c) {
     struct unit* p;
     struct table* q;
     int i;
-    char *cp1, *cp2;
+    char* cp2;
     double e;
 
     p = up;
@@ -830,22 +685,26 @@ loop:
             c--;
             goto l1;
         }
-        return (0);
+        return 0;
     }
-    for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
-        cp2 = name;
-        while (*cp1 == *cp2++)
-            if (*cp1++ == 0) {
-                cp1--;
-                break;
+    {
+        const char* cp1{};
+        for (i = 0; (cp1 = prefix[i].pname) != 0; i++) {
+            cp2 = name;
+            while (*cp1 == *cp2++)
+                if (*cp1++ == 0) {
+                    cp1--;
+                    break;
+                }
+            if (*cp1 == 0) {
+                e *= prefix[i].factor;
+                name = cp2 - 1;
+                goto loop;
             }
-        if (*cp1 == 0) {
-            e *= prefix[i].factor;
-            name = cp2 - 1;
-            goto loop;
         }
     }
     /*EMPTY*/
+    char* cp1;
     for (cp1 = name; *cp1; cp1++)
         ;
     if (cp1 > name + 1 && *--cp1 == 's') {
@@ -858,18 +717,14 @@ loop:
             name);
     diag("Cannot recognize the units: ", name);
     /*	printf("cannot recognize %s\n", name);*/
-    return (1);
+    return 1;
 }
 
-static int equal(char* s1, char* s2) {
-    char *c1, *c2;
-
-    c1 = s1;
-    c2 = s2;
+static int equal(const char* c1, const char* c2) {
     while (*c1++ == *c2)
         if (*c2++ == 0)
-            return (1);
-    return (0);
+            return 1;
+    return 0;
 }
 
 void units_cpp_init() {
@@ -897,9 +752,6 @@ void units_cpp_init() {
 l0:
     c = get();
     if (c == 0) {
-#if 0
-		printf("%d units; %ld bytes\n\n", i, cp-names);
-#endif
         if (dumpflg)
             for (tp = table; tp < table + NTAB; tp++) {
                 if (tp->name == 0)
@@ -917,36 +769,6 @@ l0:
             c = get();
         goto l0;
     }
-
-#if NRN_DYNAMIC_UNITS
-    if (c == '@') {
-        /**
-           Dynamic unit line beginning with @LegacyY@ or @LegacyN@.
-           If the Y or N does not match the modern or legacy table, skip the
-           entire line. For a match, just leave file at char after the final '@'.
-        **/
-        int i;
-        int legacy;
-        char legstr[7];
-        char y_or_n;
-        for (i = 0; i < 6; ++i) {
-            legstr[i] = get();
-        }
-        legstr[6] = '\0';
-        assert(strcmp(legstr, "Legacy") == 0);
-        y_or_n = get();
-        assert(y_or_n == 'Y' || y_or_n == 'N');
-        legacy = (y_or_n == 'Y') ? 1 : 0;
-        assert(get() == '@');
-        if (dynam[legacy].table != table) { /* skip the line */
-            while (c != '\n' && c != 0) {
-                c = get();
-            }
-            goto l0;
-        }
-        c = get();
-    }
-#endif
 
     if (c == '\n')
         goto l0;
@@ -999,17 +821,11 @@ redef:
     goto l0;
 }
 
-#if NRN_DYNAMIC_UNITS
-/* Translate string to double using a2f for modern units
-   to allow consistency with BlueBrain/nmodl
-*/
-double modern_getflt() {
+double getflt() {
     int c;
     char str[100];
     char* cp;
     double d_modern;
-
-    assert(table == dynam[0].table);
 
     cp = str;
     do
@@ -1039,73 +855,11 @@ l1:
     *cp = '\0';
     d_modern = atof(str);
     if (c == '|') {
-        d_modern /= modern_getflt();
+        d_modern /= getflt();
         return d_modern;
     }
     peekc = c;
-    return (d_modern);
-}
-#endif /* NRN_DYNAMIC_UNITS */
-
-double getflt() {
-    int c, i, dp;
-    double d, e;
-    int f;
-
-#if NRN_DYNAMIC_UNITS
-    if (table == dynam[0].table) {
-        return modern_getflt();
-    }
-#endif /* NRN_DYNAMIC_UNITS */
-    d = 0.;
-    dp = 0;
-    do
-        c = get();
-    while (c == ' ' || c == '\t');
-
-l1:
-    if (c >= '0' && c <= '9') {
-        d = d * 10. + c - '0';
-        if (dp)
-            dp++;
-        c = get();
-        goto l1;
-    }
-    if (c == '.') {
-        dp++;
-        c = get();
-        goto l1;
-    }
-    if (dp)
-        dp--;
-    if (c == '+' || c == '-') {
-        f = 0;
-        if (c == '-')
-            f++;
-        i = 0;
-        c = get();
-        while (c >= '0' && c <= '9') {
-            i = i * 10 + c - '0';
-            c = get();
-        }
-        if (f)
-            i = -i;
-        dp -= i;
-    }
-    e = 1.;
-    i = dp;
-    if (i < 0)
-        i = -i;
-    while (i--)
-        e *= 10.;
-    if (dp < 0)
-        d *= e;
-    else
-        d /= e;
-    if (c == '|')
-        return (d / getflt());
-    peekc = c;
-    return (d);
+    return d_modern;
 }
 
 int get() {
@@ -1114,7 +868,7 @@ int get() {
     /*SUPPRESS 560*/
     if ((c = peekc) != 0) {
         peekc = 0;
-        return (c);
+        return c;
     }
     c = Getc(inpfile);
     if (c == '\r') {
@@ -1125,14 +879,14 @@ int get() {
             printf("\n");
             exit(0);
         }
-        return (0);
+        return 0;
     }
-    return (c);
+    return c;
 }
 
-struct table* hash_table(char* name) {
+struct table* hash_table(const char* name) {
     struct table* tp;
-    char* np;
+    const char* np;
     unsigned h;
 
     h = 0;
@@ -1145,9 +899,9 @@ struct table* hash_table(char* name) {
     tp = &table[h];
 l0:
     if (tp->name == 0)
-        return (tp);
+        return tp;
     if (equal(name, tp->name))
-        return (tp);
+        return tp;
     tp++;
     if (tp >= table + NTAB)
         tp = table;
@@ -1159,45 +913,10 @@ void fperr(int sig) {
     fperrc++;
 }
 
-static double dynam_unit_mag(int legacy, char* u1, char* u2) {
-    double result;
-    switch_units(legacy);
+void nrnunit_str(char (&buf)[NRN_BUFSIZE], const char* name, const char* u1, const char* u2) {
     Unit_push(u1);
     Unit_push(u2);
     unit_div();
-    result = unit_mag();
+    Sprintf(buf, "static double %s = %a;\n", name, unit_mag());
     unit_pop();
-    return result;
-}
-
-void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
-#if NRN_DYNAMIC_UNITS
-
-    double legacy = dynam_unit_mag(1, u1, u2);
-    double modern = dynam_unit_mag(0, u1, u2);
-    sprintf(buf,
-            "\n"
-            "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
-            /*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
-            "static double _nrnunit_%s[2] = {%a, %g}; /* %.18g */\n",
-            name,
-            name,
-            name,
-            modern,
-            legacy,
-            modern);
-
-#else
-
-    Unit_push(u1);
-    Unit_push(u2);
-    unit_div();
-#if (defined(LegacyFR) && LegacyFR == 1)
-    sprintf(buf, "static double %s = %g;\n", name, unit_mag());
-#else
-    sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
-#endif
-    unit_pop();
-
-#endif
 }

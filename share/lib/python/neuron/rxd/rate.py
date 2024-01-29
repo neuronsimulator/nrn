@@ -1,7 +1,6 @@
 from .rxdException import RxDException
 import weakref
 from . import species, rxdmath, rxd, initializer
-import numpy
 from .rangevar import RangeVar
 import itertools
 import warnings
@@ -134,8 +133,7 @@ class Rate(GeneralizedReaction):
             for sp in self._involved_species_ecs:
                 if ecs_region and isinstance(sp(), species.SpeciesOnRegion):
                     raise RxDException(
-                        "Error Rate %r: an extracellular rate can not depend on a SpeciesOnRegion"
-                        % self._original_rate
+                        f"Error Rate {self._original_rate}: an extracellular rate can not depend on a SpeciesOnRegion"
                     )
 
     def __repr__(self):
@@ -271,8 +269,7 @@ class Rate(GeneralizedReaction):
                     )
                 ):
                     raise RxDException(
-                        "Error in rate %r, the species do not share a common region"
-                        % self
+                        f"Error in rate {self}, the species do not share a common region"
                     )
                 # remove sections where species is absent
                 active_1d_secs = {
@@ -295,7 +292,7 @@ class Rate(GeneralizedReaction):
                 # print("we have an active 3d sec")
             else:
                 raise RxDException(
-                    "Error in rate %r, the species do not share a common section" % self
+                    "Error in rate {self}, the species do not share a common section"
                 )
         else:
             active_secs = [

@@ -1,54 +1,16 @@
 #include <../../nrnconf.h>
-#include <stdio.h>
+#include <map>
+#include <cstdio>
 #include <InterViews/resource.h>
-#include <OS/string.h>
-#include <OS/table.h>
-#include <OS/list.h>
 #include "hoclist.h"
-#include <nrnpython_config.h>
 #if HAVE_IV
 #include "graph.h"
 #endif
 #include "datapath.h"
 #include "ivocvect.h"
 
-#if !defined(CABLE)
-// really belongs in vector.cpp but this is convenient since it will be
-// present in ivoc but not in nrniv
-void nrn_vecsim_add(void*, bool) {
-    printf("nrn_vecsym_add implemented in nrniv\n");
-}
-void nrn_vecsim_remove(void*) {
-    printf("nrn_vecsym_remove implemented in nrniv\n");
-}
-#if HAVE_IV
-void graphLineRecDeleted(GraphLine*) {}
-void Graph::simgraph() {}
-void GraphVector::record_install() {}
-void GraphVector::record_uninstall() {}
-#endif
-// another hack so ivoc will have these names which nrniv gets elsewhere
-int bbs_poll_;
-void bbs_done() {}
-void bbs_handle() {}
-void nrnbbs_context_wait() {}
-
-#ifdef WIN32
-void* dll_lookup(struct DLL*, const char*) {
-    return NULL;
-}
-struct DLL* dll_load(const char*) {
-    return NULL;
-}
-#endif
-#endif
-
-#if CABLE
 #include "nrnoc2iv.h"
 #include "membfunc.h"
-#else
-#include "oc2iv.h"
-#endif
 
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
@@ -58,28 +20,16 @@ extern Objectdata* hoc_top_level_data;
 /*static*/ class PathValue {
   public:
     PathValue();
-    ~PathValue();
-    CopyString* path;
+    ~PathValue() = default;
+    std::string path{};
     Symbol* sym;
     double original;
     char* str;
 };
 PathValue::PathValue() {
-    path = NULL;
     str = NULL;
     sym = NULL;
 }
-PathValue::~PathValue() {
-    if (path) {
-        delete path;
-    }
-}
-
-declareTable(PathTable, void*, PathValue*);
-implementTable(PathTable, void*, PathValue*);
-declarePtrList(StringList, char);
-implementPtrList(StringList, char);
-
 
 class HocDataPathImpl {
   private:
@@ -94,16 +44,15 @@ class HocDataPathImpl {
 
     void search(Objectdata*, Symlist*);
     void search_vectors();
-#if CABLE
     void search_pysec();
     void search(Section*);
     void search(Node*, double x);
     void search(Point_process*, Symbol*);
     void search(Prop*, double x);
-#endif
+
   private:
-    PathTable* table_;
-    StringList strlist_;
+    std::map<void*, PathValue*> table_;
+    std::vector<std::string> strlist_;
     int size_, count_, found_so_far_;
     int pathstyle_;
 };
@@ -115,13 +64,11 @@ static Symbol *sym_vec, *sym_v, *sym_vext, *sym_rallbranch, *sym_L, *sym_Ra;
 HocDataPaths::HocDataPaths(int size, int pathstyle) {
     if (!sym_vec) {
         sym_vec = hoc_table_lookup("Vector", hoc_built_in_symlist);
-#if CABLE
         sym_v = hoc_table_lookup("v", hoc_built_in_symlist);
         sym_vext = hoc_table_lookup("vext", hoc_built_in_symlist);
         sym_rallbranch = hoc_table_lookup("rallbranch", hoc_built_in_symlist);
         sym_L = hoc_table_lookup("L", hoc_built_in_symlist);
         sym_Ra = hoc_table_lookup("Ra", hoc_built_in_symlist);
-#endif
     }
     impl_ = new HocDataPathImpl(size, pathstyle);
 }
@@ -136,9 +83,8 @@ int HocDataPaths::style() {
 
 void HocDataPaths::append(double* pd) {
     //	printf("HocDataPaths::append\n");
-    PathValue* pv;
-    if (pd && !impl_->table_->find(pv, (void*) pd)) {
-        impl_->table_->insert((void*) pd, new PathValue);
+    if (pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
+        impl_->table_.emplace((void*) pd, new PathValue);
         ++impl_->count_;
     }
 }
@@ -154,78 +100,70 @@ void HocDataPaths::search() {
     }
 }
 
-String* HocDataPaths::retrieve(double* pd) {
+std::string HocDataPaths::retrieve(double* pd) const {
     assert(impl_->pathstyle_ != 2);
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->path;
-    } else {
-        return NULL;
+    auto const it = impl_->table_.find(pd);
+    if (it != impl_->table_.end()) {
+        return it->second->path;
     }
+    return {};
 }
 
-Symbol* HocDataPaths::retrieve_sym(double* pd) {
+Symbol* HocDataPaths::retrieve_sym(double* pd) const {
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->sym;
-    } else {
-        return NULL;
+    auto const it = impl_->table_.find(pd);
+    if (it != impl_->table_.end()) {
+        return it->second->sym;
     }
+    return nullptr;
 }
 
 void HocDataPaths::append(char** pd) {
     //	printf("HocDataPaths::append\n");
-    PathValue* pv;
-    if (*pd && !impl_->table_->find(pv, (void*) pd)) {
-        pv = new PathValue;
+    if (*pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
+        PathValue* pv = new PathValue;
         pv->str = *pd;
-        impl_->table_->insert((void*) pd, pv);
+        impl_->table_.emplace((void*) pd, pv);
         ++impl_->count_;
     }
 }
 
-String* HocDataPaths::retrieve(char** pd) {
+std::string HocDataPaths::retrieve(char** pd) const {
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->path;
-    } else {
-        return NULL;
+    auto const it = impl_->table_.find(pd);
+    if (it != impl_->table_.end()) {
+        return it->second->path;
     }
+    return {};
 }
 
 /*------------------------------*/
 HocDataPathImpl::HocDataPathImpl(int size, int pathstyle) {
     pathstyle_ = pathstyle;
-    table_ = new PathTable(size);
     size_ = size;
     count_ = 0;
     found_so_far_ = 0;
 }
 
 HocDataPathImpl::~HocDataPathImpl() {
-    for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-        PathValue* pv = i.cur_value();
+    for (auto& kv: table_) {
+        PathValue* pv = kv.second;
         delete pv;
     }
-    delete table_;
 }
 
 void HocDataPathImpl::search() {
     found_so_far_ = 0;
-    if (table_) {
-        for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-            PathValue* pv = i.cur_value();
-            if (pv->str) {
-                char** pstr = (char**) i.cur_key();
-                *pstr = NULL;
-            } else {
-                double* pd = (double*) i.cur_key();
-                pv->original = *pd;
-                *pd = sentinal;
-            }
+    for (auto& it: table_) {
+        PathValue* pv = it.second;
+        if (pv->str) {
+            char** pstr = (char**) it.first;
+            *pstr = nullptr;
+        } else {
+            double* pd = (double*) it.first;
+            pv->original = *pd;
+            *pd = sentinal;
         }
     }
     if (pathstyle_ > 0) {
@@ -235,24 +173,20 @@ void HocDataPathImpl::search() {
         search(hoc_top_level_data, hoc_top_level_symlist);
         search(hoc_top_level_data, hoc_built_in_symlist);
     }
-#if CABLE
     if (found_so_far_ < count_) {
         search_pysec();
     }
-#endif
     if (found_so_far_ < count_) {
         search_vectors();
     }
-    if (table_) {
-        for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-            PathValue* pv = i.cur_value();
-            if (pv->str) {
-                char** pstr = (char**) i.cur_key();
-                *pstr = pv->str;
-            } else {
-                double* pd = (double*) i.cur_key();
-                *pd = pv->original;
-            }
+    for (auto& it: table_) {
+        PathValue* pv = it.second;
+        if (pv->str) {
+            char** pstr = (char**) it.first;
+            *pstr = pv->str;
+        } else {
+            double* pd = (double*) it.first;
+            *pd = pv->original;
         }
     }
 }
@@ -261,30 +195,31 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
     PathValue* pv;
     if (pathstyle_ != 2) {
         char path[500];
-        CopyString cs("");
-        long i, cnt;
-        int len = 0;
-        cnt = strlist_.count();
-        for (i = 0; i < cnt; ++i) {
-            sprintf(path, "%s%s.", cs.string(), strlist_.item(i));
+        std::string cs{};
+        for (const auto& str: strlist_) {
+            Sprintf(path, "%s%s.", cs.c_str(), str.c_str());
             cs = path;
         }
-        sprintf(path, "%s%s", cs.string(), buf);
-        if (!table_->find(pv, v)) {
+        Sprintf(path, "%s%s", cs.c_str(), buf);
+        const auto& it = table_.find(v);
+        if (it == table_.end()) {
             hoc_warning("table lookup failed for pointer for-", path);
-            return NULL;
+            return nullptr;
         }
-        if (!pv->path) {
-            pv->path = new CopyString(path);
+        pv = it->second;
+        if (pv->path.empty()) {
+            pv->path = path;
             pv->sym = sym;
             ++found_so_far_;
         }
         // printf("HocDataPathImpl::found %s\n", path);
     } else {
-        if (!table_->find(pv, v)) {
+        const auto& it = table_.find(v);
+        if (it == table_.end()) {
             hoc_warning("table lookup failed for pointer for-", sym->name);
-            return NULL;
+            return nullptr;
         }
+        pv = it->second;
         if (!pv->sym) {
             pv->sym = sym;
             ++found_so_far_;
@@ -313,7 +248,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
     Symbol* sym;
     int i, total;
     char buf[200];
-    CopyString cs("");
+    std::string cs{};
     if (sl)
         for (sym = sl->first; sym; sym = sym->next) {
             if (sym->cpublic != 2) {
@@ -331,18 +266,18 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                     }
                     for (i = 0; i < total; ++i) {
                         if (pd[i] == sentinal) {
-                            sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                            Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
-                            found(pd + i, cs.string(), sym);
+                            found(pd + i, cs.c_str(), sym);
                         }
                     }
                 } break;
                 case STRING: {
                     char** pstr = object_pstr(sym, od);
                     if (*pstr == NULL) {
-                        sprintf(buf, "%s", sym->name);
+                        Sprintf(buf, "%s", sym->name);
                         cs = buf;
-                        found(pstr, cs.string(), sym);
+                        found(pstr, cs.c_str(), sym);
                     }
                 } break;
                 case OBJECTVAR: {
@@ -357,62 +292,56 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                             if (!t->constructor) {
                                 // not the this pointer
                                 if (obp[i]->u.dataspace != od) {
-                                    sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                                    Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.append((char*) cs.string());
+                                    strlist_.push_back(cs);
                                     obp[i]->recurse = 1;
                                     search(obp[i]->u.dataspace, obp[i]->ctemplate->symtable);
                                     obp[i]->recurse = 0;
-                                    strlist_.remove(strlist_.count() - 1);
+                                    strlist_.pop_back();
                                 }
                             } else {
                                 /* point processes */
-#if CABLE
                                 if (t->is_point_) {
-                                    sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                                    Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.append((char*) cs.string());
+                                    strlist_.push_back(cs);
                                     search((Point_process*) obp[i]->u.this_pointer, sym);
-                                    strlist_.remove(strlist_.count() - 1);
+                                    strlist_.pop_back();
                                 }
-#endif
                                 /* seclists, object lists */
                             }
                         }
                 } break;
-#if CABLE
                 case SECTION: {
                     total = hoc_total_array_data(sym, od);
                     for (i = 0; i < total; ++i) {
                         hoc_Item** pitm = object_psecitm(sym, od);
                         if (pitm[i]) {
-                            sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
+                            Sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
-                            strlist_.append((char*) cs.string());
+                            strlist_.push_back(cs);
                             search(hocSEC(pitm[i]));
-                            strlist_.remove(strlist_.count() - 1);
+                            strlist_.pop_back();
                         }
                     }
                 } break;
-#endif
                 case TEMPLATE: {
                     cTemplate* t = sym->u.ctemplate;
                     hoc_Item* q;
                     ITERATE(q, t->olist) {
                         Object* obj = OBJ(q);
-                        sprintf(buf, "%s[%d]", sym->name, obj->index);
+                        Sprintf(buf, "%s[%d]", sym->name, obj->index);
                         cs = buf;
-                        strlist_.append((char*) cs.string());
+                        strlist_.push_back(cs);
                         if (!t->constructor) {
                             search(obj->u.dataspace, t->symtable);
                         } else {
-#if CABLE
                             if (t->is_point_) {
                                 search((Point_process*) obj->u.this_pointer, sym);
                             }
-#endif
                         }
-                        strlist_.remove(strlist_.count() - 1);
+                        strlist_.pop_back();
                     }
                 } break;
                 }
@@ -421,57 +350,57 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
 }
 
 void HocDataPathImpl::search_vectors() {
-    int i, cnt;
     char buf[200];
-    CopyString cs("");
+    std::string cs{};
     cTemplate* t = sym_vec->u.ctemplate;
     hoc_Item* q;
     ITERATE(q, t->olist) {
         Object* obj = OBJ(q);
-        sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
+        Sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
         cs = buf;
-        strlist_.append((char*) cs.string());
+        strlist_.push_back(cs);
         Vect* vec = (Vect*) obj->u.this_pointer;
         int size = vec->size();
         double* pd = vector_vec(vec);
-        for (i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             if (pd[i] == sentinal) {
-                sprintf(buf, "x[%d]", i);
+                Sprintf(buf, "x[%zu]", i);
                 found(pd + i, buf, sym_vec);
             }
         }
-        strlist_.remove(strlist_.count() - 1);
+        strlist_.pop_back();
     }
 }
-
-#if CABLE
 
 void HocDataPathImpl::search_pysec() {
 #if USE_PYTHON
-    CopyString cs("");
+    std::string cs{};
     hoc_Item* qsec;
-    ForAllSections(sec) if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-        cs = secname(sec);
-        strlist_.append((char*) cs.string());
-        search(sec);
-        strlist_.remove(strlist_.count() - 1);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
+            cs = secname(sec);
+            strlist_.push_back(cs);
+            search(sec);
+            strlist_.pop_back();
+        }
     }
-}
 #endif
 }
 
 void HocDataPathImpl::search(Section* sec) {
-    if (sec->prop->dparam[2].val == sentinal) {
-        found(&sec->prop->dparam[2].val, "L", sym_L);
+    if (sec->prop->dparam[2].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[2].literal_value<double>()), "L", sym_L);
     }
-    if (sec->prop->dparam[4].val == sentinal) {
-        found(&sec->prop->dparam[4].val, "rallbranch", sym_rallbranch);
+    if (sec->prop->dparam[4].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[4].literal_value<double>()), "rallbranch", sym_rallbranch);
     }
-    if (sec->prop->dparam[7].val == sentinal) {
-        found(&sec->prop->dparam[7].val, "Ra", sym_Ra);
+    if (sec->prop->dparam[7].get<double>() == sentinal) {
+        found(&(sec->prop->dparam[7].literal_value<double>()), "Ra", sym_Ra);
     }
     if (!sec->parentsec && sec->parentnode) {
-        search(sec->parentnode, sec->prop->dparam[1].val);
+        search(sec->parentnode, sec->prop->dparam[1].get<double>());
     }
     for (int i = 0; i < sec->nnode; ++i) {
         search(sec->pnode[i], nrn_arc_position(sec, sec->pnode[i]));
@@ -479,11 +408,11 @@ void HocDataPathImpl::search(Section* sec) {
 }
 void HocDataPathImpl::search(Node* nd, double x) {
     char buf[100];
-    int i, cnt;
-    CopyString cs("");
     if (NODEV(nd) == sentinal) {
-        sprintf(buf, "v(%g)", x);
-        found(&NODEV(nd), buf, sym_v);
+        Sprintf(buf, "v(%g)", x);
+        // the conversion below yields a pointer that is potentially invalidated
+        // by almost any Node operation
+        found(static_cast<double*>(nd->v_handle()), buf, sym_v);
     }
 
 #if EXTRACELLULAR
@@ -492,9 +421,9 @@ void HocDataPathImpl::search(Node* nd, double x) {
         for (i = 0; i < nlayer; ++i) {
             if (nd->extnode->v[i] == sentinal) {
                 if (i == 0) {
-                    sprintf(buf, "vext(%g)", x);
+                    Sprintf(buf, "vext(%g)", x);
                 } else {
-                    sprintf(buf, "vext[%d](%g)", i, x);
+                    Sprintf(buf, "vext[%d](%g)", i, x);
                 }
                 found(&(nd->extnode->v[i]), buf, sym_vext);
             }
@@ -504,7 +433,7 @@ void HocDataPathImpl::search(Node* nd, double x) {
 
     Prop* p;
     for (p = nd->prop; p; p = p->next) {
-        if (!memb_func[p->type].is_point) {
+        if (!memb_func[p->_type].is_point) {
             search(p, x);
         }
     }
@@ -518,7 +447,7 @@ void HocDataPathImpl::search(Point_process* pp, Symbol*) {
 
 void HocDataPathImpl::search(Prop* prop, double x) {
     char buf[200];
-    int type = prop->type;
+    int type = prop->_type;
     Symbol* sym = memb_func[type].sym;
     Symbol* psym;
     double* pd;
@@ -533,20 +462,23 @@ void HocDataPathImpl::search(Prop* prop, double x) {
         if (memb_func[type].hoc_mech) {
             pd = prop->ob->u.dataspace[ir].pval;
         } else {
-            pd = prop->param + ir;
+            if (type == EXTRACELL && ir == neuron::extracellular::vext_pseudoindex()) {
+                // skip as it was handled by caller
+                continue;
+            } else {
+                pd = static_cast<double*>(prop->param_handle_legacy(ir));
+            }
         }
         imax = hoc_total_array_data(psym, 0);
         for (i = 0; i < imax; ++i) {
             if (pd[i] == sentinal) {
                 if (x < 0) {
-                    sprintf(buf, "%s%s", psym->name, hoc_araystr(psym, i, 0));
+                    Sprintf(buf, "%s%s", psym->name, hoc_araystr(psym, i, 0));
                 } else {
-                    sprintf(buf, "%s%s(%g)", psym->name, hoc_araystr(psym, i, 0), x);
+                    Sprintf(buf, "%s%s(%g)", psym->name, hoc_araystr(psym, i, 0), x);
                 }
                 found(pd + i, buf, psym);
             }
         }
     }
 }
-
-#endif
