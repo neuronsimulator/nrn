@@ -32,7 +32,6 @@ extern void hoc_neuronhome(void), hoc_Execerror(void);
 extern void hoc_sscanf(void), hoc_save_session(void), hoc_print_session(void);
 extern void hoc_Chdir(void), hoc_getcwd(void), hoc_Symbol_units(void), hoc_stdout(void);
 extern void hoc_name_declared(void), hoc_unix_mac_pc(void), hoc_show_winio(void);
-extern void hoc_usemcran4(void), hoc_mcran4(void), hoc_mcran4init(void);
 extern void hoc_nrn_load_dll(void), hoc_nrnversion(void), hoc_object_pushed(void);
 extern void hoc_mallinfo(void);
 extern void hoc_Setcolor(void);

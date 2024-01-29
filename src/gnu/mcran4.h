@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 
+double mcell_lowindex();
 void mcell_ran4_init(uint32_t);
 double mcell_ran4(uint32_t* idx1, double* x, unsigned int n, double range);
 double mcell_ran4a(uint32_t* idx1);
