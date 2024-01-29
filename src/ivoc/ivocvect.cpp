@@ -3876,8 +3876,7 @@ void Vector_reg() {
 #endif
 }
 
-template <typename F>
-int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, F cmp) {
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double)) {
     std::sort(base_ptr, base_ptr + total_elems, [&](const int& a, const int& b) {
         return cmp(vec[a], vec[b]) < 0;
     });
