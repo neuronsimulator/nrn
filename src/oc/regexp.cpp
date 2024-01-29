@@ -72,9 +72,7 @@ regexp.cpp,v
 #define CDOL        10
 #define CEOF        11
 #define CKET        12
-#if CABLESECTION
 #define INTRANGE 14
-#endif
 #define NBRA  5
 #define ESIZE 256
 #define eof   '\0'
@@ -86,10 +84,8 @@ static char* locs;
 static char* braslist[NBRA];
 static char* braelist[NBRA];
 static int circfl;
-#if CABLESECTION
 static int int_range_start[NBRA];
 static int int_range_stop[NBRA];
-#endif
 
 static int advance(char* lp, char* ep);
 static int hoc_cclass(char* set, char c, int af);
@@ -99,12 +95,7 @@ void hoc_regexp_compile(const char* pat) {
     int c;
     char* ep;
     char* lastep = 0;
-#if (!CABLESECTION)
-    char bracket[NBRA], *bracketp;
-    int nbra;
-#else
     int int_range_index = 0;
-#endif
     int cclcnt;
     int tempc;
 
@@ -119,10 +110,6 @@ void hoc_regexp_compile(const char* pat) {
     }
     pattern = cp;
     ep = expbuf;
-#if (!CABLESECTION)
-    bracketp = bracket;
-    nbra = 0;
-#endif
     if ((c = *cp++) == '\n') {
         cp--;
         c = eof;
@@ -132,15 +119,7 @@ void hoc_regexp_compile(const char* pat) {
             error(EREGEXP);
         return;
     }
-#if CABLESECTION
     circfl = 1;
-#else
-    circfl = 0;
-    if (c == '^') {
-        c = *cp++;
-        circfl++;
-    }
-#endif
     if (c == '*')
         goto cerror;
     cp--;
@@ -153,9 +132,7 @@ void hoc_regexp_compile(const char* pat) {
             c = eof;
         }
         if (c == eof) {
-#if CABLESECTION
             *ep++ = CDOL;
-#endif
             *ep++ = CEOF;
             return;
         }
@@ -163,23 +140,6 @@ void hoc_regexp_compile(const char* pat) {
             lastep = ep;
         switch (c) {
         case '\\':
-#if (!CABLESECTION)
-            if ((c = *cp++) == '(') {
-                if (nbra >= NBRA)
-                    goto cerror;
-                *bracketp++ = nbra;
-                *ep++ = CBRA;
-                *ep++ = nbra++;
-                continue;
-            }
-            if (c == ')') {
-                if (bracketp <= bracket)
-                    goto cerror;
-                *ep++ = CKET;
-                *ep++ = *--bracketp;
-                continue;
-            }
-#endif
             *ep++ = CCHR;
             if (c == '\n')
                 goto cerror;
@@ -199,16 +159,6 @@ void hoc_regexp_compile(const char* pat) {
             *lastep |= STAR;
             continue;
 
-#if (!CABLESECTION)
-        case '$':
-            tempc = *cp;
-            if (tempc != eof && tempc != '\n')
-                goto defchar;
-            *ep++ = CDOL;
-            continue;
-#endif
-
-#if CABLESECTION
         case '{': {
             char* cp1 = cp;
             if (int_range_index >= NBRA)
@@ -229,12 +179,7 @@ void hoc_regexp_compile(const char* pat) {
             *ep++ = int_range_index++;
         }
             continue;
-#endif
-#if CABLESECTION
         case '<':
-#else
-        case '[':
-#endif
             *ep++ = CCL;
             *ep++ = 0;
             cclcnt = 1;
@@ -272,18 +217,10 @@ void hoc_regexp_compile(const char* pat) {
                     if (ep >= &expbuf[ESIZE])
                         goto cerror;
                 }
-#if CABLESECTION
             } while ((c = *cp++) != '>');
-#else
-
-            } while ((c = *cp++) != ']');
-#endif
             lastep[1] = cclcnt;
             continue;
 
-#if (!CABLESECTION)
-        defchar:
-#endif
         default:
             *ep++ = CCHR;
             *ep++ = c;
@@ -298,28 +235,11 @@ int hoc_regexp_search(const char* tar) { /*return true if target matches pattern
     char* target = (char*) tar;
     char *p1, *p2, c;
 
-#if 1
     if (target == (char*) 0) {
         return (0);
     }
     p1 = target;
     locs = (char*) 0;
-#else /* in e, apparently for searches within or at begining of string */
-    if (gf) {
-        if (circfl)
-            return (0);
-        p1 = linebuf;
-        p2 = genbuf;
-        while (*p1++ = *p2++)
-            ;
-        locs = p1 = loc2;
-    } else {
-        if (addr == zero)
-            return (0);
-        p1 = getline(*addr);
-        locs = NULL;
-    }
-#endif
     p2 = expbuf;
     if (circfl) {
         loc1 = p1;
@@ -372,7 +292,6 @@ static int advance(char* lp, char* ep) {
             loc2 = lp;
             return (1);
 
-#if CABLESECTION
         case INTRANGE: {
             int start, stop, num;
             start = int_range_start[*ep];
@@ -390,7 +309,6 @@ static int advance(char* lp, char* ep) {
             }
         }
             return (0);
-#endif
 
         case CCL:
             if (hoc_cclass(ep, *lp++, 1)) {
