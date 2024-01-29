@@ -350,7 +350,7 @@ class Node(object):
                     f = float(args[0])
                     source = f
                     success = True
-                except ValueError:
+                except TypeError:
                     arith = rxdmath._ensure_arithmeticed(args[0])
                     source = lambda: eval_arith_flux(arith, self.region, self)
                     _sources.append(source)
