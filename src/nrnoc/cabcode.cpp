@@ -2011,6 +2011,7 @@ void forall_section(void) {
         Section* sec = hocSEC(qsec);
         qsec = qsec->next;
         if (buf[0]) {
+            std::cout << "forall_section: " << buf << " : " << secname(sec) << std::endl;
             std::regex pattern(buf);
             if (!std::regex_match(secname(sec), pattern)) {
                 continue;
@@ -2044,6 +2045,7 @@ void hoc_ifsec(void) {
     s = hoc_strpop();
     Sprintf(buf, ".*%s.*", escape_bracket(*s));
     std::regex pattern(buf);
+    std::cout << "hoc_ifsec: " << buf << " : " << secname(chk_access()) << std::endl;
     if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_execute(relative(savepc));
     }
@@ -2053,6 +2055,7 @@ void hoc_ifsec(void) {
 
 void issection(void) { /* returns true if string is the access section */
     std::regex pattern(escape_bracket(gargstr(1)));
+    std::cout << "hoc_ifsec: " << escape_bracket(gargstr(1)) << " : " << secname(chk_access()) << std::endl;
     if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_retpushx(1.);
     } else {
