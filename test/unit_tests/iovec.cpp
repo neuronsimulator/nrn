@@ -35,7 +35,7 @@ TEST_CASE("Test nrn_mlh_gsort output", "[nrn_gsort]") {
         std::vector<int> indices{2, 1, 1};
         std::vector<int> expected_result{1, 1, 2};  // as -2,5 < 5.1
 
-        SECTION("Test sorting with repeted indices") {
+        SECTION("Test sorting with repeated indices") {
             nrn_mlh_gsort(input.data(), indices.data(), input.size(), cmpdfn);
             for (auto i = 0; i < input.size(); ++i) {
                 REQUIRE(indices[i] == expected_result[i]);
