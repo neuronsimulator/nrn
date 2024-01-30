@@ -1,2 +1,4 @@
 cython<3
 packaging
+build
+setuptools_scm
