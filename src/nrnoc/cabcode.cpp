@@ -1,10 +1,12 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
-#define HOC_L_LIST 1
+#include <regex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#define HOC_L_LIST 1
 #include "section.h"
 #include "nrn_ansi.h"
 #include "nrniv_mf.h"
@@ -12,6 +14,36 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "membdef.h"
+
+static char* escape_bracket(const char* s) {
+    static char* b;
+    const char* p1;
+    char* p2;
+    if (!b) {
+        b = new char[256];
+    }
+    for (p1 = s, p2 = b; *p1; ++p1, ++p2) {
+        switch (*p1) {
+        case '<':
+            *p2 = '[';
+            break;
+        case '>':
+            *p2 = ']';
+            break;
+        case '[':
+        case ']':
+            *p2 = '\\';
+            *(++p2) = *p1;
+            break;
+        default:
+            *p2 = *p1;
+            break;
+        }
+    }
+    *p2 = '\0';
+    return b;
+}
+
 
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
@@ -1979,8 +2011,8 @@ void forall_section(void) {
         Section* sec = hocSEC(qsec);
         qsec = qsec->next;
         if (buf[0]) {
-            hoc_regexp_compile(buf);
-            if (!hoc_regexp_search(secname(sec))) {
+            std::regex pattern(escape_bracket(buf));
+            if (!std::regex_match(secname(sec), pattern)) {
                 continue;
             }
         }
@@ -2011,8 +2043,8 @@ void hoc_ifsec(void) {
 
     s = hoc_strpop();
     Sprintf(buf, ".*%s.*", *s);
-    hoc_regexp_compile(buf);
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(buf));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_execute(relative(savepc));
     }
     if (!hoc_returning)
@@ -2020,8 +2052,8 @@ void hoc_ifsec(void) {
 }
 
 void issection(void) { /* returns true if string is the access section */
-    hoc_regexp_compile(gargstr(1));
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(gargstr(1)));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_retpushx(1.);
     } else {
         hoc_retpushx(0.);
