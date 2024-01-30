@@ -172,8 +172,8 @@ extern "C" int nrnpython_start(int b) {
     }
     if (b == 0 && started) {
         PyGILState_STATE gilsav = PyGILState_Ensure();
-        Py_Finalize();
         del_wcargv(nrn_global_argc);
+        Py_Finalize();
         // because of finalize, no PyGILState_Release(gilsav);
         started = 0;
     }
