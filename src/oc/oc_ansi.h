@@ -361,8 +361,6 @@ int is_vector_arg(int);
 char* vector_get_label(IvocVect*);
 void vector_set_label(IvocVect*, char*);
 
-void hoc_regexp_compile(const char*);
-int hoc_regexp_search(const char*);
 Symbol* hoc_install_var(const char*, double*);
 void hoc_class_registration();
 void hoc_spinit();
