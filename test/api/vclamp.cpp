@@ -2,6 +2,7 @@
 #include "neuronapi.h"
 #include <dlfcn.h>
 
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -14,8 +15,6 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
-
 constexpr std::initializer_list<double> EXPECTED_V{
     -0x1.04p+6,
     -0x1.00d7f6756215p-182,
@@ -27,13 +26,8 @@ constexpr std::initializer_list<double> EXPECTED_V{
 };
 
 int main(void) {
-    Section* soma;
-    Object* vclamp;
-    Object* v;
-    Object* t;
-    char* temp_str;
-
-    nrn_init(3, argv);
+    static std::array<const char*, 4> argv = {"vclamp", "-nogui", "-nopython", nullptr};
+    nrn_init(3, argv.data());
 
     // load the stdrun library
     // Ensure If arguments are not correct we handle gracefully
@@ -49,7 +43,7 @@ int main(void) {
     }
 
     // topology
-    soma = nrn_section_new("soma");
+    Section* soma = nrn_section_new("soma");
 
     // define soma morphology with two 3d points
     nrn_section_push(soma);
@@ -59,7 +53,7 @@ int main(void) {
     nrn_segment_diam_set(soma, 0.5, 3);
 
     // voltage clamp at soma(0.5)
-    vclamp = nrn_object_new("VClamp", "d", 0.5);
+    Object* vclamp = nrn_object_new("VClamp", "d", 0.5);
     // 0 mV for 1 ms; 10 mV for the next 2 ms; 5 mV for the next 3 ms
     int i = 0;
     for (auto& [amp, dur]: std::initializer_list<std::pair<int, double>>{{0, 1}, {10, 2}, {5, 3}}) {
@@ -69,7 +63,7 @@ int main(void) {
     }
 
     // setup recording
-    v = nrn_object_new_NoArgs("Vector");
+    Object* v = nrn_object_new_NoArgs("Vector");
     auto ref_v = nrn_rangevar_new(soma, 0.5, "v");
     auto r = nrn_method_call(v, "record", /* "rd" */ NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &ref_v, 1.0);
 

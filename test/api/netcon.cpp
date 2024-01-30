@@ -1,4 +1,5 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -9,8 +10,6 @@
 using std::cout;
 using std::endl;
 using std::ofstream;
-
-static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};
 
 constexpr std::initializer_list<double> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
@@ -31,11 +30,8 @@ constexpr std::initializer_list<double> EXPECTED_V{
 };
 
 int main(void) {
-    Object* v;
-    Object* t;
-    char* temp_str;
-
-    nrn_init(3, argv);
+    static std::array<const char*, 4> argv = {"netcon", "-nogui", "-nopython", nullptr};
+    nrn_init(3, argv.data());
 
     // load the stdrun library
     nrn_function_call_s("load_file", "stdrun.hoc");
@@ -69,7 +65,7 @@ int main(void) {
 
     // setup recording
     auto soma_v = nrn_rangevar_new(soma, 0.5, "v");
-    v = nrn_object_new_NoArgs("Vector");
+    Object* v = nrn_object_new_NoArgs("Vector");
     nrn_method_call(v, "record", NRN_ARG_RANGEVAR NRN_ARG_DOUBLE, &soma_v, 20.0);
 
     nrn_function_call("finitialize", NRN_ARG_DOUBLE, -65.0);

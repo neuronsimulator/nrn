@@ -1217,7 +1217,7 @@ class _PlotShapePlot(_WrapperPlot):
                 elif val > hi:
                     col = color_to_hex(cmap(255))
                 else:
-                    val = color_to_hex(128)
+                    col = color_to_hex(cmap(128))
             else:
                 col = color_to_hex(
                     cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range)))

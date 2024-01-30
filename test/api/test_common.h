@@ -10,7 +10,7 @@ constexpr double EPSILON = 0x1p-16;  // 1>>16 for double
 
 inline bool approximate(const std::initializer_list<double>& reference, Object* v) {
     long v_size = nrn_vector_size(v);
-    double* v_values = nrn_vector_data(v);
+    const double* v_values = nrn_vector_data(v);
     if (v_size != reference.size()) {
         std::cerr << "Bad array length: " << v_size << "!=" << reference.size() << std::endl;
         return false;
@@ -27,6 +27,7 @@ inline bool approximate(const std::initializer_list<double>& reference, Object* 
     return true;
 }
 #endif
+
 
 // --- String Helpers (Neuron doesnt handle char* strings ? yet)
 

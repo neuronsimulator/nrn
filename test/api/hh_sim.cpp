@@ -1,6 +1,7 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
 #include "neuronapi.h"
 
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -25,21 +26,15 @@ constexpr std::initializer_list<double> EXPECTED_V{
 #endif
 };
 
-static const char* argv[] = {"hh_sim", "-nogui", "-nopython", nullptr};
-
 int main(void) {
-    Section* soma;
-    Object* iclamp;
-    Object *v, *t;
-    char* temp_str;
-
-    nrn_init(3, argv);
+    static std::array<const char*, 4> argv = {"hh_sim", "-nogui", "-nopython", nullptr};
+    nrn_init(3, argv.data());
 
     // load the stdrun library
     nrn_function_call_s("load_file", "stdrun.hoc");
 
     // topology
-    soma = nrn_section_new("soma");
+    Section* soma = nrn_section_new("soma");
     nrn_nseg_set(soma, 3);
 
     // define soma morphology with two 3d points
@@ -51,14 +46,14 @@ int main(void) {
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
     // current clamp at soma(0.5)
-    iclamp = nrn_object_new("IClamp", "d", 0.5);
+    Object* iclamp = nrn_object_new("IClamp", "d", 0.5);
     nrn_property_set(iclamp, "amp", 0.3);
     nrn_property_set(iclamp, "del", 1.);
     nrn_property_set(iclamp, "dur", 0.1);
 
     // setup recording
     RangeVar ref_v = nrn_rangevar_new(soma, 0.5, "v");
-    v = nrn_object_new_NoArgs("Vector");
+    Object* v = nrn_object_new_NoArgs("Vector");
     auto r = nrn_method_call(v, "record", "rd", &ref_v, 5.0);
     // Note: we could potentially even forget to drop the result
     // because it is popped from the Stack anyway. The only problem

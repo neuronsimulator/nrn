@@ -808,20 +808,23 @@ int dparam_semantics_to_int(std::string_view name) {
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
     nrn_prop_param_size_[mechtype] = param_info.size();
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
-    delete[] std::exchange(memb_func[mechtype].dparam_semantics, nullptr);
-    if (!dparam_info.empty()) {
-        memb_func[mechtype].dparam_semantics = new int[dparam_info.size()];
+    if (dparam_info.empty()) {
+        memb_func[mechtype].dparam_semantics = nullptr;
+    } else {
+        memb_func[mechtype].dparam_semantics.reset(new int[dparam_info.size()]);
         for (auto i = 0; i < dparam_info.size(); ++i) {
             // dparam_info[i].first is the name of the variable, currently unused...
             memb_func[mechtype].dparam_semantics[i] = dparam_semantics_to_int(
                 dparam_info[i].second);
         }
     }
+
     // Translate param_info into the type we want to use internally now we're fully inside NEURON
     // library code (wheels...)
     std::vector<container::Mechanism::Variable> param_info_new{};

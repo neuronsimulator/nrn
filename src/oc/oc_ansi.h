@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+
+#include "memory.hpp"
 /**
  * \dir
  * \brief HOC Interpreter
@@ -49,9 +51,6 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-void* hoc_Emalloc(size_t size);
-void hoc_malchk();
 [[noreturn]] void hoc_execerror(const char*, const char*);
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
@@ -320,10 +319,6 @@ void hoc_obj_set(int i, Object*);
 void nrn_hoc_lock();
 void nrn_hoc_unlock();
 
-void* hoc_Erealloc(void* ptr, std::size_t size);
-
-void* nrn_cacheline_alloc(void** memptr, std::size_t size);
-void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
 [[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();

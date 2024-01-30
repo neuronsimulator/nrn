@@ -71,19 +71,20 @@ void nrn_stdout_redirect(int (*myprint)(int, char*));
 Section* nrn_section_new(char const* name);
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x);
 void nrn_section_length_set(Section* sec, double length);
-double nrn_section_length_get(Section const* sec);
+double nrn_section_length_get(Section* sec);
+double nrn_section_Ra_get(Section* sec);
 void nrn_section_Ra_set(Section* sec, double val);
 char const* nrn_secname(Section* sec);
 void nrn_section_push(Section* sec);
 void nrn_section_pop(void);
-void nrn_mechanism_insert(Section* sec, Symbol* mechanism);
+void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 NrnList* nrn_allsec(void);
 NrnList* nrn_sectionlist_data(Object* obj);
 
 /****************************************
  * Segments
  ****************************************/
-int nrn_nseg_get(Section const* sec);
+int nrn_nseg_get(const Section* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
 RangeVar nrn_rangevar_new(Section*, double x, const char* var_name);

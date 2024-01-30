@@ -256,7 +256,7 @@ int nrnthread_dat2_1(int tid,
         tml_index[j] = type;
         ml_nodecount[j] = ml->nodecount;
         cg.ml_vdata_offset[j] = vdata_offset;
-        int* ds = memb_func[type].dparam_semantics;
+        int* ds = memb_func[type].dparam_semantics.get();
         for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
             if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == 0) {
                 // printf("%s ds[%d]=%d vdata_offset=%d\n", memb_func[type].sym->name, psz, ds[psz],
@@ -533,7 +533,7 @@ int* datum2int(int type,
     int isart = nrn_is_artificial_[di.type];
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
-    int* semantics = memb_func[type].dparam_semantics;
+    int* semantics = memb_func[type].dparam_semantics.get();
     for (int i = 0; i < ml->nodecount; ++i) {
         int ioff = i * sz;
         for (int j = 0; j < sz; ++j) {
@@ -772,7 +772,7 @@ static std::map<int, int> type2movable;
 static void setup_type2semantics() {
     if (type2movable.empty()) {
         for (int type = 0; type < n_memb_func; ++type) {
-            int* ds = memb_func[type].dparam_semantics;
+            int* ds = memb_func[type].dparam_semantics.get();
             if (ds) {
                 for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
                     if (ds[psz] == -4) {  // netsend semantics
