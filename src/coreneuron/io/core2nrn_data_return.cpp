@@ -43,8 +43,8 @@ int (*core2nrn_corepointer_mech_)(int tid,
 
 int (*core2nrn_nmodlrandom_)(int tid,
                              int type,
-                             std::vector<int>& indices,
-                             std::vector<double>& nmodlrandom);
+                             const std::vector<int>& indices,
+                             const std::vector<double>& nmodlrandom);
 }
 
 namespace coreneuron {
@@ -204,7 +204,7 @@ std::vector<int>& nrn_mech_random_indices(int type) {
 
 /** @brief Copy back NMODL RANDOM sequence to NEURON
  */
-static void core2nrn_nmodlrandom(int tid, NrnThreadMembList* tml) {
+static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
     // Started out as a copy of corenrn_corepointer above.
     // overall algorithm for nmodlrandom is similar to nrnthread_dat2_mech.
     int type = tml->index;
@@ -336,7 +336,7 @@ void core2nrn_data_return() {
             }
 
             core2nrn_corepointer(tid, tml);
-            core2nrn_nmodlrandom(tid, tml);
+            c2n_nmodlrandom(tid, tml);
         }
 
         // Copy the event queue and related state.

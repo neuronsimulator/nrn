@@ -2059,7 +2059,8 @@ void BBSaveState::mech(Prop* p) {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
         auto& random_indices = nrn_mech_random_indices(p->_type);
         auto size_random = random_indices.size();
-        std::vector<double*> tmp(size + size_random);
+        std::vector<double*> tmp{};
+        tmp.reserve(size + size_random);
         for (auto i = 0; i < size; ++i) {
             tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
         }
@@ -2082,12 +2083,12 @@ void BBSaveState::mech(Prop* p) {
             }
         }
         f->d(size + size_random, tmp.data());
-        // if reading, seq34 into nrnran123_setseq1
+        // if reading, seq34 into nrnran123_setseq
         if (f->type() == BBSS_IO::IN) {  // restore
             for (auto i = 0; i < size_random; ++i) {
                 auto& datum = p->dparam[random_indices[i]];
                 nrnran123_State* n123s = (nrnran123_State*) datum.get<void*>();
-                nrnran123_setseq1(n123s, seq34[i]);
+                nrnran123_setseq(n123s, seq34[i]);
             }
         }
     }

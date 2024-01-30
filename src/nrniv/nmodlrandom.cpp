@@ -63,7 +63,7 @@ static Object** set_seq(void* v) {  // return this NModlRandom instance
     NMODLRandom* r = (NMODLRandom*) v;
     r->chk();
     double seq = *getarg(1);
-    nrnran123_setseq1(r->r(), seq);
+    nrnran123_setseq(r->r(), seq);
     return hoc_temp_objptr(nrn_get_gui_redirect_obj());
 }
 

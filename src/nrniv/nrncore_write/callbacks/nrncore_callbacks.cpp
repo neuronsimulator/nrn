@@ -575,7 +575,7 @@ int core2nrn_nmodlrandom(int tid,
         for (int i = 0; i < ml->nodecount; ++i) {
             auto& datum = ml->pdata[i][ix];
             nrnran123_State* state = (nrnran123_State*) datum.get<void*>();
-            nrnran123_setseq1(state, nmodlrandom[ir++]);
+            nrnran123_setseq(state, nmodlrandom[ir++]);
         }
     }
     return 1;

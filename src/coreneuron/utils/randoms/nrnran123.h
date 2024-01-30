@@ -155,9 +155,16 @@ inline void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
 }
 
 /* this could be called from openacc parallel construct (in INITIAL block) */
-inline void nrnran123_setseq1(nrnran123_State* s, double seq34) {
+inline void nrnran123_setseq(nrnran123_State* s, double seq34) {
+    if (seq34 < 0.0) {
+        seq34 = 0.0;
+    }
+    if (seq34 > double(0XffffffffffLL)) {
+        seq34 = 0.0;
+    }
+
     // at least 64 bits even on 32 bit machine (could be more)
-    unsigned long long x = ((unsigned long long) seq34) & 0X3ffffffff;
+    unsigned long long x = ((unsigned long long) seq34) & 0X3ffffffffLL;
     char which = x & 0X3;
     uint32_t seq = x >> 2;
     nrnran123_setseq(s, seq, which);

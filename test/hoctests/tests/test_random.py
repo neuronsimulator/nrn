@@ -2,6 +2,7 @@ from neuron import h
 from neuron.expect_hocerr import expect_err, set_quiet
 from neuron.tests.utils.checkresult import Chk
 import os
+import math
 
 pc = h.ParallelContext()
 
@@ -57,7 +58,16 @@ r1 = rt.ran1
 assert r1.set_seq(2**34 - 1).get_seq() == (2**34 - 1)
 r1.uniform()
 assert r1.get_seq() == 0
-assert r1.set_seq(2**34).get_seq() == 0
+assert r1.set_seq(2**34 + 1).get_seq() == 1
+assert r1.set_seq(-10).get_seq() == 0  # all neg setseq to 0
+assert r1.set_seq(2**40 - 1).get_seq() == 17179869183.0  # up to 2**40 wrap
+assert r1.set_seq(2**40 + 1).get_seq() == 0  # all above 2**40 setseq to 0
+
+# negexp(mean) has proper scale
+r1.set_seq(0)
+x = rt.negexp0()
+r1.set_seq(0)
+assert math.isclose(rt.negexp1(5), 5 * x)
 
 r1 = h.NMODLRandom()
 expect_err("r1.uniform()")

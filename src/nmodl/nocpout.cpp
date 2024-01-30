@@ -1063,7 +1063,7 @@ static const char *_mechanism[] = {\n\
     // Refactor if ever things other than nmodlrandoms need it.
     nrn_mech_inst_destruct_list = newlist();
     ITERATE(q, nmodlrandoms) {
-        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream0();\n", SYM(q)->name);
+        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream();\n", SYM(q)->name);
         Lappendstr(defs_list, buf);
         Sprintf(buf, "nrnran123_deletestream(%s);\n", SYM(q)->name);
         Lappendstr(nrn_mech_inst_destruct_list, buf);
