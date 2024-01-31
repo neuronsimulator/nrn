@@ -9,7 +9,6 @@
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
-#include "nrnisaac.h"
 #include "utils/enumerate.h"
 
 #include <vector>
