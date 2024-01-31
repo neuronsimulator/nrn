@@ -130,7 +130,7 @@
 extern NetCvode* net_cvode_instance;
 
 double KSSingle::vres_;
-unsigned int KSSingle::idum_;
+nrnran123_State* KSSingle::rand_state;
 
 KSSingle::KSSingle(KSChan* c) {
     // implemenation assumes one ks gate complex with power 1

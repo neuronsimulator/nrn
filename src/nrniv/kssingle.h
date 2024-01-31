@@ -5,8 +5,7 @@
 #include <mymath.h>
 #include <kschan.h>
 #include <netcon.h>
-
-#include <mcran4.h>
+#include <nrnran123.h>
 
 class KSSingleTrans;
 class KSSingleState;
@@ -71,10 +70,10 @@ class KSSingle {
         return MyMath::eq(x, y, vres_);
     }
     double exprand() {
-        return -log(mcell_ran4a(&idum_));
+        return nrnran123_negexp(rand_state);
     }
     double unifrand(double range) {
-        return mcell_ran4a(&idum_) * range;
+        return nrnran123_dblpick(rand_state) * range;
     }
     int rvalrand(int);
 
@@ -84,7 +83,7 @@ class KSSingle {
     double* rval_;
     bool uses_ligands_;
     static double vres_;
-    static unsigned int idum_;
+    static nrnran123_State* rand_state;
 
     static unsigned long singleevent_deliver_;
     static unsigned long singleevent_move_;

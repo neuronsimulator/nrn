@@ -279,9 +279,12 @@ static double ks_vres(void* v) {
 
 static double ks_rseed(void* v) {
     if (ifarg(1)) {
-        KSSingle::idum_ = (unsigned int) chkarg(1, 0, 1e9);
+        nrnran123_setseq(KSSingle::rand_state,  static_cast<std::uint32_t>(chkarg(1, 0, 1e9)), 0);
     }
-    return (double) KSSingle::idum_;
+    std::uint32_t seq;
+    char which;
+    nrnran123_getseq(KSSingle::rand_state, &seq, &which);
+    return (double) seq;
 }
 
 static double ks_usetable(void* v) {
@@ -804,7 +807,7 @@ void KSChan_reg() {
     ksgate_sym = hoc_lookup("KSGate");
     kstrans_sym = hoc_lookup("KSTrans");
     KSSingle::vres_ = 0.1;
-    KSSingle::idum_ = 0;
+    KSSingle::rand_state = nrnran123_newstream(0, 0);
 }
 
 // param is gmax, g, i --- if change then change numbers below
