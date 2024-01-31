@@ -1731,6 +1731,6 @@ L3:
 uint32_t nrn_praxis_ran_index;
 
 static doublereal random_(integer* /* naught */) {
-    auto *rng = nrnran123_newstream(nrn_praxis_ran_index, 0);
+    auto* rng = nrnran123_newstream(nrn_praxis_ran_index, 0);
     return nrnran123_dblpick(rng);
 }

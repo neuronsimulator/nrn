@@ -279,7 +279,7 @@ static double ks_vres(void* v) {
 
 static double ks_rseed(void* v) {
     if (ifarg(1)) {
-        nrnran123_setseq(KSSingle::rand_state,  static_cast<std::uint32_t>(chkarg(1, 0, 1e9)), 0);
+        nrnran123_setseq(KSSingle::rand_state, static_cast<std::uint32_t>(chkarg(1, 0, 1e9)), 0);
     }
     std::uint32_t seq;
     char which;
