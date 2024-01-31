@@ -13,6 +13,7 @@ extern Symlist* hoc_symlist;
 extern void hoc_unlink_symbol(Symbol*, Symlist*);
 extern void hoc_link_symbol(Symbol*, Symlist*);
 extern void nrn_loc_point_process(int, Point_process*, Section*, Node*);
+extern cTemplate** nrn_pnt_template_;
 extern char* pnt_map;
 extern Symbol** pointsym;
 extern Prop* nrn_point_prop_;
@@ -49,6 +50,23 @@ static void check_list(const char* s, Symlist* sl) {
     }
 }
 
+static void seg_or_x_arg_inside_stack(int i, Section** psec, double* px) {
+    extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+    if (hoc_inside_stacktype(i) == NUMBER) {
+        *px = hoc_look_inside_stack<double>(i);
+        *psec = chk_access();
+    } else {
+        Object* o = hoc_look_inside_stack<Object*>(i);
+        *psec = nullptr;
+        if (nrnpy_o2loc_p_) {
+            (*nrnpy_o2loc_p_)(o, psec, px);
+        }
+        if (!(*psec)) {
+            assert(0);
+        }
+    }
+}
+
 void hoc_construct_point(Object* ob, int narg) {
     if (skip_) {
         // printf("skipped hoc_construct_point\n");
@@ -62,15 +80,10 @@ void hoc_construct_point(Object* ob, int narg) {
     assert(last_created_pp_ob_ == NULL);
     last_created_pp_ob_ = ob;
     if (narg > 0) {
-        auto const x = hoc_look_inside_stack<double>(narg - 1);
-        // printf("x=%g\n", x);
-        Section* sec = chk_access();
+        Section* sec;
+        double x;
+        seg_or_x_arg_inside_stack(narg - 1, &sec, &x);
         Node* nd = node_exact(sec, x);
-        // printf("ptype=%d pnt=%p %s nd=%p\n", ptype, pnt, secname(sec), nd);
-        // printf("type=%d pointsym=%p\n", type, pointsym[ptype]);
-        // printf("type=%d from pointsym %s = %d\n", type, pointsym[ptype]->name,
-        // pointsym[ptype]->subtype);
-
         nrn_loc_point_process(ptype, pnt, sec, nd);
     }
 }
@@ -101,8 +114,9 @@ int special_pnt_call(Object* ob, Symbol* sym, int narg) {
         if (narg != 1) {
             hoc_execerror("no argument", 0);
         }
-        auto const x = hoc_look_inside_stack<double>(narg - 1);
-        Section* sec = chk_access();
+        Section* sec;
+        double x;
+        seg_or_x_arg_inside_stack(narg - 1, &sec, &x);
         Node* node = node_exact(sec, x);
         nrn_loc_point_process(ptype, ob2pntproc(ob), sec, node);
         hoc_pushx(x);
@@ -135,7 +149,7 @@ static void alloc_pnt(Prop* p) {
         p->ob = nrn_point_prop_->ob;
         // printf("p->ob comes from nrn_point_prop_ %s\n", hoc_object_name(p->ob));
     } else {
-        nrn_prop_datum_alloc(p->_type, 2, p);
+        p->dparam = nrn_prop_datum_alloc(p->_type, 2, p);
         if (last_created_pp_ob_) {
             p->ob = last_created_pp_ob_;
             // printf("p->ob comes from last_created %s\n", hoc_object_name(p->ob));
@@ -206,6 +220,7 @@ static HocMech* common_register(const char** m,
     }
     register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
     type = nrn_get_mechtype(m[1]);
+
     // parm_default currently empty. That is ok. But fill in if
     // implementation provides a default method.
     hoc_register_parm_default(type, &hm->parm_default);
@@ -230,7 +245,7 @@ void make_mechanism() {
     }
     // if(parnames) printf("parnames=%s\n", parnames);
     Symbol* classsym = hoc_lookup(classname);
-    if (classsym->type != TEMPLATE) {
+    if (!classsym || classsym->type != TEMPLATE) {
         hoc_execerror(classname, "not a template");
     }
     cTemplate* tp = classsym->u.ctemplate;
@@ -238,6 +253,11 @@ void make_mechanism() {
     const char** m = make_m(true, cnt, slist, mname, parnames);
 
     common_register(m, classsym, slist, alloc_mech, i);
+
+    // no SoA data fields. (the reference to the Hoc Object is in prop->ob)
+    std::vector<std::pair<std::string, int>> params{};
+    std::vector<std::pair<std::string, std::string>> dparams{};
+    neuron::mechanism::detail::register_data_fields(i, params, dparams);
 
     for (sp = slist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->cpublic) {
@@ -269,7 +289,7 @@ void make_pointprocess() {
     }
     // if(parnames) printf("parnames=%s\n", parnames);
     Symbol* classsym = hoc_lookup(classname);
-    if (classsym->type != TEMPLATE) {
+    if (!classsym || classsym->type != TEMPLATE) {
         hoc_execerror(classname, "not a template");
     }
     cTemplate* tp = classsym->u.ctemplate;
@@ -298,11 +318,20 @@ void make_pointprocess() {
     Symlist* slsav = hoc_symlist;
     hoc_symlist = NULL;
     HocMech* hm = common_register(m, classsym, slist, alloc_pnt, type);
+
+    // Only area and pntproc SoA dparam fields. (the reference to the Hoc Object is in prop->ob)
+    std::vector<std::pair<std::string, int>> params{};
+    std::vector<std::pair<std::string, std::string>> dparams{};
+    dparams.push_back({"", "area"});
+    dparams.push_back({"", "pntproc"});
+    neuron::mechanism::detail::register_data_fields(type, params, dparams);
+
     hm->slist = hoc_symlist;
     hoc_symlist = slsav;
     s2 = hoc_table_lookup(m[1], hm->slist);
     assert(s2->subtype == type);
     //	type = s2->subtype;
+    nrn_pnt_template_[type] = tp;
     ptype = point_reg_helper(s2);
     // printf("type=%d pointtype=%d %s %p\n", type, ptype, s2->name, s2);
     classsym->u.ctemplate->is_point_ = ptype;
@@ -311,7 +340,7 @@ void make_pointprocess() {
     // move s2 out of HocMech->slist and into slist.
     // That is the one with the u.ppsym.
     // The only reason it needs to be in slist is to find the
-    // mechanims type. And it needs to be LAST in that list.
+    // mechanism type. And it needs to be LAST in that list.
     // The only reason for the u.ppsym is for ndatclas.cpp and we
     // need to fill those symbols with oboff.
     sp = hoc_table_lookup(classsym->name, slist);
@@ -322,7 +351,7 @@ void make_pointprocess() {
     for (i = 0; i < s2->s_varn; ++i) {
         Symbol* sp = hoc_table_lookup(s2->u.ppsym[i]->name, slist);
         s2->u.ppsym[i]->cpublic = 2;
-        s2->u.ppsym[1]->u.oboff = sp->u.oboff;
+        s2->u.ppsym[i]->u.oboff = sp->u.oboff;
     }
     for (i = 0; i < cnt; ++i) {
         if (m[i]) {

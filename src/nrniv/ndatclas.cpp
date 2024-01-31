@@ -53,13 +53,15 @@ v_structure_change).
     Symbol* sym_;
     std::vector<double> params_{};
 };
+
 NrnPropertyImpl::NrnPropertyImpl(int mechtype) {
     iterator_ = -1;
     type_ = mechtype;
     sym_ = memb_func[mechtype].sym;
-    // how many values. nrn_prop_param_size[EXTRACELL] is not all of them
+    // How many values. nrn_prop_param_size[EXTRACELL] is not all of them
+    // Nor if it is a HocMech.
     int ntotal = nrn_prop_param_size_[type_];
-    if (type_ == EXTRACELL) {
+    if (type_ == EXTRACELL || memb_func[type_].hoc_mech) {
         ntotal = 0;
         for (int i = 0; i < sym_->s_varn; ++i) {
             Symbol* s = sym_->u.ppsym[i];
@@ -93,9 +95,6 @@ NrnPropertyImpl::~NrnPropertyImpl() {
 };
 
 //----------------------------------------------------
-NrnProperty::NrnProperty(int mechtype) {
-    npi_ = new NrnPropertyImpl(mechtype);
-}
 
 NrnProperty::NrnProperty(const char* name) {
     Symbol* sym = hoc_table_lookup(name, hoc_built_in_symlist);
@@ -130,10 +129,6 @@ const char* NrnProperty::name() const {
     return npi_->sym_->name;
 }
 
-bool NrnProperty::is_point() const {
-    return memb_func[npi_->type_].is_point;
-}
-
 int NrnProperty::type() const {
     return npi_->type_;
 }
@@ -164,6 +159,14 @@ Symbol* NrnProperty::var(int i) {
     return npi_->sym_->u.ppsym[i];
 }
 
+static std::string strip_suffix(const char* name, const char* suffix) {
+    std::string s = name;
+    std::string suf{"_"};
+    suf += suffix;
+    s.resize(s.rfind(suf));
+    return s;
+}
+
 bool NrnProperty::copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype) {
     assert(vartype != NRNPOINTER);
     auto& x = npi_->params_;
@@ -172,11 +175,17 @@ bool NrnProperty::copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype) {
         if (p->ob) {
             Symbol* msym = memb_func[p->_type].sym;
             auto const cnt = msym->s_varn;
+            // u.ppsym below are the right names but not the right symbols.
+            // Those symbols are in the p->ob->ctemplate->symtable
+            Symlist* symtab = p->ob->ctemplate->symtable;
             int k = 0;
             for (int i = 0; i < cnt; ++i) {
                 Symbol* sym = msym->u.ppsym[i];
                 auto const jmax = hoc_total_array_data(sym, 0);
                 if (vartype == 0 || nrn_vartype(sym) == vartype) {
+                    const std::string& s = strip_suffix(sym->name, msym->name);
+                    sym = hoc_table_lookup(s.c_str(), symtab);
+                    assert(sym);
                     auto const n = sym->u.rng.index;
                     auto const y = p->ob->u.dataspace[n].pval;
                     for (int j = 0; j < jmax; ++j) {

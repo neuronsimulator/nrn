@@ -133,9 +133,8 @@ def test_1():
     # This is because name and number changes re-register the mechanism.
     # In this case the change would be from 1 state to 2 states.
     expect_err("cb.nahh()")  # cb changes name and inserted na_ion before failure
-    expect_err(
-        'cb.ks.name("khh");1/0'
-    )  # change name back (but there is still an instance
+    # change name back (but there is still an instance)
+    expect_err('cb.ks.name("khh");1/0')
     s.uninsert("khh")
     cb.ks.name("khh")
     s.insert("khh")

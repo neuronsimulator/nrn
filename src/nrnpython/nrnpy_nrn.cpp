@@ -2135,6 +2135,19 @@ static Symbol* var_find_in_mech(Symbol* mech, const char* varname) {
 static neuron::container::data_handle<double> var_pval(NPyMechObj* pymech,
                                                        Symbol* symvar,
                                                        int index) {
+    if (pymech->prop_->ob) {  // HocMech created by make_mechanism
+        Object* ob = pymech->prop_->ob;
+        // strip suffix
+        std::string s = symvar->name;
+        std::string suffix{"_"};
+        suffix += memb_func[pymech->type_].sym->name;
+        s.resize(s.rfind(suffix));
+
+        Symbol* sym = hoc_table_lookup(s.c_str(), ob->ctemplate->symtable);
+        assert(sym);
+        double* pd = ob->u.dataspace[sym->u.rng.index].pval + index;
+        return neuron::container::data_handle<double>{pd};
+    }
     int sym_index = symvar->u.rng.index;
     auto dh = pymech->prop_->param_handle_legacy(sym_index + index);
     return dh;

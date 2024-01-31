@@ -1,5 +1,8 @@
 from neuron import h
+from neuron.expect_hocerr import expect_err, set_quiet
 import math
+
+set_quiet(False)
 
 
 def mkmodel(mnames):
@@ -28,7 +31,7 @@ def variter(mslist, seg=None):
 
 def test_mechstd1():  # default params
     def mechstd(vartype, mnames):
-        print("\nvartype ", vartype)
+        # print("\nvartype ", vartype)
         ms = [h.MechanismStandard(name, vartype) for name in mnames]
         s = h.Section()
         for name in mnames:
@@ -42,11 +45,11 @@ def test_mechstd1():  # default params
                 varname = h.ref("")
                 size = m.name(varname, i)
                 if not m.is_array(i):
-                    print(name[0], i, varname[0], size, m.get(varname[0]))
+                    # print(name[0], i, varname[0], size, m.get(varname[0]))
                     assert getattr(s(0.5), varname[0]) == m.get(varname[0])
                 else:
                     for j in range(size):
-                        print(name[0], i, varname[0], j, size, m.get(varname[0]))
+                        # print(name[0], i, varname[0], j, size, m.get(varname[0]))
                         assert getattr(s(0.5), varname[0])[j] == m.get(varname[0], j)
 
     mnames = ["hh", "pas", "fastpas", "capacitance", "na_ion", "extracellular"]
@@ -83,10 +86,51 @@ def test_mechstd2():  # test set, get, in, out
     for ms in mslist:
         ms._in(model(0.5))
     for ms, mname, varname, isarray, index, ref in variter(mslist, model(0.5)):
-        print(ms, mname, varname, ms.get(varname, index), isarray, index, ref)
+        # print(ms, mname, varname, ms.get(varname, index), isarray, index, ref)
         assert math.isclose(ms.get(varname, index), ref[index])
+
+
+def test_mechstd3():
+    h("""x=0""")
+    expect_err('ms = h.MechanismStandard("x")')  # cover constructor
+
+
+def test_mechstd4():  # HOC mechanism
+    h(
+        """
+begintemplate Foo
+public x
+x = 1
+proc init() {
+    x = 5
+}
+endtemplate Foo
+"""
+    )
+    h.make_mechanism("foo", "Foo", "x")
+
+    ms = h.MechanismStandard("foo")
+    print(ms.get("x_foo"))
+
+    print("calling mkmodel")
+    s = mkmodel(["foo"])
+    print("return from mkmodel")
+    print(s(0.5).x_foo)
+    ms._in(s(0.5))
+    print(ms.get("x_foo"))
+    ms.set("x_foo", 6)
+    ms.out(s(0.5))
+    print(s(0.5).foo.x)
+    ms2 = h.MechanismStandard("foo")
+    ms2._in(ms)
+    assert ms2.get("x_foo") == ms.get("x_foo")
+    ms2.set("x_foo", 7)
+    ms2.out(ms)
+    assert ms.get("x_foo") == 7.0
 
 
 if __name__ == "__main__":
     test_mechstd1()
     test_mechstd2()
+    test_mechstd3()
+    test_mechstd4()

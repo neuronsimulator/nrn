@@ -9,12 +9,10 @@ class NrnNodeImpl;
 
 class NrnProperty {
   public:
-    NrnProperty(int mechtype);
     NrnProperty(const char*);
     virtual ~NrnProperty();
     const char* name() const;
     int type() const;
-    bool is_point() const;
     bool deleteable();
 
     Symbol* first_var();
