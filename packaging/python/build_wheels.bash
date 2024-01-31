@@ -103,7 +103,18 @@ build_wheel_linux() {
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
 
-    python -m build --wheel --no-isolation
+    if [ -n "${setup_args}" ]; then
+        python -m build --wheel --no-isolation \
+            --config-setting="--global-option=build_ext" \
+            --config-setting="--global-option=${setup_args}" \
+            --config-setting="--global-option=--cmake-defs=${CMAKE_DEFS}" \
+            --config-setting='--global-option=--cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline"'
+    else
+        python -m build --wheel --no-isolation \
+            --config-setting="--global-option=build_ext" \
+            --config-setting="--global-option=--cmake-defs=${CMAKE_DEFS}" \
+            --config-setting='--global-option=--cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline"'
+    fi
 
     # For CI runs we skip wheelhouse repairs
     if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
@@ -175,7 +186,18 @@ build_wheel_osx() {
       fi
     fi
 
-    python -m build --wheel --no-isolation
+    if [ -n "${setup_args}" ]; then
+        python -m build --wheel --no-isolation \
+            --config-setting="--global-option=build_ext" \
+            --config-setting="--global-option=${setup_args}" \
+            --config-setting="--global-option=--cmake-defs=${CMAKE_DEFS}" \
+            --config-setting='--global-option=--cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11"'
+    else
+        python -m build --wheel --no-isolation \
+            --config-setting="--global-option=build_ext" \
+            --config-setting="--global-option=--cmake-defs=${CMAKE_DEFS}" \
+            --config-setting='--global-option=--cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11"'
+    fi
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
