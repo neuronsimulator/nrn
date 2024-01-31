@@ -15,6 +15,7 @@ add_library(
   NegExp.cpp
   Normal.cpp
   nrnisaac.cpp
+  NrnRandom123RNG.cpp
   nrnran123.cpp
   Poisson.cpp
   Rand.cpp

@@ -17,8 +17,6 @@
 #include "ocobserv.h"
 #include <nrnran123.h>
 
-#include <ACG.h>
-#include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
@@ -32,9 +30,7 @@
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
-#include <Isaac64RNG.hpp>
 #include <NrnRandom123RNG.hpp>
-#include <MCellRan4RNG.hpp>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -115,86 +111,6 @@ static void r_destruct(void* r) {
 // syntax:
 // r.ACG([seed],[size])
 
-static double r_ACG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed = 0;
-    int size = 55;
-
-    if (ifarg(1))
-        seed = long(*getarg(1));
-    if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
-
-    x->rand->generator(new ACG(seed, size));
-    x->type_ = 0;
-    delete x->gen;
-    x->gen = x->rand->generator();
-    return 1.;
-}
-
-// Use a Multiplicative Linear Congruential Generator.  Not as high
-// quality as the ACG, but uses only 8 bytes
-// syntax:
-// r.MLCG([seed1],[seed2])
-
-static double r_MLCG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
-
-    if (ifarg(1))
-        seed1 = long(*getarg(1));
-    if (ifarg(2))
-        seed2 = long(*getarg(2));
-
-    x->rand->generator(new MLCG(seed1, seed2));
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 1;
-    return 1.;
-}
-
-static double r_MCellRan4(void* r) {
-    Rand* x = (Rand*) r;
-
-    uint32_t seed1 = 0;
-    uint32_t ilow = 0;
-
-    if (ifarg(1))
-        seed1 = (uint32_t) (chkarg(1, 0., dmaxuint));
-    if (ifarg(2))
-        ilow = (uint32_t) (chkarg(2, 0., dmaxuint));
-    MCellRan4* mcr = new MCellRan4(seed1, ilow);
-    x->rand->generator(mcr);
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 2;
-    return (double) mcr->orig_;
-}
-
-long nrn_get_random_sequence(Rand* r) {
-    assert(r->type_ == 2);
-    MCellRan4* mcr = (MCellRan4*) r->gen;
-    return mcr->ihigh_;
-}
-
-void nrn_set_random_sequence(Rand* r, long seq) {
-    assert(r->type_ == 2);
-    MCellRan4* mcr = (MCellRan4*) r->gen;
-    mcr->ihigh_ = seq;
-}
-
-int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
-    if (r->type_ == 4) {
-        NrnRandom123* nr = (NrnRandom123*) r->gen;
-        nrnran123_getids3(nr->s_, id1, id2, id3);
-        return 1;
-    }
-    return 0;
-}
-
 static double r_nrnran123(void* r) {
     Rand* x = (Rand*) r;
     uint32_t id1 = 0;
@@ -214,8 +130,45 @@ static double r_nrnran123(void* r) {
     }
     delete x->gen;
     x->gen = x->rand->generator();
-    x->type_ = 4;
     return 0.;
+}
+
+static double r_ACG(void* r) {
+    r_nrnran123(r);
+    return 1.;
+}
+
+// Use a Multiplicative Linear Congruential Generator.  Not as high
+// quality as the ACG, but uses only 8 bytes
+// syntax:
+// r.MLCG([seed1],[seed2])
+
+static double r_MLCG(void* r) {
+    r_nrnran123(r);
+    return 1.;
+}
+
+static double r_MCellRan4(void* r) {
+    return r_nrnran123(r);
+}
+
+static double r_Isaac64(void* r) {
+    return r_nrnran123(r);
+}
+
+
+long nrn_get_random_sequence(Rand* r) {
+    auto* gen = static_cast<NrnRandom123*>(r->gen);
+    return gen->get_seq();
+}
+
+void nrn_set_random_sequence(Rand* r, long seq) {
+    auto* gen = static_cast<NrnRandom123*>(r->gen);
+    gen->set_seq(seq);
+}
+
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+    return 1;
 }
 
 static double r_ran123_globalindex(void* r) {
@@ -228,69 +181,27 @@ static double r_ran123_globalindex(void* r) {
 
 static double r_sequence(void* r) {
     Rand* x = (Rand*) r;
-    if (x->type_ != 2 && x->type_ != 4) {
-        hoc_execerror(
-            "Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
-    }
-
-    if (x->type_ == 4) {
-        uint32_t seq;
-        char which;
-        if (ifarg(1)) {
-            double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
-            seq = (uint32_t) (s / 4.);
-            which = char(s - seq * 4.);
-            NrnRandom123* nr = (NrnRandom123*) x->gen;
-            nrnran123_setseq(nr->s_, seq, which);
-        }
-        nrnran123_getseq(((NrnRandom123*) x->gen)->s_, &seq, &which);
-        return double(seq) * 4. + double(which);
-    }
-
-    MCellRan4* mcr = (MCellRan4*) x->gen;
+    uint32_t seq;
+    char which;
     if (ifarg(1)) {
-        mcr->ihigh_ = (long) (*getarg(1));
+        double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
+        seq = (uint32_t) (s / 4.);
+        which = char(s - seq * 4.);
+        NrnRandom123* nr = (NrnRandom123*) x->gen;
+        nrnran123_setseq(nr->s_, seq, which);
     }
-    return (double) mcr->ihigh_;
+    nrnran123_getseq(((NrnRandom123*) x->gen)->s_, &seq, &which);
+    return double(seq) * 4. + double(which);
 }
 
 int nrn_random123_setseq(Rand* r, uint32_t seq, char which) {
-    if (r->type_ != 4) {
-        return 0;
-    }
     nrnran123_setseq(((NrnRandom123*) r->gen)->s_, seq, which);
     return 1;
 }
 
 int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
-    if (r->type_ != 4) {
-        return 0;
-    }
     nrnran123_getseq(((NrnRandom123*) r->gen)->s_, seq, which);
     return 1;
-}
-
-static double r_Isaac64(void* r) {
-    Rand* x = (Rand*) r;
-
-    uint32_t seed1 = 0;
-
-    if (ifarg(1)) {
-        seed1 = static_cast<uint32_t>(*getarg(1));
-    }
-
-    double seed{};
-    try {
-        Isaac64* mcr = new Isaac64(seed1);
-        x->rand->generator(mcr);
-        delete x->gen;
-        x->gen = x->rand->generator();
-        x->type_ = 3;
-        seed = mcr->seed();
-    } catch (const std::bad_alloc& e) {
-        hoc_execerror("Bad allocation for Isaac64 generator", e.what());
-    }
-    return seed;
 }
 
 // Pick again from the distribution last used
