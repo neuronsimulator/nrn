@@ -103,7 +103,6 @@ set(OC_FILE_LIST
     ocerf.cpp
     plot.cpp
     plt.cpp
-    regexp.cpp
     scoprand.cpp
     settext.cpp
     symbol.cpp
