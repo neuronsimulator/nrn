@@ -1,7 +1,7 @@
 #include "hocdec.h"
 #include "nrnran123.h"
 
-static nrnran123_State* state = nrnran123_newstream(0, 0);
+static const nrnran123_State* state = nrnran123_newstream(0, 0);
 
 void hoc_mcran4() {
     uint32_t idx;
