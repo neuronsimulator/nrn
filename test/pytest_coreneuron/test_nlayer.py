@@ -36,7 +36,7 @@ class Model:
         return res
 
 
-def test_nlayer():
+def get_result():
     res = []
     for nlayer in [1, 2, 3]:
         h.nlayer_extracellular(nlayer)
@@ -44,16 +44,20 @@ def test_nlayer():
         m = Model()
         res.append(m.run())
         del m
+    return res
+
+
+def test_nlayer():
+    res = get_result()
     for r in res[1:]:
         for i in range(2):
             x = r[i].c().sub(res[0][i]).abs().sum()
             print(x)
             assert x < 0.01  # At 10ms. At 5ms would be 2e-5
-    return res
 
 
 if __name__ == "__main__":
-    res = test_nlayer()
+    res = get_result()
     for i in range(len(res[0][0])):
         for j in range(2):
             for k in range(3):
