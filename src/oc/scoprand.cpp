@@ -58,7 +58,7 @@ static uint32_t value = 1;
  *--------------------------------------------------------------------------- */
 
 double scop_random(void) {
-    auto* rng = nrnran123_newstream(value, 0);
+    auto *rng = nrnran123_newstream(value, 0);
     return nrnran123_dblpick(rng);
 }
 
