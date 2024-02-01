@@ -6,6 +6,7 @@ add_library(
   Geom.cpp
   HypGeom.cpp
   LogNorm.cpp
+  mcran4.cpp
   NegExp.cpp
   Normal.cpp
   NrnRandom123RNG.cpp

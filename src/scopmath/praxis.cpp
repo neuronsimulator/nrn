@@ -1,12 +1,12 @@
 #include <../../nrnconf.h>
+#include "mcran4.h"
+#include "oc_ansi.h"
+#include "scoplib.h"
+
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
-
-#include "oc_ansi.h"
-#include "scoplib.h"
-#include <nrnran123.h>
 
 #undef small
 
@@ -1730,7 +1730,55 @@ L3:
 
 uint32_t nrn_praxis_ran_index;
 
-static doublereal random_(integer* /* naught */) {
-    auto *rng = nrnran123_newstream(nrn_praxis_ran_index, 0);
-    return nrnran123_dblpick(rng);
-}
+static doublereal random_(integer* naught) {
+    double x;
+    return mcell_ran4(&nrn_praxis_ran_index, &x, 1, 1.);
+#if 0
+    /* Initialized data */
+
+    static logical init = FALSE_;
+
+    /* System generated locals */
+    doublereal ret_val;
+
+    /* Local variables */
+    static doublereal half;
+    static integer i, j, q, r;
+    static doublereal ran1;
+    static integer ran2;
+    static doublereal ran3[127];
+
+    if (init) {
+	goto L3;
+    }
+    r = *naught % 8190 + 1;
+    ran2 = 128;
+    for (i = 1; i <= 127; ++i) {
+	--ran2;
+	ran1 = -36028797018963968.;
+	for (j = 1; j <= 7; ++j) {
+	    r = r * 1756 % 8191;
+	    q = r / 32;
+/* L1: */
+	    ran1 = (ran1 + q) * .00390625;
+	}
+/* L2: */
+	ran3[ran2 - 1] = ran1;
+    }
+    init = TRUE_;
+L3:
+    if (ran2 == 1) {
+	ran2 = 128;
+    }
+    --ran2;
+    ran1 += ran3[ran2 - 1];
+    half = .5;
+    if (ran1 >= 0.) {
+	half = -half;
+    }
+    ran1 += half;
+    ran3[ran2 - 1] = ran1;
+    ret_val = ran1 + .5;
+    return ret_val;
+#endif
+} /* random_ */

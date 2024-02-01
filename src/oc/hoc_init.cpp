@@ -255,6 +255,7 @@ void hoc_init(void) /* install constants and built-ins table */
         }
     }
 
+    set_use_mcran4(false);
     nrn_xopen_broadcast_ = 255;
     extern void hoc_init_space(void);
     hoc_init_space();

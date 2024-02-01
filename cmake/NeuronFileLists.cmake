@@ -9,6 +9,7 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
+    gnu/mcran4.h
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h

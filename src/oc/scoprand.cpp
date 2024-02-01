@@ -23,7 +23,8 @@ static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
 #endif
 
 #include <math.h>
-#include "nrnran123.h"
+#include "oc_mcran4.hpp"
+#include "mcran4.h"
 #include "scoplib.h"
 static uint32_t value = 1;
 
@@ -58,8 +59,17 @@ static uint32_t value = 1;
  *--------------------------------------------------------------------------- */
 
 double scop_random(void) {
-    auto *rng = nrnran123_newstream(value, 0);
-    return nrnran123_dblpick(rng);
+    if (use_mcran4()) {
+        /*perhaps 4 times slower but much higher quality*/
+        return mcell_ran4a(&value);
+    } else {
+        uint32_t a = 2147437301, c = 453816981,
+                 /* m = 2^32 - 1, the largest long int value that can be represented */
+            /*m = 0xFFFFFFFF;*/ /* limited to 32 bit integers*/
+            m = ~0;
+        value = a * value + c;
+        return (fabs((double) value / (double) m));
+    }
 }
 
 /*-----------------------------------------------------------------------------
