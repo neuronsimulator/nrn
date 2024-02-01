@@ -10,6 +10,7 @@
  *        we leave to nocmodl.
  */
 #include "bbsavestate.h"
+#include "mcran4.h"
 #include "nrncvode.h"
 #include "nrnran123.h"
 #include "nrnrandom.h"
