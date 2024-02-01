@@ -27,17 +27,15 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  * use these in place of the ones that libg++ used to provide. 
  */
 #include <cstdint>
-#include <cassert>
-#include <cmath>
 
 union PrivateRNGSingleType {		   	// used to access floats as unsigneds
     float s;
-    uint32_t u;
+    std::uint32_t u;
 };
 
 union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
     double d;
-    uint32_t u[2];
+    std::uint32_t u[2];
 };
 
 //
@@ -52,7 +50,7 @@ public:
     //
     // Return a long-words word of random bits
     //
-    virtual uint32_t asLong() = 0;
+    virtual std::uint32_t asLong() = 0;
     virtual void reset() = 0;
     //
     // Return random bits converted to either a float or a double

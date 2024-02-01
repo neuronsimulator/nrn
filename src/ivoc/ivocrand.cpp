@@ -30,6 +30,7 @@
 #include <HypGeom.h>
 #include <Weibull.h>
 #include <NrnRandom123RNG.hpp>
+#include <MCellRan4RNG.hpp>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -129,6 +130,7 @@ static double r_nrnran123(void* r) {
     }
     delete x->gen;
     x->gen = x->rand->generator();
+    x->type_ = 4;
     return 0.;
 }
 
@@ -148,7 +150,23 @@ static double r_MLCG(void* r) {
 }
 
 static double r_MCellRan4(void* r) {
-    return r_nrnran123(r);
+    auto* x = static_cast<Rand*>(r);
+
+    std::uint32_t seed1 = 0;
+    std::uint32_t ilow = 0;
+
+    if (ifarg(1)) {
+        seed1 = static_cast<std::uint32_t>(chkarg(1, 0., dmaxuint));
+    }
+    if (ifarg(2)) {
+        ilow = static_cast<std::uint32_t>(chkarg(2, 0., dmaxuint));
+    }
+    MCellRan4* mcr = new MCellRan4(seed1, ilow);
+    x->rand->generator(mcr);
+    delete x->gen;
+    x->gen = x->rand->generator();
+    x->type_ = 2;
+    return static_cast<double>(mcr->orig_);
 }
 
 static double r_Isaac64(void* r) {
@@ -157,16 +175,25 @@ static double r_Isaac64(void* r) {
 
 
 long nrn_get_random_sequence(Rand* r) {
-    auto* gen = static_cast<NrnRandom123*>(r->gen);
-    return gen->get_seq();
+    nrn_assert(r->type_ == 2);
+    auto* mcr = static_cast<MCellRan4*>(r->gen);
+    return mcr->ihigh_;
 }
 
+
 void nrn_set_random_sequence(Rand* r, long seq) {
-    auto* gen = static_cast<NrnRandom123*>(r->gen);
-    gen->set_seq(seq);
+    nrn_assert(r->type_ == 2);
+    auto* mcr = static_cast<MCellRan4*>(r->gen);
+    mcr->ihigh_ = seq;
 }
 
 int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+    if (r->type_ != 4) {
+        return 0;
+    }
+
+    auto* nr = static_cast<NrnRandom123*>(r->gen);
+    nrnran123_getids3(nr->s_, id1, id2, id3);
     return 1;
 }
 
@@ -179,26 +206,39 @@ static double r_ran123_globalindex(void* r) {
 }
 
 static double r_sequence(void* r) {
-    Rand* x = (Rand*) r;
-    uint32_t seq;
-    char which;
-    if (ifarg(1)) {
-        double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
-        seq = (uint32_t) (s / 4.);
-        which = char(s - seq * 4.);
-        NrnRandom123* nr = (NrnRandom123*) x->gen;
-        nrnran123_setseq(nr->s_, seq, which);
+    auto* x = static_cast<Rand*>(r);
+    if (x->type_ == 4) {
+        std::uint32_t seq;
+        char which;
+        if (ifarg(1)) {
+            double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
+            seq = (uint32_t) (s / 4.);
+            which = char(s - seq * 4.);
+            NrnRandom123* nr = (NrnRandom123*) x->gen;
+            nrnran123_setseq(nr->s_, seq, which);
+        }
+        nrnran123_getseq(((NrnRandom123*) x->gen)->s_, &seq, &which);
+        return double(seq) * 4. + double(which);
     }
-    nrnran123_getseq(((NrnRandom123*) x->gen)->s_, &seq, &which);
-    return double(seq) * 4. + double(which);
+    auto* mcr = static_cast<MCellRan4*>(x->gen);
+    if (ifarg(1)) {
+        mcr->ihigh_ = static_cast<long>(*getarg(1));
+    }
+    return static_cast<double>(mcr->ihigh_);
 }
 
 int nrn_random123_setseq(Rand* r, uint32_t seq, char which) {
+    if (r->type_ != 4) {
+        return 0;
+    }
     nrnran123_setseq(((NrnRandom123*) r->gen)->s_, seq, which);
     return 1;
 }
 
 int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
+    if (r->type_ != 4) {
+        return 0;
+    }
     nrnran123_getseq(((NrnRandom123*) r->gen)->s_, seq, which);
     return 1;
 }

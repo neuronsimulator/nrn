@@ -5,11 +5,19 @@
 
 struct Object;
 
+/* type_:
+ * 0: ACG (unused)
+ * 1: MLCG (unused)
+ * 2: MCellRan4
+ * 3: Isaac64 (unused)
+ * 4: Random123
+ */
 class Rand {
   public:
     Rand(unsigned long seed = 0, int size = 55, Object* obj = nullptr);
     ~Rand();
     RNG* gen;
     Random* rand;
+    int type_;
     Object* obj_;
 };
