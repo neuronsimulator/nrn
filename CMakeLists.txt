@@ -207,7 +207,7 @@ include(cmake/modules/FindPythonModule.cmake)
 include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
-set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast Debug)
 include(ReleaseDebugAutoFlags)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
