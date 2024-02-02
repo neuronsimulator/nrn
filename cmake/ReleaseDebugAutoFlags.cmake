@@ -21,6 +21,9 @@ endif()
 # Release : Release mode, no debuginfo
 # RelWithDebInfo : Distribution mode, basic optimizations for portable code with debuginfos
 # Fast : Maximum level of optimization. Target native architecture, not portable code
+# FastDebug: Similar to Debug with a bit higher level optimisations (-O1) and other compiler
+#            flags so that it's faster than -O0 but still produces consistent results for
+#            testing and debugging purposes.
 # ~~~
 
 include(CompilerFlagsHelpers)
