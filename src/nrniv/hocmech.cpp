@@ -277,7 +277,6 @@ void make_mechanism() {
 }
 
 void make_pointprocess() {
-    char buf[256];
     int i, cnt, type, ptype;
     Symbol *sp, *s2;
     char* classname = gargstr(1);
