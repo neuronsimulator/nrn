@@ -87,6 +87,11 @@ struct MechanismRange {
         return std::next(m_data_ptrs[variable], array_size * (m_offset + instance));
     }
 
+    template <int variable, int array_size>
+    [[nodiscard]] double* data_array_ptr() {
+        return data_array(0);
+    }
+
     /**
      * @brief Get a RANGE variable value.
      * @tparam variable The index of the RANGE variable in the mechanism.
@@ -97,6 +102,11 @@ struct MechanismRange {
     template <int variable>
     [[nodiscard]] double& fpfield(std::size_t instance) {
         return *data_array<variable, 1>(instance);
+    }
+
+    template <int variable>
+    [[nodiscard]] double* fpfield_ptr() {
+        return data_array<variable, 1>(0);
     }
 
     /**
@@ -122,6 +132,12 @@ struct MechanismRange {
     [[nodiscard]] double* dptr_field(std::size_t instance) {
         static_assert(variable < NumDatumFields);
         return m_pdata_ptrs[variable][m_offset + instance];
+    }
+
+    template <int variable>
+    [[nodiscard]] double* const* dptr_field_ptr() {
+        static_assert(variable < NumDatumFields);
+        return m_pdata_ptrs[variable] + m_offset;
     }
 
   protected:
