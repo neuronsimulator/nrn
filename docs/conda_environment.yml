@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.10
+  - packaging=21.3
   - bison
   - cmake
   - xorg-libxcomposite
