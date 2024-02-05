@@ -14,3 +14,4 @@ plotly
 nbsphinx
 jinja2
 sphinx-design
+packaging==21.3
