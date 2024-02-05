@@ -7,6 +7,7 @@
 */
 
 #include <sstream>
+#include <mutex>
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
