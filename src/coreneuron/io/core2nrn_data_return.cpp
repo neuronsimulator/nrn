@@ -185,9 +185,10 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
 }
 
 // based on code from nrncore_callbacks.cpp
-static std::unordered_map<int, std::vector<int>> mech_random_indices{};
 std::vector<int>& nrn_mech_random_indices(int type) {
-    // not threadsafe until after first call for a type
+    static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+    static std::mutex mx;
+    std::unique_lock<std::mutex> lock(mx);
     if (mech_random_indices.count(type) == 0) {
         // if no element, create empty one and search dparam_semantics to fill
         auto& mri = mech_random_indices[type];
@@ -199,6 +200,7 @@ std::vector<int>& nrn_mech_random_indices(int type) {
             }
         }
     }
+    lock.unlock();
     return mech_random_indices[type];
 }
 
