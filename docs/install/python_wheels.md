@@ -35,9 +35,21 @@ Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
-### Building the docker image automatically
-Any workflow that runs on gitlab will now have the `mac_m1_container_build` job added to it. This job needs to be started manually and will not affect the overal workflow status. It doesn't need to be run every time, just when a refresh of the container image is necessary.
-It will build the container image and push to docker hub on our M1 runner. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
+### Building the docker images automatically
+If you run the workflow manually on Gitlab (with the "Run pipeline" button), it will now have the `mac_m1_container_build` and `x86_64_container_build` jobs added to it. These jobs need to be started manually and will not affect the overal workflow status. They don't need to be run every time, just when a refresh of the container images is necessary.
+They will build the container images and push to docker hub. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
+
+A word of warning: podman on OSX uses a virtual machine. The job can take care of starting it, but we generally try to have it running to avoid jobs cleaning up after themselves and killing the machine for other jobs. When starting the machine, set the variables that need to be set during the container build, ie. proxy and `BUILDAH_FORMAT`.
+
+`BUILDAH_FORMAT` ensures that `ONBUILD` instructions are enabled.
+
+```
+export http_proxy=http://bbpproxy.epfl.ch:80
+export https_proxy=http://bbpproxy.epfl.ch:80
+export HTTP_PROXY=http://bbpproxy.epfl.ch:80
+export HTTPS_PROXY=http://bbpproxy.epfl.ch:80
+export BUILDAH_FORMAT=docker
+```
 
 ### Building the docker image manually
 After making updates to any of the docker files, you can build the image with:
