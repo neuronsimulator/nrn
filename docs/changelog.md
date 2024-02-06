@@ -6,6 +6,7 @@ _Release Date_ : 06-02-2024
 
 ### What's New
 
+This release brings no new features, just bugfixes and minor improvements.
 
 
 ### Bug Fixes
