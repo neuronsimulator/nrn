@@ -10,7 +10,6 @@ Python RXD tutorials
    basic-initialization
    Changing initial conditions and parameters
    thresholds
-   extracellular
    Restricting reactions to certain sections
 
 .. toctree::
