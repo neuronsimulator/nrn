@@ -55,25 +55,25 @@ enum class Status : enum_type {
     empty = 0,
 
     /// converted to local
-    localized = 1L << 0,
+    localized = 1LL << 0,
 
     /// converted to global
-    globalized = 1L << 1,
+    globalized = 1LL << 1,
 
     /// inlined
-    inlined = 1L << 2,
+    inlined = 1LL << 2,
 
     /// renamed
-    renamed = 1L << 3,
+    renamed = 1LL << 3,
 
     /// created
-    created = 1L << 4,
+    created = 1LL << 4,
 
     /// derived from state
-    from_state = 1L << 5,
+    from_state = 1LL << 5,
 
     /// variable marked as thread safe
-    thread_safe = 1L << 6
+    thread_safe = 1LL << 6
 };
 
 /// usage of mod file as array or scalar
@@ -88,10 +88,10 @@ enum class VariableType : enum_type {
 /// variable usage within a mod file
 enum class Access : enum_type {
     /// variable is ready only
-    read = 1L << 0,
+    read = 1LL << 0,
 
     /// variable is written only
-    write = 1L << 1
+    write = 1LL << 1
 };
 
 
@@ -118,106 +118,106 @@ enum class NmodlType : enum_type {
     empty = 0,
 
     /// Local Variable
-    local_var = 1L << 0,
+    local_var = 1LL << 0,
 
     /// Global Variable
-    global_var = 1L << 1,
+    global_var = 1LL << 1,
 
     /// Range Variable
-    range_var = 1L << 2,
+    range_var = 1LL << 2,
 
     /// Parameter Variable
-    param_assign = 1L << 3,
+    param_assign = 1LL << 3,
 
     /// Pointer Type
-    pointer_var = 1L << 4,
+    pointer_var = 1LL << 4,
 
     /// Bbcorepointer Type
-    bbcore_pointer_var = 1L << 5,
+    bbcore_pointer_var = 1LL << 5,
 
     /// Extern Type
-    extern_var = 1L << 6,
+    extern_var = 1LL << 6,
 
     /// Prime Type
-    prime_name = 1L << 7,
+    prime_name = 1LL << 7,
 
     /// Assigned Definition
-    assigned_definition = 1L << 8,
+    assigned_definition = 1LL << 8,
 
     /// Unit Def
-    unit_def = 1L << 9,
+    unit_def = 1LL << 9,
 
     /// Read Ion
-    read_ion_var = 1L << 10,
+    read_ion_var = 1LL << 10,
 
     /// Write Ion
-    write_ion_var = 1L << 11,
+    write_ion_var = 1LL << 11,
 
     /// Non Specific Current
-    nonspecific_cur_var = 1L << 12,
+    nonspecific_cur_var = 1LL << 12,
 
     /// Electrode Current
-    electrode_cur_var = 1L << 13,
+    electrode_cur_var = 1LL << 13,
 
     /// Argument Type
-    argument = 1L << 14,
+    argument = 1LL << 14,
 
     /// Function Type
-    function_block = 1L << 15,
+    function_block = 1LL << 15,
 
     /// Procedure Type
-    procedure_block = 1L << 16,
+    procedure_block = 1LL << 16,
 
     /// Derivative Block
-    derivative_block = 1L << 17,
+    derivative_block = 1LL << 17,
 
     /// Linear Block
-    linear_block = 1L << 18,
+    linear_block = 1LL << 18,
 
     /// NonLinear Block
-    non_linear_block = 1L << 19,
+    non_linear_block = 1LL << 19,
 
     /// constant variable
-    constant_var = 1L << 20,
+    constant_var = 1LL << 20,
 
     /// Kinetic Block
-    kinetic_block = 1L << 21,
+    kinetic_block = 1LL << 21,
 
     /// FunctionTable Block
-    function_table_block = 1L << 22,
+    function_table_block = 1LL << 22,
 
     /// factor in unit block
-    factor_def = 1L << 23,
+    factor_def = 1LL << 23,
 
     /// neuron variable accessible in mod file
-    extern_neuron_variable = 1L << 24,
+    extern_neuron_variable = 1LL << 24,
 
     /// neuron solver methods and math functions
-    extern_method = 1L << 25,
+    extern_method = 1LL << 25,
 
     /// state variable
-    state_var = 1L << 26,
+    state_var = 1LL << 26,
 
     /// need to solve : used in solve statement
-    to_solve = 1L << 27,
+    to_solve = 1LL << 27,
 
     /// ion type
-    useion = 1L << 28,
+    useion = 1LL << 28,
 
     /// variable is used in table statement
-    table_statement_var = 1L << 29,
+    table_statement_var = 1LL << 29,
 
     /// variable is used in table as assigned
-    table_assigned_var = 1L << 30,
+    table_assigned_var = 1LL << 30,
 
     /// Discrete Block
-    discrete_block = 1L << 31,
+    discrete_block = 1LL << 31,
 
     /// Define variable / macro
-    define = 1L << 32,
+    define = 1LL << 32,
 
     /// Codegen specific variable
-    codegen_var = 1L << 33
+    codegen_var = 1LL << 33
 };
 
 template <typename T>
