@@ -26,12 +26,12 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 function(get_link_libraries libs)
   # CMake does some magic to transform sys libs to -l<libname>. We replicate it
   foreach(link_lib ${libs})
-    # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
-    # from OSX can be skipped
+    # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub
+    # libraries from OSX can be skipped
     if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
       continue()
     endif()
-  
+
     get_filename_component(dir_path ${link_lib} DIRECTORY)
     if(TARGET ${link_lib})
       get_property(
@@ -45,10 +45,10 @@ function(get_link_libraries libs)
       # ${compile_flag})
       foreach(sublink_lib ${sublink_flag})
         if(TARGET ${sublink_lib})
-            message(NOTICE "For '${link_lib}' going to see TARGET '${sublink_lib}' recursively.")
-            get_link_libraries(${sublink_lib})
+          message(NOTICE "For '${link_lib}' going to see TARGET '${sublink_lib}' recursively.")
+          get_link_libraries(${sublink_lib})
         else()
-            set(link_flag "${link_flag} ${sublink_flag}")
+          set(link_flag "${link_flag} ${sublink_flag}")
         endif()
       endforeach()
     elseif(NOT dir_path)
