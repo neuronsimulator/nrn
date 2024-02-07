@@ -89,7 +89,7 @@ struct MechanismRange {
 
     template <int variable, int array_size>
     [[nodiscard]] double* data_array_ptr() {
-        return data_array(0);
+        return data_array<variable, array_size>(0);
     }
 
     /**
