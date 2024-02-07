@@ -224,4 +224,4 @@ You can build the entire documentation simply by using sphinx from
 
 .. code:: sh
 
-   python3 setup.py build_ext --inplace docs -G "Unix Makefiles"
+   python3 setup.py build_ext --inplace docs
