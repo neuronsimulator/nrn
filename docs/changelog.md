@@ -1,7 +1,7 @@
 # NEURON 8.2
 
 ## 8.2.4
-_Release Date_ : 06-02-2024
+_Release Date_ : 08-02-2024
 
 
 ### What's New
@@ -20,6 +20,10 @@ This release brings no new features, just bugfixes and minor improvements.
 - small bugfix for edge case in RX3D
 - unified setup.py
 - misc cmake improvements
+
+### Improvements /  Other Changes
+- Disabled RXD code in notebook to avoid breaking docs build (see [GitHub Issue #2710](https://github.com/neuronsimulator/nrn/issues/2710))
+- Disabled RXD tests on Windows (see [GitHub Issue #2585](https://github.com/neuronsimulator/nrn/issues/2585))
 
 
 For the complete list of commits check  [GitHub Issue #2700](https://github.com/neuronsimulator/nrn/issues/2700)
