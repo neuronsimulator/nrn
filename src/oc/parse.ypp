@@ -112,9 +112,9 @@ static void hoc_opasgn_invalid(int op);
 /* NEWCABLE */
 %token	<sym>	SECTIONKEYWORD SECTION CONNECTKEYWORD ACCESSKEYWORD
 %token	<sym>	RANGEVAR MECHANISM INSERTKEYWORD FORALL NRNPNTVAR FORSEC IFSEC
-%token	<sym>	UNINSERTKEYWORD SETPOINTERKEYWORD SECTIONREF
+%token	<sym>	UNINSERTKEYWORD SETPOINTERKEYWORD SECTIONREF RANGEOBJ
 %type	<sym>	sectiondecl sectionname
-%type	<inst>	rangevar rangevar1 section section_or_ob
+%type	<inst>	rangevar rangevar1 section section_or_ob rangeobj rangeobj1
 /* END NEWCABLE */
 
 /* OOP */
@@ -202,6 +202,15 @@ asgn:	varname ROP expr
 	;
 
 /* OOP */
+
+rangeobj: rangeobj1
+		{ code(sec_access_push); codesym((Symbol *)0);}
+	| section '.' rangeobj1
+	;
+rangeobj1: RANGEOBJ {pushs($1); pushi(CHECK);} wholearray
+		{ $$ = $3;}
+	;
+
 object:	OBJECTVAR {pushi(OBJECTVAR);pushs($1); pushi(CHECK);} wholearray
 		{$$ = $3; code(hoc_objectvar); spop(); codesym($1);}
 	| OBJECTARG
@@ -216,6 +225,10 @@ object:	OBJECTVAR {pushi(OBJECTVAR);pushs($1); pushi(CHECK);} wholearray
 	| HOCOBJFUNCTION begin '(' arglist ')'
 		{ $$ = $2; code(call); codesym($1); codei($4);
 		  code(hoc_known_type); codei(OBJECTVAR); pushi(OBJECTVAR);}
+	| rangeobj
+		{ code(rangeobjevalmiddle); codesym(spop()); pushi(OBJECTVAR);}
+	| rangeobj '(' expr ')'
+		{TPD; code(rangeobjeval); codesym(spop()); pushi(OBJECTVAR);}
 	;
 
 ob: ob1 { spop(); }
@@ -975,7 +988,7 @@ ckvar: VAR
 anyname: STRING|VAR|UNDEF|FUNCTION|PROCEDURE|FUN_BLTIN|SECTION|RANGEVAR
 	|NRNPNTVAR|OBJECTVAR|TEMPLATE|OBFUNCTION|AUTO|AUTOOBJ|SECTIONREF
 	|MECHANISM|BLTIN|STRFUNCTION|HOCOBJFUNCTION|ITERATOR|STRINGFUNC
-	|OBJECTFUNC
+	|OBJECTFUNC|RANGEOBJ
 	;
 %%
 	/* end of grammar */

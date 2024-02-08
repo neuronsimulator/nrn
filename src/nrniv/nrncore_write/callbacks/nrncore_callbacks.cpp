@@ -258,7 +258,7 @@ int nrnthread_dat2_1(int tid,
         cg.ml_vdata_offset[j] = vdata_offset;
         int* ds = memb_func[type].dparam_semantics;
         for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
-            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == 0) {
+            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == -11 || ds[psz] == 0) {
                 // printf("%s ds[%d]=%d vdata_offset=%d\n", memb_func[type].sym->name, psz, ds[psz],
                 // vdata_offset);
                 vdata_offset += ml->nodecount;
@@ -332,6 +332,7 @@ int nrnthread_dat2_mech(int tid,
                         int*& nodeindices,
                         double*& data,
                         int*& pdata,
+                        std::vector<uint32_t>& nmodlrandom,  // 5 uint32_t per var per instance
                         std::vector<int>& pointer2type) {
     if (tid >= nrn_nthread) {
         return 0;
@@ -392,6 +393,32 @@ int nrnthread_dat2_mech(int tid,
         pdata = NULL;
     }
 
+    // nmodlrandom: reserve 5 uint32 for each var of each instance
+    // id1, id2, id3, seq, uint32_t(which)
+    // Header is number of random variables followed by dparam indices
+    // if no destructor, skip. There are no random variables.
+    if (nrn_mech_inst_destruct.count(type)) {
+        auto& indices = nrn_mech_random_indices(type);
+        nmodlrandom.reserve(1 + indices.size() + 5 * n * indices.size());
+        nmodlrandom.push_back(indices.size());
+        for (int ix: indices) {
+            nmodlrandom.push_back((uint32_t) ix);
+        }
+        for (int ix: indices) {
+            uint32_t data[5];
+            char which;
+            for (int i = 0; i < n; ++i) {
+                auto& datum = ml->pdata[i][ix];
+                nrnran123_State* r = (nrnran123_State*) datum.get<void*>();
+                nrnran123_getids3(r, &data[0], &data[1], &data[2]);
+                nrnran123_getseq(r, &data[3], &which);
+                data[4] = uint32_t(which);
+                for (auto j: data) {
+                    nmodlrandom.push_back(j);
+                }
+            }
+        }
+    }
     return 1;
 }
 
@@ -523,6 +550,37 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     return 1;
 }
 
+// NMODL RANDOM seq34 data return from coreneuron
+int core2nrn_nmodlrandom(int tid,
+                         int type,
+                         const std::vector<int>& indices,
+                         const std::vector<double>& nmodlrandom) {
+    if (tid >= nrn_nthread) {
+        return 0;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    // ARTIFICIAL_CELL are not in nt.
+    if (!ml) {
+        ml = CellGroup::deferred_type2artml_[tid][type];
+        assert(ml);
+    }
+
+    auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
+    assert(nrnindices == indices);
+    assert(nmodlrandom.size() == indices.size() * ml->nodecount);
+
+    int ir = 0;  // into nmodlrandom
+    for (const auto ix: nrnindices) {
+        for (int i = 0; i < ml->nodecount; ++i) {
+            auto& datum = ml->pdata[i][ix];
+            nrnran123_State* state = (nrnran123_State*) datum.get<void*>();
+            nrnran123_setseq(state, nmodlrandom[ir++]);
+        }
+    }
+    return 1;
+}
+
 int* datum2int(int type,
                Memb_list* ml,
                NrnThread& nt,
@@ -577,6 +635,8 @@ int* datum2int(int type,
             } else if (etype == -7) {  // bbcorepointer
                 pdata[jj] = ml_vdata_offset + eindex;
                 // printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
+            } else if (etype == -11) {  // random
+                pdata[jj] = ml_vdata_offset + eindex;
             } else {                   // uninterpreted
                 assert(eindex != -3);  // avoided if last
                 pdata[jj] = 0;
