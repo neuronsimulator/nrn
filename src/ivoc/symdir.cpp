@@ -1,8 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <InterViews/resource.h>
-#include <OS/list.h>
-#include <OS/string.h>
 #include <stdio.h>
 #include "ocobserv.h"
 #include "utils/enumerate.h"

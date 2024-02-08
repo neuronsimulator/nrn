@@ -2,8 +2,6 @@
 #include <map>
 #include <cstdio>
 #include <InterViews/resource.h>
-#include <OS/string.h>
-#include <OS/list.h>
 #include "hoclist.h"
 #if HAVE_IV
 #include "graph.h"
@@ -464,7 +462,12 @@ void HocDataPathImpl::search(Prop* prop, double x) {
         if (memb_func[type].hoc_mech) {
             pd = prop->ob->u.dataspace[ir].pval;
         } else {
-            pd = static_cast<double*>(prop->param_handle_legacy(ir));
+            if (type == EXTRACELL && ir == neuron::extracellular::vext_pseudoindex()) {
+                // skip as it was handled by caller
+                continue;
+            } else {
+                pd = static_cast<double*>(prop->param_handle_legacy(ir));
+            }
         }
         imax = hoc_total_array_data(psym, 0);
         for (i = 0; i < imax; ++i) {

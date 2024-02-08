@@ -153,7 +153,6 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_NRNIV_SRC_FILES}
     ${NRN_NRNOC_SRC_FILES}
     ${NRN_OC_SRC_FILES}
-    ${NRN_MESCH_SRC_FILES}
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
@@ -212,10 +211,8 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/parallel
     ${PROJECT_BINARY_DIR}/src/sundials
     ${PROJECT_BINARY_DIR}/src/sundials/shared
-    ${PROJECT_SOURCE_DIR}/external/Random123/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
-    ${PROJECT_SOURCE_DIR}/src/mesch
     ${PROJECT_SOURCE_DIR}/src/nrncvode
     ${PROJECT_SOURCE_DIR}/src/nrnmpi
     ${PROJECT_SOURCE_DIR}/src/nrnpython
@@ -328,12 +325,6 @@ if(NRN_USE_BACKWARD)
 endif()
 
 if(NRN_HAVE_NVHPC_COMPILER)
-  # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
-  # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 21.7)
-    set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
-                                                                                   -Mnovect)
-  endif()
   # For NVHPC we will rely on FE exceptions as opposed to errno in order to make use of faster
   # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
@@ -418,6 +409,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
+target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")

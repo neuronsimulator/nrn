@@ -1,7 +1,6 @@
 #ifndef ocfile_h
 #define ocfile_h
 
-#include <OS/string.h>
 #include <string>
 class File;
 class FileChooser;

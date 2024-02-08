@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include <OS/string.h>
 #include <InterViews/observe.h>
 #if HAVE_IV
 #include <InterViews/action.h>

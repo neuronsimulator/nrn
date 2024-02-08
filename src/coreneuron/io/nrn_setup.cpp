@@ -738,6 +738,16 @@ void nrn_cleanup() {
                 (*s)(nt, ml, tml->index);
             }
 
+            // Moved from below as priv_dtor is now deleting the RANDOM streams,
+            // and at this moment need an undeleted pdata.
+            // Destroy the global variables struct allocated in nrn_init
+            if (auto* const priv_dtor = corenrn.get_memb_func(tml->index).private_destructor) {
+                (*priv_dtor)(nt, ml, tml->index);
+                assert(!ml->instance);
+                assert(!ml->global_variables);
+                assert(ml->global_variables_size == 0);
+            }
+
             ml->data = nullptr;  // this was pointing into memory owned by nt
             free_memory(ml->pdata);
             ml->pdata = nullptr;
@@ -751,14 +761,6 @@ void nrn_cleanup() {
             if (ml->_thread) {
                 free_memory(ml->_thread);
                 ml->_thread = nullptr;
-            }
-
-            // Destroy the global variables struct allocated in nrn_init
-            if (auto* const priv_dtor = corenrn.get_memb_func(tml->index).private_destructor) {
-                (*priv_dtor)(nt, ml, tml->index);
-                assert(!ml->instance);
-                assert(!ml->global_variables);
-                assert(ml->global_variables_size == 0);
             }
 
             NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;

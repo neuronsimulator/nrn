@@ -9,6 +9,9 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/container/generic_data_handle.hpp neuron/container/non_owning_soa_identifier.hpp
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
+    gnu/mcran4.h
+    gnu/nrnisaac.h
+    gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
     nrnmpi/nrnmpidec.h
@@ -37,14 +40,12 @@ set(HEADER_FILES_TO_INSTALL
     oc/hocgetsym.h
     oc/hoclist.h
     oc/hocparse.h
-    oc/mcran4.h
     oc/mech_api.h
+    oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
-    oc/nrnisaac.h
     oc/nrnmpi.h
     oc/nrnrandom.h
-    oc/nrnran123.h
     oc/oc_ansi.h
     oc/ocfunc.h
     oc/ocmisc.h
@@ -68,8 +69,6 @@ set(HEADER_FILES_TO_INSTALL
     scopmath/sparse_thread.hpp
     scopmath/ssimplic.hpp
     scopmath/ssimplic_thread.hpp
-    sparse13/cspmatrix.h
-    sparse13/cspredef.h
     sparse13/spconfig.h
     sparse13/spmatrix.h)
 
@@ -79,15 +78,9 @@ set(HEADER_FILES_TO_INSTALL
 set(NRN_HEADERS_INCLUDE_LIST)
 
 # =============================================================================
-# Lists of random number related files
-# =============================================================================
-set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp)
-
-# =============================================================================
 # Files in oc directory
 # =============================================================================
 set(OC_FILE_LIST
-    ${RAN_FILE_LIST}
     audit.cpp
     axis.cpp
     code.cpp
@@ -103,12 +96,13 @@ set(OC_FILE_LIST
     hoc_oop.cpp
     list.cpp
     math.cpp
+    oc_mcran4.cpp
+    memory.cpp
     mswinprt.cpp
     nonlin.cpp
     ocerf.cpp
     plot.cpp
     plt.cpp
-    regexp.cpp
     scoprand.cpp
     settext.cpp
     symbol.cpp
@@ -222,7 +216,6 @@ set(NRNIV_FILE_LIST
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
-    geometry3d.cpp
     glinerec.cpp
     hocmech.cpp
     impedanc.cpp
@@ -235,6 +228,7 @@ set(NRNIV_FILE_LIST
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp
+    nmodlrandom.cpp
     nonlinz.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
@@ -315,76 +309,6 @@ nrn_create_file_list(
   spgmr.c
   sundialsmath.c)
 set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
-
-# meschach matrix sources
-set(MESCH_FILES_LIST
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    arnoldi.c
-    bdfactor.c
-    bkpfacto.c
-    chfactor.c
-    conjgrad.c
-    copy.c
-    dmacheps.c
-    err.c
-    extras.c
-    fft.c
-    givens.c
-    hessen.c
-    hsehldr.c
-    init.c
-    iter0.c
-    iternsym.c
-    itersym.c
-    ivecop.c
-    lanczos.c
-    lufactor.c
-    machine.c
-    matlab.c
-    matop.c
-    matrixio.c
-    meminfo.c
-    memory.c
-    memstat.c
-    mfunc.c
-    norm.c
-    otherio.c
-    pxop.c
-    qrfactor.c
-    schur.c
-    solve.c
-    sparse.c
-    sparseio.c
-    spbkp.c
-    spchfctr.c
-    splufctr.c
-    sprow.c
-    spswap.c
-    submat.c
-    svd.c
-    symmeig.c
-    update.c
-    vecop.c
-    version.c
-    zcopy.c
-    zfunc.c
-    zgivens.c
-    zhessen.c
-    zhsehldr.c
-    zlufctr.c
-    zmachine.c
-    zmatio.c
-    zmatlab.c
-    zmatop.c
-    zmemory.c
-    znorm.c
-    zqrfctr.c
-    zschur.c
-    zsolve.c
-    zvecop.c)
 
 set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
@@ -497,7 +421,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST listimpl.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
+set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
@@ -530,7 +454,6 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
-nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})

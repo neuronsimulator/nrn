@@ -3,9 +3,6 @@
 
 // allow communication between src/ivoc/symdir.cpp and src/nrniv/pysecname.cpp
 
-#include <OS/list.h>
-#include <OS/string.h>
-
 class SymbolItem {
   public:
     SymbolItem(const char*, int whole_array = 0);

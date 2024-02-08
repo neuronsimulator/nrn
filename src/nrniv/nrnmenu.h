@@ -1,7 +1,6 @@
 #ifndef nrnmenu_h
 #define nrnmenu_h
 
-#include <OS/string.h>
 #include "ndatclas.h"
 class MechTypeImpl;
 

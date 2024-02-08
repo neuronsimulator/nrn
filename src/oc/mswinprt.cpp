@@ -2,7 +2,9 @@
 
 #ifdef MINGW
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -146,11 +148,9 @@ void hoc_win_exec(void) {
 
 void hoc_winio_show(int b) {}
 
-#if !defined(__MWERKS__)
 int getpid() {
     return 1;
 }
-#endif
 
 void hoc_Plt() {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);

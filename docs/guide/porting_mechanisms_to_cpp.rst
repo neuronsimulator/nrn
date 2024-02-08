@@ -324,3 +324,27 @@ If your MOD files produce these deprecation warnings, make sure that the
 relevant method (``vector_capacity`` in this example) is being called with an
 argument of the correct type (``IvocVect*``), and not a type that is implicitly
 converted to ``void*``.
+
+Legacy random number generators and API
+---------------------------------------
+
+Various changes have also been done in the API of NEURON functions related to random 
+number generators.
+
+First, in |neuron_with_cpp_mechanisms| parameters passed to the functions need to be
+of the correct type as it was already mentioned in :ref:`function-decls-with-incorrect-types`.
+The most usual consequence of that is that NEURON random API functions that were taking as
+an argument a ``void*`` now need to called with a ``Rand*``. An example of the changes needed
+to fix this issue is given in `182129 <https://github.com/ModelDBRepository/182129/pull/1>`_.
+
+Another related change is with ``scop_rand()`` function that is usually used for defining a
+``URAND`` ``FUNCTION`` in mod files to return a number based on a uniform distribution from 0 to 1.
+This function now takes no argument anymore. An example of this change can also be found in
+`182129 <https://github.com/ModelDBRepository/182129/pull/1>`_.
+
+Finally, the preferred random number generator is ``Random123``. You can find more information
+about that in :meth:`Random.Random123` and :ref:`Randomness in NEURON models`. An example of the
+usage of ``Random123`` can be seen in `netstim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod>`_
+and its `corresponding test <https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_psolve.py#L60>`_.`
+Another important aspect of ``Random123`` is that it's supported in CoreNEURON as well. For more
+information about this see :ref:`Random Number Generators: Random123 vs MCellRan4`.

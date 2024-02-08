@@ -33,7 +33,6 @@ void iv_display_scale(float);
 #include "idraw.h"
 #include <InterViews/style.h>
 #endif
-#include <OS/string.h>
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
@@ -654,8 +653,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     nrn_optarg_on("-mpi", &our_argc, our_argv);
 
 #if (defined(NRNMECH_DLL_STYLE) || defined(WIN32))
-    String str;
 #if HAVE_IV
+    String str;
     if (session) {
         if (session->style()->find_attribute("nrnmechdll", str)) {
             nrn_mech_dll = str.string();

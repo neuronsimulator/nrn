@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+
+#include "memory.hpp"
 /**
  * \dir
  * \brief HOC Interpreter
@@ -37,6 +39,7 @@ union Objectdata;
 struct Symbol;
 struct Symlist;
 struct VoidFunc;
+struct Prop;
 
 namespace neuron {
 struct model_sorted_token;
@@ -49,9 +52,6 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-void* hoc_Emalloc(size_t size);
-void hoc_malchk();
 [[noreturn]] void hoc_execerror(const char*, const char*);
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
@@ -313,6 +313,8 @@ Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
 Object** hoc_temp_objptr(Object*);
 Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
+Object* nrn_pntproc_nmodlrandom_wrap(void* pnt, Symbol* sym);
+Object* nrn_nmodlrandom_wrap(Prop* prop, Symbol* sym);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);
 Object* hoc_obj_get(int i);
@@ -320,10 +322,6 @@ void hoc_obj_set(int i, Object*);
 void nrn_hoc_lock();
 void nrn_hoc_unlock();
 
-void* hoc_Erealloc(void* ptr, std::size_t size);
-
-void* nrn_cacheline_alloc(void** memptr, std::size_t size);
-void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
 [[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
@@ -363,8 +361,6 @@ int is_vector_arg(int);
 char* vector_get_label(IvocVect*);
 void vector_set_label(IvocVect*, char*);
 
-void hoc_regexp_compile(const char*);
-int hoc_regexp_search(const char*);
 Symbol* hoc_install_var(const char*, double*);
 void hoc_class_registration();
 void hoc_spinit();

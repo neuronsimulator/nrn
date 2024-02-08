@@ -721,6 +721,9 @@ void single_prop_free(Prop* p) {
         clear_point_process_struct(p);
         return;
     }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
+    }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
             notify_freed_val_array(&(p->dparam[2].literal_value<double>()), 6);

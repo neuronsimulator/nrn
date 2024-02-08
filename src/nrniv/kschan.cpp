@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <string.h>
 #include <stdlib.h>
-#include <OS/list.h>
 #include <math.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -12,10 +11,6 @@
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
-#if defined(__MWERKS__) && !defined(_MSC_VER)
-#include <extras.h>
-#define strdup _strdup
-#endif
 
 using KSChanList = std::vector<KSChan*>;
 static KSChanList* channels;

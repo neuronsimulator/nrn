@@ -2,7 +2,6 @@
 #define kschan_h
 
 #include <math.h>
-#include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "ivocvect.h"
 #include "nrnunits.h"

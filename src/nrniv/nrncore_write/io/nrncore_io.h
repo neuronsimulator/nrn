@@ -31,6 +31,8 @@ void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 void writeint_(int* p, size_t size, FILE* f);
 void writedbl_(double* p, size_t size, FILE* f);
 
+void write_uint32vec(std::vector<uint32_t>& vec, FILE* f);
+
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
 // also for read
