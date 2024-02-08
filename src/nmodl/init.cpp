@@ -91,6 +91,7 @@ static struct { /* Keywords */
                 {"MUTEXLOCK", NRNMUTEXLOCK},
                 {"MUTEXUNLOCK", NRNMUTEXUNLOCK},
                 {"REPRESENTS", REPRESENTS},
+                {"RANDOM", RANDOM},
                 {0, 0}};
 
 /*
@@ -153,6 +154,17 @@ static const char* extdef5[] = {/* the extdef names that are not threadsafe */
 #include "extdef5.h"
                                 0};
 
+/* random to nrnran123 functions */
+std::map<std::string, const char*> extdef_rand = {
+    {"random_setseq", "nrnran123_setseq"},
+    {"random_setids", "nrnran123_setids"},
+    {"random_uniform", "nrnran123_uniform"},
+    {"random_negexp", "nrnran123_negexp"},
+    {"random_normal", "nrnran123_normal"},
+    {"random_ipick", "nrnran123_ipick"},
+    {"random_dpick", "nrnran123_dblpick"},
+};
+
 List *constructorfunc, *destructorfunc;
 
 void init() {
@@ -196,6 +208,10 @@ void init() {
         s = lookup(extdef5[i]);
         assert(s);
         s->subtype |= EXTDEF5;
+    }
+    for (auto it: extdef_rand) {
+        s = install(it.first.c_str(), NAME);
+        s->subtype = EXTDEF_RANDOM;
     }
     intoken = newlist();
     initfunc = newlist();
