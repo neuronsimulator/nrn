@@ -19,6 +19,7 @@ About NMODL
    :caption: Contents:
 
    contents/visitors
+   contents/pointers
 
 .. toctree::
    :maxdepth: 3
