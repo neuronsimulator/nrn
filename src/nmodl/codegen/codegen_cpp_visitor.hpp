@@ -406,6 +406,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /*                     Common helper routines accross codegen functions                 */
     /****************************************************************************************/
 
+    /**
+     * Check if a structure for ion variables is required
+     * \return \c true if a structure fot ion variables must be generated
+     */
+    bool ion_variable_struct_required() const;
+
 
     /**
      * Generate the string representing the procedure parameter declaration
@@ -590,6 +596,56 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     std::vector<IndexVariableInfo> get_int_variables();
 
 
+    /**
+     * For a given output block type, return statements for all read ion variables
+     *
+     * \param type The type of code block being generated
+     * \return     A \c vector of strings representing the reading of ion variables
+     */
+    std::vector<std::string> ion_read_statements(BlockType type) const;
+
+
+    /**
+     * For a given output block type, return minimal statements for all read ion variables
+     *
+     * \param type The type of code block being generated
+     * \return     A \c vector of strings representing the reading of ion variables
+     */
+    std::vector<std::string> ion_read_statements_optimized(BlockType type) const;
+
+
+    /**
+     * For a given output block type, return statements for writing back ion variables
+     *
+     * \param type The type of code block being generated
+     * \return     A \c vector of strings representing the write-back of ion variables
+     */
+    std::vector<ShadowUseStatement> ion_write_statements(BlockType type);
+
+
+    /**
+     * Process shadow update statement
+     *
+     * If the statement requires reduction then add it to vector of reduction statement and return
+     * statement using shadow update
+     *
+     * \param statement The statement that might require shadow updates
+     * \param type      The target backend code block type
+     * \return          The generated target backend code
+     */
+    std::string process_shadow_update_statement(const ShadowUseStatement& statement,
+                                                BlockType type);
+
+
+    /**
+     * Determine the variable name for the "current" used in breakpoint block taking into account
+     * intermediate code transformations.
+     * \param current The variable name for the current used in the model
+     * \return        The name for the current to be printed in C++
+     */
+    std::string breakpoint_current(std::string current) const;
+
+
     /****************************************************************************************/
     /*                                Backend specific routines                             */
     /****************************************************************************************/
@@ -609,6 +665,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      */
     virtual void print_global_var_struct_decl();
 
+    /**
+     * Check if ion variable copies should be avoided
+     */
+    virtual bool optimize_ion_variable_copies() const = 0;
 
     /****************************************************************************************/
     /*                         Printing routines for code generation                        */
@@ -808,6 +868,16 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         return std::make_shared<symtab::Symbol>(name, ModToken());
     }
 
+    /**
+     * Generate Function call statement for nrn_wrote_conc
+     * \param ion_name      The name of the ion variable
+     * \param concentration The name of the concentration variable
+     * \param index
+     * \return              The string representing the function call
+     */
+    virtual std::string conc_write_statement(const std::string& ion_name,
+                                             const std::string& concentration,
+                                             int index) = 0;
 
     /****************************************************************************************/
     /*                  Code-specific printing routines for code generations                */
@@ -829,6 +899,13 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /****************************************************************************************/
     /*                         Routines for returning variable name                         */
     /****************************************************************************************/
+
+    /**
+     * Determine the updated name if the ion variable has been optimized
+     * \param name The ion variable name
+     * \return     The updated name of the variable has been optimized (e.g. \c ena --> \c ion_ena)
+     */
+    std::string update_if_ion_variable_name(const std::string& name) const;
 
 
     /**
@@ -885,6 +962,30 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      */
     virtual std::string get_variable_name(const std::string& name,
                                           bool use_instance = true) const = 0;
+
+
+    /**
+     * Return ion variable name and corresponding ion read variable name.
+     *
+     * Example:
+     *   {"ena", "ion_ena"} = read_ion_variable_name("ena");
+     *
+     * \param name The ion variable name
+     * \return     The ion read variable name
+     */
+    static std::pair<std::string, std::string> read_ion_variable_name(const std::string& name);
+
+
+    /**
+     * Return ion variable name and corresponding ion write variable name
+     *
+     * Example:
+     *   {"ion_ena", "ena"} = write_ion_variable_name("ena");
+     *
+     * \param name The ion variable name
+     * \return     The ion write variable name
+     */
+    static std::pair<std::string, std::string> write_ion_variable_name(const std::string& name);
 
 
     /****************************************************************************************/
