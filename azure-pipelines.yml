@@ -44,6 +44,8 @@ stages:
             python.version: '3.10'
           Python311:
             python.version: '3.11'
+          Python312:
+            python.version: '3.12'
       steps:
 
       # Secure files documentation:
@@ -106,6 +108,10 @@ stages:
           Python311:
             python.version: '3.11'
             python.org.version: '3.11.1'
+            python.installer.name: 'macos11.pkg'
+          Python312:
+            python.version: '3.12'
+            python.org.version: '3.12.2'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -198,7 +204,7 @@ stages:
               echo "Setting dropurl to $AZURE_DROP_URL"
               echo "##vso[task.setvariable variable=dropurl]$AZURE_DROP_URL"
             displayName: 'Resolve Azure drop URL'
-              
+
           - task: GitHubComment@0
             inputs:
               gitHubConnection: 'neuronsimulator'
