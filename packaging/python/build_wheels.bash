@@ -55,11 +55,12 @@ pip_numpy_install() {
       39) numpy_ver="numpy==1.19.3" ;;
       310) numpy_ver="numpy==1.21.3" ;;
       311) numpy_ver="numpy==1.23.5" ;;
+      312) numpy_ver="numpy==1.26.0" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
     # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' ]]; then
+    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver != 311 ]] && [[ $py_ver != 312 ]]; then
       numpy_ver="numpy==1.21.3"
     fi
 
@@ -132,7 +133,7 @@ build_wheel_osx() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install -U delocate -r packaging/python/build_requirements.txt
+    pip install -U 'delocate<0.10.4' -r packaging/python/build_requirements.txt
     pip_numpy_install
 
     echo " - Building..."
@@ -157,6 +158,12 @@ build_wheel_osx() {
     py_platform=$(python -c "import sysconfig; print('%s' % sysconfig.get_platform());")
 
     echo " - Python platform: ${py_platform}"
+    if [[ "${py_platform}" == "macosx"-*"-arm64" ]]; then
+        # This is a shortcut to have a successful delocate-wheel. See:
+        # https://github.com/matthew-brett/delocate/issues/153
+        python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"  | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
+        python -c "import os,delocate; print('LOOK HERE'); print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"
+    fi
     if [[ "${py_platform}" == *"-universal2" ]]; then
       if [[ `uname -m` == 'arm64' ]]; then
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/arm64}"
@@ -166,6 +173,7 @@ build_wheel_osx() {
         # This is a shortcut to have a successful delocate-wheel. See:
         # https://github.com/matthew-brett/delocate/issues/153
         python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"  | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
+        python -c "import os,delocate; print('LOOK HERE'); print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"
       else
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
         echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
