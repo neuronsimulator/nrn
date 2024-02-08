@@ -233,6 +233,8 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_PROCEDURE(token, pos);
     case Token::PROTECT:
         return Parser::make_PROTECT(token, pos);
+    case Token::RANDOM:
+        return Parser::make_RANDOM(token, pos);
     case Token::RANGE:
         return Parser::make_RANGE(token, pos);
     case Token::READ:

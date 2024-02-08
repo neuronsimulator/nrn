@@ -217,7 +217,10 @@ enum class NmodlType : enum_type {
     define = 1LL << 32,
 
     /// Codegen specific variable
-    codegen_var = 1LL << 33
+    codegen_var = 1LL << 33,
+
+    /// Randomvar Type
+    random_var = 1LL << 34
 };
 
 template <typename T>
@@ -249,7 +252,6 @@ inline T& operator&=(T& lhs, T rhs) {
     lhs = lhs & rhs;
     return lhs;
 }
-
 
 /// check if any property is set
 inline bool has_property(const NmodlType& obj, NmodlType property) {

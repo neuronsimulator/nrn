@@ -478,6 +478,8 @@ std::map<std::string, NmodlTestCase> const nmodl_valid_constructs{
                     POINTER rng1, rng2
                     BBCOREPOINTER rng3
                     EXTERNAL extvar
+                    RANDOM r1
+                    RANDOM r2, r3
                     THREADSAFE
                 }
             )"

@@ -10,6 +10,7 @@
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_utils.hpp"
 #include "visitors/rename_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
 namespace codegen {
@@ -145,7 +146,6 @@ bool CodegenCppVisitor::defined_method(const std::string& name) const {
     return function && function->has_any_property(properties);
 }
 
-
 int CodegenCppVisitor::float_variables_size() const {
     return codegen_float_variables.size();
 }
@@ -235,7 +235,20 @@ void CodegenCppVisitor::print_global_var_struct_decl() {
 
 void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
     const auto& name = node.get_node_name();
-    auto function_name = name;
+
+    // return C++ function name for RANDOM construct function
+    // e.g. nrnran123_negexp for random_negexp
+    auto get_renamed_random_function =
+        [&](const std::string& name) -> std::pair<std::string, bool> {
+        if (codegen::naming::RANDOM_FUNCTIONS_MAPPING.count(name)) {
+            return {codegen::naming::RANDOM_FUNCTIONS_MAPPING[name], true};
+        }
+        return {name, false};
+    };
+    std::string function_name;
+    bool is_random_function;
+    std::tie(function_name, is_random_function) = get_renamed_random_function(name);
+
     if (defined_method(name)) {
         function_name = method_name(name);
     }
@@ -263,6 +276,12 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         if (!arguments.empty()) {
             printer->add_text(", ");
         }
+    }
+
+    // first argument to random functions need to be type casted
+    // from void* to nrnran123_State*.
+    if (is_random_function && !arguments.empty()) {
+        printer->add_text("(nrnran123_State*)");
     }
 
     print_vector_elements(arguments, ", ");
@@ -684,6 +703,15 @@ void CodegenCppVisitor::update_index_semantics() {
         index += size;
     }
 
+    for (auto& var: info.random_variables) {
+        if (info.first_random_var_index == -1) {
+            info.first_random_var_index = index;
+        }
+        int size = var->get_length();
+        info.semantics.emplace_back(index, naming::RANDOM_SEMANTIC, size);
+        index += size;
+    }
+
     if (info.diam_used) {
         info.semantics.emplace_back(index++, naming::DIAM_VARIABLE, 1);
     }
@@ -861,6 +889,12 @@ std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
         } else {
             variables.emplace_back(make_symbol(name), true);
         }
+    }
+
+    for (const auto& var: info.random_variables) {
+        auto name = var->get_name();
+        variables.emplace_back(make_symbol(name), true);
+        variables.back().symbol->add_properties(NmodlType::random_var);
     }
 
     if (info.diam_used) {

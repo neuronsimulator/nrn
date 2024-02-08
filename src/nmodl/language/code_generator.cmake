@@ -139,6 +139,8 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/procedure_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/program.hpp
     ${PROJECT_BINARY_DIR}/src/ast/protect_statement.hpp
+    ${PROJECT_BINARY_DIR}/src/ast/random_var.hpp
+    ${PROJECT_BINARY_DIR}/src/ast/random_var_list.hpp
     ${PROJECT_BINARY_DIR}/src/ast/range.hpp
     ${PROJECT_BINARY_DIR}/src/ast/range_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/react_var_name.hpp

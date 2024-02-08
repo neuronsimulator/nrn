@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <map>
 #include <string>
+#include <unordered_map>
 
 
 namespace nmodl {
@@ -119,6 +119,9 @@ static constexpr char POINTER_SEMANTIC[] = "pointer";
 /// semantic type for core pointer variable
 static constexpr char CORE_POINTER_SEMANTIC[] = "bbcorepointer";
 
+/// semantic type for RANDOM variable
+static constexpr char RANDOM_SEMANTIC[] = "random";
+
 /// semantic type for net send call
 static constexpr char NET_SEND_SEMANTIC[] = "netsend";
 
@@ -174,7 +177,7 @@ static constexpr char NRN_POINTERINDEX[] = "hoc_nrnpointerindex";
 /// commonly used variables in verbatim block and how they
 /// should be mapped to new code generation backends
 // clang-format off
-        const std::map<std::string, std::string> VERBATIM_VARIABLES_MAPPING{
+        static const std::unordered_map<std::string, std::string> VERBATIM_VARIABLES_MAPPING{
                 {"_nt", "nt"},
                 {"_p", "data"},
                 {"_ppvar", "indexes"},
@@ -183,8 +186,18 @@ static constexpr char NRN_POINTERINDEX[] = "hoc_nrnpointerindex";
                 {"_cntml_padded", "pnodecount"},
                 {"_cntml", "nodecount"},
                 {"_tqitem", "tqitem"}};
-// clang-format on
 
+        // Functions available in NMODL with RANDOM construct and their mapping to
+        // C++ functions for Random123 interface.
+        static std::unordered_map<std::string, std::string> RANDOM_FUNCTIONS_MAPPING{
+                {"random_setseq", "nrnran123_setseq"},
+                {"random_setids", "nrnran123_setids"},
+                {"random_uniform", "nrnran123_uniform"},
+                {"random_negexp", "nrnran123_negexp"},
+                {"random_normal", "nrnran123_normal"},
+                {"random_ipick", "nrnran123_ipick"},
+                {"random_dpick", "nrnran123_dblpick"}};
+// clang-format on
 }  // namespace naming
 }  // namespace codegen
 }  // namespace nmodl

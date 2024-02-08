@@ -119,6 +119,9 @@ class PerfVisitor: public ConstAstVisitor {
     /// count of pointer / bbcorepointer variables
     int num_pointer_variables = 0;
 
+    /// count of RANDOM variables
+    int num_random_variables = 0;
+
     /// keys used in map to track var usage
     std::string const_memr_key = "cm_r_u";
     std::string const_memw_key = "cm_w_u";

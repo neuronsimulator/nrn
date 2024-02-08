@@ -324,8 +324,14 @@ struct CodegenInfo {
     /// pointer or bbcore pointer variables
     std::vector<SymbolType> pointer_variables;
 
+    /// RANDOM variables
+    std::vector<SymbolType> random_variables;
+
     /// index/offset for first pointer variable if exist
     int first_pointer_var_index = -1;
+
+    /// index/offset for first RANDOM variable if exist
+    int first_random_var_index = -1;
 
     /// tqitem index in integer variables
     /// note that if tqitem doesn't exist then the default value should be 0

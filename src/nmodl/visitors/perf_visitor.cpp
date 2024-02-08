@@ -256,6 +256,11 @@ void PerfVisitor::count_variables() {
     variables = current_symtab->get_variables_with_properties(property);
     num_pointer_variables = static_cast<int>(variables.size());
 
+    /// RANDOM variables have NmodlType::random_var
+    property = NmodlType::random_var;
+    variables = current_symtab->get_variables_with_properties(property);
+    num_random_variables = static_cast<int>(variables.size());
+
 
     /// number of global variables : parameters and pointers could appear also
     /// as range variables and hence need to filter out. But if anything declared
@@ -293,6 +298,7 @@ void PerfVisitor::print_memory_usage() {
 
     stream << "  STATE : " << num_state_variables;
     stream << "  POINTER : " << num_pointer_variables << std::endl;
+    stream << "  RANDOM : " << num_random_variables << std::endl;
 
     if (printer) {
         printer->push_block("MemoryInfo");
@@ -315,6 +321,10 @@ void PerfVisitor::print_memory_usage() {
 
         printer->push_block("Pointer");
         printer->add_node(std::to_string(num_pointer_variables), "total");
+        printer->pop_block();
+
+        printer->push_block("RANDOM");
+        printer->add_node(std::to_string(num_random_variables), "total");
         printer->pop_block();
 
         printer->pop_block();

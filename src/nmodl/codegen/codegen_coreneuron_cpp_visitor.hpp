@@ -606,6 +606,13 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print the getter method for index position of first RANDOM variable
+     *
+     */
+    void print_first_random_var_index_getter();
+
+
+    /**
      * Print the getter methods for float and integer variables count
      *
      */

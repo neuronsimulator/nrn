@@ -12,6 +12,7 @@
 #include <string>
 
 #include "ast/all.hpp"
+#include "codegen/codegen_naming.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/string_utils.hpp"
 #include "visitors/json_visitor.hpp"
@@ -279,6 +280,10 @@ std::string get_full_var_name(const ast::VarName& node) {
         full_var_name = node.get_node_name();
     }
     return full_var_name;
+}
+
+bool is_random_construct_function(const std::string& name) {
+    return codegen::naming::RANDOM_FUNCTIONS_MAPPING.count(name) != 0;
 }
 
 }  // namespace nmodl

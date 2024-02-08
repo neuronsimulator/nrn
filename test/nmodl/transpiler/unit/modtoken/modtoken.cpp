@@ -47,14 +47,14 @@ TEST_CASE("NMODL Lexer returning valid ModToken object", "[token][modtoken]") {
             std::stringstream ss;
             symbol_type("text", value);
             ss << *(value.get_token());
-            REQUIRE(ss.str() == "           text at [1.1-4] type 342");
+            REQUIRE(ss.str() == "           text at [1.1-4] type 343");
         }
 
         {
             std::stringstream ss;
             symbol_type("  some_text", value);
             ss << *(value.get_token());
-            REQUIRE(ss.str() == "      some_text at [1.3-11] type 342");
+            REQUIRE(ss.str() == "      some_text at [1.3-11] type 343");
         }
     }
 
@@ -64,7 +64,7 @@ TEST_CASE("NMODL Lexer returning valid ModToken object", "[token][modtoken]") {
             std::stringstream ss;
             symbol_type("h'' = ", value);
             ss << *(value.get_token());
-            REQUIRE(ss.str() == "            h'' at [1.1-3] type 349");
+            REQUIRE(ss.str() == "            h'' at [1.1-3] type 350");
             REQUIRE(value.get_order()->eval() == 2);
         }
     }

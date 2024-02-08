@@ -127,6 +127,7 @@
 %token  <ModToken>              PROCEDURE
 %token  <ModToken>              PROTECT
 %token  <ModToken>              RANGE
+%token  <ModToken>              RANDOM
 %token  <ModToken>              REACT1
 %token  <ModToken>              REACTION
 %token  <ModToken>              READ
@@ -293,6 +294,7 @@
 %type   <ast::GlobalVarVector>              global_var_list
 %type   <ast::PointerVarVector>             pointer_var_list
 %type   <ast::BbcorePointerVarVector>       bbcore_pointer_var_list
+%type   <ast::RandomVarVector>              random_var_list
 %type   <ast::ExternVarVector>              external_var_list
 %type   <ast::Valence*>                     valence
 %type   <ast::ExpressionStatement*>         initial_statement
@@ -1987,6 +1989,11 @@ neuron_statement :
                         $1.emplace_back(new ast::BbcorePointer($3));
                         $$ = $1;
                     }
+                |   neuron_statement RANDOM random_var_list
+                    {
+                        $1.emplace_back(new ast::RandomVarList($3));
+                        $$ = $1;
+                    }
                 |   neuron_statement EXTERNAL external_var_list
                     {
                         $1.emplace_back(new ast::External($3));
@@ -2191,6 +2198,23 @@ bbcore_pointer_var_list : NAME_PTR
                 |   error
                     {
                         error(scanner.loc, "bbcore_pointer_var_list");
+                    }
+                ;
+
+
+random_var_list : NAME_PTR
+                    {
+                        $$ = ast::RandomVarVector();
+                        $$.emplace_back(new ast::RandomVar($1));
+                    }
+                |   random_var_list "," NAME_PTR
+                    {
+                        $1.emplace_back(new ast::RandomVar($3));
+                        $$ = $1;
+                    }
+                |   error
+                    {
+                        error(scanner.loc, "random_var_list");
                     }
                 ;
 

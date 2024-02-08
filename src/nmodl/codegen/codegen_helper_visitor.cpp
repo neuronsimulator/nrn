@@ -269,6 +269,12 @@ void CodegenHelperVisitor::find_non_range_variables() {
     // clang-format on
     info.pointer_variables = psymtab->get_variables_with_properties(properties);
 
+    /// find RANDOM variables
+    // clang-format off
+    properties = NmodlType::random_var;
+    // clang-format on
+    info.random_variables = psymtab->get_variables_with_properties(properties);
+
     // find special variables like diam, area
     // clang-format off
     properties = NmodlType::assigned_definition

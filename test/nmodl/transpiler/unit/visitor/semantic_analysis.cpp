@@ -192,3 +192,69 @@ SCENARIO("At most one DERIVATIVE block", "[visitor][semantic_analysis]") {
         }
     }
 }
+
+SCENARIO("RANDOM Construct", "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with correct RANDOM variable usage") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANDOM r
+            }
+            PROCEDURE rates() {
+                LOCAL x
+                random_setseq(r, 1)
+                x = 1 + random_negexp(r)
+                x = x + exp(random_negexp(r))
+            }
+            FUNCTION erand() {
+                 erand = random_negexp(r)
+            }
+        )";
+        THEN("Semantic analysis should pass") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+
+    GIVEN("A mod file with incorrect usage of RANDOM variable as function arguments") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANDOM r
+            }
+            PROCEDURE rates() {
+                random_setseq(1, r)
+            }
+        )";
+        THEN("Semantic analysis should faial") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+
+    GIVEN("A mod file with incorrect usage of RANDOM variable in an expression") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANDOM r
+            }
+            PROCEDURE rates() {
+                LOCAL x
+                x = r + 1
+            }
+        )";
+        THEN("Semantic analysis should fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+
+    GIVEN("A mod file with incorrect usage of RANDOM variable in non-random function") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANDOM r
+            }
+            PROCEDURE rates() {
+                LOCAL x
+                x = exp(r) + 1
+            }
+        )";
+        THEN("Semantic analysis should fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}

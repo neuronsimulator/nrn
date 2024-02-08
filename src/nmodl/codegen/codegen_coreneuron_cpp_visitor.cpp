@@ -1259,6 +1259,15 @@ void CodegenCoreneuronCppVisitor::print_first_pointer_var_index_getter() {
 }
 
 
+void CodegenCoreneuronCppVisitor::print_first_random_var_index_getter() {
+    printer->add_newline(2);
+    print_device_method_annotation();
+    printer->push_block("static inline int first_random_var_index()");
+    printer->fmt_line("return {};", info.first_random_var_index);
+    printer->pop_block();
+}
+
+
 void CodegenCoreneuronCppVisitor::print_num_variable_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
@@ -2293,6 +2302,19 @@ void CodegenCoreneuronCppVisitor::print_instance_variable_setup() {
     printer->fmt_push_block("static void {}(NrnThread* nt, Memb_list* ml, int type)",
                             method_name(naming::NRN_PRIVATE_DESTRUCTOR_METHOD));
     cast_inst_and_assert_validity();
+
+    // delete random streams
+    if (info.random_variables.size()) {
+        printer->add_line("int pnodecount = ml->_nodecount_padded;");
+        printer->add_line("int nodecount = ml->nodecount;");
+        printer->add_line("Datum* indexes = ml->pdata;");
+        printer->push_block("for (int id = 0; id < nodecount; id++)");
+        for (const auto& var: info.random_variables) {
+            const auto& name = get_variable_name(var->get_name());
+            printer->fmt_line("nrnran123_deletestream((nrnran123_State*){});", name);
+        }
+        printer->pop_block();
+    }
     print_instance_struct_delete_from_device();
     printer->add_multi_line(R"CODE(
         delete inst;
@@ -3561,6 +3583,7 @@ void CodegenCoreneuronCppVisitor::print_namespace_end() {
 
 void CodegenCoreneuronCppVisitor::print_common_getters() {
     print_first_pointer_var_index_getter();
+    print_first_random_var_index_getter();
     print_net_receive_arg_size_getter();
     print_thread_getters();
     print_num_variable_getter();

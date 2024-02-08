@@ -139,4 +139,7 @@ std::string get_indexed_name(const ast::IndexedName& node);
 /// Given a VarName node, return the full var name including index
 std::string get_full_var_name(const ast::VarName& node);
 
+/// Is given name a one of the function for RANDOM construct
+bool is_random_construct_function(const std::string& name);
+
 }  // namespace nmodl

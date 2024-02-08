@@ -394,6 +394,14 @@
                                   type: Name
                                   node_name: true
 
+                        - RandomVar:
+                            brief: "Single variable of type RANDOM. pointer to a nrnran123_State"
+                            members:
+                              - name:
+                                  brief: "Name of the a RANDOM variable"
+                                  type: Name
+                                  node_name: true
+
                         - BbcorePointerVar:
                             members:
                               - name:
@@ -415,7 +423,7 @@
                   - Block:
                       brief: "Base class for all block scoped nodes"
                       description: |
-                              NMODL has different local and global block scoped nodes like
+                              NMODL has different local and globals block scoped nodes like
                               ast::NeuronBlock, ast::ParamBlock, ast::IfStatement etc. Ast::Block
                               is base class and defines common interface for these nodes.
 
@@ -1731,6 +1739,25 @@
                             separator: ", "
                       brief: "Represents GLOBAL statement in NMODL"
 
+                  - RandomVarList:
+                      brief: "Represents RANDOM statement in NMODL"
+                      nmodl: "RANDOM "
+                      members:
+                        - variables:
+                            brief: "Vector of random variables"
+                            type: RandomVar
+                            vector: true
+                            separator: ", "
+                      description: |
+                                Here is an example of RANDOM statement
+                                
+                                \code{.mod}   
+                                      NEURON {
+                                          THREADSAFE
+                                          POINT_PROCESS NetStim
+                                          RANDOM ranvar
+                                \endcode
+ 
                   - Pointer:
                       nmodl: "POINTER "
                       members:
@@ -1738,6 +1765,7 @@
                             brief: "Vector of pointer variables"
                             type: PointerVar
                             vector: true
+                            add: true
                             separator: ", "
                       brief: "Represents POINTER statement in NMODL"
 

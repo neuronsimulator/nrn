@@ -6,8 +6,10 @@
  */
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "codegen/codegen_naming.hpp"
 #include "symtab/symbol_properties.hpp"
 #include "utils/string_utils.hpp"
 
@@ -157,6 +159,10 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
 
     if (has_property(obj, NmodlType::codegen_var)) {
         properties.emplace_back("codegen_var");
+    }
+
+    if (has_property(obj, NmodlType::random_var)) {
+        properties.emplace_back("random_var");
     }
 
     return properties;

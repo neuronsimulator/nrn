@@ -97,6 +97,7 @@ const static std::map<std::string, TokenType> keywords = {
     {"CHARGE", Token::VALENCE},
     {"GLOBAL", Token::GLOBAL},
     {"POINTER", Token::POINTER},
+    {"RANDOM", Token::RANDOM},
     {"BBCOREPOINTER", Token::BBCOREPOINTER},
     {"EXTERNAL", Token::EXTERNAL},
     {"INCLUDE", Token::INCLUDE1},
