@@ -1,6 +1,7 @@
 from neuron import h
 import subprocess
 from pathlib import Path
+import os
 
 
 # default args generate accepted nmodl string
@@ -75,7 +76,9 @@ def chk_nmodl(txt, program="nocmodl", rcode=False):
 
 
 def test_syntax():
-    for program in ["nocmodl", "nmodl"]:
+    # nmodl could be external installation (not in PATH)
+    nmodl_binary = os.environ.get("NMODL_BINARY", "nmodl")
+    for program in ["nocmodl", nmodl_binary]:
         foo = False
         assert chk_nmodl(modfile(), program, rcode=True)
         assert chk_nmodl(modfile(s0="ASSIGNED{rv1}"), program)
