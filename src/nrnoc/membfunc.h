@@ -163,8 +163,8 @@ inline std::size_t vext_pseudoindex() {
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
-#define _AMBIGUOUS 5  // for Ions
-#define RAND       6  // RANDOM
+#define _AMBIGUOUS  5  // for Ions
+#define NMODLRANDOM 6  // RANDOM variable in NEURON block
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
@@ -183,6 +183,8 @@ extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
+extern int nrn_dparam_semantics_to_int(const char*);
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
@@ -318,3 +320,7 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
 [[nodiscard]] NrnThread* _nrn_mechanism_get_thread(Node*);
 [[nodiscard]] int _nrn_mechanism_get_type(Prop*);
 [[nodiscard]] int _nrn_mechanism_get_v_node_index(Node*);
+
+// Rarely (e.g. NEURON {RANDOM123 ranvar}) instances of a mod file
+// need to deallocate owning objects at end of their life.
+extern std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;

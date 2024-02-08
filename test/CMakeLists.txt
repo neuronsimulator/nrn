@@ -503,6 +503,14 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/nmodl/test_kinetic.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_kinetic.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME test_random
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS test/nmodl/test_random.py
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND ${modtests_launch_py} test/nmodl/test_random.py)
+
   nrn_add_test_group(
     CORENEURON
     NAME coreneuron_modtests
@@ -636,6 +644,22 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/coreneuron/test_ba.py)
     nrn_add_test(
       GROUP coreneuron_modtests
+      NAME test_nmodlrandom_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_nmodlrandom.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME test_nmodlrandom_syntax_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom_syntax.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_syntax_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_nmodlrandom_syntax.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
       NAME test_natrans_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
@@ -760,6 +784,7 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pytest_coreneuron/unitstest.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")

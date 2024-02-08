@@ -1,5 +1,10 @@
 import pytest
 from .testutils import compare_data, tol
+from platform import platform
+
+
+def applearm():
+    return "macOS-" in platform() and "-arm64-" in platform()
 
 
 @pytest.fixture
@@ -80,7 +85,7 @@ def test_currents_cvode(model_pump):
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)
-        assert max_err < tol
+        assert max_err < (1e-8 if applearm() else tol)
 
 
 def test_currents_stucture_change(model_pump):

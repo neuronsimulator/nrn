@@ -479,7 +479,11 @@ static void point_menu(Object* ob, int make_label) {
     if (psym->s_varn) {
         for (k = 0; k < psym->s_varn; k++) {
             vsym = psym->u.ppsym[k];
-            if (nrn_vartype(vsym) == nrnocCONST) {
+            int vartype = nrn_vartype(vsym);
+            if (vartype == NMODLRANDOM) {  // skip
+                continue;
+            }
+            if (vartype == nrnocCONST) {
                 deflt = true;
 
 #if defined(MikeNeubig)
