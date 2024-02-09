@@ -1396,6 +1396,24 @@ void rangepoint(void) /* symbol at pc, return value on stack */
     rangevareval();
 }
 
+void rangeobjeval(void) /* symbol at pc, section location on stack, return object on stack*/
+{
+    Symbol* s{(pc++)->sym};
+    assert(s->subtype == NMODLRANDOM);  // the only possibility at the moment
+    double d = xpop();
+    Section* sec{nrn_sec_pop()};
+    auto const i = node_index(sec, d);
+    Prop* m = nrn_mechanism_check(s->u.rng.type, sec, i);
+    Object* ob = nrn_nmodlrandom_wrap(m, s);
+    hoc_push_object(ob);
+}
+
+void rangeobjevalmiddle(void) /* symbol at pc, return object on stack*/
+{
+    hoc_pushx(0.5);
+    rangeobjeval();
+}
+
 int node_index(Section* sec, double x) /* returns nearest index to x */
 {
     int i;

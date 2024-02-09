@@ -85,6 +85,12 @@ void nrn_list(Item* qtype, Item* qlist) {
             point_process = 1;
         }
         break;
+    case RANDOM:
+        plist = (List**) 0;
+        ITERATE(q, qlist) {
+            declare(RANGEOBJ, q, nullptr);
+        }
+        break;
     default:
         plist = (List**) 0;
         break;

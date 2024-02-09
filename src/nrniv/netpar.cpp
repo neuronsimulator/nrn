@@ -240,6 +240,8 @@ NetParEvent::~NetParEvent() {}
 void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt) {
     nc->event(tt + usable_mindelay_, this, nt);
 }
+
+
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     int seq;
     if (nrn_use_selfqueue_) {  // first handle pending flag=1 self events

@@ -234,6 +234,8 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
         memb_func[type].dparam_semantics[ix] = -9;
     } else if (strcmp(name, "fornetcon") == 0) {
         memb_func[type].dparam_semantics[ix] = -10;
+    } else if (strcmp(name, "random") == 0) {
+        memb_func[type].dparam_semantics[ix] = -11;
     } else {
         int i = name[0] == '#' ? 1 : 0;
         int etype = nrn_get_mechtype(name + i);

@@ -48,6 +48,7 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrnmpi_spike_compress(int nspike, bool gidcompress, int xchng);
 extern bool nrn_use_bin_queue_;
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
