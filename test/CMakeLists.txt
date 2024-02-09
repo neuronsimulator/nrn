@@ -655,8 +655,10 @@ if(NRN_ENABLE_PYTHON)
       NAME test_nmodlrandom_syntax_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom_syntax.py
-      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-                  COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_syntax_py
+      ENVIRONMENT
+        ${modtests_processor_env} ${nrnpython_mpi_env}
+        COVERAGE_FILE=.coverage.coreneuron_test_nmodlrandom_syntax_py
+        NMODL_BINARY=${CORENRN_NMODL_BINARY}
       COMMAND ${modtests_launch_py} test/coreneuron/test_nmodlrandom_syntax.py)
     nrn_add_test(
       GROUP coreneuron_modtests
