@@ -240,7 +240,7 @@ bool NrnProperty::copy_out(NrnProperty& np, int vartype) {
     return true;
 }
 
-Symbol* NrnProperty::find(const char* name) {
+Symbol* NrnProperty::findsym(const char* name) {
     Symbol* sym;
     int i, cnt;
     cnt = npi_->sym_->s_varn;
@@ -253,39 +253,13 @@ Symbol* NrnProperty::find(const char* name) {
     return nullptr;
 }
 
-int NrnProperty::prop_index(const Symbol* s) {
+neuron::container::data_handle<double> NrnProperty::pval(const Symbol* s, int index) {
     assert(s);
     if (s->type != RANGEVAR && s->type != RANGEOBJ) {
         hoc_execerror(s->name, "not a range variable");
     }
-    return s->u.rng.index;
-}
-
-neuron::container::data_handle<double> NrnProperty::pval(const Symbol* s, int index) {
-    double* raw = &npi_->params_[prop_index(s) + index];
+    double* raw = &npi_->params_[s->u.rng.index + index];
     return static_cast<neuron::container::data_handle<double>>(raw);
-}
-
-neuron::container::data_handle<double> NrnProperty::prop_pval(Prop* p,
-                                                              Node* nd,
-                                                              const Symbol* s,
-                                                              int index) {
-    int sym_index = prop_index(s);
-    if (p->ob) {
-        return neuron::container::data_handle<double>{p->ob->u.dataspace[sym_index].pval + index};
-    } else {
-        if (s->subtype == NRNPOINTER) {
-            return static_cast<neuron::container::data_handle<double>>(
-                p->dparam[sym_index + index]);
-        } else {
-            if (p->_type == EXTRACELL && sym_index == neuron::extracellular::vext_pseudoindex()) {
-                // vext is in Node.ExtNode.v
-                return static_cast<neuron::container::data_handle<double>>(nd->extnode->v + index);
-            } else {
-                return p->param_handle_legacy(sym_index + index);
-            }
-        }
-    }
 }
 
 //--------------------------------------------------

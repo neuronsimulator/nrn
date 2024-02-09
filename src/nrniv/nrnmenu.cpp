@@ -834,7 +834,7 @@ void MechanismStandard::action(const char* action, Object* pyact) {
 }
 void MechanismStandard::set(const char* name, double val, int index) {
     mschk("set");
-    Symbol* s = np_->find(name);
+    Symbol* s = np_->findsym(name);
     if (s) {
         *np_->pval(s, index) = val;
     } else {
@@ -843,7 +843,7 @@ void MechanismStandard::set(const char* name, double val, int index) {
 }
 double MechanismStandard::get(const char* name, int index) {
     mschk("get");
-    Symbol* s = np_->find(name);
+    Symbol* s = np_->findsym(name);
     if (!s) {
         hoc_execerror(name, "not in this property");
     }

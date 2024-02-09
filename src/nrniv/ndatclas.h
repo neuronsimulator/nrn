@@ -18,15 +18,9 @@ class NrnProperty {
     Symbol* first_var();
     bool more_var();
     Symbol* next_var();
-    Symbol* find(const char* rangevar);
+    Symbol* findsym(const char* rangevar);
     Symbol* var(int);
     neuron::container::data_handle<double> pval(const Symbol*, int index);
-    static int prop_index(const Symbol*);
-    static neuron::container::data_handle<double> prop_pval(Prop*,
-                                                            Node*,
-                                                            const Symbol*,
-                                                            int arrayindex = 0);
-
     // vartype=0, 1, 2, 3 means all, PARAMETER, ASSIGNED, STATE
     bool copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype = 0);
     bool copy_out(NrnProperty& dest, int vartype = 0);
