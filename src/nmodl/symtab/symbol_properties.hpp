@@ -220,7 +220,10 @@ enum class NmodlType : enum_type {
     codegen_var = 1LL << 33,
 
     /// Randomvar Type
-    random_var = 1LL << 34
+    random_var = 1LL << 34,
+
+    /// FUNCTION or PROCEDURE needs setdata check
+    use_range_ptr_var = 1LL << 35
 };
 
 template <typename T>

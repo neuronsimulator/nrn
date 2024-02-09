@@ -25,6 +25,7 @@
 #include "visitors/after_cvode_to_cnexp_visitor.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
+#include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
@@ -525,6 +526,12 @@ int main(int argc, const char* argv[]) {
         {
             CodegenTransformVisitor{}.visit_program(*ast);
             ast_to_nmodl(*ast, filepath("TransformVisitor"));
+            SymtabVisitor(update_symtab).visit_program(*ast);
+        }
+
+        {
+            FunctionCallpathVisitor{}.visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("FunctionCallpathVisitor"));
             SymtabVisitor(update_symtab).visit_program(*ast);
         }
 

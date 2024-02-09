@@ -12,6 +12,7 @@ add_library(
   after_cvode_to_cnexp_visitor.cpp
   constant_folder_visitor.cpp
   defuse_analyze_visitor.cpp
+  function_callpath_visitor.cpp
   global_var_visitor.cpp
   implicit_argument_visitor.cpp
   indexedname_visitor.cpp

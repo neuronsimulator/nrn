@@ -161,6 +161,10 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("codegen_var");
     }
 
+    if (has_property(obj, NmodlType::use_range_ptr_var)) {
+        properties.emplace_back("use_range_ptr_var");
+    }
+
     if (has_property(obj, NmodlType::random_var)) {
         properties.emplace_back("random_var");
     }
