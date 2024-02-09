@@ -12,6 +12,7 @@
  * \brief Various types to store code generation specific information
  */
 
+#include <fmt/format.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -19,6 +20,7 @@
 
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
+
 
 namespace nmodl {
 namespace codegen {
@@ -109,11 +111,54 @@ struct Ion {
         return is_intra_cell_conc(text) || is_extra_cell_conc(text);
     }
 
+    /// Is the variable name `text` related to this ion?
+    ///
+    /// Example: For sodium this is true for any of `"ena"`, `"ina"`, `"nai"`
+    /// and `"nao"`; but not `ion_ina`, etc.
+    bool is_ionic_variable(const std::string& text) const {
+        return is_ionic_conc(text) || is_ionic_current(text) || is_rev_potential(text);
+    }
+
+    bool is_current_derivative(const std::string& text) const {
+        return text == ("di" + name + "dv");
+    }
+
     /// for a given ion, return different variable names/properties
     /// like internal/external concentration, reversial potential,
     /// ionic current etc.
     static std::vector<std::string> get_possible_variables(const std::string& ion_name) {
         return {"i" + ion_name, ion_name + "i", ion_name + "o", "e" + ion_name};
+    }
+
+    /// Variable index in the ion mechanism.
+    ///
+    /// For sodium (na), the `var_name` must be one of `ina`, `ena`, `nai`,
+    /// `nao` or `dinadv`. Replace `na` with the analogous for other ions.
+    ///
+    /// In NRN the order is:
+    ///   0: ena
+    ///   1: nai
+    ///   2: nao
+    ///   3: ina
+    ///   4: dinadv
+    int variable_index(const std::string& var_name) const {
+        if (is_rev_potential(var_name)) {
+            return 0;
+        }
+        if (is_intra_cell_conc(var_name)) {
+            return 1;
+        }
+        if (is_extra_cell_conc(var_name)) {
+            return 2;
+        }
+        if (is_ionic_current(var_name)) {
+            return 3;
+        }
+        if (is_current_derivative(var_name)) {
+            return 4;
+        }
+
+        throw std::runtime_error(fmt::format("Invalid `var_name == {}`.", var_name));
     }
 };
 

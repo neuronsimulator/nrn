@@ -194,9 +194,9 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
         double* Ds{};
         double* v_unused{};
         double* g_unused{};
-        const double* ion_ena{};
-        double* ion_ina{};
-        double* ion_dinadv{};
+        const double* const* ion_ena{};
+        double* const* ion_ina{};
+        double* const* ion_dinadv{};
         pas_test_Store* global{&pas_test_global};
     };)";
 
@@ -259,9 +259,16 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
             _nrn_mechanism_field<double>{"ina"} /* 6 */,
             _nrn_mechanism_field<double>{"Ds"} /* 7 */,
             _nrn_mechanism_field<double>{"v_unused"} /* 8 */,
-            _nrn_mechanism_field<double>{"g_unused"} /* 9 */
+            _nrn_mechanism_field<double>{"g_unused"} /* 9 */,
+            _nrn_mechanism_field<double*>{"ion_ena", "na_ion"} /* 0 */,
+            _nrn_mechanism_field<double*>{"ion_ina", "na_ion"} /* 1 */,
+            _nrn_mechanism_field<double*>{"ion_dinadv", "na_ion"} /* 2 */
         );
 
+        hoc_register_prop_size(mech_type, 10, 3);
+        hoc_register_dparam_semantics(mech_type, 0, "na_ion");
+        hoc_register_dparam_semantics(mech_type, 1, "na_ion");
+        hoc_register_dparam_semantics(mech_type, 2, "na_ion");
     })CODE";
 
             REQUIRE_THAT(generated,
