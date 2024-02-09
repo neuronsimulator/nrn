@@ -566,7 +566,7 @@ def setup_package():
             if f[0] != "_"
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging"] + maybe_patchelf,
+        install_requires=["numpy>=1.9.3", "packaging", "find_libpython", "setuptools"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],
