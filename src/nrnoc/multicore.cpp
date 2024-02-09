@@ -47,6 +47,8 @@ the handling of v_structure_change as long as possible.
 #include <vector>
 #include <iostream>
 
+#include <Eigen/Eigen>
+
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
 #define CACHELINE_CALLOC(name, type, size) \
@@ -346,7 +348,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->_ecell_memb_list = 0;
                 nt->_ecell_child_cnt = 0;
                 nt->_ecell_children = NULL;
-                nt->_sp13mat = 0;
+                nt->_sp13mat = nullptr;
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
                 nt->_node_data_offset = 0;
@@ -442,8 +444,8 @@ void nrn_threads_free() {
             nt->_ecell_children = NULL;
         }
         if (nt->_sp13mat) {
-            spDestroy(nt->_sp13mat);
-            nt->_sp13mat = 0;
+            delete nt->_sp13mat;
+            nt->_sp13mat = nullptr;
         }
         nt->end = 0;
         nt->ncell = 0;

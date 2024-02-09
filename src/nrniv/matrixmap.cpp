@@ -3,7 +3,7 @@
 #include <vector>
 using std::vector;
 
-#include "spmatrix.h"
+#include <Eigen/Eigen>
 
 MatrixMap::MatrixMap(Matrix& mat)
     : m_(mat)
@@ -73,7 +73,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
             jt = start + j - nnode;
         }
         // printf("MatrixMap::alloc getElement(%d,%d)\n", it, jt);
-        ptree_[plen_] = spGetElement(_nt->_sp13mat, it, jt);
+        ptree_[plen_] = &_nt->_sp13mat->coeffRef(it - 1, jt - 1);
         ++plen_;
     }
 }
