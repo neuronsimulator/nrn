@@ -293,6 +293,9 @@ fi
 # gpu wheel needs updated pip
 $python_exe -m pip install --upgrade pip
 
+# we'll want setuptools installed and up-to-date
+$python_exe -m pip install --upgrade setuptools
+
 
 # install numpy, pytest and neuron
 $python_exe -m pip install numpy pytest
