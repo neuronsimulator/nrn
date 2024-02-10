@@ -1,4 +1,4 @@
-set(NMODL_USECASE_DIRS cnexp_scalar cnexp_array global_breakpoint)
+set(NMODL_USECASE_DIRS cnexp_scalar cnexp_array global_breakpoint point_process parameter)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
   add_test(NAME usecase_${usecase}

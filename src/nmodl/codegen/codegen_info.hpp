@@ -298,6 +298,9 @@ struct CodegenInfo {
     /// typically equal to number of primes
     int num_equations = 0;
 
+    /// number of semantic variables
+    int semantic_variable_count;
+
     /// True if we have to emit CVODE code
     /// TODO: Figure out when this needs to be true
     bool emit_cvode = false;
