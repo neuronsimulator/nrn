@@ -43,6 +43,14 @@ using printer::CodePrinter;
 
 
 /**
+ * @brief Enum to switch between HOC and Python wrappers for functions and
+ *        procedures defined in mechanisms
+ *
+ */
+enum InterpreterWrapper { HOC, Python };
+
+
+/**
  * \defgroup codegen_backends Codegen Backends
  * \ingroup codegen
  * \brief Code generation backends for NEURON
@@ -196,6 +204,13 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_function(const ast::FunctionBlock& node) override;
 
 
+    void print_hoc_py_wrapper_function_body(const ast::Block* function_or_procedure_block,
+                                            InterpreterWrapper wrapper_type);
+
+
+    void print_hoc_py_wrapper_function_definitions();
+
+
     /****************************************************************************************/
     /*                             Code-specific helper routines                            */
     /****************************************************************************************/
@@ -262,6 +277,31 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     std::string conc_write_statement(const std::string& ion_name,
                                      const std::string& concentration,
                                      int index) override;
+
+    /**
+     * All functions and procedures need a \c _hoc_<func_or_proc_name> to be available to the HOC
+     * interpreter
+     */
+    std::string hoc_function_name(const std::string& function_or_procedure_name) const;
+
+
+    /**
+     * Get the signature of the \c _hoc_<func_or_proc_name> function
+     */
+    std::string hoc_function_signature(const std::string& function_or_procedure_name) const;
+
+
+    /**
+     * In non POINT_PROCESS mechanisms all functions and procedures need a \c
+     * _py_<func_or_proc_name> to be available to the HOC interpreter
+     */
+    std::string py_function_name(const std::string& function_or_procedure_name) const;
+
+    /**
+     * Get the signature of the \c _npy_<func_or_proc_name> function
+     */
+    std::string py_function_signature(const std::string& function_or_procedure_name) const;
+
 
     /****************************************************************************************/
     /*                  Code-specific printing routines for code generations                */

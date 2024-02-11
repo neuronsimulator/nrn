@@ -275,6 +275,8 @@ void _nrn_mechanism_register_data_fields(Args&&... args) {
         hoc_register_dparam_semantics(mech_type, 0, "na_ion");
         hoc_register_dparam_semantics(mech_type, 1, "na_ion");
         hoc_register_dparam_semantics(mech_type, 2, "na_ion");
+        hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);
+        hoc_register_npy_direct(mech_type, npy_direct_func_proc);
     })CODE";
 
             REQUIRE_THAT(generated,

@@ -201,6 +201,9 @@ struct CodegenInfo {
     /// name of the suffix
     std::string mod_suffix;
 
+    /// point process range and functions don't have suffix
+    std::string rsuffix;
+
     /// true if mod file is vectorizable (which should be always true for coreneuron)
     /// But there are some blocks like LINEAR are not thread safe in neuron or mod2c
     /// context. In this case vectorize is used to determine number of float variable

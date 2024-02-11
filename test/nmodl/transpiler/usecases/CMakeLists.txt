@@ -1,4 +1,11 @@
-set(NMODL_USECASE_DIRS cnexp_scalar cnexp_array global_breakpoint point_process parameter)
+set(NMODL_USECASE_DIRS
+    cnexp_scalar
+    cnexp_array
+    global_breakpoint
+    point_process
+    parameter
+    func_proc
+    func_proc_pnt)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
   add_test(NAME usecase_${usecase}
