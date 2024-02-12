@@ -102,7 +102,7 @@ workflows:
           matrix:
             parameters:
               NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
-              NRN_NIGHTLY_UPLOAD: ["false"]
+              NRN_NIGHTLY_UPLOAD: ["true"]
 
   nightly:
     triggers:
