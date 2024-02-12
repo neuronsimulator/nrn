@@ -1,307 +1,229 @@
 .. _project:
 
+.. note:: This document contains some best practices regarding project management.
+  Adhering to these principles drastically increases the future value of your
+  project to the neuroscience community. Reproducibility, replicability,
+  transparency and understandability are key pillars of good science.
 
-.. warning::
-
-    The commands and methods here are outdated and have thus never been updated
-    to work with Python; consider directly using a modern version control system
-    (e.g. ``git`` or ``hg``) instead. You will likely want to store the version
-    identifier with each figure or datafile so you can recreate the data.
-
+##################
 Project Management
-------------------
+##################
 
-RCS control of simulation projects in a single directory. The idea is to 
-be able to reproduce a simulation given its version number. 
-The version number was printed along with all the neuron windows on the screen 
-when the simulation was archived. 
-See :ref:`ArchiveAndHardcopy` 
+===============
+Version Control
+===============
 
-To manage parameter sets instead, use:
+Version control is a key aspect to well-maintained and manageable projects. It tracks
+every change made to your code and makes each changeset uniquely identifiable.
 
-.. toctree:: :maxdepth: 1
+Currently the most used version control protocol is `git`. And the most common cloud
+providers of `git` servers are GitHub, GitLab and BitBucket. See their respective
+documentation and make yourself familiar with creating and managing repositories.
 
-    mechstan.rst
- 
-Effective use of this management system requires that the user conform to 
-a policy in which no simulation variables are changed except by changing them 
-in managed files (listed in the nrnversion file). ie. during a session 
-only change variables by editing a hoc file and saving it, or only change 
-variables in field editors that actually appear on the screen when a simulation 
-is archived. Variable values will be lost if you change them 
-by direct command to the interpreter (the command does not appear in any file) 
-or if you dismiss a panel after changing one of its field editors (when 
-the simulation is archived, only values of field editors actually displayed 
-on the screen are saved). User judgment is required to determine if these 
-missing variable values will later prevent reproduction of the simulation. 
-If this is the case, then when the hardcopy is printed, the user should 
-manually enter this information when the log message is requested or 
-else make hand written notes on the hardcopy itself. 
- 
-A policy that seems to work pretty well is to always start a simulation via 
+Continuous integration
+======================
 
-.. code-block::
-    none
+Continuous integration is an important step to assure the quality of your model over
+time. It is a collection of steps that is performed every time you update your code, to
+test that all components are working and the quality is up to standards you have set.
 
-    	special init.hoc -	# if the simulation uses mod file 
+Your own software and all of the dependencies that you use (including NEURON) 
+continually change, and these changes can introduce errors that weren't there before.
+Make sure that you set up a continuous integration pipeline with your version control
+provider that executes `testing`_, `coverage`_, `documentation`_ and `formatting`_.
 
-where init.hoc xopens all necessary files to initialize the simulation. 
+===============
+Code Guidelines
+===============
 
-.. code-block::
-    none
+Modern Python projects follow several well-described standards. The 
+`Python Zen <https://www.python.org/dev/peps/pep-0020/#id2>`_ is a farcical collection of
+rules of thumb that can help you assess the clarity of your code. A more
+formal specification can be found in `PEP8 <https://www.python.org/dev/peps/pep-0008/>`_
 
-    init.hoc 
-    //------- 
-    xopen("$(NEURONHOME)/lib/hoc/noload.hoc")	// standard run tools 
-    xopen("morph.hoc")	// topology, geometry, compartmentalization 
-    xopen("memb.hoc")	// membrane properties 
-    xopen("param.hoc")	// parameters that are occasionally changed 
-    xopen("start.ses")	// will automatically change for every new version 
-    //------- 
+.. _formatting:
 
-With this style, whenever an old version is checked out and run, the appearance 
-of the screen should match the hardcopy and it should be possible to 
-reproduce the archived simulation. 
-     
+Several automatic linters and formatters exist that can automatically format your code
+every time you commit to your version control. Some examples include `flake8`, 
+`autopep8` and `black`. The latter has been used to format NEURON's Python source code.
 
-.. warning::
-    Reliance on a management policy that requires judgment is regrettable. 
-    However making the system failsafe while retaining the generality of the 
-    interpreter is probably impossible. Archive strategies consisting solely 
-    of checkpoints, 
-    eg. coredumps, use a great deal of disk space and don't capture any 
-    semantic information about the logical structure of the variables and 
-    how they are related. This strategy is low time and high space. 
-    Audit trails, saving all the commands and changes, is high time and low space. 
-    Its problem is that it captures all the false starts and mistakes. 
-    Recapitulating every excruciating detail is probably too confusing. 
-    The current system, by developing very low space, very low time logical 
-    snapshots, although not failsafe, hopefully will realistically help to 
-    solve the very real problems of simulation management. 
+A good model can be used and adapted by others with minimal understanding of the code
+itself. Your code should be organized as a proper library with modules and functions.
+No code should be executed at import time, and no model parameters hidden inside code
+or stored globally. Instead, make a ``model(param1, param2, ...)`` function that users
+can call to run their own variations of the model, consider organizing it into a class
+so that others can inherit from it and override parts. Use a ``__main__.py`` file so
+that users can execute your model with ``python -m my_project param1 param2 param3``:
 
-Examples
-========
+.. code-block:: python
 
-The following example illustrates the initialization of an essentially 
-empty project. 
- 
-Here are the files. After initializing the project with these, they 
-can be modified to handle arbitrary complexity. These files should be 
-in an otherwise empty subdirectory. 
- 
-init.hoc 
+  from my_project import model
+  import sys
+  
+  # Run model with the command line
+  # parameters, assuming they are all
+  # numerical values
+  model(*map(float, sys.argv[1:]))
+
+Alternatively you can provide a richer command line interface using setuptools's
+`console_scripts
+<https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html#console-scripts>`_
+entry point and a command line argument parser such as Python's `argparse
+<https://docs.python.org/3/library/argparse.html>`_
+
+===================
+Directory structure
+===================
+
+It is conventional for version controlled projects and Python projects to reserve the
+root folder for project configuration and tooling configuration files. Your source code
+is placed inside of a folder that is named after your project, conforming to `PEP8 module
+naming <https://www.python.org/dev/peps/pep-0008/#package-and-module-names>`_:
 
 .. code-block::
-    none
 
-    xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
-    xopen("morph.hoc") 
-    xopen("memb.hoc") 
-    xopen("param.hoc") 
-    xopen("start.ses") 
+  my-project-root
+  ⌞.git
+  ⌞.github
+  ⌞docs
+  ⌞my_project
+    ⌞mod
+    ⌞morphologies
+    ⌞__init__.py
+    ⌞__main__.py
+    ⌞other_src.py
+  ⌞tests
+  ⌞pyproject.toml
+  ⌞README.md
+  ⌞setup.cfg
+  ⌞setup.py
+  
+The advantages of a good directory structure are manifold: new developers know where to
+look for code and can contribute faster, most default settings will just work, other 
+tools will find your codebase easy to process, ...
 
-morph.hoc 
+================
+Python packaging
+================
 
-.. code-block::
-    none
+As touched briefly before, put your source code in a folder named after the project.
+You can distribute your model as a ``pip`` installable package so that other researchers
+have easy access to it, and your model *just works* on other machines. By adding either a
+``setup.cfg`` or ``setup.py`` file you can provide some metadata about the project and
+upload it to `PyPI <https://pypi.org>`_ from whence they can be pip installed.
 
-    create soma 
-    access soma 
-    L=5 
-    diam=100/(PI*L) 
+See the `setuptools quickstart guide 
+<https://setuptools.readthedocs.io/en/latest/userguide/quickstart.html>`_ for the basics
+of getting your package out there. To package NEURON specific files such as mod files
+and morphologies you can use the ``include_package_data`` and ``package_data`` keywords:
 
-memb.hoc 
+.. code-block:: python
 
-.. code-block::
-    none
+  from setuptools import setup
+  
+  setup(
+      name="my-project",
+      version="1.0.0",
+      author="Me",
+      email="noreply@uni.com",
+      packages=["my_project"],
+      include_package_data=True,
+      package_data={
+          "my_project": [
+              "mod/*.mod",
+              "morphologies/*"
+          ]
+      },
+  )
+  
+.. note:: 
 
-    insert hh 
+  There is a 60MB package size limit on PyPI. Also GitHub limits single files
+  to 125MB. Do not include large datasets in your Python package or git repository.
+  Find alternative hosting providers for scientific data like `ModelDB
+  <https://senselab.med.yale.edu/ModelDB/>`_ or the `EBRAINS Knowledge Graph
+  <https://kg.ebrains.eu/>`. Use your ``.gitignore`` file to exclude large files in
+  your repository.
+  
+=============
+Documentation
+=============
 
-param.hoc 
+Good code is made understandable to others:
 
-.. code-block::
-    none
+* For users:
+  * Write `docstrings <https://www.python.org/dev/peps/pep-0257/>` for the public API.
+  * Separate and indicate the `public and private API 
+    <https://www.python.org/dev/peps/pep-0008/#designing-for-inheritance>`
+    so users know which part of the code was intended for them to use (public), and what 
+    will break in unexpected ways if they change it (private).
+  * Describe all of the parameters of the model in the module level docstring
+* For developers:
+  * Write developer docs on the conventions used in your project
+  * Leave comments in the source code that explain possibly unclear passages
 
-    gnabar_hh = .120 
+With these in place you can generate automatic documentation using `sphinx` and host them
+on a provider such as ReadTheDocs. Users are familiar with the layout of sphinx docs and
+have an intuition on how to navigate around in them.
 
-start.ses 
+=======
+Testing
+=======
 
-.. code-block::
-    none
+There are many frameworks available that will run your test suites for you. Some common
+examples are Python's own ``unittest`` module, ``pytest`` and ``tox``. Place tests under
+a ``tests`` folder.
 
-    nrnmainmenu() 
+Make sure that you test for common mistakes in user input validation and to run a few
+computationally light scaled down versions of your model and validate the output. If the
+tests pass you'll be sure that all of the essential parts of your model work as expected.
 
- 
-The project is initialized with :ref:`prjnrninit` . 
-This will create an RCS directory and checkout 
-a nrnversion file with the contents: 
+Coverage
+--------
 
-.. code-block::
-    none
+Several tools exist, such as `coverage <https://pypi.org/project/coverage/>`_, that will
+analyse how much over the code was actually tested during the testing process. You can
+send these reports to online service providers such as `Codecov.io <https://codecov.io/`_
+to analyse and visualize which parts of your model might still contain errors.
 
-    $Revision: 1.3 $ 
-    1.1 init.hoc 
-    1.1 memb.hoc 
-    1.1 morph.hoc 
-    1.1 param.hoc 
-    1.1 start.ses 
+======
+NEURON
+======
 
-Note that nrnversion is essentially just a manifest of the files in 
-the project. To add a new file to the project one can explicitly check 
-the file into RCS with the ci command and insert the appropriate line 
-in the nrnversion file. 
- 
-At this point one can run 
+List the versions of NEURON for which your model works as a requirement for your project:
 
-.. code-block::
-    none
+.. code-block:: python
 
-    nrniv init.hoc - 
+  from setuptools import setup
+  
+  setup(
+      name="my-project",
+      version="1.0.0",
+      author="Me",
+      email="noreply@uni.com",
+      packages=["my_project"],
+      install_requires=["NEURON>=8.0.0"],
+  )
 
-and see a neuron main menu. Use the menu to generate a graph 
-of an action potential. Since there was an RCS directory with a 
-nrnversion,v archive when nrnmainmenu() was executed, 
-the Miscellaneous menu has an ArchiveAndHardcopy item. 
-Pressing this button will archive the current version with the session 
-(it is saved in start.ses), request a description of this version and 
-print the version number, description, and session windows on the 
-printer specified by the ``$PRINT_CMD`` environment variable. 
- 
-It is recommended that you play with this simple project for a while 
-to familiarize yourself with the style before employing it in a serious 
-project. Make several different hardcopies. Use :ref:`prjnrnco` to check out 
-earlier versions and run them, modify parameters, and make several more 
-hardcopies. Note the way branch version numbers are generated and incremented. 
+Mechanisms
+==========
 
-Utilities
-=========     
+Mechanisms need to be compiled against the user's installation of NEURON, so don't
+include the compiled library in your version control. The mod files can be packaged
+along with your Python source code, and your project's README.md best contains
+instructions how to compile them.
 
-.. _prjnrninit:
+Another good practice is to include a check for the compiled library's existence. For example, on `x86_64` UNIX platforms, you could:
 
-prjnrninit
-~~~~~~~~~~
+.. code-block:: python
 
-
-Syntax:
-    ``$NEURONHOME/bin/prjnrninit``
-
-
-Description:
-    In the current working directory creates an RCS directory and 
-    checks in (and out again with locking) 
-    all the hoc, ses, mod files as version 1.1. A nrnversion file 
-    is created (and archived) which contains a manifest of the files 
-    necessary to recreate a simulation. The Revision level of 
-    the nrnversion defines the version of the simulation. 
-
-
-prjnrncmp
-~~~~~~~~~
-
-
-Syntax:
-    ``$NEURONHOME/bin/prjnrncmp``
-
-
-Description:
-    If working files consistent with manifest in nrnversion return with 
-    exit status 0. Otherwise return with exit status 1 and print the 
-    names of the differing files on the standard output. 
-
-
-.. _prjnrnco:
-
-prjnrnco
-~~~~~~~~
-
-
-Syntax:
-    ``$NEURONHOME/bin/prjnrnco version``
-
-
-Description:
-    Checkout the version from the RCS archive. 
-     
-    Prior to checkout if the working files differ from the archive, the user 
-    is asked whether or not to checkout anyway. If "Checkout anyway" is chosen 
-    the changes to the previous working files will be lost. 
-
-
-prjnrnci
-~~~~~~~~
-
-
-Syntax:
-    ``$NEURONHOME/bin/prjnrnci``
-
-
-Description:
-    Checkin a new version to the RCS archive. 
-     
-    The microemacs editor is run so the user can edit a description of the 
-    new version. On exit from the editor the user will be asked whether or 
-    not to continue checking in the version. 
-     
-    A new version is checked in even if the working files are unchanged. 
-     
-    On exit from this command, the working files are locked versions 
-    of the newest version. The nrnversion file contains the version number 
-    of the simulation (itself) as well as the version numbers of all the 
-    working files it needs to reconstruct the simulation. 
-
-.. _prjnrnpr:
-
-prjnrnpr
-~~~~~~~~
+  import os
+  
+  this_dir = os.path.dirname(__file__)
+  lib = os.path.join(this_dir, "mod", "x86_64", "libnrnmech.so"))
+  assert os.path.exists(lib), "Mechanism library not found, please compile it."
 
 
-Syntax:
-    ``cat postscriptfile | $NEURONHOME/bin/prjnrnpr``
-
-
-Description:
-    Checks in the working files and 
-    sends the postscript file to the command specified in the 
-    ``$PRINT_CMD`` (e.g. :command:`lp`) environment variable. 
-     
-    If the working files are not different from their archived versions 
-    the user is asked whether to continue or verify that the simulation 
-    can be reproduced. If the latter, a new the simulation is loaded in 
-    an xterm window. The user should then try to reproduce the simulation 
-    he/she is attempting to checkin. When the xterm goes away the user 
-    will be asked whether or not to continue to checkin. If you can't reproduce 
-    the simulation or had to change working files to reproduce it, choose "Abort" 
-     
-    If the working files did differ then :func:`prjnrnci` is run in an :program:`xterm`. 
-     
-    The last question for the user to answer is whether to leave the working 
-    files at the new or old version. The answer depends on whether you envision 
-    this simulation as a side branch off the primary version or as 
-    additive. 
-     
-    The log message entered during checkin is added to the postcript stream 
-    and sent to ``$PRINT_CMD``.
-     
-    This command is called by the :ref:`ArchiveAndHardcopy` menu item in the 
-    :ref:`NEURONMainMenu` which first saves the session in :file:`start.hoc` and 
-    sends the entire session as standard input to this command. 
-
-
-ivdialog
-~~~~~~~~
-
-
-Syntax:
-    ``$NEURONHOME/bin/prjnrnpr "banner" "accept" "cancel"``
-
-
-Description:
-    Pops up a boolean dialog. 
-     
-    "1" is printed on the standard output if 
-    the "accept" button is pressed. 
-     
-    "0" is printed on the standard output 
-    if the "cancel" button is pressed. 
-
+Another option is to use community developed tools such as `Glia 
+<https://pypi.org/project/nrn-glia/>`_ to manage mod files.
 
