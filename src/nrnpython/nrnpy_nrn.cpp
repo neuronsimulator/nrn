@@ -181,12 +181,12 @@ static Object* pysec_cell(Section* sec) {
     return NULL;
 }
 
-static int NpySObj_contains(PyObject* s, PyObject* obj, const char *string) {
+static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
     /* Checks is provided PyObject* s contains obj */
     PyObject* obj_seg;
     int result;
     if (!PyObject_HasAttrString(obj, string)) {
-    return 0;
+        return 0;
     }
     Py_INCREF(obj);
     obj_seg = PyObject_GetAttrString(obj, string);
