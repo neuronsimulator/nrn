@@ -18,7 +18,7 @@ Pre-release
   - [ ] Update semantic version in `CMakeLists.txt`
   - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` in the cherrypicks PR (copy structure as-is)
   - [ ] Update `docs/index.rst` accordingly with the new `.pkg` and `.exe` links for `PKG installer` and `Windows Installer`
-- [ ] Activate ReadtheDocs for the cherry-pick branch and ensure the documentation builds
+- [ ] Activate ReadtheDocs for the cherry-pick branch and ensure the documentation builds (when logged in, go to [the versions page](https://readthedocs.org/projects/nrn/versions/) and set the version for your branch to Active and Hidden)
 - [ ] Run a test wheel build WITHOUT upload on the cherry-pick branch to ensure all the wheels build ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 
 Sanity checks
