@@ -104,15 +104,7 @@ void TQueue_reg() {
 
 //----------------
 
-#if BBTQ == 0
-#include <bbtqueue.cpp>
-#elif BBTQ == 2
-#include <sptqueue.cpp>
-#elif BBTQ == 4
-#include <spt2queue.cpp>
-#elif BBTQ == 5
 #include <sptbinq.cpp>
-#endif
 
 SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
     MUTCONSTRUCT(mkmut)
