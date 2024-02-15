@@ -9,8 +9,6 @@
 
 #include <cassert>
 #include <filesystem>
-#include <sys/param.h>
-#include <unistd.h>
 
 #include "utils/common_utils.hpp"
 #include "utils/string_utils.hpp"
