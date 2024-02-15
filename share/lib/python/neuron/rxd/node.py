@@ -468,6 +468,9 @@ class Node1D(Node):
     def segment(self):
         return self._sec._sec(self.x)
 
+    def _in_seg(self, segment):
+        return segment == self.segment
+
     @property
     def surface_area(self):
         """The surface area of the compartment in square microns.
