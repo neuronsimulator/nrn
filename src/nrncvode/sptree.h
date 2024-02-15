@@ -283,9 +283,6 @@ SPBLK* spenq(SPBLK* n, SPTREE<SPBLK>* q) {
         n->rightlink = temp;
     }
 
-#if BBTQ != 4 && BBTQ != 5
-    n->cnt++;
-#endif
     return (n);
 
 } /* spenq */
@@ -512,9 +509,6 @@ void splay(SPBLK* n, SPTREE<SPBLK>* q) {
     SPBLK* left;   /* the top of left subtree being built */
     SPBLK* right;  /* the top of right subtree being built */
 
-#if BBTQ != 4 && BBTQ != 5
-    n->cnt++; /* bump reference count */
-#endif
 
     left = n->leftlink;
     right = n->rightlink;
@@ -967,9 +961,6 @@ SPTREE *q;
 	n->leftlink = NULL;
 	n->rightlink = NULL;
 	n->uplink = NULL;
-#if BBTQ != 4 && BBTQ != 5
-	n->cnt = 0;
-#endif
 	spenq( n, q );
     }
 
