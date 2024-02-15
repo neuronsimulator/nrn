@@ -1,7 +1,7 @@
 # i_membrane + electrode current sums to 0 when electrode parameters are time dependent.
 # This test revealed a fast_imem bug that needed fixing #2733
 
-from neuron import h, gui
+from neuron import h, gui, config
 from neuron import coreneuron
 import math
 
@@ -116,8 +116,10 @@ def tst(xtrcell, secondorder, cvactive, corenrn, seclmp):
     h.finitialize(-65)
     if corenrn:
         coreneuron.enable = True
+        coreneuron.verbose = 0
         pc.psolve(h.tstop)
         coreneuron.enable = False
+        coreneuron.verbose = 2
     else:
         h.run()
     plt(vvec, "v")
@@ -154,6 +156,8 @@ def tst(xtrcell, secondorder, cvactive, corenrn, seclmp):
 def test_imem():
     # tst(xtrcell, secondorder, cvactive, corenrn, seclmp)
     cnlist = [0]
+    if config.arguments["NRN_ENABLE_CORENEURON"]:
+        cnlist.append(1)
     for seclmp in [0, 1]:
         tst(1, 0, 0, 0, seclmp)
         tst(0, 0, 1, 0, seclmp)
