@@ -18,7 +18,7 @@ import tempfile
 
 import jinja2
 
-from parser import LanguageParser
+from language_parser import LanguageParser
 import node_info
 import utils
 
