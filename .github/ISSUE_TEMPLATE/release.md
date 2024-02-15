@@ -33,7 +33,7 @@ Releasing
 - [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 - [ ] Create, test and upload manual artifacts
   - [ ] MacOS package installer (manual task, ask Michael)
-  - [ ] arm64 wheels (manual task, check with Alex or Pramod)
+  - [ ] arm64 wheels (manual task, check with Erik, Goran or Pramod)
   - [ ] aarch64 wheels (create a `release/x.y-aarch64` branch for this, see [guide](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-circleci))
 - [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
