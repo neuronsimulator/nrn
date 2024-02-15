@@ -11,9 +11,9 @@
 # Mechanisms version are by default 0.0, but should be overriden
 MECH_NAME =
 MECH_VERSION = 0.0
-MODS_PATH = .
+MODS_PATH = $(PWD)
 # in the @CMAKE_HOST_SYSTEM_PROCESSOR@ folder
-OUTPUT = .
+OUTPUT = $(PWD)
 DESTDIR =
 UserINCFLAGS =
 UserLDFLAGS =
@@ -78,8 +78,8 @@ endif
 NRNUNITS = $(datadir_lib)/nrnunits.lib
 
 # File path config (internal)
-MODC_DIR = .
-OBJS_DIR = .
+MODC_DIR = $(PWD)
+OBJS_DIR = $(PWD)
 mod_objs   = $(MODOBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
