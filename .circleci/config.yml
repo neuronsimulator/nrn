@@ -54,10 +54,9 @@ jobs:
               310) pyenv_py_ver="3.10" ;;
               311) pyenv_py_ver="3.11" ;;
               312) pyenv_py_ver="3.12" ;;
-              *) echo "Error: pyenv python version not specified!" && exit 1;;
+              *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
             esac
 
-            cd /opt/circleci/.pyenv/plugins/python-build/../.. && git fetch --all && git checkout -B master origin/master && cd -
             env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
             pyenv global $pyenv_py_ver
             export PYTHON_EXE=$(which python)
