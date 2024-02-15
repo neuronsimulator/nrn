@@ -150,6 +150,7 @@ def tst(xtrcell, secondorder, cvactive, corenrn, seclmp):
         chkvec(*tmp)
 
     cv.use_fast_imem(0)
+    h.secondorder = 0
     return glist
 
 
