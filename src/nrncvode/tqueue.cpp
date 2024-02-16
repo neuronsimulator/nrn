@@ -70,13 +70,7 @@ void TQueue::deleteitem(TQItem* i) {
 }
 
 void TQueue::print() {
-    if (least_) {
-        prnt(least_, 0);
-    }
-    spscan(prnt, static_cast<TQItem*>(nullptr), sptree_);
-    for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
-        prnt(q, 0);
-    }
+    forall_callback(prnt);
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
@@ -93,8 +87,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
 // Assume not using bin queue.
 TQItem* TQueue::second_least(double t) {
     assert(least_);
-    TQItem* b = sphead(sptree_);
-    if (b && b->t_ == t) {
+    if (auto* b = spread(sptree_); b && b->t_ == t) {
         return b;
     }
     return nullptr;
@@ -105,8 +98,7 @@ void TQueue::move_least(double tnew) {
 }
 
 void TQueue::move_least_nolock(double tnew) {
-    TQItem* b = least();
-    if (b) {
+    if (TQItem* b = least(); b) {
         b->t_ = tnew;
         TQItem* nl = sphead(sptree_);
         if (nl) {
@@ -222,15 +214,13 @@ TQItem* TQueue::atomic_dq(double tt) {
 }
 
 TQItem* TQueue::find(double t) {
-    TQItem* q;
     // search only in the  splay tree. if this is a bug then fix it.
     STAT(nfind)
     if (t == least_t_nolock()) {
-        q = least();
+        return least();
     } else {
-        q = splookup(t, sptree_);
+        return splookup(t, sptree_);
     }
-    return (q);
 }
 
 BinQ::BinQ() {
@@ -255,19 +245,17 @@ BinQ::~BinQ() {
 
 void BinQ::resize(int size) {
     // printf("BinQ::resize from %d to %d\n", nbin_, size);
-    int i, j;
-    TQItem* q;
     assert(size >= nbin_);
     TQItem** bins = new TQItem*[size];
-    for (i = nbin_; i < size; ++i) {
+    for (int i = nbin_; i < size; ++i) {
         bins[i] = 0;
     }
-    for (i = 0, j = qpt_; i < nbin_; ++i, ++j) {
+    for (int i = 0, j = qpt_; i < nbin_; ++i, ++j) {
         if (j >= nbin_) {
             j = 0;
         }
         bins[i] = bins_[j];
-        for (q = bins[i]; q; q = q->left_) {
+        for (TQItem* q = bins[i]; q; q = q->left_) {
             q->cnt_ = i;
         }
     }
@@ -341,13 +329,12 @@ TQItem* BinQ::next(TQItem* q) {
 }
 
 void BinQ::remove(TQItem* q) {
-    TQItem *q1, *q2;
-    q1 = bins_[q->cnt_];
+    TQItem *q1 = bins_[q->cnt_];
     if (q1 == q) {
         bins_[q->cnt_] = q->left_;
         return;
     }
-    for (q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
+    for (const TQItem *q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
         if (q2 == q) {
             q1->left_ = q->left_;
             return;
