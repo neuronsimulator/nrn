@@ -329,12 +329,12 @@ TQItem* BinQ::next(TQItem* q) {
 }
 
 void BinQ::remove(TQItem* q) {
-    TQItem *q1 = bins_[q->cnt_];
+    TQItem* q1 = bins_[q->cnt_];
     if (q1 == q) {
         bins_[q->cnt_] = q->left_;
         return;
     }
-    for (const TQItem *q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
+    for (const TQItem* q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
         if (q2 == q) {
             q1->left_ = q->left_;
             return;
