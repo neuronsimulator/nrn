@@ -106,6 +106,7 @@ set(OC_FILE_LIST
     scoprand.cpp
     settext.cpp
     symbol.cpp
+    tqueue.cpp
     version.cpp
     x.cpp
     xred.cpp)

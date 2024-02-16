@@ -14,7 +14,7 @@
 #include "cvodeobj.h"
 #include "hoclist.h"
 #include "pool.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
 #include "datapath.h"
@@ -1034,7 +1034,7 @@ Object** NetCvode::netconlist() {
 NetCvodeThreadData::NetCvodeThreadData() {
     tpool_ = new TQItemPool(1000, 1);
     // tqe_ accessed only by thread i so no locking
-    tqe_ = new TQueue(tpool_, 0);
+    tqe_ = new TQueue(tpool_);
     sepool_ = new SelfEventPool(1000, 1);
     selfqueue_ = nullptr;
     psl_thr_ = nullptr;
@@ -2794,7 +2794,7 @@ void NetCvode::clear_events() {
         d.ite_cnt_ = 0;
         if (nrn_use_selfqueue_) {
             if (!d.selfqueue_) {
-                d.selfqueue_ = new SelfQueue(d.tpool_, 0);
+                d.selfqueue_ = new SelfQueue(d.tpool_);
             } else {
                 d.selfqueue_->remove_all();
             }

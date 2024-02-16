@@ -185,7 +185,7 @@ callback to bbss_early when needed.
 
 #include "netcon.h"
 #include "nrniv_mf.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "vrecitem.h"
 
 // on mingw, OUT became defined
