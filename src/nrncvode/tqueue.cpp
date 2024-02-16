@@ -356,8 +356,7 @@ void BinQ::remove(TQItem* q) {
 }
 
 SelfQueue::SelfQueue(TQItemPool* tp)
-    : tpool_(tp)
-{}
+    : tpool_(tp) {}
 
 SelfQueue::~SelfQueue() {
     remove_all();
