@@ -444,10 +444,19 @@ endif()
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
 add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
+set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
+set(CORENRN_INSTALL_TARGETS
+    coreneuron-core
+    PARENT_SCOPE)
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
+  set_target_properties(coreneuron-cuda PROPERTIES EXPORT_NAME corenrn-cuda)
   target_link_libraries(coreneuron-core PUBLIC coreneuron-cuda)
+  # list() commands don't propagate to parent scope
+  set(CORENRN_INSTALL_TARGETS
+      "coreneuron-core;coreneuron-cuda"
+      PARENT_SCOPE)
 endif()
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})
@@ -526,6 +535,9 @@ endif()
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}
                                              ${CORENRN_LIKWID_LIB})
+set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
+target_compile_features(coreneuron-core PUBLIC cxx_std_17)
+target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:include>)
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
@@ -626,6 +638,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
 # `special` to link against `libcorenrnmech_internal.{a,so}`
 include(MakefileBuildOptions)
+set(CORENRN_CXX_FLAGS
+    "${CORENRN_CXX_FLAGS}"
+    PARENT_SCOPE)
 
 # =============================================================================
 # CoreNEURON related configuration

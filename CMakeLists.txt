@@ -495,6 +495,9 @@ endif()
 # initialize CLI11 submodule
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
+# coreneuron targets will get propagated down from the subdirectory
+set(NRN_INSTALL_TARGETS nrniv_lib nocmodl)
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -903,6 +906,25 @@ if(NRN_MACOS_BUILD)
   # universal build for neurondemo needs to be after, or at end of, install
   nrn_macos_after_install()
 endif()
+
+# =============================================================================
+# Install CMake glue
+# =============================================================================
+install(TARGETS ${NRN_INSTALL_TARGETS} ${CORENRN_INSTALL_TARGETS} EXPORT NeuronTargets)
+install(
+  EXPORT NeuronTargets
+  FILE neuronTargets.cmake
+  NAMESPACE neuron::
+  DESTINATION lib/cmake/neuron)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake DESTINATION lib/cmake/neuron)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronMechMaker.cmake DESTINATION lib/cmake/neuron)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
+              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in DESTINATION share/nrn)
 
 # =============================================================================
 # Copy bash executable for windows
