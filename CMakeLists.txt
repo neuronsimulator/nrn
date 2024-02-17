@@ -245,7 +245,7 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
-cpp_cc_git_submodule(eigen)
+cpp_cc_git_submodule(eigen BUILD REQUIRED)
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -889,6 +889,27 @@ if(NRN_MACOS_BUILD)
   # universal build for neurondemo needs to be after, or at end of, install
   nrn_macos_after_install()
 endif()
+
+# =============================================================================
+# Install CMake glue
+# =============================================================================
+install(TARGETS nrniv_lib EXPORT NeuronTargets)
+install(EXPORT NeuronTargets
+  FILE neuronTargets.cmake
+  NAMESPACE neuron::
+  DESTINATION lib/cmake/neuron
+)
+
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake
+  DESTINATION lib/cmake/neuron
+)
+
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in
+  DESTINATION share/nrn
+)
 
 # =============================================================================
 # Copy bash executable for windows
