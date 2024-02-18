@@ -61,9 +61,7 @@ static void seg_or_x_arg_inside_stack(int i, Section** psec, double* px) {
         if (nrnpy_o2loc_p_) {
             (*nrnpy_o2loc_p_)(o, psec, px);
         }
-        if (!(*psec)) {
-            assert(0);
-        }
+        assert(*psec);
     }
 }
 

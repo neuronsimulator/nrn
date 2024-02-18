@@ -60,14 +60,13 @@ NrnPropertyImpl::NrnPropertyImpl(int mechtype) {
     sym_ = memb_func[mechtype].sym;
     // How many values. nrn_prop_param_size[EXTRACELL] is not all of them
     // Nor if it is a HocMech.
-    int ntotal = nrn_prop_param_size_[type_];
-    if (type_ == EXTRACELL || memb_func[type_].hoc_mech) {
-        ntotal = 0;
-        for (int i = 0; i < sym_->s_varn; ++i) {
-            Symbol* s = sym_->u.ppsym[i];
-            ntotal += hoc_total_array_data(s, nullptr);
-        }
+    // And nrn_prop_param_size does not include array sizes.
+    int ntotal{};
+    for (int i = 0; i < sym_->s_varn; ++i) {
+        Symbol* s = sym_->u.ppsym[i];
+        ntotal += hoc_total_array_data(s, nullptr);
     }
+
     params_.resize(ntotal);
     auto& param_default = *memb_func[mechtype].parm_default;
     int ix = 0;
@@ -241,16 +240,17 @@ bool NrnProperty::copy_out(NrnProperty& np, int vartype) {
 }
 
 Symbol* NrnProperty::findsym(const char* name) {
-    Symbol* sym;
+    Symbol* rsym = nullptr;
     int i, cnt;
     cnt = npi_->sym_->s_varn;
     for (i = 0; i < cnt; ++i) {
-        sym = npi_->sym_->u.ppsym[i];
+        Symbol* sym = npi_->sym_->u.ppsym[i];
         if (strcmp(sym->name, name) == 0) {
-            return sym;
+            rsym = sym;
+            break;
         }
     }
-    return nullptr;
+    return rsym;
 }
 
 neuron::container::data_handle<double> NrnProperty::pval(const Symbol* s, int index) {

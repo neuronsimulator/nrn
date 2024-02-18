@@ -610,8 +610,8 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     /* artificial cells done in v_setup_vectors() */
     for (tml = _nt->tml; tml; tml = tml->next) {
         if (memb_func[tml->index].is_point) {
-            if (tml->ml->prop) {  // hocmech
-                // I don't think hocmech works with multiple threads.
+            if (memb_func[tml->index].hoc_mech) {
+                // I don't think hoc_mech works with multiple threads.
                 for (i = 0; i < tml->ml->nodecount; ++i) {
                     auto* pnt = tml->ml->prop[i]->dparam[1].get<Point_process*>();
                     pnt->_vnt = _nt;

@@ -502,7 +502,8 @@ void SymDirectoryImpl::load_section() {
     nrn_popsec();
 }
 
-void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
+void SymDirectoryImpl::load_mechanism(Prop* p, int vartype, const char* xarg) {
+    int type = p->_type;
     if (memb_func[type].is_point) {
         return;
     }
@@ -511,7 +512,7 @@ void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
     int cnt = msym->s_varn;
     for (int i = 0; i < cnt; ++i) {
         Symbol* sym = msym->u.ppsym[i];
-        if (nrn_vartype(sym) == type || type == 0) {
+        if (nrn_vartype(sym) == vartype || vartype == 0) {
             if (ISARRAY(sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {

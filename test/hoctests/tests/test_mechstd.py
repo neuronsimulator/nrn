@@ -1,4 +1,4 @@
-from neuron import h
+from neuron import h, gui
 from neuron.expect_hocerr import expect_err, set_quiet
 import math
 
@@ -129,8 +129,50 @@ endtemplate Foo
     assert ms.get("x_foo") == 7.0
 
 
+def mechact(ms, i, index):
+    print(ms, i, index)
+
+
+def sv(b, ms):
+    b.save("// hello from sv(%s, %s) " % (str(b), str(ms)))
+    ms.save("name")
+
+
+def test_mechstd5():
+    model = mkmodel(["sdata"])
+    ms = h.MechanismStandard("sdata")
+    b = h.HBox()
+    b.save((sv, (b, ms)))
+    b.intercept(1)
+    ms.panel()
+    ms.action(mechact)
+    ms.panel("label name")
+    b.intercept(0)
+    b.map()
+
+    pp = h.SData(model(0.5))
+    pp.a = 5
+    ms2 = h.MechanismStandard("SData")
+    print(pp.a)
+    ms2._in(pp)
+    print(ms2.get("a"))
+    h.save_session("tmp.ses")
+    b.unmap()
+
+
+def test_mechstd6():
+    # Since SymChooser.run() is a dialog, to cover load_mechanism, must
+    # manually navigate to sdata and SData[0]
+    h("create soma")
+    h.soma.insert("sdata")
+    pp = h.SData(h.soma(0.5))
+    sc = h.SymChooser()
+    sc.run()
+
+
 if __name__ == "__main__":
     test_mechstd1()
     test_mechstd2()
     test_mechstd3()
     test_mechstd4()
+    test_mechstd5()
