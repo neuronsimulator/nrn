@@ -72,17 +72,6 @@ void TQueue::print() {
     forall_callback(prnt);
 }
 
-template <typename F>
-void TQueue::forall_callback(F f) {
-    if (least_) {
-        f(least_, 0);
-    }
-    spscan(f, static_cast<TQItem*>(nullptr), sptree_);
-    for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
-        f(q, 0);
-    }
-}
-
 // for Parallel Global Variable Timestep method.
 // Assume not using bin queue.
 TQItem* TQueue::second_least(double t) {
