@@ -19,7 +19,8 @@ struct SPTREE;
 
 struct TQItem {
     // Needed for the MutexPool
-    void clear(){} const;
+    void clear() {}
+    const;
 
     void* data_{};
     double t_{};
@@ -134,7 +135,7 @@ class TQueue {
     TQItemPool* tpool_{};
 #if COLLECT_TQueue_STATISTICS
     unsigned long ninsert{};
-    unsigned long nrem{}; 
+    unsigned long nrem{};
     unsigned long nleast{};
     unsigned long nbal{};
     unsigned long ncmplxrem{};
