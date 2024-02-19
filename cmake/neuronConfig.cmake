@@ -45,12 +45,13 @@ function(create_libnrnmech)
   endforeach()
 
   if(NRN_MECH_CORENEURON)
-    # CoreNEURON requires additional mod files. Only append them to the input list if
-    # similar named mods are _not yet present_
+    # CoreNEURON requires additional mod files. Only append them to the input list if similar named
+    # mods are _not yet present_
     file(GLOB BASE_MOD_FILES "${_CORENEURON_BASE_MOD}/*.mod")
     foreach(MOD_FILE IN LISTS BASE_MOD_FILES)
       string(REGEX REPLACE ".*/\([^/]+\)[.]mod$" "\\1" MOD_STUB "${MOD_FILE}")
       if("${MOD_STUB}" IN_LIST INPUT_STUBS)
+
       else()
         list(APPEND MOD_FILES "${MOD_FILE}")
       endif()
@@ -67,10 +68,8 @@ function(create_libnrnmech)
     list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_FILE}\\\"\")\;")
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
-    add_custom_command(
-      COMMAND "${TRANSPILER}" -o "${CMAKE_CURRENT_BINARY_DIR}/${OUTDIR}/cpp"
-              "${MOD_FILE}"
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
+    add_custom_command(COMMAND "${TRANSPILER}" -o "${CMAKE_CURRENT_BINARY_DIR}/${OUTDIR}/cpp"
+                               "${MOD_FILE}" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
 
     list(APPEND L_SOURCES "${CPP_FILE}")
   endforeach()
@@ -86,7 +85,8 @@ function(create_libnrnmech)
   if(NRN_MECH_CORENEURON)
     add_library(libcorenrnmech ${_CORENEURON_MECH_ENG} ${L_SOURCES})
     target_include_directories(libcorenrnmech PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
-    target_compile_definitions(libcorenrnmech PRIVATE ADDITIONAL_MECHS NRN_PRCELLSTATE=0 CORENEURON_BUILD)
+    target_compile_definitions(libcorenrnmech PRIVATE ADDITIONAL_MECHS NRN_PRCELLSTATE=0
+                                                      CORENEURON_BUILD)
     target_link_libraries(libcorenrnmech neuron::corenrn)
 
     set(MECH_LIB libcorenrnmech)
