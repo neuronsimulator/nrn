@@ -893,7 +893,7 @@ endif()
 # =============================================================================
 # Install CMake glue
 # =============================================================================
-install(TARGETS nrniv_lib EXPORT NeuronTargets)
+install(TARGETS nrniv_lib coreneuron-core EXPORT NeuronTargets)
 install(
   EXPORT NeuronTargets
   FILE neuronTargets.cmake

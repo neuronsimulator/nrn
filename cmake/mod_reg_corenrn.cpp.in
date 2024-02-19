@@ -5,11 +5,12 @@ extern int nrn_nobanner_;
 
 @MECH_DECLARE@
 
-extern modl_reg() {
+void modl_reg() {
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, " Additional mechanisms from files\n");
     @MECH_PRINT@
     fprintf(stderr, "\n\n");
   }
   @MECH_REGISTRE@
+}
 } //namespace coreneuron
