@@ -2033,8 +2033,8 @@ int NetCvode::solve(double tout) {
         if (tout >= 0.) {
             time_t rt = time(nullptr);
             //			int cnt = 0;
-            TQueue* tq = p[0].tq_;
-            TQueue* tqe = p[0].tqe_;
+            const TQueue* tq = p[0].tq_;
+            const TQueue* tqe = p[0].tqe_;
             NrnThread* nt = nrn_threads;
             while (tq->least_t() < tout || tqe->least_t() <= tout) {
                 err = local_microstep(cache_token, *nt);
@@ -6599,8 +6599,8 @@ static void lvardt_integrate(neuron::model_sorted_token const& token, NrnThread&
     int id = nt->id;
     NetCvode* nc = net_cvode_instance;
     NetCvodeThreadData& p = nc->p[id];
-    TQueue* tq = p.tq_;
-    TQueue* tqe = p.tqe_;
+    const TQueue* tq = p.tq_;
+    const TQueue* tqe = p.tqe_;
     double tout = lvardt_tout_;
     nt->_stop_stepping = 0;
     while (tq->least_t() < tout || tqe->least_t() <= tout) {

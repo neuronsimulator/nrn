@@ -19,7 +19,7 @@ struct SPTREE;
 
 struct TQItem {
     // Needed for the MutexPool
-    void clear(){} const;
+    void clear() const {};
 
     void* data_{};
     double t_{};

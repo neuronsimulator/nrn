@@ -140,7 +140,7 @@ void spinit(SPTREE<SPBLK>* q) {
     q->enqcmps = 0;
     q->splays = 0;
     q->splayloops = 0;
-    q->root = NULL;
+    q->root = nullptr;
 }
 
 /*----------------
