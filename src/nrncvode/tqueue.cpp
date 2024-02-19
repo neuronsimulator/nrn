@@ -220,8 +220,7 @@ TQItem* TQueue::find(double t) {
 
 BinQ::BinQ()
     : nbin_(1000)
-    , bins_(new TQItem*[nbin_])
-{
+    , bins_(new TQItem*[nbin_]) {
     for (int i = 0; i < nbin_; ++i) {
         bins_[i] = nullptr;
     }
