@@ -28,7 +28,8 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ../nrnmpi
       ${PROJECT_BINARY_DIR}/src/nrnpython
       ${PROJECT_BINARY_DIR}/src/ivos
-      ${PROJECT_BINARY_DIR}/src/oc)
+      ${PROJECT_BINARY_DIR}/src/oc
+      ${NRN_OC_GENERATED_SOURCES})
   if(NRN_ENABLE_INTERVIEWS)
     list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
   else()
