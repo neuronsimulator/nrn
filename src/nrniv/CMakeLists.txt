@@ -409,9 +409,10 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib PRIVATE nrngnu)
 target_link_libraries(nrniv_lib PRIVATE sparse13)
-# We feel at liberty to include across various subdirectories without clear interfaces,
-# thus this should be public at _build_ time, but not at install time.
-target_include_directories(nrniv_lib SYSTEM PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen>)
+# We feel at liberty to include across various subdirectories without clear interfaces, thus this
+# should be public at _build_ time, but not at install time.
+target_include_directories(
+  nrniv_lib SYSTEM PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen>)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PRIVATE "${NRN_OC_GEN}")
