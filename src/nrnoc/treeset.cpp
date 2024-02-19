@@ -424,7 +424,7 @@ void nrn_rhs(NrnThread* _nt) {
 
     if (_nt->_nrn_fast_imem) {
         /* _nrn_save_rhs has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+           here we transform so it only has membrane current contribution
         */
         double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
         if (use_cachevec) {
@@ -551,25 +551,24 @@ void nrn_lhs(NrnThread* _nt) {
 
     activsynapse_lhs();
 
-
     if (_nt->_nrn_fast_imem) {
         /* _nrn_save_d has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+           here we transform so it only has membrane current contribution
         */
         double* p = _nt->_nrn_fast_imem->_nrn_sav_d;
         if (use_sparse13) {
             for (i = i1; i < i3; ++i) {
                 Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
+                p[i] = NODED(nd) - p[i];
             }
         } else if (use_cachevec) {
             for (i = i1; i < i3; ++i) {
-                p[i] += VEC_D(i);
+                p[i] = VEC_D(i) - p[i];
             }
         } else {
             for (i = i1; i < i3; ++i) {
                 Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd);
+                p[i] += NODED(nd) - p[i];
             }
         }
     }
