@@ -126,7 +126,7 @@ void TQueue::statistics() {
 #endif
 }
 
-void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
+void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     if (least_) {
         f(least_, 0);
     }

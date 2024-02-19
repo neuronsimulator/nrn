@@ -110,7 +110,7 @@ class TQueue {
     void print();
     void statistics();
     void spike_stat(double*);
-    void forall_callback(void(*f)(const TQItem*, int));
+    void forall_callback(void (*f)(const TQItem*, int));
     int nshift_{};
     void deleteitem(TQItem*);
 
