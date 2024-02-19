@@ -27,7 +27,7 @@ function(create_libnrnmech)
   endif()
 
   foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
-  # set(MOD_FILE common/mod/DetAMPANMDA.mod)
+    # set(MOD_FILE common/mod/DetAMPANMDA.mod)
     string(REGEX REPLACE ".*/\([^/]+\)[.]mod$" "\\1" MOD_STUB "${MOD_FILE}")
     string(REGEX REPLACE "[.]mod$" ".cpp" FULL_CPP_FILE "${MOD_FILE}")
     string(REGEX REPLACE "^.*/" "cpp/" CPP_FILE "${FULL_CPP_FILE}")
@@ -37,9 +37,9 @@ function(create_libnrnmech)
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
     add_custom_command(
-      COMMAND "${TRANSPILER}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp" "${CMAKE_CURRENT_SOURCE_DIR}/${MOD_FILE}"
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
-    )
+      COMMAND "${TRANSPILER}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp"
+              "${CMAKE_CURRENT_SOURCE_DIR}/${MOD_FILE}"
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
 
     list(APPEND L_SOURCES "${CPP_FILE}")
   endforeach()

@@ -413,9 +413,7 @@ target_link_libraries(nrniv_lib PRIVATE Eigen3::Eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PRIVATE "${NRN_OC_GEN}")
-target_include_directories(nrniv_lib INTERFACE
-  $<INSTALL_INTERFACE:include>
-)
+target_include_directories(nrniv_lib INTERFACE $<INSTALL_INTERFACE:include>)
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_include_directories(nrniv_lib PRIVATE "${NRN_DEFAULT_PYTHON_INCLUDES}")
 endif()
@@ -446,10 +444,7 @@ if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib PUBLIC ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
 
-set_target_properties(nrniv_lib PROPERTIES
-  EXPORT_NAME nrniv
-  OUTPUT_NAME nrniv
-)
+set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)
 target_compile_features(nrniv_lib PUBLIC cxx_std_17)
 
 # =============================================================================

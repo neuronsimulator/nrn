@@ -894,22 +894,16 @@ endif()
 # Install CMake glue
 # =============================================================================
 install(TARGETS nrniv_lib EXPORT NeuronTargets)
-install(EXPORT NeuronTargets
+install(
+  EXPORT NeuronTargets
   FILE neuronTargets.cmake
   NAMESPACE neuron::
-  DESTINATION lib/cmake/neuron
-)
+  DESTINATION lib/cmake/neuron)
 
-install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake
-  DESTINATION lib/cmake/neuron
-)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake DESTINATION lib/cmake/neuron)
 
-install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in
-  DESTINATION share/nrn
-)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
+              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in DESTINATION share/nrn)
 
 # =============================================================================
 # Copy bash executable for windows
