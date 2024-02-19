@@ -110,8 +110,7 @@ class TQueue {
     void print();
     void statistics();
     void spike_stat(double*);
-    template <typename F>
-    void forall_callback(F f);
+    void forall_callback(void(*f)(const TQItem*, int));
     int nshift_{};
     void deleteitem(TQItem*);
 
@@ -146,17 +145,6 @@ class TQueue {
     unsigned long nfastmove{};
 #endif
 };
-
-template <typename F>
-void TQueue::forall_callback(F f) {
-    if (least_) {
-        f(least_, 0);
-    }
-    spscan(f, static_cast<TQItem*>(nullptr), sptree_);
-    for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
-        f(q, 0);
-    }
-}
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast
   public:          // insertion, deletion, iteration

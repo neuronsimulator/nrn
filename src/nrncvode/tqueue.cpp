@@ -126,6 +126,16 @@ void TQueue::statistics() {
 #endif
 }
 
+void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
+    if (least_) {
+        f(least_, 0);
+    }
+    spscan(f, static_cast<TQItem*>(nullptr), sptree_);
+    for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
+        f(q, 0);
+    }
+}
+
 void TQueue::spike_stat(double* d) {
 #if COLLECT_TQueue_STATISTICS
     d[0] = ninsert;
