@@ -245,8 +245,8 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
-# Eigen will build tests with a generic `visitor` target when BUILD_TESTING is enabled.
-# This will clash with a target with the same name in NMODL!
+# Eigen will build tests with a generic `visitor` target when BUILD_TESTING is enabled. This will
+# clash with a target with the same name in NMODL!
 set(BUILD_TESTING OFF)
 cpp_cc_git_submodule(eigen BUILD REQUIRED EXCLUDE_FROM_ALL)
 
