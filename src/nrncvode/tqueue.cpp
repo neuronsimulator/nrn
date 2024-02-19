@@ -33,7 +33,6 @@ of struct _spblk, we are really using TQItem
 #define key       t_
 #include <sptree.h>
 
-// extern double dt;
 #define nt_dt nrn_threads->_dt
 
 void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
@@ -46,9 +45,9 @@ static void prnt(const TQItem* b, int level) {
 }
 
 TQueue::TQueue(TQItemPool* tp)
-    : tpool_(tp)
-    , sptree_(new SPTREE<TQItem>)
-    , binq_(new BinQ) {
+    : sptree_(new SPTREE<TQItem>)
+    , binq_(new BinQ)
+    , tpool_(tp) {
     spinit(sptree_);
 }
 
@@ -73,7 +72,8 @@ void TQueue::print() {
     forall_callback(prnt);
 }
 
-void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
+template <typename F>
+void TQueue::forall_callback(F f) {
     if (least_) {
         f(least_, 0);
     }
@@ -87,7 +87,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
 // Assume not using bin queue.
 TQItem* TQueue::second_least(double t) {
     assert(least_);
-    if (auto* b = spread(sptree_); b && b->t_ == t) {
+    if (auto* b = sphead(sptree_); b && b->t_ == t) {
         return b;
     }
     return nullptr;
@@ -100,12 +100,9 @@ void TQueue::move_least(double tnew) {
 void TQueue::move_least_nolock(double tnew) {
     if (TQItem* b = least(); b) {
         b->t_ = tnew;
-        TQItem* nl = sphead(sptree_);
-        if (nl) {
-            if (tnew > nl->t_) {
-                least_ = spdeq(&sptree_->root);
-                spenq(b, sptree_);
-            }
+        if (const TQItem* nl = sphead(sptree_); nl && tnew > nl->t_) {
+            least_ = spdeq(&sptree_->root);
+            spenq(b, sptree_);
         }
     }
 }
@@ -145,8 +142,6 @@ void TQueue::spike_stat(double* d) {
     d[0] = ninsert;
     d[1] = nmove;
     d[2] = nrem;
-// printf("FifoQ spikestat nfenq=%lu nfdeq=%lu nfrem=%lu\n", fifo_->nfenq, fifo_->nfdeq,
-// fifo_->nfrem);
 #endif
 }
 
@@ -200,7 +195,7 @@ void TQueue::remove(TQItem* q) {
 }
 
 TQItem* TQueue::atomic_dq(double tt) {
-    TQItem* q = 0;
+    TQItem* q = nullptr;
     if (least_ && least_->t_ <= tt) {
         q = least_;
         STAT(nrem);
@@ -223,14 +218,13 @@ TQItem* TQueue::find(double t) {
     }
 }
 
-BinQ::BinQ() {
-    nbin_ = 1000;
-    bins_ = new TQItem*[nbin_];
+BinQ::BinQ()
+    : nbin_(1000)
+    , bins_(new TQItem*[nbin_])
+{
     for (int i = 0; i < nbin_; ++i) {
-        bins_[i] = 0;
+        bins_[i] = nullptr;
     }
-    qpt_ = 0;
-    tt_ = 0.;
 #if COLLECT_TQueue_STATISTICS
     nfenq = nfdeq = nfrem = 0;
 #endif
@@ -244,11 +238,10 @@ BinQ::~BinQ() {
 }
 
 void BinQ::resize(int size) {
-    // printf("BinQ::resize from %d to %d\n", nbin_, size);
     assert(size >= nbin_);
-    TQItem** bins = new TQItem*[size];
+    auto** bins = new TQItem*[size];
     for (int i = nbin_; i < size; ++i) {
-        bins[i] = 0;
+        bins[i] = nullptr;
     }
     for (int i = 0, j = qpt_; i < nbin_; ++i, ++j) {
         if (j >= nbin_) {
@@ -265,7 +258,7 @@ void BinQ::resize(int size) {
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int) ((td - tt_) / nt_dt + 1.e-10);
+    auto idt = static_cast<int>((td - tt_) / nt_dt + 1.e-10);
     if (idt < 0) {
         if (nrn_binq_enqueue_error_handler) {
             (*nrn_binq_enqueue_error_handler)(td, q);
@@ -277,12 +270,11 @@ void BinQ::enqueue(double td, TQItem* q) {
     if (idt >= nbin_) {
         resize(idt + 100);
     }
-    // assert (idt < nbin_);
+
     idt += qpt_;
     if (idt >= nbin_) {
         idt -= nbin_;
     }
-    // printf("enqueue idt=%d qpt=%d\n", idt, qpt_);
     assert(idt < nbin_);
     q->cnt_ = idt;  // only for iteration
     q->left_ = bins_[idt];
@@ -312,7 +304,7 @@ TQItem* BinQ::first() {
             return bins_[j];
         }
     }
-    return 0;
+    return nullptr;
 }
 TQItem* BinQ::next(TQItem* q) {
     if (q->left_) {
@@ -325,7 +317,7 @@ TQItem* BinQ::next(TQItem* q) {
             return bins_[i];
         }
     }
-    return 0;
+    return nullptr;
 }
 
 void BinQ::remove(TQItem* q) {
@@ -334,7 +326,7 @@ void BinQ::remove(TQItem* q) {
         bins_[q->cnt_] = q->left_;
         return;
     }
-    for (const TQItem* q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
+    for (TQItem* q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
         if (q2 == q) {
             q1->left_ = q->left_;
             return;

@@ -18,8 +18,8 @@ template <typename T>
 struct SPTREE;
 
 struct TQItem {
-    // Needed for the pool
-    void clear(){};
+    // Needed for the MutexPool
+    void clear(){} const;
 
     void* data_{};
     double t_{};
@@ -46,7 +46,7 @@ class BinQ {
         return bins_[qpt_];
     }
     TQItem* dequeue();
-    double tbin() {
+    double tbin() const {
         return tt_;
     }
     // for iteration
@@ -55,27 +55,31 @@ class BinQ {
     void remove(TQItem*);
     void resize(int);
 #if COLLECT_TQueue_STATISTICS
-  public:
-    int nfenq, nfdeq, nfrem;
+
+    int nfenq{};
+    int nfdeq{};
+    int nfrem{};
 #endif
+
   private:
-    double tt_;  // time at beginning of qpt_ interval
-    int nbin_, qpt_;
-    TQItem** bins_;
+    double tt_{};  // time at beginning of qpt_ interval
+    int nbin_{};
+    int qpt_{};
+    TQItem** bins_{};
 };
 
 using TQItemPool = MutexPool<TQItem>;
 
 class TQueue {
   public:
-    TQueue(TQItemPool*);
+    explicit TQueue(TQItemPool*);
     virtual ~TQueue();
 
     TQItem* least() {
         return least_;
     }
     TQItem* second_least(double t);
-    double least_t() {
+    double least_t() const {
         if (least_) {
             return least_->t_;
         } else {
@@ -106,17 +110,17 @@ class TQueue {
     void print();
     void statistics();
     void spike_stat(double*);
-    void forall_callback(void (*)(const TQItem*, int));
+    template <typename F>
+    void forall_callback(F f);
     int nshift_{};
     void deleteitem(TQItem*);
 
-  public:
     BinQ* binq() {
         return binq_;
     }
 
   private:
-    double least_t_nolock() {
+    double least_t_nolock() const {
         if (least_) {
             return least_->t_;
         } else {
@@ -129,14 +133,23 @@ class TQueue {
     TQItem* least_{};
     TQItemPool* tpool_{};
 #if COLLECT_TQueue_STATISTICS
-    unsigned long ninsert{}, nrem{}, nleast{}, nbal{}, ncmplxrem{};
-    unsigned long ncompare{}, nleastsrch{}, nfind{}, nfindsrch{}, nmove{}, nfastmove{};
+    unsigned long ninsert{};
+    unsigned long nrem{}; 
+    unsigned long nleast{};
+    unsigned long nbal{};
+    unsigned long ncmplxrem{};
+    unsigned long ncompare{};
+    unsigned long nleastsrch{};
+    unsigned long nfind{};
+    unsigned long nfindsrch{};
+    unsigned long nmove{};
+    unsigned long nfastmove{};
 #endif
 };
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast
   public:          // insertion, deletion, iteration
-    SelfQueue(TQItemPool*);
+    explicit SelfQueue(TQItemPool*);
     virtual ~SelfQueue();
     TQItem* insert(void*);
     void* remove(TQItem*);

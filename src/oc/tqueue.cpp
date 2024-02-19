@@ -70,7 +70,7 @@ static Member_func members[] = {{"insrt", insert},
                                 {"find", find},
                                 {"stats", stats},
                                 {"printf", print},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static void* cons(Object*) {
     assert(0);
