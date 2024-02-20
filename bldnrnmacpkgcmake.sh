@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.9 python3.10 python3.11 python3.12"
+default_pythons="python3.8 python3.9 python3.10 python3.11 python3.12"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
 
-# python3.8 needs to be universal and macosx-10.9. So we built our own and
+# rx3doptlevel=2 is default but very slow compiling. For script testing
+# launch with rx3doptlevel set to 0 or 1, e.g.
+# rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
+if test "$rx3doptlevel" = "" ; then
+  rx3doptlevel=2
+fi
+
+# python3.8 needs to be universal and macosx-10.9. So we built our own
+# from python.org python3.8.18 sources. Unfortunately, I cannot get pip
+# to work (OpenSSH issues), so I installed python.org Python3.8.10 installer
+# (which would have been fine by itself except it is macosx-11)
+# and copied relevant site-packages from that into the python3.8.18
+# installation site-packages.
 export PATH=$HOME/soft/python3.8/bin:$PATH
 # In the top level source dir?# 
 if test -f nrnversion.sh ; then
@@ -104,7 +116,7 @@ cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
-  -DNRN_RX3D_OPT_LEVEL=1 \
+  -DNRN_RX3D_OPT_LEVEL=$rx3doptlevel \
   $archs_cmake \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
