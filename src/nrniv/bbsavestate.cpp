@@ -156,7 +156,7 @@ We do not need to worry about bin queueing since it is the delivery time that
 is enqueueed and that is always in the future.
 
 When bin queueing is used, a mechanism is needed to avoid the assertion
-error in BinQ::enqueue (see nrncvode/sptbinq.cpp) when the enqueued event
+error in BinQ::enqueue (see nrncvode/tqueue.cpp) when the enqueued event
 has a delivery time earlier than the binq current time. One possibility
 is to turn off bin queueing and force all events on the standard queue
 to be on binq boundaries. Another possibility is for bbsavestate to
