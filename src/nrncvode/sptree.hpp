@@ -1,5 +1,5 @@
 /*
-** sptree.h:  The following type declarations provide the binary tree
+** sptree.hpp:  The following type declarations provide the binary tree
 **  representation of event-sets or priority queues needed by splay trees
 **
 **  assumes that data and datb will be provided by the application

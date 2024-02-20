@@ -21,7 +21,7 @@ extern int hoc_return_type_code;
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "mymath.h"
 #include "htlist.h"
 #include <nrnmutdec.h>

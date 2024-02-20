@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include <nrnmutdec.h>
-#include <pool.h>
+#include <pool.hpp>
 
 class TQItem;
 using TQItemPool = MutexPool<TQItem>;

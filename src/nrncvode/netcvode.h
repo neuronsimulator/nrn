@@ -7,7 +7,7 @@
 
 #include "cvodeobj.h"
 #include "neuron/container/data_handle.hpp"
-#include "tqueue.h"
+#include "tqueue.hpp"
 
 #include <cmath>
 #include <vector>
