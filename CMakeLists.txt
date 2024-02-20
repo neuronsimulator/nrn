@@ -487,6 +487,9 @@ endif()
 # initialize CLI11 submodule
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
+# coreneuron targets will get appended here
+set(NRN_INSTALL_TARGETS nrniv_lib)
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -893,7 +896,7 @@ endif()
 # =============================================================================
 # Install CMake glue
 # =============================================================================
-install(TARGETS nrniv_lib coreneuron-core EXPORT NeuronTargets)
+install(TARGETS ${NRN_INSTALL_TARGETS} EXPORT NeuronTargets)
 install(
   EXPORT NeuronTargets
   FILE neuronTargets.cmake
