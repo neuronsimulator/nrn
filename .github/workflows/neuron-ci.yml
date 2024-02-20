@@ -409,16 +409,16 @@ jobs:
         if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3
 
-    - name: Save compiler cache
-      uses: actions/cache/save@v4
-      if: always()
-      with:
-        path: |
-          ${{runner.workspace}}/ccache
-        key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
-        restore-keys: |
-          ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
-          ${{matrix.os}}-${{hashfiles('matrix.json')}}-
+      - name: Save compiler cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{runner.workspace}}/ccache
+          key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
   # see https://github.com/orgs/community/discussions/26822
   final:
