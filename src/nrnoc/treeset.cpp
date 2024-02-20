@@ -568,7 +568,7 @@ void nrn_lhs(NrnThread* _nt) {
         } else {
             for (i = i1; i < i3; ++i) {
                 Node* nd = _nt->_v_node[i];
-                p[i] += NODED(nd) - p[i];
+                p[i] = NODED(nd) - p[i];
             }
         }
     }
