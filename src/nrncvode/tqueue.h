@@ -2,6 +2,8 @@
 
 #undef check
 
+#include <assert.h>
+
 #include <nrnmutdec.h>
 #include <pool.h>
 
@@ -17,8 +19,6 @@ using TQItemPool = MutexPool<TQItem>;
 // and forall_callback does the splay tree first and then the bin (so
 // not in time order)
 // The bin part assumes a fixed step method.
-
-#include <assert.h>
 
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
