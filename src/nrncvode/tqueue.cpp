@@ -1,11 +1,5 @@
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <section.h>
-
 #include "tqueue.h"
 #include "pool.h"
 
@@ -110,6 +104,12 @@ void TQueue_reg() {
 }
 
 //----------------
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <section.h>
 
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
