@@ -334,7 +334,7 @@ void TQueue::remove(TQItem* q) {
     STAT(nrem);
     if (q) {
         if (q == least_) {
-            if (sptree_->root) {
+            if (spempty(sptree_) != 0) {
                 least_ = spdeq(&sptree_->root);
             } else {
                 least_ = nullptr;
@@ -355,7 +355,7 @@ TQItem* TQueue::atomic_dq(double tt) {
     if (least_ && least_->t_ <= tt) {
         q = least_;
         STAT(nrem);
-        if (sptree_->root) {
+        if (spempty(sptree_) != 0) {
             least_ = spdeq(&sptree_->root);
         } else {
             least_ = nullptr;
