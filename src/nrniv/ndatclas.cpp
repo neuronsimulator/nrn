@@ -217,7 +217,7 @@ Symbol* NrnProperty::find(const char* name) {
 }
 int NrnProperty::prop_index(const Symbol* s) const {
     assert(s);
-    if (s->type != RANGEVAR) {
+    if (s->type != RANGEVAR && s->type != RANGEOBJ) {
         hoc_execerror(s->name, "not a range variable");
     }
     return s->u.rng.index;

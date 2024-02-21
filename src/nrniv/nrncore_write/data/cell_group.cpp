@@ -258,7 +258,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     int vdata_size = 0;
     for (int i = 0; i < dsize; ++i) {
         int* ds = memb_func[di.type].dparam_semantics;
-        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == 0) {
+        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == -11 || ds[i] == 0) {
             ++vdata_size;
         }
     }
@@ -311,6 +311,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -10) {  // fornetcon
                 etype = -10;
                 eindex = 0;
+            } else if (dmap[j] == -11) {  // random
+                etype = -11;
+                eindex = vdata_offset++;
             } else if (dmap[j] == -9) {  // diam
                 cg.ndiam = nt.end;
                 etype = -9;

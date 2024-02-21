@@ -7,7 +7,6 @@ include:
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
 
-
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/263401 for why we specify the flags like this now
 # 130 characters seems to be the point at which jobs refuse to run
 .matrix:
@@ -263,3 +262,60 @@ test:neuron:nmodl:nvhpc:omp:legacy:
 test:neuron:nmodl:nvhpc:omp:
   extends: [.test_neuron, .gpu_node]
   needs: ["build:neuron:nmodl:nvhpc:omp"]
+
+
+# Container building
+mac_m1_container_build:
+  stage: .pre
+  tags:
+    - macos-arm64
+  script:
+    - if [ -z "${ARM64_IMAGE_TAG}" ]; then
+    -   echo "Please set the ARM64_IMAGE_TAG variable"
+    -   exit 1
+    - fi
+    - cd packaging/python
+    - echo "Replacing symlinks with their targets to keep podman happy"
+    - find . -type l -exec cp $(realpath {}) ./TEMP \; -exec rm {} \; -exec mv TEMP {} \;
+    - ls -l
+    - export BUILDAH_FORMAT=docker # enables ONBUILD instructions which are not OCI compatible
+    - machine_status=$(podman machine inspect | awk '/State/ {print $2}' | tr -d '",')
+      # If you start the machine yourself, make sure BUILDAH_FORMAT and the http proxy variables are set in the shell before doing so!
+    - if [[ "${machine_status}" != "running" ]]; then
+    -     echo "Machine is in ${machine_status} status - starting"
+    -     podman machine start
+    - fi
+    - podman build -t neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG} --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+    - podman login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_AUTH_TOKEN} docker.io
+    - podman push neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG}
+    - podman rmi localhost/neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+  when: manual
+
+x86_64_container_build:
+  stage: .pre
+  image:
+    name: quay.io/buildah/stable
+    entrypoint: [""]
+  variables:
+    KUBERNETES_CPU_LIMIT: 4
+    KUBERNETES_CPU_REQUEST: 2
+    KUBERNETES_MEMORY_LIMIT: 8Gi
+    KUBERNETES_MEMORY_REQUEST: 4Gi
+  tags:
+    - kubernetes
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+  when: manual
+  script:
+    - if [ -z "${X86_IMAGE_TAG}" ]; then
+    -   echo "Please set the X86_IMAGE_TAG variable"
+    -   exit 1
+    - fi
+    - export STORAGE_DRIVER=vfs    # allows to build inside containers without additional mounts
+    - export BUILDAH_FORMAT=docker # enables ONBUILD instructions which are not OCI compatible
+    - cd packaging/python
+    - buildah bud --iidfile image_id -t neuronsimulator/neuron_wheel:${X86_IMAGE_TAG} -f Dockerfile .
+    - buildah login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_AUTH_TOKEN} docker.io
+    - buildah push $(<image_id) docker://docker.io/neuronsimulator/neuron_wheel:${X86_IMAGE_TAG}

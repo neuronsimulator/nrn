@@ -283,8 +283,8 @@ else()
     FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
-
 endif()
+set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
 
 # set correct arguments for nmodl for cpu/gpu target
 set(CORENRN_NMODL_FLAGS

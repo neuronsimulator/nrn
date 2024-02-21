@@ -111,6 +111,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
+%token	<qp>	RANDOM RANDOMVAR
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -185,6 +186,11 @@ Name:	NAME
 		{ Symbol *checklocal(Symbol*);
 		  SYM($1) = checklocal(SYM($1));  /* it was a bug
 			when this was done to the lookahead token in lex */
+		}
+	| RANDOMVAR error {
+		  std::string s{SYM($1)->name};
+		  s += " RANDOM var can only be used as the first arg of a random_ function";
+		  myerr(s.c_str());
 		}
 	;
 declare: parmblk | indepblk | depblk | stateblk
@@ -622,10 +628,21 @@ fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
 				vectorize = 0;
 			}
 		 }
+		 Item* arg = $2->next;
+		 if (SYM($1)->subtype & EXTDEF_RANDOM) {
+		    if (arg == $2 || arg->itemtype != SYMBOL || SYM(arg)->type != RANDOMVAR) {
+		        diag(SYM($1)->name, " must have RANDOM var as first argument");
+		    }
+		 }else{
+		    if (arg != $2 && arg->itemtype == SYMBOL && SYM(arg)->type == RANDOMVAR) {
+		        diag(SYM($1)->name, " cannot have RANDOM var as an argument");
+		    }
+		 }
 		 vectorize_use_func($1,$2,$4,$5,blocktype);
 		}
 	;
 exprlist: /*nothing*/{$$ = ITEM0;}
+	| RANDOMVAR
 	| expr
 	| STRING
 	| exprlist ',' expr
@@ -1010,6 +1027,8 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt THREADSAFE
 		{ assert_threadsafe = 1; }
+	| nrnstmt RANDOM nrnlist
+	        { nrn_list($2, $3);}
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}

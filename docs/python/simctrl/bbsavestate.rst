@@ -30,18 +30,24 @@ BBSaveState
           h.stdinit()
           bbss = h.BBSaveState()
           if restore:
-            bbss.restore_test()
+            bbss.restore("temp.dat")
             print(f'after restore t={h.t}')
           else:
             pc.psolve(tstop/2)
-            bbss.save_test()
+            bbss.save("temp.dat")
           pc.psolve(tstop)
 
-    Note that files are saved in a subdirectory called "out" and restored
-    from a subdirectory called "in". An empty "out" folder should be created by
-    the user prior to calling save_test(). A script filter
+    In this case, the entire model state for this MPI rank is in the filename for save and restore.
+
+    If multisplit is involved, or it is desired to reassemble the model cells on a different set of MPI ranks,
+    one instead must use :meth:`BBSaveState.save_test`
+    and :meth:`BBSaveState.restore_test`. This allows reassembly of the multisplit subtrees back into
+    their complete cells to allow different multisplitting and different cell distribution on different ranks.
+    In this case
+    files are saved in a subdirectory called "bbss_out" and restored
+    from a subdirectory called "bbss_in". A script filter
     (see :meth:`BBSaveState.save_test`) is needed to copy and sometimes
-    concatenate files from the out to the in subfolders. These files have
+    concatenate files from the bbss_out to the bbss_in subfolders. These files have
     an ascii format.
 
     BBSaveState has a c++ API that allows one to replace the file reader and
@@ -59,7 +65,7 @@ BBSaveState
     Because a restore clears the event queue and because one cannot call
     finitialize from hoc without vitiating the restore, :meth:`Vector.play` will
     not work unless one calls :meth:`BBSaveState.vector_play_init` after a
-    restore (similarly :func:`frecord` must be called for :meth:`Vector.record` to work.
+    restore (similarly :func:`frecord_init` must be called for :meth:`Vector.record` to work.
     Note that it is necessary that Vector.play use a tvec argument with
     a first element greater than or equal to the restore time.
     
@@ -72,9 +78,10 @@ BBSaveState
        with a base gid.
     4. NetCon.event in Hoc can be used only with NetCon's with a None source.
 
-    
-    To allow extra state, such as Random sequence, to be saved for
-    POINT_PROCESS or SUFFIX density nmodl mechanisms,
+    RANDOM variables declared in a mod file NEURON block have their sequence value saved
+    automatically.
+
+    To allow extra state to be saved, eg. when POINTER and BBCOREPOINTER are used to manage objects,
     declare  FUNCTION bbsavestate() within the mechanism.
     That function is called when the
     mechanism instance is saved and restored.
@@ -119,16 +126,16 @@ BBSaveState
 
 
     Description:
-        State of the model is saved in files within the subdirectory, `out`.
-    The file `out/tmp` contains the value of t. Other files have the
+        State of the model is saved in files within the subdirectory, `bbss_out`.
+        The file `bbss_out/tmp` contains the value of t. Other files have the
         filename format tmp.<gid>.<rank> . Only in the case of multisplit
         is it possible to have the same gid in more than one filename. Note
         that the out folder needs to be created by the user prior to a call
         to save_test().
 
         To prepare for a restore, the tmp.<gid>.<rank> files should be copied
-        from the `out` subfolder to a subfolder called `in`, with the filename
-        in/tmp.<gid> . Each file should begin with a first line that specifies
+        from the `bbss_out` subfolder to a subfolder called `bbss_in`, with the filename
+        bbss_in/tmp.<gid> . Each file should begin with a first line that specifies
         the number of files in the `out` folder that had the same gid.
 
         The following out2in.sh script shows how to do this (not particularly
@@ -138,16 +145,16 @@ BBSaveState
           bash
 
           #!/usr/bin/env bash
-          rm -f in/*
-          cat out/tmp > in/tmp
-          for f in out/tmp.*.* ; do
+          rm -f bbss_in/*
+          cat bbss_out/tmp > bbss_in/tmp
+          for f in bbss_out/tmp.*.* ; do
             echo $f
             i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
             echo $i
-            if test ! -f in/tmp.$i ; then
-              cnt=`ls out/tmp.$i.* | wc -l`
-              echo $cnt > in/tmp.$i
-              cat out/tmp.$i.* >> in/tmp.$i
+            if test ! -f bbss_in/tmp.$i ; then
+              cnt=`ls bbss_out/tmp.$i.* | wc -l`
+              echo $cnt > bbss_in/tmp.$i
+              cat bbss_out/tmp.$i.* >> bbss_in/tmp.$i
             fi
           done
 
@@ -166,16 +173,40 @@ BBSaveState
 
     Description:
         State of the model is restored from files within the
-        subdirectory, "in". The file "in/tmp" supplies the value of t.
-    Other files have the filename format tmp.<gid> and are read when
+        subdirectory, "bbss_in". The file "bbss_in/tmp" supplies the value of t.
+        Other files have the filename format tmp.<gid> and are read when
         that gid is restored. Note that in a multisplit context, the same
-        "in/tmp.<gid>" file will be read by multiple ranks, but only the state
+        "bbss_in/tmp.<gid>" file will be read by multiple ranks, but only the state
         assocated with sections that exist on a rank will be restored.
 
 ----
 
 
+.. method:: BBSaveState.save
 
+  Syntax:
+    ``.save("filename")``
+
+  Description:
+    Saves the state of the entire model (on this rank). This is simpler to use than the ``save_test``, ``restore_test``
+    pattern but does not work if one has multisplit cells or desires a different distribution of cells on a different
+    number of ranks.
+
+
+----
+
+
+.. method:: BBSaveState.restore
+
+  Syntax:
+    ``.restore("filename")``
+
+  Description:
+    Restores the state of the entire model (on this rank). This is simpler to use than the ``save_test``, ``restore_test``
+    pattern but does not work if one has multisplit cells or desires a different distribution of cells on a different
+    number of ranks.
+
+----
 
 .. method:: BBSaveState.ignore
 

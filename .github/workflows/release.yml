@@ -25,7 +25,7 @@ jobs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
       rel_tag: ${{ env.REL_TAG }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
             ref: ${{ env.REL_BRANCH }}
