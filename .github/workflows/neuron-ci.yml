@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1
+        uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
 
@@ -110,13 +110,13 @@ jobs:
           echo CI_OS_NAME=linux >> $GITHUB_ENV
         shell: bash
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -127,7 +127,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -176,10 +176,10 @@ jobs:
           echo -----
 
       - name: Restore compiler cache
-        uses: pat-s/always-upload-cache@v3
+        uses: actions/cache@v4
         with:
-          path: |
-            ${{runner.workspace}}/ccache
+          path: ${{runner.workspace}}/ccache
+          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
