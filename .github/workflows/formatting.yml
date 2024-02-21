@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Set up Python@3.7
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: 3.7
       
@@ -30,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade black[jupyter]==22.12.0
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Check Python formatting
         working-directory: ${{runner.workspace}}/nrn
@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Set up Python@3.7
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: 3.7
 
@@ -59,7 +59,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install ninja-build
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure
         working-directory: ${{runner.workspace}}/nrn
@@ -93,7 +93,7 @@ jobs:
           command -v clang-format
           clang-format --version
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure
         working-directory: ${{runner.workspace}}/nrn
