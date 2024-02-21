@@ -197,9 +197,10 @@ jobs:
           echo -----
 
       - name: Restore compiler cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/ccache
+          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
@@ -407,13 +408,6 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/neuron-ci.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3
-
-      - name: Save compiler cache
-        uses: actions/cache/save@v4
-        if: always()
-        with:
-          path: ${{runner.workspace}}/ccache
-          key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
 
   # see https://github.com/orgs/community/discussions/26822
   final:
