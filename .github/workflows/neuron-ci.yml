@@ -89,7 +89,7 @@ jobs:
 
     steps:
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1
+        uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
@@ -196,23 +196,11 @@ jobs:
           cat matrix.json
           echo -----
 
-      # Workaround for https://github.com/actions/cache/issues/92
-      - name: Checkout cache action
-        uses: actions/checkout@v4
-        with:
-          repository: actions/cache
-          ref: v3
-          path: tmp/actions/cache
-
-      - name: Make actions/cache@v3 run even on failure
-        run: |
-          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
-
       - name: Restore compiler cache
-        uses: ./tmp/actions/cache
+        uses: actions/cache@v4
         with:
-          path: |
-            ${{runner.workspace}}/ccache
+          path: ${{runner.workspace}}/ccache
+          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
