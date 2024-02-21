@@ -4,6 +4,7 @@
 
 from neuron import config, h
 
+
 def coreneuron_available():
     if not config.arguments["NRN_ENABLE_CORENEURON"]:
         return False
