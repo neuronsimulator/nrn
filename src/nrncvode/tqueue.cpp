@@ -6,8 +6,8 @@
 #include <stdarg.h>
 #include <section.h>
 
-#include "tqueue.h"
-#include "pool.h"
+#include "tqueue.hpp"
+#include "pool.hpp"
 
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -127,7 +127,7 @@ of struct _spblk, we are really using TQItem
 #define uplink    parent_
 #define cnt       cnt_
 #define key       t_
-#include <sptree.h>
+#include <sptree.hpp>
 
 // extern double dt;
 #define nt_dt nrn_threads->_dt
@@ -280,7 +280,7 @@ void TQueue::statistics() {
     Printf("calls to find=%lu\n", nfind);
     Printf("comparisons=%d\n", sptree_->enqcmps);
 #else
-    Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
+    Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.hpp\n");
 #endif
 }
 

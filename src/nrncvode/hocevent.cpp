@@ -1,5 +1,5 @@
 #include <objcmd.h>
-#include <pool.h>
+#include <pool.hpp>
 #include <netcon.h>
 #include <nrnoc2iv.h>
 #include <mymath.h>
