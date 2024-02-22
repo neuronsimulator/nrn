@@ -20,17 +20,17 @@ struct SPTREE {
     int enqcmps; /* compares in spenq */
 };
 
-#define spinit      sptq_spinit
-#define spempty     sptq_spempty
-#define spenq       sptq_spenq
-#define spdeq       sptq_spdeq
-#define splay       sptq_splay
-#define sphead      sptq_sphead
-#define spdelete    sptq_spdelete
-#define splookup    sptq_splookup
-#define spscan  sptq_spscan
-#define spfhead sptq_spfhead
-#define spfnext sptq_spfnext
+#define spinit   sptq_spinit
+#define spempty  sptq_spempty
+#define spenq    sptq_spenq
+#define spdeq    sptq_spdeq
+#define splay    sptq_splay
+#define sphead   sptq_sphead
+#define spdelete sptq_spdelete
+#define splookup sptq_splookup
+#define spscan   sptq_spscan
+#define spfhead  sptq_spfhead
+#define spfnext  sptq_spfnext
 
 /*  Original file: sptree.cpp
  *
