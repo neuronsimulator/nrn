@@ -44,7 +44,7 @@ class SPTree {
     T* dequeue();
 
     // Return the first element in the tree.
-    // 
+    //
     // Returns a reference to the first item;
     // event, and the old left branch is shortened, as if the tree had
     // been splayed about the first element; this is done by dequeueing
@@ -142,7 +142,7 @@ void SPTree<T>::enqueue(T* n) {
         if (STRCMP(next->key, key) > 0)
             goto two;
 
-    one: /* assert next->key <= key */
+    one:   /* assert next->key <= key */
         do /* walk to the right in the left tree */
         {
             temp = next->rightlink;
@@ -180,7 +180,7 @@ void SPTree<T>::enqueue(T* n) {
 
         } while (STRCMP(next->key, key) <= 0); /* change sides */
 
-    two: /* assert next->key > key */
+    two:   /* assert next->key > key */
         do /* walk to the left in the right tree */
         {
             temp = next->leftlink;
@@ -227,8 +227,7 @@ void SPTree<T>::enqueue(T* n) {
 }
 
 template <typename T>
-T* SPTree<T>::dequeue()
-{
+T* SPTree<T>::dequeue() {
     return dequeue(&root);
 }
 
@@ -293,8 +292,7 @@ T* SPTree<T>::dequeue(T** np) /* pointer to a node pointer */
 }
 
 template <typename T>
-void SPTree<T>::splay(T* n)
-{
+void SPTree<T>::splay(T* n) {
     T* up;     /* points to the node being dealt with */
     T* prev;   /* a descendent of up, already dealt with */
     T* upup;   /* the parent of up */
