@@ -152,34 +152,18 @@ pull the changes from the main (upstream) repository:
  Development Conventions
 ------------------------
 
-If you are developing NMODL, make sure to enable both
-``NMODL_FORMATTING`` and ``NMODL_PRECOMMIT`` CMake variables to ensure
-that your contributions follow the coding conventions of this project:
+Formatting
+~~~~~~~~~~
 
-.. code:: cmake
+Run the HPC coding conventions formatter to format all source files:
 
-   cmake -DNMODL_FORMATTING:BOOL=ON -DNMODL_PRECOMMIT:BOOL=ON <path>
+.. code:: bash
 
-The first variable provides the following additional targets to format
-C, C++, and CMake files:
+   cmake/hpc-coding-conventions/bin/format
 
-::
+The HPC coding conventions formatter installs any dependencies into a Python
+virtual environment.
 
-   make clang-format cmake-format
-
-The second option activates Git hooks that will discard commits that do
-not comply with coding conventions of this project. These 2 CMake
-variables require additional utilities:
-
--  `ClangFormat
-   7 <https://releases.llvm.org/7.0.0/tools/clang/docs/ClangFormat.html>`__
--  `cmake-format <https://github.com/cheshirekow/cmake_format>`__
--  `pre-commit <https://pre-commit.com/>`__
-
-clang-format can be installed on Linux thanks to `LLVM apt
-page <http://apt.llvm.org/>`__. On MacOS, you can simply install llvm
-with brew: ``brew install llvm``. *cmake-format* and *pre-commit*
-utilities can be installed with *pip*.
 
 Validate the Python package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

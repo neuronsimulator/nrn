@@ -24,7 +24,7 @@ NMODL as a domain specific language (DSL) to describe a wide range of
 membrane and intracellular submodels. Here is an example of exponential
 synapse specified in NMODL:
 
-.. code:: python
+.. code::
 
    NEURON {
        POINT_PROCESS ExpSyn
