@@ -911,17 +911,15 @@ SPBLK* spenqafter(SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q) {
 template <typename SPBLK>
 SPBLK* splookup(double key, SPTREE<SPBLK>* q) {
     SPBLK* n;
-    int Sct;
     int c;
 
     /* find node in the tree */
     n = q->root;
     c = ++(q->lkpcmps);
     q->lookups++;
-    //    while( n && (Sct = STRCMP( key, n->key ) ) )
-    while (n && (Sct = key != n->key)) {
+    while (n && key != n->key) {
         c++;
-        n = (Sct < 0) ? n->leftlink : n->rightlink;
+        n = key < n->key ? n->leftlink : n->rightlink;
     }
     q->lkpcmps = c;
 
