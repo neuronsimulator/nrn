@@ -7,7 +7,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
-#include "pool.h"
+#include "pool.hpp"
 
 #include <InterViews/observe.h>
 
