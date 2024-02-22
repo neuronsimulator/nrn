@@ -166,8 +166,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
     MUTCONSTRUCT(mkmut)
     tpool_ = tp;
     nshift_ = 0;
-    sptree_ = new SPTREE<TQItem>;
-    spinit(sptree_);
+    sptree_ = new SPTree<TQItem>();
     binq_ = new BinQ;
     least_ = 0;
 
@@ -179,7 +178,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
 
 TQueue::~TQueue() {
     TQItem *q, *q2;
-    while ((q = spdeq(&sptree_->root)) != nullptr) {
+    while ((q = sptree_->dequeue()) != nullptr) {
         deleteitem(q);
     }
     delete sptree_;
@@ -200,7 +199,7 @@ void TQueue::print() {
     if (least_) {
         prnt(least_, 0);
     }
-    spscan(prnt, static_cast<TQItem*>(nullptr), sptree_);
+    sptree_->apply_all(prnt, nullptr);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         prnt(q, 0);
     }
@@ -212,7 +211,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     if (least_) {
         f(least_, 0);
     }
-    spscan(f, static_cast<TQItem*>(nullptr), sptree_);
+    sptree_->apply_all(f, nullptr);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         f(q, 0);
     }
@@ -225,11 +224,11 @@ void TQueue::check(const char* mes) {}
 // Assume not using bin queue.
 TQItem* TQueue::second_least(double t) {
     assert(least_);
-    TQItem* b = sphead(sptree_);
+    TQItem* b = sptree_->first();
     if (b && b->t_ == t) {
         return b;
     }
-    return 0;
+    return nullptr;
 }
 
 void TQueue::move_least(double tnew) {
@@ -242,11 +241,11 @@ void TQueue::move_least_nolock(double tnew) {
     TQItem* b = least();
     if (b) {
         b->t_ = tnew;
-        TQItem* nl = sphead(sptree_);
+        TQItem* nl = sptree_->first();
         if (nl) {
             if (tnew > nl->t_) {
-                least_ = spdeq(&sptree_->root);
-                spenq(b, sptree_);
+                least_ = sptree_->dequeue();
+                sptree_->enqueue(b);
             }
         }
     }
@@ -258,14 +257,14 @@ void TQueue::move(TQItem* i, double tnew) {
     if (i == least_) {
         move_least_nolock(tnew);
     } else if (tnew < least_->t_) {
-        spdelete(i, sptree_);
+        sptree_->remove(i);
         i->t_ = tnew;
-        spenq(least_, sptree_);
+        sptree_->enqueue(least_);
         least_ = i;
     } else {
-        spdelete(i, sptree_);
+        sptree_->remove(i);
         i->t_ = tnew;
-        spenq(i, sptree_);
+        sptree_->enqueue(i);
     }
     MUTUNLOCK
 }
@@ -278,7 +277,7 @@ void TQueue::statistics() {
            nrem,
            nleast);
     Printf("calls to find=%lu\n", nfind);
-    Printf("comparisons=%d\n", sptree_->enqcmps);
+    Printf("comparisons=%d\n", sptree_->get_enqcmps());
 #else
     Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.hpp\n");
 #endif
@@ -303,11 +302,11 @@ TQItem* TQueue::insert(double t, void* d) {
     i->cnt_ = -1;
     if (t < least_t_nolock()) {
         if (least()) {
-            spenq(least(), sptree_);
+            sptree_->enqueue(least());
         }
         least_ = i;
     } else {
-        spenq(i, sptree_);
+        sptree_->enqueue(i);
     }
     MUTUNLOCK
     return i;
@@ -334,15 +333,15 @@ void TQueue::remove(TQItem* q) {
     STAT(nrem);
     if (q) {
         if (q == least_) {
-            if (!spempty(sptree_)) {
-                least_ = spdeq(&sptree_->root);
+            if (!sptree_->empty()) {
+                least_ = sptree_->dequeue();
             } else {
                 least_ = nullptr;
             }
         } else if (q->cnt_ >= 0) {
             binq_->remove(q);
         } else {
-            spdelete(q, sptree_);
+            sptree_->remove(q);
         }
         tpool_->hpfree(q);
     }
@@ -355,8 +354,8 @@ TQItem* TQueue::atomic_dq(double tt) {
     if (least_ && least_->t_ <= tt) {
         q = least_;
         STAT(nrem);
-        if (!spempty(sptree_)) {
-            least_ = spdeq(&sptree_->root);
+        if (!sptree_->empty()) {
+            least_ = sptree_->dequeue();
         } else {
             least_ = nullptr;
         }
@@ -373,7 +372,7 @@ TQItem* TQueue::find(double t) {
     if (t == least_t_nolock()) {
         q = least();
     } else {
-        q = splookup(t, sptree_);
+        q = sptree_->find(t);
     }
     MUTUNLOCK
     return (q);

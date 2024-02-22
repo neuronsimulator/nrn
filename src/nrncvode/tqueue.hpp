@@ -22,7 +22,7 @@ using TQItemPool = MutexPool<TQItem>;
 
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
-struct SPTREE;
+struct SPTree;
 
 class TQItem {
   public:
@@ -148,7 +148,7 @@ class TQueue {
         }
     }
     void move_least_nolock(double tnew);
-    SPTREE<TQItem>* sptree_;
+    SPTree<TQItem>* sptree_;
     BinQ* binq_;
     TQItem* least_;
     TQItemPool* tpool_;
