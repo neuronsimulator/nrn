@@ -100,7 +100,7 @@ void spinit(SPTREE<SPBLK>* q) {
  * spempty() -- is an event-set represented as a splay tree empty?
  */
 template <typename SPBLK>
-int spempty(SPTREE<SPBLK>* q) {
+bool spempty(SPTREE<SPBLK>* q) {
     return (q == nullptr || q->root == nullptr);
 }
 
