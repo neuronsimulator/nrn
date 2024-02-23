@@ -28,7 +28,11 @@ namespace codegen {
  * \brief %Visitor for printing C++ code with OpenACC backend
  */
 class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
+  public:
+    using CodegenCoreneuronCppVisitor::CodegenCoreneuronCppVisitor;
+
   protected:
+
     /// name of the code generation backend
     std::string backend_name() const override;
 
@@ -133,20 +137,6 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
     /// Replace default implementation by a no-op
     /// since the buffer cannot be grown up during gpu execution
     void print_net_send_buffering_grow() override;
-
-
-  public:
-    CodegenAccVisitor(const std::string& mod_file,
-                      const std::string& output_dir,
-                      const std::string& float_type,
-                      bool optimize_ionvar_copies)
-        : CodegenCoreneuronCppVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
-
-    CodegenAccVisitor(const std::string& mod_file,
-                      std::ostream& stream,
-                      const std::string& float_type,
-                      bool optimize_ionvar_copies)
-        : CodegenCoreneuronCppVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
 };
 
 /** \} */  // end of codegen_backends

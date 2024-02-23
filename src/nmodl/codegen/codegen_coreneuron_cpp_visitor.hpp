@@ -60,6 +60,9 @@ using printer::CodePrinter;
  *    have removed return from verbatim block.
  */
 class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
+  public:
+    using CodegenCppVisitor::CodegenCppVisitor;
+
   protected:
     /****************************************************************************************/
     /*                                    Member variables                                  */
@@ -1098,51 +1101,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
   public:
-    /**
-     * \brief Constructs the C++ code generator visitor
-     *
-     * This constructor instantiates an NMODL C++ code generator and allows writing generated code
-     * directly to a file in \c [output_dir]/[mod_filename].cpp.
-     *
-     * \note No code generation is performed at this stage. Since the code
-     * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
-     * visit_program in order to generate the C++ code corresponding to the AST.
-     *
-     * \param mod_filename The name of the model for which code should be generated.
-     *                     It is used for constructing an output filename.
-     * \param output_dir   The directory where target C++ file should be generated.
-     * \param float_type   The float type to use in the generated code. The string will be used
-     *                     as-is in the target code. This defaults to \c double.
-     */
-    CodegenCoreneuronCppVisitor(std::string mod_filename,
-                                const std::string& output_dir,
-                                std::string float_type,
-                                const bool optimize_ionvar_copies)
-        : CodegenCppVisitor(mod_filename, output_dir, float_type, optimize_ionvar_copies) {}
-
-    /**
-     * \copybrief nmodl::codegen::CodegenCoreneuronCppVisitor
-     *
-     * This constructor instantiates an NMODL C++ code generator and allows writing generated code
-     * into an output stream.
-     *
-     * \note No code generation is performed at this stage. Since the code
-     * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
-     * visit_program in order to generate the C++ code corresponding to the AST.
-     *
-     * \param mod_filename The name of the model for which code should be generated.
-     *                     It is used for constructing an output filename.
-     * \param stream       The output stream onto which to write the generated code
-     * \param float_type   The float type to use in the generated code. The string will be used
-     *                     as-is in the target code. This defaults to \c double.
-     */
-    CodegenCoreneuronCppVisitor(std::string mod_filename,
-                                std::ostream& stream,
-                                std::string float_type,
-                                const bool optimize_ionvar_copies)
-        : CodegenCppVisitor(mod_filename, stream, float_type, optimize_ionvar_copies) {}
-
-
     /****************************************************************************************/
     /*          Public printing routines for code generation for use in unit tests          */
     /****************************************************************************************/
