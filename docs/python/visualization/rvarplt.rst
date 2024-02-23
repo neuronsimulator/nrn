@@ -157,7 +157,7 @@ RangeVarPlot
             a_1.plot(plt)
             plt.show()
 
-        .. image:: ../images/rangevarplot2.png
+        .. image:: ../images/rangevarplotrxd.png
             :align: center
 
 ----
