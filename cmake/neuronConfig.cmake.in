@@ -1,0 +1,126 @@
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/neuronTargets.cmake")
+
+get_filename_component(_dir "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_prefix "${_dir}/../../.." ABSOLUTE)
+
+set(NRN_ENABLE_CORENEURON @NRN_ENABLE_CORENEURON@)
+
+set(_NEURON_MAIN "${_prefix}/share/nrn/nrnmain.cpp")
+set(_NEURON_MAIN_INCLUDE_DIR "${_prefix}/include/nrncvode")
+set(_NEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_nrn.cpp.in")
+
+set(_CORENEURON_BASE_MOD "${_prefix}/share/modfile")
+set(_CORENEURON_MAIN "${_prefix}/share/coreneuron/coreneuron.cpp")
+set(_CORENEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_corenrn.cpp.in")
+set(_CORENEURON_MECH_ENG "${_prefix}/share/coreneuron/enginemech.cpp")
+set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms")
+
+find_program(NOCMODL nocmodl REQUIRED)
+find_program(NMODL nmodl REQUIRED)
+
+function(merge_modfile_lists)
+  cmake_parse_arguments(MERGE_MODS "" "" "MOD_FILES" ${ARGN})
+endfunction()
+
+function(create_nrnmech)
+  set(options CORENEURON INSTALL_CPP INSTALL_MOD SPECIAL)
+  set(oneValueArgs MECHANISM_NAME)
+  cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "MOD_FILES" ${ARGN})
+
+  set(CORE "")
+  set(INPUT_MAIN ${_NEURON_MAIN})
+  set(INPUT_MECH_REG ${_NEURON_MECH_REG})
+  set(RETURN_TYPE "\"C\" void")
+  set(TRANSPILER "${NOCMODL}")
+
+  if(NRN_MECH_CORENEURON)
+    if(NOT NRN_ENABLE_CORENEURON)
+      message(FATAL_ERROR "CoreNEURON support not enabled")
+    endif()
+    set(CORE "core")
+    set(INPUT_MAIN ${_CORENEURON_MAIN})
+    set(INPUT_MECH_REG ${_CORENEURON_MECH_REG})
+    set(RETURN_TYPE "int")
+    set(TRANSPILER "${NMODL}")
+  endif()
+
+  set(OUTDIR "${CORE}neuron")
+  set(LIBNAME "${CORE}nrnmech")
+  set(EXENAME "${CORE}special")
+
+  foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
+    get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+    list(APPEND INPUT_STUBS "${MOD_STUB}")
+    list(APPEND MOD_FILES "${MOD_FILE}")
+  endforeach()
+
+  if(NRN_MECH_CORENEURON)
+    # CoreNEURON requires additional mod files. Only append them to the input list if similar named
+    # mods are _not yet present_
+    file(GLOB BASE_MOD_FILES "${_CORENEURON_BASE_MOD}/*.mod")
+    foreach(MOD_FILE IN LISTS BASE_MOD_FILES)
+      get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+      if("${MOD_STUB}" IN_LIST INPUT_STUBS)
+
+      else()
+        list(APPEND MOD_FILES "${MOD_FILE}")
+      endif()
+    endforeach()
+  endif()
+
+  foreach(MOD_FILE IN LISTS MOD_FILES)
+    # set(MOD_FILE common/mod/DetAMPANMDA.mod)
+    get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+    set(CPP_FILE "cpp/${OUTDIR}/${MOD_STUB}.cpp")
+
+    list(APPEND L_MECH_DECLARE "extern ${RETURN_TYPE} _${MOD_STUB}_reg(void)\;")
+    list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_FILE}\\\"\")\;")
+    list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
+
+    add_custom_command(COMMAND "${TRANSPILER}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp/${OUTDIR}"
+                               "${MOD_FILE}" OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
+
+    list(APPEND L_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
+  endforeach()
+
+  list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
+  list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
+  list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
+
+  get_filename_component(MECH_REG "${INPUT_MECH_REG}" NAME_WLE)
+  configure_file(${INPUT_MECH_REG} ${MECH_REG} @ONLY)
+
+  if(NRN_MECH_CORENEURON)
+    add_library(${LIBNAME} SHARED ${_CORENEURON_MECH_ENG} ${L_SOURCES})
+    target_include_directories(${LIBNAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
+    target_compile_definitions(${LIBNAME} PRIVATE ADDITIONAL_MECHS NRN_PRCELLSTATE=0
+      CORENEURON_BUILD)
+    target_link_libraries(${LIBNAME} neuron::corenrn)
+  else()
+    add_library(${LIBNAME} SHARED ${L_SOURCES})
+    target_link_libraries(${LIBNAME} neuron::nrniv)
+  endif()
+
+  if(NRN_MECH_INSTALL_CPP)
+    install(FILES ${L_SOURCES} DESTINATION "share/${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>/cpp")
+  endif()
+
+  if(NRN_MECH_INSTALL_MOD)
+    install(FILES ${MOD_FILES} DESTINATION "share/${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>/mod")
+  endif()
+
+  install(TARGETS ${LIBNAME} DESTINATION lib)
+  set_target_properties(${LIBNAME} PROPERTIES OUTPUT_NAME "${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>")
+
+  if(NRN_MECH_SPECIAL)
+    add_executable(${EXENAME} ${INPUT_MAIN} ${MECH_REG})
+    target_include_directories(${EXENAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+    target_link_libraries(${EXENAME} ${LIBNAME})
+    set_target_properties(${EXENAME} PROPERTIES OUTPUT_NAME "special$<$<BOOL:${NRN_MECH_CORENEURON}>:-core>")
+    install(TARGETS ${EXENAME} DESTINATION bin)
+  endif()
+endfunction()
