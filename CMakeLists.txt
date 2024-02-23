@@ -903,7 +903,8 @@ install(
   NAMESPACE neuron::
   DESTINATION lib/cmake/neuron)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake @ONLY)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake DESTINATION lib/cmake/neuron)
 

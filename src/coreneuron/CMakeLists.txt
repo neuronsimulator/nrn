@@ -469,7 +469,9 @@ endif()
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
 set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
-set(CORENRN_INSTALL_TARGETS coreneuron-core PARENT_SCOPE)
+set(CORENRN_INSTALL_TARGETS
+    coreneuron-core
+    PARENT_SCOPE)
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
