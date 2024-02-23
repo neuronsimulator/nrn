@@ -388,6 +388,10 @@ extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl,
     MPI_Gatherv(s, scnt, MPI_INT, r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
 }
 
+extern void nrnmpi_sizet_gather(size_t* s, size_t* r, int cnt, int root) {
+    MPI_Gather(s, cnt, MPI_UNSIGNED_LONG_LONG, r, cnt, MPI_UNSIGNED_LONG_LONG, root, nrnmpi_comm);
+}
+
 extern void nrnmpi_char_gatherv(char* s, int scnt, char* r, int* rcnt, int* rdispl, int root) {
     MPI_Gatherv(s, scnt, MPI_CHAR, r, rcnt, rdispl, MPI_CHAR, root, nrnmpi_comm);
 }

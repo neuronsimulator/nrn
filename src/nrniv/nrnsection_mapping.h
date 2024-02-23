@@ -143,6 +143,6 @@ struct NrnMappingInfo {
     }
 };
 
-void nrn_write_mapping_info(const char*, int, NrnMappingInfo&);
+size_t nrn_write_mapping_info(const char*, int, NrnMappingInfo&);
 
 #endif  // NRN_SECTION_MAPPING

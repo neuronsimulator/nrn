@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_filehandler.hpp"
@@ -15,6 +16,7 @@
 #include "coreneuron/io/user_params.hpp"
 #include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
+
 
 namespace coreneuron {
 void read_phase1(NrnThread& nt, UserParams& userParams);
@@ -100,6 +102,7 @@ inline void read_phase_aux<gap>(NrnThread& nt, UserParams& userParams) {
     read_phasegap(nt, userParams);
 }
 
+
 /// Reading phase wrapper for each neuron group.
 template <phase P>
 inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memory_transfer) {
@@ -114,9 +117,8 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
                 data_dir = userParams.restore_path;
             }
 
-            std::string fname = std::string(data_dir) + "/" +
-                                std::to_string(userParams.gidgroups[i]) + "_" + getPhaseName<P>() +
-                                ".dat";
+            size_t file_offset = userParams.file_offsets[i * userParams.num_offsets + P - 1];
+            const auto& fname = FileHandler::get_rank_fname(data_dir);
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid.
@@ -128,7 +130,7 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
                 userParams.file_reader[i].close();
             } else {
                 // if no file failed to open or not opened at all
-                userParams.file_reader[i].open(fname);
+                userParams.file_reader[i].open(fname, file_offset);
             }
         }
         read_phase_aux<P>(*nt, userParams);

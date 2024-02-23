@@ -219,16 +219,22 @@ static part1_ret part1() {
 }
 
 static void part2(const char* path) {
+    std::vector<size_t> offsets(4);
+
     CellGroup* cgs = cellgroups_;
     for (int i = 0; i < nrn_nthread; ++i) {
         chkpnt = 0;
-        write_nrnthread(path, nrn_threads[i], cgs[i]);
+        const auto& nrnthread_offsets = write_nrnthread(path, nrn_threads[i], cgs[i]);
+        if (nrnthread_offsets[1] > 0) {
+            offsets[0] = nrnthread_offsets[0];
+            offsets[1] = nrnthread_offsets[1];
+        }
     }
 
     /** write mapping information */
     if (mapinfo.size()) {
         int gid = cgs[0].group_id;
-        nrn_write_mapping_info(path, gid, mapinfo);
+        offsets[2] = nrn_write_mapping_info(path, gid, mapinfo);
         mapinfo.clear();
     }
 
@@ -238,7 +244,7 @@ static void part2(const char* path) {
         for (int i = 0; i < nrn_nthread; ++i) {
             group_ids[i] = cgs[i].group_id;
         }
-        nrnbbcore_gap_write(path, group_ids);
+        offsets[3] = nrnbbcore_gap_write(path, group_ids);
         delete[] group_ids;
     }
 
@@ -262,7 +268,7 @@ static void part2(const char* path) {
                 hoc_execerror("Second arg must be Vector or double.", NULL);
             }
         }
-        write_nrnthread_task(path, cgs, append);
+        write_nrnthread_task(path, cgs, append, offsets);
     }
 
     part2_clean();

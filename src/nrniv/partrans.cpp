@@ -143,6 +143,7 @@ extern void (*nrnthread_vi_compute_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();  // before nrnthread_v_transfer and after update. Called by
                                       // thread 0.
 extern void (*nrn_mk_transfer_thread_data_)();
+extern std::string get_rank_fname(const char* basepath, bool create_folder = true);
 #if NRNMPI
 extern double nrnmpi_transfer_wait_;
 #endif
@@ -983,9 +984,11 @@ SetupTransferInfo* nrn_get_partrans_setup_info(int ngroup, int cn_nthread, size_
 }
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
+    size_t offset = 0;
+
     auto gi = nrncore_transfer_info(nrn_nthread);  // gi stood for gapinfo
     if (gi == nullptr) {
-        return 0;
+        return offset;
     }
 
     // print the files
@@ -996,10 +999,16 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
             continue;
         }
 
-        char fname[1000];
-        Sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
-        FILE* f = fopen(fname, "wb");
-        assert(f);
+        const std::string fname = get_rank_fname(path);
+
+        FILE* f = fopen(fname.c_str(), "ab");
+        if (!f) {
+            hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
+        }
+
+        // Set the offset inside the file
+        offset = ftell(f);
+
         fprintf(f, "%s\n", bbcore_write_version);
         fprintf(f, "%d sizeof_sid_t\n", int(sizeof(sgid_t)));
 
@@ -1023,12 +1032,15 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
             CHKPNT fwrite(g.tar_index.data(), ntar, sizeof(int), f);
         }
 
+        // Mark the end of the file with '\0'
+        fputc(0, f);
+
         fclose(f);
     }
 
     // cleanup
     delete[] gi;
-    return 0;
+    return offset;
 }
 
 static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {

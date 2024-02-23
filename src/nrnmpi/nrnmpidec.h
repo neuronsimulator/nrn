@@ -83,6 +83,7 @@ extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
+extern void nrnmpi_sizet_gather(size_t* s, size_t* r, int cnt, int root);
 extern void nrnmpi_char_gatherv(char* s, int scnt, char* r, int* rcnt, int* rdispl, int root);
 extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root);
 extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root);

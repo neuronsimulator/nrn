@@ -13,6 +13,7 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include "nrnsection_mapping.h"
 
 extern short* nrn_is_artificial_;
@@ -52,6 +53,24 @@ std::string get_filename(const std::string& path, std::string file_name) {
     std::string fname(path + '/' + file_name);
     nrn_assert(fname.size() < 1024);
     return fname;
+}
+
+std::string get_rank_fname(const char* basepath, bool create_folder = true) {
+    // TODO: Change this for equivalent MPI functions to get the node ID
+    std::string nodepath = "";
+    if (const char* node_id = std::getenv("SLURM_NODEID")) {
+        const int factor = 20;
+        nodepath = std::to_string(std::atoi(node_id) / factor) + "/" + node_id;
+    } else if (const char* hostname = std::getenv("HOSTNAME")) {
+        nodepath = hostname;
+    }
+    // Create subfolder for the rank, based on the node
+    std::string path = std::string(basepath) + "/" + nodepath;
+    if (create_folder && !std::filesystem::exists(path)) {
+        std::filesystem::create_directories(path);
+    }
+
+    return (path + "/" + std::to_string(nrnmpi_myid) + ".dat");
 }
 
 
@@ -112,18 +131,23 @@ void write_globals(const char* fname) {
     fclose(f);
 }
 
+std::array<size_t, 2> write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
+    std::array<size_t, 2> offsets = {0, 0};
 
-void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
-    char fname[1000];
     if (cg.n_output <= 0) {
-        return;
+        return offsets;
     }
     assert(cg.group_id >= 0);
-    nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
-    FILE* f = fopen(fname, "wb");
+
+    const auto& fname = get_rank_fname(path);
+    FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
-        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
+        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname.c_str());
     }
+
+    // Set the first offset inside the file
+    offsets[0] = ftell(f);
+
     fprintf(f, "%s\n", bbcore_write_version);
 
     // nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
@@ -137,13 +161,12 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
         delete[] cg.netcon_srcgid;
         cg.netcon_srcgid = NULL;
     }
-    fclose(f);
 
-    nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
-    f = fopen(fname, "w");
-    if (!f) {
-        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
-    }
+    // Mark the end of the file with '\0'
+    fputc(0, f);
+
+    // Set the second offset inside the file
+    offsets[1] = ftell(f);
 
     fprintf(f, "%s\n", bbcore_write_version);
 
@@ -291,7 +314,12 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
 
     nrnbbcore_vecplay_write(f, nt);
 
+    // Mark the end of the file with '\0'
+    fputc(0, f);
+
     fclose(f);
+
+    return offsets;
 }
 
 
@@ -363,7 +391,10 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
+void write_nrnthread_task(const char* path,
+                          CellGroup* cgs,
+                          bool append,
+                          std::vector<size_t>& file_offsets) {
     // ids of datasets that will be created
     std::vector<int> iSend;
 
@@ -398,6 +429,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
 
     // total number of datasets across all ranks
     int iSumThread = 0;
+    int num_offsets = file_offsets.size();
 
     // calculate mpi displacements
     if (nrnmpi_myid == 0) {
@@ -424,6 +456,10 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
             iRecvVec[iInt] = iSend[iInt];
         }
     }
+
+    // Collect the offsets
+    file_offsets.resize(num_offsets * (nrnmpi_myid == 0 ? nrnmpi_numprocs : 1ULL));
+    nrnmpi_sizet_gather(file_offsets.data(), file_offsets.data(), num_offsets, 0);
 #else
     for (int iInt = 0; iInt < num_datasets; ++iInt) {
         iRecvVec[iInt] = iSend[iInt];
@@ -512,15 +548,21 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
             fseek(fp, pos, SEEK_SET);
         }
         fprintf(fp, "%10d\n", iSumThread);
+        fprintf(fp, "%d\n", num_offsets);
 
         if (append) {
             // Start writing the groupids starting at the end of the file.
             fseek(fp, 0, SEEK_END);
         }
 
-        // write all dataset ids
+        // write all dataset + offsets
+        size_t offsets_idx = 0;
         for (int i = 0; i < iRecvVec.size(); ++i) {
             fprintf(fp, "%d\n", iRecvVec[i]);
+
+            for (int i = 0; i < num_offsets; i++, offsets_idx++) {
+                fprintf(fp, "%zu\n", file_offsets[offsets_idx]);
+            }
         }
 
         fclose(fp);
@@ -528,17 +570,16 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
 }
 
 /** @brief dump mapping information to gid_3.dat file */
-void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
-    /** full path of mapping file */
-    std::stringstream ss;
-    ss << path << "/" << gid << "_3.dat";
-
-    std::string fname(ss.str());
-    FILE* f = fopen(fname.c_str(), "w");
-
+size_t nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
+    size_t offset = 0;
+    const auto& fname = get_rank_fname(path);
+    FILE* f = fopen(fname.c_str(), "ab");
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
+
+    // Set the offset inside the file
+    offset = ftell(f);
 
     fprintf(f, "%s\n", bbcore_write_version);
 
@@ -574,5 +615,11 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             }
         }
     }
+
+    // Mark the end of the file with '\0'
+    fputc(0, f);
+
     fclose(f);
+
+    return offset;
 }

@@ -56,7 +56,9 @@ class FileHandler {
     explicit FileHandler(const std::string& filename);
 
     /** Preserving chkpnt state, move to a new file. */
-    void open(const std::string& filename, std::ios::openmode mode = std::ios::in);
+    void open(const std::string& filename,
+              size_t offset = 0,
+              std::ios::openmode mode = std::ios::in);
 
     /** Is the file not open */
     bool fail() const {
@@ -64,6 +66,8 @@ class FileHandler {
     }
 
     static bool file_exist(const std::string& filename);
+
+    static std::string get_rank_fname(const char* basepath, bool create_folder = true);
 
     /** nothing more to read */
     bool eof();
