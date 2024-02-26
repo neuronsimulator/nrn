@@ -4,7 +4,6 @@
 
 #include <assert.h>
 
-#include <nrnmutdec.h>
 #include <pool.hpp>
 
 class TQItem;
@@ -77,26 +76,13 @@ class BinQ {
 
 class TQueue {
   public:
-    TQueue(TQItemPool*, int mkmut = 0);
+    TQueue(TQItemPool*);
     virtual ~TQueue();
 
     TQItem* least() {
         return least_;
     }
     TQItem* second_least(double t);
-#if NRN_ENABLE_THREADS
-    double least_t() {
-        double tt;
-        MUTLOCK;
-        if (least_) {
-            tt = least_->t_;
-        } else {
-            tt = 1e15;
-        }
-        MUTUNLOCK;
-        return tt;
-    }
-#else
     double least_t() {
         if (least_) {
             return least_->t_;
@@ -104,7 +90,6 @@ class TQueue {
             return 1e15;
         }
     }
-#endif
     TQItem* atomic_dq(double til);
     TQItem* insert(double t, void* data);
     TQItem* enqueue_bin(double t, void* data);
@@ -152,7 +137,6 @@ class TQueue {
     BinQ* binq_;
     TQItem* least_;
     TQItemPool* tpool_;
-    MUTDEC
 #if COLLECT_TQueue_STATISTICS
     unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
     unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
@@ -161,7 +145,7 @@ class TQueue {
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast
   public:          // insertion, deletion, iteration
-    SelfQueue(TQItemPool*, int mkmut = 0);
+    SelfQueue(TQItemPool*);
     virtual ~SelfQueue();
     TQItem* insert(void*);
     void* remove(TQItem*);
@@ -176,5 +160,4 @@ class SelfQueue {  // not really a queue but a doubly linked list for fast
   private:
     TQItem* head_;
     TQItemPool* tpool_;
-    MUTDEC
 };
