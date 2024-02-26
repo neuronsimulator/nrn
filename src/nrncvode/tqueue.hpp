@@ -76,7 +76,7 @@ class BinQ {
 
 class TQueue {
   public:
-    TQueue(TQItemPool*);
+    explicit TQueue(TQItemPool*);
     virtual ~TQueue();
 
     TQItem* least() {
@@ -145,7 +145,7 @@ class TQueue {
 
 class SelfQueue {  // not really a queue but a doubly linked list for fast
   public:          // insertion, deletion, iteration
-    SelfQueue(TQItemPool*);
+    explicit SelfQueue(TQItemPool*);
     virtual ~SelfQueue();
     TQItem* insert(void*);
     void* remove(TQItem*);
