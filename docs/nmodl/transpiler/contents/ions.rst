@@ -107,3 +107,10 @@ This optimization is implemented in NMODL. It can be activated on the CLI via
    nmodl ... codegen --opt-ionvar-copy
 
 
+Special Case: zero-area nodes
+-----------------------------
+
+Ions are not defined for nodes that represent a segment with zero area. This
+means point processes can't use ions at nodes with surface zero-area.
+Therefore, this should be asserted in generated code. It also allows converting
+ion currents to ion current densities by dividing by the area.
