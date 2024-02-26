@@ -19,6 +19,7 @@ About NMODL
    :caption: Contents:
 
    contents/visitors
+   contents/currents
    contents/ions
    contents/pointers
 
