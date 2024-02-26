@@ -10,7 +10,7 @@
 #endif
 #if USECVODE
         ,
-    Cvode_reg(), TQueue_reg()
+    Cvode_reg()
 #endif
 #if USEDSP
                      ,
@@ -33,7 +33,7 @@
 #endif
 #if USECVODE
     ,
-    Cvode_reg, TQueue_reg
+    Cvode_reg
 #endif
 #if USEDSP
     ,

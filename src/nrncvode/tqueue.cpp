@@ -9,9 +9,6 @@
 #include "tqueue.hpp"
 #include "pool.hpp"
 
-#include "classreg.h"
-#include "nrnoc2iv.h"
-
 #define PROFILE 0
 #include "profile.h"
 
@@ -22,94 +19,6 @@
 #else
 #define STAT(arg) /**/
 #endif
-
-static const char* errmess_;
-
-static double insert(void* v) {
-    TQueue* q = (TQueue*) v;
-    q->insert(*getarg(1), (void*) 1);
-    return 1.;
-}
-static double print(void* v) {
-    TQueue* q = (TQueue*) v;
-    q->print();
-    return 1.;
-}
-
-static double least(void* v) {
-    TQueue* q = (TQueue*) v;
-    TQItem* i = q->least();
-    double x = -1e9;
-    if (i) {
-        x = i->t_;
-    }
-    return x;
-}
-static double rmleast(void* v) {
-    TQueue* q = (TQueue*) v;
-    TQItem* i = q->least();
-    double x = -1e9;
-    if (i) {
-        x = i->t_;
-        q->remove(i);
-    }
-    return x;
-}
-
-static double mvleast(void* v) {
-    TQueue* q = (TQueue*) v;
-    q->move_least(*getarg(1));
-    return 1.;
-}
-
-static double remove(void* v) {
-    TQueue* q = (TQueue*) v;
-    q->remove(q->find(*getarg(1)));
-    return 1.;
-}
-
-static double find(void* v) {
-    TQueue* q = (TQueue*) v;
-    TQItem* i = q->find(*getarg(1));
-    double x = -1e9;
-    if (i) {
-        x = i->t_;
-        q->remove(i);
-    }
-    return x;
-}
-static double stats(void* v) {
-    TQueue* q = (TQueue*) v;
-    q->statistics();
-    return 1.;
-}
-
-static Member_func members[] = {{"insrt", insert},
-                                {"least", least},
-                                {"move_least", mvleast},
-                                {"remove_least", rmleast},
-                                {"remove", remove},
-                                {"find", find},
-                                {"stats", stats},
-                                {"printf", print},
-                                {0, 0}};
-
-static void* cons(Object*) {
-    assert(0);
-    TQueue* q = new TQueue(0);
-    return (void*) q;
-}
-
-static void destruct(void* v) {
-    TQueue* q = (TQueue*) v;
-    delete q;
-}
-
-void TQueue_reg() {
-    class2oc("TQueue", cons, destruct, members, NULL, NULL, NULL);
-}
-
-//----------------
 
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
@@ -154,12 +63,6 @@ static void prnt(const TQItem* b, int level) {
         Printf("    ");
     }
     Printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_ ? 'x' : 'o', b->cnt_, b, b->data_);
-}
-
-static void chk(TQItem* b, int level) {
-    if (!b->check()) {
-        hoc_execerror("chk failed", errmess_);
-    }
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
