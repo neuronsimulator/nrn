@@ -44,17 +44,21 @@ class CodePrinter {
     std::ofstream ofs;
     std::streambuf* sbuf = nullptr;
     std::unique_ptr<std::ostream> result;
+    size_t current_line = 1;
+    size_t blame_line = 0;
     size_t indent_level = 0;
     const size_t NUM_SPACES = 4;
 
   public:
-    CodePrinter()
-        : result(std::make_unique<std::ostream>(std::cout.rdbuf())) {}
+    CodePrinter(size_t blame_line = 0)
+        : result(std::make_unique<std::ostream>(std::cout.rdbuf()))
+        , blame_line(blame_line) {}
 
-    CodePrinter(std::ostream& stream)
-        : result(std::make_unique<std::ostream>(stream.rdbuf())) {}
+    CodePrinter(std::ostream& stream, size_t blame_line = 0)
+        : result(std::make_unique<std::ostream>(stream.rdbuf()))
+        , blame_line(blame_line) {}
 
-    CodePrinter(const std::string& filename);
+    CodePrinter(const std::string& filename, size_t blame_line = 0);
 
     ~CodePrinter() {
         ofs.close();
@@ -74,6 +78,7 @@ class CodePrinter {
 
     template <typename... Args>
     void add_text(Args&&... args) {
+        blame();
         (operator<<(*result, args), ...);
     }
 
@@ -127,6 +132,10 @@ class CodePrinter {
     int indent_spaces() {
         return NUM_SPACES * indent_level;
     }
+
+  private:
+    /// Blame when on the requested line.
+    void blame();
 };
 
 /** @} */  // end of printer

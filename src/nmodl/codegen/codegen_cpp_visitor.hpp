@@ -198,8 +198,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     CodegenCppVisitor(std::string mod_filename,
                       const std::string& output_dir,
                       std::string float_type,
-                      const bool optimize_ionvar_copies)
-        : printer(std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + ".cpp"))
+                      const bool optimize_ionvar_copies,
+                      size_t blame_line = 0)
+        : printer(
+              std::make_unique<CodePrinter>(output_dir + "/" + mod_filename + ".cpp", blame_line))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
@@ -224,8 +226,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     CodegenCppVisitor(std::string mod_filename,
                       std::ostream& stream,
                       std::string float_type,
-                      const bool optimize_ionvar_copies)
-        : printer(std::make_unique<CodePrinter>(stream))
+                      const bool optimize_ionvar_copies,
+                      size_t blame_line = 0)
+        : printer(std::make_unique<CodePrinter>(stream, blame_line))
         , mod_filename(std::move(mod_filename))
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}

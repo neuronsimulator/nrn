@@ -21,6 +21,7 @@ option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
 option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
 option(NMODL_ENABLE_USECASES
        "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
+option(NMODL_ENABLE_BACKWARD "Use backward, enables blame." OFF)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
@@ -130,6 +131,10 @@ if(NMODL_3RDPARTY_USE_SPDLOG)
   set(SPDLOG_BUILD_PIC ON)
 endif()
 cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+
+if(NMODL_ENABLE_BACKWARD)
+  cpp_cc_git_submodule(backward BUILD PACKAGE backward REQUIRED)
+endif()
 
 # =============================================================================
 # Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)

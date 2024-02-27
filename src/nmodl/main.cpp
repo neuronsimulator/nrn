@@ -159,6 +159,9 @@ int main(int argc, const char* argv[]) {
     /// floating point data type
     std::string data_type("double");
 
+    /// which line to run blame for
+    size_t blame_line = 0;
+
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     app.get_formatter()->column_width(40);
     app.set_help_all_flag("-H,--help-all", "Print this help message including all sub-commands");
@@ -268,6 +271,11 @@ int main(int argc, const char* argv[]) {
     codegen_opt->add_flag("--opt-ionvar-copy",
         optimize_ionvar_copies_codegen,
         fmt::format("Optimize copies of ion variables ({})", optimize_ionvar_copies_codegen))->ignore_case();
+
+#if NMODL_ENABLE_BACKWARD
+    auto blame_opt = app.add_subcommand("blame", "Blame NMODL code that generated some code.");
+    blame_opt->add_option("--line", blame_line, "Justify why this line was generated.");
+#endif
 
     // clang-format on
 
@@ -538,28 +546,22 @@ int main(int argc, const char* argv[]) {
         {
             if (coreneuron_code && oacc_backend) {
                 logger->info("Running OpenACC backend code generator for CoreNEURON");
-                CodegenAccVisitor visitor(modfile,
-                                          output_dir,
-                                          data_type,
-                                          optimize_ionvar_copies_codegen);
+                CodegenAccVisitor visitor(
+                    modfile, output_dir, data_type, optimize_ionvar_copies_codegen, blame_line);
                 visitor.visit_program(*ast);
             }
 
             else if (coreneuron_code && !neuron_code && cpp_backend) {
                 logger->info("Running C++ backend code generator for CoreNEURON");
-                CodegenCoreneuronCppVisitor visitor(modfile,
-                                                    output_dir,
-                                                    data_type,
-                                                    optimize_ionvar_copies_codegen);
+                CodegenCoreneuronCppVisitor visitor(
+                    modfile, output_dir, data_type, optimize_ionvar_copies_codegen, blame_line);
                 visitor.visit_program(*ast);
             }
 
             else if (neuron_code && cpp_backend) {
                 logger->info("Running C++ backend code generator for NEURON");
-                CodegenNeuronCppVisitor visitor(modfile,
-                                                output_dir,
-                                                data_type,
-                                                optimize_ionvar_copies_codegen);
+                CodegenNeuronCppVisitor visitor(
+                    modfile, output_dir, data_type, optimize_ionvar_copies_codegen, blame_line);
                 visitor.visit_program(*ast);
             }
 
