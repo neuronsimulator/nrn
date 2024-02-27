@@ -1,5 +1,10 @@
 #! /usr/bin/env bash
-set -e
+set -eu
+
+if [[ $# -ne 2 ]]
+then
+  echo "Usage: $0 NMODL USECASE_DIR"
+fi
 
 nmodl="$1"
 output_dir="$(uname -m)"

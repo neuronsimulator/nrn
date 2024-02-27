@@ -165,6 +165,33 @@ The HPC coding conventions formatter installs any dependencies into a Python
 virtual environment.
 
 
+Updating Golden References
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run
+
+.. code:: bash
+
+   cmake --build <build-dir> --target generate_references
+
+to regenerate the golden references. They are saved in a submodule
+``tests/usecases/references``, which points to ``BlueBrain/nmodl-references``.
+
+Create a PR for the changes to the references and update the SHA in the NMODL
+repo. It might be useful to change to SSH authentication:
+
+.. code:: bash
+
+   git remote set-url origin ssh://git@github.com/BlueBrain/nmodl-references
+
+(from inside ``tests/usecases/references``).
+
+Remember the rules of submodules: They're checked out on a specific commit,
+i.e. detached HEAD. If you want to modify the submodule, it's usual best to
+checkout ``main`` from then on the submodule will behave much like a Git repo
+that happens to be located inside a Git repo.
+
+
 Validate the Python package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
