@@ -109,3 +109,18 @@ def test_modify_ast():
 }
 """
     assert str(modast) == one_var_after
+
+
+def test_sympy_conductance_visitor():
+    """
+    Make sure NMODL sets the correct env variables to be able to run the sympy visitor
+    """
+    program = """NEURON {
+        USEION na READ ena WRITE ina
+        RANGE gna
+    }
+    BREAKPOINT {
+        ina = gna*(v - ena)
+    }"""
+    driver = nmodl.NmodlDriver()
+    visitor.SympyConductanceVisitor().visit_program(driver.parse_string(program))

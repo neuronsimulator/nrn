@@ -76,7 +76,8 @@ class Docs(Command):
 install_requirements = [
     "PyYAML>=3.13",
     "sympy>=1.3",
-    "find_libpython"
+    "find_libpython",
+    "importlib_resources;python_version<'3.9'",
 ]
 
 
