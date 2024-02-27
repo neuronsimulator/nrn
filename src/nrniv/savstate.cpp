@@ -9,7 +9,7 @@
 #include "classreg.h"
 #include "nrniv_mf.h"
 
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "netcon.h"
 #include "vrecitem.h"
 #include "utils/enumerate.h"

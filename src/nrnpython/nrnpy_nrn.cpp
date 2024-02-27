@@ -181,19 +181,24 @@ static Object* pysec_cell(Section* sec) {
     return NULL;
 }
 
-static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
-    /* report that we contain the object if it has a .sec that is equal to ourselves */
-    PyObject* obj_sec;
+static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
+    /* Checks is provided PyObject* s contains obj */
+    PyObject* obj_seg;
     int result;
-    if (!PyObject_HasAttrString(obj, "sec")) {
+    if (!PyObject_HasAttrString(obj, string)) {
         return 0;
     }
     Py_INCREF(obj);
-    obj_sec = PyObject_GetAttrString(obj, "sec");
+    obj_seg = PyObject_GetAttrString(obj, string);
     Py_DECREF(obj);
-    result = PyObject_RichCompareBool(sec, obj_sec, Py_EQ);
-    Py_XDECREF(obj_sec);
+    result = PyObject_RichCompareBool(s, obj_seg, Py_EQ);
+    Py_XDECREF(obj_seg);
     return (result);
+}
+
+static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
+    /* report that we contain the object if it has a .sec that is equal to ourselves */
+    return NpySObj_contains(sec, obj, "sec");
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
@@ -457,6 +462,11 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
         Py_INCREF(self->pyseg_);
     }
     return (PyObject*) self;
+}
+
+static int NPySegObj_contains(PyObject* segment, PyObject* obj) {
+    /* report that we contain the object if it has a .segment that is equal to ourselves */
+    return NpySObj_contains(segment, obj, "segment");
 }
 
 static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
