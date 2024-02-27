@@ -584,14 +584,9 @@ void spdelete(SPBLK* n, SPTREE<SPBLK>* q) {
  */
 template <typename SPBLK>
 SPBLK* splookup(double key, SPTREE<SPBLK>* q) {
-    SPBLK* n;
-    int Sct;
-
-    /* find node in the tree */
-    n = q->root;
-    //    while( n && (Sct = STRCMP( key, n->key ) ) )
-    while (n && (Sct = key != n->key)) {
-        n = (Sct < 0) ? n->leftlink : n->rightlink;
+    SPBLK* n = q->root;
+    while (n && key != n->key) {
+        n = key < n->key ? n->leftlink : n->rightlink;
     }
 
     /* reorganize tree around this node */
