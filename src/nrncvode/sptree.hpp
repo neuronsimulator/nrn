@@ -418,15 +418,11 @@ void SPTree<T>::remove(T* n) {
     }
 }
 
-template <typename T>
-T* SPTree<T>::find(double key) {
-    int Sct;
-
-    /* find node in the tree */
-    T* n = root;
-    //    while( n && (Sct = STRCMP( key, n->key ) ) )
-    while (n && (Sct = key != n->key)) {
-        n = (Sct < 0) ? n->leftlink : n->rightlink;
+template <typename SPBLK>
+SPBLK* splookup(double key, SPTREE<SPBLK>* q) {
+    SPBLK* n = q->root;
+    while (n && key != n->key) {
+        n = key < n->key ? n->leftlink : n->rightlink;
     }
 
     /* reorganize tree around this node */
