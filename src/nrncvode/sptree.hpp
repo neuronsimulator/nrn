@@ -421,9 +421,9 @@ void SPTree<T>::remove(T* n) {
     }
 }
 
-template <typename SPBLK>
-SPBLK* splookup(double key, SPTREE<SPBLK>* q) {
-    SPBLK* n = q->root;
+template <typename T>
+T* SPTree<T>::find(double key) {
+    T* n = root;
     while (n && key != n->key) {
         n = key < n->key ? n->leftlink : n->rightlink;
     }
