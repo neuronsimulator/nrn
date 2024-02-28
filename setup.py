@@ -16,7 +16,6 @@ A generic wrapper to access nmodl binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import stat
-from pkg_resources import working_set
 from find_libpython import find_libpython
 
 
@@ -78,6 +77,7 @@ install_requirements = [
     "sympy>=1.3",
     "find_libpython",
     "importlib_resources;python_version<'3.9'",
+    "importlib_metadata;python_version<'3.9'",
 ]
 
 

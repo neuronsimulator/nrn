@@ -1,9 +1,14 @@
-import os.path as osp
-from pkg_resources import *
+import sys
+
+if sys.version_info >= (3, 9):
+    from importlib.resources import files
+else:
+    from importlib_resources import files
 
 from ._nmodl import *
 
 RESOURCE_DIR = "ext/example"
+
 
 def list_examples():
     """Returns a list of examples available
@@ -13,10 +18,11 @@ def list_examples():
     Returns:
         List of available examples
     """
-    if resource_exists(__name__, RESOURCE_DIR) and resource_isdir(__name__, RESOURCE_DIR):
-        return resource_listdir(__name__, RESOURCE_DIR)
-    else:
-        raise FileNotFoundError("Could not find sample directory")
+    path = files("nmodl") / RESOURCE_DIR
+    if path.exists() and path.is_dir():
+        return [result.name for result in path.glob("*.mod")]
+
+    raise FileNotFoundError("Could not find sample directory")
 
 
 def load_example(example):
@@ -29,10 +35,10 @@ def load_example(example):
     Args:
         example: Filename of an example as provided by `list_examples()`
     Returns:
-        List of available examples
+        An path to the example as a string
     """
-    resource =  osp.join(RESOURCE_DIR, example)
-    if resource_exists(__name__, resource):
-        return resource_string(__name__, resource)
-    else:
-        raise FileNotFoundError("Could not find sample mod files")
+    path = files("nmodl") / RESOURCE_DIR / example
+    if path.exists():
+        return path.read_text()
+
+    raise FileNotFoundError(f"Could not find sample mod file {example}")
