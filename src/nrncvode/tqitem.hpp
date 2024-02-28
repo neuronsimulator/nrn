@@ -1,7 +1,8 @@
 #pragma once
 
 struct TQItem {
-    void clear(){};
+    // This function is used by the pool to clean object, here this is useless.
+    void clear() const {};
 
     void* data_{};
     double t_{};
