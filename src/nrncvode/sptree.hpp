@@ -7,6 +7,9 @@
 **
 **  assumes that key will be provided by the application, comparable
 **  with the compare function applied to the addresses of two keys.
+**
+** Originaly written by Douglas W. Jones in Fortran helped by Srinivas R. Sataluri.
+** Translated by David Brower to C circa 1988.
 */
 
 #pragma once
@@ -35,7 +38,7 @@ class SPTree {
     // and the right branch of the left subtree
     void enqueue(T* n);
 
-    // Return and remove first node.
+    // Return and remove the first node.
     //
     // Remove and return the first node; this deletes
     // (and returns) the leftmost node, replacing it with its right
@@ -43,13 +46,11 @@ class SPTree {
     // are performed to shorten the left branch of the tree.
     T* dequeue();
 
-    // Return the first element in the tree.
+    // Return the element in the tree with the lowest key.
     //
-    // Returns a reference to the first item;
-    // event, and the old left branch is shortened, as if the tree had
-    // been splayed about the first element; this is done by dequeueing
-    // the head and then making the resulting queue the right son of
-    // the head returned by spdeq.
+    // Returns a pointer to the item with the lowest key.
+    // The left branch will be shortened as if the tree had been splayed around the first item.
+    // This is done by dequeue and enqueuing the first item.
     T* first();
 
     // Remove node from a tree.
@@ -65,6 +66,8 @@ class SPTree {
 
     // Apply a function to nodes in ascending order.
     //
+    // f is the function that will be applied to nodes. The first argument will be
+    // a pointer to the current node, the integer valued is unused and will always be 0.
     // If n is given, start at that node, otherwise start from the head.
     void apply_all(void (*f)(const T*, int), T* n) const;
 
