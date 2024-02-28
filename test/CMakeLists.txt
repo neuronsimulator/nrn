@@ -510,6 +510,13 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/nmodl/test_random.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_random.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME "test_path_spaces"
+    REQUIRES ${modtests_preload_sanitizer}
+    SCRIPT_PATTERNS "test/nmodl/Project Path Space/test.*"
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND bash -c "pwd && cd 'test/nmodl/Project Path Space' && nrnivmodl")
 
   nrn_add_test_group(
     CORENEURON
