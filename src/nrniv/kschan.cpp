@@ -927,7 +927,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
     m_kschan[7 + aoff] = 0;
     soffset_ = 3 + aoff;  // first state points here in p array
     add_channel(m_kschan);
-    has_instances();
+    err_if_has_instances();
     for (int i = 0; i < 9; ++i)
         if (m_kschan[i]) {
             free((void*) m_kschan[i]);
@@ -946,7 +946,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
     int i;
-    has_instances();
+    err_if_has_instances();
     name_ = s;
     if (mechsym_) {
         char old_suffix[100];
@@ -1011,7 +1011,7 @@ void KSChan::set_single(bool b, bool update) {
             0);
     }
     // check before changing structure
-    has_instances();
+    err_if_has_instances();
 
     if (is_single()) {
         memb_func[mechtype_].singchan_ = NULL;
@@ -1086,7 +1086,7 @@ void KSChan::update_prop() {
     }
     new_dsize += 2 * nligand_;
     new_psize += nstate_;
-    has_instances();
+    err_if_has_instances();
 
     int i;
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
@@ -1167,7 +1167,7 @@ void KSChan::setion(const char* s) {
     }
     // before doing anything destructive, check if register is going to succeed below
     std::string new_ion{strlen(s) == 0 ? "NonSpecific" : s};
-    has_instances();
+    err_if_has_instances();
 
     // now we know register will succeed, we can start modifying member data
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
@@ -1530,7 +1530,7 @@ hoc_object_name(trans_[i].obj_));
 
 KSState* KSChan::add_hhstate(const char* name) {
     int i;
-    has_instances();
+    err_if_has_instances();
     usetable(false);
     // new state, transition, gate, and f
     int is = nhhstate_;
@@ -1557,7 +1557,7 @@ KSState* KSChan::add_hhstate(const char* name) {
 }
 
 KSState* KSChan::add_ksstate(int ig, const char* name) {
-    has_instances();
+    err_if_has_instances();
     // states must be added so that the gate states are in sequence
     int i, is;
     usetable(false);
@@ -1596,7 +1596,7 @@ KSState* KSChan::add_ksstate(int ig, const char* name) {
 
 void KSChan::remove_state(int is) {
     int i;
-    has_instances();
+    err_if_has_instances();
     usetable(false);
     if (is < nhhstate_) {
         state_remove(is);
@@ -1660,7 +1660,7 @@ void KSChan::remove_state(int is) {
 
 KSTransition* KSChan::add_transition(int src, int target) {
     // does not deal here with ligands
-    has_instances();
+    err_if_has_instances();
     usetable(false);
     int it = iligtrans_;
     trans_insert(it, src, target);
@@ -1674,7 +1674,7 @@ KSTransition* KSChan::add_transition(int src, int target) {
 
 void KSChan::remove_transition(int it) {
     // might reduce nstate, might reduce nligand.
-    has_instances();
+    err_if_has_instances();
     usetable(false);
     assert(it >= ivkstrans_);
     set_single(false);
@@ -1738,7 +1738,7 @@ void KSChan::check_struct() {
 KSState* KSChan::state_insert(int i, const char* n, double d) {
     // before mutating any state, check if the call to register below will succeed
     auto const new_nstate = nstate_ + 1;
-    has_instances();
+    err_if_has_instances();
     int j;
     usetable(false);
     if (nstate_ >= state_size_) {
@@ -1778,7 +1778,7 @@ KSState* KSChan::state_insert(int i, const char* n, double d) {
 void KSChan::state_remove(int i) {
     // before mutating any state, check if the call to register below will succeed
     auto const new_nstate = nstate_ - 1;
-    has_instances();
+    err_if_has_instances();
     int j;
     usetable(false);
     unref(state_[i].obj_);
@@ -1922,7 +1922,7 @@ void KSChan::setstructure(Vect* vec) {
     // before mutating any state, check if the call to register below will succeed
     int const new_nstate = vec->elem(2);
     int const new_nligand = vec->elem(5);
-    has_instances();
+    err_if_has_instances();
     int i, j, ii, idx, ns;
     usetable(false);
     int nstate_old = nstate_;
@@ -2245,7 +2245,7 @@ void KSChan::mulmat(Memb_list* ml,
 /**
  * @brief Error if instances exist
  */
-void KSChan::has_instances() const {
+void KSChan::err_if_has_instances() const {
     auto& mech_data = neuron::model().mechanism_data(mechtype_);
     if (mech_data.empty()) {  // (re)-registration allowed since no existing instances
         return;
@@ -2262,21 +2262,21 @@ void KSChan::register_data_fields() {  // or re-register
 
     std::vector<std::pair<std::string, int>> params{};
     if (is_single()) {
-        params.push_back({"Nsingle", 1});
+        params.emplace_back("Nsingle", 1);
     }
-    params.push_back({"gmax", 1});
+    params.emplace_back("gmax", 1);
     if (ion_sym_ == nullptr) {
-        params.push_back({"e", 1});
+        params.emplace_back("e", 1);
     }
-    params.push_back({"g", 1});
-    params.push_back({"i", 1});
+    params.emplace_back("g", 1);
+    params.emplace_back("i", 1);
     for (int i = 0; i < nstate_; ++i) {
-        params.push_back({state(i), 1});
+        params.emplace_back(state(i), 1);
     }
     // Dstate
     std::string d{"D"};
     for (int i = 0; i < nstate_; ++i) {
-        params.push_back({d + state(i), 1});
+        params.emplace_back(d + state(i), 1);
     }
 
     // Use strings instead of string.c_str() to keep alive and avoid
@@ -2285,25 +2285,25 @@ void KSChan::register_data_fields() {  // or re-register
 
     std::vector<std::pair<std::string, std::string>> dparams{};
     if (is_point()) {
-        dparams.push_back({"_nd_area", "area"});
-        dparams.push_back({"_pntproc", "pntproc"});
+        dparams.emplace_back("_nd_area", "area");
+        dparams.emplace_back("_pntproc", "pntproc");
     }
     if (is_single()) {
-        dparams.push_back({"singleptr", "pointer"});
+        dparams.emplace_back("singleptr", "pointer");
     }
     if (ion_sym_) {
         std::string name{ion_sym_->name};
         // the names don't matter
-        dparams.push_back({name + "_erev", name});
-        dparams.push_back({name + "_icur", name});
-        dparams.push_back({name + "_didv", name});
-        dparams.push_back({name + "_ci", name});
-        dparams.push_back({name + "_co", name});
+        dparams.emplace_back(name + "_erev", name);
+        dparams.emplace_back(name + "_icur", name);
+        dparams.emplace_back(name + "_didv", name);
+        dparams.emplace_back(name + "_ci", name);
+        dparams.emplace_back(name + "_co", name);
     }
     for (int i = 0; i < nligand_; ++i) {
         std::string name{ligands_[i]->name};
-        dparams.push_back({name + "_ligo", name});
-        dparams.push_back({name + "_ligi", name});
+        dparams.emplace_back(name + "_ligo", name);
+        dparams.emplace_back(name + "_ligi", name);
     }
     nrn_delete_mechanism_prop_datum(mechtype_);
     neuron::mechanism::detail::register_data_fields(mechtype_, params, dparams);

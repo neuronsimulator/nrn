@@ -419,7 +419,7 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
-    void has_instances() const;
+    void err_if_has_instances() const;
     void register_data_fields();
 
     KSState* state_insert(int i, const char* name, double frac);

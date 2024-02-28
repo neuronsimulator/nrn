@@ -163,6 +163,8 @@ def test_mechstd5():
 def test_mechstd6():
     # Since SymChooser.run() is a dialog, to cover load_mechanism, must
     # manually navigate to sdata and SData[0]
+    # Note SymDirectoryImpl::load_mechanism is covered by
+    # test/cover/unit_tests/cover.cpp
     h("create soma")
     h.soma.insert("sdata")
     pp = h.SData(h.soma(0.5))
