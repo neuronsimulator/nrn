@@ -10,4 +10,3 @@ struct TQItem {
     TQItem* parent_{};
     int cnt_{};  // reused: -1 means it is in the splay tree, >=0 gives bin
 };
-
