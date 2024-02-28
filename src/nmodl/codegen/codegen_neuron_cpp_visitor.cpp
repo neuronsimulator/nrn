@@ -211,8 +211,6 @@ void CodegenNeuronCppVisitor::print_function_or_procedure(const ast::Block& node
     printer->add_text(" ");
     printer->push_block();
 
-    printer->fmt_line("auto inst = make_instance_{}(*_ml);", info.mod_suffix);
-
     // function requires return variable declaration
     if (node.is_function_block()) {
         auto type = default_float_data_type();
@@ -328,6 +326,7 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
             _nt = nrn_threads;
         )CODE");
     }
+    printer->fmt_line("auto inst = make_instance_{}(_ml_real);", info.mod_suffix);
     if (info.function_uses_table(block_name)) {
         printer->fmt_line("_check_{}({})", block_name, internal_method_arguments());
     }
@@ -376,13 +375,14 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_definitions() {
 
 
 std::string CodegenNeuronCppVisitor::internal_method_arguments() {
-    return "_ml, id, _ppvar, _thread, _nt";
+    return "_ml, inst, id, _ppvar, _thread, _nt";
 }
 
 
 CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::internal_method_parameters() {
     ParamVector params;
     params.emplace_back("", "_nrn_mechanism_cache_range*", "", "_ml");
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
     params.emplace_back("", "size_t", "", "id");
     params.emplace_back("", "Datum*", "", "_ppvar");
     params.emplace_back("", "Datum*", "", "_thread");
