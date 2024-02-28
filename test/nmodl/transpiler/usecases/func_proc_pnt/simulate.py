@@ -1,15 +1,27 @@
 from neuron import h
 
+nseg = 5
 s = h.Section()
+s.nseg = nseg
 
-pnt_proc = h.test_func_proc_pnt(s(0.5))
+point_processes = []
+for k in range(nseg):
+    x = (0.5 + k) * 1.0 / nseg
+    point_processes.append(h.test_func_proc_pnt(s(x)))
 
-pnt_proc.set_x_42()
+for k in range(nseg):
+    point_processes[k].set_x_42()
 
-assert pnt_proc.x == 42
+for k in range(nseg):
+    assert point_processes[k].x == 42
 
-pnt_proc.set_x_a(13.7)
+for k in range(nseg):
+    value = 0.1 + k
+    point_processes[k].set_x_a(value)
 
-assert pnt_proc.x == 13.7
+for k in range(nseg):
+    value = 0.1 + k
+    assert point_processes[k].x == value
+    assert point_processes[k].x_plus_a(1000.0) == 1000.0 + value
 
-assert pnt_proc.get_a_42(42) == 84
+print([point_processes[k].x for k in range(nseg)])

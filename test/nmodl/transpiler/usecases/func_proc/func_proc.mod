@@ -15,8 +15,8 @@ PROCEDURE set_x_a(a) {
     x = a
 }
 
-FUNCTION get_a_42(a) {
-    get_a_42 = a + 42
+FUNCTION x_plus_a(a) {
+    x_plus_a = x + a
 }
 
 PROCEDURE set_a_x() {
