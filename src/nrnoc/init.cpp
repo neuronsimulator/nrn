@@ -112,6 +112,7 @@ int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
+static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
                                            {"L", {1e-4, 1e20}},
@@ -383,6 +384,7 @@ void hoc_last_init(void) {
     SectionList_reg();
     SectionRef_reg();
     register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    hoc_register_parm_default(MORPHOLOGY, &morph_parm_default);
     neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
@@ -747,6 +749,10 @@ void register_mech(const char** m,
     }
 }
 
+void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
+    memb_func[mechtype].parm_default = pd;
+}
+
 void nrn_writes_conc(int mechtype, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;
@@ -849,6 +855,25 @@ void update_mech_ppsym_for_modlrandom(
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
+// Use this if string.c_str() causes possibility of
+// AddressSanitizer: stack-use-after-scope on address
+void register_data_fields(int mechtype,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_info) {
+    std::vector<std::pair<const char*, int>> params{};
+    std::vector<std::pair<const char*, const char*>> dparams{};
+
+    for (auto&& [str, i]: param_info) {
+        params.emplace_back(str.c_str(), i);
+    }
+    for (auto&& [str1, str2]: dparam_info) {
+        dparams.emplace_back(str1.c_str(), str2.c_str());
+    }
+
+    register_data_fields(mechtype, params, dparams);
+}
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
