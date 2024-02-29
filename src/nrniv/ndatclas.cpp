@@ -55,8 +55,7 @@ v_structure_change).
 NrnPropertyImpl::NrnPropertyImpl(int mechtype)
     : iterator_(-1)
     , type_(mechtype)
-    , sym_(memb_func[mechtype].sym)
-{
+    , sym_(memb_func[mechtype].sym) {
     // How many values. nrn_prop_param_size[EXTRACELL] is not all of them
     // Nor if it is a HocMech.
     // And nrn_prop_param_size does not include array sizes.
@@ -205,8 +204,7 @@ bool NrnProperty::copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype) {
             if (vartype == 0 || nrn_vartype(sym) == vartype) {
                 auto const n = sym->u.rng.index;
                 for (int j = 0; j < jmax; ++j) {
-                    if (p->_type == EXTRACELL &&
-                        n == neuron::extracellular::vext_pseudoindex()) {
+                    if (p->_type == EXTRACELL && n == neuron::extracellular::vext_pseudoindex()) {
                         if (to_prop) {
                             nd_dest->extnode->v[j] = x[k + j];
                         } else {

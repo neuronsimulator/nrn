@@ -628,7 +628,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
 }
 
 void nrn_thread_memblist_setup() {
-    int *mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
+    int* mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
     void** vmap = (void**) emalloc(n_memb_func * sizeof(void*));
     for (int it = 0; it < nrn_nthread; ++it) {
         thread_memblist_setup(nrn_threads + it, mlcnt, vmap);
