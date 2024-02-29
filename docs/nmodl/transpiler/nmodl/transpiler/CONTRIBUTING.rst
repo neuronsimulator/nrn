@@ -152,6 +152,15 @@ pull the changes from the main (upstream) repository:
  Development Conventions
 ------------------------
 
+New Lines
+~~~~~~~~~
+
+When generating/printing code it's important to use ``add_newline`` to
+start a new line of code. When printing a string containing multiple lines,
+i.e. one that contains a ``"\n"`` one must use ``add_multi_line``.
+
+It's important that NMODL knows the line number it's currently on.
+
 Formatting
 ~~~~~~~~~~
 
@@ -226,3 +235,27 @@ have ``CMake >= 3.15`` and use following cmake option:
 ::
 
    cmake .. -DENABLE_CLANG_TIDY=ON
+
+Blaming NMODL
+~~~~~~~~~~~~~
+
+While developing NMODL one may want to know which line of code in NMODL
+produced a particular line of code in the generated file, e.g. when faced with
+a compiler error such as
+
+.. code-block::
+
+   hodhux.cpp:105:26: error: ‘coreneuron’ has not been declared
+     105 |         double* celsius{&coreneuron::celsius};
+         |                          ^~~~~~~~~~
+
+One can find the line by doing:
+
+.. code-block::
+
+   $ nmodl hodhux.mod ... blame --line 105
+
+which will print a backtrace every time NMODL writes to line 105. While this is
+useful for finding the line responsible for printing, i.e. convert AST to C++,
+that line it doesn't immediately explain why the AST ended up that way.
+Currently, we don't have a tool for the latter.
