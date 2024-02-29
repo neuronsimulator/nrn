@@ -492,6 +492,8 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /*                              Print nrn_cur related routines                          */
     /****************************************************************************************/
 
+    std::string nrn_current_arguments();
+    ParamVector nrn_current_parameters();
 
     /**
      * Print the \c nrn_current kernel
@@ -598,6 +600,10 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     void print_make_instance() const;
 
+    /** Print `make_*_node_data`.
+     */
+    void print_make_node_data() const;
+
     /**
      * Set v_unused (voltage) for NRN_PRCELLSTATE feature
      */
@@ -655,6 +661,14 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *                           be included in the struct declaration.
      */
     void print_mechanism_range_var_structure(bool print_initializers) override;
+
+    /**
+     * Print the structure that wraps all node variables required for the NMODL.
+     *
+     * \param print_initializers Whether or not default values for variables
+     *                           be included in the struct declaration.
+     */
+    void print_node_data_structure(bool print_initializers);
 };
 
 

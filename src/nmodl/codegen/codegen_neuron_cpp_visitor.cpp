@@ -919,50 +919,6 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     }
 }
 
-void CodegenNeuronCppVisitor::print_make_instance() const {
-    printer->add_newline(2);
-    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_range& _ml)",
-                            instance_struct(),
-                            info.mod_suffix);
-    printer->fmt_push_block("return {}", instance_struct());
-
-    std::vector<std::string> make_instance_args;
-
-    const auto codegen_float_variables_size = codegen_float_variables.size();
-    for (int i = 0; i < codegen_float_variables_size; ++i) {
-        const auto& float_var = codegen_float_variables[i];
-        if (float_var->is_array()) {
-            make_instance_args.push_back(
-                fmt::format("_ml.template data_array_ptr<{}, {}>()", i, float_var->get_length()));
-        } else {
-            make_instance_args.push_back(fmt::format("_ml.template fpfield_ptr<{}>()", i));
-        }
-    }
-
-    const auto codegen_int_variables_size = codegen_int_variables.size();
-    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
-        const auto& var = codegen_int_variables[i];
-        auto name = var.symbol->get_name();
-        auto const variable = [&var, i]() -> std::string {
-            if (var.is_index || var.is_integer) {
-                return "";
-            } else if (var.is_vdata) {
-                return "";
-            } else {
-                return fmt::format("_ml.template dptr_field_ptr<{}>()", i);
-            }
-        }();
-        if (variable != "") {
-            make_instance_args.push_back(variable);
-        }
-    }
-
-    printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
-
-    printer->pop_block(";");
-    printer->pop_block();
-}
-
 void CodegenNeuronCppVisitor::print_mechanism_register() {
     /// TODO: Write this according to NEURON
     printer->add_newline(2);
@@ -1136,6 +1092,83 @@ void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_ini
     printer->pop_block(";");
 }
 
+void CodegenNeuronCppVisitor::print_make_instance() const {
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_instance_{}(_nrn_mechanism_cache_range& _ml)",
+                            instance_struct(),
+                            info.mod_suffix);
+    printer->fmt_push_block("return {}", instance_struct());
+
+    std::vector<std::string> make_instance_args;
+
+    const auto codegen_float_variables_size = codegen_float_variables.size();
+    for (int i = 0; i < codegen_float_variables_size; ++i) {
+        const auto& float_var = codegen_float_variables[i];
+        if (float_var->is_array()) {
+            make_instance_args.push_back(
+                fmt::format("_ml.template data_array_ptr<{}, {}>()", i, float_var->get_length()));
+        } else {
+            make_instance_args.push_back(fmt::format("_ml.template fpfield_ptr<{}>()", i));
+        }
+    }
+
+    const auto codegen_int_variables_size = codegen_int_variables.size();
+    for (size_t i = 0; i < codegen_int_variables_size; ++i) {
+        const auto& var = codegen_int_variables[i];
+        auto name = var.symbol->get_name();
+        auto const variable = [&var, i]() -> std::string {
+            if (var.is_index || var.is_integer) {
+                return "";
+            } else if (var.is_vdata) {
+                return "";
+            } else {
+                return fmt::format("_ml.template dptr_field_ptr<{}>()", i);
+            }
+        }();
+        if (variable != "") {
+            make_instance_args.push_back(variable);
+        }
+    }
+
+    printer->add_multi_line(fmt::format("{}", fmt::join(make_instance_args, ",\n")));
+
+    printer->pop_block(";");
+    printer->pop_block();
+}
+
+void CodegenNeuronCppVisitor::print_node_data_structure(bool print_initializers) {
+    auto const value_initialize = print_initializers ? "{}" : "";
+    printer->add_newline(2);
+    printer->fmt_push_block("struct {} ", node_data_struct());
+
+    // Pointers to node variables
+    printer->add_line("int const * nodeindices;");
+    printer->add_line("double const * node_voltages;");
+    printer->add_line("double * node_rhs;");
+    printer->add_line("int nodecount;");
+
+    printer->pop_block(";");
+}
+
+void CodegenNeuronCppVisitor::print_make_node_data() const {
+    printer->add_newline(2);
+    printer->fmt_push_block("static {} make_node_data_{}(NrnThread& _nt, Memb_list& _ml_arg)",
+                            node_data_struct(),
+                            info.mod_suffix);
+
+    std::vector<std::string> make_node_data_args;
+    make_node_data_args.push_back("_ml_arg.nodeindices");
+    make_node_data_args.push_back("_nt.node_voltage_storage()");
+    make_node_data_args.push_back("_nt.node_rhs_storage()");
+    make_node_data_args.push_back("_ml_arg.nodecount");
+
+    printer->fmt_push_block("return {}", node_data_struct());
+    printer->add_multi_line(fmt::format("{}", fmt::join(make_node_data_args, ",\n")));
+
+    printer->pop_block(";");
+    printer->pop_block();
+}
+
 
 void CodegenNeuronCppVisitor::print_initial_block(const InitialBlock* node) {
     // read ion statements
@@ -1169,6 +1202,8 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
 
     printer->add_line("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};");
     printer->fmt_line("auto inst = make_instance_{}(_lmr);", info.mod_suffix);
+    printer->fmt_line("auto node_data = make_node_data_{}(*_nt, *_ml_arg);", info.mod_suffix);
+
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
 }
 
@@ -1353,28 +1388,152 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
 /*                              Print nrn_cur related routines                          */
 /****************************************************************************************/
 
+std::string CodegenNeuronCppVisitor::nrn_current_arguments() {
+    if (ion_variable_struct_required()) {
+        throw std::runtime_error("Not implemented.");
+    }
+    return "id, inst, node_data, v";
+}
+
+
+CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::nrn_current_parameters() {
+    if (ion_variable_struct_required()) {
+        throw std::runtime_error("Not implemented.");
+    }
+
+    ParamVector params;
+    params.emplace_back("", "size_t", "", "id");
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+    params.emplace_back("", fmt::format("{}&", node_data_struct()), "", "node_data");
+    params.emplace_back("", "double", "", "v");
+    return params;
+}
+
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_current(const BreakpointBlock& node) {
-    return;
+    const auto& args = nrn_current_parameters();
+    const auto& block = node.get_statement_block();
+    printer->add_newline(2);
+    // print_device_method_annotation();
+    printer->fmt_push_block("inline double nrn_current_{}({})",
+                            info.mod_suffix,
+                            get_parameter_str(args));
+    printer->add_line("double current = 0.0;");
+    print_statement_block(*block, false, false);
+    for (auto& current: info.currents) {
+        const auto& name = get_variable_name(current);
+        printer->fmt_line("current += {};", name);
+    }
+    printer->add_line("return current;");
+    printer->pop_block();
 }
 
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& node) {
-    return;
+    const auto& block = node.get_statement_block();
+    print_statement_block(*block, false, false);
+    if (!info.currents.empty()) {
+        std::string sum;
+        for (const auto& current: info.currents) {
+            auto var = breakpoint_current(current);
+            sum += get_variable_name(var);
+            if (&current != &info.currents.back()) {
+                sum += "+";
+            }
+        }
+        printer->fmt_line("double rhs = {};", sum);
+    }
+
+    std::string sum;
+    for (const auto& conductance: info.conductances) {
+        auto var = breakpoint_current(conductance.variable);
+        sum += get_variable_name(var);
+        if (&conductance != &info.conductances.back()) {
+            sum += "+";
+        }
+    }
+    printer->fmt_line("double g = {};", sum);
+
+    for (const auto& conductance: info.conductances) {
+        if (!conductance.ion.empty()) {
+            const auto& lhs = std::string(naming::ION_VARNAME_PREFIX) + "di" + conductance.ion +
+                              "dv";
+            const auto& rhs = get_variable_name(conductance.variable);
+            const ShadowUseStatement statement{lhs, "+=", rhs};
+            const auto& text = process_shadow_update_statement(statement, BlockType::Equation);
+            printer->add_line(text);
+        }
+    }
 }
 
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel() {
-    return;
+    printer->fmt_line("double I1 = nrn_current_{}({}+0.001);",
+                      info.mod_suffix,
+                      nrn_current_arguments());
+    for (auto& ion: info.ions) {
+        for (auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                const auto& name = get_variable_name(var);
+                printer->fmt_line("double di{} = {};", ion.name, name);
+            }
+        }
+    }
+    printer->fmt_line("double I0 = nrn_current_{}({});", info.mod_suffix, nrn_current_arguments());
+    printer->add_line("double rhs = I0;");
+
+    printer->add_line("double g = (I1-I0)/0.001;");
+    for (auto& ion: info.ions) {
+        for (auto& var: ion.writes) {
+            if (ion.is_ionic_current(var)) {
+                const auto& lhs = std::string(naming::ION_VARNAME_PREFIX) + "di" + ion.name + "dv";
+                auto rhs = fmt::format("(di{}-{})/0.001", ion.name, get_variable_name(var));
+                if (info.point_process) {
+                    auto area = get_variable_name(naming::NODE_AREA_VARIABLE);
+                    rhs += fmt::format("*1.e2/{}", area);
+                }
+                const ShadowUseStatement statement{lhs, "+=", rhs};
+                const auto& text = process_shadow_update_statement(statement, BlockType::Equation);
+                printer->add_line(text);
+            }
+        }
+    }
 }
 
 
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
-    return;
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->add_line("double v = node_data.node_voltages[node_id];");
+
+    const auto& read_statements = ion_read_statements(BlockType::Equation);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    if (info.conductances.empty()) {
+        print_nrn_cur_non_conductance_kernel();
+    } else {
+        print_nrn_cur_conductance_kernel(node);
+    }
+
+    const auto& write_statements = ion_write_statements(BlockType::Equation);
+    for (auto& statement: write_statements) {
+        auto text = process_shadow_update_statement(statement, BlockType::Equation);
+        printer->add_line(text);
+    }
+
+    if (info.point_process) {
+        const auto& area = get_variable_name(naming::NODE_AREA_VARIABLE);
+        printer->fmt_line("double mfactor = 1.e2/{};", area);
+        printer->add_line("g = g*mfactor;");
+        printer->add_line("rhs = rhs*mfactor;");
+    }
+
+    // print_g_unused();
 }
 
 
@@ -1390,14 +1549,36 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
         return;
     }
 
+    if (info.conductances.empty()) {
+        print_nrn_current(*info.breakpoint_node);
+    }
+
     printer->add_newline(2);
+    printer->add_line("/** update current */");
+    print_global_function_common_code(BlockType::Equation);
+    // print_channel_iteration_block_parallel_hint(BlockType::Equation, info.breakpoint_node);
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    print_nrn_cur_kernel(*info.breakpoint_node);
+    // print_nrn_cur_matrix_shadow_update();
+    // if (!nrn_cur_reduction_loop_required()) {
+    //     print_fast_imem_calculation();
+    // }
 
-    printer->fmt_line(
-        "void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* _ml_arg, "
-        "int _type) {{}}",
-        method_name(naming::NRN_CUR_METHOD));
 
-    /// TODO: Fill in
+    printer->add_line("node_data.node_rhs[node_id] -= rhs;");
+
+
+    printer->pop_block();
+
+    // if (nrn_cur_reduction_loop_required()) {
+    //     printer->push_block("for (int id = 0; id < nodecount; id++)");
+    //     print_nrn_cur_matrix_shadow_reduction();
+    //     printer->pop_block();
+    //     print_fast_imem_calculation();
+    // }
+
+    // print_kernel_data_present_annotation_block_end();
+    printer->pop_block();
 }
 
 
@@ -1482,7 +1663,9 @@ void CodegenNeuronCppVisitor::print_namespace_end() {
 void CodegenNeuronCppVisitor::print_data_structures(bool print_initializers) {
     print_mechanism_global_var_structure(print_initializers);
     print_mechanism_range_var_structure(print_initializers);
+    print_node_data_structure(print_initializers);
     print_make_instance();
+    print_make_node_data();
 }
 
 
