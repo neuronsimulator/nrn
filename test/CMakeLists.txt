@@ -23,7 +23,8 @@ add_executable(
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
   unit_tests/utils/enumerate.cpp
-  unit_tests/oc/hoc_interpreter.cpp)
+  unit_tests/oc/hoc_interpreter.cpp
+  cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
