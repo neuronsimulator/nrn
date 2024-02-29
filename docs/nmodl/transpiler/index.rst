@@ -22,6 +22,7 @@ About NMODL
    contents/currents
    contents/ions
    contents/pointers
+   contents/cable_equations
 
 .. toctree::
    :maxdepth: 3
