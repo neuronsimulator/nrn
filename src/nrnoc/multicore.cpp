@@ -609,29 +609,28 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     /* fill in the Point_process._vnt value. */
     /* artificial cells done in v_setup_vectors() */
     for (tml = _nt->tml; tml; tml = tml->next) {
-        if (memb_func[tml->index].is_point) {
-            if (memb_func[tml->index].hoc_mech) {
-                // I don't think hoc_mech works with multiple threads.
-                for (i = 0; i < tml->ml->nodecount; ++i) {
-                    auto* pnt = tml->ml->prop[i]->dparam[1].get<Point_process*>();
-                    pnt->_vnt = _nt;
-                }
-            } else {
-                for (i = 0; i < tml->ml->nodecount; ++i) {
-                    auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
-                    pnt->_vnt = _nt;
-                }
+        if (!memb_func[tml->index].is_point) {
+            continue;
+        }
+        if (memb_func[tml->index].hoc_mech) {
+            // I don't think hoc_mech works with multiple threads.
+            for (int i = 0; i < tml->ml->nodecount; ++i) {
+                auto* pnt = tml->ml->prop[i]->dparam[1].get<Point_process*>();
+                pnt->_vnt = _nt;
+            }
+        } else {
+            for (int i = 0; i < tml->ml->nodecount; ++i) {
+                auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
+                pnt->_vnt = _nt;
             }
         }
     }
 }
 
 void nrn_thread_memblist_setup() {
-    int it, *mlcnt;
-    void** vmap;
-    mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
-    vmap = (void**) emalloc(n_memb_func * sizeof(void*));
-    for (it = 0; it < nrn_nthread; ++it) {
+    int *mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
+    void** vmap = (void**) emalloc(n_memb_func * sizeof(void*));
+    for (int it = 0; it < nrn_nthread; ++it) {
         thread_memblist_setup(nrn_threads + it, mlcnt, vmap);
     }
     // Right now the sorting method updates the storage offsets inside the

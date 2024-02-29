@@ -621,7 +621,7 @@ static double ms_count(void* v) {
     return ((MechanismStandard*) v)->count();
 }
 static double ms_is_array(void* v) {
-    MechanismStandard* ms = (MechanismStandard*) v;
+    auto* ms = static_cast<MechanismStandard*>(v);
     hoc_return_type_code = 2;
     return ms->is_array((int) chkarg(1, 0, ms->count() - 1));
 }
@@ -735,14 +735,14 @@ MechanismStandard::~MechanismStandard() {
 int MechanismStandard::count() {
     return name_cnt_;
 }
-bool MechanismStandard::is_array(int i) {
-    Symbol* s = np_->var(i + offset_);
+bool MechanismStandard::is_array(int i) const {
+    const Symbol* s = np_->var(i + offset_);
     return s->arayinfo;
 }
-const char* MechanismStandard::name() {
+const char* MechanismStandard::name() const {
     return np_->name();
 }
-const char* MechanismStandard::name(int i, int& size) {
+const char* MechanismStandard::name(int i, int& size) const {
     Symbol* s;
     if (vartype_ == -1) {
         s = glosym_[i];
@@ -834,7 +834,7 @@ void MechanismStandard::action(const char* action, Object* pyact) {
 }
 void MechanismStandard::set(const char* name, double val, int index) {
     mschk("set");
-    Symbol* s = np_->findsym(name);
+    const Symbol* s = np_->findsym(name);
     if (s) {
         *np_->pval(s, index) = val;
     } else {
@@ -843,7 +843,7 @@ void MechanismStandard::set(const char* name, double val, int index) {
 }
 double MechanismStandard::get(const char* name, int index) {
     mschk("get");
-    Symbol* s = np_->findsym(name);
+    const Symbol* s = np_->findsym(name);
     if (!s) {
         hoc_execerror(name, "not in this property");
     }

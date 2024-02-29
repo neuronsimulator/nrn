@@ -44,9 +44,7 @@ v_structure_change).
 //----------------------------------------------------
 /* static */ class NrnPropertyImpl {
     friend class NrnProperty;
-    NrnPropertyImpl(int mechtype);
-    ~NrnPropertyImpl();
-
+    explicit NrnPropertyImpl(int mechtype);
 
     int iterator_;
     int type_;
@@ -54,10 +52,11 @@ v_structure_change).
     std::vector<double> params_{};
 };
 
-NrnPropertyImpl::NrnPropertyImpl(int mechtype) {
-    iterator_ = -1;
-    type_ = mechtype;
-    sym_ = memb_func[mechtype].sym;
+NrnPropertyImpl::NrnPropertyImpl(int mechtype)
+    : iterator_(-1)
+    , type_(mechtype)
+    , sym_(memb_func[mechtype].sym)
+{
     // How many values. nrn_prop_param_size[EXTRACELL] is not all of them
     // Nor if it is a HocMech.
     // And nrn_prop_param_size does not include array sizes.
@@ -79,10 +78,6 @@ NrnPropertyImpl::NrnPropertyImpl(int mechtype) {
         }
         ++i;
     }
-}
-
-NrnPropertyImpl::~NrnPropertyImpl() {
-    // printf("NrnProperty freed prop\n");
 }
 
 //---------------------------------------------------
@@ -170,70 +165,70 @@ bool NrnProperty::copy(bool to_prop, Prop* dest, Node* nd_dest, int vartype) {
     assert(vartype != NRNPOINTER);
     auto& x = npi_->params_;
     Prop* p = dest;
-    if (p && npi_->type_ == p->_type) {
-        if (p->ob) {
-            Symbol* msym = memb_func[p->_type].sym;
-            auto const cnt = msym->s_varn;
-            // u.ppsym below are the right names but not the right symbols.
-            // Those symbols are in the p->ob->ctemplate->symtable
-            Symlist* symtab = p->ob->ctemplate->symtable;
-            int k = 0;
-            for (int i = 0; i < cnt; ++i) {
-                Symbol* sym = msym->u.ppsym[i];
-                auto const jmax = hoc_total_array_data(sym, 0);
-                if (vartype == 0 || nrn_vartype(sym) == vartype) {
-                    const std::string& s = strip_suffix(sym->name, msym->name);
-                    sym = hoc_table_lookup(s.c_str(), symtab);
-                    assert(sym);
-                    auto const n = sym->u.rng.index;
-                    auto const y = p->ob->u.dataspace[n].pval;
-                    for (int j = 0; j < jmax; ++j) {
-                        if (to_prop) {
-                            y[j] = x[k + j];
-                        } else {
-                            x[k + j] = y[j];
-                        }
-                    }
-                }
-                k += jmax;
-            }
-        } else {
-            Symbol* msym = memb_func[p->_type].sym;
-            auto const cnt = msym->s_varn;
-            int k = 0;
-            for (int i = 0; i < cnt; ++i) {
-                Symbol* sym = msym->u.ppsym[i];
-                auto const jmax = hoc_total_array_data(sym, 0);
-                if (vartype == 0 || nrn_vartype(sym) == vartype) {
-                    auto const n = sym->u.rng.index;
-                    for (int j = 0; j < jmax; ++j) {
-                        if (p->_type == EXTRACELL &&
-                            n == neuron::extracellular::vext_pseudoindex()) {
-                            if (to_prop) {
-                                nd_dest->extnode->v[j] = x[k + j];
-                            } else {
-                                x[k + j] = nd_dest->extnode->v[j];
-                            }
-                        } else {
-                            if (to_prop) {
-                                p->param_legacy(n + j) = x[k + j];
-                            } else {
-                                x[k + j] = p->param_legacy(n + j);
-                            }
-                        }
-                    }
-                }
-                k += jmax;
-            }
-        }
-        return true;
-    } else {
+    if (!p || npi_->type_ != p->_type) {
         return false;
     }
+
+    if (p->ob) {
+        Symbol* msym = memb_func[p->_type].sym;
+        auto const cnt = msym->s_varn;
+        // u.ppsym below are the right names but not the right symbols.
+        // Those symbols are in the p->ob->ctemplate->symtable
+        Symlist* symtab = p->ob->ctemplate->symtable;
+        int k = 0;
+        for (int i = 0; i < cnt; ++i) {
+            const Symbol* sym = msym->u.ppsym[i];
+            auto const jmax = hoc_total_array_data(sym, 0);
+            if (vartype == 0 || nrn_vartype(sym) == vartype) {
+                const std::string& s = strip_suffix(sym->name, msym->name);
+                sym = hoc_table_lookup(s.c_str(), symtab);
+                assert(sym);
+                auto const n = sym->u.rng.index;
+                auto const y = p->ob->u.dataspace[n].pval;
+                for (int j = 0; j < jmax; ++j) {
+                    if (to_prop) {
+                        y[j] = x[k + j];
+                    } else {
+                        x[k + j] = y[j];
+                    }
+                }
+            }
+            k += jmax;
+        }
+    } else {
+        Symbol* msym = memb_func[p->_type].sym;
+        auto const cnt = msym->s_varn;
+        int k = 0;
+        for (int i = 0; i < cnt; ++i) {
+            const Symbol* sym = msym->u.ppsym[i];
+            auto const jmax = hoc_total_array_data(sym, 0);
+            if (vartype == 0 || nrn_vartype(sym) == vartype) {
+                auto const n = sym->u.rng.index;
+                for (int j = 0; j < jmax; ++j) {
+                    if (p->_type == EXTRACELL &&
+                        n == neuron::extracellular::vext_pseudoindex()) {
+                        if (to_prop) {
+                            nd_dest->extnode->v[j] = x[k + j];
+                        } else {
+                            x[k + j] = nd_dest->extnode->v[j];
+                        }
+                    } else {
+                        if (to_prop) {
+                            p->param_legacy(n + j) = x[k + j];
+                        } else {
+                            x[k + j] = p->param_legacy(n + j);
+                        }
+                    }
+                }
+            }
+            k += jmax;
+        }
+    }
+    return true;
 }
 
-bool NrnProperty::copy_out(NrnProperty& np, int vartype) {
-    auto& psrc = npi_->params_;
+bool NrnProperty::copy_out(NrnProperty& np, int /* vartype */) {
+    const auto& psrc = npi_->params_;
     auto& pdest = np.npi_->params_;
     pdest = psrc;
     return true;

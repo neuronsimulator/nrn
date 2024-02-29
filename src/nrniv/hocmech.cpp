@@ -319,8 +319,8 @@ void make_pointprocess() {
     // Only area and pntproc SoA dparam fields. (the reference to the Hoc Object is in prop->ob)
     std::vector<std::pair<std::string, int>> params{};
     std::vector<std::pair<std::string, std::string>> dparams{};
-    dparams.push_back({"", "area"});
-    dparams.push_back({"", "pntproc"});
+    dparams.emplace_back("", "area");
+    dparams.emplace_back("", "pntproc");
     neuron::mechanism::detail::register_data_fields(type, params, dparams);
 
     hm->slist = hoc_symlist;

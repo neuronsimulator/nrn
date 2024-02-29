@@ -864,11 +864,11 @@ void register_data_fields(int mechtype,
     std::vector<std::pair<const char*, int>> params{};
     std::vector<std::pair<const char*, const char*>> dparams{};
 
-    for (auto i = 0; i < param_info.size(); ++i) {
-        params.push_back({param_info[i].first.c_str(), param_info[i].second});
+    for (auto&&[str, i]: param_info) {
+        params.emplace_back(str.c_str(), i);
     }
-    for (auto i = 0; i < dparam_info.size(); ++i) {
-        dparams.push_back({dparam_info[i].first.c_str(), dparam_info[i].second.c_str()});
+    for (auto&&[str1, str2]: dparam_info) {
+        dparams.emplace_back(str1.c_str(), str2.c_str());
     }
 
     register_data_fields(mechtype, params, dparams);

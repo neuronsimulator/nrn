@@ -945,12 +945,11 @@ KSChan::KSChan(Object* obj, bool is_p) {
 
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
-    int i;
     err_if_has_instances();
     name_ = s;
     if (mechsym_) {
         char old_suffix[100];
-        i = 0;
+        int i = 0;
         while (strcmp(mechsym_->name, name_.c_str()) != 0 && looksym(name_.c_str())) {
             Printf("KSChan::setname %s already in use\n", name_.c_str());
             Sprintf(old_suffix, "%s%d", s, i);
@@ -970,7 +969,7 @@ void KSChan::setname(const char* s) {
         }
 
         Symbol* sp;
-        if (!is_point())
+        if (!is_point()) {
             for (i = 0; i < rlsym_->s_varn; ++i) {
                 sp = rlsym_->u.ppsym[i];
                 char* cp = strstr(sp->name, old_suffix);
@@ -986,6 +985,7 @@ void KSChan::setname(const char* s) {
                     sp->name = s1;
                 }
             }
+        }
         //	printf("%s renamed to %s\n", old_suffix+1, name_.c_str());
     }
     register_data_fields();
@@ -1000,7 +1000,6 @@ void KSChan::power(KSGateComplex* gc, int p) {
 
 void KSChan::set_single(bool b, bool update) {
     if (!is_point()) {
-        b = false;
         return;
     }
     if (b && (ngate_ != 1 || gc_[0].power_ != 1 || nhhstate_ > 0 || nksstate_ < 2)) {
@@ -1014,10 +1013,10 @@ void KSChan::set_single(bool b, bool update) {
     err_if_has_instances();
 
     if (is_single()) {
-        memb_func[mechtype_].singchan_ = NULL;
+        memb_func[mechtype_].singchan_ = nullptr;
         delete_schan_node_data();
         delete single_;
-        single_ = NULL;
+        single_ = nullptr;
     }
     is_single_ = b;
     parm_default_fill();
@@ -1037,8 +1036,7 @@ const char* KSChan::state(int i) {
 }
 
 int KSChan::trans_index(int s, int t) {
-    int i;
-    for (i = 0; i < ntrans_; ++i) {
+    for (int i = 0; i < ntrans_; ++i) {
         if (trans_[i].src_ == s && trans_[i].target_ == t) {
             return i;
         }
@@ -1047,8 +1045,7 @@ int KSChan::trans_index(int s, int t) {
 }
 
 int KSChan::gate_index(int is) {
-    int i;
-    for (i = 1; i < ngate_; ++i) {
+    for (int i = 1; i < ngate_; ++i) {
         if (is < gc_[i].sindex_) {
             return i - 1;
         }
@@ -1088,7 +1085,6 @@ void KSChan::update_prop() {
     new_psize += nstate_;
     err_if_has_instances();
 
-    int i;
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 
     // some old sym pointers
@@ -1161,7 +1157,6 @@ void KSChan::update_prop() {
 
 void KSChan::setion(const char* s) {
     // printf("KSChan::setion\n");
-    int i;
     if (strcmp(ion_.c_str(), s) == 0) {
         return;
     }
@@ -1181,7 +1176,7 @@ void KSChan::setion(const char* s) {
             printf("switch from useion to non-specific\n");
             rlsym_->s_varn += 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
-            for (i = 0; i <= io; ++i) {
+            for (int i = 0; i <= io; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i];
             }
             ion_sym_ = NULL;
@@ -1198,7 +1193,7 @@ void KSChan::setion(const char* s) {
             ppsym[1 + io]->u.rng.type = rlsym_->subtype;
             ppsym[1 + io]->cpublic = 1;
             ppsym[1 + io]->u.rng.index = 1 + io;
-            for (i = 2 + io; i < rlsym_->s_varn; ++i) {
+            for (int i = 2 + io; i < rlsym_->s_varn; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i - 1];
                 ppsym[i]->u.rng.index += 1;
             }
@@ -1230,11 +1225,11 @@ void KSChan::setion(const char* s) {
             ion_sym_ = sym;
             rlsym_->s_varn -= 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
-            for (i = 0; i <= io; ++i) {
+            for (int i = 0; i <= io; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i];
             }
             freesym(rlsym_->u.ppsym[1 + io], searchsym);
-            for (i = 1 + io; i < rlsym_->s_varn; ++i) {
+            for (int i = 1 + io; i < rlsym_->s_varn; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i + 1];
                 ppsym[i]->u.rng.index -= 1;
             }
@@ -1246,7 +1241,7 @@ void KSChan::setion(const char* s) {
         }
     }
     parm_default_fill();
-    for (i = iligtrans_; i < ntrans_; ++i) {
+    for (int i = iligtrans_; i < ntrans_; ++i) {
         trans_[i].lig2pd(pdoff);
     }
     register_data_fields();
@@ -1921,7 +1916,6 @@ void KSChan::trans_remove(int i) {
 void KSChan::setstructure(Vect* vec) {
     // before mutating any state, check if the call to register below will succeed
     int const new_nstate = vec->elem(2);
-    int const new_nligand = vec->elem(5);
     err_if_has_instances();
     int i, j, ii, idx, ns;
     usetable(false);

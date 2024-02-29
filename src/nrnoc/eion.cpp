@@ -492,7 +492,7 @@ void ion_style(void) {
     hoc_retpushx((double) oldstyle);
 }
 
-int nrn_vartype(Symbol* sym) {
+int nrn_vartype(const Symbol* sym) {
     int i;
     i = sym->subtype;
     if (i == _AMBIGUOUS) {

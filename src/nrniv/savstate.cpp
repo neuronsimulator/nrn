@@ -250,7 +250,7 @@ void SaveState::ssi_def() {
             ssi[im].size = nrn_prop_param_size_[im];
         } else {
             int type = STATE;
-            Symbol* msym = memb_func[im].sym;
+            const Symbol* msym = memb_func[im].sym;
             for (int i = 0; i < msym->s_varn; ++i) {
                 Symbol* sym = msym->u.ppsym[i];
                 int vartype = nrn_vartype(sym);
