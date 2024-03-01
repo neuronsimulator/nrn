@@ -105,7 +105,7 @@ endif()
 cpp_cc_git_submodule(eigen)
 # We could have fmt incoming from NEURON
 if(NOT TARGET fmt)
-  cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+  cpp_cc_git_submodule(fmt BUILD EXCLUDE_FROM_ALL PACKAGE fmt REQUIRED)
 endif()
 # If we're building from the submodule, make sure we pass -fPIC so that we can link the code into a
 # shared library later.
@@ -133,7 +133,7 @@ endif()
 cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
 
 if(NMODL_ENABLE_BACKWARD)
-  cpp_cc_git_submodule(backward BUILD PACKAGE backward REQUIRED)
+  cpp_cc_git_submodule(backward BUILD EXCLUDE_FROM_ALL PACKAGE backward REQUIRED)
 endif()
 
 # =============================================================================
