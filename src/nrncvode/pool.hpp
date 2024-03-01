@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <mutex>
 
-template <typename T, std::size_t Count = 1000>
+template <typename T>
 class MutexPool {
   public:
     using value_type = T;
@@ -22,7 +22,7 @@ class MutexPool {
     void free_all();
 
     // For now this pool only allow allocation of 1 byte at a time
-    std::size_t max_size() {
+    std::size_t max_size() const {
         return 1;
     }
 
@@ -46,17 +46,18 @@ class MutexPool {
 #endif
 };
 
-template <typename T, std::size_t Count>
-MutexPool<T, Count>::MutexPool() {
-    auto* ptr = pools_.emplace_back(Count).data();
-    items_.resize(Count);
-    for (std::size_t i = 0; i < Count; ++i) {
+template <typename T>
+MutexPool<T>::MutexPool() {
+    constexpr std::size_t count = 1000;
+    auto* ptr = pools_.emplace_back(count).data();
+    items_.resize(count);
+    for (std::size_t i = 0; i < count; ++i) {
         items_[i] = ptr + i;
     }
 }
 
-template <typename T, std::size_t Count>
-void MutexPool<T, Count>::grow() {
+template <typename T>
+void MutexPool<T>::grow() {
     std::size_t total_size = items_.size();
 
     // Everything is already allocated so reset put_ to the beginning of items
@@ -67,13 +68,13 @@ void MutexPool<T, Count>::grow() {
     items_.resize(2 * total_size);
 
     auto* ptr = pools_.emplace_back(total_size).data();
-    for (std::size_t i = total_size, j = 0; j < 2 * total_size; ++i, ++j) {
+    for (std::size_t i = total_size, j = 0; j < total_size; ++i, ++j) {
         items_[i] = ptr + j;
     }
 }
 
-template <typename T, std::size_t Count>
-T* MutexPool<T, Count>::allocate(std::size_t n) {
+template <typename T>
+T* MutexPool<T>::allocate(std::size_t n) {
 #if NRN_ENABLE_THREADS
     std::lock_guard<std::recursive_mutex> l(mut_);
 #endif
@@ -90,8 +91,8 @@ T* MutexPool<T, Count>::allocate(std::size_t n) {
     return item;
 }
 
-template <typename T, std::size_t Count>
-void MutexPool<T, Count>::deallocate(T* item, std::size_t) {
+template <typename T>
+void MutexPool<T>::deallocate(T* item, std::size_t) {
 #if NRN_ENABLE_THREADS
     std::lock_guard<std::recursive_mutex> l(mut_);
 #endif
@@ -100,8 +101,8 @@ void MutexPool<T, Count>::deallocate(T* item, std::size_t) {
     put_ = (++put_) % items_.size();
 }
 
-template <typename T, std::size_t Count>
-void MutexPool<T, Count>::free_all() {
+template <typename T>
+void MutexPool<T>::free_all() {
 #if NRN_ENABLE_THREADS
     std::lock_guard<std::recursive_mutex> l(mut_);
 #endif
