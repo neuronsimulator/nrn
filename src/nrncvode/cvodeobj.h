@@ -7,10 +7,10 @@
 #include "shared/nvector.h"
 #include "membfunc.h"
 #include "netcon.h"
+#include "tqitem.hpp"
 
 class NetCvode;
 class Daspk;
-class TQItem;
 class TQueue;
 typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;

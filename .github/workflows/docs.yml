@@ -1,7 +1,8 @@
 name: NEURON Documentation
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -36,11 +37,11 @@ jobs:
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PY_VERSION }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Python dependencies
         working-directory: ${{runner.workspace}}/nrn

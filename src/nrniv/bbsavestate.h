@@ -49,6 +49,7 @@ class BBSaveState {
     void seccontents(Section*);
     void node(Node*);
     void node01(Section*, Node*);
+    void v_vext(Node*);
     void mech(Prop*);
     void netrecv_pp(Point_process*);
     void possible_presyn(int gid);

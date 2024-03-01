@@ -59,6 +59,7 @@ extern int (*nrn2core_get_dat2_mech_)(int tid,
                                       int*& nodeindices,
                                       double*& data,
                                       int*& pdata,
+                                      std::vector<uint32_t>& nmodlrandom,
                                       std::vector<int>& pointer2type);
 
 extern int (*nrn2core_get_dat2_3_)(int tid,

@@ -594,8 +594,6 @@ class AccumulateMemoryUsage {
                     std::vector<detail::index_column_tag::type> const& vec,
                     int field_index,
                     int array_dim) {
-        auto element_size = sizeof(detail::index_column_tag::type);
-
         m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
         m_usage.stable_identifiers.capacity = m_usage.stable_identifiers.size +
                                               (vec.capacity() - vec.size()) * sizeof(vec[0]);

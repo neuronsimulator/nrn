@@ -7,14 +7,14 @@
 #include <nrnmpi.h>
 #include <errno.h>
 #include <time.h>
-#include <InterViews/regexp.h>
+#include <regex>
 #include "classreg.h"
 #include "nrnoc2iv.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
-#include "pool.h"
-#include "tqueue.h"
+#include "pool.hpp"
+#include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
 #include "datapath.h"
@@ -246,9 +246,7 @@ extern void nrn_multisend_advance();
 
 bool nrn_use_fifo_queue_;
 
-#if BBTQ == 5
 bool nrn_use_bin_queue_;
-#endif
 
 #if NRNMPI
 // for compressed info during spike exchange
@@ -930,98 +928,74 @@ Object** NetCvode::netconlist() {
     Object** po = newoclist(4, o);
 
     Object *opre = nullptr, *opost = nullptr, *otar = nullptr;
-    Regexp *spre = nullptr, *spost = nullptr, *star = nullptr;
-    char* s;
-    int n;
+    std::regex spre, spost, star;
 
     if (hoc_is_object_arg(1)) {
         opre = *hoc_objgetarg(1);
     } else {
-        s = gargstr(1);
-        if (s[0] == '\0') {
-            spre = new Regexp(".*");
+        std::string s(gargstr(1));
+        if (s.empty()) {
+            spre = std::regex(".*");
         } else {
-            spre = new Regexp(escape_bracket(s));
-        }
-        if (!spre->pattern()) {
-            delete std::exchange(spre, nullptr);
-            hoc_execerror(gargstr(1), "not a valid regular expression");
+            try {
+                spre = std::regex(escape_bracket(s.data()));
+            } catch (std::regex_error&) {
+                hoc_execerror(gargstr(1), "not a valid regular expression");
+            }
         }
     }
     if (hoc_is_object_arg(2)) {
         opost = *hoc_objgetarg(2);
     } else {
-        s = gargstr(2);
-        if (s[0] == '\0') {
-            spost = new Regexp(".*");
+        std::string s(gargstr(2));
+        if (s.empty()) {
+            spost = std::regex(".*");
         } else {
-            spost = new Regexp(escape_bracket(s));
-        }
-        if (!spost->pattern()) {
-            delete std::exchange(spost, nullptr);
-            delete std::exchange(spre, nullptr);
-            hoc_execerror(gargstr(2), "not a valid regular expression");
+            try {
+                spost = std::regex(escape_bracket(s.data()));
+            } catch (std::regex_error&) {
+                hoc_execerror(gargstr(2), "not a valid regular expression");
+            }
         }
     }
     if (hoc_is_object_arg(3)) {
         otar = *hoc_objgetarg(3);
     } else {
-        s = gargstr(3);
-        if (s[0] == '\0') {
-            star = new Regexp(".*");
+        std::string s(gargstr(3));
+        if (s.empty()) {
+            star = std::regex(".*");
         } else {
-            star = new Regexp(escape_bracket(s));
-        }
-        if (!star->pattern()) {
-            delete std::exchange(star, nullptr);
-            delete std::exchange(spre, nullptr);
-            delete std::exchange(spost, nullptr);
-            hoc_execerror(gargstr(3), "not a valid regular expression");
+            try {
+                star = std::regex(escape_bracket(s.data()));
+            } catch (std::regex_error&) {
+                hoc_execerror(gargstr(3), "not a valid regular expression");
+            }
         }
     }
 
-    bool b;
     hoc_Item* q;
     if (psl_) {
         ITERATE(q, psl_) {
             PreSyn* ps = (PreSyn*) VOIDITM(q);
-            b = false;
+            bool b = false;
             if (ps->ssrc_) {
                 Object* precell = nrn_sec2cell(ps->ssrc_);
                 if (opre) {
-                    if (precell == opre) {
-                        b = true;
-                    } else {
-                        b = false;
-                    }
+                    b = precell == opre;
                 } else {
-                    s = hoc_object_name(precell);
-                    n = strlen(s);
-                    if (spre->Match(s, n, 0) > 0) {
-                        b = true;
-                    } else {
-                        b = false;
-                    }
+                    std::string s(hoc_object_name(precell));
+                    b = std::regex_search(s, spre);
                 }
             } else if (ps->osrc_) {
                 Object* presyn = ps->osrc_;
                 if (opre) {
-                    if (presyn == opre) {
-                        b = true;
-                    } else {
-                        b = false;
-                    }
+                    b = presyn == opre;
                 } else {
-                    s = hoc_object_name(presyn);
-                    n = strlen(s);
-                    if (spre->Match(s, n, 0) > 0) {
-                        b = true;
-                    } else {
-                        b = false;
-                    }
+                    std::string s(hoc_object_name(presyn));
+                    b = std::regex_search(s, spre);
                 }
             }
-            if (b == true) {
+            if (b) {
                 for (const auto& d: ps->dil_) {
                     Object* postcell = nullptr;
                     Object* target = nullptr;
@@ -1033,37 +1007,19 @@ Object** NetCvode::netconlist() {
                         }
                     }
                     if (opost) {
-                        if (postcell == opost) {
-                            b = true;
-                        } else {
-                            b = false;
-                        }
+                        b = postcell == opost;
                     } else {
-                        s = hoc_object_name(postcell);
-                        n = strlen(s);
-                        if (spost->Match(s, n, 0) > 0) {
-                            b = true;
-                        } else {
-                            b = false;
-                        }
+                        std::string s(hoc_object_name(postcell));
+                        b = std::regex_search(s, spost);
                     }
-                    if (b == true) {
+                    if (b) {
                         if (otar) {
-                            if (target == otar) {
-                                b = true;
-                            } else {
-                                b = false;
-                            }
+                            b = target == otar;
                         } else {
-                            s = hoc_object_name(target);
-                            n = strlen(s);
-                            if (star->Match(s, n, 0) > 0) {
-                                b = true;
-                            } else {
-                                b = false;
-                            }
+                            std::string s(hoc_object_name(target));
+                            b = std::regex_search(s, star);
                         }
-                        if (b == true) {
+                        if (b) {
                             o->append(d->obj_);
                         }
                     }
@@ -1071,9 +1027,6 @@ Object** NetCvode::netconlist() {
             }
         }
     }
-    delete std::exchange(spre, nullptr);
-    delete std::exchange(spost, nullptr);
-    delete std::exchange(star, nullptr);
     return po;
 }
 
@@ -2594,31 +2547,8 @@ void NetCvode::vec_event_store() {
     }
 }
 
-#if BBTQ == 4
-TQItem* NetCvode::fifo_event(double td, DiscreteEvent* db) {
-    if (nrn_use_fifo_queue_) {
-#if PRINT_EVENT
-        if (print_event_) {
-            db->pr("send", td, this);
-        }
-        if (vec_event_store_) {
-            Vect* x = vec_event_store_;
-            int n = x->size();
-            x->resize_chunk(n + 2);
-            x->elem(n) = t;
-            x->elem(n + 1) = td;
-        }
-#endif
-        return p[0].tqe_->insert_fifo(td, db);
-    } else {
-        return p[0].tqe_->insert(td, db);
-    }
-}
-#else
 #define fifo_event event
-#endif
 
-#if BBTQ == 5
 TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
     if (nrn_use_bin_queue_) {
 #if PRINT_EVENT
@@ -2642,9 +2572,6 @@ TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
         return p[nt->id].tqe_->insert(td, db);
     }
 }
-#else
-#define bin_event event
-#endif
 
 TQItem* NetCvode::event(double td, DiscreteEvent* db, NrnThread* nt) {
 #if PRINT_EVENT
@@ -2872,10 +2799,8 @@ void NetCvode::clear_events() {
                 d.selfqueue_->remove_all();
             }
         }
-#if BBTQ == 5
         d.tqe_->nshift_ = -1;
         d.tqe_->shift_bin(nt_t - 0.5 * nt_dt);
-#endif
     }
     // I don't believe this is needed anymore since cvode not needed
     // til delivery.
@@ -2903,7 +2828,6 @@ void NetCvode::free_event_pools() {
 void NetCvode::init_events() {
     hoc_Item* q;
     int i, j;
-#if BBTQ == 5
     for (i = 0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
         // first bin starts 1/2 time step early because per time step
@@ -2912,7 +2836,6 @@ void NetCvode::init_events() {
         // nt->_t + 0.5*nt->_dt where nt->_t is a multiple of dt.
         p[i].tqe_->shift_bin(nt_t - 0.5 * nt_dt);
     }
-#endif
     if (psl_) {
         ITERATE(q, psl_) {
             PreSyn* ps = (PreSyn*) VOIDITM(q);
@@ -2924,19 +2847,6 @@ void NetCvode::init_events() {
             // also decide what to do about use_min_delay_
             // the rule for now is to use it if all delays are
             // the same and there are more than 2
-#if BBTQ == 4
-            // but
-            // if we desire nrn_use_fifo_queue_ then use it
-            // even if just one
-            double fifodelay;
-            if (nrn_use_fifo_queue_) {
-                if (!dil.empty()) {
-                    ps->use_min_delay_ = 1;
-                    ps->delay_ = dil[0]->delay_;
-                    fifodelay = ps->delay_;
-                }
-            } else
-#endif  // BBTQ
             {
                 if (dil.size() > 2) {
                     ps->use_min_delay_ = 1;
@@ -2949,15 +2859,6 @@ void NetCvode::init_events() {
                 if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
                     ps->use_min_delay_ = false;
                 }
-#if BBTQ == 4
-                if (nrn_use_fifo_queue_ && d->delay_ != fifodelay) {
-                    hoc_warning(
-                        "Use of the event fifo queue is turned off due to more than one value for "
-                        "NetCon.delay",
-                        0);
-                    nrn_use_fifo_queue_ = false;
-                }
-#endif
             }
         }
     }
@@ -3121,11 +3022,7 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
     if (active_ && target_) {
         assert(PP2NT(target_) == nt);
         STATISTICS(netcon_send_active_);
-#if BBTQ == 5
         ns->bin_event(tt, this, PP2NT(target_));
-#else
-        ns->event(tt, this, PP2NT(target_));
-#endif
     } else {
         STATISTICS(netcon_send_inactive_);
     }
@@ -3202,10 +3099,6 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #ifndef USENCS
     if (use_min_delay_) {
         STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 4
-        ns->fifo_event(tt + delay_, this);
-#else
-#if BBTQ == 5
         for (i = 0; i < nrn_nthread; ++i) {
             if (nt->id == i) {
                 ns->bin_event(tt + delay_, this, nt);
@@ -3213,24 +3106,16 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
                 ns->p[i].interthread_send(tt + delay_, this, nrn_threads + i);
             }
         }
-#else
-        ns->event(tt + delay_, this);
-#endif
-#endif
     } else {
         STATISTICS(presyn_send_direct_);
         for (const auto& d: dil_) {
             if (d->active_ && d->target_) {
                 NrnThread* n = PP2NT(d->target_);
-#if BBTQ == 5
                 if (nt == n) {
                     ns->bin_event(tt + d->delay_, d, n);
                 } else {
                     ns->p[n->id].interthread_send(tt + d->delay_, d, n);
                 }
-#else
-                ns->event(tt + d->delay_, d, PP2NT(d->target_));
-#endif
             }
         }
     }
@@ -6051,7 +5936,6 @@ void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     int tid = nt->id;
     tsav = nt->_t;
     tm = nt->_t + 0.5 * nt->_dt;
-#if BBTQ == 5
 tryagain:
     // one of the events on the main queue may be a NetParEvent
     // which due to dt round off error can result in an event
@@ -6089,18 +5973,15 @@ tryagain:
         }
         //		assert(int(tm/nt->_dt)%1000 == p[tid].tqe_->nshift_);
     }
-#endif
 
     deliver_events(tm, nt);
 
-#if BBTQ == 5
     if (nrn_use_bin_queue_) {
         if (p[tid].tqe_->top()) {
             goto tryagain;
         }
         p[tid].tqe_->shift_bin(tm);
     }
-#endif
     nt->_t = tsav;
 }
 

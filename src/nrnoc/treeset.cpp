@@ -437,8 +437,8 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     activsynapse_rhs();
 
     if (vec_sav_rhs) {
-        /* _nrn_save_rhs has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* vec_sav_rhs has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         for (i = i1; i < i3; ++i) {
             vec_sav_rhs[i] -= vec_rhs[i];
@@ -542,11 +542,11 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     activsynapse_lhs();
 
     if (vec_sav_d) {
-        /* _nrn_save_d has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* vec_sav_d has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] += vec_d[i];
+            vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
         }
     }
 #if EXTRACELLULAR
@@ -721,6 +721,9 @@ void single_prop_free(Prop* p) {
     if (pnt_map[p->_type]) {
         clear_point_process_struct(p);
         return;
+    }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {

@@ -1,7 +1,8 @@
 name: NEURON CI
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -40,7 +41,7 @@ jobs:
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.0
+      MUSIC_VERSION: 1.2.1
 
     strategy:
       matrix:
@@ -89,7 +90,7 @@ jobs:
 
     steps:
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1
+        uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
@@ -127,7 +128,7 @@ jobs:
           echo CI_OS_NAME=linux >> $GITHUB_ENV
         shell: bash
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -138,7 +139,7 @@ jobs:
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -151,7 +152,7 @@ jobs:
           python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -173,7 +174,8 @@ jobs:
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
-          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          # on some systems MPI library detection fails, provide exact flags/compilers
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource MPI_CXXFLAGS="-g -O3" MPI_CFLAGS="-g -O3" MPI_LDFLAGS=" " CC=mpicc CXX=mpicxx
           make -j install
           deactivate
         working-directory: ${{runner.temp}}
@@ -195,23 +197,11 @@ jobs:
           cat matrix.json
           echo -----
 
-      # Workaround for https://github.com/actions/cache/issues/92
-      - name: Checkout cache action
-        uses: actions/checkout@v3
-        with:
-          repository: actions/cache
-          ref: v3
-          path: tmp/actions/cache
-
-      - name: Make actions/cache@v3 run even on failure
-        run: |
-          sed -i'.bak' -e '/ post-if: /d' tmp/actions/cache/action.yml
-
       - name: Restore compiler cache
-        uses: ./tmp/actions/cache
+        uses: actions/cache@v4
         with:
-          path: |
-            ${{runner.workspace}}/ccache
+          path: ${{runner.workspace}}/ccache
+          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
