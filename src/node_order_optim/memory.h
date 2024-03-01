@@ -183,7 +183,14 @@ inline void alloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
             size_t multiple = num_bytes / alignment;
             fill = alignment * (multiple + 1) - num_bytes;
         }
+#ifndef WIN32
         nrn_assert((pointer = std::aligned_alloc(alignment, num_bytes + fill)) != nullptr);
+#else
+        // Windows has _aligned_alloc, but that must be paired with
+        // _aligned_free 
+        fprintf(stderr, "Windows has no std::aligned_alloc\n");
+        nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
+#endif
     } else {
         nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
     }
