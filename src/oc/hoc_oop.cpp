@@ -88,7 +88,7 @@ size_t hoc_total_array(Symbol* s) /* total number of elements in array pointer *
     return total;
 }
 
-size_t hoc_total_array_data(Symbol* s,
+size_t hoc_total_array_data(const Symbol* s,
                             Objectdata* obd) /* total number of elements in array pointer */
 {
     Arrayinfo* a;

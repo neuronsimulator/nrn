@@ -51,7 +51,7 @@ class SymDirectoryImpl: public Observer {
     void load_object();
     void load_aliases();
     void load_template();
-    void load_mechanism(Prop*, int, const char*);
+    void load_mechanism(const Prop*, int, const char*);
     void append(Symbol* sym, Objectdata* od, Object* o = NULL);
     void append(Object*);
     void un_append(Object*);
@@ -496,20 +496,23 @@ void SymDirectoryImpl::load_section() {
     symbol_lists_.push_back(new SymbolItem(buf));
     nrn_pushsec(sec);
     Node* nd = sec->pnode[i];
-    for (Prop* p = nd->prop; p; p = p->next) {
+    for (const Prop* p = nd->prop; p; p = p->next) {
         load_mechanism(p, 0, xarg);
     }
     nrn_popsec();
 }
 
-void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
-    NrnProperty np(p);
-    if (np.is_point()) {
+void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const char* xarg) {
+    int type = p->_type;
+    if (memb_func[type].is_point) {
         return;
     }
     char buf[200];
-    for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
-        if (np.var_type(sym) == type || type == 0) {
+    Symbol* msym = memb_func[type].sym;
+    int cnt = msym->s_varn;
+    for (int i = 0; i < cnt; ++i) {
+        const Symbol* sym = msym->u.ppsym[i];
+        if (nrn_vartype(sym) == vartype || vartype == 0) {
             if (ISARRAY(sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
