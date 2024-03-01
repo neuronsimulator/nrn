@@ -1032,10 +1032,10 @@ Object** NetCvode::netconlist() {
 
 #define ITE_SIZE 10
 NetCvodeThreadData::NetCvodeThreadData() {
-    tpool_ = new TQItemPool(1000, 1);
+    tpool_ = new TQItemPool();
     // tqe_ accessed only by thread i so no locking
     tqe_ = new TQueue(tpool_, 0);
-    sepool_ = new SelfEventPool(1000, 1);
+    sepool_ = new SelfEventPool();
     selfqueue_ = nullptr;
     psl_thr_ = nullptr;
     tq_ = nullptr;

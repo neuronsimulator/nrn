@@ -1,5 +1,4 @@
-#ifndef pool_h
-#define pool_h
+#pragma once
 
 // create and manage a vector of objects as a memory pool of those objects
 // the object must have a void clear() method which takes care of any
@@ -9,127 +8,101 @@
 // the chain of Pool
 // is only for extra items in a pool_ and no other fields are used.
 // the pool doubles in size every time a chain Pool is added.
-// maxget() tells the most number of pool items used at once.
 
 #include <nrnmutdec.h>
 
-#include <cassert>
+#include <list>
+#include <vector>
 
-template <typename T>
+template <typename T, std::size_t Count = 1000>
 class MutexPool {
   public:
-    MutexPool(long count, int mkmut = 0);
+    MutexPool();
     ~MutexPool();
     T* alloc();
     void hpfree(T*);
-    int maxget() {
-        return maxget_;
-    }
     void free_all();
 
   private:
+    // Add a new vector to the pools_ with the double of size of the previous one
+    // Reset put_ and get_
     void grow();
-    T** items_{};
-    T* pool_{};
-    long pool_size_{};
-    long count_{};
-    long get_{};
-    long put_{};
-    long nget_{};
-    long maxget_{};
-    MutexPool<T>* chain_{};
+    // A ring-buffer covering all the pools_
+    // put_ is the place where to put the next freed item
+    // get_ is the place where to get a new item
+    std::vector<T*> items_{};
+    std::size_t get_{};
+    std::size_t put_{};
+    // Number of items currently allocated in the pools
+    // When this number equal the total number of elements it will be time to grow()
+    std::size_t nget_{};
+    // A vector of all the pools_
+    std::vector<std::vector<T>> pools_{};
     MUTDEC
 };
 
-template <typename T>
-MutexPool<T>::MutexPool(long count, int mkmut) {
-    count_ = count;
-    pool_ = new T[count_];
-    pool_size_ = count;
-    items_ = new T*[count_];
-    for (long i = 0; i < count_; ++i) {
-        items_[i] = pool_ + i;
+template <typename T, std::size_t Count>
+MutexPool<T, Count>::MutexPool() {
+    auto* ptr = pools_.emplace_back(Count).data();
+    items_.resize(Count);
+    for (std::size_t i = 0; i < Count; ++i) {
+        items_[i] = ptr + i;
     }
-    MUTCONSTRUCT(mkmut)
+    MUTCONSTRUCT(1)
 }
 
-template <typename T>
-void MutexPool<T>::grow() {
-    assert(get_ == put_);
-    MutexPool<T>* p = new MutexPool<T>(count_);
-    p->chain_ = chain_;
-    chain_ = p;
-    long newcnt = 2 * count_;
-    T** itms = new T*[newcnt];
-    put_ += count_;
-    for (long i = 0; i < get_; ++i) {
-        itms[i] = items_[i];
+template <typename T, std::size_t Count>
+void MutexPool<T, Count>::grow() {
+    std::size_t total_size = items_.size();
+
+    // Everything is already allocated so reset put_ to the beginning of items
+    // and set get_ to the new space allocated pointing to the new pool
+    put_ = 0;
+    get_ = total_size;
+
+    items_.resize(2 * total_size);
+
+    auto* ptr = pools_.emplace_back(total_size).data();
+    for (std::size_t i = total_size, j = 0; j < 2 * total_size; ++i, ++j) {
+        items_[i] = ptr + j;
     }
-    for (long i = get_, j = 0; j < count_; ++i, ++j) {
-        itms[i] = p->items_[j];
-    }
-    for (long i = put_, j = get_; j < count_; ++i, ++j) {
-        itms[i] = items_[j];
-    }
-    delete[] items_;
-    delete[] p->items_;
-    p->items_ = 0;
-    items_ = itms;
-    count_ = newcnt;
 }
 
-template <typename T>
-MutexPool<T>::~MutexPool() {
-    delete chain_;
-    delete[] pool_;
-    delete[] items_;
+template <typename T, std::size_t Count>
+MutexPool<T, Count>::~MutexPool() {
     MUTDESTRUCT
 }
 
-template <typename T>
-T* MutexPool<T>::alloc() {
+template <typename T, std::size_t Count>
+T* MutexPool<T, Count>::alloc() {
     MUTLOCK
-    if (nget_ >= count_) {
+    if (nget_ == items_.size()) {
         grow();
     }
-    T* item = items_[get_];
-    get_ = (get_ + 1) % count_;
     ++nget_;
-
-    maxget_ = std::max(nget_, maxget_);
+    T* item = items_[get_];
+    get_ = (++get_) % items_.size();
 
     MUTUNLOCK
     return item;
 }
 
-template <typename T>
-void MutexPool<T>::hpfree(T* item) {
+template <typename T, std::size_t Count>
+void MutexPool<T, Count>::hpfree(T* item) {
     MUTLOCK
-    assert(nget_ > 0);
-    items_[put_] = item;
-    put_ = (put_ + 1) % count_;
     --nget_;
+    items_[put_] = item;
+    put_ = (++put_) % items_.size();
     MUTUNLOCK
 }
 
-template <typename T>
-void MutexPool<T>::free_all() {
+template <typename T, std::size_t Count>
+void MutexPool<T, Count>::free_all() {
     MUTLOCK
-    MutexPool<T>* pp;
-    long i;
-    nget_ = 0;
     get_ = 0;
     put_ = 0;
-    for (pp = this; pp; pp = pp->chain_) {
-        for (i = 0; i < pp->pool_size_; ++i) {
-            items_[put_++] = pp->pool_ + i;
-            pp->pool_[i].clear();
-        }
+    for (auto& item: items_) {
+        item->clear();
     }
-    assert(put_ == count_);
-    put_ = 0;
     MUTUNLOCK
 }
-
-
-#endif

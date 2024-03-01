@@ -27,7 +27,7 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
     if (!hepool_) {
         nrn_hoc_lock();
         if (!hepool_) {
-            hepool_ = new HocEventPool(100, 1);
+            hepool_ = new HocEventPool();
         }
         nrn_hoc_unlock();
     }
