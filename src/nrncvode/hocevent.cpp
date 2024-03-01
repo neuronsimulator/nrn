@@ -31,7 +31,7 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
         }
         nrn_hoc_unlock();
     }
-    HocEvent* he = hepool_->alloc();
+    HocEvent* he = hepool_->allocate();
     he->stmt_ = nullptr;
     he->ppobj_ = ppobj;
     he->reinit_ = reinit;
@@ -48,7 +48,7 @@ void HocEvent::hefree() {
         delete stmt_;
         stmt_ = nullptr;
     }
-    hepool_->hpfree(this);
+    hepool_->deallocate(this);
 }
 
 void HocEvent::clear() {

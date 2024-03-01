@@ -81,7 +81,7 @@ TQueue::~TQueue() {
 }
 
 void TQueue::deleteitem(TQItem* i) {
-    tpool_->hpfree(i);
+    tpool_->deallocate(i);
 }
 
 void TQueue::print() {
@@ -186,7 +186,7 @@ void TQueue::spike_stat(double* d) {
 TQItem* TQueue::insert(double t, void* d) {
     MUTLOCK
     STAT(ninsert);
-    TQItem* i = tpool_->alloc();
+    TQItem* i = tpool_->allocate();
     i->data_ = d;
     i->t_ = t;
     i->cnt_ = -1;
@@ -205,7 +205,7 @@ TQItem* TQueue::insert(double t, void* d) {
 TQItem* TQueue::enqueue_bin(double td, void* d) {
     MUTLOCK
     STAT(ninsert);
-    TQItem* i = tpool_->alloc();
+    TQItem* i = tpool_->allocate();
     i->data_ = d;
     i->t_ = td;
     binq_->enqueue(td, i);
@@ -215,7 +215,7 @@ TQItem* TQueue::enqueue_bin(double td, void* d) {
 
 void TQueue::release(TQItem* q) {
     // if lockable then the pool is internally handles locking
-    tpool_->hpfree(q);
+    tpool_->deallocate(q);
 }
 
 void TQueue::remove(TQItem* q) {
@@ -233,7 +233,7 @@ void TQueue::remove(TQItem* q) {
         } else {
             spdelete(q, sptree_);
         }
-        tpool_->hpfree(q);
+        tpool_->deallocate(q);
     }
     MUTUNLOCK
 }
@@ -401,7 +401,7 @@ SelfQueue::~SelfQueue() {
 }
 TQItem* SelfQueue::insert(void* d) {
     MUTLOCK
-    TQItem* q = tpool_->alloc();
+    TQItem* q = tpool_->allocate();
     q->left_ = nullptr;
     q->right_ = head_;
     if (head_) {
@@ -423,14 +423,14 @@ void* SelfQueue::remove(TQItem* q) {
     if (q == head_) {
         head_ = q->right_;
     }
-    tpool_->hpfree(q);
+    tpool_->deallocate(q);
     MUTUNLOCK
     return q->data_;
 }
 void SelfQueue::remove_all() {
     MUTLOCK
     for (TQItem* q = first(); q; q = next(q)) {
-        tpool_->hpfree(q);
+        tpool_->deallocate(q);
     }
     head_ = nullptr;
     MUTUNLOCK

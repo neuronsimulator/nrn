@@ -2295,7 +2295,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-    SelfEvent* se = p.sepool_->alloc();
+    SelfEvent* se = p.sepool_->allocate();
     se->flag_ = flag;
     se->target_ = pnt;
     se->weight_ = weight;
@@ -2331,7 +2331,7 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
         NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-        SelfEvent* se = p.sepool_->alloc();
+        SelfEvent* se = p.sepool_->allocate();
         se->flag_ = flag;
         se->target_ = pnt;
         se->weight_ = weight;
@@ -3366,7 +3366,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
     }
     NetCvodeThreadData& nctd = ns->p[PP2NT(target_)->id];
     --nctd.unreffed_event_cnt_;
-    nctd.sepool_->hpfree(this);
+    nctd.sepool_->deallocate(this);
 }
 
 void SelfEvent::pr(const char* s, double tt, NetCvode* ns) {

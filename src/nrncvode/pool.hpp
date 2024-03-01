@@ -3,25 +3,28 @@
 // create and manage a vector of objects as a memory pool of those objects
 // the object must have a void clear() method which takes care of any
 // data the object contains which should be deleted upon free_all.
-// clear() is NOT called on free, only on free_all.
+// clear() is NOT called on deallocate, only on free_all.
 
-// the chain of Pool
-// is only for extra items in a pool_ and no other fields are used.
-// the pool doubles in size every time a chain Pool is added.
-
-#include <nrnmutdec.h>
+// the pool doubles in size every time a new pool is added.
 
 #include <list>
 #include <vector>
+#include <stdexcept>
+#include <mutex>
 
 template <typename T, std::size_t Count = 1000>
 class MutexPool {
   public:
+    using value_type = T;
     MutexPool();
-    ~MutexPool();
-    T* alloc();
-    void hpfree(T*);
+    T* allocate(std::size_t = 1);
+    void deallocate(T*, std::size_t = 1);
     void free_all();
+
+    // For now this pool only allow allocation of 1 byte at a time
+    std::size_t max_size() {
+        return 1;
+    }
 
   private:
     // Add a new vector to the pools_ with the double of size of the previous one
@@ -38,7 +41,9 @@ class MutexPool {
     std::size_t nget_{};
     // A vector of all the pools_
     std::vector<std::vector<T>> pools_{};
-    MUTDEC
+#if NRN_ENABLE_THREADS
+    std::recursive_mutex mut_;
+#endif
 };
 
 template <typename T, std::size_t Count>
@@ -48,7 +53,6 @@ MutexPool<T, Count>::MutexPool() {
     for (std::size_t i = 0; i < Count; ++i) {
         items_[i] = ptr + i;
     }
-    MUTCONSTRUCT(1)
 }
 
 template <typename T, std::size_t Count>
@@ -69,13 +73,13 @@ void MutexPool<T, Count>::grow() {
 }
 
 template <typename T, std::size_t Count>
-MutexPool<T, Count>::~MutexPool() {
-    MUTDESTRUCT
-}
-
-template <typename T, std::size_t Count>
-T* MutexPool<T, Count>::alloc() {
-    MUTLOCK
+T* MutexPool<T, Count>::allocate(std::size_t n) {
+#if NRN_ENABLE_THREADS
+    std::lock_guard<std::recursive_mutex> l(mut_);
+#endif
+    if (n != 1) {
+        throw std::runtime_error("MutexPool allocator can only allocate one object at a time");
+    }
     if (nget_ == items_.size()) {
         grow();
     }
@@ -83,26 +87,27 @@ T* MutexPool<T, Count>::alloc() {
     T* item = items_[get_];
     get_ = (++get_) % items_.size();
 
-    MUTUNLOCK
     return item;
 }
 
 template <typename T, std::size_t Count>
-void MutexPool<T, Count>::hpfree(T* item) {
-    MUTLOCK
+void MutexPool<T, Count>::deallocate(T* item, std::size_t) {
+#if NRN_ENABLE_THREADS
+    std::lock_guard<std::recursive_mutex> l(mut_);
+#endif
     --nget_;
     items_[put_] = item;
     put_ = (++put_) % items_.size();
-    MUTUNLOCK
 }
 
 template <typename T, std::size_t Count>
 void MutexPool<T, Count>::free_all() {
-    MUTLOCK
+#if NRN_ENABLE_THREADS
+    std::lock_guard<std::recursive_mutex> l(mut_);
+#endif
     get_ = 0;
     put_ = 0;
     for (auto& item: items_) {
         item->clear();
     }
-    MUTUNLOCK
 }
