@@ -352,8 +352,13 @@ int nrncore_run(const char* arg) {
 #endif
 
     // launch coreneuron
-    int result = coreneuron_launcher(
-        nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, corenrn_mpi_library.c_str(), arg, nrncore_is_file_mode());
+    int result = coreneuron_launcher(nrn_nthread,
+                                     have_gap,
+                                     nrnmpi_use,
+                                     nrn_use_fast_imem,
+                                     corenrn_mpi_library.c_str(),
+                                     arg,
+                                     nrncore_is_file_mode());
 
     // close handle and return result
     dlclose(handle);
