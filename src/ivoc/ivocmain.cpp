@@ -233,14 +233,6 @@ extern void nrnmpi_stubs();
 extern std::string nrnmpi_load();
 #endif
 
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
-
 #ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
@@ -381,7 +373,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // extern char** environ;
     int i;
     //	prargs("at beginning", argc, argv);
-    force_load();
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
