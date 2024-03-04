@@ -674,7 +674,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = new Prop{static_cast<short>(type)};
+    auto* p = new Prop{nd, static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
