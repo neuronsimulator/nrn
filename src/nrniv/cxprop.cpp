@@ -1,6 +1,6 @@
-#include "arraypool.h"   // ArrayPool
-#include "hocdec.h"      // Datum
-#include "section.h"     // Section
+#include "arraypool.h"     // ArrayPool
+#include "hocdec.h"        // Datum
+#include "section.h"       // Section
 #include "utils/pool.hpp"  // Pool
 #include "../neuron/model_data.hpp"
 

@@ -15,10 +15,9 @@
 
 constexpr bool PoolMutexed = true;
 
-template <typename T, bool M=false>
+template <typename T, bool M = false>
 class Pool {
   public:
-
     using value_type = T;
     Pool();
     template <typename F>
