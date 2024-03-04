@@ -42,7 +42,7 @@ class MutexPool {
     // A vector of all the pools_
     std::vector<std::vector<T>> pools_{};
 #if NRN_ENABLE_THREADS
-    std::recursive_mutex mut_;
+    std::mutex mut_;
 #endif
 };
 
@@ -58,7 +58,7 @@ MutexPool<T>::MutexPool() {
 
 template <typename T>
 void MutexPool<T>::grow() {
-    std::size_t total_size = items_.size();
+    const std::size_t total_size = items_.size();
 
     // Everything is already allocated so reset put_ to the beginning of items
     // and set get_ to the new space allocated pointing to the new pool
@@ -76,7 +76,7 @@ void MutexPool<T>::grow() {
 template <typename T>
 T* MutexPool<T>::allocate(std::size_t n) {
 #if NRN_ENABLE_THREADS
-    std::lock_guard<std::recursive_mutex> l(mut_);
+    std::lock_guard<std::mutex> l(mut_);
 #endif
     if (n != 1) {
         throw std::runtime_error("MutexPool allocator can only allocate one object at a time");
@@ -94,7 +94,7 @@ T* MutexPool<T>::allocate(std::size_t n) {
 template <typename T>
 void MutexPool<T>::deallocate(T* item, std::size_t) {
 #if NRN_ENABLE_THREADS
-    std::lock_guard<std::recursive_mutex> l(mut_);
+    std::lock_guard<std::mutex> l(mut_);
 #endif
     --nget_;
     items_[put_] = item;
@@ -104,7 +104,7 @@ void MutexPool<T>::deallocate(T* item, std::size_t) {
 template <typename T>
 void MutexPool<T>::free_all() {
 #if NRN_ENABLE_THREADS
-    std::lock_guard<std::recursive_mutex> l(mut_);
+    std::lock_guard<std::mutex> l(mut_);
 #endif
     get_ = 0;
     put_ = 0;
