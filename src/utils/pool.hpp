@@ -11,12 +11,20 @@
 #include <vector>
 #include <stdexcept>
 #include <mutex>
+#include <functional>
 
-template <typename T>
-class MutexPool {
+constexpr bool PoolMutexed = true;
+
+template <typename T, bool M=false>
+class Pool {
   public:
+
     using value_type = T;
-    MutexPool();
+    Pool();
+    template <typename F>
+    void set_function(F f) {
+        clear_(f);
+    }
     T* allocate(std::size_t = 1);
     void deallocate(T*, std::size_t = 1);
     void free_all();
@@ -25,6 +33,8 @@ class MutexPool {
     std::size_t max_size() const {
         return 1;
     }
+
+    bool is_valid_ptr(const T*) const;
 
   private:
     // Add a new vector to the pools_ with the double of size of the previous one
@@ -41,13 +51,16 @@ class MutexPool {
     std::size_t nget_{};
     // A vector of all the pools_
     std::vector<std::vector<T>> pools_{};
-#if NRN_ENABLE_THREADS
+
+    std::function<void(T*)> clear_{};
+
+#if NRN_ENABLE_THREADS && M
     std::mutex mut_;
 #endif
 };
 
-template <typename T>
-MutexPool<T>::MutexPool() {
+template <typename T, bool M>
+Pool<T, M>::Pool() {
     constexpr std::size_t count = 1000;
     auto* ptr = pools_.emplace_back(count).data();
     items_.resize(count);
@@ -56,8 +69,8 @@ MutexPool<T>::MutexPool() {
     }
 }
 
-template <typename T>
-void MutexPool<T>::grow() {
+template <typename T, bool M>
+void Pool<T, M>::grow() {
     const std::size_t total_size = items_.size();
 
     // Everything is already allocated so reset put_ to the beginning of items
@@ -73,13 +86,13 @@ void MutexPool<T>::grow() {
     }
 }
 
-template <typename T>
-T* MutexPool<T>::allocate(std::size_t n) {
-#if NRN_ENABLE_THREADS
+template <typename T, bool M>
+T* Pool<T, M>::allocate(std::size_t n) {
+#if NRN_ENABLE_THREADS && M
     std::lock_guard<std::mutex> l(mut_);
 #endif
     if (n != 1) {
-        throw std::runtime_error("MutexPool allocator can only allocate one object at a time");
+        throw std::runtime_error("Pool allocator can only allocate one object at a time");
     }
     if (nget_ == items_.size()) {
         grow();
@@ -91,9 +104,9 @@ T* MutexPool<T>::allocate(std::size_t n) {
     return item;
 }
 
-template <typename T>
-void MutexPool<T>::deallocate(T* item, std::size_t) {
-#if NRN_ENABLE_THREADS
+template <typename T, bool M>
+void Pool<T, M>::deallocate(T* item, std::size_t) {
+#if NRN_ENABLE_THREADS && M
     std::lock_guard<std::mutex> l(mut_);
 #endif
     --nget_;
@@ -101,14 +114,27 @@ void MutexPool<T>::deallocate(T* item, std::size_t) {
     put_ = (++put_) % items_.size();
 }
 
-template <typename T>
-void MutexPool<T>::free_all() {
-#if NRN_ENABLE_THREADS
+template <typename T, bool M>
+void Pool<T, M>::free_all() {
+#if NRN_ENABLE_THREADS && M
     std::lock_guard<std::mutex> l(mut_);
 #endif
     get_ = 0;
     put_ = 0;
-    for (auto& item: items_) {
-        item->clear();
+    if (clear_) {
+        for (auto& item: items_) {
+            std::invoke(clear_, item);
+        }
     }
+}
+
+template <typename T, bool M>
+bool Pool<T, M>::is_valid_ptr(const T* p) const {
+    for (const auto& pool: pools_) {
+        if (p >= &pool.front() && p <= &pool.back()) {
+            // Check that the pointer is on a value and not in the middle
+            return (p - &pool.front()) % sizeof(T) == 0;
+        }
+    }
+    return true;
 }

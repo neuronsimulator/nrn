@@ -13,7 +13,7 @@
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
-#include "pool.hpp"
+#include "utils/pool.hpp"
 #include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
@@ -427,7 +427,6 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-using SelfEventPool = MutexPool<SelfEvent>;
 typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be

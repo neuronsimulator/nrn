@@ -5,11 +5,11 @@
 #include <assert.h>
 
 #include <nrnmutdec.h>
-#include <pool.hpp>
+#include <utils/pool.hpp>
 
 #include "tqitem.hpp"
 
-using TQItemPool = MutexPool<TQItem>;
+using TQItemPool = Pool<TQItem, PoolMutexed>;
 
 // bin queue for the fixed step method for NetCons and PreSyns. Splay tree
 // for others.

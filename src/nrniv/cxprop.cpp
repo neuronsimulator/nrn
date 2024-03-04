@@ -1,7 +1,7 @@
 #include "arraypool.h"   // ArrayPool
 #include "hocdec.h"      // Datum
 #include "section.h"     // Section
-#include "structpool.h"  // Pool
+#include "utils/pool.hpp"  // Pool
 #include "../neuron/model_data.hpp"
 
 #include <memory>
@@ -84,9 +84,9 @@ void nrn_delete_mechanism_prop_datum(int type) {
 
 Section* nrn_section_alloc() {
     if (!secpool_) {
-        secpool_ = new SectionPool(1000);
+        secpool_ = new SectionPool();
     }
-    auto* const sec = secpool_->alloc();
+    auto* const sec = secpool_->allocate();
     // Call the Section constructor
     new (sec) Section();
     return sec;
@@ -95,14 +95,14 @@ Section* nrn_section_alloc() {
 void nrn_section_free(Section* s) {
     // Call the Section destructor
     s->~Section();
-    secpool_->hpfree(s);
+    secpool_->deallocate(s);
 }
 
 int nrn_is_valid_section_ptr(void* v) {
     if (!secpool_) {
         return 0;
     }
-    return secpool_->is_valid_ptr(v);
+    return secpool_->is_valid_ptr(static_cast<Section*>(v));
 }
 
 void nrn_poolshrink(int shrink) {

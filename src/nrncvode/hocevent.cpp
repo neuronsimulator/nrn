@@ -1,10 +1,10 @@
 #include <objcmd.h>
-#include <pool.hpp>
+#include <utils/pool.hpp>
 #include <netcon.h>
 #include <nrnoc2iv.h>
 #include <mymath.h>
 
-using HocEventPool = MutexPool<HocEvent>;
+using HocEventPool = Pool<HocEvent, PoolMutexed>;
 HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
