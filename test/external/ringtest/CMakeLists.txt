@@ -46,6 +46,24 @@ nrn_add_test(
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
 
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_reportmapping_directmode
+  PRELOAD_SANITIZER
+  REQUIRES mod_compatibility mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_python} -tstop 100 -coreneuron -reportmapping)
+
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_reportmapping_filemode
+  PRELOAD_SANITIZER
+  REQUIRES mod_compatibility mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_python} -tstop 100 -coreneuron -reportmapping -filemode)
+
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
     set(gpu_arg -gpu)
