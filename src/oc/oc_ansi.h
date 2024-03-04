@@ -299,7 +299,7 @@ template <typename T>
 T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
 void hoc_stkobj_unref(Object*, int stkindex);
-size_t hoc_total_array_data(Symbol*, Objectdata*);
+size_t hoc_total_array_data(const Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);
 
 char* hoc_object_pathname(Object*);
