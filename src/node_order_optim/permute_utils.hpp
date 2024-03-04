@@ -19,7 +19,11 @@ void forward_permute(T*& data, int data_size, const std::vector<int>& perm) {
     for (auto i = 0; i < perm.size(); ++i) {
         new_data[i] = data[perm[i]];
     }
-    std::swap(data, new_data);
+    // cannot std::swap because data may have been allocated by malloc
+    // std::swap(data, new_data);
+    for (auto i = 0; i < perm.size(); ++i) {
+        data[i] = new_data[i];
+    }
     delete[] new_data;
 }
 
