@@ -151,19 +151,22 @@ nrn_add_test_group_comparison(
 
 if(CORENRN_ENABLE_REPORTING)
   find_program(H5DIFF_EXECUTABLE "h5diff")
-  set(reference_path "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
-  cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
-                         OUTPUT "${reference_path}")
+  set(reference_path
+      "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
+  cpp_cc_build_time_copy(
+    INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
+    OUTPUT "${reference_path}")
   foreach(testfolder coreneuron_mpi_reportmapping_directmode coreneuron_mpi_reportmapping_filemode)
     if(H5DIFF_EXECUTABLE)
+      add_test(NAME external_ringtest::compare_soma_report_${testfolder}
+               COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
+                       ${reference_path})
+    else()
       add_test(
         NAME external_ringtest::compare_soma_report_${testfolder}
-        COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
-                ${reference_path})
-    else()
-    add_test(
-      NAME external_ringtest::compare_soma_report_${testfolder}
-      COMMAND python -c "import h5py; \
+        COMMAND
+          python -c
+          "import h5py; \
                          file = h5py.File(\"${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5\"); \
                          ref_file = h5py.File(\"${reference_path}\"); \
                          data = set(file[\"/report/default/mapping/node_ids\"]); \
