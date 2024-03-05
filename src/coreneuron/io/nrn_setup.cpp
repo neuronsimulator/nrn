@@ -517,7 +517,7 @@ void nrn_setup(const char* filesdat,
     }
 
     if (is_mapping_needed)
-        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams, corenrn_embedded);
+        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams, !corenrn_file_mode);
 
     *mindelay = set_mindelay(*mindelay);
 
@@ -933,7 +933,7 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
     NrnThreadMappingInfo* ntmapping = new NrnThreadMappingInfo();
 
     Phase3 p3;
-    if (corenrn_embedded) {
+    if (corenrn_embedded && !corenrn_file_mode) {
         p3.read_direct(ntmapping);
     } else {
         auto& F = userParams.file_reader[nt.id];
