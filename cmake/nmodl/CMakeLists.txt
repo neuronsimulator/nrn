@@ -26,6 +26,12 @@ set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+option(LINK_AGAINST_PYTHON "Should the Python library be linked or not" ON)
+option(NMODL_BUILD_WHEEL "Flag to signal we are building a wheel" OFF)
+if(NMODL_BUILD_WHEEL)
+  set(LINK_AGAINST_PYTHON OFF)
+  set(NMODL_ENABLE_TESTS OFF)
+endif()
 
 # =============================================================================
 # Settings to enable project as submodule
@@ -166,12 +172,6 @@ endif()
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.8 REQUIRED)
 cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
-include(cmake/hpc-coding-conventions/cpp/cmake/bbp-find-python-module.cmake)
-cpp_cc_find_python_module(jinja2 2.9.3 REQUIRED)
-cpp_cc_find_python_module(pytest 3.3.0 REQUIRED)
-cpp_cc_find_python_module(sympy 1.3 REQUIRED)
-cpp_cc_find_python_module(textwrap 0.9 REQUIRED)
-cpp_cc_find_python_module(yaml 3.12 REQUIRED)
 
 # =============================================================================
 # Compiler specific flags for external submodules

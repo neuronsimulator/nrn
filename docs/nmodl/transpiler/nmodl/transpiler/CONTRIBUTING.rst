@@ -210,9 +210,8 @@ the Python API:
 1. setup a sandbox environment with either *virtualenv*, *pyenv*, or
    *pipenv*. For instance with *virtualenv*:
    ``python -m venv .venv && source .venv/bin/activate``
-2. build the Python package with the command: ``python setup.py build``
-3. install *pytest* Python package: ``pip install pytest``
-4. execute the unit-tests: ``pytest``
+2. build the Python wheel with the command: ``python -m pip wheel . --no-deps``
+3. execute the unit-tests for the wheel: ``bash packaging/test_wheel.bash $(command -v python) WHEEL``, where ``WHEEL`` is the path to the wheel generated in the previous step.
 
 Memory Leaks and clang-tidy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

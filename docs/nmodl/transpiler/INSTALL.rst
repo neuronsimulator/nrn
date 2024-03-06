@@ -45,8 +45,8 @@ of all dependencies we recommend using `homebrew <https://brew.sh/>`__:
 
    brew install flex bison cmake python3
 
-The necessary Python packages can then easily be added using the pip3
-command.
+All of the Python dependencies (build, run, and development) can be installed
+using:
 
 .. code:: sh
 
@@ -74,7 +74,8 @@ installed along with the system toolchain:
 
    apt-get install flex bison gcc python3 python3-pip
 
-The Python dependencies are installed using:
+All of the Python dependencies (build, run, and development) can be installed
+using:
 
 .. code:: sh
 
@@ -124,8 +125,8 @@ to cmake as:
             -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
             -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
 
-Using Python setuptools
-~~~~~~~~~~~~~~~~~~~~~~~
+Using the Python build system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are mainly interested in the NMODL Framework parsing and analysis
 tools and wish to use them from Python, we recommend building and
@@ -138,6 +139,19 @@ installing using Python.
 This should build the NMODL framework and install it into your pip user
 ``site-packages`` folder such that it becomes available as a Python
 module.
+
+Building a wheel
+~~~~~~~~~~~~~~~~
+
+You can also build a wheel you can test and install in another environment using:
+
+.. code:: sh
+
+   pip3 wheel . --no-deps [-C OPTION1=VALUE1 -C OPTION2=VALUE2...] [--wheel-dir DIRECTORY]
+
+where the various ``OPTION`` values describe the build options (for a list of
+all available options, please consult the `reference <https://scikit-build-core.readthedocs.io/en/latest/configuration.html>`_).
+Notably, due to a bug in CMake, on MacOS one should pass ``-C build-dir=DIRECTORY`` to the above.
 
 When building without linking against libpython
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,6 +224,16 @@ example in your Python 3 interpeter as follows:
        SUFFIX hh
    }
 
+You can also run all of the Python tests for a given wheel using:
+
+.. code:: sh
+
+   bash packaging/test_wheel.bash PYTHON_EXECUTABLE WHEEL
+
+where ``PYTHON_EXECUTABLE`` should be replaced by the path to the Python
+executable, and ``WHEEL`` should be replaced by the path to the wheel you wish
+to test.
+
 NMODL is now setup correctly!
 
 Generating Documentation
@@ -219,9 +243,14 @@ In order to build the documentation you must have additionally
 ``pandoc`` installed. Use your system’s package manager to do this
 (e.g. ``sudo apt-get install pandoc``).
 
-You can build the entire documentation simply by using sphinx from
-``setup.py``:
+You can build the entire documentation simply by using the ``generate_docs.sh``
+script:
 
 .. code:: sh
 
-   python3 setup.py build_ext --inplace docs
+   bash docs/generate_docs.sh DIRECTORY [PYTHON_EXECUTABLE]
+
+where ``DIRECTORY`` is where you want to put the output files. The HTML
+documentation will then be available in ``DIRECTORY/docs``, and the temporary
+build will be stored in ``DIRECTORY/build``. You can also specify the path to
+the Python executable if it is not picked up automatically.

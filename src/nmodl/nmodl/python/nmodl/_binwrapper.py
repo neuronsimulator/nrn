@@ -7,7 +7,6 @@ import os
 import stat
 import sys
 
-
 if sys.version_info >= (3, 9):
     from importlib.metadata import metadata, PackageNotFoundError
     from importlib.resources import files
@@ -18,7 +17,7 @@ else:
 from find_libpython import find_libpython
 
 
-def _config_exe(exe_name):
+def main():
     """Sets the environment to run the real executable (returned)"""
 
     try:
@@ -42,12 +41,7 @@ def _config_exe(exe_name):
         str(NMODL_PREFIX.parent) + ":" + os.environ.get("PYTHONPATH", "")
     )
 
-    return os.path.join(NMODL_BIN, exe_name)
-
-
-if __name__ == "__main__":
-    """Set the pointed file as executable"""
-    exe = _config_exe(os.path.basename(sys.argv[0]))
+    exe = NMODL_BIN / os.path.basename(sys.argv[0])
     st = os.stat(exe)
     os.chmod(exe, st.st_mode | stat.S_IEXEC)
     os.execv(exe, sys.argv)

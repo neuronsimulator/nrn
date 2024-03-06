@@ -34,9 +34,9 @@ set(CODE_GENERATOR_JINJA_FILES
 set(CODE_GENERATOR_PY_FILES
     ${PROJECT_SOURCE_DIR}/src/language/argument.py
     ${PROJECT_SOURCE_DIR}/src/language/code_generator.py
+    ${PROJECT_SOURCE_DIR}/src/language/language_parser.py
     ${PROJECT_SOURCE_DIR}/src/language/node_info.py
     ${PROJECT_SOURCE_DIR}/src/language/nodes.py
-    ${PROJECT_SOURCE_DIR}/src/language/language_parser.py
     ${PROJECT_SOURCE_DIR}/src/language/utils.py
 )
 
