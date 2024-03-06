@@ -15,8 +15,9 @@ set(ringtest_prefix ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks
                     ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS})
 set(ringtest_special ${ringtest_prefix} special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py)
 set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
-set(ringtest_python ${ringtest_prefix} ${preload_sanitizer_mpiexec}
-                    ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ringtest.py)
+set(ringtest_pybase ${ringtest_prefix} ${preload_sanitizer_mpiexec}
+                    ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS})
+set(ringtest_python ${ringtest_python_base} ringtest.py)
 
 # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is
 # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences in
@@ -45,6 +46,21 @@ nrn_add_test(
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
+
+# creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
+nrn_add_test_group(
+  NAME external_ringtest_nrn
+  SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
+  ENVIRONMENT OMP_NUM_THREADS=1
+  MODFILE_PATTERNS "mod/*.mod"
+  OUTPUT asciispikes::spk2.std # which output data to compare
+  SCRIPT_PATTERNS "*.py" "*.hoc")
+
+nrn_add_test(
+  GROUP external_ringtest_nrn
+  NAME optim_node_order
+  REQUIRES python
+  COMMAND ${ringtest_pybase} test_optimize_node_order.py -tstop 50 -rparm -npt 1)
 
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
