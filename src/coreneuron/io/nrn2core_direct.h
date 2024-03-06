@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cstdint>
 
 extern "C" {
 // The callbacks into nrn/src/nrniv/nrnbbcore_write.cpp to get
