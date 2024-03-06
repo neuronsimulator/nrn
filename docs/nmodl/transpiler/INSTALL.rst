@@ -180,6 +180,8 @@ libpywrapper two environment variables need to be present:
 building without linking against libpython we must set ``NMODL_PYLIB``
 before running cmake!
 
+.. _testing-installed-module:
+
 Testing the Installed Module
 ----------------------------
 
