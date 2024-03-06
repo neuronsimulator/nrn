@@ -53,7 +53,6 @@ nrn_add_test_group(
   SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
   ENVIRONMENT OMP_NUM_THREADS=1
   MODFILE_PATTERNS "mod/*.mod"
-  OUTPUT asciispikes::spk2.std # which output data to compare
   SCRIPT_PATTERNS "*.py" "*.hoc")
 
 nrn_add_test(
