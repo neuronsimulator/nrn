@@ -58,8 +58,7 @@ nrn_add_test(
   GROUP external_ringtest_nrn
   NAME optim_node_order
   REQUIRES python
-  COMMAND ${preload_sanitizer} ${NRN_DEFAULT_PYTHON_EXECUTABLE} test_optimize_node_order.py -tstop
-          50 -rparm -npt 1)
+  COMMAND nrniv -python test_optimize_node_order.py -tstop 50 -rparm -npt 1)
 
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
