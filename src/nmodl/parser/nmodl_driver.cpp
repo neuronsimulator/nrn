@@ -35,6 +35,10 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_stream(std::istream& in) {
 
 std::shared_ptr<ast::Program> NmodlDriver::parse_file(const fs::path& filename,
                                                       const location* loc) {
+    if (fs::is_directory(filename)) {
+        throw std::runtime_error("NMODL Parser Error : path " + filename.string() +
+                                 " appears to be a directory, please provide a file instead");
+    }
     std::ifstream in(filename);
     if (!in.good()) {
         std::ostringstream oss;
