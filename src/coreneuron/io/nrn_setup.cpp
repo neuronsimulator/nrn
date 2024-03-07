@@ -44,6 +44,7 @@
 
 /// --> Coreneuron
 bool corenrn_embedded;
+bool corenrn_file_mode;
 int corenrn_embedded_nthread;
 
 void (*nrn2core_group_ids_)(int*);
@@ -170,7 +171,7 @@ std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
-    if (corenrn_embedded) {
+    if (corenrn_embedded && !corenrn_file_mode) {
         ngrp = corenrn_embedded_nthread;
         grp = new int[ngrp + 1];
         (*nrn2core_group_ids_)(grp);
@@ -473,8 +474,8 @@ void nrn_setup(const char* filesdat,
     // of phase2.  So gap junction setup is deferred to after phase2.
 
     nrnthreads_netcon_negsrcgid_tid.resize(nrn_nthread);
-    if (!corenrn_embedded) {
-        coreneuron::phase_wrapper<coreneuron::phase::one>(userParams);
+    if (corenrn_file_mode) {
+        coreneuron::phase_wrapper<coreneuron::phase::one>(userParams, !corenrn_file_mode);
     } else {
         nrn_multithread_job([](NrnThread* n) {
             Phase1 p1{n->id};
@@ -490,7 +491,7 @@ void nrn_setup(const char* filesdat,
     // read the rest of the gidgroup's data and complete the setup for each
     // thread.
     /* nrn_multithread_job supports serial, pthread, and openmp. */
-    coreneuron::phase_wrapper<coreneuron::phase::two>(userParams, corenrn_embedded);
+    coreneuron::phase_wrapper<coreneuron::phase::two>(userParams, !corenrn_file_mode);
 
     // gap junctions
     // Gaps are done after phase2, in order to use layout and permutation
@@ -917,7 +918,7 @@ void read_phase1(NrnThread& nt, UserParams& userParams) {
 
 void read_phase2(NrnThread& nt, UserParams& userParams) {
     Phase2 p2;
-    if (corenrn_embedded) {
+    if (corenrn_embedded && !corenrn_file_mode) {
         p2.read_direct(nt.id, nt);
     } else {
         p2.read_file(userParams.file_reader[nt.id], nt);
