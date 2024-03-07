@@ -167,11 +167,11 @@ if(CORENRN_ENABLE_REPORTING)
         COMMAND
           python -c
           "import h5py; \
-                         file = h5py.File(\"${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5\"); \
-                         ref_file = h5py.File(\"${reference_path}\"); \
-                         data = set(file[\"/report/default/mapping/node_ids\"]); \
-                         ref_data = set(ref_file[\"/report/default/mapping/node_ids\"]); \
-                         assert data == ref_data;")
+          file = h5py.File(\"${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5\"); \
+          ref_file = h5py.File(\"${reference_path}\"); \
+          data = set(file[\"/report/default/mapping/node_ids\"]); \
+          ref_data = set(ref_file[\"/report/default/mapping/node_ids\"]); \
+          assert data == ref_data;")
     endif()
     set_tests_properties(external_ringtest::compare_soma_report_${testfolder}
                          PROPERTIES DEPENDS "external_ringtest::${testfolder}")
