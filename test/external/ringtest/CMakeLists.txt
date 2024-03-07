@@ -173,7 +173,7 @@ if(CORENRN_ENABLE_REPORTING)
                          ref_data = set(ref_file[\"/report/default/mapping/node_ids\"]); \
                          assert data == ref_data;")
     endif()
-    set_tests_properties(external_ringtest::compare_soma_report_${testfolder} PROPERTIES
-                         DEPENDS "external_ringtest::${testfolder}")
+    set_tests_properties(external_ringtest::compare_soma_report_${testfolder}
+                         PROPERTIES DEPENDS "external_ringtest::${testfolder}")
   endforeach()
 endif()
