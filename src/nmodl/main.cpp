@@ -250,7 +250,7 @@ int main(int argc, const char* argv[]) {
         fmt::format("Write AST to JSON file ({})", json_ast))->ignore_case();
     passes_opt->add_flag("--nmodl-ast",
         nmodl_ast,
-        fmt::format("Write AST to NMODL file ({})", nmodl_ast))->ignore_case();
+        fmt::format("Write the intermediate AST after each pass as a NMODL file to the scratch directory ({})", nmodl_ast))->ignore_case();
     passes_opt->add_flag("--json-perf",
         json_perfstat,
         fmt::format("Write performance statistics to JSON file ({})", json_perfstat))->ignore_case();
