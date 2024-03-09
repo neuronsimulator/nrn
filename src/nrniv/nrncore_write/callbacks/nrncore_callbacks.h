@@ -6,6 +6,8 @@
 #include <vector>
 #include <set>
 #include <cstdlib>
+#include <inttypes.h>
+
 // includers need several pieces of info for nrn_get_partrans_setup_info
 #include "partrans.h"
 
@@ -66,6 +68,7 @@ int nrnthread_dat2_mech(int tid,
                         int*& nodeindices,
                         double*& data,
                         int*& pdata,
+                        std::vector<uint32_t>& nmodlrandom,
                         std::vector<int>& pointer2type);
 int nrnthread_dat2_3(int tid,
                      int nweight,
@@ -123,6 +126,10 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec,
 void nrnthreads_all_weights_return(std::vector<double*>& weights);
 size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata);
 int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iarray, double* darray);
+int core2nrn_nmodlrandom(int tid,
+                         int type,
+                         const std::vector<int>& indices,
+                         const std::vector<double>& nmodlrandom);
 }
 
 // For direct transfer of event queue information from CoreNEURON
@@ -227,6 +234,7 @@ static core2nrn_callback_t cnbs[] = {
 
     {"core2nrn_clear_queues_", (CNB) core2nrn_clear_queues},
     {"core2nrn_corepointer_mech_", (CNB) core2nrn_corepointer_mech},
+    {"core2nrn_nmodlrandom_", (CNB) core2nrn_nmodlrandom},
     {"core2nrn_NetCon_event_", (CNB) core2nrn_NetCon_event},
     {"core2nrn_SelfEvent_event_", (CNB) core2nrn_SelfEvent_event},
     {"core2nrn_SelfEvent_event_noweight_", (CNB) core2nrn_SelfEvent_event_noweight},

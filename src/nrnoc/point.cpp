@@ -328,6 +328,9 @@ static void free_one_point(Point_process* pnt) {
     if (memb_func[p->_type].destructor) {
         memb_func[p->_type].destructor(p);
     }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
+    }
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);
     }

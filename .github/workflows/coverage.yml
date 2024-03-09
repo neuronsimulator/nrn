@@ -1,7 +1,8 @@
 name: NEURON Code Coverage
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -73,7 +74,7 @@ jobs:
           sudo apt-get install xvfb
           sudo /usr/bin/Xvfb $DISPLAY -screen 0 1600x1200x24 -noreset -nolock -shmem &  # run in bg
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -83,7 +84,7 @@ jobs:
             git submodule update --init --recursive --force --depth 1 -- external/nmodl
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
 
@@ -95,12 +96,12 @@ jobs:
           python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Set up Python@${{ env.PY_MID_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MID_VERSION }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
 
@@ -110,7 +111,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
-          
+
 
       - name: Build & Test
         id: build-test
@@ -184,7 +185,7 @@ jobs:
         if: failure() && contains(github.event.pull_request.title, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           directory: ./build
           fail_ci_if_error: true

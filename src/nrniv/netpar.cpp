@@ -156,11 +156,7 @@ void ncs_netcon_inject(int srcgid, int netconIndex, double spikeTime, bool local
     NetCon* d = ps->dil_.item(netconIndex);
     NrnThread* nt = nrn_threads;
     if (d->active_ && d->target_) {
-#if BBTQ == 5
         ns->bin_event(spikeTime + d->delay_, d, nt);
-#else
-        ns->event(spikeTime + d->delay_, d, nt);
-#endif
     }
 }
 
@@ -240,6 +236,8 @@ NetParEvent::~NetParEvent() {}
 void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt) {
     nc->event(tt + usable_mindelay_, this, nt);
 }
+
+
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     int seq;
     if (nrn_use_selfqueue_) {  // first handle pending flag=1 self events

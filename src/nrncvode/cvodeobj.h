@@ -8,10 +8,10 @@
 #include <nvector/nvector_serial.h> /* serial N_Vector types, fcts, macros*/
 #include "netcon.h"
 #include <cvode/cvode_impl.h>
+#include "tqitem.hpp"
 
 class NetCvode;
 class Daspk;
-class TQItem;
 class TQueue;
 typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;
