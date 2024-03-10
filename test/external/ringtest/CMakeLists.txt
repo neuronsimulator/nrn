@@ -131,7 +131,7 @@ nrn_add_test_group_comparison(
   GROUP external_ringtest
   REFERENCE_OUTPUT asciispikes::external/tests/ringtest/reference_data/spk1.100ms.std.ref)
 
-# Add tests for read coreneuron mapping info in memory and file mode Due to ASAN error in
+# Add tests for read coreneuron mapping info in memory and file mode. Because of asan error in
 # read_mapping_info, currectly run tests only when reporting is ON
 if(CORENRN_ENABLE_REPORTING)
   nrn_add_test(
