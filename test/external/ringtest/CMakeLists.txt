@@ -131,25 +131,23 @@ nrn_add_test_group_comparison(
   GROUP external_ringtest
   REFERENCE_OUTPUT asciispikes::external/tests/ringtest/reference_data/spk1.100ms.std.ref)
 
-# Add tests for read coreneuron mapping info in memory and file mode. Because of asan error in
-# read_mapping_info, currectly run tests only when reporting is ON
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_reportmapping_directmode
+  REQUIRES coreneuron mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping)
+
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_reportmapping_filemode
+  REQUIRES coreneuron mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping -filemode)
+
 if(CORENRN_ENABLE_REPORTING)
-  nrn_add_test(
-    GROUP external_ringtest
-    NAME coreneuron_mpi_reportmapping_directmode
-    REQUIRES coreneuron mpi python
-    PROCESSORS ${ringtest_mpi_ranks}
-    ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
-    COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping)
-
-  nrn_add_test(
-    GROUP external_ringtest
-    NAME coreneuron_mpi_reportmapping_filemode
-    REQUIRES coreneuron mpi python
-    PROCESSORS ${ringtest_mpi_ranks}
-    ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
-    COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping -filemode)
-
   find_program(H5DIFF_EXECUTABLE "h5diff")
   set(reference_path
       "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
