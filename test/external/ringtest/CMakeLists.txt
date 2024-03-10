@@ -126,10 +126,6 @@ foreach(processor cpu gpu)
     ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads} NEURON_INIT_MPI=1
     COMMAND ${ringtest_python} -tstop 100 -coreneuron -nt ${ringtest_num_datasets} ${gpu_arg})
 endforeach()
-# Step 3 -- add a job that compares the outputs of all the tests added in Step 2
-nrn_add_test_group_comparison(
-  GROUP external_ringtest
-  REFERENCE_OUTPUT asciispikes::external/tests/ringtest/reference_data/spk1.100ms.std.ref)
 
 nrn_add_test(
   GROUP external_ringtest
@@ -138,7 +134,6 @@ nrn_add_test(
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
   COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping)
-
 nrn_add_test(
   GROUP external_ringtest
   NAME coreneuron_mpi_reportmapping_filemode
@@ -146,6 +141,11 @@ nrn_add_test(
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
   COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping -filemode)
+
+# Step 3 -- add a job that compares the outputs of all the tests added in Step 2
+nrn_add_test_group_comparison(
+  GROUP external_ringtest
+  REFERENCE_OUTPUT asciispikes::external/tests/ringtest/reference_data/spk1.100ms.std.ref)
 
 if(CORENRN_ENABLE_REPORTING)
   find_program(H5DIFF_EXECUTABLE "h5diff")
