@@ -187,7 +187,13 @@ int main(int argc, const char* argv[]) {
         ->ignore_case();
     app.add_flag("--neuron", neuron_code, "Generate C++ code for NEURON");
     app.add_flag("--coreneuron", coreneuron_code, "Generate C++ code for CoreNEURON (Default)");
-
+    app.add_flag(
+        "--version",
+        [](std::size_t count) {
+            std::cout << Version::to_string() << std::endl;
+            exit(0);
+        },
+        "Print the version and exit");
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c,--cpp", cpp_backend, fmt::format("C++ backend ({})", cpp_backend))
         ->ignore_case();
