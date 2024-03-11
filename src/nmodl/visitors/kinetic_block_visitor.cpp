@@ -222,10 +222,10 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement& node)
             }
         }
         if (!lhs->is_react_var_name() || !single_state_var) {
-            logger->warn(
+            throw std::runtime_error(fmt::format(
                 "KineticBlockVisitor :: LHS of \"<<\" reaction statement must be a single state "
                 "var, but instead found {}: ignoring this statement",
-                to_nmodl(lhs));
+                to_nmodl(lhs)));
             return;
         }
         const auto& rhs = node.get_expression1();

@@ -129,13 +129,8 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             KINETIC states {
                 ~ x + y << (2*z)
             })";
-        std::string output_nmodl_text = R"(
-            DERIVATIVE states {
-            })";
-        THEN("Emit warning & do not process statement") {
-            auto result = run_kinetic_block_visitor(input_nmodl_text);
-            CAPTURE(input_nmodl_text);
-            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        THEN("Fail by throwing an error.") {
+            CHECK_THROWS(run_kinetic_block_visitor(input_nmodl_text));
         }
     }
     GIVEN("KINETIC block with -> reaction statement, 1 state var, flux vars") {
