@@ -563,6 +563,14 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print extern declarations for neuron global variables.
+     *
+     * Examples include `celsius`.
+     */
+    void print_neuron_global_variable_declarations();
+
+
+    /**
      * Print NEURON global variable macros
      *
      */

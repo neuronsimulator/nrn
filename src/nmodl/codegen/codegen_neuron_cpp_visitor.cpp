@@ -596,7 +596,7 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
     if (iter != info.neuron_global_variables.end()) {
         std::string ret;
         if (use_instance) {
-            ret = "*(inst->";
+            ret = "*(inst.";
         }
         ret.append(varname);
         if (use_instance) {
@@ -1050,6 +1050,12 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->pop_block();
 }
 
+void CodegenNeuronCppVisitor::print_neuron_global_variable_declarations() {
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        printer->fmt_line("extern {} {};", type, name);
+    }
+}
 
 void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_initializers) {
     auto const value_initialize = print_initializers ? "{}" : "";
@@ -1063,8 +1069,7 @@ void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_ini
         printer->fmt_line("{}* {}{};",
                           type,
                           name,
-                          print_initializers ? fmt::format("{{&coreneuron::{}}}", name)
-                                             : std::string{});
+                          print_initializers ? fmt::format("{{&::{}}}", name) : std::string{});
     }
     for (auto& var: codegen_float_variables) {
         const auto& name = var->get_name();
@@ -1100,6 +1105,13 @@ void CodegenNeuronCppVisitor::print_make_instance() const {
     printer->fmt_push_block("return {}", instance_struct());
 
     std::vector<std::string> make_instance_args;
+
+
+    for (auto const& [var, type]: info.neuron_global_variables) {
+        auto const name = var->get_name();
+        make_instance_args.push_back(fmt::format("&::{}", name));
+    }
+
 
     const auto codegen_float_variables_size = codegen_float_variables.size();
     for (int i = 0; i < codegen_float_variables_size; ++i) {
@@ -1711,6 +1723,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_backend_info();
     print_headers_include();
     print_macro_definitions();
+    print_neuron_global_variable_declarations();
     print_namespace_begin();
     print_nmodl_constants();
     print_prcellstate_macros();
