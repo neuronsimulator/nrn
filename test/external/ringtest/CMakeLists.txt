@@ -154,7 +154,8 @@ if(CORENRN_ENABLE_REPORTING)
   cpp_cc_build_time_copy(
     INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
     OUTPUT "${reference_path}")
-  foreach(testfolder coreneuron_mpi_registermapping_directmode coreneuron_mpi_registermapping_filemode)
+  foreach(testfolder coreneuron_mpi_registermapping_directmode
+                     coreneuron_mpi_registermapping_filemode)
     if(H5DIFF_EXECUTABLE)
       add_test(NAME external_ringtest::compare_soma_report_${testfolder}
                COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
