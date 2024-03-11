@@ -129,18 +129,18 @@ endforeach()
 
 nrn_add_test(
   GROUP external_ringtest
-  NAME coreneuron_mpi_reportmapping_directmode
+  NAME coreneuron_mpi_registermapping_directmode
   REQUIRES coreneuron mpi python
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
-  COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping)
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -registermapping)
 nrn_add_test(
   GROUP external_ringtest
-  NAME coreneuron_mpi_reportmapping_filemode
+  NAME coreneuron_mpi_registermapping_filemode
   REQUIRES coreneuron mpi python
   PROCESSORS ${ringtest_mpi_ranks}
   ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
-  COMMAND ${ringtest_special} -tstop 100 -coreneuron -reportmapping -filemode)
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -registermapping -filemode)
 
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(
@@ -154,7 +154,7 @@ if(CORENRN_ENABLE_REPORTING)
   cpp_cc_build_time_copy(
     INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
     OUTPUT "${reference_path}")
-  foreach(testfolder coreneuron_mpi_reportmapping_directmode coreneuron_mpi_reportmapping_filemode)
+  foreach(testfolder coreneuron_mpi_registermapping_directmode coreneuron_mpi_registermapping_filemode)
     if(H5DIFF_EXECUTABLE)
       add_test(NAME external_ringtest::compare_soma_report_${testfolder}
                COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
