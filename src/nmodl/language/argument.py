@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+
 class Argument:
     """Utility class for holding all arguments for node classes"""
 

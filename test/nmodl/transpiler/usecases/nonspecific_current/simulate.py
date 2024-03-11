@@ -22,7 +22,7 @@ t = np.array(t_hoc.as_numpy())
 erev = 1.5
 rate = 0.005 / 1e-3
 v0 = -65.0
-v_exact = erev + (v0 - erev)*np.exp(-rate*t)
+v_exact = erev + (v0 - erev) * np.exp(-rate * t)
 rel_err = np.abs(v - v_exact) / np.max(np.abs(v_exact))
 
 assert np.all(rel_err < 1e-1), f"rel_err = {rel_err}"

@@ -67,7 +67,8 @@ def test_differentiate2c():
     # multiple prev_eqs to substitute
     # (these statements should be in the same order as in the mod file)
     assert _equivalent(
-        differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x", "a = -2*x*x"]), "-6*x*x+2"
+        differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x", "a = -2*x*x"]),
+        "-6*x*x+2",
     )
     assert _equivalent(
         differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x*x", "a = -2*x"]), "0"
@@ -113,7 +114,7 @@ def test_integrate2c():
         ("a*x", "x*exp(a*dt)"),
         ("a*x+b", "(-b + (a*x + b)*exp(a*dt))/a"),
     ]
-    for (eq, sol) in test_cases:
+    for eq, sol in test_cases:
         assert _equivalent(
             integrate2c(f"x'={eq}", "dt", var_list, use_pade_approx=False), f"x = {sol}"
         )
@@ -125,7 +126,7 @@ def test_integrate2c():
         ("a*x", "-x*(a*dt+2)/(a*dt-2)"),
         ("a*x+b", "-(a*dt*x+2*b*dt+2*x)/(a*dt-2)"),
     ]
-    for (eq, sol) in pade_test_cases:
+    for eq, sol in pade_test_cases:
         assert _equivalent(
             integrate2c(f"x'={eq}", "dt", var_list, use_pade_approx=True), f"x = {sol}"
         )

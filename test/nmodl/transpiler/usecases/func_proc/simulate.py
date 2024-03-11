@@ -7,7 +7,7 @@ s.nseg = nseg
 s.insert("test_func_proc")
 
 coords = [(0.5 + k) * 1.0 / nseg for k in range(nseg)]
-values = [ 0.1 + k for k in range(nseg)]
+values = [0.1 + k for k in range(nseg)]
 
 for x in coords:
     s(x).test_func_proc.set_x_42()

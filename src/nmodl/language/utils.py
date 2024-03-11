@@ -8,8 +8,8 @@ import re
 
 def camel_case_to_underscore(name):
     """convert string from 'AaaBbbbCccDdd' -> 'Aaa_Bbbb_Ccc_Ddd'"""
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    typename = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    typename = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1)
     return typename
 
 

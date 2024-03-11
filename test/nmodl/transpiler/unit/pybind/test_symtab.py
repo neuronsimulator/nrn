@@ -6,16 +6,20 @@
 import io
 from nmodl.dsl import ast, visitor, symtab
 
+
 def test_symtab(ch_ast):
     v = symtab.SymtabVisitor()
     v.visit_program(ch_ast)
     s = ch_ast.get_symbol_table()
-    m = s.lookup('m')
+    m = s.lookup("m")
     assert m is not None
     assert m.get_name() == "m"
-    assert m.has_all_properties(symtab.NmodlType.state_var | symtab.NmodlType.prime_name) is True
+    assert (
+        m.has_all_properties(symtab.NmodlType.state_var | symtab.NmodlType.prime_name)
+        is True
+    )
 
-    mInf = s.lookup('mInf')
+    mInf = s.lookup("mInf")
     assert mInf is not None
     assert mInf.get_name() == "mInf"
     assert mInf.has_any_property(symtab.NmodlType.range_var) is True

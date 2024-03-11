@@ -170,7 +170,7 @@ latex_documents = [
     (master_doc, "nmodl.tex", "nmodl Documentation", "BlueBrain HPC team", "manual")
 ]
 
-imgmath_image_format = 'svg'
+imgmath_image_format = "svg"
 imgmath_embed = True
 imgmath_font_size = 14
 

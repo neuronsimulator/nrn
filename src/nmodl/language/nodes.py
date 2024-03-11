@@ -17,7 +17,7 @@ from utils import to_snake_case
 
 
 class BaseNode:
-    """base class for all node types (parent + child) """
+    """base class for all node types (parent + child)"""
 
     def __init__(self, args):
         self.class_name = args.class_name
@@ -35,7 +35,7 @@ class BaseNode:
         return self.class_name < other.class_name
 
     def get_data_type_name(self):
-        """ return type name for the node """
+        """return type name for the node"""
         return node_info.DATA_TYPES[self.class_name]
 
     @property
@@ -145,8 +145,9 @@ class BaseNode:
 
     @property
     def is_pointer_node(self):
-        return not (self.class_name in node_info.PTR_EXCLUDE_TYPES or
-                    self.is_base_type_node)
+        return not (
+            self.class_name in node_info.PTR_EXCLUDE_TYPES or self.is_base_type_node
+        )
 
     @property
     def is_ptr_excluded_node(self):
@@ -154,9 +155,11 @@ class BaseNode:
 
     @property
     def requires_default_constructor(self):
-        return (self.class_name in node_info.LEXER_DATA_TYPES or
-                self.is_program_node or
-                self.is_ptr_excluded_node)
+        return (
+            self.class_name in node_info.LEXER_DATA_TYPES
+            or self.is_program_node
+            or self.is_ptr_excluded_node
+        )
 
     @property
     def has_template_methods(self):
@@ -205,7 +208,11 @@ class ChildNode(BaseNode):
         typename = self.get_typename()
         if self.is_vector:
             return "const " + typename + "&"
-        if self.is_base_type_node and not self.is_integral_type_node or self.is_ptr_excluded_node:
+        if (
+            self.is_base_type_node
+            and not self.is_integral_type_node
+            or self.is_ptr_excluded_node
+        ):
             return "const " + typename + "&"
         return typename
 
@@ -242,18 +249,23 @@ class ChildNode(BaseNode):
 
     @property
     def _is_member_type_wrapped_as_shared_pointer(self):
-        return not (self.is_vector or self.is_base_type_node or self.is_ptr_excluded_node)
+        return not (
+            self.is_vector or self.is_base_type_node or self.is_ptr_excluded_node
+        )
 
     @property
     def member_rvalue_typename(self):
         """returns rvalue reference type when used as returned or parameter type"""
         typename = self.member_typename
-        if not self.is_integral_type_node and not self._is_member_type_wrapped_as_shared_pointer:
+        if (
+            not self.is_integral_type_node
+            and not self._is_member_type_wrapped_as_shared_pointer
+        ):
             return "const " + typename + "&"
         return typename
 
     def get_add_methods_declaration(self):
-        s = ''
+        s = ""
         if self.add_method:
             method = f"""
               /**
@@ -304,11 +316,11 @@ class ChildNode(BaseNode):
                */
               void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, std::shared_ptr<{self.class_name}> n);
             """
-            s = textwrap.indent(textwrap.dedent(method), '  ')
+            s = textwrap.indent(textwrap.dedent(method), "  ")
         return s
 
     def get_add_methods_definition(self, parent):
-        s = ''
+        s = ""
         if self.add_method:
             set_parent = "n->set_parent(this); "
             if self.optional:
@@ -407,7 +419,7 @@ class ChildNode(BaseNode):
         return s
 
     def get_add_methods_inline_definition(self, parent):
-        s = ''
+        s = ""
         if self.add_method:
             set_parent = "n->set_parent(this); "
             if self.optional:
@@ -435,7 +447,7 @@ class ChildNode(BaseNode):
         return s
 
     def get_node_name_method_declaration(self):
-        s = ''
+        s = ""
         if self.get_node_name:
             # string node should be evaluated and hence eval() method
             method = f"""
@@ -451,11 +463,11 @@ class ChildNode(BaseNode):
                   * \\sa Ast::get_node_type_name
                   */
                  std::string get_node_name() const override;"""
-            s = textwrap.indent(textwrap.dedent(method), '  ')
+            s = textwrap.indent(textwrap.dedent(method), "  ")
         return s
 
     def get_node_name_method_definition(self, parent):
-        s = ''
+        s = ""
         if self.get_node_name:
             # string node should be evaluated and hence eval() method
             method_name = "eval" if self.is_string_node else "get_node_name"
@@ -466,31 +478,47 @@ class ChildNode(BaseNode):
         return s
 
     def get_getter_method(self, class_name):
-        getter_method = self.getter_method if self.getter_method else "get_" + to_snake_case(self.varname)
+        getter_method = (
+            self.getter_method
+            if self.getter_method
+            else "get_" + to_snake_case(self.varname)
+        )
         getter_override = "override" if self.getter_override else ""
         return_type = self.member_rvalue_typename
-        return textwrap.indent(textwrap.dedent(f"""
+        return textwrap.indent(
+            textwrap.dedent(
+                f"""
           /**
            * \\brief Getter for member variable \\ref {class_name}.{self.varname}
            */
           {return_type} {getter_method}() const noexcept {getter_override} {{
             return {self.varname};
           }}
-        """), '  ')
+        """
+            ),
+            "  ",
+        )
 
     def get_setter_method_declaration(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
         reference = "" if self.is_base_type_node else "&&"
         if self.is_base_type_node:
-            return textwrap.indent(textwrap.dedent(f"""
+            return textwrap.indent(
+                textwrap.dedent(
+                    f"""
               /**
                * \\brief Setter for member variable \\ref {class_name}.{self.varname}
                */
               void {setter_method}({setter_type} {self.varname});
-            """), '  ')
+            """
+                ),
+                "  ",
+            )
         else:
-            return textwrap.indent(textwrap.dedent(f"""
+            return textwrap.indent(
+                textwrap.dedent(
+                    f"""
               /**
                * \\brief Setter for member variable \\ref {class_name}.{self.varname} (rvalue reference)
                */
@@ -500,13 +528,15 @@ class ChildNode(BaseNode):
                * \\brief Setter for member variable \\ref {class_name}.{self.varname}
                */
               void {setter_method}(const {setter_type}& {self.varname});
-            """), '  ')
+            """
+                ),
+                "  ",
+            )
 
     def get_setter_method_definition(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
         reference = "" if self.is_base_type_node else "&&"
-
 
         if self.is_base_type_node:
             return f"""
@@ -563,12 +593,10 @@ class ChildNode(BaseNode):
                        }}
                     """
 
-
-
-
     def __repr__(self):
         return "ChildNode(class_name='{}', nmodl_name='{}')".format(
-            self.class_name, self.nmodl_name)
+            self.class_name, self.nmodl_name
+        )
 
     __str__ = __repr__
 
@@ -595,7 +623,9 @@ class Node(BaseNode):
         for child in self.children:
             if child.is_ptr_excluded_node or child.is_vector:
                 dependent_classes.add(child.class_name)
-        return sorted(["ast/{}.hpp".format(to_snake_case(clazz)) for clazz in dependent_classes])
+        return sorted(
+            ["ast/{}.hpp".format(to_snake_case(clazz)) for clazz in dependent_classes]
+        )
 
     @property
     def ast_enum_name(self):
@@ -631,12 +661,14 @@ class Node(BaseNode):
     @property
     def has_setters(self):
         """returns True if the class has at least one setter member method"""
-        return any([
-            self.is_name_node,
-            self.has_token,
-            self.is_symtab_needed,
-            self.is_data_type_node and not self.is_enum_node
-        ])
+        return any(
+            [
+                self.is_name_node,
+                self.has_token,
+                self.is_symtab_needed,
+                self.is_data_type_node and not self.is_enum_node,
+            ]
+        )
 
     @property
     def is_base_block_node(self):
@@ -669,13 +701,13 @@ class Node(BaseNode):
         :return: True if need to print visit method for node in symtabjsonvisitor
                  otherwise False
         """
-        return (self.has_children() and
-                (self.is_symbol_var_node or
-                 self.is_symbol_block_node or
-                 self.is_symbol_helper_node or
-                 self.is_program_node or
-                 self.has_parent_block_node()
-                 ))
+        return self.has_children() and (
+            self.is_symbol_var_node
+            or self.is_symbol_block_node
+            or self.is_symbol_helper_node
+            or self.is_program_node
+            or self.has_parent_block_node()
+        )
 
     @property
     def is_base_class_number_node(self):
@@ -685,12 +717,12 @@ class Node(BaseNode):
         return self.base_class == node_info.NUMBER_NODE
 
     def ctor_declaration(self):
-        args = [f'{c.get_rvalue_typename()} {c.varname}' for c in self.children]
+        args = [f"{c.get_rvalue_typename()} {c.varname}" for c in self.children]
         return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_definition(self):
-        args = [f'{c.get_rvalue_typename()} {c.varname}' for c in self.children]
-        initlist = [f'{c.varname}({c.varname})' for c in self.children]
+        args = [f"{c.get_rvalue_typename()} {c.varname}" for c in self.children]
+        initlist = [f"{c.varname}({c.varname})" for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
                 : {', '.join(initlist)} {{ set_parent_in_children(); }}
@@ -698,12 +730,12 @@ class Node(BaseNode):
         return textwrap.dedent(s)
 
     def ctor_shrptr_declaration(self):
-        args = [f'{c.member_rvalue_typename} {c.varname}' for c in self.children]
+        args = [f"{c.member_rvalue_typename} {c.varname}" for c in self.children]
         return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_shrptr_definition(self):
-        args = [f'{c.member_rvalue_typename} {c.varname}' for c in self.children]
-        initlist = [f'{c.varname}({c.varname})' for c in self.children]
+        args = [f"{c.member_rvalue_typename} {c.varname}" for c in self.children]
+        initlist = [f"{c.varname}({c.varname})" for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
                 : {', '.join(initlist)} {{ set_parent_in_children(); }}
@@ -711,16 +743,20 @@ class Node(BaseNode):
         return textwrap.dedent(s)
 
     def has_ptr_children(self):
-        return any(not (c.is_vector or c.is_base_type_node or c.is_ptr_excluded_node)
-                   for c in self.children)
+        return any(
+            not (c.is_vector or c.is_base_type_node or c.is_ptr_excluded_node)
+            for c in self.children
+        )
 
     def public_members(self):
         """
         Return public members of the node
         """
-        members = [[child.member_typename, child.varname, None, child.brief]
-                   for child in self.children
-                   if child.is_public]
+        members = [
+            [child.member_typename, child.varname, None, child.brief]
+            for child in self.children
+            if child.is_public
+        ]
 
         return members
 
@@ -728,18 +764,41 @@ class Node(BaseNode):
         """
         Return private members of the node
         """
-        members = [[child.member_typename, child.varname, None, child.brief]
-                   for child in self.children
-                   if not child.is_public]
+        members = [
+            [child.member_typename, child.varname, None, child.brief]
+            for child in self.children
+            if not child.is_public
+        ]
 
         if self.has_token:
-            members.append(["std::shared_ptr<ModToken>", "token", None, "token with location information"])
+            members.append(
+                [
+                    "std::shared_ptr<ModToken>",
+                    "token",
+                    None,
+                    "token with location information",
+                ]
+            )
 
         if self.is_symtab_needed:
-            members.append(["symtab::SymbolTable*", "symtab",  "nullptr", "symbol table for a block"])
+            members.append(
+                [
+                    "symtab::SymbolTable*",
+                    "symtab",
+                    "nullptr",
+                    "symbol table for a block",
+                ]
+            )
 
         if self.is_program_node:
-            members.append(["symtab::ModelSymbolTable", "model_symtab", None, "global symbol table for model"])
+            members.append(
+                [
+                    "symtab::ModelSymbolTable",
+                    "model_symtab",
+                    None,
+                    "global symbol table for model",
+                ]
+            )
 
         return members
 
@@ -747,12 +806,28 @@ class Node(BaseNode):
         """
         Return private members of the node destined to be pybind properties
         """
-        members = [[child.member_typename, child.varname, child.is_base_type_node, None, child.brief]
-                   for child in self.children
-                   if not child.is_public]
+        members = [
+            [
+                child.member_typename,
+                child.varname,
+                child.is_base_type_node,
+                None,
+                child.brief,
+            ]
+            for child in self.children
+            if not child.is_public
+        ]
 
         if self.has_token:
-            members.append(["std::shared_ptr<ModToken>", "token", True, None, "token with location information"])
+            members.append(
+                [
+                    "std::shared_ptr<ModToken>",
+                    "token",
+                    True,
+                    None,
+                    "token with location information",
+                ]
+            )
 
         return members
 
@@ -764,18 +839,19 @@ class Node(BaseNode):
         """
         Return description for the node in doxygen form
         """
-        lines = self.description.split('\n')
+        lines = self.description.split("\n")
         description = ""
         for i, line in enumerate(lines):
             if i == 0:
-                description = ' ' + line + '\n'
+                description = " " + line + "\n"
             else:
-                description += '  * ' + line + '\n'
+                description += "  * " + line + "\n"
         return description
 
     def __repr__(self):
         return "Node(class_name='{}', base_class='{}', nmodl_name='{}')".format(
-            self.class_name, self.base_class, self.nmodl_name)
+            self.class_name, self.base_class, self.nmodl_name
+        )
 
     def __eq__(self, other):
         """

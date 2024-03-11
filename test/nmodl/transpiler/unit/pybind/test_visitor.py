@@ -40,20 +40,29 @@ def test_json_visitor(ch_ast):
     # test compact json
     prime_str = nmodl.dsl.to_nmodl(primes[0])
     prime_json = nmodl.dsl.to_json(primes[0], True)
-    assert prime_json == '{"PrimeName":[{"String":[{"name":"m"}]},{"Integer":[{"name":"1"}]}]}'
+    assert (
+        prime_json
+        == '{"PrimeName":[{"String":[{"name":"m"}]},{"Integer":[{"name":"1"}]}]}'
+    )
 
     # test json with expanded keys
     result_json = nmodl.dsl.to_json(primes[0], compact=True, expand=True)
-    expected_json = ('{"children":[{"children":[{"name":"m"}],'
-                   '"name":"String"},{"children":[{"name":"1"}],'
-                   '"name":"Integer"}],"name":"PrimeName"}')
+    expected_json = (
+        '{"children":[{"children":[{"name":"m"}],'
+        '"name":"String"},{"children":[{"name":"1"}],'
+        '"name":"Integer"}],"name":"PrimeName"}'
+    )
     assert result_json == expected_json
 
     # test json with nmodl embedded
-    result_json = nmodl.dsl.to_json(primes[0], compact=True, expand=True, add_nmodl=True)
-    expected_json = ('{"children":[{"children":[{"name":"m"}],"name":"String","nmodl":"m"},'
-                     '{"children":[{"name":"1"}],"name":"Integer","nmodl":"1"}],'
-                     '"name":"PrimeName","nmodl":"m\'"}')
+    result_json = nmodl.dsl.to_json(
+        primes[0], compact=True, expand=True, add_nmodl=True
+    )
+    expected_json = (
+        '{"children":[{"children":[{"name":"m"}],"name":"String","nmodl":"m"},'
+        '{"children":[{"name":"1"}],"name":"Integer","nmodl":"1"}],'
+        '"name":"PrimeName","nmodl":"m\'"}'
+    )
     assert result_json == expected_json
 
 
@@ -88,6 +97,7 @@ def test_modify_ast():
     RANGE x
 }
     """
+
     class ModifyVisitor(visitor.AstVisitor):
         def __init__(self, old_name, new_name):
             visitor.AstVisitor.__init__(self)

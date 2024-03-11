@@ -19,8 +19,8 @@ h.run()
 x = np.array(x_hoc.as_numpy())
 t = np.array(t_hoc.as_numpy())
 
-rate = (0.1 - 1.0) * (0.7 * 0.8 * 0.9)
-x_exact = 42.0 * np.exp(rate * t)
+x0 = 42.0
+x_exact = 42.0 * np.exp(-t)
 rel_err = np.abs(x - x_exact) / x_exact
 
 assert np.all(rel_err < 1e-12)

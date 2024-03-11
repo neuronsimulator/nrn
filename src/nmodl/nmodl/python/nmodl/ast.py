@@ -1,6 +1,7 @@
 """
 Module for vizualization of NMODL abstract syntax trees (ASTs).
 """
+
 import getpass
 import json
 import os

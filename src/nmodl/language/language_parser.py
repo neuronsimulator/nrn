@@ -26,7 +26,6 @@ class LanguageParser:
         self.filename = filename
         self.debug = debug
 
-
     def parse_child_rule(self, child):
         """parse child specification and return argument as properties
 
@@ -40,72 +39,72 @@ class LanguageParser:
         args.varname = varname
 
         # type i.e. class of the variable
-        args.class_name = properties['type']
+        args.class_name = properties["type"]
 
         if self.debug:
-            print('Child {}, {}'.format(args.varname, args.class_name))
+            print("Child {}, {}".format(args.varname, args.class_name))
 
         # if there is add method for member in the class
-        if 'add' in properties:
-            args.add_method = properties['add']
+        if "add" in properties:
+            args.add_method = properties["add"]
 
         # if variable is an optional member
-        if 'optional' in properties:
-            args.is_optional = properties['optional']
+        if "optional" in properties:
+            args.is_optional = properties["optional"]
 
         # if variable is vector, the separator to use while
         # printing back to nmodl
-        if 'separator' in properties:
-            args.separator = properties['separator']
+        if "separator" in properties:
+            args.separator = properties["separator"]
 
         # if variable is public member
-        if 'public' in properties:
-            args.is_public = properties['public']
+        if "public" in properties:
+            args.is_public = properties["public"]
 
         # if variable if of vector type
-        if 'vector' in properties:
-            args.is_vector = properties['vector']
+        if "vector" in properties:
+            args.is_vector = properties["vector"]
 
         # if get_node_name method required
-        if 'node_name' in properties:
-            args.get_node_name = properties['node_name']
+        if "node_name" in properties:
+            args.get_node_name = properties["node_name"]
 
         # brief description of member variable
-        if 'brief' in properties:
-            args.brief = properties['brief']
+        if "brief" in properties:
+            args.brief = properties["brief"]
 
         # description of member variable
-        if 'description' in properties:
-            args.description = properties['description']
+        if "description" in properties:
+            args.description = properties["description"]
 
         # if getter method required
-        if 'getter' in properties:
-            if 'name' in properties['getter']:
-                args.getter_method = properties['getter']['name']
-            if 'override' in properties['getter']:
-                args.getter_override = properties['getter']['override']
+        if "getter" in properties:
+            if "name" in properties["getter"]:
+                args.getter_method = properties["getter"]["name"]
+            if "override" in properties["getter"]:
+                args.getter_override = properties["getter"]["override"]
 
         # if there is nmodl name
-        if 'nmodl' in properties:
-            args.nmodl_name = properties['nmodl']
+        if "nmodl" in properties:
+            args.nmodl_name = properties["nmodl"]
 
         # prefix while printing back to NMODL
-        if 'prefix' in properties:
-            args.prefix = properties['prefix']['value']
+        if "prefix" in properties:
+            args.prefix = properties["prefix"]["value"]
 
             # if prefix is compulsory to print in NMODL then make suffix empty
-            if 'force' in properties['prefix']:
-                if properties['prefix']['force']:
+            if "force" in properties["prefix"]:
+                if properties["prefix"]["force"]:
                     args.force_prefix = args.prefix
                     args.prefix = ""
 
         # suffix while printing back to NMODL
-        if 'suffix' in properties:
-            args.suffix = properties['suffix']['value']
+        if "suffix" in properties:
+            args.suffix = properties["suffix"]["value"]
 
             # if suffix is compulsory to print in NMODL then make suffix empty
-            if 'force' in properties['suffix']:
-                if properties['suffix']['force']:
+            if "force" in properties["suffix"]:
+                if properties["suffix"]["force"]:
                     args.force_suffix = args.suffix
                     args.suffix = ""
 
@@ -124,15 +123,17 @@ class LanguageParser:
                 continue
 
             args = Argument()
-            args.url = properties.get('url', None)
+            args.url = properties.get("url", None)
             args.class_name = class_name
-            args.brief = properties.get('brief', '')
-            args.description = properties.get('description', '')
+            args.brief = properties.get("brief", "")
+            args.description = properties.get("description", "")
 
             # yaml file has abstract classes and their subclasses with children as a property
-            if 'children' in properties:
+            if "children" in properties:
                 # recursively parse all sub-classes of current abstract class
-                child_abstract_nodes, child_nodes = self.parse_yaml_rules(properties['children'], class_name)
+                child_abstract_nodes, child_nodes = self.parse_yaml_rules(
+                    properties["children"], class_name
+                )
 
                 # append all parsed subclasses
                 abstract_nodes.extend(child_abstract_nodes)
@@ -146,26 +147,26 @@ class LanguageParser:
                     abstract_nodes.append(node)
                     nodes.insert(0, node)
                     if self.debug:
-                        print('Abstract {}'.format(node))
+                        print("Abstract {}".format(node))
             else:
-                args.base_class = base_class if base_class else 'Ast'
+                args.base_class = base_class if base_class else "Ast"
 
                 # store token in every node
                 args.has_token = True
 
                 # name of the node while printing back to NMODL
-                args.nmodl_name = properties['nmodl'] if 'nmodl' in properties else None
+                args.nmodl_name = properties["nmodl"] if "nmodl" in properties else None
 
                 # create tree node and add to the list
                 node = Node(args)
                 nodes.append(node)
 
                 if self.debug:
-                    print('Class {}'.format(node))
+                    print("Class {}".format(node))
 
                 # now process all children specification
-                if 'members' in properties:
-                    for child in properties['members']:
+                if "members" in properties:
+                    for child in properties["members"]:
                         args = self.parse_child_rule(child)
                         node.add_child(args)
 
@@ -179,15 +180,18 @@ class LanguageParser:
         return abstract_nodes, nodes
 
     def parse_file(self):
-        """ parse nmodl YAML specification file for AST creation """
+        """parse nmodl YAML specification file for AST creation"""
 
-        with open(self.filename, 'r') as stream:
+        with open(self.filename, "r") as stream:
             try:
                 rules = yaml.safe_load(stream)
                 _, nodes = self.parse_yaml_rules(rules)
             except yaml.YAMLError as e:
-                print("Error while parsing YAML definition file {0} : {1}".format(
-                    self.filename, e.strerror))
+                print(
+                    "Error while parsing YAML definition file {0} : {1}".format(
+                        self.filename, e.strerror
+                    )
+                )
                 sys.exit(1)
 
         return nodes

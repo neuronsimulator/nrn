@@ -111,7 +111,7 @@ class CodeGenerator(
         return self.jinja_env.get_template(name)
 
     def _cmake_deps_task(self, tasks):
-        """"Construct the JinjaTask generating the CMake file exporting all dependencies
+        """ "Construct the JinjaTask generating the CMake file exporting all dependencies
 
         Args:
             tasks: list of JinjaTask objects
@@ -196,12 +196,18 @@ class CodeGenerator(
                         task = JinjaTask(
                             app=self,
                             input=filepath,
-                            output=self.base_dir / sub_dir / "pynode_{}.cpp".format(chunk_k),
+                            output=self.base_dir
+                            / sub_dir
+                            / "pynode_{}.cpp".format(chunk_k),
                             context=dict(
                                 nodes=self.nodes[
-                                    chunk_k * chunk_length : (chunk_k + 1) * chunk_length
+                                    chunk_k
+                                    * chunk_length : (chunk_k + 1)
+                                    * chunk_length
                                 ],
-                                setup_pybind_method="init_pybind_classes_{}".format(chunk_k),
+                                setup_pybind_method="init_pybind_classes_{}".format(
+                                    chunk_k
+                                ),
                             ),
                             extradeps=extradeps[filepath],
                         )
@@ -212,7 +218,11 @@ class CodeGenerator(
                         app=self,
                         input=filepath,
                         output=self.base_dir / sub_dir / filepath.name,
-                        context=dict(nodes=self.nodes, node_info=node_info, **extracontext[filepath]),
+                        context=dict(
+                            nodes=self.nodes,
+                            node_info=node_info,
+                            **extracontext[filepath],
+                        ),
                         extradeps=extradeps[filepath],
                     )
                     tasks.append(task)
@@ -235,7 +245,7 @@ class JinjaTask(
     """
 
     def execute(self):
-        """"Perform the Jinja task
+        """ "Perform the Jinja task
 
         Execute Jinja renderer if the output file is out-of-date.
 
