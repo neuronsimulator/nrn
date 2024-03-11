@@ -7,76 +7,15 @@
 
 #include "visitors/loop_unroll_visitor.hpp"
 
+
 #include "ast/all.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
+#include "visitors/index_remover.hpp"
 #include "visitors/visitor_utils.hpp"
-
 
 namespace nmodl {
 namespace visitor {
-
-/**
- * \class IndexRemover
- * \brief Helper visitor to replace index of array variable with integer
- *
- * When loop is unrolled, the index variable like `i` :
- *
- *   ca[i] <-> ca[i+1]
- *
- * has type `Name` in the AST. This needs to be replaced with `Integer`
- * for optimizations like constant folding. This pass look at name and
- * binary expressions under index variables.
- */
-class IndexRemover: public AstVisitor {
-  private:
-    /// index variable name
-    std::string index;
-
-    /// integer value of index variable
-    int value;
-
-    /// true if we are visiting index variable
-    bool under_indexed_name = false;
-
-  public:
-    IndexRemover(std::string index, int value)
-        : index(std::move(index))
-        , value(value) {}
-
-    /// if expression we are visiting is `Name` then return new `Integer` node
-    std::shared_ptr<ast::Expression> replace_for_name(
-        const std::shared_ptr<ast::Expression>& node) const {
-        if (node->is_name()) {
-            auto name = std::dynamic_pointer_cast<ast::Name>(node);
-            if (name->get_node_name() == index) {
-                return std::make_shared<ast::Integer>(value, nullptr);
-            }
-        }
-        return node;
-    }
-
-    void visit_binary_expression(ast::BinaryExpression& node) override {
-        node.visit_children(*this);
-        if (under_indexed_name) {
-            /// first recursively replaces children
-            /// replace lhs & rhs if they have matching index variable
-            auto lhs = replace_for_name(node.get_lhs());
-            auto rhs = replace_for_name(node.get_rhs());
-            node.set_lhs(std::move(lhs));
-            node.set_rhs(std::move(rhs));
-        }
-    }
-
-    void visit_indexed_name(ast::IndexedName& node) override {
-        under_indexed_name = true;
-        node.visit_children(*this);
-        /// once all children are replaced, do the same for index
-        auto length = replace_for_name(node.get_length());
-        node.set_length(std::move(length));
-        under_indexed_name = false;
-    }
-};
 
 
 /// return underlying expression wrapped by WrappedExpression

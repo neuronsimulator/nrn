@@ -16,6 +16,7 @@ add_library(
   global_var_visitor.cpp
   implicit_argument_visitor.cpp
   indexedname_visitor.cpp
+  index_remover.cpp
   inline_visitor.cpp
   kinetic_block_visitor.cpp
   local_to_assigned_visitor.cpp
