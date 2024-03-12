@@ -149,30 +149,23 @@ nrn_add_test_group_comparison(
 
 if(CORENRN_ENABLE_REPORTING)
   find_program(H5DIFF_EXECUTABLE "h5diff")
-  set(reference_path
-      "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
-  cpp_cc_build_time_copy(
-    INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
-    OUTPUT "${reference_path}")
-  foreach(testfolder coreneuron_mpi_registermapping_directmode
-                     coreneuron_mpi_registermapping_filemode)
-    if(H5DIFF_EXECUTABLE)
+  if(H5DIFF_EXECUTABLE)
+    set(reference_path
+        "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
+    cpp_cc_build_time_copy(
+      INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
+      OUTPUT "${reference_path}")
+    foreach(testfolder coreneuron_mpi_registermapping_directmode
+                       coreneuron_mpi_registermapping_filemode)
       add_test(NAME external_ringtest::compare_soma_report_${testfolder}
                COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
                        ${reference_path})
-    else()
-      add_test(
-        NAME external_ringtest::compare_soma_report_${testfolder}
-        COMMAND
-          python -c
-          "import h5py; \
-          file = h5py.File(\"${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5\"); \
-          ref_file = h5py.File(\"${reference_path}\"); \
-          data = set(file[\"/report/default/mapping/node_ids\"]); \
-          ref_data = set(ref_file[\"/report/default/mapping/node_ids\"]); \
-          assert data == ref_data;")
-    endif()
-    set_tests_properties(external_ringtest::compare_soma_report_${testfolder}
-                         PROPERTIES DEPENDS "external_ringtest::${testfolder}")
-  endforeach()
+      set_tests_properties(external_ringtest::compare_soma_report_${testfolder}
+                           PROPERTIES DEPENDS "external_ringtest::${testfolder}")
+    endforeach()
+  else()
+    message(WARNING "Can not find h5diff, skip comparing the soma report for "
+            "external_ringtest::coreneuron_mpi_registermapping_directmode "
+            "external_ringtest::coreneuron_mpi_registermapping_filemode")
+  endif()
 endif()
