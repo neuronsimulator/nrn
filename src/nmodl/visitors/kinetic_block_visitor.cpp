@@ -8,10 +8,13 @@
 #include "kinetic_block_visitor.hpp"
 
 #include "ast/all.hpp"
+#include "index_remover.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
 #include "visitor_utils.hpp"
+
+#include <regex>
 
 
 namespace nmodl {
@@ -141,24 +144,69 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve& node) {
     logger->debug("KineticBlockVisitor :: --> {}", to_nmodl(node));
 }
 
+void KineticBlockVisitor::set_compartment_factor(int var_index, const std::string& factor) {
+    if (compartment_factors[var_index] != "") {
+        throw std::runtime_error("Setting compartment volume twice.");
+    }
+
+    compartment_factors[var_index] = factor;
+    logger->debug("KineticBlockVisitor :: COMPARTMENT factor {} for state var {} (index {})",
+                  factor,
+                  state_var[var_index],
+                  var_index);
+}
+
+void KineticBlockVisitor::compute_compartment_factor(ast::Compartment& node,
+                                                     const ast::Name& name) {
+    const auto& var_name = name.get_node_name();
+    const auto it = state_var_index.find(var_name);
+    if (it != state_var_index.cend()) {
+        int var_index = it->second;
+        auto expr = node.get_expression();
+        std::string expression = to_nmodl(expr);
+
+        set_compartment_factor(var_index, expression);
+    } else {
+        logger->debug(
+            "KineticBlockVisitor :: COMPARTMENT specified volume for non-state variable {}",
+            var_name);
+    }
+}
+
+void KineticBlockVisitor::compute_indexed_compartment_factor(ast::Compartment& node,
+                                                             const ast::Name& name) {
+    auto array_var_name = name.get_node_name();
+    auto index_name = node.get_name()->get_node_name();
+
+    auto pattern = fmt::format("^{}\\[([0-9]*)\\]$", array_var_name);
+    std::regex re(pattern);
+    std::smatch m;
+
+    for (size_t var_index = 0; var_index < state_var.size(); ++var_index) {
+        auto matches = std::regex_match(state_var[var_index], m, re);
+
+        if (matches) {
+            int index_value = std::stoi(m[1]);
+            auto volume_expr = node.get_expression();
+            auto expr = std::shared_ptr<ast::Expression>(node.get_expression()->clone());
+            IndexRemover(index_name, index_value).visit_expression(*expr);
+
+            std::string expression = to_nmodl(*expr);
+            set_compartment_factor(var_index, expression);
+        }
+    }
+}
+
 void KineticBlockVisitor::visit_compartment(ast::Compartment& node) {
     // COMPARTMENT block has an expression, and a list of state vars it applies to.
     // For each state var, the rhs of the differential eq should be divided by the expression.
     // Here we store the expressions in the compartment_factors vector
-    auto expr = node.get_expression();
-    std::string expression = to_nmodl(expr);
-    logger->debug("KineticBlockVisitor :: COMPARTMENT expr: {}", expression);
+    logger->debug("KineticBlockVisitor :: COMPARTMENT expr: {}", to_nmodl(node.get_expression()));
     for (const auto& name_ptr: node.get_names()) {
-        const auto& var_name = name_ptr->get_node_name();
-        const auto it = state_var_index.find(var_name);
-        if (it != state_var_index.cend()) {
-            int var_index = it->second;
-            compartment_factors[var_index] = expression;
-            logger->debug(
-                "KineticBlockVisitor :: COMPARTMENT factor {} for state var {} (index {})",
-                expression,
-                var_name,
-                var_index);
+        if (node.get_name() == nullptr) {
+            compute_compartment_factor(node, *name_ptr);
+        } else {
+            compute_indexed_compartment_factor(node, *name_ptr);
         }
     }
     // add COMPARTMENT state to list of statements to remove

@@ -239,6 +239,26 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
         }
     }
+    GIVEN("KINETIC block with -> reaction statement, indexed COMPARTMENT") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[2]
+            }
+            KINETIC states {
+                COMPARTMENT i, vol[i] { x }
+                ~ x[0] + x[1] -> (f(v))
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                x'[0] = ((-1*(f(v)*x[0]*x[1])))/(vol[0])
+                x'[1] = ((-1*(f(v)*x[0]*x[1])))/(vol[1])
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
     GIVEN("KINETIC block with one reaction statement, 1 state var, 1 non-state var, flux vars") {
         // Here c is NOT a state variable
         // see 9.9.2.1 of NEURON book
