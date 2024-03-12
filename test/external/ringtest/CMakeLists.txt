@@ -165,7 +165,7 @@ if(CORENRN_ENABLE_REPORTING)
     endforeach()
   else()
     message(WARNING "Can not find h5diff, skip comparing the soma report for "
-            "external_ringtest::coreneuron_mpi_registermapping_directmode "
-            "external_ringtest::coreneuron_mpi_registermapping_filemode")
+                    "external_ringtest::coreneuron_mpi_registermapping_directmode "
+                    "external_ringtest::coreneuron_mpi_registermapping_filemode")
   endif()
 endif()
