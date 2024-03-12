@@ -29,7 +29,7 @@ TEST_CASE("random123 smoke test") {
     double res[NUM_TRIES];
     s = nrnran123_newstream(KEY_1, KEY_2);
 
-    //    nrn_pragma_omp(target parallel for)
+    nrn_pragma_omp(target parallel for)
     nrn_pragma_acc(parallel loop copy(res[0:NUM_TRIES]) deviceptr(s) num_gangs(1) vector_length(1))
     for (int i = 0; i < NUM_TRIES; i++) {
         res[i] = nrnran123_dblpick(s);
