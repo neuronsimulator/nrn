@@ -18,6 +18,7 @@ extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 
 #include "nrnwrap_dlfcn.h"
+#include "nrnsection_mapping.h"
 
 extern bbcore_write_t* nrn_bbcore_write_;
 extern bbcore_write_t* nrn_bbcore_read_;
@@ -26,6 +27,7 @@ extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
 extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
+extern NrnMappingInfo mapinfo;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
 extern void* nrn_interthread_enqueue(NrnThread*);
@@ -217,6 +219,40 @@ int nrnthread_dat1(int tid,
     cg.netcon_srcgid = NULL;
     netcon_negsrcgid_tid = cg.netcon_negsrcgid_tid;
     return 1;
+}
+
+void nrnthread_dat3_cell_count(int& cell_count) {
+    cell_count = mapinfo.size();
+}
+
+void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_seclist) {
+    CellMapping* c = mapinfo.mapping[i];
+    gid = c->gid;
+    nsec = c->num_sections();
+    nseg = c->num_segments();
+    n_seclist = c->size();
+}
+
+void nrnthread_dat3_secmapping(int i_c,
+                               int i_sec,
+                               std::string& sclname,
+                               int& nsec,
+                               int& nseg,
+                               size_t& total_lfp_factors,
+                               int& n_electrodes,
+                               std::vector<int>& data_sec,
+                               std::vector<int>& data_seg,
+                               std::vector<double>& data_lfp) {
+    CellMapping* c = mapinfo.mapping[i_c];
+    SecMapping* s = c->secmapping[i_sec];
+    sclname = s->name;
+    nsec = s->nsec;
+    nseg = s->size();
+    total_lfp_factors = s->seglfp_factors.size();
+    n_electrodes = s->num_electrodes;
+    data_sec = s->sections;
+    data_seg = s->segments;
+    data_lfp = s->seglfp_factors;
 }
 
 // sizes and total data count
