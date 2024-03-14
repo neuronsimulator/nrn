@@ -17,7 +17,7 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 8.2.5a
+  VERSION 8.2.5
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
