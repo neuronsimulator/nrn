@@ -274,7 +274,6 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement& node)
                 "KineticBlockVisitor :: LHS of \"<<\" reaction statement must be a single state "
                 "var, but instead found {}: ignoring this statement",
                 to_nmodl(lhs)));
-            return;
         }
         const auto& rhs = node.get_expression1();
         std::string varname = to_nmodl(lhs);
