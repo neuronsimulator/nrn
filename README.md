@@ -1,7 +1,7 @@
 [![Build Status](https://dev.azure.com/neuronsimulator/nrn/_apis/build/status/neuronsimulator.nrn?branchName=master)](https://dev.azure.com/neuronsimulator/nrn/_build/latest?definitionId=1&branchName=master) [![Actions Status](https://github.com/neuronsimulator/nrn/workflows/Windows%20Installer/badge.svg)](https://github.com/neuronsimulator/nrn/actions) [![Actions Status](https://github.com/neuronsimulator/nrn/workflows/NEURON%20CI/badge.svg)](https://github.com/neuronsimulator/nrn/actions) [![codecov](https://codecov.io/gh/neuronsimulator/nrn/branch/master/graph/badge.svg?token=T7PIDw6LrC)](https://codecov.io/gh/neuronsimulator/nrn) [![Documentation Status](https://readthedocs.org/projects/nrn/badge/?version=latest)](http://nrn.readthedocs.io/?badge=latest)
 
 # NEURON
-NEURON is a simulator for models of neurons and networks of neuron. See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code, documentation, tutorials, announcements of
+NEURON  is a simulator for models of neurons and networks of neuron. See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code, documentation, tutorials, announcements of
 courses and conferences, and a discussion forum.
 
 ## Installing NEURON
@@ -38,4 +38,3 @@ Refer to [NEURON contribution guidelines](CONTRIBUTING.md)
 NEURON development is supported by NIH grant R01NS11613 (PI M.L. Hines at Yale University).
 
 Collaboration is provided by the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL) with funding from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology. Additional funding from the European Union Seventh Framework Program (FP7/20072013) under grant agreement no. 604102 (HBP) and the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreement no. 720270 (Human Brain Project SGA1), no. 785907 (Human Brain Project SGA2) and no. 945539 (Human Brain Project SGA3).
-
