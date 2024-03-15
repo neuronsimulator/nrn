@@ -7,7 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
-from importlib.metadata import distributions
+from importlib_metadata import distributions
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var

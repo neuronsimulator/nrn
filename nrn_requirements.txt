@@ -1,4 +1,5 @@
 wheel
+importlib_metadata
 setuptools
 setuptools_scm
 scikit-build
