@@ -7,7 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
-from pkg_resources import working_set
+from importlib.metadata import distributions
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
@@ -63,22 +63,20 @@ def _check_cpp_compiler_version():
 
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
+    NRN_PREFIX = None
+    package_names = ["neuron", "neuron-nightly"]
 
-    package_name = "neuron"
+    # Search for NEURON package installation location using importlib.metadata
+    for dist in distributions():
+        if dist.metadata['Name'] in package_names:
+            NRN_PREFIX = dist.locate_file('neuron', '.data')
+            print(f"INFO : Using {dist.metadata['Name']} Package")
+            break
 
-    # determine package to find the install location
-    if "neuron-nightly" in working_set.by_key:
-        print("INFO : Using neuron-nightly Package (Developer Version)")
-        package_name = "neuron-nightly"
-    elif "neuron" in working_set.by_key:
-        package_name = "neuron"
-    else:
+    if NRN_PREFIX is None:
         raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
 
-    NRN_PREFIX = os.path.join(
-        working_set.by_key[package_name].location, "neuron", ".data"
-    )
-    os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
+    os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share", "nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
