@@ -21,7 +21,7 @@ int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
-const char* bbcore_write_version = "1.6";  // Allow multiple gid and PreSyn per real cell.
+const char* bbcore_write_version = "1.7";  // NMODLRandom
 
 char* pnt_name(Point_process* pnt) {
     return corenrn.get_memb_func(pnt->_type).sym;

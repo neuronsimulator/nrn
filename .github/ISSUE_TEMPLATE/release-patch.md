@@ -18,6 +18,8 @@ Pre-release
   - [ ] Update semantic version in `CMakeLists.txt`
   - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` in the cherrypicks PR (copy structure as-is)
   - [ ] Update `docs/index.rst` accordingly with the new `.pkg` and `.exe` links for `PKG installer` and `Windows Installer`
+- [ ] Activate ReadtheDocs for the cherry-pick branch and ensure the documentation builds (when logged in, go to [the versions page](https://readthedocs.org/projects/nrn/versions/) and set the version for your branch to Active and Hidden)
+- [ ] Run a test wheel build WITHOUT upload on the cherry-pick branch to ensure all the wheels build ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 
 Sanity checks
 ---
@@ -33,7 +35,7 @@ Releasing
 - [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 - [ ] Create, test and upload manual artifacts
   - [ ] MacOS package installer (manual task, ask Michael)
-  - [ ] arm64 wheels (manual task, check with Alex or Pramod)
+  - [ ] arm64 wheels (manual task, check with Erik, Goran or Pramod)
   - [ ] aarch64 wheels (use existing `release/x.y-aarch64` branch for this, see [guide](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-circleci))
 - [ ] Publish the `x.y.z` wheels on PyPI; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs

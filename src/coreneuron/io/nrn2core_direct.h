@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cstdint>
 
 extern "C" {
 // The callbacks into nrn/src/nrniv/nrnbbcore_write.cpp to get
@@ -59,6 +60,7 @@ extern int (*nrn2core_get_dat2_mech_)(int tid,
                                       int*& nodeindices,
                                       double*& data,
                                       int*& pdata,
+                                      std::vector<uint32_t>& nmodlrandom,
                                       std::vector<int>& pointer2type);
 
 extern int (*nrn2core_get_dat2_3_)(int tid,
@@ -94,6 +96,20 @@ extern int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
                                               int& ubound_index);
 
 extern void (*nrn2core_part2_clean_)();
+
+extern void (*nrn2core_get_dat3_cell_count_)(int& cell_count);
+extern void (
+    *nrn2core_get_dat3_cellmapping_)(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+extern void (*nrn2core_get_dat3_secmapping_)(int i_c,
+                                             int i_sec,
+                                             std::string& sclname,
+                                             int& nsec,
+                                             int& nseg,
+                                             size_t& total_lfp_factors,
+                                             int& n_electrodes,
+                                             std::vector<int>& data_sec,
+                                             std::vector<int>& data_seg,
+                                             std::vector<double>& data_lfp);
 
 /* what variables to send back to NEURON on each time step */
 extern void (*nrn2core_get_trajectory_requests_)(int tid,
