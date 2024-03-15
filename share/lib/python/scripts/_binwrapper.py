@@ -68,8 +68,8 @@ def _config_exe(exe_name):
 
     # Search for NEURON package installation location using importlib.metadata
     for dist in distributions():
-        if dist.metadata['Name'] in package_names:
-            NRN_PREFIX = dist.locate_file('neuron', '.data')
+        if dist.metadata["Name"] in package_names:
+            NRN_PREFIX = dist.locate_file("neuron", ".data")
             print(f"INFO : Using {dist.metadata['Name']} Package")
             break
 
