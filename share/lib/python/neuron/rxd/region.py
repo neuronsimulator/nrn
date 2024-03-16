@@ -344,7 +344,10 @@ class Extracellular:
     def _short_repr(self):
         return "Extracellular"
 
-    def volume(self, index):
+    def volume(self, species):
+        return sum(species.nodes(self).volume)
+
+    def _volume(self, index):
         """Returns the volume of the voxel at a given index"""
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
