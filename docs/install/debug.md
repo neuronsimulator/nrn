@@ -25,14 +25,14 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.html#nrn_fenableexcept)
+Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
 
 #### Different results with different nhost or nthread.
 What is the gid and spiketime of the earliest difference?
-Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.html?highlight=prcellstate#ParallelContext.prcellstate)
+Use [ParallelContext.prcellstate](../python/modelspec/programmatic/network/parcon.rst#ParallelContext.prcellstate)
 for that gid at various times
 before spiketime to see why and when the prcellstate files become different.
 Time 0 after initialization is often a good place to start.
@@ -128,8 +128,8 @@ the next valgrind error.
 
 
 #### Sanitizers
-The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan,
-see below) and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
+The `AddressSanitizer` (ASan), `LeakSanitizer` (LSan), `ThreadSanitizer` (TSan)
+and `UndefinedBehaviorSanitizer` (UBSan) are a collection of tools
 that rely on compiler instrumentation to catch dangerous behaviour at runtime.
 Compiler support is widespread but not ubiquitous, but both Clang and GCC
 provide support.
@@ -147,13 +147,14 @@ The typical example of this case is loading NEURON from Python, where the
 As of [#1842](https://github.com/neuronsimulator/nrn/pull/1842), the NEURON
 build system is aware of ASan, LSan and UBSan, and it tries to configure the
 sanitizers correctly based on the `NRN_SANITIZERS` CMake variable.
+In [#2034](https://github.com/neuronsimulator/nrn/pull/2034) this was extended
+to TSan via `-DNRN_SANITIZERS=thread`, and support for GCC was added.
 For example, `cmake -DNRN_SANITIZERS=address,leak ...` will enable ASan and
 LSan, while `-DNRN_SANITIZERS=undefined` will enable UBSan.
-Not all combinations of sanitizers are possible, so far ASan, ASan+LSan and
-UBSan have been tested with Clang, GCC has not been tested and likely needs
-minor changes.
-Support for standalone LSan and for TSan (see below for manual instructions)
-should be possible without major difficulties, but is not yet implemented.
+Not all combinations of sanitizers are possible, so far ASan, ASan+LSan, TSan
+and UBSan have been tested with Clang.
+Support for standalone LSan should be possible without major difficulties, but
+is not yet implemented.
 
 Depending on your system, you may also need to set the `LLVM_SYMBOLIZER_PATH`
 variable to point to the `llvm-symbolizer` executable matching your Clang.
@@ -176,59 +177,30 @@ use `nrn-enable-sanitizer special -python path/to/script.py` or
 because the `python` binary is (presumably) not linked against the sanitizer
 runtime library.
 
-LSan and UBSan support suppression files, which can be used to prevent tests
-failing due to known issues.
-NEURON includes a suppression file for UBSan under `.sanitizers/undefined.supp`
-in the GitHub repository, no LSan equivalent exists for the moment.
+LSan, TSan and UBSan support suppression files, which can be used to prevent
+tests failing due to known issues.
+NEURON includes a suppression file for TSan under `.sanitizers/thread.supp` and
+one for UBSan under `.sanitizers/undefined.supp` in the GitHub repository, no
+LSan equivalent exists for the moment.
 
 Note that LSan and MPI implementations typically do not play nicely together, so
 if you want to use LSan with NEURON, you may need to disable MPI or add a
 suppression file that is tuned to your MPI implementation.
 
-The GitHub Actions CI for NEURON at the time of writing includes test jobs for
-ASan and UBSan using Clang 14, but does not enable LSan.
+Similarly, TSan does not work very well with MPI and (especially) OpenMP
+implementations that were not compiled with TSan instrumentation (which they
+are typically not).
 
-CoreNEURON and NMODL both support the sanitizers in a similar way, but this has
-to be enabled explicitly: `-DNRN_SANITIZERS=undefined` will not compile
-CoreNEURON code with UBSan enabled, you must additionally pass
-`-DCORENRN_SANITIZERS=undefined` to enable instrumentation of CoreNEURON code.
-The equivalent variable for NMODL is `NMODL_SANITIZERS`.
+The GitHub Actions CI for NEURON at the time of writing includes three jobs
+using Ubuntu 22.04: ASan (but not LSan) using Clang 14, UBSan using Clang 14,
+and TSan using GCC 12.
+In addition, there is a macOS-based ASan build using AppleClang, which has the
+advantage that it uses `libc++` instead of `libstdc++`.
 
-#### ThreadSanitizer (TSAN)
-`ThreadSanitizer` is a tool that detects data races. Be aware that a slowdown is incurred by using ThreadSanitizer of about 5x-15x, with typical memory overhead of about 5x-10x.  
-
-Here is how to enable it:
-```
-cmake ... -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="-O0 -fno-inline -g -fsanitize=thread" -DCMAKE_CXX_FLAGS="-O0 -fno-inline -g -fsanitize=thread" ..
-```
-You can then target a specific test (for example `ctest -VV -R test_name` or `bin/nrniv -nogui -nopython test.hoc`) and have a look at the generated output. In case of data races, you would see something similar to:
-```
-94: WARNING: ThreadSanitizer: data race (pid=2572)
-94:   Read of size 8 at 0x7b3c00000bf0 by thread T1:
-94:     #0 Cvode::at_time(double, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:751 (libnrniv.so+0x38673e)
-94:     #1 at_time /home/savulesc/Workspace/nrn/src/nrncvode/cvodestb.cpp:133 (libnrniv.so+0x389e27)
-94:     #2 _nrn_current__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:266 (libnrniv.so+0x5b8f02)
-94:     #3 _nrn_cur__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:306 (libnrniv.so+0x5b9236)
-94:     #4 Cvode::rhs_memb(CvMembList*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:68 (libnrniv.so+0x38a0eb)
-94:     #5 Cvode::rhs(NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:35 (libnrniv.so+0x38a2f6)
-94:     #6 Cvode::fun_thread_transfer_part2(double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:671 (libnrniv.so+0x3bbbf1)
-94:     #7 Cvode::fun_thread(double, double*, double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:639 (libnrniv.so+0x3bd049)
-94:     #8 f_thread /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:1532 (libnrniv.so+0x384f45)
-94:     #9 slave_main /home/savulesc/Workspace/nrn/src/nrnoc/multicore.cpp:337 (libnrniv.so+0x5157ee)
-94: 
-94:   Previous write of size 8 at 0x7b3c00000bf0 by main thread:
-94:     #0 Cvode::at_time(double, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:753 (libnrniv.so+0x386759)
-94:     #1 at_time /home/savulesc/Workspace/nrn/src/nrncvode/cvodestb.cpp:133 (libnrniv.so+0x389e27)
-94:     #2 _nrn_current__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:266 (libnrniv.so+0x5b8f02)
-94:     #3 _nrn_cur__IClamp /home/savulesc/Workspace/nrn/src/nrnoc/stim.c:306 (libnrniv.so+0x5b9236)
-94:     #4 Cvode::rhs_memb(CvMembList*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:68 (libnrniv.so+0x38a0eb)
-94:     #5 Cvode::rhs(NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/cvtrset.cpp:35 (libnrniv.so+0x38a2f6)
-94:     #6 Cvode::fun_thread_transfer_part2(double*, NrnThread*) /home/savulesc/Workspace/nrn/src/nrncvode/occvode.cpp:671 (libnrniv.so+0x3bbbf1)
-..............................................................
-94: SUMMARY: ThreadSanitizer: data race /home/savulesc/Workspace/nrn/src/nrncvode/cvodeobj.cpp:751 in Cvode::at_time(double, NrnThread*)
-94: ==================
-```
-
+NMODL supports the sanitizers in a similar way, but this has to be enabled
+explicitly: `-DNRN_SANITIZERS=undefined` will not compile NMODL code with UBSan
+enabled, you must additionally pass `-DNMODL_SANITIZERS=undefined` to enable
+instrumentation of NMODL code.
 
 Profiling and performance benchmarking
 --------------------------------------

@@ -1,7 +1,6 @@
 #ifndef vrecitem_h
 #define vrecitem_h
 
-#include <OS/list.h>
 #include <InterViews/observe.h>
 #include <netcon.h>
 #include <ivocvect.h>
@@ -50,7 +49,7 @@ class PlayRecordEvent: public DiscreteEvent {
 // common interface for Play and Record for all integration methods.
 class PlayRecord: public Observer {
   public:
-    PlayRecord(double* pd, Object* ppobj = nil);
+    PlayRecord(neuron::container::data_handle<double> pd, Object* ppobj = nullptr);
     virtual ~PlayRecord();
     virtual void install(Cvode* cv) {
         cvode_ = cv;
@@ -61,19 +60,18 @@ class PlayRecord: public Observer {
     }  // play - every f(y, t) or res(y', y, t); record - advance_tn and initialize flag
     virtual void deliver(double t, NetCvode*) {}  // at associated DiscreteEvent
     virtual PlayRecordEvent* event() {
-        return nil;
+        return nullptr;
     }
     virtual void pr();  // print identifying info
     virtual int type() {
         return 0;
     }
 
-    // install normally calls one of these. Cvode may be nil.
+    // install normally calls one of these. Cvode may be nullptr.
     void play_add(Cvode*);
     void record_add(Cvode*);
 
     // administration
-    virtual void update_ptr(double*);
     virtual void disconnect(Observable*);
     virtual void update(Observable* o) {
         disconnect(o);
@@ -88,13 +86,13 @@ class PlayRecord: public Observer {
     virtual PlayRecordSave* savestate_save();
     static PlayRecordSave* savestate_read(FILE*);
 
-    double* pd_;
+    // pd_ can refer to a voltage, and those are stored in a modern container,
+    // so we need to use data_handle
+    neuron::container::data_handle<double> pd_;
     Object* ppobj_;
     Cvode* cvode_;
     int ith_;  // The thread index
 };
-
-declarePtrList(PlayRecList, PlayRecord)
 
 class PlayRecordSave {
   public:
@@ -111,7 +109,7 @@ class PlayRecordSave {
 
 class TvecRecord: public PlayRecord {
   public:
-    TvecRecord(Section*, IvocVect* tvec, Object* ppobj = nil);
+    TvecRecord(Section*, IvocVect* tvec, Object* ppobj = nullptr);
     virtual ~TvecRecord();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -131,7 +129,7 @@ class TvecRecord: public PlayRecord {
 
 class YvecRecord: public PlayRecord {
   public:
-    YvecRecord(double*, IvocVect* y, Object* ppobj = nil);
+    YvecRecord(neuron::container::data_handle<double>, IvocVect* y, Object* ppobj = nullptr);
     virtual ~YvecRecord();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -150,7 +148,10 @@ class YvecRecord: public PlayRecord {
 
 class VecRecordDiscrete: public PlayRecord {
   public:
-    VecRecordDiscrete(double*, IvocVect* y, IvocVect* t, Object* ppobj = nil);
+    VecRecordDiscrete(neuron::container::data_handle<double>,
+                      IvocVect* y,
+                      IvocVect* t,
+                      Object* ppobj = nullptr);
     virtual ~VecRecordDiscrete();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -188,7 +189,10 @@ class VecRecordDiscreteSave: public PlayRecordSave {
 
 class VecRecordDt: public PlayRecord {
   public:
-    VecRecordDt(double*, IvocVect* y, double dt, Object* ppobj = nil);
+    VecRecordDt(neuron::container::data_handle<double>,
+                IvocVect* y,
+                double dt,
+                Object* ppobj = nullptr);
     virtual ~VecRecordDt();
     virtual void install(Cvode*);
     virtual void record_init();
@@ -222,8 +226,12 @@ class VecRecordDtSave: public PlayRecordSave {
 
 class VecPlayStep: public PlayRecord {
   public:
-    VecPlayStep(double*, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
-    VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
+    VecPlayStep(neuron::container::data_handle<double>,
+                IvocVect* y,
+                IvocVect* t,
+                double dt,
+                Object* ppobj = nullptr);
+    VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nullptr);
     void init(IvocVect* y, IvocVect* t, double dt);
     virtual ~VecPlayStep();
     virtual void install(Cvode*);
@@ -263,12 +271,16 @@ class VecPlayStepSave: public PlayRecordSave {
 
 class VecPlayContinuous: public PlayRecord {
   public:
-    VecPlayContinuous(double*, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj = nil);
+    VecPlayContinuous(neuron::container::data_handle<double> pd,
+                      IvocVect* y,
+                      IvocVect* t,
+                      IvocVect* discon,
+                      Object* ppobj = nullptr);
     VecPlayContinuous(const char* s,
                       IvocVect* y,
                       IvocVect* t,
                       IvocVect* discon,
-                      Object* ppobj = nil);
+                      Object* ppobj = nullptr);
     virtual ~VecPlayContinuous();
     void init(IvocVect* y, IvocVect* t, IvocVect* tdiscon);
     virtual void install(Cvode*);

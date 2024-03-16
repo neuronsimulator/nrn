@@ -50,7 +50,7 @@ void solv_diffeq(Item* qsol,
     if (method && strcmp(method->name, "cnexp") == 0) {
         Sprintf(buf, " %s();\n", fun->name);
         replacstr(qsol, buf);
-        Sprintf(buf, " %s(_p, _ppvar, _thread, _nt);\n", fun->name);
+        Sprintf(buf, " %s(_threadargs_);\n", fun->name);
         vectorize_substitute(qsol, buf);
         return;
     }
@@ -124,7 +124,8 @@ void solv_diffeq(Item* qsol,
             Strcpy(deriv2_advance, "");
         }
         Sprintf(buf,
-                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, _p, &%s, %s, %s, &_temp%d%s);\n%s",
+                "%s %s%s(_ninits, %d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, "
+                "&%s, %s, %s, &_temp%d%s);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -138,9 +139,11 @@ void solv_diffeq(Item* qsol,
                 maxerr_str,
                 deriv2_advance);
     } else {
+        // examples of ssprefix + method->name: sparse, _ss_sparse
         Sprintf(buf,
-                "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
-,&_coef%d, _linmat%d);\n",
+                "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, "
+                "neuron::scopmath::row_view{_ml, _iml}, &%s, "
+                "%s, %s, &_coef%d, _linmat%d);\n",
                 ssprefix,
                 method->name,
                 listnum,
@@ -155,8 +158,10 @@ void solv_diffeq(Item* qsol,
     }
     replacstr(qsol, buf);
     if (method->subtype & DERF) { /* derivimplicit */
+        // derivimplicit_thread
         Sprintf(buf,
-                "%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _p, _ppvar, _thread, _nt);\n%s",
+                "%s %s%s_thread(%d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, %s, "
+                "_ml, _iml, _ppvar, _thread, _nt);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
@@ -168,20 +173,21 @@ void solv_diffeq(Item* qsol,
         vectorize_substitute(qsol, buf);
     } else { /* kinetic */
         if (vectorize) {
-            Sprintf(
-                buf,
-                "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
-, _linmat%d, _p, _ppvar, _thread, _nt);\n",
-                ssprefix,
-                method->name,
-                listnum,
-                numeqn,
-                listnum,
-                listnum,
-                indepsym->name,
-                dindepname,
-                fun->name,
-                listnum);
+            // sparse_thread, _ss_sparse_thread
+            Sprintf(buf,
+                    "%s%s_thread(&(_thread[_spth%d].literal_value<void*>()), %d, "
+                    "_slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, "
+                    "&%s, %s, %s, _linmat%d, _threadargs_);\n",
+                    ssprefix,
+                    method->name,
+                    listnum,
+                    numeqn,
+                    listnum,
+                    listnum,
+                    indepsym->name,
+                    dindepname,
+                    fun->name,
+                    listnum);
             vectorize_substitute(qsol, buf);
         }
     }
@@ -190,7 +196,7 @@ void solv_diffeq(Item* qsol,
             "   if (secondorder) {\n"
             "    int _i;\n"
             "    for (_i = 0; _i < %d; ++_i) {\n"
-            "      _p[_slist%d[_i]] += dt*_p[_dlist%d[_i]];\n"
+            "      _ml->data(_iml, _slist%d[_i]) += dt*_ml->data(_iml, _dlist%d[_i]);\n"
             "    }}\n",
             numeqn,
             listnum,
@@ -465,14 +471,15 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
     Lappendsym(massage_list_, SYM(q2));
 
     /* all this junk is still in the intoken list */
-    Sprintf(buf, "static int %s(_threadargsproto_);\n", SYM(q2)->name);
+    Sprintf(buf, "static int %s(_internalthreadargsproto_);\n", SYM(q2)->name);
     Linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     q = insertstr(q3, "() {_reset=0;\n");
     derfun = SYM(q2);
     vectorize_substitute(q,
-                         "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int "
-                         "_reset=0; int error = 0;\n");
+                         "(_internalthreadargsproto_) {\n"
+                         "  int _reset=0;\n"
+                         "  int error = 0;\n");
 
     if (derfun->subtype & DERF && derfun->u.i) {
         diag("DERIVATIVE merging not implemented", (char*) 0);
@@ -517,24 +524,24 @@ is not allowed on the left hand side.");
             if (s->subtype & ARRAY) {
                 int dim = s->araydim;
                 Sprintf(buf,
-                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = {%s_columnindex, _i};",
                         dim,
                         numlist,
                         count,
                         state->name);
                 Lappendstr(initlist, buf);
                 Sprintf(buf,
-                        " _dlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        " _dlist%d[%d+_i] = {%s_columnindex, _i};}\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
                 Lappendstr(initlist, buf);
                 count += dim;
             } else {
-                Sprintf(buf, "_slist%d[%d] = %s_columnindex;", numlist, count, state->name);
+                Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};", numlist, count, state->name);
                 Lappendstr(initlist, buf);
                 Sprintf(buf,
-                        " _dlist%d[%d] = %s_columnindex;\n",
+                        " _dlist%d[%d] = {%s_columnindex, 0};\n",
                         numlist,
                         count,
                         name_forderiv(indx + 1));
@@ -547,7 +554,12 @@ is not allowed on the left hand side.");
         diag("DERIVATIVE contains no derivatives", (char*) 0);
     }
     derfun->used = count;
-    Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n", numlist, count, numlist, count);
+    Sprintf(buf,
+            "static neuron::container::field_index _slist%d[%d], _dlist%d[%d];\n",
+            numlist,
+            count,
+            numlist,
+            count);
     Linsertstr(procfunc, buf);
 
     Lappendstr(procfunc, "\n/*CVODE*/\n");
@@ -556,9 +568,7 @@ is not allowed on the left hand side.");
     {
         Item* qq = procfunc->prev;
         copyitems(q1->next, q4, procfunc->prev);
-        vectorize_substitute(
-            qq->next,
-            "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int _reset = 0;");
+        vectorize_substitute(qq->next, "(_internalthreadargsproto_) {int _reset = 0;");
         vectorize_scan_for_func(qq->next, procfunc);
     }
     lappendstr(procfunc, "return _reset;\n}\n");
@@ -569,8 +579,7 @@ is not allowed on the left hand side.");
         Item* qextra = q1->next->next->next->next;
         Sprintf(buf, "static int _ode_matsol%d", numlist);
         Lappendstr(procfunc, buf);
-        vectorize_substitute(lappendstr(procfunc, "() {\n"),
-                             "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n");
+        vectorize_substitute(lappendstr(procfunc, "() {\n"), "(_internalthreadargsproto_) {\n");
         qq = procfunc->next;
         cvode_cnexp_possible = 1;
         ITERATE(q, cvode_diffeq_list) {
@@ -657,17 +666,19 @@ if (_deriv%d_advance) {\n",
         q = insertsym(q4, sp);
         eqnqueue(q);
         Sprintf(buf,
-                "_p[_dlist%d[_id]] - (_p[_slist%d[_id]] - _savstate%d[_id])/d%s;\n",
+                "_ml->data(_iml, _dlist%d[_id]) - (_ml->data(_iml, _slist%d[_id]) - "
+                "_savstate%d[_id])/d%s;\n",
                 numlist,
                 numlist,
                 numlist,
                 indepsym->name);
         Insertstr(q4, buf);
-        Sprintf(buf,
-                "}else{\n_dlist%d[++_counte] = _p[_slist%d[_id]] - _savstate%d[_id];}}}\n",
-                numlist + 1,
-                numlist,
-                numlist);
+        Sprintf(
+            buf,
+            "}else{\n_dlist%d[++_counte] = _ml->data(_iml, _slist%d[_id]) - _savstate%d[_id];}}}\n",
+            numlist + 1,
+            numlist,
+            numlist);
         Insertstr(q4, buf);
     } else {
         ITERATE(q, deriv_state_list) {
@@ -680,7 +691,9 @@ if (_deriv%d_advance) {\n",
     q = mixed_eqns(q2, q3, q4); /* numlist now incremented */
     if (deriv_implicit) {
         Sprintf(buf,
-                "{int _id; for(_id=0; _id < %d; _id++) { _savstate%d[_id] = _p[_slist%d[_id]];}}\n",
+                "for(int _id=0; _id < %d; _id++) {\n"
+                "  _savstate%d[_id] = _ml->data(_iml, _slist%d[_id]);\n"
+                "}\n",
                 count,
                 derfun->u.i,
                 derfun->u.i);
@@ -829,7 +842,7 @@ each has been saved. So we know if the translation is possible.
 int cvode_cnexp_success(Item* q1, Item* q2) {
     Item *q, *q3, *q4, *qeq;
     if (cvode_cnexp_possible) {
-        /* convert Method to nil and the type of the block to
+        /* convert Method to nullptr and the type of the block to
            PROCEDURE */
         SYM(cvode_cnexp_solve->next)->name = stralloc("cnexp", 0);
         remove(deriv_imp_list->next);
@@ -887,8 +900,7 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
             Item* qq = procfunc->prev;
             copyitems(q1, q2, procfunc->prev);
             /* more or less redundant with massagederiv */
-            vectorize_substitute(qq->next->next,
-                                 "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {");
+            vectorize_substitute(qq->next->next, "(_internalthreadargsproto_) {");
             vectorize_scan_for_func(qq->next->next, procfunc);
         }
         lappendstr(procfunc, " return 0;\n}\n");

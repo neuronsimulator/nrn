@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 names=`sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
 ' nrnmpidec.h`
@@ -10,9 +12,12 @@ sed -n '
 /extern [^v]/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  return (*p_\2)\3;@}/p
 ' nrnmpidec.h | tr '@' '\n' | sed '
 /p_nrnmpi/ {
-s/, [a-zA-Z0-9_*]* /, /g
-s/)([a-zA-Z_0-9*]* /)(/
+s/, [a-zA-Z0-9_:*&]* /, /g
+s/)([a-zA-Z0-9_:*&]* /)(/
+s/const& //g
 s/char\* //g
+s/char\*\* //g
+s/std::string& //g
 }
 '> nrnmpi_dynam_wrappers.inc
 

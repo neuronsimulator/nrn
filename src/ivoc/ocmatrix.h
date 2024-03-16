@@ -1,30 +1,29 @@
 #ifndef ocmatrix_h
 #define ocmatrix_h
 
-#ifndef MATRIXH
-#define MAT   void
-#define SPMAT void
-#define PERM  void
-#endif
-
+#include <memory>
 #include <vector>
-using std::vector;
+
+#include <Eigen/Eigen>
+#include <Eigen/Sparse>
+#include <Eigen/LU>
 
 struct Object;
 class IvocVect;
+class OcMatrix;
+using Matrix = OcMatrix;
 class OcFullMatrix;
-#define Vect   IvocVect
-#define Matrix OcMatrix
+using Vect = IvocVect;
 
 class OcMatrix {
   public:
     enum { MFULL = 1, MSPARSE, MBAND };
     static OcMatrix* instance(int nrow, int ncol, int type = MFULL);
-    virtual ~OcMatrix();
+    virtual ~OcMatrix() = default;
 
     virtual double* mep(int i, int j) {
         unimp();
-        return NULL;
+        return nullptr;
     }  // matrix element pointer
     inline double& operator()(int i, int j) {
         return *mep(i, j);
@@ -46,7 +45,7 @@ class OcMatrix {
         unimp();
     }
 
-    virtual void nonzeros(vector<int>& m, vector<int>& n);
+    virtual void nonzeros(std::vector<int>& m, std::vector<int>& n);
 
     OcFullMatrix* full();
 
@@ -139,100 +138,91 @@ class OcMatrix {
     }
 
     void unimp();
-    Object** temp_objvar();
 
   protected:
     OcMatrix(int type);
 
   public:
-    Object* obj_;
+    Object* obj_{};
 
   private:
-    int type_;
+    int type_{};
 };
 
 extern Matrix* matrix_arg(int);
 
-class OcFullMatrix: public OcMatrix {  // type 1
+class OcFullMatrix final: public OcMatrix {  // type 1
   public:
     OcFullMatrix(int, int);
-    virtual ~OcFullMatrix();
+    ~OcFullMatrix() override = default;
 
-    virtual double* mep(int, int);
-    virtual double getval(int i, int j);
-    virtual int nrow();
-    virtual int ncol();
-    virtual void resize(int, int);
+    double* mep(int, int) override;
+    double getval(int i, int j) override;
+    int nrow() override;
+    int ncol() override;
+    void resize(int, int) override;
 
-    virtual void mulv(Vect* in, Vect* out);
-    virtual void mulm(Matrix* in, Matrix* out);
-    virtual void muls(double, Matrix* out);
-    virtual void add(Matrix*, Matrix* out);
-    virtual void getrow(int, Vect* out);
-    virtual void getcol(int, Vect* out);
-    virtual void getdiag(int, Vect* out);
-    virtual void setrow(int, Vect* in);
-    virtual void setcol(int, Vect* in);
-    virtual void setdiag(int, Vect* in);
-    virtual void setrow(int, double in);
-    virtual void setcol(int, double in);
-    virtual void setdiag(int, double in);
-    virtual void zero();
-    virtual void ident();
-    virtual void exp(Matrix* out);
-    virtual void pow(int, Matrix* out);
-    virtual void inverse(Matrix* out);
-    virtual void solv(Vect* vin, Vect* vout, bool use_lu);
-    virtual void copy(Matrix* out);
-    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1);
-    virtual void transpose(Matrix* out);
-    virtual void symmeigen(Matrix* mout, Vect* vout);
-    virtual void svd1(Matrix* u, Matrix* v, Vect* d);
-    virtual double det(int* exponent);
+    void mulv(Vect* in, Vect* out) override;
+    void mulm(Matrix* in, Matrix* out) override;
+    void muls(double, Matrix* out) override;
+    void add(Matrix*, Matrix* out) override;
+    void getrow(int, Vect* out) override;
+    void getcol(int, Vect* out) override;
+    void getdiag(int, Vect* out) override;
+    void setrow(int, Vect* in) override;
+    void setcol(int, Vect* in) override;
+    void setdiag(int, Vect* in) override;
+    void setrow(int, double in) override;
+    void setcol(int, double in) override;
+    void setdiag(int, double in) override;
+    void zero() override;
+    void ident() override;
+    void exp(Matrix* out) override;
+    void pow(int, Matrix* out) override;
+    void inverse(Matrix* out) override;
+    void solv(Vect* vin, Vect* vout, bool use_lu) override;
+    void copy(Matrix* out) override;
+    void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) override;
+    void transpose(Matrix* out) override;
+    void symmeigen(Matrix* mout, Vect* vout) override;
+    void svd1(Matrix* u, Matrix* v, Vect* d) override;
+    double det(int* exponent) override;
 
   private:
-    MAT* m_;
-    MAT* lu_factor_;
-    PERM* lu_pivot_;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> m_{};
+    std::unique_ptr<Eigen::FullPivLU<decltype(m_)>> lu_{};
 };
 
-class OcSparseMatrix: public OcMatrix {  // type 2
+class OcSparseMatrix final: public OcMatrix {  // type 2
   public:
     OcSparseMatrix(int, int);
-    virtual ~OcSparseMatrix();
+    ~OcSparseMatrix() override = default;
 
-    virtual double* mep(int, int);
-    virtual double* pelm(int, int);  // NULL if element does not exist
-    virtual int nrow();
-    virtual int ncol();
-    virtual double getval(int, int);
-    virtual void ident(void);
-    virtual void mulv(Vect* in, Vect* out);
-    virtual void solv(Vect* vin, Vect* vout, bool use_lu);
+    double* mep(int, int) override;
+    int nrow() override;
+    int ncol() override;
+    double getval(int, int) override;
+    void ident(void) override;
+    void mulv(Vect* in, Vect* out) override;
+    void solv(Vect* vin, Vect* vout, bool use_lu) override;
 
-    virtual void setrow(int, Vect* in);
-    virtual void setcol(int, Vect* in);
-    virtual void setdiag(int, Vect* in);
-    virtual void setrow(int, double in);
-    virtual void setcol(int, double in);
-    virtual void setdiag(int, double in);
+    void setrow(int, Vect* in) override;
+    void setcol(int, Vect* in) override;
+    void setdiag(int, Vect* in) override;
+    void setrow(int, double in) override;
+    void setcol(int, double in) override;
+    void setdiag(int, double in) override;
 
-    virtual void nonzeros(vector<int>& m, vector<int>& n);
+    void nonzeros(std::vector<int>& m, std::vector<int>& n) override;
 
-    virtual int sprowlen(int);  // how many elements in row
-    virtual double spgetrowval(int i, int jindx, int* j);
+    int sprowlen(int) override;  // how many elements in row
+    double spgetrowval(int i, int jindx, int* j) override;
 
-    virtual void zero();
+    void zero() override;
 
   private:
-    SPMAT* m_;
-    SPMAT* lu_factor_;
-    PERM* lu_pivot_;
+    Eigen::SparseMatrix<double, Eigen::RowMajor> m_{};
+    std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
 };
-
-#ifndef MATRIXH
-#undef MAT
-#undef SPMAT
-#endif
 
 #endif

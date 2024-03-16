@@ -13,11 +13,11 @@
 #undef begin
 #undef add
 
-#include <OS/list.h>
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
 #include "netcvode.h"
 #include "cvodeobj.h"
+#include "utils/enumerate.h"
 
 #if HAVE_IV  // to end of file
 #include "graph.h"
@@ -26,11 +26,7 @@
 
 extern NetCvode* net_cvode_instance;
 
-class GLineRecordList;
-
-declarePtrList(GLineRecordList, GLineRecord)
-implementPtrList(GLineRecordList, GLineRecord)
-static GLineRecordList* grl;
+static std::vector<GLineRecord*>* grl;
 
 // Since GraphLine is not an observable, its destructor calls this.
 // So ivoc will work, a stub is placed in ivoc/datapath.cpp
@@ -38,11 +34,9 @@ void graphLineRecDeleted(GraphLine* gl) {
     if (!grl) {
         return;
     }
-    int i, cnt = grl->count();
-    for (i = 0; i < cnt; ++i) {
-        GLineRecord* r = grl->item(i);
-        if (r->uses(gl)) {
-            delete r;
+    for (auto& item: *grl) {
+        if (item->uses(gl)) {
+            delete item;
             return;
         }
     }
@@ -52,25 +46,22 @@ void NetCvode::simgraph_remove() {
     if (!grl) {
         return;
     }
-    while (grl->count()) {
-        delete grl->item(grl->count() - 1);
+    for (auto& item: *grl) {
+        delete item;
     }
 }
 
 void Graph::simgraph() {
-    int i, cnt;
     if (!grl) {
-        grl = new GLineRecordList();
+        grl = new std::vector<GLineRecord*>();
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         PlayRecord* pr = net_cvode_instance->playrec_uses(gl);
         if (pr) {
             delete pr;
         }
         GLineRecord* r = new GLineRecord(gl);
-        grl->append(r);
+        grl->push_back(r);
     }
 }
 
@@ -116,13 +107,10 @@ void GLineRecord::fill_pd1() {
 }
 
 void GLineRecord::fill_pd() {
-    // Call only if cache_efficient will not change pointers before useing
-    // the results of his computation.
-
     // Get rid of old pd_and_vec_ info.
-    for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-        if ((*it).second) {
-            delete (*it).second;
+    for (auto& [_, elem]: pd_and_vec_) {
+        if (elem) {
+            delete elem;
         }
     }
     pd_and_vec_.resize(0);
@@ -143,7 +131,7 @@ void GLineRecord::fill_pd() {
 }
 
 GLineRecord::GLineRecord(GraphLine* gl)
-    : PlayRecord(NULL) {
+    : PlayRecord({}) {
     // shouldnt be necessary but just in case
     //	printf("GLineRecord %p name=%s\n", this, gl->name());
     gl_ = gl;
@@ -153,53 +141,34 @@ GLineRecord::GLineRecord(GraphLine* gl)
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv)
-    : PlayRecord(NULL) {
-    // printf("GVectorRecord %p\n", this);
-    gv_ = gv;
-}
+    : PlayRecord({})
+    , gv_{gv} {}
 
 void GraphVector::record_install() {
-    // printf("GraphVector::record_install()\n");
-    GVectorRecord* gvr = new GVectorRecord(this);
+    new GVectorRecord(this);
 }
 
-void GraphVector::record_uninstall() {
-    // printf("GraphVector::record_uninstall()\n");
-}
+void GraphVector::record_uninstall() {}
 
 GLineRecord::~GLineRecord() {
-    //	printf("~GLineRecord %p\n", this);
-    int i;
     if (v_) {
         delete v_;
-        v_ = NULL;
+        v_ = nullptr;
     }
 
-    for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-        if ((*it).second) {
-            delete (*it).second;
+    for (auto& [_, vec]: pd_and_vec_) {
+        if (vec) {
+            delete vec;
         }
     }
 
-    for (i = grl->count() - 1; i >= 0; --i) {
-        if (grl->item(i) == this) {
-            gl_->simgraph_activate(false);
-            grl->remove(i);
-            return;
-        }
+    if (auto it = std::find(grl->rbegin(), grl->rend(), this); it != grl->rend()) {
+        gl_->simgraph_activate(false);
+        grl->erase(std::next(it).base());  // Reverse iterator need that
     }
 }
 
-GVectorRecord::~GVectorRecord() {
-    printf("~GVectorRecord %p\n", this);
-#if 0  // for now not allowing vector buffering
-  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
-    if ((*it).second) {
-      delete (*it).second;
-    }
-  }
-#endif
-}
+GVectorRecord::~GVectorRecord() {}
 
 void GLineRecord::record_init() {
     gl_->simgraph_init();
@@ -216,7 +185,7 @@ void GVectorRecord::continuous(double t) {}
 int GVectorRecord::count() {
     return gv_->py_data()->count();
 }
-double* GVectorRecord::pdata(int i) {
+neuron::container::data_handle<double> GVectorRecord::pdata(int i) {
     return gv_->py_data()->p(i);
 }
 
@@ -236,10 +205,8 @@ void GLineRecord::plot(int vecsz, double tstop) {
         ObjectContext obc(NULL);
         for (int i = 0; i < vecsz; ++i) {
             x->add(dt * i);
-            for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end();
-                 ++it) {
-                double* pd = (*it).first;
-                *pd = (*it).second->elem(i);
+            for (auto& [pd, elem]: pd_and_vec_) {
+                *pd = elem->elem(i);
             }
             gl_->plot();
         }

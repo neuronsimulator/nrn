@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if MAC || defined(HAVE_UNISTD_H)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -36,9 +36,6 @@ extern int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-
 
 static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
@@ -134,13 +131,7 @@ static double f_gets(void* v) {
     OcFile* f = (OcFile*) v;
     char** pbuf = hoc_pgargstr(1);
     char* buf;
-#if USE_NRNFILEWRAP
-    NrnFILEWrap nfw, *fw;
-    nfw.f = f->file();
-    fw = &nfw;
-#else
     FILE* fw = f->file();
-#endif
     if ((buf = fgets_unlimited(hoc_tmpbuf, fw)) != 0) {
         hoc_assign_str(pbuf, buf);
         return double(strlen(buf));
@@ -320,7 +311,7 @@ void OcFile::close() {
 }
 void OcFile::set_name(const char* s) {
     close();
-    if (s != filename_.string()) {
+    if (s != filename_.c_str()) {
         filename_ = s;
     }
 }
@@ -334,14 +325,7 @@ void OcFile::binary_mode() {
  Use File.seek(0) after opening or use a binary style read/write as first\n\
  access to file.");
         }
-#if defined(__MWERKS__)
-        // printf("can't switch to binary mode. No setmode\n");
-        mode_[1] = 'b';
-        mode_[2] = '\0';
-        file_ = freopen(filename_.string(), mode_, file());
-#else
         setmode(fileno(file()), O_BINARY);
-#endif
         binary_ = true;
     }
 }
@@ -354,20 +338,6 @@ bool OcFile::open(const char* name, const char* type) {
     strcpy(mode_, type);
 #endif
     file_ = fopen(expand_env_var(name), type);
-#if defined(FILE_OPEN_RETRY) && FILE_OPEN_RETRY > 0
-    int i;
-    for (i = 0; !file_ && i < FILE_OPEN_RETRY; ++i) {
-        // retry occasionally needed on BlueGene
-        file_ = fopen(expand_env_var(name), type);
-    }
-    if (i > 0) {
-        if (file_) {
-            printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
-        } else {
-            printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
-        }
-    }
-#endif
     return is_open();
 }
 
@@ -480,13 +450,13 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir();
+        dirname_ = *fc_->dir()->string();
     } else
 #endif
     {
         dirname_ = "";
     }
-    return dirname_.string();
+    return dirname_.c_str();
 }
 
 bool OcFile::file_chooser_popup() {

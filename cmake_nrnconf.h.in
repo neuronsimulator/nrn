@@ -13,18 +13,8 @@
    */
 #undef CRAY_STACKSEG_END
 
-/* Define to 1 if using `alloca.c'. */
-#undef C_ALLOCA
-
 /* if mac os x */
 #undef DARWIN
-
-/* Define to 1 if you have `alloca', as a function or macro. */
-#undef HAVE_ALLOCA
-
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
-#undef HAVE_ALLOCA_H
 
 /* Define to 1 if you have the `bcopy' function. */
 #undef HAVE_BCOPY
@@ -32,21 +22,11 @@
 /* Define to 1 if you have the `bzero' function. */
 #undef HAVE_BZERO
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
-   */
-#undef HAVE_DIRENT_H
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
-#undef HAVE_DOPRNT
-
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
-
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
 
 /* Define to 1 if you have the <fenv.h> header file. */
 #undef HAVE_FENV_H
@@ -57,44 +37,17 @@
 /* Define to 1 if you have the `feenableexcept' function. */
 #undef HAVE_FEENABLEEXCEPT
 
-/* Define to 1 if you have the <float.h> header file. */
-#undef HAVE_FLOAT_H
-
-/* Define to 1 if you have the `ftime' function. */
-#undef HAVE_FTIME
-
-/* Define to 1 if you have the `getcwd' function. */
-#undef HAVE_GETCWD
-
-/* Define to 1 if you have the `gethostname' function. */
-#undef HAVE_GETHOSTNAME
-
-/* Define to 1 if you have the `getpw' function. */
-#undef HAVE_GETPW
-
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the `index' function. */
 #undef HAVE_INDEX
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
 /* Define to 1 if you have the `isatty' function. */
 #undef HAVE_ISATTY
 
 /* define if using InterViews */
 #undef HAVE_IV
-
-/* Define to 1 if you have the <limits.h> header file. */
-#undef HAVE_LIMITS_H
-
-/* Define to 1 if you have the <locale.h> header file. */
-#undef HAVE_LOCALE_H
-
-/* Define to 1 if you have the `lockf' function. */
-#undef HAVE_LOCKF
 
 /* Define to 1 if you have the `mallinfo' function. */
 #undef HAVE_MALLINFO
@@ -105,23 +58,8 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
-/* Define to 1 if you have the <math.h> header file. */
-#undef HAVE_MATH_H
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the `mkdir' function. */
-#undef HAVE_MKDIR
-
 /* Define to 1 if you have the `mkstemp' function. */
 #undef HAVE_MKSTEMP
-
-/* define if the compiler implements namespaces */
-#undef HAVE_NAMESPACES
-
-/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
-#undef HAVE_NDIR_H
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
@@ -129,17 +67,11 @@
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
-/* Define to 1 if you have the `select' function. */
-#undef HAVE_SELECT
-
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
 
 /* Define to 1 if you have the `setitimer' function. */
 #undef HAVE_SETITIMER
-
-/* Define to 1 if you have the <sgtty.h> header file. */
-#undef HAVE_SGTTY_H
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
@@ -150,100 +82,14 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGBUS
 
-/* (Define if this signal exists) */
-#undef HAVE_SIGSEGV
-
-/* define if the compiler has stringstream */
-#undef HAVE_SSTREAM
-
-/* Define to 1 if you have the <stdarg.h> header file. */
-#undef HAVE_STDARG_H
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
-
-/* Define to 1 if you have the <stream.h> header file. */
-#undef HAVE_STREAM_H
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define to 1 if you have the <stropts.h> header file. */
-#undef HAVE_STROPTS_H
-
-/* Define to 1 if you have the `strstr' function. */
-#undef HAVE_STRSTR
-
-/* Define to 1 if you have the `stty' function. */
-#undef HAVE_STTY
-
-/* Define to 1 if you have the <sys/conf.h> header file. */
-#undef HAVE_SYS_CONF_H
-
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
-   */
-#undef HAVE_SYS_DIR_H
-
-/* Define to 1 if you have the <sys/file.h> header file. */
-#undef HAVE_SYS_FILE_H
-
-/* Define to 1 if you have the <sys/ioctl.h> header file. */
-#undef HAVE_SYS_IOCTL_H
-
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
-   */
-#undef HAVE_SYS_NDIR_H
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
-#undef HAVE_SYS_WAIT_H
-
-/* Define to 1 if you have the <termio.h> header file. */
-#undef HAVE_TERMIO_H
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
-
-/* Define to 1 if you have the <varargs.h> header file. */
-#undef HAVE_VARARGS_H
-
-/* Define to 1 if you have the `vprintf' function. */
-#undef HAVE_VPRINTF
-
-/* Define to 1 if you have the <_G_config.h> header file. */
-#undef HAVE__G_CONFIG_H
-
-/* define if can declare inline float abs(float) */
-#undef INLINE_FLOAT_ABS
-
-/* define if can declare inline long abs(long) */
-#undef INLINE_LONG_ABS
-
-/* undefined or ::fabs or std::fabs */
-#undef IVOS_FABS
-
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
-#undef LT_OBJDIR
-
-/* 1 for legacy, undef for NIST (as of 2017), for FARADAY and R */
-#undef LegacyFR
 
 /* define if using mingw */
 #undef MINGW
@@ -256,9 +102,6 @@
 
 /* host triplet */
 #undef NRNHOST
-
-/* cpu type consistent with nrnivmodl */
-#undef NRNHOSTCPU
 
 /* if 1 then dlopen nrnmech instead of special */
 #undef NRNMECH_DLL_STYLE
@@ -361,8 +204,13 @@
  * mesch (and maybe others)
  */
 #if defined(__cplusplus)
+#include <array>
 #include <string_view>
 namespace neuron::config {
+#ifdef USE_PYTHON
+   constexpr std::string_view default_python_executable{R"(@NRN_DEFAULT_PYTHON_EXECUTABLE@)"};
+   constexpr std::array<std::string_view, @NRN_PYTHON_COUNT@> supported_python_versions{@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@};
+#endif
    constexpr std::string_view shared_library_prefix{"@CMAKE_SHARED_LIBRARY_PREFIX@"};
    constexpr std::string_view shared_library_suffix{"@CMAKE_SHARED_LIBRARY_SUFFIX@"};
    constexpr std::string_view system_processor{"@CMAKE_SYSTEM_PROCESSOR@"};

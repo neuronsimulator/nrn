@@ -18,7 +18,6 @@ def test_direct_memory_transfer():
     h.soma.insert("Sample")
 
     h.cvode.use_fast_imem(1)
-    h.cvode.cache_efficient(1)
 
     v = h.Vector()
     v.record(h.soma(0.5)._ref_v, sec=h.soma)

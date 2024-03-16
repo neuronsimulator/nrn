@@ -23,8 +23,9 @@ jobs:
     name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
     outputs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
+      rel_tag: ${{ env.REL_TAG }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
             ref: ${{ env.REL_BRANCH }}
@@ -49,7 +50,7 @@ jobs:
           name: Release ${{ env.REL_TAG }}
           prerelease: true
 
-  full-src-package:
+  nrn-full-src-package:
     runs-on: ubuntu-latest
     needs: tag-n-release
     steps:
@@ -71,18 +72,20 @@ jobs:
         cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
         make nrnversion_h VERBOSE=1
 
-    - name: Create full-src-package
+    - name: Create nrn-full-src-package
       id: tar
       run: |
-        tar -czvf ${REL_TAG}.tar.gz nrn
-        echo "asset_file=${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
+        tar -czvf nrn-full-src-package-${REL_TAG}.tar.gz nrn
+        echo "asset_file=nrn-full-src-package-${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
 
-    - name: Upload full-src-package to release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ needs.tag-n-release.outputs.release_url }}
-        asset_name: ${{ github.job }}-${{ steps.tar.outputs.asset_file }}
-        asset_content_type: application/gzip
-        asset_path: ${{ steps.tar.outputs.asset_file }}
+    - name: Upload nrn-full-src-package to release
+      run: |
+        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${{ steps.tar.outputs.asset_file }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  windows-installer:
+    needs: tag-n-release
+    uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
+    with:
+      tag: ${{ needs.tag-n-release.outputs.rel_tag }}

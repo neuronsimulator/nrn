@@ -2,6 +2,8 @@
 # Set various variables used in template files
 # =============================================================================
 # TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
+
 set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
 
 set(nrndef_unix "//")
@@ -24,6 +26,7 @@ set(CMAKE_INSTALL_BINDIR bin)
 set(CMAKE_INSTALL_LIBDIR lib)
 set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
+set(CMAKE_INSTALL_DATADIR_NMODL share/nmodl)
 
 # =============================================================================
 # Include nrnivmodl makefile generator
@@ -34,12 +37,13 @@ include(CMakeListsNrnMech)
 # nrnmech_makefile (based on coreneuron Configure templates)
 # =============================================================================
 nrn_configure_file(nrngui bin)
-configure_file(sortspike sortspike COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/sortspike COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
+string(JOIN " " NRN_PYTHON_VERSIONS_STRING ${NRN_PYTHON_VERSIONS})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh
+               @ONLY)
 
-# if running from the build folder (e.g. make test) may need this.
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh DESTINATION ${PROJECT_BINARY_DIR}/bin)
 # Make sure nrnivmodl and neurondemo are executable in the build folder, so we can execute it to
 # prepare test files. This can be done more elegantly in newer CMake versions; v3.19+ have
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
@@ -67,7 +71,6 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(
-  PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh ${CMAKE_CURRENT_BINARY_DIR}/sortspike
-           ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
-           ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
+                 ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

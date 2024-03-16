@@ -9,7 +9,7 @@ The build will be universal2 and work on arm64 and x86_64 architectures
 (if the pythons used are themselves, universal2).
 Preparing your Mac development environment for correct functioning of
 the script requires installing a few extra [Dependencies](#Dependencies) beyond the
-[normal user source build](./install_instructions.html#Mac-OS-Depend),
+[normal user source build](./install_instructions.md#Mac-OS-Depend),
 obtaining an Apple Developer Program membership,
 and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
@@ -17,7 +17,7 @@ On an Apple M1 or x86_64,
 the script, by default, creates, e.g.,
 ```nrn-8.0a-726-gb9a811a32-macosx-11-universal2-py-38-39-310.pkg```
 where the information between nrn and macosx comes from ```git describe```,
-the number after macos refers to the ```MACOSX_DEPLOYMENT_TARGET=11```
+the number after macosx refers to the ```MACOSX_DEPLOYMENT_TARGET=11```
 the next item(s) before py indicate the architectures on which
 the program can run (i.e. ```arm64```, ```x86_64```, or ```universal2```
 for both)
@@ -32,7 +32,7 @@ the same MACOSX_DEPLOYMENT_TARGET. You can check both of these with
 
 A space separated list of python executable arguments can be used in
 place of the internal default lists. ```$NRN_SRC``` is the location of the
-repository, default ```$HOME/neuron/nrn```. The script makes sure ```$NRN_SRC/build```
+repository, default is the current working directory (hopefully you launch at the location of this script, e.g. ```$HOME/neuron/nrn```). The script makes sure ```$NRN_SRC/build```
 exists and uses that folder to configure and build the software. The
 software is installed in ```/Applications/NEURON```.
 
@@ -50,9 +50,12 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 ```
+[^1]
+[^1]: NRN_RX3D_OPT_LEVEL=2 can build VERY slowly (cython translated cpp file can take a half hour or more). So for testing, we generally copy the script to temp.sh and modify to NRN_RX3D_OPT_LEVEL=0
+
 The default variables above will be
 ```
-pythons="python3.8;python3.9;python3.10"
+pythons="python3.8;python3.9;python3.10;python3.11"
 archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 ```
 
@@ -62,7 +65,11 @@ The MPI library does not have to be universal if configuring with
 ```-DNRN_ENABLE_MPI_DYNAMIC=ON``` as the library is not linked against
 during the build.
 
-```make -j install``` is used to build and install in ```/Applications/NEURON```
+```make -j install``` [^2] is used to build and install in ```/Applications/NEURON```
+
+[^2]: Instead of make, the script uses Ninja. ```ninja install``` and the cmake line begins with ```cmake .. -G Ninja ...```
+
+Runs some basic tests to verify a successful build
 
 ```make macpkg``` ( see ```src/mac/CMakeLists.txt``` ) is used to:
 
@@ -90,42 +97,47 @@ during the build.
 
 - request Apple to notarize NEURON.pkg ```src/macnrn_notarize.sh```
 
+  If notarization succeeds it will finish with a few lines of the form
+  ```
+  Current status: Accepted........Processing complete
+    id: bda82fa9-e0ab-4f86-aad8-3fee1d8c2369
+    status: Accepted
+  ```
+  and staple the package.
+
   If notarizaton fails, it is occasionally due to Apple
   changing the contracts and demanding that 
   "You must first sign the relevant contracts online. (1048)". In that
   case, go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
-  to accept the legal docs.  For other notarization failures, one must consult
-  the LogFileURL which can be obtained with
-  ```
-  % xcrun altool  --notarization-info $RequestIdentifier \
-      --username "michael.hines@yale.edu" \
-      --password "`cat ~/.ssh/notarization-password`"
-  No errors getting notarization info.
+  to accept the legal docs an try again. For other notarization failures, one must consult the LogFileURL which can be obtained with [^3]
+  [^3]: altool has been replaced by notarytool for purposes of notarization. See
+  https://developer.apple.com/documentation/technotes/tn3147-migrating-to-the-latest-notarization-tool
+  and ```nrn/src/mac/nrn_notarize.sh```
 
-            Date: 2022-01-02 23:38:12 +0000
-            Hash: 7254157952d4f3573c2804879cf6da8d...
-     LogFileURL: https://osxapps-ssl.itunes.apple.com/itunes-assets...
-     RequestUUID: 152f0f0e-af58-4d22-b291-6a441825dd20
-          Status: invalid
-     Status Code: 2
-  Status Message: Package Invalid
   ```
-  where RequestIdentifer (the RequestUUID) appears in the email sent
-  back in response to the notarization request.
+  % xcrun notarytool log \
+    --apple-id "$apple_id" \
+    --team-id "$team_id" \
+    --password "$app_specific_password" \
+    "$id"
+  ```
+  where $id was printed by the notarization request. The apple_id, team_id, and
+  app_specfic_password are set by the script to the contents of the files
+  ```
+  $HOME/.ssh/apple-id
+  $HOME/.ssh/apple-team-id
+  $HOME/.ssh/apple-notarization-password
+  ```
+  
 
 The script ends by printing:
 ```
-  Until we figure out how to automatically staple the notarization
-  the following two commands must be executed manually.
-  xcrun stapler staple $PACKAGE_FILE_NAME
   cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
+  Manually upload $HOME/nrn-9.0a-88-gc6d8b9af6-macosx-10.15-universal2-py-39-310-311.pkg to github
 ```
-where the variables are filled out and can be copy/pasted to your
-terminal after Apple sends an email declaring that notarization was successful.
 
-The email from Apple usually takes just a few minutes but can be hours.
 I've been uploading the ```$PACKAGE_FULL_NAME``` as an artifact for a
-Release version from https://github.com/neuronsimulatior/nrn by choosing
+Release version from https://github.com/neuronsimulator/nrn by choosing
 Releases, choosing the proper Release tag (e.g. Release 8.0a), Edit release,
 and clicking in the "Attach binaries ..." near the bottom of the page.
 
@@ -163,7 +175,7 @@ can be found at [python.org](http://python.org/Downloads/macOS) at least for
 
   - Python 3.8 is already installed as /usr/bin/python3 and is universal2.
 
-  - The [normal source build](./install_instructions.html#Mac-OS-Depend)
+  - The [normal source build](./install_instructions.md#Mac-OS-Depend)
     explains how to install brew and add it to the PATH.
     ```bash
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

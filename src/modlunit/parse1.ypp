@@ -102,6 +102,7 @@ extern int lexcontext;
 %type	<qp>	initstmt bablk
 %token  <qp>    CONDUCTANCE
 %type   <qp>    conducthint
+%token  <qp>    RANDOM
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -602,7 +603,7 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 		  while (q1 != netreceive_arglist && q2 != args) {
 			Symbol* s1 = SYM(q1);
 			Symbol* s2 = SYM(q2);
-			if (s1->u.str) { /* s2 must be nil or same */
+			if (s1->u.str) { /* s2 must be nullptr or same */
 				if (s2->u.str) {
 					if (strcmp(s1->u.str, s2->u.str) != 0) {
 						diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
@@ -610,7 +611,7 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 				}else{
 					s2->u.str = s1->u.str;
 				}
-			}else{ /* s2 must be nil */
+			}else{ /* s2 must be nullptr */
 				if (s2->u.str) {
 					diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
 				}
@@ -751,6 +752,8 @@ nrnstmt: /*nothing*/
 	| nrnstmt ELECTRODE_CURRENT nrnlist
 		{ P1{nrn_list($2,$3);}}
 	| nrnstmt RANGE nrnlist
+		{ P1{nrn_list($2, $3);}}
+	| nrnstmt RANDOM nrnlist
 		{ P1{nrn_list($2, $3);}}
 	| nrnstmt GLOBAL nrnlist
 		{ P1{nrn_list($2, $3);}}

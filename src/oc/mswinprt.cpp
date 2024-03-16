@@ -2,7 +2,9 @@
 
 #ifdef MINGW
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -13,10 +15,6 @@
 #include "../mswin/extra/d2upath.cpp"
 
 #include "gui-redirect.h"
-
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 extern char* neuron_home;
 extern char* neuron_home_dos;
@@ -150,11 +148,9 @@ void hoc_win_exec(void) {
 
 void hoc_winio_show(int b) {}
 
-#if !defined(__MWERKS__)
 int getpid() {
     return 1;
 }
-#endif
 
 void hoc_Plt() {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);

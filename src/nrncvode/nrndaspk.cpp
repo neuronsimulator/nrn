@@ -11,6 +11,7 @@
 #include "cvodeobj.h"
 #include "nrndaspk.h"
 #include "netcvode.h"
+#include "nrn_ansi.h"
 #include "ida/ida.h"
 #include "ida/ida_impl.h"
 #include "mymath.h"
@@ -29,8 +30,6 @@ double Daspk::dteps_;
 
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
-extern void nrn_rhs(NrnThread*);
-extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
 // this is private in ida.cpp but we want to check if our initialization
@@ -145,8 +144,8 @@ Daspk::Daspk(Cvode* cv, int neq) {
     delta_ = cv->nvnew(neq);
     parasite_ = cv->nvnew(neq);
     use_parasite_ = false;
-    spmat_ = nil;
-    mem_ = nil;
+    spmat_ = nullptr;
+    mem_ = nullptr;
 }
 
 Daspk::~Daspk() {
@@ -192,17 +191,17 @@ int Daspk::init_failure_style_;
 int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
 
-static void* do_ode_thread(NrnThread* nt) {
+static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
+    auto* const nt = &ntr;
     int i;
     Cvode* cv = thread_cv;
     nt->_t = cv->t_;
-    cv->do_ode(nt);
+    cv->do_ode(sorted_token, ntr);
     CvodeThreadData& z = cv->ctd_[nt->id];
     double* yp = cv->n_vector_data(nvec_yp, nt->id);
     for (i = z.neq_v_; i < z.nvsize_; ++i) {
         yp[i] = *(z.pvdot_[i]);
     }
-    return 0;
 }
 
 static double check(double t, Daspk* ida) {
@@ -271,7 +270,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
     }
     thread_cv = cv_;
     nvec_yp = yp_;
-    nrn_multithread_job(do_ode_thread);
+    nrn_multithread_job(nrn_ensure_model_data_are_sorted(), do_ode_thread);
     ida_init();
     t = cv_->t_;
 #if 1
@@ -349,13 +348,12 @@ int Daspk::advance_tn(double tstop) {
 int Daspk::interpolate(double tt) {
     // printf("Daspk::interpolate %.15g\n", tt);
     assert(tt >= cv_->t0_ && tt <= cv_->tn_);
-    IDASetStopTime(mem_, tt);
-    int ier = IDASolve(mem_, tt, &cv_->t_, cv_->y_, yp_, IDA_NORMAL);
+    int ier = IDAGetSolution(mem_, tt, cv_->y_, yp_);
     if (ier < 0) {
         Printf("DASPK interpolate error\n");
         return ier;
     }
-    assert(MyMath::eq(tt, cv_->t_, NetCvode::eps(cv_->t_)));
+    cv_->t_ = tt;
     // interpolation does not call res. So we have to.
     res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
     // if(MyMath::eq(t, cv_->t_, NetCvode::eps(cv_->t_))) {
@@ -401,15 +399,16 @@ void Cvode::daspk_scatter_y(double* y, int tid) {
     // not needed since the matrix solve is already with respect to vi,vx
     // in all cases. (i.e. the solution vector is in the right hand side
     // and refers to vi, vx.
-    scatter_y(y, tid);
+    scatter_y(nrn_ensure_model_data_are_sorted(), y, tid);
     // transform the vm+vext to vm
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        assert(z.cmlext_->ml.size() == 1);
+        Memb_list* ml = &z.cmlext_->ml[0];
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
-            NODEV(nd) -= nd->extnode->v[0];
+            nd->v() -= nd->extnode->v[0];
         }
     }
 }
@@ -427,7 +426,8 @@ void Cvode::daspk_gather_y(double* y, int tid) {
     // transform vm to vm+vext
     CvodeThreadData& z = ctd_[tid];
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        assert(z.cmlext_->ml.size() == 1);
+        Memb_list* ml = &z.cmlext_->ml[0];
         int i, n = ml->nodecount;
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
@@ -464,8 +464,9 @@ for (i=0; i < z.nvsize_; ++i) {
     daspk_scatter_y(y, nt->id);  // vi, vext, channel states, linmod non-node y.
     // rhs of cy' = f(y)
     play_continuous_thread(tt, nt);
-    nrn_rhs(nt);
-    do_ode(nt);
+    auto const sorted_token = nrn_ensure_model_data_are_sorted();
+    nrn_rhs(sorted_token, *nt);
+    do_ode(sorted_token, *nt);
     // accumulate into delta
     gather_ydot(delta, nt->id);
 
@@ -493,71 +494,70 @@ for (i=0; i < z.nvsize_; ++i) {
     //	assert(use_sparse13 == true && nlayer <= 1);
     assert(use_sparse13 == true);
     if (z.cmlcap_) {
-        Memb_list* ml = z.cmlcap_->ml;
+        assert(z.cmlcap_->ml.size() == 1);
+        Memb_list* ml = &z.cmlcap_->ml[0];
         int n = ml->nodecount;
-        double* p = NULL;
-        if (nt->_nrn_fast_imem) {
-            p = nt->_nrn_fast_imem->_nrn_sav_rhs;
-        }
+        auto const vec_sav_rhs = nt->node_sav_rhs_storage();
         for (i = 0; i < n; ++i) {
-            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_ - 1;
             Extnode* nde = nd->extnode;
             double cdvm;
             if (nde) {
-                cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j + 1]);
+                cdvm = 1e-3 * ml->data(i, 0) * (yprime[j] - yprime[j + 1]);
                 delta[j] -= cdvm;
                 delta[j + 1] += cdvm;
                 // i_cap
-                cd[1] = cdvm;
+                ml->data(i, 1) = cdvm;
 #if I_MEMBRANE
                 // add i_cap to i_ion which is in sav_g
                 // this will be copied to i_membrane below
-                nde->param[3 + 3 * nlayer] += cdvm;
+                *nde->param[neuron::extracellular::sav_rhs_index_ext()] += cdvm;
 #endif
             } else {
-                cdvm = 1e-3 * cd[0] * yprime[j];
+                cdvm = 1e-3 * ml->data(i, 0) * yprime[j];
                 delta[j] -= cdvm;
-                cd[1] = cdvm;
+                ml->data(i, 1) = cdvm;
             }
-            if (p) {
+            if (vec_sav_rhs) {
                 int i = nd->v_node_index;
-                p[i] += cdvm;
-                p[i] *= NODEAREA(nd) * 0.01;
+                vec_sav_rhs[i] += cdvm;
+                vec_sav_rhs[i] *= NODEAREA(nd) * 0.01;
             }
         }
     }
     // See nrnoc/excelln.cpp for location of cx.
     if (z.cmlext_) {
-        Memb_list* ml = z.cmlext_->ml;
+        assert(z.cmlext_->ml.size() == 1);
+        Memb_list* ml = &z.cmlext_->ml[0];
         int n = ml->nodecount;
         for (i = 0; i < n; ++i) {
-            double* cd = ml->_data[i];
             Node* nd = ml->nodelist[i];
             int j = nd->eqn_index_;
 #if EXTRACELLULAR
 #if I_MEMBRANE
             // i_membrane = sav_rhs --- even for zero area nodes
-            cd[1 + 3 * nlayer] = cd[3 + 3 * nlayer];
+            ml->data(i, neuron::extracellular::i_membrane_index) =
+                ml->data(i, neuron::extracellular::sav_rhs_index);
 #endif /*I_MEMBRANE*/
-            if (nlayer == 1) {
+            if (nrn_nlayer_extracellular == 1) {
                 // only works for one layer
                 // otherwise loop over layer,
                 // xc is (pd + 2*(nlayer))[layer]
                 // and deal with yprime[i+layer]-yprime[i+layer+1]
-                delta[j] -= 1e-3 * cd[2] * yprime[j];
+                delta[j] -= 1e-3 *
+                            ml->data(i, neuron::extracellular::xc_index, 0 /* 0th/only layer */) *
+                            yprime[j];
             } else {
-                int k, jj;
-                double x;
-                k = nlayer - 1;
-                jj = j + k;
-                delta[jj] -= 1e-3 * cd[2 * nlayer + k] * (yprime[jj]);
-                for (k = nlayer - 2; k >= 0; --k) {
+                int k = nrn_nlayer_extracellular - 1;
+                int jj = j + k;
+                delta[jj] -= 1e-3 * ml->data(i, neuron::extracellular::xc_index, k) * (yprime[jj]);
+                for (k = nrn_nlayer_extracellular - 2; k >= 0; --k) {
                     // k=0 refers to stuff between layer 0 and 1
                     // j is for vext[0]
                     jj = j + k;
-                    x = 1e-3 * cd[2 * nlayer + k] * (yprime[jj] - yprime[jj + 1]);
+                    auto const x = 1e-3 * ml->data(i, neuron::extracellular::xc_index, k) *
+                                   (yprime[jj] - yprime[jj + 1]);
                     delta[jj] -= x;
                     delta[jj + 1] += x;  // last one in iteration is nlayer-1
                 }
@@ -583,7 +583,7 @@ for (i=0; i < z.nvsize_; ++i) {
             delta[i] -= tps[i] * fac;
         }
     }
-    before_after(z.after_solve_, nt);
+    before_after(sorted_token, z.after_solve_, nt);
 #if 0
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
 for (i=0; i < z.nvsize_; ++i) {
@@ -621,7 +621,8 @@ printf("\n");
     _nt->_vcv = this;
     daspk_scatter_y(y, _nt->id);  // I'm not sure this is necessary.
     if (solve_state_ == INVALID) {
-        nrn_lhs(_nt);  // designed to setup M*[dvm+dvext, dvext, dy] = ...
+        nrn_lhs(nrn_ensure_model_data_are_sorted(),
+                *_nt);  // designed to setup M*[dvm+dvext, dvext, dy] = ...
         solve_state_ = SETUP;
     }
     if (solve_state_ == SETUP) {
@@ -647,7 +648,7 @@ for (i=0; i < neq_v_; ++i) {
 }
 #endif
     solve_state_ = INVALID;  // but not if using sparse13
-    solvemem(_nt);
+    solvemem(nrn_ensure_model_data_are_sorted(), _nt);
     gather_ydot(b, _nt->id);
     // the ode's of the form m' = (minf - m)/mtau in model descriptions compute
     // b = b/(1 + dt*mtau) since cvode required J = 1 - gam*df/dy

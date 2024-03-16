@@ -20,7 +20,6 @@ access s1.sec	// soma becomes the default section
 #include "parse.hpp"
 #include "hoc_membf.h"
 #include "oc_ansi.h"
-#include <nrnpython_config.h>
 
 extern int hoc_return_type_code;
 
@@ -156,7 +155,7 @@ static double s_rename(void* v) {
 
     if (size == 0) {
         pitm[index] = qsec;
-        sec->prop->dparam[0] = sym;
+        sec->prop->dparam[0] = {neuron::container::do_not_search, sym};
         sec->prop->dparam[5] = index;
         sec->prop->dparam[6] = static_cast<Object*>(nullptr);
         OPSECITM(sym)[0] = qsec;

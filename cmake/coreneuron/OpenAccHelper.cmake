@@ -30,9 +30,6 @@ endfunction()
 # Prepare compiler flags for GPU target
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
-  # Get the NVC++ version number for use in nrnivmodl_core_makefile.in
-  cnrn_parse_version(${CMAKE_CXX_COMPILER_VERSION} OUTPUT_MAJOR_MINOR
-                     CORENRN_NVHPC_MAJOR_MINOR_VERSION)
   # Enable cudaProfiler{Start,Stop}() behind the Instrumentor::phase... APIs
   list(APPEND CORENRN_COMPILE_DEFS CORENEURON_CUDA_PROFILING CORENEURON_ENABLE_GPU)
   # Plain C++ code in CoreNEURON may need to use CUDA runtime APIs for, for example, starting and
@@ -133,11 +130,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # "include/Random123/features/sse.h", warning #550-D: variable "edx" was set but never used
     # ~~~
     set(CORENEURON_CXX_WARNING_SUPPRESSIONS --diag_suppress=111,550)
-    # This one can be a bit more targeted
-    # ~~~
-    # "boost/test/unit_test_log.hpp", warning #612-D: overloaded virtual function "..." is only partially overridden in class "..."
-    # ~~~
-    set(CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS --diag_suppress=612)
     # Extra suppressions for .cpp files translated from .mod files.
     # ~~~
     # "x86_64/corenrn/mod2c/pattern.cpp", warning #161-D: unrecognized #pragma

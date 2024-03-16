@@ -18,16 +18,12 @@ extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
 
-PVoid2Int CellGroup::artdata2index_;
 Deferred_Type2ArtMl CellGroup::deferred_type2artml_;
 int* CellGroup::has_net_event_;
 
 CellGroup::CellGroup() {
     n_output = n_real_output = n_presyn = n_netcon = n_mech = ntype = 0;
     group_id = -1;
-    output_gid = output_vindex = 0;
-    netcons = 0;
-    output_ps = 0;
     ndiam = 0;
     netcon_srcgid = netcon_pnttype = netcon_pntindex = 0;
     datumindices = 0;
@@ -39,10 +35,6 @@ CellGroup::CellGroup() {
 }
 
 CellGroup::~CellGroup() {
-    if (output_gid)
-        delete[] output_gid;
-    if (output_vindex)
-        delete[] output_vindex;
     if (netcon_srcgid)
         delete[] netcon_srcgid;
     if (netcon_pnttype)
@@ -51,17 +43,13 @@ CellGroup::~CellGroup() {
         delete[] netcon_pntindex;
     if (datumindices)
         delete[] datumindices;
-    if (netcons)
-        delete[] netcons;
-    if (output_ps)
-        delete[] output_ps;
     if (ml_vdata_offset)
         delete[] ml_vdata_offset;
     delete[] type2ml;
 }
 
 
-CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
+void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     for (int i = 0; i < nrn_nthread; ++i) {
         auto& nt = nrn_threads[i];
         cgs[i].n_real_cell = nt.ncell;  // real cell count
@@ -75,9 +63,13 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             hoc_Item* q;
             ITERATE(q, pth) {
                 auto* ps = static_cast<PreSyn*>(VOIDITM(q));
-                auto& pv = ps->thvar_;
-                assert(pv);
-                if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
+                // The PreSyn should refer to a valid Node
+                assert(ps->thvar_);
+                // The old code says this should always be a voltage, and
+                // voltage is the thing we are moving to a new data structure,
+                // so we should not be hitting the backwards-compatibility layer
+                if (!ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
+                        neuron::model().node_data())) {
                     hoc_execerr_ext("NetCon range variable reference source not a voltage");
                 }
                 if (ps->gid_ < 0) {
@@ -113,17 +105,12 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
         }
         cgs[i].n_presyn = npre;
 
-        cgs[i].output_ps = new PreSyn*[npre];
-        cgs[i].output_gid = new int[npre];
-        cgs[i].output_vindex = new int[npre];
         // in case some cells do not have voltage presyns (eg threshold detection
         // computed from a POINT_PROCESS NET_RECEIVE with WATCH and net_event)
         // initialize as unused.
-        for (int j = 0; j < npre; ++j) {
-            cgs[i].output_ps[j] = NULL;
-            cgs[i].output_gid[j] = -1;
-            cgs[i].output_vindex[j] = -1;
-        }
+        cgs[i].output_ps.resize(npre);
+        cgs[i].output_gid.resize(npre, -1);
+        cgs[i].output_vindex.resize(npre, -1);
 
         // fill in the output_ps, output_gid, and output_vindex for the real cells.
         npre = 0;
@@ -131,10 +118,16 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             hoc_Item* q;
             ITERATE(q, pth) {
                 auto* ps = static_cast<PreSyn*>(VOIDITM(q));
-                auto& pv = ps->thvar_;
-                cgs[i].output_ps[npre] = ps;
-                cgs[i].output_gid[npre] = ps->output_index_;
-                cgs[i].output_vindex[npre] = pv - nt._actual_v;
+                assert(ps->thvar_);
+                assert(ps->thvar_.refers_to_a_modern_data_structure());
+                assert(ps->thvar_.refers_to<neuron::container::Node::field::Voltage>(
+                    neuron::model().node_data()));
+                cgs[i].output_ps.at(npre) = ps;
+                cgs[i].output_gid.at(npre) = ps->output_index_;
+                // Convert back to an old-style index, i.e. the index of the
+                // voltage within this NrnThread after sorting
+                cgs[i].output_vindex.at(npre) = ps->thvar_.current_row() -
+                                                cache_token.thread_cache(i).node_data_offset;
                 ++npre;
             }
         }
@@ -147,25 +140,16 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             int type = mla[j].first;
             Memb_list* ml = mla[j].second;
             if (nrn_has_net_event(type)) {
-                for (int j = 0; j < ml->nodecount; ++j) {
-                    auto* pnt = ml->pdata[j][1].get<Point_process*>();
-                    PreSyn* ps = (PreSyn*) pnt->presyn_;
-                    cgs[i].output_ps[npre] = ps;
-                    long agid = -1;
-                    if (nrn_is_artificial_[type]) {
-                        // static_cast<long> ensures the RHS is calculated with
-                        // `long` precision, not `int` precision. This lets us
-                        // check for overflow below.
-                        agid = -(type +
-                                 1000 * static_cast<long>(nrncore_art2index(pnt->prop->param)));
-                    } else {  // POINT_PROCESS with net_event
-                        int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->_data[0];
-                        double* d2 = pnt->prop->param;
-                        assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        long ix{(d2 - d1) / sz};
-                        agid = -(type + 1000 * ix);
-                    }
+                for (int instance = 0; instance < ml->nodecount; ++instance) {
+                    auto* const pnt = ml->pdata[instance][1].get<Point_process*>();
+                    auto* const ps = static_cast<PreSyn*>(pnt->presyn_);
+                    auto const other_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
+                    assert(other_thread == i);
+                    cgs[i].output_ps.at(npre) = ps;
+                    auto const offset = cache_token.thread_cache(i).mechanism_offset.at(type);
+                    auto const global_row = pnt->prop->id().current_row();
+                    assert(global_row >= offset);
+                    long const agid = -(type + 1000 * static_cast<long>(global_row - offset));
                     if (ps) {
                         if (ps->output_index_ >= 0) {  // has gid
                             cgs[i].output_gid[npre] = ps->output_index_;
@@ -215,9 +199,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
     // use the Hoc NetCon object list to segregate according to threads
     // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
     // netcon_pntindex (and, if nrn_nthread > 1, netcon_negsrcgid_tid).
-    CellGroup::mk_cgs_netcon_info(cgs);
-
-    return cgs;
+    CellGroup::mk_cgs_netcon_info(cache_token, cgs);
 }
 
 void CellGroup::datumtransform(CellGroup* cgs) {
@@ -264,7 +246,6 @@ void CellGroup::datumtransform(CellGroup* cgs) {
 
 void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
     NrnThread& nt = nrn_threads[ith];
-    double* a = nt._actual_area;
     int nnode = nt.end;
     int mcnt = ml->nodecount;
     int dsize = bbcore_dparam_size[di.type];
@@ -277,7 +258,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     int vdata_size = 0;
     for (int i = 0; i < dsize; ++i) {
         int* ds = memb_func[di.type].dparam_semantics;
-        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == 0) {
+        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == -11 || ds[i] == 0) {
             ++vdata_size;
         }
     }
@@ -287,41 +268,25 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
         // Prop* datum instance arrays are not in cache efficient order
         // ie. ml->pdata[i] are not laid out end to end in memory.
         // Also, ml->_data for artificial cells is not in cache efficient order
-        // but in the artcell case there are no pointers to doubles and
-        // the _actual_area pointer should be left unfilled.
+        // but in the artcell case there are no pointers to doubles
         Datum* dparam = ml->pdata[i];
         int offset = i * dsize;
         int vdata_offset = i * vdata_size;
         for (int j = 0; j < dsize; ++j) {
             int etype = -100;  // uninterpreted
             int eindex = -1;
-            if (dmap[j] == -1) {  // double* into _actual_area
+            if (dmap[j] == -1) {  // used to be a double* into _actual_area, now handled by soa<...>
                 if (isart) {
                     etype = -1;
                     eindex = -1;  // the signal to ignore in bbcore.
                 } else {
-                    const auto* dpj = dparam[j].get<double*>();
-                    if (dpj == &ml->nodelist[i]->_area) {
-                        // possibility it points directly into Node._area instead of
-                        // _actual_area. For our purposes we need to figure out the
-                        // _actual_area index.
-                        etype = -1;
-                        eindex = ml->nodeindices[i];
-                        assert(a[ml->nodeindices[i]] == *dpj);
-                    } else {
-                        if (dpj < a || dpj >= (a + nnode)) {
-                            printf("%s dparam=%p a=%p a+nnode=%p j=%d\n",
-                                   memb_func[di.type].sym->name,
-                                   dpj,
-                                   a,
-                                   a + nnode,
-                                   j);
-                            abort();
-                        }
-                        assert(dpj >= a && dpj < (a + nnode));
-                        etype = -1;
-                        eindex = dpj - a;
-                    }
+                    auto area = static_cast<neuron::container::data_handle<double>>(dparam[j]);
+                    assert(area.refers_to_a_modern_data_structure());
+                    auto const cache_token = nrn_ensure_model_data_are_sorted();
+                    etype = -1;
+                    // current_row() refers to the global Node data, but we need
+                    // to set eindex to something local to the NrnThread
+                    eindex = area.current_row() - cache_token.thread_cache(ith).node_data_offset;
                 }
             } else if (dmap[j] == -2) {  // this is an ion and dparam[j][0].i is the iontype
                 etype = -2;
@@ -346,6 +311,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -10) {  // fornetcon
                 etype = -10;
                 eindex = 0;
+            } else if (dmap[j] == -11) {  // random
+                etype = -11;
+                eindex = vdata_offset++;
             } else if (dmap[j] == -9) {  // diam
                 cg.ndiam = nt.end;
                 etype = -9;
@@ -355,19 +323,19 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 // Need to determine this node and then simple to search its
                 // mechanism list for MORPHOLOGY and then know the diam.
                 Node* nd = ml->nodelist[i];
-                double* pdiam = NULL;
+                neuron::container::data_handle<double> pdiam{};
                 for (Prop* p = nd->prop; p; p = p->next) {
                     if (p->_type == MORPHOLOGY) {
-                        pdiam = p->param;
+                        pdiam = p->param_handle(0);
                         break;
                     }
                 }
-                assert(dparam[j].get<double*>() == pdiam);
+                assert(static_cast<neuron::container::data_handle<double>>(dparam[j]) == pdiam);
                 eindex = ml->nodeindices[i];
             } else if (dmap[j] == -5) {  // POINTER
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
-                double* pd = dparam[j].get<double*>();
+                auto const pd = static_cast<neuron::container::data_handle<double>>(dparam[j]);
                 nrn_dblpntr2nrncore(pd, nt, etype, eindex);
                 if (etype == 0) {
                     fprintf(stderr,
@@ -377,34 +345,13 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 assert(etype != 0);
                 // pointer into one of the tml types?
             } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
-                Memb_list* eml = cg.type2ml[dmap[j]];
+                etype = dmap[j];
+                Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
                 auto* const pval = dparam[j].get<double*>();
-                if (pval < eml->_data[0]) {
-                    printf("%s dparam=%p data=%p j=%d etype=%d %s\n",
-                           memb_func[di.type].sym->name,
-                           pval,
-                           eml->_data[0],
-                           j,
-                           dmap[j],
-                           memb_func[dmap[j]].sym->name);
-                    abort();
-                }
-                assert(pval >= eml->_data[0]);
-                etype = dmap[j];
-                if (pval >= (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount))) {
-                    printf("%s dparam=%p data=%p j=%d psize=%d nodecount=%d etype=%d %s\n",
-                           memb_func[di.type].sym->name,
-                           pval,
-                           eml->_data[0],
-                           j,
-                           nrn_prop_param_size_[etype],
-                           eml->nodecount,
-                           etype,
-                           memb_func[etype].sym->name);
-                }
-                assert(pval < (eml->_data[0] + (nrn_prop_param_size_[etype] * eml->nodecount)));
-                eindex = pval - eml->_data[0];
+                auto const legacy_index = eml->legacy_index(pval);
+                assert(legacy_index >= 0);
+                eindex = legacy_index;
             } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
@@ -424,7 +371,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
 // use the Hoc NetCon object list to segregate according to threads
 // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
 // netcon_pntindex (called at end of mk_cellgroups);
-void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
+void CellGroup::mk_cgs_netcon_info(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     // count the netcons for each thread
     int* nccnt = new int[nrn_nthread];
     for (int i = 0; i < nrn_nthread; ++i) {
@@ -446,7 +393,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
     // allocate
     for (int i = 0; i < nrn_nthread; ++i) {
         cgs[i].n_netcon = nccnt[i];
-        cgs[i].netcons = new NetCon*[nccnt[i] + 1];
+        cgs[i].netcons.resize(nccnt[i] + 1);
         cgs[i].netcon_srcgid = new int[nccnt[i] + 1];
         cgs[i].netcon_pnttype = new int[nccnt[i] + 1];
         cgs[i].netcon_pntindex = new int[nccnt[i] + 1];
@@ -468,19 +415,11 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
 
         if (nc->target_) {
             int type = nc->target_->prop->_type;
+            auto const target_thread = static_cast<NrnThread*>(nc->target_->_vnt)->id;
+            assert(target_thread == ith);
             cgs[ith].netcon_pnttype[i] = type;
-            if (nrn_is_artificial_[type]) {
-                cgs[ith].netcon_pntindex[i] = nrncore_art2index(nc->target_->prop->param);
-            } else {
-                // cache efficient so can calculate index from pointer
-                Memb_list* ml = cgs[ith].type2ml[type];
-                int sz = nrn_prop_param_size_[type];
-                double* d1 = ml->_data[0];
-                double* d2 = nc->target_->prop->param;
-                assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                int ix = (d2 - d1) / sz;
-                cgs[ith].netcon_pntindex[i] = ix;
-            }
+            cgs[ith].netcon_pntindex[i] = nc->target_->prop->id().current_row() -
+                                          cache_token.thread_cache(ith).mechanism_offset.at(type);
         } else {
             cgs[ith].netcon_pnttype[i] = 0;
             cgs[ith].netcon_pntindex[i] = -1;
@@ -504,21 +443,18 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
                                 NULL);
                         }
                     }
-                    Point_process* pnt = (Point_process*) ps->osrc_->u.this_pointer;
+                    auto* const pnt = static_cast<Point_process*>(ps->osrc_->u.this_pointer);
                     int type = pnt->prop->_type;
-                    if (nrn_is_artificial_[type]) {
-                        int ix = nrncore_art2index(pnt->prop->param);
-                        cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    } else {
-                        assert(nrn_has_net_event(type));
-                        Memb_list* ml = cgs[ith].type2ml[type];
-                        int sz = nrn_prop_param_size_[type];
-                        double* d1 = ml->_data[0];
-                        double* d2 = pnt->prop->param;
-                        assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        int ix = (d2 - d1) / sz;
-                        cgs[ith].netcon_srcgid[i] = -(type + 1000 * ix);
-                    }
+                    auto const src_thread = static_cast<NrnThread*>(pnt->_vnt)->id;
+                    auto const current = pnt->prop->id().current_row();
+                    auto const offset =
+                        cache_token.thread_cache(src_thread).mechanism_offset.at(type);
+                    // the resulting GID is different for "the same" pnt/source
+                    // if the number of threads changes, because it encodes the
+                    // offset of the source process into the thread that it
+                    // lives in
+                    cgs[ith].netcon_srcgid[i] = -(type +
+                                                  1000 * static_cast<long>(current - offset));
                 } else {
                     cgs[ith].netcon_srcgid[i] = -1;
                 }
@@ -542,7 +478,7 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
 // so we assume there will be no POINTER usage into that data.
 // Also, note that ml.nodecount for artificial cell does not refer to
 // a list of voltage nodes but just to the count of instances.
-void CellGroup::mk_tml_with_art(CellGroup* cgs) {
+void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, CellGroup* cgs) {
     // copy NrnThread tml list and append ARTIFICIAL cell types
     // but do not include PatternStim if file mode.
     //    For direct mode PatternStim is not treated specially except that
@@ -554,7 +490,6 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
     // Now using cgs[tid].mlwithart instead of
     // tml_with_art = new NrnThreadMembList*[nrn_nthread];
     // to allow fast retrieval of type and Memb_list* given index into the vector.
-
     // copy from NrnThread
     for (int id = 0; id < nrn_nthread; ++id) {
         MlWithArt& mla = cgs[id].mlwithart;
@@ -563,7 +498,6 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
         }
     }
     int* acnt = new int[nrn_nthread];
-
     for (int i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_list[i].nodecount) {
             // skip PatternStim if file mode transfer.
@@ -573,7 +507,7 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
             if (strcmp(memb_func[i].sym->name, "HDF5Reader") == 0) {
                 continue;
             }
-            Memb_list* ml = memb_list + i;
+            Memb_list* ml = &memb_list[i];
             // how many artificial in each thread
             for (int id = 0; id < nrn_nthread; ++id) {
                 acnt[id] = 0;
@@ -588,19 +522,18 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
             for (int id = 0; id < nrn_nthread; ++id) {
                 if (acnt[id]) {
                     MlWithArt& mla = cgs[id].mlwithart;
-                    ml = new Memb_list;
+                    ml = new Memb_list{i};
                     mla.push_back(MlWithArtItem(i, ml));  // need to delete ml when mla destroyed.
                     ml->nodecount = acnt[id];
                     ml->nodelist = NULL;
                     ml->nodeindices = NULL;
                     ml->prop = NULL;
                     ml->_thread = NULL;
-                    ml->_data = new double*[acnt[id]];
+                    // ml->_data = new double*[acnt[id]];
                     ml->pdata = new Datum*[acnt[id]];
                 }
             }
             // fill data and pdata pointers
-            // and fill the artdata2index hash table
             for (int id = 0; id < nrn_nthread; ++id) {
                 acnt[id] = 0;
             }
@@ -608,9 +541,8 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
                 auto* pnt = memb_list[i].pdata[j][1].get<Point_process*>();
                 int id = ((NrnThread*) pnt->_vnt)->id;
                 Memb_list* ml = cgs[id].mlwithart.back().second;
-                ml->_data[acnt[id]] = memb_list[i]._data[j];
+                ml->set_storage_offset(cache_token.thread_cache(id).mechanism_offset.at(i));
                 ml->pdata[acnt[id]] = memb_list[i].pdata[j];
-                artdata2index_.insert(std::pair<double*, int>(ml->_data[acnt[id]], acnt[id]));
                 ++acnt[id];
             }
         }
@@ -628,9 +560,6 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
         size_t npnt = 0;
         size_t nart = 0;
         int ith = nt->id;
-        // printf("rank %d thread %d\n", nrnmpi_myid, ith);
-        // printf("  ncell=%d nnode=%d\n", nt->ncell, nt->end);
-        // v_parent_index, _actual_a, _actual_b, _actual_area
         nbytes = nt->end * (1 * sizeof(int) + 3 * sizeof(double));
         threadbytes += nbytes;
 
@@ -683,7 +612,7 @@ void CellGroup::clean_art(CellGroup* cgs) {
                 if (!deferred_type2artml_.empty()) {
                     deferred_type2artml_[ith][type] = ml;
                 } else {
-                    delete[] ml->_data;
+                    // delete[] ml->_data;
                     delete[] ml->pdata;
                     delete ml;
                 }

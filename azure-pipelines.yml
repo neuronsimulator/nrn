@@ -29,7 +29,7 @@ stages:
     jobs:
 
     - job: 'ManyLinuxWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 45
       pool:
         vmImage: 'ubuntu-20.04'
       strategy:
@@ -42,6 +42,8 @@ stages:
             python.version: '3.10'
           Python311:
             python.version: '3.11'
+          Python312:
+            python.version: '3.12'
       steps:
 
       # Secure files documentation:
@@ -67,7 +69,7 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
+            'neuronsimulator/neuron_wheel:latest-x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
@@ -79,80 +81,32 @@ stages:
       - template: ci/azure-wheel-test-upload.yml
 
 
-    - job: 'ManyLinuxGPUWheels'
-      timeoutInMinutes: 30
-      pool:
-        vmImage: 'ubuntu-20.04'
-      variables:
-        GPU_BUILD: 'true'
-      strategy:
-        matrix:
-          Python38:
-            python.version: '3.8'
-          Python39:
-            python.version: '3.9'
-          Python310:
-            python.version: '3.10'
-          Python311:
-            python.version: '3.11'
-      steps:
-
-      # Secure files documentation:
-      #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
-      #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
-      - task: DownloadSecureFile@1
-        name: mpt_headersSF
-        displayName: 'Download mpt_headers secure file'
-        inputs:
-          secureFile: 'mpt_headears.2.21.tar.gz'
-
-      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
-      # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
-      - script: |
-          sudo mkdir -p /opt/nrnwheel/mpt
-          sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          docker run --rm \
-            -w /root/nrn \
-            -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
-            -e NEURON_NIGHTLY_TAG \
-            -e NRN_NIGHTLY_UPLOAD \
-            -e NRN_RELEASE_UPLOAD \
-            -e SETUPTOOLS_SCM_PRETEND_VERSION \
-            -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel_gpu:nvhpc-22.1-cuda-11.5-gcc9' \
-            packaging/python/build_wheels.bash linux $(python.version) coreneuron-gpu
-        displayName: 'Building ManyLinux Wheel'
-
-      - script: |
-          sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-        displayName: 'Install Test System Depdendencies'
-
-      - template: ci/azure-wheel-test-upload.yml
-
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
-      timeoutInMinutes: 40
+      timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-11'
+        vmImage: 'macOS-12'
       strategy:
         matrix:
           Python38:
             python.version: '3.8'
             python.org.version: '3.8.10'
-            python.installer.name: 'macosx10.9.pkg'
+            python.installer.name: 'macos11.pkg'
           Python39:
             python.version: '3.9'
             python.org.version: '3.9.13'
-            python.installer.name: 'macosx10.9.pkg'
+            python.installer.name: 'macos11.pkg'
           Python310:
             python.version: '3.10'
-            python.org.version: '3.10.5'
+            python.org.version: '3.10.11'
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.org.version: '3.11.1'
+            python.org.version: '3.11.7'
+            python.installer.name: 'macos11.pkg'
+          Python312:
+            python.version: '3.12'
+            python.org.version: '3.12.0'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -184,7 +138,7 @@ stages:
         name: readlineSF
         displayName: 'Download readline secure file'
         inputs:
-          secureFile: 'readline7.0.tar.gz'
+          secureFile: 'readline7.0-ncurses6.4.tar.gz'
 
       # 10.14 is required for full C++17 support according to
       # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
@@ -201,42 +155,6 @@ stages:
 
       - template: ci/azure-wheel-test-upload.yml
 
-
-    # Jobs to build NEURON installer natively
-    - job: 'WindowsInstaller'
-      timeoutInMinutes: 45
-      pool:
-        vmImage: windows-latest
-      variables:
-        MSYS2_ROOT: C:\msys64
-
-      steps:
-      - checkout: self
-        submodules: 'true'
-        clean: 'true'
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_download_deps.cmd
-        displayName: "Download Dependencies"
-        condition: succeeded()
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_install_deps.cmd
-        displayName: "Install Dependencies"
-        condition: succeeded()
-
-      # WSL is enabled by default in the image, with no installed linux distribution.
-      # WSL creates an unusable `bash.EXE` that can be resolved first from the environment.
-      # This is why we remove that file.
-      - script: |
-          rm.exe "C:/WINDOWS/system32/bash.EXE"
-          %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
-        displayName: "Build and Create Installer"
-        condition: succeeded()
-
-      - template: ci/azure-win-installer-upload.yml
 
   - stage: Final
     jobs:

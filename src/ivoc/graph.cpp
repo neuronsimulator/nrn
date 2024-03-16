@@ -48,10 +48,6 @@ extern Image* gif_image(const char*);
 
 #include "classreg.h"
 #include "gui-redirect.h"
-#include "treeset.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 #define Graph_Crosshair_           "Crosshair Graph"
@@ -512,38 +508,39 @@ static void gr_add(void* v, bool var) {
     Object* obj = NULL;
     char* lab = NULL;
     char* expr = NULL;
-    int ioff = 0;       // deal with 0, 1, or 2 optional arguments after first
-    double* pd = NULL;  // pointer to varname if second arg is varname string
+    int ioff = 0;  // deal with 0, 1, or 2 optional arguments after first
+    // pointer to varname if second arg is varname string
+    neuron::container::data_handle<double> pd{};
     int fixtype = g->labeltype();
     // organize args for backward compatibility and the new
     // addexpr("label, "expr", obj,.... style
     if (ifarg(2)) {
         if (var) {  // if string or address then variable and 1 was label
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             if (hoc_is_str_arg(2)) {
-                pd = hoc_val_pointer(gargstr(2));
+                pd = hoc_val_handle(hoc_gargstr(2));
                 ioff += 1;
             } else if (hoc_is_pdouble_arg(2)) {
-                pd = hoc_pgetarg(2);
+                pd = hoc_hgetarg<double>(2);
                 ioff += 1;
             }
         } else if (hoc_is_str_arg(2)) {  // 1 label, 2 expression
-            lab = gargstr(1);
-            expr = gargstr(2);
+            lab = hoc_gargstr(1);
+            expr = hoc_gargstr(2);
             ioff += 1;
             if (ifarg(3) && hoc_is_object_arg(3)) {  // object context
                 obj = *hoc_objgetarg(3);
                 ioff += 1;
             }
         } else if (hoc_is_object_arg(2)) {  // 1 expr, 2 object context
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
             obj = *hoc_objgetarg(2);
             ioff += 1;
         } else {
-            expr = gargstr(1);
+            expr = hoc_gargstr(1);
         }
     } else {
-        expr = gargstr(1);
+        expr = hoc_gargstr(1);
     }
     if (ifarg(3 + ioff)) {
         if (ifarg(6 + ioff)) {
@@ -625,7 +622,7 @@ static double gr_vector(void* v) {
     Graph* g = (Graph*) v;
     int n = int(chkarg(1, 1., 1.e5));
     double* x = hoc_pgetarg(2);
-    double* y = hoc_pgetarg(3);
+    auto y_handle = hoc_hgetarg<double>(3);
     GraphVector* gv = new GraphVector("");
     if (ifarg(4)) {
         gv->color(colors->color(int(*getarg(4))));
@@ -635,7 +632,7 @@ static double gr_vector(void* v) {
         gv->brush(g->brush());
     }
     for (int i = 0; i < n; ++i) {
-        gv->add(x[i], y + i);
+        gv->add(x[i], y_handle.next_array_element(i));
     }
     //	GLabel* glab = g->label(gv->name());
     //	((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
@@ -1362,7 +1359,6 @@ void GraphItem::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 // Graph
-implementPtrList(LineList, GraphLine);
 declareActionCallback(Graph);
 implementActionCallback(Graph);
 
@@ -1372,8 +1368,7 @@ Graph::Graph(bool b)
     : Scene(0, 0, XSCENE, YSCENE) {
     loc_ = 0;
     x_expr_ = NULL;
-    x_pval_ = NULL;
-    var_name_ = NULL;
+    x_pval_ = {};
     rvp_ = NULL;
     cross_action_ = NULL;
     vector_copy_ = false;
@@ -1455,8 +1450,8 @@ Graph::Graph(bool b)
 
 Graph::~Graph() {
     // printf("~Graph\n");
-    for (long i = 0; i < line_list_.count(); ++i) {
-        Resource::unref(line_list_.item(i));
+    for (auto& item: line_list_) {
+        Resource::unref(item);
     }
     Resource::unref(keep_lines_toggle_);
     Resource::unref(x_);
@@ -1467,20 +1462,13 @@ Graph::~Graph() {
     Resource::unref(sc_);
     Resource::unref(current_polyline_);
     Resource::unref(family_label_);
-    if (var_name_) {
-        delete var_name_;
-    }
     if (cross_action_) {
         delete cross_action_;
     }
 }
 
 void Graph::name(char* s) {
-    if (var_name_) {
-        *var_name_ = s;
-    } else {
-        var_name_ = new CopyString(s);
-    }
+    var_name_ = s;
 }
 
 void Graph::help() {
@@ -1498,36 +1486,31 @@ void Graph::help() {
 }
 
 void Graph::delete_label(GLabel* glab) {
-    GraphLine* glin = NULL;
-    GlyphIndex i, cnt;
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        if (line_list_.item(i)->label() == glab) {
-            glin = line_list_.item(i);
-            break;
-        }
-    }
-    if (glin) {
-        line_list_.remove(i);
+    GraphLine* glin = nullptr;
+    auto it = std::find_if(line_list_.begin(), line_list_.end(), [&](const auto& e) {
+        return e->label() == glab;
+    });
+    if (it != line_list_.end()) {
+        glin = *it;
+        line_list_.erase(it);
         glin->unref();
-        i = glyph_index(glin);
-        remove(i);
+        GlyphIndex index = glyph_index(glin);
+        remove(index);
     }
     if (!glin) {  // but possibly a vector line
-        cnt = count();
-        for (i = 0; i < cnt; ++i) {
-            GraphItem* gi = (GraphItem*) component(i);
+        for (GlyphIndex index = 0; index < count(); ++index) {
+            GraphItem* gi = (GraphItem*) component(index);
             if (gi->is_polyline()) {
                 GPolyLine* gpl = (GPolyLine*) gi->body();
                 if (gpl->label() == glab) {
-                    remove(i);
+                    remove(index);
                     break;
                 }
             }
         }
     }
-    i = glyph_index(glab);
-    remove(i);
+    GlyphIndex index = glyph_index(glab);
+    remove(index);
 }
 
 GLabel* Graph::new_proto_label() const {
@@ -1535,18 +1518,17 @@ GLabel* Graph::new_proto_label() const {
 }
 
 bool Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
-    GlyphIndex i, cnt = line_list_.count();
     if (strcmp(glab->text(), text)) {
-        for (i = 0; i < cnt; ++i) {
-            if (line_list_.item(i)->label() == glab) {
-                if (!line_list_.item(i)->change_expr(text, &symlist_)) {
+        for (auto& line: line_list_) {
+            if (line->label() == glab) {
+                if (!line->change_expr(text, &symlist_)) {
                     return false;
                 }
             }
         }
         glab->text(text);
     }
-    i = glyph_index(glab);
+    GlyphIndex i = glyph_index(glab);
     if (glab->fixtype() != gl->fixtype()) {
         if (gl->fixed()) {
             glab->fixed(gl->scale());
@@ -1579,8 +1561,8 @@ void Graph::change_line_color(GPolyLine* glin) {
 }
 
 GlyphIndex Graph::glyph_index(const Glyph* gl) {
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
+    GlyphIndex cnt = count();
+    for (GlyphIndex i = 0; i < cnt; ++i) {
         Glyph* g = ((GraphItem*) component(i))->body();
         if (g == gl) {
             return i;
@@ -1600,13 +1582,12 @@ std::ostream* Graph::ascii() {
 }
 
 void Graph::draw(Canvas* c, const Allocation& a) const {
-    long i, cnt = line_list_.count();
     // if (!extension_flushed_) {
     Scene::draw(c, a);
     //}
     if (extension_flushed_) {
-        for (i = 0; i < cnt; ++i) {
-            line_list_.item(i)->extension()->draw(c, a);
+        for (auto& item: line_list_) {
+            item->extension()->draw(c, a);
         }
     }
     if (ascii_) {
@@ -1615,7 +1596,7 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
 }
 
 void Graph::ascii_save(std::ostream& o) const {
-    long line, lcnt = line_list_.count();
+    long line, lcnt = line_list_.size();
     int i, dcnt;
     if (lcnt == 0 || !x_ || family_label_) {
         // tries to print in matrix form is labels and each line the same
@@ -1626,8 +1607,8 @@ void Graph::ascii_save(std::ostream& o) const {
         }
         if (lcnt) {
             o << lcnt << " addvar/addexpr lines:";
-            for (i = 0; i < lcnt; ++i) {
-                o << " " << line_list_.item(i)->name();
+            for (const auto& line: line_list_) {
+                o << " " << line->name();
             }
             o << std::endl;
         }
@@ -1733,15 +1714,15 @@ void Graph::ascii_save(std::ostream& o) const {
     } else {
         o << "x";
     }
-    for (line = 0; line < lcnt; ++line) {
-        o << " " << line_list_.item(line)->name();
+    for (const auto& item: line_list_) {
+        o << " " << item->name();
     }
     o << std::endl;
     dcnt = x_->count();
     for (i = 0; i < dcnt; ++i) {
         o << x_->get_val(i);
-        for (line = 0; line < lcnt; ++line) {
-            o << "\t" << line_list_.item(line)->y(i);
+        for (const auto& item: line_list_) {
+            o << "\t" << item->y(i);
         }
         o << std::endl;
     }
@@ -1813,10 +1794,6 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
     GraphLine* gl;
     l = b = 1e9;
     r = t = -1e9;
-#if 0
-	cnt = line_list_.count();
-	if (!cnt) {
-#endif
     cnt = count();
     for (i = 0; i < cnt; ++i) {
         GraphItem* gi = (GraphItem*) component(i);
@@ -1857,19 +1834,6 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
         t = -1e30;
     }
     return;
-#if 0
-	}
-	for (i = 0; i < cnt; ++i) {
-		gl = line_list_.item(i);
-		l = std::min(l, gl->x_data()->min());
-		b = std::min(b, gl->y_data()->min());
-		r = std::max(r, gl->x_data()->max());
-		t = std::max(t, gl->y_data()->max());
-	}
-	if (l >= r || b >= t) {
-		Scene::wholeplot(l, b, r, t);
-	}
-#endif
 }
 
 void Graph::axis(DimensionName d,
@@ -1908,7 +1872,7 @@ GraphLine* Graph::add_var(const char* expr,
                           const Brush* brush,
                           bool usepointer,
                           int fixtype,
-                          double* pd,
+                          neuron::container::data_handle<double> pd,
                           const char* lab,
                           Object* obj) {
     GraphLine* gl = new GraphLine(expr, x_, &symlist_, color, brush, usepointer, pd, obj);
@@ -1922,7 +1886,7 @@ GraphLine* Graph::add_var(const char* expr,
     ((GraphItem*) component(i))->save(false);
     glab->color(color);
     gl->label(glab);
-    line_list_.append(gl);
+    line_list_.push_back(gl);
     gl->ref();
     Scene::append(new GPolyLineItem(gl));
     return gl;
@@ -1943,12 +1907,12 @@ void Graph::x_expr(const char* expr, bool usepointer) {
         hoc_execerror(expr, "not an expression");
     }
     if (usepointer) {
-        x_pval_ = hoc_val_pointer(expr);
+        x_pval_ = hoc_val_handle(expr);
         if (!x_pval_) {
             hoc_execerror(expr, "is invalid left hand side of assignment statement");
         }
     } else {
-        x_pval_ = 0;
+        x_pval_ = {};
     }
 }
 
@@ -1958,10 +1922,8 @@ void Graph::begin() {
         keep_lines();
         family_value();
     }
-    long count = line_list_.count();
     int hem = hoc_execerror_messages;
-    for (long i = 0; i < count; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->erase();
         if (family_on_) {
             ((GPolyLine*) gl)->color(color());
@@ -1990,9 +1952,8 @@ void Graph::plot(float x) {
     } else {
         x_->add(x);
     }
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->plot();
+    for (auto& item: line_list_) {
+        item->plot();
     }
 }
 void Graph::begin_line(const char* s) {
@@ -2024,37 +1985,23 @@ void Graph::flush() {
     //	damage_all();//too conservative. plots everything every time
 }
 void Graph::fast_flush() {
-#if 0
-	long i, cnt = line_list_.count();
-	for (i=0; i < cnt; ++i) {
-		modified(
-		  glyph_index(
-		    line_list_.item(i)->extension()
-		  )
-		);
-	}
-#else
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension()->damage(this);
+    for (auto& item: line_list_) {
+        item->extension()->damage(this);
     }
-#endif
     extension_flushed_ = true;
 }
 
 void Graph::extension_start() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_start();
+    for (auto& item: line_list_) {
+        item->extension_start();
     }
     extension_flushed_ = false;
 }
 void Graph::extension_continue() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_continue();
+    for (auto& item: line_list_) {
+        item->extension_continue();
     }
     extension_flushed_ = false;
 }
@@ -2115,28 +2062,21 @@ void Graph::cross_action(char c, Coord x, Coord y) {
     }
 }
 void Graph::erase() {
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->erase();
+    for (auto& item: line_list_) {
+        item->erase();
     }
     damage_all();
 }
 
 void Graph::erase_all() {
-    int i;
-#if 0
-	while(count()) {
-		remove(0);
-	}
-#else
-    for (i = count() - 1; i >= 0; --i) {
+    for (int i = count() - 1; i >= 0; --i) {
         remove(i);
     }
-#endif
-    while (line_list_.count()) {
-        Resource::unref(line_list_.item(0));
-        line_list_.remove(0);
+    for (auto& item: line_list_) {
+        Resource::unref(item);
     }
+    line_list_.clear();
+    line_list_.shrink_to_fit();
     label_n_ = 0;
 }
 void Graph::family_value() {
@@ -2207,9 +2147,7 @@ void Graph::family(bool i) {
     } else {
         family_on_ = false;
         keep_lines_toggle_->set(TelltaleState::is_chosen, false);
-        long count = line_list_.count();
-        for (long i = 0; i < count; ++i) {
-            GraphLine* gl = line_list_.item(i);
+        for (auto& gl: line_list_) {
             gl->color(gl->save_color());
             gl->brush(gl->save_brush());
         }
@@ -2325,18 +2263,14 @@ void Graph::erase_lines() {
             }
         }
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->label()->erase_flag(false);
     }
     cnt = count();
     for (i = cnt - 1; i >= 0; --i) {
         ((GraphItem*) component(i))->erase(this, i, GraphItem::ERASE_LINE);
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         Scene::append(new GPolyLineItem(gl));
     }
     erase();
@@ -2421,14 +2355,14 @@ void Graph::save_phase2(std::ostream& o) {
         Sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
         o << buf << std::endl;
     }
-    if (var_name_) {
-        if ((var_name_->string())[var_name_->length() - 1] == '.') {
-            Sprintf(buf, "%sappend(save_window_)", var_name_->string());
+    if (!var_name_.empty()) {
+        if (var_name_.back() == '.') {
+            Sprintf(buf, "%sappend(save_window_)", var_name_.c_str());
         } else {
-            Sprintf(buf, "%s = save_window_", var_name_->string());
+            Sprintf(buf, "%s = save_window_", var_name_.c_str());
         }
         o << buf << std::endl;
-        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_->string());
+        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_.c_str());
         o << buf << std::endl;
     }
     if (x_expr_) {
@@ -2482,17 +2416,18 @@ void Graph::choose_sym() {
         w = v->canvas()->window();
     }
     while ((w && sc_->post_for_aligned(w, .5, 1.)) || (!w && sc_->post_at(300, 300))) {
-        // printf("Graph selected %s\n", sc_->selected()->string());
         char buf[256];
         double* pd = sc_->selected_var();
+        neuron::container::data_handle<double> pd_handle{pd};
+
         if (sc_->selected_vector_count()) {
-            Sprintf(buf, "%s", sc_->selected()->string());
+            Sprintf(buf, "%s", sc_->selected().c_str());
             GraphVector* gv = new GraphVector(buf);
             gv->color(color());
             gv->brush(brush());
             int n = sc_->selected_vector_count();
             for (int i = 0; i < n; ++i) {
-                gv->add(double(i), pd + i);
+                gv->add(double(i), pd_handle.next_array_element(i));
             }
             GLabel* glab = label(gv->name());
             ((GraphItem*) component(glyph_index(glab)))->save(false);
@@ -2501,20 +2436,19 @@ void Graph::choose_sym() {
             flush();
             break;
         } else if (pd) {
-            //		add_var(sc_->selected()->string(), color(), brush(), 1, 2, pd);
-            add_var(sc_->selected()->string(), color(), brush(), 1, 2);
+            add_var(sc_->selected().c_str(), color(), brush(), 1, 2);
             break;
         } else {
-            CopyString s(*sc_->selected());
+            auto s = sc_->selected();
             // above required due to bug in mswindows version in which
             // sc_->selected seems volatile under some kinds of hoc
             // executions.
-            Sprintf(buf, "hoc_ac_ = %s\n", s.string());
+            Sprintf(buf, "hoc_ac_ = %s\n", s.c_str());
             if (oc.run(buf) == 0) {
-                add_var(s.string(), color(), brush(), 0, 2);
+                add_var(s.c_str(), color(), brush(), 0, 2);
                 break;
             }
-            hoc_warning(s.string(), "is not an expression.");
+            hoc_warning(s.c_str(), "is not an expression.");
         }
     }
     //	sc_->unref();
@@ -2533,12 +2467,12 @@ void Graph::family_label_chooser() {
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
         char buf[256];
-        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected()->string());
+        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected().c_str());
         if (oc.run(buf) == 0) {
-            family(fsc_->selected()->string());
+            family(fsc_->selected().c_str());
             break;
         }
-        hoc_warning(sc_->selected()->string(), "is not an expression.");
+        hoc_warning(sc_->selected().c_str(), "is not an expression.");
     }
 }
 
@@ -2549,7 +2483,7 @@ GraphLine::GraphLine(const char* expr,
                      const Color* c,
                      const Brush* b,
                      bool usepointer,
-                     double* pd,
+                     neuron::container::data_handle<double> pd,
                      Object* obj)
     : GPolyLine(x, c, b) {
     Oc oc;
@@ -2561,16 +2495,16 @@ GraphLine::GraphLine(const char* expr,
             // char buf[256];
             // Sprintf(buf, "%s", expr);
             // expr_ = oc.parseExpr(buf, symlist);
-            expr_ = NULL;
+            expr_ = nullptr;
             pval_ = pd;
         } else {
             expr_ = oc.parseExpr(expr, symlist);
-            pval_ = hoc_val_pointer(expr);
+            pval_ = hoc_val_handle(expr);
             if (!pval_) {
                 hoc_execerror(expr, "is invalid left hand side of assignment statement");
             }
         }
-        oc.notify_when_freed(pval_, this);
+        neuron::container::notify_when_handle_dies(pval_, this);
     } else {
         if (obj) {
             obj_ = obj;
@@ -2580,7 +2514,7 @@ GraphLine::GraphLine(const char* expr,
         } else {
             expr_ = oc.parseExpr(expr, symlist);
         }
-        pval_ = 0;
+        pval_ = {};
     }
     if (!pval_ && !expr_) {
         hoc_execerror(expr, "not an expression");
@@ -2674,7 +2608,7 @@ void GraphLine::simgraph_continuous(double tt) {
 
 void GraphLine::update(Observable*) {  // *pval_ has been freed
                                        // printf("GraphLine::update pval_ has been freed\n");
-    pval_ = NULL;
+    pval_ = {};
     if (obj_) {
         expr_ = NULL;
     }
@@ -2691,9 +2625,9 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
     if (sym) {
         expr_ = sym;
         if (pval_) {
-            Oc oc;
-            oc.notify_pointer_disconnect(this);
-            pval_ = NULL;
+            // we are no longer interested in updates to pval_
+            nrn_notify_pointer_disconnect(this);
+            pval_ = {};
         }
         return true;
     } else {
@@ -3068,7 +3002,7 @@ GLabel::~GLabel() {
 }
 
 Glyph* GLabel::clone() const {
-    return new GLabel(text_.string(), color_, fixtype_, scale_, x_align_, y_align_);
+    return new GLabel(text_.c_str(), color_, fixtype_, scale_, x_align_, y_align_);
 }
 
 void GLabel::save(std::ostream& o, Coord x, Coord y) {
@@ -3080,7 +3014,7 @@ void GLabel::save(std::ostream& o, Coord x, Coord y) {
             "save_window_.label(%g, %g, \"%s\", %d, %g, %g, %g, %d)",
             x,
             y,
-            text_.string(),
+            text_.c_str(),
             fixtype_,
             scale_,
             x_align_,
@@ -3108,7 +3042,7 @@ void GLabel::align(float x, float y) {
 void GLabel::color(const Color* c) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
-    label_ = new Label(text_, kit.font(), c);
+    label_ = new Label(text_.c_str(), kit.font(), c);
     label_->ref();
     Resource::ref(c);
     Resource::unref(color_);
@@ -3122,7 +3056,7 @@ void GLabel::text(const char* t) {
     Resource::unref(label_);
     WidgetKit& kit = *WidgetKit::instance();
     text_ = t;
-    label_ = new Label(text_, kit.font(), color_);
+    label_ = new Label(text_.c_str(), kit.font(), color_);
     label_->ref();
 }
 
@@ -3164,7 +3098,7 @@ void GLabel::draw(Canvas* c, const Allocation& a1) const {
     // printf("transformer %g %g %g %g %g %g\n", a00, a01, a10, a11, a20, a21);
     label_->draw(c, a2);
     c->pop_transform();
-    IfIdraw(text(c, text_.string(), t, NULL, color()));
+    IfIdraw(text(c, text_.c_str(), t, NULL, color()));
 }
 
 // DataVec------------------
@@ -3329,27 +3263,6 @@ void DataVec::write() {
 #endif
 }
 
-DataPointers::DataPointers(int size) {
-    count_ = 0;
-    size_ = size;
-    px_ = new double*[size];
-}
-DataPointers::~DataPointers() {
-    delete[] px_;
-}
-void DataPointers::add(double* pd) {
-    if (count_ == size_) {
-        size_ *= 2;
-        double** px = new double*[size_];
-        for (int i = 0; i < count_; i++) {
-            px[i] = px_[i];
-        }
-        delete[] px_;
-        px_ = px;
-    }
-    px_[count_++] = pd;
-}
-
 GraphVector::GraphVector(const char* name, const Color* color, const Brush* brush)
     : GPolyLine(new DataVec(50), color, brush) {
     dp_ = new DataPointers();
@@ -3367,7 +3280,7 @@ GraphVector::~GraphVector() {
 }
 
 const char* GraphVector::name() const {
-    return name_.string();
+    return name_.c_str();
 }
 
 void GraphVector::save(std::ostream&) {}
@@ -3386,28 +3299,28 @@ void GraphVector::update(Observable*) {
     begin();
 }
 
-void GraphVector::add(float x, double* py) {
+void GraphVector::add(float x, neuron::container::data_handle<double> py) {
     if (disconnect_defer_) {
         Oc oc;
         oc.notify_pointer_disconnect(this);
         disconnect_defer_ = false;
     }
-    if (dp_->count() == 0 || py != dp_->p(dp_->count() - 1) + 1) {
-        Oc oc;
-        oc.notify_when_freed(py, this);
+    // Dubious
+    if (dp_->count() == 0 ||
+        static_cast<double*>(py) != static_cast<double*>(dp_->p(dp_->count() - 1)) + 1) {
+        neuron::container::notify_when_handle_dies(py, this);
     }
     x_->add(x);
-    double* p = &zero;
-    if (py) {
-        p = py;
+    if (!py) {
+        py = {neuron::container::do_not_search, &zero};
     }
-    dp_->add(p);
-    y_->add(float(*p));
+    y_->add(*py);
+    dp_->add(std::move(py));
 }
 
 bool GraphVector::trivial() const {
     for (int i = 0; i < dp_->count(); ++i) {
-        if (dp_->p(i) != &zero) {
+        if (static_cast<double const*>(dp_->p(i)) != &zero) {
             return false;
         }
     }
@@ -3487,48 +3400,6 @@ void Graph::change_prop() {
     ColorBrushWidget::start(this);
     if (Oc::helpmode()) {
         help();
-    }
-}
-
-void Graph::update_ptrs() {
-    if (x_pval_) {
-        x_pval_ = nrn_recalc_ptr(x_pval_);
-    }
-    if (rvp_) {
-        rvp_->update_ptrs();
-    }
-    GlyphIndex i, cnt = count();
-    for (i = 0; i < cnt; ++i) {
-        GraphItem* gi = (GraphItem*) component(i);
-        if (gi->is_graphVector()) {
-            GraphVector* gv = (GraphVector*) (gi->body());
-            if (gv) {
-                gv->update_ptrs();
-            }
-        }
-    }
-    cnt = line_list_.count();
-    for (i = 0; i < line_list_.count(); ++i) {
-        line_list_.item(i)->update_ptrs();
-    }
-}
-
-void DataPointers::update_ptrs() {
-    int i;
-    for (i = 0; i < count_; ++i) {
-        px_[i] = nrn_recalc_ptr(px_[i]);
-    }
-}
-
-void GraphLine::update_ptrs() {
-    if (pval_) {
-        pval_ = nrn_recalc_ptr(pval_);
-    }
-}
-
-void GraphVector::update_ptrs() {
-    if (dp_) {
-        dp_->update_ptrs();
     }
 }
 

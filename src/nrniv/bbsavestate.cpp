@@ -156,7 +156,7 @@ We do not need to worry about bin queueing since it is the delivery time that
 is enqueueed and that is always in the future.
 
 When bin queueing is used, a mechanism is needed to avoid the assertion
-error in BinQ::enqueue (see nrncvode/sptbinq.cpp) when the enqueued event
+error in BinQ::enqueue (see nrncvode/tqueue.cpp) when the enqueued event
 has a delivery time earlier than the binq current time. One possibility
 is to turn off bin queueing and force all events on the standard queue
 to be on binq boundaries. Another possibility is for bbsavestate to
@@ -169,9 +169,9 @@ callback to bbss_early when needed.
 
 #include "bbsavestate.h"
 #include "classreg.h"
-#include "ndatclas.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
+#include "nrnran123.h"
 #include "ocfile.h"
 #include <cmath>
 #include <nrnmpiuse.h>
@@ -184,7 +184,7 @@ callback to bbss_early when needed.
 
 #include "netcon.h"
 #include "nrniv_mf.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "vrecitem.h"
 
 // on mingw, OUT became defined
@@ -208,7 +208,6 @@ extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
 extern hoc_Item* net_cvode_instance_psl();
-extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_netcon_event(NetCon*, double);
 extern double t;
 typedef void (*PFIO)(int, Object*);
@@ -313,6 +312,8 @@ class BBSS_Cnt: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     int bytecnt();
@@ -335,6 +336,14 @@ void BBSS_Cnt::d(int n, double& p) {
     ++nl;
 }
 void BBSS_Cnt::d(int n, double* p) {
+    nd += n;
+    ++nl;
+}
+void BBSS_Cnt::d(int n, double**) {
+    nd += n;
+    ++nl;
+}
+void BBSS_Cnt::d(int n, neuron::container::data_handle<double>) {
     nd += n;
     ++nl;
 }
@@ -361,6 +370,8 @@ class BBSS_TxtFileOut: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     FILE* f;
@@ -384,6 +395,17 @@ void BBSS_TxtFileOut::d(int n, double* p) {
     }
     fprintf(f, "\n");
 }
+void BBSS_TxtFileOut::d(int n, double** p) {
+    for (int i = 0; i < n; ++i) {
+        fprintf(f, " %22.15g", *p[i]);
+    }
+    fprintf(f, "\n");
+}
+void BBSS_TxtFileOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);  // Cannot read n values "starting at" a data handle
+    assert(h);
+    fprintf(f, " %22.15g\n", *h);
+}
 void BBSS_TxtFileOut::s(char* cp, int chk) {
     fprintf(f, "%s\n", cp);
 }
@@ -400,6 +422,8 @@ class BBSS_TxtFileIn: public BBSS_IO {
         d(n, &p);
     }
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override {
         return BBSS_IO::IN;
@@ -431,6 +455,19 @@ void BBSS_TxtFileIn::d(int n, double* p) {
     }
     nrn_assert(fscanf(f, "\n") == 0);
 }
+void BBSS_TxtFileIn::d(int n, double** p) {
+    for (int i = 0; i < n; ++i) {
+        nrn_assert(fscanf(f, " %lf", p[i]) == 1);
+    }
+    nrn_assert(fscanf(f, "\n") == 0);
+}
+void BBSS_TxtFileIn::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    assert(h);
+    double v{};
+    nrn_assert(fscanf(f, " %lf\n", &v) == 1);
+    *h = v;
+}
 void BBSS_TxtFileIn::s(char* cp, int chk) {
     char buf[100];
     nrn_assert(fscanf(f, "%[^\n]\n", buf) == 1);
@@ -452,6 +489,8 @@ class BBSS_BufferOut: public BBSS_IO {
     virtual void i(int& j, int chk = 0) override;
     virtual void d(int n, double& p) override;
     virtual void d(int n, double* p) override;
+    virtual void d(int n, double** p) override;
+    virtual void d(int n, neuron::container::data_handle<double> h) override;
     virtual void s(char* cp, int chk = 0) override;
     virtual Type type() override;
     virtual void a(int);
@@ -474,6 +513,15 @@ void BBSS_BufferOut::d(int n, double& d) {
 }
 void BBSS_BufferOut::d(int n, double* d) {
     cpy(n * sizeof(double), (char*) d);
+}
+void BBSS_BufferOut::d(int n, double** d) {
+    for (auto i = 0; i < n; ++i) {
+        cpy(sizeof(double), reinterpret_cast<char*>(d[i]));
+    }
+}
+void BBSS_BufferOut::d(int n, neuron::container::data_handle<double> h) {
+    assert(n == 1);
+    cpy(sizeof(double), reinterpret_cast<char*>(static_cast<double*>(h)));
 }
 void BBSS_BufferOut::s(char* cp, int chk) {
     cpy(strlen(cp) + 1, cp);
@@ -966,28 +1014,24 @@ void BBSaveState_reg() {
 
 // from savstate.cpp
 struct StateStructInfo {
-    int offset;
-    int size;
-    Symbol* callback;
+    int offset{-1};
+    int size{};
+    Symbol* callback{nullptr};
 };
 static StateStructInfo* ssi;
 static cTemplate* nct;
 static void ssi_def() {
+    assert(!ssi);
     if (nct) {
         return;
     }
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
-    ssi = new StateStructInfo[n_memb_func];
-    int sav = v_structure_change;
+    ssi = new StateStructInfo[n_memb_func]{};
     for (int im = 0; im < n_memb_func; ++im) {
-        ssi[im].offset = -1;
-        ssi[im].size = 0;
-        ssi[im].callback = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -998,14 +1042,19 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size;
+            ssi[im].size = nrn_prop_param_size_[im];  // sum over array dims
         } else {
-            int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
-                    sym->subtype == _AMBIGUOUS) {
+            Symbol* msym = memb_func[im].sym;
+            for (int i = 0; i < msym->s_varn; ++i) {
+                Symbol* sym = msym->u.ppsym[i];
+                int vartype = nrn_vartype(sym);
+                if (vartype == STATE || vartype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = sym->u.rng.index;
+                    } else {
+                        // assert what we assume: that after this code the variables we want are
+                        // `size` contiguous legacy indices starting at `offset`
+                        assert(ssi[im].offset + ssi[im].size == sym->u.rng.index);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -1028,11 +1077,7 @@ static void ssi_def() {
             //	printf("callback %s\n", ssi[im].callback->name);
             //}
         }
-        delete np;
     }
-    // Following set to 1 when NrnProperty constructor calls prop_alloc.
-    // so set back to original value.
-    v_structure_change = sav;
 }
 
 // if we know the Point_process, we can find the NetCon
@@ -1920,6 +1965,22 @@ void BBSaveState::seccontents(Section* sec) {
     }
 }
 
+// If extracellular, then save/restore not just v but also vext
+void BBSaveState::v_vext(Node* nd) {
+    if (nd->extnode) {
+        int n = 1 + nlayer;
+        std::vector<double*> tmp{};
+        tmp.reserve(n);
+        tmp.push_back(static_cast<double*>(nd->v_handle()));
+        for (int i = 0; i < nlayer; ++i) {
+            tmp.push_back(&nd->extnode->v[i]);
+        }
+        f->d(n, tmp.data());
+    } else {
+        f->d(1, nd->v_handle());
+    }
+}
+
 // all Point_process and mechanisms -- except IGNORE point process instances
 void BBSaveState::node(Node* nd) {
     if (debug) {
@@ -1928,7 +1989,7 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    f->d(1, NODEV(nd));
+    v_vext(nd);
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -1967,7 +2028,11 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    f->d(1, NODEV(nd));
+    // I don't know if there is duplicate saving of zero area node voltages.
+    // or, if so, it can be avoided. There was mention above of split cells
+    // and, with extracellular, there can be no such thing.
+    v_vext(nd);
+
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
@@ -2007,7 +2072,46 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     Sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    f->d(ssi[p->_type].size, p->param + ssi[p->_type].offset);
+
+    if (type == EXTRACELL) {
+        // skip - vext states saved by caller and we are not saving parameters.
+    } else {
+        auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
+        auto& random_indices = nrn_mech_random_indices(p->_type);
+        auto size_random = random_indices.size();
+        std::vector<double*> tmp{};
+        tmp.reserve(size + size_random);
+        for (auto i = 0; i < size; ++i) {
+            tmp.push_back(static_cast<double*>(p->param_handle_legacy(ssi[p->_type].offset + i)));
+        }
+
+        // read or write the RANDOM 34 sequence values by pointing last
+        // size_random tmp elements to seq34 double slots.
+        std::vector<double> seq34(size_random, 0);
+        for (auto i = 0; i < size_random; ++i) {
+            tmp.push_back(static_cast<double*>(&seq34[i]));
+        }
+        // if writing, nrnran123_getseq into seq34
+        if (f->type() == BBSS_IO::OUT) {  // save
+            for (auto i = 0; i < size_random; ++i) {
+                uint32_t seq{};
+                char which{};
+                auto& datum = p->dparam[random_indices[i]];
+                nrnran123_State* n123s = (nrnran123_State*) datum.get<void*>();
+                nrnran123_getseq(n123s, &seq, &which);
+                seq34[i] = 4.0 * double(seq) + double(which);
+            }
+        }
+        f->d(size + size_random, tmp.data());
+        // if reading, seq34 into nrnran123_setseq
+        if (f->type() == BBSS_IO::IN) {  // restore
+            for (auto i = 0; i < size_random; ++i) {
+                auto& datum = p->dparam[random_indices[i]];
+                nrnran123_State* n123s = (nrnran123_State*) datum.get<void*>();
+                nrnran123_setseq(n123s, seq34[i]);
+            }
+        }
+    }
     Point_process* pp{};
     if (memb_func[p->_type].is_point) {
         pp = p->dparam[1].get<Point_process*>();

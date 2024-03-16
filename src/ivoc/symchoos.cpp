@@ -60,8 +60,6 @@
 
 #include "classreg.h"
 #include "gui-redirect.h"
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 
@@ -83,7 +81,7 @@ class SymChooserImpl {
     int* filter_map_;
     SymDirectory** dir_;
     SymChooserAction* action_;
-    const String* selected_;
+    std::string selected_;
     CopyString last_selected_;
     int last_index_;
     Style* style_;
@@ -202,7 +200,7 @@ static double text(void* v) {
 #if HAVE_IV
     IFGUI
     SymChooser* sc = (SymChooser*) v;
-    hoc_assign_str(hoc_pgargstr(1), sc->selected()->string());
+    hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
     ENDGUI
     return 0.;
 #else
@@ -249,7 +247,7 @@ SymChooser::~SymChooser() {
     delete impl_;
 }
 
-const String* SymChooser::selected() const {
+const std::string& SymChooser::selected() const {
     return impl_->selected_;
 }
 
@@ -508,7 +506,7 @@ void SymChooserImpl::load(int bindex) {
     filter_map_ = index;
     // printf("loading %d\n", bindex);
     for (int i = 0; i < dircount; i++) {
-        const String& f = d.name(i);
+        const String& f = d.name(i).c_str();
         bool is_dir = d.is_directory(i);
         if ((is_dir && filtered(f, directory_filter_)) || (!is_dir && filtered(f, filter_))) {
             Glyph* name = kit.label(f);
@@ -531,7 +529,7 @@ void SymChooserImpl::load(int bindex) {
     // to avoid a premature browser request which ends up showing an
     // empty list.
     fbrowser_[bindex]->refresh();
-    editor_->field(d.path());
+    editor_->field(d.path().c_str());
     kit.pop_style();
 }
 
@@ -565,7 +563,7 @@ bool SymChooserImpl::filtered(const String& name, FieldEditor* e) {
     if (s == NULL || s->length() == 0) {
         return true;
     }
-    return s == NULL || s->length() == 0 || SymDirectory::match(name, *s);
+    return s == NULL || s->length() == 0 || SymDirectory::match(name.string(), s->string());
 }
 
 void SymChooserImpl::accept_browser_index(int bindex) {
@@ -575,8 +573,8 @@ void SymChooserImpl::accept_browser_index(int bindex) {
     }
     //    i = filter_map_[i];
     SymDirectory* dir = dir_[bindex];
-    const String& path = dir->path();
-    const String& name = dir->name(i);
+    const String& path = dir->path().c_str();
+    const String& name = dir->name(i).c_str();
     Symbol* sym = dir->symbol(i);
     int length = path.length() + name.length();
     auto const tmp_len = length + 2;
@@ -586,7 +584,7 @@ void SymChooserImpl::accept_browser_index(int bindex) {
     editor_->field(tmp);
     last_selected_ = tmp;
     last_index_ = i;
-    selected_ = editor_->text();
+    selected_ = editor_->text()->string();
     if (dir->is_directory(i)) {
         if (chdir(bindex, i)) {
             fchooser_->focus(editor_);
@@ -602,7 +600,7 @@ void SymChooserImpl::accept_browser_index(int bindex) {
 }
 
 double* SymChooserImpl::selected_var() {
-    if (last_index_ != -1 && strcmp(selected_->string(), last_selected_.string()) == 0) {
+    if (last_index_ != -1 && selected_ == last_selected_.string()) {
         SymDirectory* dir = dir_[browser_index_];
         return dir->variable(last_index_);
     } else {
@@ -611,7 +609,7 @@ double* SymChooserImpl::selected_var() {
 }
 
 int SymChooserImpl::selected_vector_count() {
-    if (last_index_ != -1 && strcmp(selected_->string(), last_selected_.string()) == 0) {
+    if (last_index_ != -1 && selected_ == last_selected_.string()) {
         SymDirectory* dir = dir_[browser_index_];
         return dir->whole_vector(last_index_);
     } else {
@@ -627,15 +625,15 @@ void SymChooserImpl::accept_browser() {
         return;
     }
     //    i = filter_map_[i];
-    const String& path = dir_[bi]->path();
-    const String& name = dir_[bi]->name(i);
+    const String& path = dir_[bi]->path().c_str();
+    const String& name = dir_[bi]->name(i).c_str();
     int length = path.length() + name.length();
     char* tmp = new char[length + 1];
     std::snprintf(
         tmp, length + 1, "%.*s%.*s", path.length(), path.string(), name.length(), name.string());
     // printf("accept_browser %s\n", tmp);
     editor_->field(tmp);
-    selected_ = editor_->text();
+    selected_ = editor_->text()->string();
     if (dir_[bi]->is_directory(i)) {
         if (chdir(bi, i)) {
             fchooser_->focus(editor_);
@@ -649,21 +647,19 @@ void SymChooserImpl::accept_browser() {
 }
 
 void SymChooserImpl::cancel_browser() {
-    selected_ = NULL;
+    selected_.clear();
     fchooser_->dismiss(false);
 }
 
 void SymChooserImpl::editor_accept(FieldEditor* e) {
-    int i;
-    int bi = browser_index_;
-    if ((i = dir_[bi]->index(*e->text())) >= 0) {
-        if (!chdir(bi, i)) {
-            selected_ = &dir_[bi]->name(i);
+    if (int i = dir_[browser_index_]->index(e->text()->string()); i >= 0) {
+        if (!chdir(browser_index_, i)) {
+            selected_ = dir_[browser_index_]->name(i);
             fchooser_->dismiss(true);
         }
         return;
     } else {
-        selected_ = e->text();
+        selected_ = e->text()->string();
         fchooser_->dismiss(true);
     }
 }

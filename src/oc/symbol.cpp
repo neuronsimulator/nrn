@@ -2,17 +2,6 @@
 /* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
 
-#if HAVE_POSIX_MEMALIGN
-#define HAVE_MEMALIGN 1
-#endif
-#if defined(DARWIN) /* posix_memalign seems not to work on Darwin 10.6.2 */
-#undef HAVE_MEMALIGN
-#endif
-#if HAVE_MEMALIGN
-#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
-#define _XOPEN_SOURCE 600
-#endif
-
 #include "hoc.h"
 #include "hocdec.h"
 #include "hoclist.h"
@@ -25,14 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if MAC
-#undef HAVE_MALLOC_H
-#endif
 #if HAVE_MALLOC_H
 #include <malloc.h>
-#endif
-#if HAVE_ALLOC_H
-#include <alloc.h> /* at least for turbo C 2.0 */
 #endif
 
 #include "nrnmpiuse.h"
@@ -177,96 +160,6 @@ void hoc_link_symbol(Symbol* sp, Symlist* list) {
     }
     list->last = sp;
     sp->next = nullptr;
-}
-
-static int emalloc_error = 0;
-
-void hoc_malchk(void) {
-    if (emalloc_error) {
-        emalloc_error = 0;
-        execerror("out of memory", nullptr);
-    }
-}
-
-void* hoc_Emalloc(size_t n) { /* check return from malloc */
-    void* p = malloc(n);
-    if (p == nullptr)
-        emalloc_error = 1;
-    return p;
-}
-
-void* emalloc(size_t n) {
-    void* p = hoc_Emalloc(n);
-    if (emalloc_error) {
-        hoc_malchk();
-    }
-    return p;
-}
-
-void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
-    if (n == 0) {
-        return nullptr;
-    }
-    void* p = calloc(n, size);
-    if (p == nullptr)
-        emalloc_error = 1;
-    return p;
-}
-
-void* ecalloc(size_t n, size_t size) {
-    void* p = hoc_Ecalloc(n, size);
-    if (emalloc_error) {
-        hoc_malchk();
-    }
-    return p;
-}
-
-void* nrn_cacheline_alloc(void** memptr, size_t size) {
-#if HAVE_MEMALIGN
-    static int memalign_is_working = 1;
-    if (memalign_is_working) {
-        if (posix_memalign(memptr, 64, size) != 0) {
-            fprintf(stderr, "posix_memalign not working, falling back to using malloc\n");
-            memalign_is_working = 0;
-            *memptr = hoc_Emalloc(size);
-            hoc_malchk();
-        }
-    } else
-#endif
-        *memptr = hoc_Emalloc(size);
-    hoc_malchk();
-    return *memptr;
-}
-
-void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
-#if HAVE_MEMALIGN
-    nrn_cacheline_alloc(memptr, nmemb * size);
-    memset(*memptr, 0, nmemb * size);
-#else
-    *memptr = hoc_Ecalloc(nmemb, size);
-    hoc_malchk();
-#endif
-    return *memptr;
-}
-
-void* hoc_Erealloc(void* ptr, size_t size) { /* check return from realloc */
-    if (!ptr) {
-        return hoc_Emalloc(size);
-    }
-    void* p = realloc(ptr, size);
-    if (p == nullptr) {
-        free(ptr);
-        emalloc_error = 1;
-    }
-    return p;
-}
-
-void* erealloc(void* ptr, size_t size) {
-    void* p = hoc_Erealloc(ptr, size);
-    if (emalloc_error) {
-        hoc_malchk();
-    }
-    return p;
 }
 
 void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */

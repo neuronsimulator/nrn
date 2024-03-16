@@ -24,11 +24,7 @@ extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>
-#define asrt(arg) nrn_assert(arg == MPI_SUCCESS)
-#define USE_HPM   0
-#if USE_HPM
-#include <libhpm.h>
-#endif
+#define nrn_mpi_assert(arg) nrn_assert(arg == MPI_SUCCESS)
 
 #if NRN_MUSIC
 #include "nrnmusicapi.h"
@@ -41,6 +37,10 @@ MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
 static MPI_Group grp_bbs;
 static MPI_Group grp_net;
+
+static int nrnmpi_numprocs_subworld = 1;
+static int nrnmpi_subworld_id = -1;
+static int nrnmpi_subworld_change_cnt = 0;
 
 extern void nrnmpi_spike_initialize();
 
@@ -114,12 +114,12 @@ for (i=0; i < *pargc; ++i) {
 #if (NRN_ENABLE_THREADS)
             int required = MPI_THREAD_SERIALIZED;
             int provided;
-            asrt(MPI_Init_thread(pargc, pargv, required, &provided));
+            nrn_mpi_assert(MPI_Init_thread(pargc, pargv, required, &provided));
             if (required > provided) {
                 nrn_cannot_use_threads_and_mpi = 1;
             }
 #else
-            asrt(MPI_Init(pargc, pargv));
+            nrn_mpi_assert(MPI_Init(pargc, pargv));
 #endif
             nrnmpi_under_nrncontrol_ = 1;
 #if NRN_MUSIC
@@ -130,20 +130,20 @@ for (i=0; i < *pargc; ++i) {
 
 #if NRN_MUSIC
         if (nrnmusic) {
-            asrt(MPI_Comm_dup(nrnmusic_comm, &nrnmpi_world_comm));
+            nrn_mpi_assert(MPI_Comm_dup(nrnmusic_comm, &nrnmpi_world_comm));
         } else {
 #else
         {
 #endif
-            asrt(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
+            nrn_mpi_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
         }
     }
     grp_bbs = MPI_GROUP_NULL;
     grp_net = MPI_GROUP_NULL;
-    asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
-    asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
-    asrt(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
-    asrt(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
+    nrn_mpi_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
+    nrn_mpi_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
+    nrn_mpi_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
+    nrn_mpi_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
     nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
     nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
     nrnmpi_spike_initialize();
@@ -235,44 +235,44 @@ void nrnmpi_subworld_size(int n) {
         return;
     }
     if (nrnmpi_comm != MPI_COMM_NULL) {
-        asrt(MPI_Comm_free(&nrnmpi_comm));
+        nrn_mpi_assert(MPI_Comm_free(&nrnmpi_comm));
         nrnmpi_comm = MPI_COMM_NULL;
     }
     if (nrn_bbs_comm != MPI_COMM_NULL) {
-        asrt(MPI_Comm_free(&nrn_bbs_comm));
+        nrn_mpi_assert(MPI_Comm_free(&nrn_bbs_comm));
         nrn_bbs_comm = MPI_COMM_NULL;
     }
     if (grp_bbs != MPI_GROUP_NULL) {
-        asrt(MPI_Group_free(&grp_bbs));
+        nrn_mpi_assert(MPI_Group_free(&grp_bbs));
         grp_bbs = MPI_GROUP_NULL;
     }
     if (grp_net != MPI_GROUP_NULL) {
-        asrt(MPI_Group_free(&grp_net));
+        nrn_mpi_assert(MPI_Group_free(&grp_net));
         grp_net = MPI_GROUP_NULL;
     }
     MPI_Group wg;
-    asrt(MPI_Comm_group(nrnmpi_world_comm, &wg));
+    nrn_mpi_assert(MPI_Comm_group(nrnmpi_world_comm, &wg));
     int r = nrnmpi_myid_world;
     /* special cases */
     if (n == 1) {
-        asrt(MPI_Group_incl(wg, 1, &r, &grp_net));
-        asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
-        asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
-        asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
-        asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
-        asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
-        asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+        nrn_mpi_assert(MPI_Group_incl(wg, 1, &r, &grp_net));
+        nrn_mpi_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
+        nrn_mpi_assert(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
+        nrn_mpi_assert(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+        nrn_mpi_assert(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+        nrn_mpi_assert(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+        nrn_mpi_assert(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         nrnmpi_subworld_id = nrnmpi_myid_bbs;
         nrnmpi_numprocs_subworld = nrnmpi_numprocs_bbs;
     } else if (n == nrnmpi_numprocs_world) {
-        asrt(MPI_Group_incl(wg, 1, &r, &grp_bbs));
-        asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
-        asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
-        asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
-        asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+        nrn_mpi_assert(MPI_Group_incl(wg, 1, &r, &grp_bbs));
+        nrn_mpi_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
+        nrn_mpi_assert(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
+        nrn_mpi_assert(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+        nrn_mpi_assert(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
         if (r == 0) {
-            asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
-            asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+            nrn_mpi_assert(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+            nrn_mpi_assert(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
             nrnmpi_myid_bbs = -1;
             nrnmpi_numprocs_bbs = -1;
@@ -296,21 +296,21 @@ void nrnmpi_subworld_size(int n) {
             range[1] = nw - 1;
         }
         range[2] = 1; /* stride */
-        asrt(MPI_Group_range_incl(wg, 1, &range, &grp_net));
-        asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
-        asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
-        asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+        nrn_mpi_assert(MPI_Group_range_incl(wg, 1, &range, &grp_net));
+        nrn_mpi_assert(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
+        nrn_mpi_assert(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+        nrn_mpi_assert(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
 
         /* nrn_bbs_com ranks stride is nrnmpi_numprocs */
         /* only rank 0 of each subworld participates in nrn_bbs_comm */
         range[0] = 0;            /* first world rank in nrn_bbs_comm */
         range[1] = (nb - 1) * n; /* last world rank in nrn_bbs_comm */
         range[2] = n;            /* stride */
-        asrt(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
-        asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
+        nrn_mpi_assert(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
+        nrn_mpi_assert(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
         if (r % n == 0) { /* only rank 0 participates in nrn_bbs_comm */
-            asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
-            asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+            nrn_mpi_assert(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+            nrn_mpi_assert(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
             nrnmpi_myid_bbs = -1;
             nrnmpi_numprocs_bbs = -1;
@@ -322,12 +322,20 @@ void nrnmpi_subworld_size(int n) {
         }
     }
     nrnmpi_subworld_change_cnt++;
-    asrt(MPI_Group_free(&wg));
+    nrn_mpi_assert(MPI_Group_free(&wg));
 }
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
 int nrnmpi_wrap_mpi_init(int* flag) {
     return MPI_Initialized(flag);
+}
+
+void nrnmpi_get_subworld_info(int* cnt, int* index, int* rank, int* numprocs, int* numprocs_world) {
+    *cnt = nrnmpi_subworld_change_cnt;
+    *index = nrnmpi_subworld_id;
+    *rank = nrnmpi_myid;
+    *numprocs = nrnmpi_numprocs_subworld;
+    *numprocs_world = nrnmpi_numprocs_world;
 }
 
 #endif

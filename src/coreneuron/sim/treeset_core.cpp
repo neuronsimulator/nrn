@@ -70,8 +70,8 @@ static void nrn_rhs(NrnThread* _nt) {
         }
 
     if (_nt->nrn_fast_imem) {
-        /* _nrn_save_rhs has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* nrn_sav_rhs has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_rhs;
         nrn_pragma_acc(parallel loop present(p, vec_rhs) if (_nt->compute_gpu)
@@ -148,14 +148,14 @@ static void nrn_lhs(NrnThread* _nt) {
     int* parent_index = _nt->_v_parent_index;
 
     if (_nt->nrn_fast_imem) {
-        /* _nrn_save_d has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* nrn_sav_d has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_d;
         nrn_pragma_acc(parallel loop present(p, vec_d) if (_nt->compute_gpu) async(_nt->stream_id))
         nrn_pragma_omp(target teams distribute parallel for if(_nt->compute_gpu))
         for (int i = i1; i < i3; ++i) {
-            p[i] += vec_d[i];
+            p[i] = vec_d[i] - p[i];
         }
     }
 

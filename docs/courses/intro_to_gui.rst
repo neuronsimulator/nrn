@@ -222,7 +222,7 @@ Halve the duration and double the amplitude.
     Change the number of Points plotted/ms to 100 and dt to 0.01 ms and run again.
 
 5. 
-    **Increase the amplitude to 1e4 nA, cut the duration to 1e-5 ms, inrease Points plotted/ms to 1e5, and start a simulation...**
+    **Increase the amplitude to 1e4 nA, cut the duration to 1e-5 ms, increase Points plotted/ms to 1e5, and start a simulation...**
 
     After a few seconds of eternity, stop the simulation by clicking on RunControl / stop
 
@@ -242,7 +242,7 @@ Halve the duration and double the amplitude.
 
     :download:`bilayer.hoc <code/bilayer.hoc>` contains a properly configured CellBuilder, plus a custom interface for running simulations. The one item it doesn't have is a VariableStepControl. 
 
-    :download:`bilayer.hoc <code/bilayer.hoc>` is actually a session file that was given the "hoc" extension so that MSWin users could launch it by double clickin on the file name. For didactic reasons we prefer that you load it from Python instead.
+    :download:`bilayer.hoc <code/bilayer.hoc>` is actually a session file that was given the "hoc" extension so that MSWin users could launch it by double clicking on the file name. For didactic reasons we prefer that you load it from Python instead.
 
     1. 
         Save :download:`bilayer.hoc <code/bilayer.hoc>` to your machine, open up in a terminal, then cd to the directory that contains bilayer.hoc

@@ -22,11 +22,14 @@
    d is assumed to be non-zero.
    d and rhs is calculated from the property list.
 */
-
-
+#include "hoclist.h"
+#include "membfunc.h"
+#include "neuron/container/mechanism_data.hpp"
+#include "neuron/container/node_data.hpp"
+#include "neuron/model_data.hpp"
 #include "nrnredef.h"
 #include "options.h"
-#include "hoclist.h"
+#include "section_fwd.hpp"
 
 /*#define DEBUGSOLVE 1*/
 #define xpop      hoc_xpop
@@ -35,39 +38,37 @@
 #define execerror hoc_execerror
 #include "hocdec.h"
 
-typedef struct Section {
-    int refcount;              /* may be in more than one list */
-    short nnode;               /* Number of nodes for ith section */
-    struct Section* parentsec; /* parent section of node 0 */
-    struct Section* child;     /* root of the list of children
-                       connected to this parent kept in
-                       order of increasing x */
-    struct Section* sibling;   /* used as list of sections that have same parent */
-
-
-    /* the parentnode is only valid when tree_changed = 0 */
-    struct Node* parentnode; /* parent node */
-    struct Node** pnode;     /* Pointer to  pointer vector of node structures */
-    int order;               /* index of this in secorder vector */
-    short recalc_area_;      /* NODEAREA, NODERINV, diam, L need recalculation */
-    short volatile_mark;     /* for searching */
-    void* volatile_ptr;      /* e.g. ShapeSection* */
-#if DIAMLIST
-    short npt3d;                     /* number of 3-d points */
-    short pt3d_bsize;                /* amount of allocated space for 3-d points */
-    struct Pt3d* pt3d;               /* list of 3d points with diameter */
-    struct Pt3d* logical_connection; /* nil for legacy, otherwise specifies logical connection
-                                        position (for translation) */
-#endif
-    struct Prop* prop; /* eg. length, etc. */
-} Section;
+#include <optional>
 
 #if DIAMLIST
-typedef struct Pt3d {
-    float x, y, z, d; /* 3d point, microns */
+struct Pt3d {
+    float x, y, z, d;  // 3d point, microns
     double arc;
-} Pt3d;
+};
 #endif
+struct Section {
+    int refcount{};        // may be in more than one list
+    short nnode{};         // Number of nodes for ith section
+    Section* parentsec{};  // parent section of node 0
+    Section* child{};      // root of the list of children connected to this parent kept in order of
+                           // increasing x
+    Section* sibling{};    // used as list of sections that have same parent
+
+    Node* parentnode{};     // parent node; only valid when tree_changed = 0
+    Node** pnode{};         // Pointer to pointer vector of node structures
+    int order{};            // index of this in secorder vector
+    short recalc_area_{};   // NODEAREA, NODERINV, diam, L need recalculation
+    short volatile_mark{};  // for searching
+    void* volatile_ptr{};   // e.g. ShapeSection*
+#if DIAMLIST
+    short npt3d{};               // number of 3-d points
+    short pt3d_bsize{};          // amount of allocated space for 3-d points
+    Pt3d* pt3d{};                // list of 3d points with diameter
+    Pt3d* logical_connection{};  // nullptr for legacy, otherwise specifies logical connection
+                                 // position (for translation)
+#endif
+    Prop* prop{};  // eg. length, etc.
+};
 
 typedef float NodeCoef;
 typedef double NodeVal;
@@ -96,72 +97,112 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
 /* if any double is added after area then think about changing
 the notify_free_val parameter in node_free in solve.cpp
 */
-
-#define NODED(n)   (*((n)->_d))
-#define NODERHS(n) (*((n)->_rhs))
-
-#undef NODEV /* sparc-sun-solaris2.9 */
-
-#if CACHEVEC == 0
-#define NODEA(n)    ((n)->_a)
-#define NODEB(n)    ((n)->_b)
-#define NODEV(n)    ((n)->_v)
-#define NODEAREA(n) ((n)->_area)
-#else /* CACHEVEC */
-#define NODEV(n)    (*((n)->_v))
-#define NODEAREA(n) ((n)->_area)
+#define NODEAREA(n) ((n)->area())
 #define NODERINV(n) ((n)->_rinv)
-#define VEC_A(i)    (_nt->_actual_a[(i)])
-#define VEC_B(i)    (_nt->_actual_b[(i)])
-#define VEC_D(i)    (_nt->_actual_d[(i)])
-#define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->_actual_v[(i)])
-#define VEC_AREA(i) (_nt->_actual_area[(i)])
-#define NODEA(n)    (VEC_A((n)->v_node_index))
-#define NODEB(n)    (VEC_B((n)->v_node_index))
-#endif /* CACHEVEC */
 
-extern int use_sparse13;
-extern int use_cachevec;
-extern int secondorder;
-extern int cvode_active_;
+struct Extnode;
+struct Node {
+    // Eventually the old Node class should become an alias for
+    // neuron::container::handle::Node, but as an intermediate measure we can
+    // add one of those as a member and forward some access/modifications to it.
+    neuron::container::Node::owning_handle _node_handle{neuron::model().node_data()};
 
-typedef struct Node {
-#if CACHEVEC == 0
-    double _v;    /* membrane potential */
-    double _area; /* area in um^2 but see treesetup.cpp */
-    double _a;    /* effect of node in parent equation */
-    double _b;    /* effect of parent in node equation */
-#else             /* CACHEVEC */
-    double* _v;     /* membrane potential */
-    double _area;   /* area in um^2 but see treesetup.cpp */
-    double _rinv;   /* conductance uS from node to parent */
-    double _v_temp; /* vile necessity til actual_v allocated */
-#endif            /* CACHEVEC */
-    double* _d;   /* diagonal element in node equation */
-    double* _rhs; /* right hand side in node equation */
+    [[nodiscard]] auto id() {
+        return _node_handle.id();
+    }
+    [[nodiscard]] auto& a() {
+        return _node_handle.a();
+    }
+    [[nodiscard]] auto const& a() const {
+        return _node_handle.a();
+    }
+    [[nodiscard]] auto& area() {
+        return _node_handle.area_hack();
+    }
+    [[nodiscard]] auto const& area() const {
+        return _node_handle.area_hack();
+    }
+    [[nodiscard]] auto area_handle() {
+        return _node_handle.area_handle();
+    }
+    [[nodiscard]] auto& b() {
+        return _node_handle.b();
+    }
+    [[nodiscard]] auto const& b() const {
+        return _node_handle.b();
+    }
+    [[nodiscard]] auto& d() {
+        return _node_handle.d();
+    }
+    [[nodiscard]] auto const& d() const {
+        return _node_handle.d();
+    }
+    [[nodiscard]] auto& v() {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto const& v() const {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto& v_hack() {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto const& v_hack() const {
+        return _node_handle.v_hack();
+    }
+    [[nodiscard]] auto v_handle() {
+        return _node_handle.v_handle();
+    }
+    [[nodiscard]] auto& rhs() {
+        return _node_handle.rhs();
+    }
+    [[nodiscard]] auto const& rhs() const {
+        return _node_handle.rhs();
+    }
+    [[nodiscard]] auto rhs_handle() {
+        return _node_handle.rhs_handle();
+    }
+    [[nodiscard]] auto& sav_d() {
+        return _node_handle.sav_d();
+    }
+    [[nodiscard]] auto const& sav_d() const {
+        return _node_handle.sav_d();
+    }
+    [[nodiscard]] auto& sav_rhs() {
+        return _node_handle.sav_rhs();
+    }
+    [[nodiscard]] auto const& sav_rhs() const {
+        return _node_handle.sav_rhs();
+    }
+    [[nodiscard]] auto sav_rhs_handle() {
+        return _node_handle.sav_rhs_handle();
+    }
+    [[nodiscard]] auto non_owning_handle() {
+        return _node_handle.non_owning_handle();
+    }
+    double _rinv{}; /* conductance uS from node to parent */
     double* _a_matelm;
     double* _b_matelm;
+    double* _d_matelm;
     int eqn_index_;                 /* sparse13 matrix row/col index */
                                     /* if no extnodes then = v_node_index +1*/
                                     /* each extnode adds nlayer more equations after this */
-    struct Prop* prop;              /* Points to beginning of property list */
+    Prop* prop{};                   /* Points to beginning of property list */
     Section* child;                 /* section connected to this node */
                                     /* 0 means no other section connected */
     Section* sec;                   /* section this node is in */
-                                    /* #if PARANEURON */
+                                    /* #if NRNMPI */
     struct Node* _classical_parent; /* needed for multisplit */
     struct NrnThread* _nt;
 /* #endif */
 #if EXTRACELLULAR
-    struct Extnode* extnode;
+    Extnode* extnode{};
 #endif
 
 #if EXTRAEQN
-    struct Eqnblock* eqnblock; /* hook to other equations which
+    Eqnblock* eqnblock{}; /* hook to other equations which
            need to be solved at the same time as the membrane
            potential. eg. fast changeing ionic concentrations */
-#endif                         /*MOREEQN*/
+#endif
 
 #if DEBUGSOLVE
     double savd;
@@ -169,85 +210,202 @@ typedef struct Node {
 #endif                   /*DEBUGSOLVE*/
     int v_node_index;    /* only used to calculate parent_node_indices*/
     int sec_node_index_; /* to calculate segment index from *Node */
-} Node;
-
-#if EXTRACELLULAR
-/* pruned to only work with sparse13 */
-extern int nrn_nlayer_extracellular;
-#define nlayer (nrn_nlayer_extracellular) /* first (0) layer is extracellular next to membrane */
-typedef struct Extnode {
-    double* param; /* points to extracellular parameter vector */
-    /* v is membrane potential. so v internal = Node.v + Node.vext[0] */
-    /* However, the Node equation is for v internal. */
-    /* This is reconciled during update. */
-
-    /* Following all have allocated size of nlayer */
-    double* v; /* v external. */
-    double* _a;
-    double* _b;
-    double** _d;
-    double** _rhs; /* d, rhs, a, and b are analogous to those in node */
-    double** _a_matelm;
-    double** _b_matelm;
-    double** _x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
-    double** _x21; /* effect of v[layer-1 or internal] on eqn layer*/
-} Extnode;
-#endif
+    Node() = default;
+    Node(Node const&) = delete;
+    Node(Node&&) = default;
+    Node& operator=(Node const&) = delete;
+    Node& operator=(Node&&) = default;
+    ~Node();
+    friend std::ostream& operator<<(std::ostream& os, Node const& n) {
+        return os << n._node_handle;
+    }
+};
 
 #if !INCLUDEHOCH
 #include "hocdec.h" /* Prop needs Datum and Datum needs Symbol */
 #endif
 
 #define PROP_PY_INDEX 10
+struct Prop {
+    // Working assumption is that we can safely equate "Prop" with "instance
+    // of a mechanism" apart from a few special cases like CABLESECTION
+    Prop(short type)
+        : _type{type} {
+        if (type != CABLESECTION) {
+            m_mech_handle = neuron::container::Mechanism::owning_handle{
+                neuron::model().mechanism_data(type)};
+        }
+    }
+    Prop* next;      /* linked list of properties */
+    short _type;     /* type of membrane, e.g. passive, HH, etc. */
+    int dparam_size; /* for notifying hoc_free_val_array */
+    // double* param;     /* vector of doubles for this property */
+    Datum* dparam;   /* usually vector of pointers to doubles
+                of other properties but maybe other things as well
+                for example one cable section property is a
+                symbol */
+    long _alloc_seq; /* for cache efficiency */
+    Object* ob;      /* nullptr if normal property, otherwise the object containing the data*/
 
-typedef struct Prop {
-    struct Prop* next; /* linked list of properties */
-    short _type;       /* type of membrane, e.g. passive, HH, etc. */
-    short unused1;     /* gcc and borland need pairs of shorts to align the same.*/
-    int param_size;    /* for notifying hoc_free_val_array */
-    double* param;     /* vector of doubles for this property */
-    Datum* dparam;     /* usually vector of pointers to doubles
-                  of other properties but maybe other things as well
-                  for example one cable section property is a
-                  symbol */
-    long _alloc_seq;   /* for cache efficiency */
-    Object* ob;        /* nil if normal property, otherwise the object containing the data*/
-} Prop;
+    /** @brief Get the identifier of this instance.
+     */
+    [[nodiscard]] auto id() const {
+        assert(m_mech_handle);
+        return m_mech_handle->id_hack();
+    }
 
-extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
-extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
-extern void nrn_prop_data_free(int type, double* pd);
+    /**
+     * @brief Check if the given handle refers to data owned by this Prop.
+     */
+    [[nodiscard]] bool owns(neuron::container::data_handle<double> const& handle) const {
+        assert(m_mech_handle);
+        auto const num_fpfields = m_mech_handle->num_fpfields();
+        auto* const raw_ptr = static_cast<double const*>(handle);
+        for (auto i = 0; i < num_fpfields; ++i) {
+            for (auto j = 0; j < m_mech_handle->fpfield_dimension(i); ++j) {
+                if (raw_ptr == &m_mech_handle->fpfield(i, j)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Return a reference to the i-th floating point data field associated with this Prop.
+     *
+     * Note that there is a subtlety with the numbering scheme in case of array variables.
+     * If we have 3 array variables (a, b, c) with dimensions x, y, z:
+     *   a[x] b[y] c[z]
+     * then, for example, the second element of b (assume y >= 2) is obtained with param(1, 1).
+     * In AoS NEURON these values were all stored contiguously, and the values were obtained using
+     * a single index; taking the same example, the second element of b used to be found at index
+     * x + 1 in the param array. In all of the above, scalar variables are treated the same and
+     * simply have dimension 1. In SoA NEURON then a[1] is stored immediately after a[0] in memory,
+     * but for a given mechanism instance b[0] is **not** stored immediately after a[x-1].
+     *
+     * It is possible, but a little inefficient, to calculate the new pair of indices from an old
+     * index. For that, see the param_legacy and param_handle_legacy functions.
+     */
+    [[nodiscard]] double& param(int field_index, int array_index = 0) {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield(field_index, array_index);
+    }
+
+    /**
+     * @brief Return a reference to the i-th double value associated with this Prop.
+     *
+     * See the discussion above about numbering schemes.
+     */
+    [[nodiscard]] double const& param(int field_index, int array_index = 0) const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield(field_index, array_index);
+    }
+
+    /**
+     * @brief Return a handle to the i-th double value associated with this Prop.
+     *
+     * See the discussion above about numbering schemes.
+     */
+    [[nodiscard]] auto param_handle(int field, int array_index = 0) {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield_handle(field, array_index);
+    }
+
+    [[nodiscard]] auto param_handle(neuron::container::field_index ind) {
+        return param_handle(ind.field, ind.array_index);
+    }
+
+  private:
+    /**
+     * @brief Translate a legacy (flat) index into a (variable, array offset) pair.
+     * @todo Reimplement this using the new helpers.
+     */
+    [[nodiscard]] std::pair<int, int> translate_legacy_index(int legacy_index) const {
+        assert(m_mech_handle);
+        int total{};
+        auto const num_fields = m_mech_handle->num_fpfields();
+        for (auto field = 0; field < num_fields; ++field) {
+            auto const array_dim = m_mech_handle->fpfield_dimension(field);
+            if (legacy_index < total + array_dim) {
+                auto const array_index = legacy_index - total;
+                return {field, array_index};
+            }
+            total += array_dim;
+        }
+        throw std::runtime_error("could not translate legacy index " +
+                                 std::to_string(legacy_index));
+    }
+
+  public:
+    [[nodiscard]] double& param_legacy(int legacy_index) {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param(array_dim, array_index);
+    }
+
+    [[nodiscard]] double const& param_legacy(int legacy_index) const {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param(array_dim, array_index);
+    }
+
+    [[nodiscard]] auto param_handle_legacy(int legacy_index) {
+        auto const [array_dim, array_index] = translate_legacy_index(legacy_index);
+        return param_handle(array_dim, array_index);
+    }
+
+    /**
+     * @brief Return how many double values are assocated with this Prop.
+     *
+     * In case of array variables, this is the sum over array dimensions.
+     * i.e. if a mechanism has a[2] b[2] then param_size()=4 and param_num_vars()=2.
+     */
+    [[nodiscard]] int param_size() const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfields_size();
+    }
+
+    /**
+     * @brief Return how many (possibly-array) variables are associated with this Prop.
+     *
+     * In case of array variables, this ignores array dimensions.
+     * i.e. if a mechanism has a[2] b[2] then param_size()=4 and param_num_vars()=2.
+     */
+    [[nodiscard]] int param_num_vars() const {
+        assert(m_mech_handle);
+        return m_mech_handle->num_fpfields();
+    }
+
+    /**
+     * @brief Return the array dimension of the given value.
+     */
+    [[nodiscard]] int param_array_dimension(int field) const {
+        assert(m_mech_handle);
+        return m_mech_handle->fpfield_dimension(field);
+    }
+
+    [[nodiscard]] std::size_t current_row() const {
+        assert(m_mech_handle);
+        return m_mech_handle->current_row();
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, Prop const& p) {
+        if (p.m_mech_handle) {
+            return os << *p.m_mech_handle;
+        } else {
+            return os << "Prop{nullopt}";
+        }
+    }
+
+  private:
+    // This is a handle that owns a row of the ~global mechanism data for
+    // `_type`. Usage of `param` and `param_size` should be replaced with
+    // indirection through this.
+    std::optional<neuron::container::Mechanism::owning_handle> m_mech_handle;
+};
+
 extern void nrn_prop_datum_free(int type, Datum* ppd);
-extern double nrn_ghk(double, double, double, double);
-
-/* a point process is computed just like regular mechanisms. Ie it appears
-in the property list whose type specifies which allocation, current, and
-state functions to call.  This means some nodes have more properties than
-other nodes even in the same section.  The Point_process structure allows
-the interface to hoc variable names.
-Each variable symbol u.rng->type refers to the point process mechanism.
-The variable is treated as a vector
-variable whose first index specifies "which one" of that mechanisms insertion
-points we are talking about.  Finally the variable u.rng->index tells us
-where in the p-array to look.  The number of point_process vectors is the
-number of different point process types.  This is different from the
-mechanism type which enumerates all mechanisms including the point_processes.
-It is the responsibility of create_point_process to set up the vectors and
-fill in the symbol information.  However only after the process is given
-a location can the variables be set or accessed. This is because the
-allocation function may have to connect to some ionic parameters and the
-process exists primarily as a property of a node.
-*/
-typedef struct Point_process {
-    Section* sec; /* section and node location for the point mechanism*/
-    Node* node;
-    Prop* prop;    /* pointer to the actual property linked to the
-                  node property list */
-    Object* ob;    /* object that owns this process */
-    void* presyn_; /* non-threshold presynapse for NetCon */
-    void* nvi_;    /* NrnVarIntegrator (for local step method) */
-    void* _vnt;    /* NrnThread* (for NET_RECEIVE and multicore) */
-} Point_process;
+extern void nrn_delete_mechanism_prop_datum(int type);
+extern int nrn_mechanism_prop_datum_count(int type);
 
 #if EXTRAEQN
 /*Blocks of equations can hang off each node of the current conservation

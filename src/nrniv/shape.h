@@ -80,7 +80,7 @@ class ShapeScene: public Graph {  // entire neuron
     SectionHandler* section_handler_;
     PolyGlyph* sg_;
     Rotate3Band* r3b_;
-    CopyString* var_name_;
+    std::string var_name_;
     ShapeChangeObserver* shape_changed_;
 };
 
@@ -134,7 +134,6 @@ class ShapeSection: public FastShape {  // single section
     Coord scale() {
         return len_scale_;
     }
-    void update_ptrs();
 
   private:
     void trapezoid(Canvas*, const Color*, int i) const;
@@ -146,11 +145,11 @@ class ShapeSection: public FastShape {  // single section
     void fastidious_draw(Canvas*, const Color*, int, float, float) const;
 #endif
   private:
-    double** pvar_;
+    std::vector<neuron::container::data_handle<double>> pvar_;
     Section* sec_;
     Coord len_scale_;
     const Color* color_;
-    const Color** old_;
+    std::vector<Color const*> old_;
     const Color** colorseg_;
     int colorseg_size_;  // so know when to unref colorseg_ items.
     Coord xmin_, xmax_, ymin_, ymax_;

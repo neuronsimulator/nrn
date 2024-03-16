@@ -23,7 +23,6 @@ proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd
     soma { insert Sample }
 
     cvode.use_fast_imem(1)
-    cvode.cache_efficient(1)
 
     // record results of a run
     vvec = new Vector()

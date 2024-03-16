@@ -5,9 +5,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-#define CACHEVEC 1
-
-extern char* nmodl_version_;
+extern const char* nmodl_version_;
 
 #define P(arg) fputs(arg, fcout)
 List *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlist;
@@ -53,42 +51,16 @@ static void ext_vdef() {
     }
     if (electrode_current) {
         P("#if EXTRACELLULAR\n");
-        P(" _nd = _ml->_nodelist[_iml];\n");
-        P(" if (_nd->_extnode) {\n");
-        P("    _v = NODEV(_nd) +_nd->_extnode->_v[0];\n");
+        P(" _nd = _ml_arg->_nodelist[_iml];\n");
+        P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+        P("    _v = NODEV(_nd) + _extnode->_v[0];\n");
         P(" }else\n");
         P("#endif\n");
         P(" {\n");
-#if CACHEVEC == 0
-        P("    _v = NODEV(_nd);\n");
-#else
-        P("#if CACHEVEC\n");
-        P("  if (use_cachevec) {\n");
-        P("    _v = VEC_V(_ni[_iml]);\n");
-        P("  }else\n");
-        P("#endif\n");
-        P("  {\n");
-        P("    _nd = _ml->_nodelist[_iml];\n");
-        P("    _v = NODEV(_nd);\n");
-        P("  }\n");
-#endif
-
+        P("   _v = _vec_v[_ni[_iml]];\n");
         P(" }\n");
     } else {
-#if CACHEVEC == 0
-        P(" _nd = _ml->_nodelist[_iml];\n");
-        P(" _v = NODEV(_nd);\n");
-#else
-        P("#if CACHEVEC\n");
-        P("  if (use_cachevec) {\n");
-        P("    _v = VEC_V(_ni[_iml]);\n");
-        P("  }else\n");
-        P("#endif\n");
-        P("  {\n");
-        P("    _nd = _ml->_nodelist[_iml];\n");
-        P("    _v = NODEV(_nd);\n");
-        P("  }\n");
-#endif
+        P("   _v = _vec_v[_ni[_iml]];\n");
     }
 }
 
@@ -113,10 +85,18 @@ void c_out() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format on\n");
     P("#include \"md1redef.h\"\n");
-    P("#include \"section.h\"\n");
+    P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format off\n");
+    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
+    P("#include <vector>\n");
+
+    /* avoid clashes with mech names */
+    P("using std::size_t;\n");
+    P("static auto& std_cerr_stream = std::cerr;\n");
 
     printlist(defs_list);
     printlist(firstlist);
@@ -164,14 +144,16 @@ void c_out() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-    P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
-    P("#if CACHEVEC\n");
-    P("    _ni = _ml->_nodeindices;\n");
-    P("#endif\n");
-    P("_cntml = _ml->_nodecount;\n");
-    P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-    P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+    P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
+    P("Node *_nd; double _v; int* _ni; int _cntml;\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+    P("_ml = &_lmr;\n");  // update global _ml
+    P("_ni = _ml_arg->_nodeindices;\n");
+    P("_cntml = _ml_arg->_nodecount;\n");
+    P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use global _iml
+    P(" _ppvar = _ml_arg->_pdata[_iml];\n");
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
     }
@@ -205,14 +187,18 @@ void c_out() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-        P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+          "Memb_list* _ml_arg, int _type){\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
+        P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
+        P("auto const _vec_v = _nt->node_voltage_storage();\n");
+        P("Node *_nd; int* _ni; double _rhs, _v; int _cntml;\n");
+        P("_ml = &_lmr;\n");  // update global _ml
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("_cntml = _ml_arg->_nodecount;\n");
+        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // global _iml
+        P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
@@ -223,7 +209,7 @@ void c_out() {
             fprintf(fcout, "if (cvode_active_) { %s(); }\n", cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
-            P(" _g = _nrn_current(_v + .001);\n");
+            P(" auto const _g_local = _nrn_current(_v + .001);\n");
             printlist(begin_dion_stmt());
             if (state_discon_list_) {
                 P(" state_discon_flag_ = 1; _rhs = _nrn_current(_v); state_discon_flag_ = 0;\n");
@@ -231,7 +217,7 @@ void c_out() {
                 P(" _rhs = _nrn_current(_v);\n");
             }
             printlist(end_dion_stmt(".001"));
-            P(" _g = (_g - _rhs)/.001;\n");
+            P(" _g = (_g_local - _rhs)/.001;\n");
             /* set the ion variable values */
             printlist(set_ion_variables(0));
             if (point_process) {
@@ -239,106 +225,68 @@ void c_out() {
                 P(" _rhs *= 1.e2/(_nd_area);\n");
             }
             if (electrode_current) {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) += _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) += _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) += _rhs;\n");
+                P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
+                P("  if (_vec_sav_rhs) {\n");
+                P("    _vec_sav_rhs[_ni[_iml]] += _rhs;\n");
                 P("  }\n");
-                P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
-                  "_rhs; }\n");
-#endif
                 P("#if EXTRACELLULAR\n");
-                P(" if (_nd->_extnode) {\n");
-                P("   *_nd->_extnode->_rhs[0] += _rhs;\n");
+                P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+                P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) -= _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) -= _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) -= _rhs;\n");
-                P("  }\n");
-#endif
+                P("	 _vec_rhs[_ni[_iml]] -= _rhs;\n");
             }
         }
         P(" \n}}\n");
 
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml, int _type){\n");
+        P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
+          "_nt, Memb_list* _ml_arg, int _type) {\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
+        P("auto* const _ml = &_lmr;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("_cntml = _ml_arg->_nodecount;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml];\n");
         if (electrode_current) {
-            P(" _nd = _ml->_nodelist[_iml];\n");
-#if CACHEVEC == 0
-            P("	NODED(_nd) -= _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) -= _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("	NODED(_nd) -= _g;\n");
+            P(" _nd = _ml_arg->_nodelist[_iml];\n");
+            P("  _vec_d[_ni[_iml]] -= _g;\n");
+            P("  if (_vec_sav_d) {\n");
+            P("    _vec_sav_d[_ni[_iml]] -= _g;\n");
             P("  }\n");
-            P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
-#endif
             P("#if EXTRACELLULAR\n");
-            P(" if (_nd->_extnode) {\n");
-            P("   *_nd->_extnode->_d[0] += _g;\n");
+            P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+            P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
-#if CACHEVEC == 0
-            P("	NODED(_nd) += _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) += _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("     _nd = _ml->_nodelist[_iml];\n");
-            P("	NODED(_nd) += _g;\n");
-            P("  }\n");
-#endif
+            P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}}\n");
     }
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type){\n");
+    P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
     if (nrnstate || currents->next == currents) {
-        P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+        P("Node *_nd; double _v = 0.0; int* _ni; int _cntml;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
-        P(" _nd = _ml->_nodelist[_iml];\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+        P("_ml = &_lmr;\n");  // update global _ml
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("_cntml = _ml_arg->_nodecount;\n");
+        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");  // use the global _iml
+        P(" _ppvar = _ml_arg->_pdata[_iml];\n");
+        P(" _nd = _ml_arg->_nodelist[_iml];\n");
         ext_vdef();
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
@@ -508,9 +456,9 @@ static void funcdec() {
             narg = s->varnum;
             if (vectorize) {
                 if (narg) {
-                    Fprintf(fcout, "_threadargsprotocomma_ ");
+                    Fprintf(fcout, "_internalthreadargsprotocomma_ ");
                 } else {
-                    Fprintf(fcout, "_threadargsproto_");
+                    Fprintf(fcout, "_internalthreadargsproto_");
                 }
             }
             /*loop over argcount and add ,double */
@@ -535,10 +483,13 @@ void c_out_vectorize() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
+    P("// clang-format off\n");
     P("#include \"md1redef.h\"\n");
-    P("#include \"section.h\"\n");
+    P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("// clang-format on\n");
+    P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     printlist(defs_list);
     printlist(firstlist);
     P("static int _reset;\n");
@@ -566,7 +517,7 @@ void c_out_vectorize() {
 
     /* Initialization function must always be present */
 
-    P("\nstatic void initmodel(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n  int "
+    P("\nstatic void initmodel(_internalthreadargsproto_) {\n  int "
       "_i; double _save;");
     P("{\n");
     initstates();
@@ -575,17 +526,19 @@ void c_out_vectorize() {
     Fflush(fcout);
 
     /* generation of initmodel interface */
-    P("\nstatic void nrn_init(NrnThread* _nt, Memb_list* _ml, int _type){\n");
-    P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+    P("\nstatic void nrn_init(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type){\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+    P("auto* const _ml = &_lmr;\n");
+    P("Datum* _ppvar; Datum* _thread;\n");
     P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
-    P("#if CACHEVEC\n");
-    P("    _ni = _ml->_nodeindices;\n");
-    P("#endif\n");
-    P("_cntml = _ml->_nodecount;\n");
-    P("_thread = _ml->_thread;\n");
+    P("_ni = _ml_arg->_nodeindices;\n");
+    P("_cntml = _ml_arg->_nodecount;\n");
+    P("_thread = _ml_arg->_thread;\n");
     /*check_tables();*/
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-    P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+    P(" _ppvar = _ml_arg->_pdata[_iml];\n");
     check_tables();
     if (debugging_ && net_receive_) {
         P(" _tsav = -1e20;\n");
@@ -597,18 +550,19 @@ void c_out_vectorize() {
         P(" v = _v;\n");
     }
     printlist(get_ion_variables(1));
-    P(" initmodel(_p, _ppvar, _thread, _nt);\n");
+    P(" initmodel(_threadargs_);\n");
     printlist(set_ion_variables(2));
     P("}\n");
     P("}\n");
 
     /* standard modl EQUATION without solve computes current */
     if (!conductance_) {
-        P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, "
-          "double _v){double _current=0.;v=_v;");
+        P("\nstatic double _nrn_current(_internalthreadargsprotocomma_ "
+          "double _v) {\n"
+          "double _current=0.; v=_v;\n");
         if (cvode_nrn_current_solve_) {
             fprintf(fcout,
-                    "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
+                    "if (cvode_active_) { %s(_threadargs_); }\n",
                     cvode_nrn_current_solve_->name);
         }
         P("{");
@@ -632,16 +586,20 @@ void c_out_vectorize() {
        well as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-        P("\nstatic void nrn_cur(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+        P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+          "Memb_list* _ml_arg, int _type) {\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
+        P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
+        P("auto const _vec_v = _nt->node_voltage_storage();\n");
+        P("auto* const _ml = &_lmr;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
-        P("_thread = _ml->_thread;\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("_cntml = _ml_arg->_nodecount;\n");
+        P("_thread = _ml_arg->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
+        P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
         if (currents->next != currents) {
             printlist(get_ion_variables(0));
@@ -650,7 +608,7 @@ void c_out_vectorize() {
         }
         if (cvode_nrn_cur_solve_) {
             fprintf(fcout,
-                    "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n",
+                    "if (cvode_active_) { %s(_threadargs_); }\n",
                     cvode_nrn_cur_solve_->name);
         }
         if (currents->next != currents) {
@@ -660,16 +618,16 @@ void c_out_vectorize() {
                 printlist(set_ion_variables(0));
                 P(" }\n");
             } else {
-                P(" _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);\n");
+                P(" auto const _g_local = _nrn_current(_threadargscomma_ _v + .001);\n");
                 printlist(begin_dion_stmt());
                 if (state_discon_list_) {
                     P(" state_discon_flag_ = 1; _rhs = _nrn_current(_v); state_discon_flag_ = "
                       "0;\n");
                 } else {
-                    P(" _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);\n");
+                    P(" _rhs = _nrn_current(_threadargscomma_ _v);\n");
                 }
                 printlist(end_dion_stmt(".001"));
-                P(" _g = (_g - _rhs)/.001;\n");
+                P(" _g = (_g_local - _rhs)/.001;\n");
                 /* set the ion variable values */
                 printlist(set_ion_variables(0));
             } /* end of not conductance */
@@ -678,88 +636,48 @@ void c_out_vectorize() {
                 P(" _rhs *= 1.e2/(_nd_area);\n");
             }
             if (electrode_current) {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) += _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) += _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) += _rhs;\n");
+                P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
+                P("  if (_vec_sav_rhs) {\n");
+                P("    _vec_sav_rhs[_ni[_iml]] += _rhs;\n");
                 P("  }\n");
-                P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += "
-                  "_rhs; }\n");
-#endif
                 P("#if EXTRACELLULAR\n");
-                P(" if (_nd->_extnode) {\n");
-                P("   *_nd->_extnode->_rhs[0] += _rhs;\n");
+                P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+                P("   *_extnode->_rhs[0] += _rhs;\n");
                 P(" }\n");
                 P("#endif\n");
             } else {
-#if CACHEVEC == 0
-                P("	NODERHS(_nd) -= _rhs;\n");
-#else
-                P("#if CACHEVEC\n");
-                P("  if (use_cachevec) {\n");
-                P("	VEC_RHS(_ni[_iml]) -= _rhs;\n");
-                P("  }else\n");
-                P("#endif\n");
-                P("  {\n");
-                P("	NODERHS(_nd) -= _rhs;\n");
-                P("  }\n");
-#endif
+                P("	 _vec_rhs[_ni[_iml]] -= _rhs;\n");
             }
         }
         P(" \n}\n");
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
-        P("\nstatic void nrn_jacob(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
+        P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
+          "_nt, Memb_list* _ml_arg, int _type) {\n");
+        P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+        P("auto const _vec_d = _nt->node_d_storage();\n");
+        P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
+        P("auto* const _ml = &_lmr;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
-        P("_thread = _ml->_thread;\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("_cntml = _ml_arg->_nodecount;\n");
+        P("_thread = _ml_arg->_thread;\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml];\n");
         if (electrode_current) {
-            P(" _nd = _ml->_nodelist[_iml];\n");
-#if CACHEVEC == 0
-            P("	NODED(_nd) -= _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) -= _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("	NODED(_nd) -= _g;\n");
+            P(" _nd = _ml_arg->_nodelist[_iml];\n");
+            P("  _vec_d[_ni[_iml]] -= _g;\n");
+            P("  if (_vec_sav_d) {\n");
+            P("    _vec_sav_d[_ni[_iml]] -= _g;\n");
             P("  }\n");
-            P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
-#endif
             P("#if EXTRACELLULAR\n");
-            P(" if (_nd->_extnode) {\n");
-            P("   *_nd->_extnode->_d[0] += _g;\n");
+            P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
+            P("   *_extnode->_d[0] += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
-#if CACHEVEC == 0
-            P("	NODED(_nd) += _g;\n");
-#else
-            P("#if CACHEVEC\n");
-            P("  if (use_cachevec) {\n");
-            P("	VEC_D(_ni[_iml]) += _g;\n");
-            P("  }else\n");
-            P("#endif\n");
-            P("  {\n");
-            P("     _nd = _ml->_nodelist[_iml];\n");
-            P("	NODED(_nd) += _g;\n");
-            P("  }\n");
-#endif
+            P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}\n");
         P(" \n}\n");
@@ -767,22 +685,24 @@ void c_out_vectorize() {
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
-    P("\nstatic void nrn_state(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
+    P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
+      "Memb_list* _ml_arg, int _type) {\n");
+    P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
+    P("auto* const _vec_v = _nt->node_voltage_storage();\n");
+    P("auto* const _ml = &_lmr;\n");
     if (nrnstate || currents->next == currents) {
-        P("double* _p; Datum* _ppvar; Datum* _thread;\n");
-        P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+        P("Datum* _ppvar; Datum* _thread;\n");
+        P("Node *_nd; double _v = 0.0; int* _ni;\n");
         if (dtsav_for_nrn_state && nrnstate) {
             P("double _dtsav = dt;\n"
               "if (secondorder) { dt *= 0.5; }\n");
         }
-        P("#if CACHEVEC\n");
-        P("    _ni = _ml->_nodeindices;\n");
-        P("#endif\n");
-        P("_cntml = _ml->_nodecount;\n");
-        P("_thread = _ml->_thread;\n");
-        P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
-        P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
-        P(" _nd = _ml->_nodelist[_iml];\n");
+        P("_ni = _ml_arg->_nodeindices;\n");
+        P("size_t _cntml = _ml_arg->_nodecount;\n");
+        P("_thread = _ml_arg->_thread;\n");
+        P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
+        P(" _ppvar = _ml_arg->_pdata[_iml];\n");
+        P(" _nd = _ml_arg->_nodelist[_iml];\n");
         ext_vdef();
         P(" v=_v;\n{\n");
         printlist(get_ion_variables(1));
@@ -809,7 +729,6 @@ void c_out_vectorize() {
     */
     /* initlists() is called once to setup slist and dlist pointers */
     P("\nstatic void _initlists(){\n");
-    P(" double _x; double* _p = &_x;\n");
     P(" int _i; static int _first = 1;\n");
     P("  if (!_first) return;\n");
     printlist(initlist);

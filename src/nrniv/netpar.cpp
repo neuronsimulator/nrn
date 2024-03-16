@@ -24,8 +24,10 @@ using Gid2PreSyn = std::unordered_map<int, PreSyn*>;
 #include <netcon.h>
 #include <cvodeobj.h>
 #include <netcvode.h>
-#include <vector>
 #include "ivocvect.h"
+
+#include <atomic>
+#include <vector>
 
 static int n_multisend_interval;
 
@@ -41,6 +43,19 @@ static IvocVect* all_spiketvec = NULL;
 static IvocVect* all_spikegidvec = NULL;
 static double t_exchange_;
 static double dt1_;  // 1/dt
+static int localgid_size_;
+static int ag_send_size_;
+static int ag_send_nspike_;
+static int ovfl_capacity_;
+static int ovfl_;
+static unsigned char* spfixout_;
+static unsigned char* spfixin_;
+static unsigned char* spfixin_ovfl_;
+static int nout_;
+static int* nin_;
+static NRNMPI_Spike* spikeout_;
+static NRNMPI_Spike* spikein_;
+static int icapacity_;
 static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
@@ -79,7 +94,7 @@ double nrn_multisend_receive_time(int) {
 }
 #endif
 
-#if PARANEURON
+#if NRNMPI
 extern void nrnmpi_split_clear();
 #endif
 extern void nrnmpi_multisplit_clear();
@@ -141,11 +156,7 @@ void ncs_netcon_inject(int srcgid, int netconIndex, double spikeTime, bool local
     NetCon* d = ps->dil_.item(netconIndex);
     NrnThread* nt = nrn_threads;
     if (d->active_ && d->target_) {
-#if BBTQ == 5
         ns->bin_event(spikeTime + d->delay_, d, nt);
-#else
-        ns->event(spikeTime + d->delay_, d, nt);
-#endif
     }
 }
 
@@ -213,7 +224,7 @@ Gid2PreSyn& nrn_gid2out() {
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
-    static int seqcnt_;
+static std::atomic<int> seqcnt_;
 static NrnThread* last_nt_;
 #endif
 
@@ -225,6 +236,8 @@ NetParEvent::~NetParEvent() {}
 void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt) {
     nc->event(tt + usable_mindelay_, this, nt);
 }
+
+
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     int seq;
     if (nrn_use_selfqueue_) {  // first handle pending flag=1 self events
@@ -240,9 +253,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
     nt->_t = tt;
 #if NRNMPI
     if (nrnmpi_numprocs > 0) {
-        MUTLOCK
         seq = ++seqcnt_;
-        MUTUNLOCK
         if (seq == nrn_nthread) {
             last_nt_ = nt;
 #if NRNMPI
@@ -574,7 +585,7 @@ void nrn_spike_exchange(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange();
+    n = nrnmpi_spike_exchange(&ovfl_, &nout_, nin_, spikeout_, &spikein_, &icapacity_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -670,7 +681,15 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         nrnmpi_barrier();
         nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
     }
-    n = nrnmpi_spike_exchange_compressed();
+    n = nrnmpi_spike_exchange_compressed(localgid_size_,
+                                         ag_send_size_,
+                                         ag_send_nspike_,
+                                         &ovfl_capacity_,
+                                         &ovfl_,
+                                         spfixout_,
+                                         spfixin_,
+                                         &spfixin_ovfl_,
+                                         nin_);
     wt_ = nrnmpi_wtime() - wt;
     wt = nrnmpi_wtime();
     TBUF
@@ -688,7 +707,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         if (max_histogram_) {
             vector_vec(max_histogram_)[0] += 1.;
         }
-        t_exchange_ = nrn_threads->_t;
+        t_exchange_ = nt->_t;
         TBUF
         return;
     }
@@ -785,7 +804,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
     }
-    t_exchange_ = nrn_threads->_t;
+    t_exchange_ = nt->_t;
     wt1_ = nrnmpi_wtime() - wt;
     TBUF
 }
@@ -969,7 +988,7 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 void nrnmpi_gid_clear(int arg) {
     if (arg == 0 || arg == 3 || arg == 4) {
         nrn_partrans_clear();
-#if PARANEURON
+#if NRNMPI
         nrnmpi_split_clear();
 #endif
     }

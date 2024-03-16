@@ -8,6 +8,7 @@ See also:
     cvode.rst
     batch.rst
     savstate.rst
+    bbsavestate.rst
     sessionsave.rst
 
 Functions
@@ -210,22 +211,6 @@ Functions
         from a call to the :func:`fcurrent` function. For the fixed step method 
         :func:`fadvance` modifies NODED and NODERHS 
         but leaves NODEA and NODEB unchanged. 
-
-----
-
-.. function:: nrnunit_use_legacy
-
-  Syntax:
-    ``bool = h.nrnunit_use_legacy(bool)``
-
-  Description:
-    | Return current units usage as 0 or 1.
-    | An argument is not required.
-    | Arg, False uses modern codata2018 units for FARADAY, R, etc. (default as of version 8.0)
-    | Arg, True uses legacy units (default prior to October, 2020)
-
-  .. seealso::
-    :ref:`NRNUNIT_USE_LEGACY` :ref:`CONSTANTS`
 
 ----
 

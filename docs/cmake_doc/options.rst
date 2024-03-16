@@ -1,25 +1,72 @@
 Introduction
 ============
-The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
+The NEURON build system now uses CMake as of version 7.8 circa Nov 2019.
 The previous autotools (./configure) build system has been removed after
 8.0 release.
 
+The NEURON simulator as well as Interviews, CoreNEURON and NMODL can be installed
+together using the following instructions:
+
+1. Clone the latest version or specific release:
+
 .. code-block:: shell
 
-  git clone https://github.com/neuronsimulator/nrn nrn
-  cd nrn
-  mkdir build
-  cd build
-  cmake .. # default install to /usr/local
-  make -j
-  sudo make -j install
+   git clone https://github.com/neuronsimulator/nrn           # latest development branch
+   git clone https://github.com/neuronsimulator/nrn -b 8.2.3  # specific release version 8.2.3
+   cd nrn
 
-The ``-j`` option to make invokes a parallel make using all available cores.
-This is often very much faster than a single process make. One can add a number
-after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
-to use. This can be useful if there is the possibility of running out of memory.
+..
 
-The make targets that are made available by cmake can be listed with
+   .. warning:: To build NEURON from source you either need to clone the
+   NEURON Git repository or download a source code archive that includes
+   Git submodules, such as the ``nrn-full-src-package-X.Y.Z.tar.gz`` file in
+   the `NEURON
+   releases <https://github.com/neuronsimulator/nrn/releases>`__ on
+   GitHub. The tarballs like ``Source code (tar.gz)`` or
+   ``Source code (zip)`` created by GitHub are incomplete.
+
+2. Create a build directory:
+
+.. code-block:: shell
+
+   mkdir build
+   cd build
+
+3. Run ``cmake`` with the appropriate options (see below for a list of
+   common options). A full list of options can be found in
+   ``nrn/CMakeLists.txt`` and defaults are shown in
+   ``nrn/cmake/BuildOptionDefaults.cmake``. e.g. a bare-bones
+   installation:
+
+.. code-block:: shell
+
+   cmake .. \
+    -DNRN_ENABLE_INTERVIEWS=OFF \
+    -DNRN_ENABLE_MPI=OFF \
+    -DNRN_ENABLE_RX3D=OFF \
+    -DPYTHON_EXECUTABLE=$(which python3) \
+    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+
+4. Build the code:
+
+.. code-block:: shell
+
+   cmake --build . --parallel 8 --target install
+
+Feel free to set the number of parallel jobs (i.e. 8) according to your
+system using the ``--parallel`` option.
+
+   .. warning:: When ``NEURON`` is installed with ``CoreNEURON`` option enabled then ``NMODL`` is also installed with the ``NMODL`` Python bindings which increase a lot the compilation complexity and memory requirements. For that purpose it’s recommended to either disable this option if the Python bindings are not needed using the ``CMake`` option ``-DNMODL_ENABLE_PYTHON_BINDINGS=OFF`` or restrict the number of parallel jobs running in parallel in the ``cmake`` command using ``cmake --parallel <number_of_parallel_jobs>``. i.e. in a machine with 8 threads do ``cmake -parallel 4``.
+
+5. Set PATH and PYTHONPATH environmental variables to use the
+   installation:
+
+.. code-block:: shell
+
+   export PATH=/path/to/install/directory/bin:$PATH
+   export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+
+The make targets that are made available by CMake can be listed with
 
 .. code-block:: shell
 
@@ -190,8 +237,8 @@ IV_ENABLE_X11_DYNAMIC_MAKE_HEADERS:BOOL=OFF
   If it is ever necessary to remake the X11 dynamic .h files, I will
   do so and push them to the https://github.com/neuronsimulator/iv respository.
 
-MPI options:
-============
+MPI options
+===========
 
 NRN_ENABLE_MPI:BOOL=ON
 ----------------------
@@ -248,14 +295,15 @@ NRN_ENABLE_MUSIC:BOOL=OFF
   only for binary distributions of NEURON (e.g. wheels) where NEURON may
   be installed and used prior to installing music.)
 
-Python options:
-===============
+Python options
+==============
 
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+.. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
   Enable dynamic Python version support
@@ -263,21 +311,31 @@ NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
   This is mostly useful for binary distributions where it is unknown which
   version, if any, of python exists on the target machine.
 
+.. _cmake_nrn_python_dynamic:
 NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
-  semicolon (;) separated list of python executables to create interfaces. (default python3)
+  Semicolon (;) separated list of Python executables to build support for.
 
-  If the string is empty use the python specified by PYTHON_EXECUTABLE
-  or else the default python. Binary distributions often specify a list
-  of python versions so that if any one of them is available on the
-  target machine, NEURON + Python will be fully functional. Eg. the
-  mac package build script on my machine, nrn/bldnrnmacpkgcmake.sh uses
+  If the string is empty use the python specified by ``PYTHON_EXECUTABLE``.
+  or else the default python (``python3`` in the ``$PATH``).
+  Binary distributions often specify a list of python versions so that if any
+  one of them is available on the target machine, NEURON + Python will be fully
+  functional.
+  You must specify exactly one executable for each minor version of Python that
+  you would like to support.
+  For example:
 
   .. code-block:: shell
 
     -DNRN_PYTHON_DYNAMIC="python3.8;python3.9;python3.10;python3.11"
 
-  This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
+  The first entry in the list is considered to be the default version, followed
+  by alternatives in decreasing order of preference.
+  The default version is used to execute build scripts, and many tests are only
+  executed using this version.
+
+  This option is ignored unless ``NRN_ENABLE_PYTHON_DYNAMIC=ON``, in which case
+  ``PYTHON_EXECUTABLE`` is ignored.
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
@@ -315,8 +373,8 @@ NRN_RX3D_OPT_LEVEL:STRING=0
 
     -DNRN_RX3D_OPT_LEVEL=2
 
-CoreNEURON options:
-===================
+CoreNEURON options
+==================
 
 NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
@@ -337,9 +395,22 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
-  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
   The ones of particular interest that can be used on the NEURON
   CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+
+NMODL options
+=============
+
+To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
+
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
+------------------------------------
+  Enable pybind11 based python bindings
+
+  Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
+  the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
+
 
 Occasionally useful advanced options:
 =====================================
@@ -508,12 +579,29 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
+  For a list of all the cpp files changed in a pull request, consider
+  copy/pasting the ``;`` separated list obtained with
+
+  .. code-block:: shell
+
+     a=`git diff --name-only master | grep '\.cpp'`
+     echo $a | sed 's/ /;/g'
+
+
 NRN_SANITIZERS:STRING=
 ----------------------
-  Enable some combination of AddressSanitizer, LeakSanitizer and
-  UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
-  ``leak`` and ``undefined``. See the "Diagnosis and Debugging" section for more
-  information.
+  Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
+  and UndefinedBehaviorSanitizer. Accepts a comma-separated list of ``address``,
+  ``leak``, ``thread`` and ``undefined``.
+  See the "Diagnosis and Debugging" section for more information.
+  Note that on macOS it can be a little intricate to combine
+  ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
+  you attempt this then the CMake code should recommend a solution.
+
+  Note: the ``address`` sanitizer also prints leak infornation when a
+  launch exits. That can be avoided with
+
+  ``export ASAN_OPTIONS=detect_leaks=0``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -522,20 +610,6 @@ NRN_ENABLE_DISCRETE_EVENT_OBSERVER:BOOL=ON
 ------------------------------------------
   Enable Observer to be a subclass of DiscreteEvent
   Can save space but a lot of component destruction may not notify other components that are watching it to no longer use that component. Useful only if one builds a model without needing to eliminate pieces of the model.
-
-NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
-----------------------------
-  Default is to use modern faraday, R, etc. from 2019 nist constants.
-  When Off or ON, and in the absence of the ``NRNUNIT_USE_LEGACY=0or1``
-  environment variable, the default dynamic value of ``h.nrnunit_use_legacy()``
-  will be 0 or 1 respectively.
-
-  At launch time (or import neuron),
-  use of legacy or modern units can be specified with the
-  ``NRNUNIT_USE_LEGACY=0or1`` environment variable. The use of legacy or
-  modern units can be dynamically specified after launch with the
-  ``h.nrnunit_use_legacy(0or1)`` function (with no args, returns the
-  current use flag).
 
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
@@ -572,3 +646,31 @@ NRN_ENABLE_BACKTRACE:BOOL=OFF
   Does not work with python.
 
   Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.
+
+NRN_LINK_AGAINST_PYTHON:BOOL=OFF
+--------------------------------
+  When ``NRN_ENABLE_PYTHON_DYNAMIC=ON`` then link the NEURON-Python interface
+  libraries ``libnrnpythonX.Y.so`` against the corresponding Python library
+  that was found at configuration time (``libpythonX.Y.so``).
+  This is enabled by default on Windows, but is not generally needed on macOS
+  and Linux, where the Python library is found and loaded dynamically at
+  runtime.
+
+NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
+----------------------------------
+  Semicolon (;) separated list of Python executables that NEURON is **not**
+  built with support for, for use in tests of error messages and reporting.
+  For these purposes, minor versions (3.X and 3.Y) are considered different
+  and patch versions (3.8.X and 3.8.Y) are considered to be the same.
+
+NRN_ENABLE_MATH_OPT:BOOL=OFF
+-------------------------------------
+  Enable extra math optimisations.
+
+  When using compilers like GCC and Clang, one needs to explicitly use compiler
+  flags like `-funsafe-math-optimizations` in order to generate SIMD/vectorised
+  code using vector math library. This flag adds these extra compiler flags
+  to enable SIMD code.
+
+  Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
+  by default.

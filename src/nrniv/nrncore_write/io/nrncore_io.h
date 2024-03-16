@@ -31,12 +31,15 @@ void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 void writeint_(int* p, size_t size, FILE* f);
 void writedbl_(double* p, size_t size, FILE* f);
 
+void write_uint32vec(std::vector<uint32_t>& vec, FILE* f);
+
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
-typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
+// also for read
+struct Memb_list;
+using bbcore_write_t =
+    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
 
-void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f);
-double* contiguous_art_data(double** data, int nitem, int szitem);
 void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 

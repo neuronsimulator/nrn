@@ -31,16 +31,8 @@ void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
 void* create_point_process(int pointtype, Object* ho) {
-    Point_process* pp;
-    pp = (Point_process*) emalloc(sizeof(Point_process));
-    pp->node = 0;
-    pp->sec = 0;
-    pp->prop = 0;
+    auto* const pp = new Point_process{};
     pp->ob = ho;
-    pp->presyn_ = 0;
-    pp->nvi_ = 0;
-    pp->_vnt = 0;
-
     if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
         create_artcell_prop(pp, pointsym[pointtype]->subtype);
         return pp;
@@ -48,12 +40,11 @@ void* create_point_process(int pointtype, Object* ho) {
     if (ho && ho->ctemplate->steer && ifarg(1)) {
         loc_point_process(pointtype, (void*) pp);
     }
-    return (void*) pp;
+    return pp;
 }
 
 Object* nrn_new_pointprocess(Symbol* sym) {
     void* v;
-    extern Object* hoc_new_object(Symbol*, void*);
     extern Object* hoc_new_opoint(int);
     Object* ob;
     extern Symlist* hoc_built_in_symlist;
@@ -76,60 +67,63 @@ Object* nrn_new_pointprocess(Symbol* sym) {
 void destroy_point_process(void* v) {
     // might be NULL if error handling because of error in construction
     if (v) {
-        Point_process* pp = (Point_process*) v;
+        auto* const pp = static_cast<Point_process*>(v);
         free_one_point(pp);
-        free(pp);
+        delete pp;
     }
 }
 
 void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node) {
     extern Prop* prop_alloc_disallow(Prop * *pp, short type, Node* nd);
-    extern Prop* prop_alloc(Prop**, int, Node*);
     extern Section* nrn_pnt_sec_for_need_;
-    Prop* p;
-    double x;
-
     assert(!nrn_is_artificial_[pointsym[pointtype]->subtype]);
-    x = nrn_arc_position(sec, node);
-    /* the problem the next fragment overcomes is that POINTER's become
-       invalid when a point process is moved (dparam and param were
-       allocated but then param was freed and replaced by old param) The
-       error that I saw, then, was when a dparam pointed to a param --
-       useful to give default value to a POINTER and then the param was
-       immediately freed. This was the tip of the iceberg since in general
-       when one moves a point process, some pointers are valid and
-       some invalid and this can only be known by the model in its
-       CONSTRUCTOR. Therefore, instead of copying the old param to
-       the new param (and therefore invalidating other pointers as in
-       menus) we flag the allocation routine for the model to
-       1) not allocate param and dparam, 2) don't fill param but
-       do the work for dparam (fill pointers for ions),
-       3) execute the constructor normally.
-    */
     if (pnt->prop) {
+        // Make the old Node forget about pnt->prop
+        if (auto* const old_node = pnt->node; old_node) {
+            auto* const p = pnt->prop;
+            if (!nrn_is_artificial_[p->_type]) {
+                auto* p1 = old_node->prop;
+                if (p1 == p) {
+                    old_node->prop = p1->next;
+                } else {
+                    for (; p1; p1 = p1->next) {
+                        if (p1->next == p) {
+                            p1->next = p->next;
+                            break;
+                        }
+                    }
+                }
+            }
+            v_structure_change = 1;  // needed?
+        }
+        // Tell the new Node about pnt->prop
+        pnt->prop->next = node->prop;
+        node->prop = pnt->prop;
+        // Call the nrn_alloc function from the MOD file with nrn_point_prop_ set: this will skip
+        // resetting parameter values and calling the CONSTRUCTOR block, but it *will* update ion
+        // variables to point to the ion mechanism instance in the new Node
+        prop_update_ion_variables(pnt->prop, node);
+    } else {
+        // Allocate a new Prop for this Point_process
+        Prop* p;
+        auto const x = nrn_arc_position(sec, node);
         nrn_point_prop_ = pnt->prop;
-    } else {
-        nrn_point_prop_ = (Prop*) 0;
+        nrn_pnt_sec_for_need_ = sec;
+        // Both branches of this tell `node` about the new Prop `p`
+        if (x == 0. || x == 1.) {
+            p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
+        } else {
+            p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
+        }
+        nrn_pnt_sec_for_need_ = nullptr;
+        nrn_point_prop_ = nullptr;
+        pnt->prop = p;
+        pnt->prop->dparam[1] = {neuron::container::do_not_search, pnt};
     }
-    nrn_pnt_sec_for_need_ = sec;
-    if (x == 0. || x == 1.) {
-        p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
-    } else {
-        p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
-    }
-    nrn_pnt_sec_for_need_ = (Section*) 0;
-
-    nrn_point_prop_ = (Prop*) 0;
-    if (pnt->prop) {
-        pnt->prop->param = nullptr;
-        pnt->prop->dparam = nullptr;
-        free_one_point(pnt);
-    }
+    // Update pnt->sec with sec, unreffing the old value and reffing the new one
     nrn_sec_ref(&pnt->sec, sec);
-    pnt->node = node;
-    pnt->prop = p;
-    pnt->prop->dparam[0] = &NODEAREA(node);
-    pnt->prop->dparam[1] = pnt;
+    pnt->node = node;  // tell pnt which node it belongs to now
+    pnt->prop->dparam[0] = node->area_handle();
     if (pnt->ob) {
         if (pnt->ob->observers) {
             hoc_obj_notify(pnt->ob);
@@ -242,12 +236,14 @@ double has_loc_point(void* v) {
     return (pnt->sec != 0);
 }
 
-double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
+neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
+                                                             Symbol* sym,
+                                                             int index) {
     if (!pnt->prop) {
         if (nrn_inpython_ == 1) { /* python will handle the error */
             hoc_warning("point process not located in a section", nullptr);
             nrn_inpython_ = 2;
-            return nullptr;
+            return {};
         } else {
             hoc_execerror("point process not located in a section", nullptr);
         }
@@ -257,31 +253,43 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index) {
         if (cppp_semaphore) {
             ++cppp_semaphore;
             cppp_datum = &datum;  // we will store a value in `datum` later
-            return &ppp_dummy;
+            return neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                          &ppp_dummy};
         } else {
-            return datum.get<double*>();
+            // In case _p_somevar is being used as an opaque void* in a VERBATIM
+            // block then then the Datum will hold a literal void* and will not
+            // be convertible to double*. If instead somevar is used in the MOD
+            // file and it was set from the interpreter (mech._ref_pv =
+            // seg._ref_v), then the Datum will hold either data_handle<double>
+            // or a literal double*. If we attempt to access a POINTER or
+            // BBCOREPOINTER variable that is being used as an opaque void* from
+            // the interpreter -- as is done in test_datareturn.py, for example
+            // -- then we will reach this code when the datum holds a literal
+            // void*. We don't know what type that pointer really refers to, so
+            // in the first instance let's return nullptr in that case, not
+            // void*-cast-to-double*.
+            if (datum.holds<double*>()) {
+                return static_cast<neuron::container::data_handle<double>>(datum);
+            } else {
+                return {};
+            }
         }
     } else {
         if (pnt->prop->ob) {
-            return pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index;
+            return neuron::container::data_handle<double>{
+                pnt->prop->ob->u.dataspace[sym->u.rng.index].pval + index};
         } else {
-            return &(pnt->prop->param[sym->u.rng.index + index]);
+            return pnt->prop->param_handle_legacy(sym->u.rng.index + index);
         }
     }
 }
 
-/* put the right double pointer on the stack */
+// put the right data handle on the stack
 void steer_point_process(void* v) {
-    Symbol* sym;
-    int index;
-    Point_process* pnt = (Point_process*) v;
-    sym = hoc_spop();
-    if (ISARRAY(sym)) {
-        index = hoc_araypt(sym, SYMBOL);
-    } else {
-        index = 0;
-    }
-    hoc_pushpx(point_process_pointer(pnt, sym, index));
+    auto* const pnt = static_cast<Point_process*>(v);
+    auto* const sym = hoc_spop();
+    auto const index = ISARRAY(sym) ? hoc_araypt(sym, SYMBOL) : 0;
+    hoc_push(point_process_pointer(pnt, sym, index));
 }
 
 void nrn_cppp(void) {
@@ -294,7 +302,7 @@ void connect_point_process_pointer(void) {
         hoc_execerror("not a point process pointer", (char*) 0);
     }
     cppp_semaphore = 0;
-    *cppp_datum = hoc_pxpop();
+    *cppp_datum = hoc_pop_handle<double>();
     hoc_nopop();
 }
 
@@ -316,18 +324,17 @@ static void free_one_point(Point_process* pnt) {
                 }
             }
     }
-    { v_structure_change = 1; }
-    if (p->param) {
-        if (memb_func[p->_type].destructor) {
-            memb_func[p->_type].destructor(p);
-        }
-        notify_freed_val_array(p->param, p->param_size);
-        nrn_prop_data_free(p->_type, p->param);
+    v_structure_change = 1;
+    if (memb_func[p->_type].destructor) {
+        memb_func[p->_type].destructor(p);
+    }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
     }
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);
     }
-    free(p);
+    delete p;
     pnt->prop = (Prop*) 0;
     pnt->node = (Node*) 0;
     if (pnt->sec) {
@@ -353,14 +360,10 @@ void clear_point_process_struct(Prop* p) {
         if (p->ob) {
             hoc_obj_unref(p->ob);
         }
-        if (p->param) {
-            notify_freed_val_array(p->param, p->param_size);
-            nrn_prop_data_free(p->_type, p->param);
-        }
         if (p->dparam) {
             nrn_prop_datum_free(p->_type, p->dparam);
         }
-        free(p);
+        delete p;
     }
 }
 

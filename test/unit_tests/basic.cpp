@@ -1,21 +1,24 @@
+#include <../../nrnconf.h>
 #include "code.h"
 #include "neuron.h"
 #include "ocfunc.h"
 #include "section.h"
+#if HAVE_IV
+#include "ivoc.h"
+#endif
 
 #include <catch2/catch.hpp>
 
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {
         REQUIRE(hoc_oc("create s\n") == 0);
-        WHEN("fast_imem and cachevec is allocated") {
+        WHEN("fast_imem is allocated") {
             nrn_use_fast_imem = true;
-            use_cachevec = 1;
             nrn_fast_imem_alloc();
             THEN("nrn_fast_imem should not be nullptr") {
                 for (int it = 0; it < nrn_nthread; ++it) {
-                    NrnThread* nt = &nrn_threads[it];
-                    REQUIRE(nt->_nrn_fast_imem != nullptr);
+                    REQUIRE(nrn_threads[it].node_sav_d_storage());
+                    REQUIRE(nrn_threads[it].node_sav_rhs_storage());
                 }
             }
         }
@@ -31,8 +34,9 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                 }
                 THEN("The current in this section is 0") {
                     for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                        auto const vec_sav_rhs = nt->node_sav_rhs_storage();
                         for (int i = 0; i < nt->end; ++i) {
-                            REQUIRE(nt->_nrn_fast_imem->_nrn_sav_rhs[i] == 0.0);
+                            REQUIRE(vec_sav_rhs[i] == 0.0);
                         }
                     }
                 }
@@ -47,9 +51,17 @@ TEST_CASE("Test return code of execerror", "[NEURON][execerror]") {
     REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
 }
 
+#if HAVE_IV
+TEST_CASE("Test Oc::run(cmd)", "[NEURON]") {
+    Oc oc;
+    REQUIRE(oc.run("foo", 1) == 1);
+    REQUIRE(oc.run("foo", 0) == 1);
+}
+#endif
+
 // AddressSanitizer seems to intercept the mallinfo[2]() system calls and return
-// null values from them.
-#ifndef NRN_ASAN_ENABLED
+// null values from them. ThreadSanitizer seems to do the same.
+#if !defined(NRN_ASAN_ENABLED) && !defined(NRN_TSAN_ENABLED)
 TEST_CASE("Test nrn_mallinfo returns non-zero", "[NEURON][nrn_mallinfo]") {
     SECTION("HOC") {
         REQUIRE(

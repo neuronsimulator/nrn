@@ -57,7 +57,6 @@ def test_subworlds():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, spike_detector)
 
-    h.cvode.cache_efficient(1)
     h.finitialize(-65)
     pc.set_maxstep(10)
     pc.psolve(250.0)

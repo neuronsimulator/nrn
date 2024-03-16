@@ -4,6 +4,11 @@ NEURON Python documentation
 ===========================
 (:ref:`Switch to HOC documentation <hoc_prog_ref>`)
 
+For a basic introduction on how to run Python scripts with NEURON, see
+:ref:`running Python scripts with NEURON <launching_hoc_and_python_scripts>`,
+and you may also like to refer to the `NEURON Python tutorial
+<../tutorials/scripting-neuron-basics.html>`_.
+
 Quick Links
 -----------
 - :ref:`genindex`
@@ -23,14 +28,14 @@ Quick Links
     `KSChan <modelspec/programmatic/kschan.html>`_, `LinearMechanism <modelspec/programmatic/linmod.html>`_,
     `MechanismStandard <programming/mechstan.html>`_,
     `MechanismType <modelspec/programmatic/mechtype.html>`_, `NetCon <modelspec/programmatic/network/netcon.html>`_, `ParallelContext <modelspec/programmatic/network/parcon.html>`_,
-    `ParallelNetManager <modelspec/programmatic/network/parnet.html>`_, `PlotShape <visualization/plotshapeclass.html>`_, `Python <programming/python.html>`_,
+    `ParallelNetManager <modelspec/programmatic/network/parnet.html>`_, `PlotShape <visualization/plotshapeclass.html>`_,
     `RangeVarPlot <visualization/rvarplt.html>`_, `SaveState <simctrl/savstate.html>`_, `SectionBrowser <programming/gui/secbrows.html>`_,
     `SectionList <modelspec/programmatic/topology/seclist.html>`_, `SectionRef <modelspec/programmatic/topology/secref.html>`_, `Shape <visualization/shape.html>`_,
     `StateTransitionEvent <modelspec/programmatic/ste.html>`_
 
-    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
-    :ref:`ocsyntax`, :ref:`topology`
+    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`math`,
+    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`standardruntools`,
+    :ref:`topology`
     
     :ref:`neuron_rxd`
 
@@ -40,8 +45,6 @@ Basic Programming
 .. toctree::
     :maxdepth: 1
     
-    NEURON Python tutorial <https://neuronsimulator.github.io/nrn/tutorials/scripting-neuron-basics.html>
-    programming/hoc.rst
     programming/mathematics.rst
     programming/strings.rst
     programming/guidesign.rst
@@ -52,6 +55,8 @@ Basic Programming
     programming/dynamiccode.rst
     programming/projectmanagement.rst
     programming/internals.rst
+    programming/neuron_classes.rst
+    programming/hoc-from-python.rst
 
 Model Specification
 -------------------

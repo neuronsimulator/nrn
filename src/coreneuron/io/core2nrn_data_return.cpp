@@ -7,6 +7,7 @@
 */
 
 #include <sstream>
+#include <mutex>
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
@@ -26,7 +27,7 @@
  *  Return is size of either the returned data pointer or the number
  *  of pointers in mdata. tid is the thread index.
  */
-size_t (*nrn2core_type_return_)(int type, int tid, double*& data, double**& mdata);
+size_t (*nrn2core_type_return_)(int type, int tid, double*& data, std::vector<double*>& mdata);
 
 /** @brief, Call NEURON mechanism bbcore_read.
  *  Inverse of bbcore_write for transfer from NEURON to CoreNEURON.
@@ -40,6 +41,11 @@ int (*core2nrn_corepointer_mech_)(int tid,
                                   int dcnt,
                                   int* iArray,
                                   double* dArray);
+
+int (*core2nrn_nmodlrandom_)(int tid,
+                             int type,
+                             const std::vector<int>& indices,
+                             const std::vector<double>& nmodlrandom);
 }
 
 namespace coreneuron {
@@ -67,14 +73,13 @@ static void soa2aos_inverse_permute_copy(size_t n,
                                          int sz,
                                          int stride,
                                          double* src,
-                                         double** dest,
+                                         std::vector<double*>& dest,
                                          int* permute) {
     // src is soa and permuted. dest is n pointers to sz doubles (aos).
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + permute[instance];
         for (int i = 0; i < sz; ++i) {
-            d[i] = s[i * stride];
+            dest[i][instance] = s[i * stride];
         }
     }
 }
@@ -86,13 +91,16 @@ static void soa2aos_inverse_permute_copy(size_t n,
  *  Each of the sz segments of src have the same order as the n pointers
  *  of dest.
  */
-static void soa2aos_unpermuted_copy(size_t n, int sz, int stride, double* src, double** dest) {
+static void soa2aos_unpermuted_copy(size_t n,
+                                    int sz,
+                                    int stride,
+                                    double* src,
+                                    std::vector<double*>& dest) {
     // src is soa and permuted. dest is n pointers to sz doubles (aos).
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + instance;
         for (int i = 0; i < sz; ++i) {
-            d[i] = s[i * stride];
+            dest[i][instance] = s[i * stride];
         }
     }
 }
@@ -101,11 +109,12 @@ static void soa2aos_unpermuted_copy(size_t n, int sz, int stride, double* src, d
  *  dest is an array of n pointers to the beginning of each sz length array.
  *  src is a contiguous array of n segments of size sz.
  */
-static void aos2aos_copy(size_t n, int sz, double* src, double** dest) {
+static void aos2aos_copy(size_t n, int sz, double* src, std::vector<double*>& dest) {
     for (size_t instance = 0; instance < n; ++instance) {
-        double* d = dest[instance];
         double* s = src + (instance * sz);
-        std::copy(s, s + sz, d);
+        for (auto i = 0; i < sz; ++i) {
+            dest[i][instance] = s[i];
+        }
     }
 }
 
@@ -176,6 +185,64 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
     (*core2nrn_corepointer_mech_)(tid, type, icnt, dcnt, iArray.get(), dArray.get());
 }
 
+// based on code from nrncore_callbacks.cpp
+std::vector<int>& nrn_mech_random_indices(int type) {
+    static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+    static std::mutex mx;
+    std::unique_lock<std::mutex> lock(mx);
+    if (mech_random_indices.count(type) == 0) {
+        // if no element, create empty one and search dparam_semantics to fill
+        auto& mri = mech_random_indices[type];
+        int* semantics = corenrn.get_memb_func(type).dparam_semantics;
+        int dparam_size = corenrn.get_prop_dparam_size()[type];
+        for (int i = 0; i < dparam_size; ++i) {
+            if (semantics[i] == -11) {
+                mri.push_back(i);
+            }
+        }
+    }
+    lock.unlock();
+    return mech_random_indices[type];
+}
+
+/** @brief Copy back NMODL RANDOM sequence to NEURON
+ */
+static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
+    // Started out as a copy of corenrn_corepointer above.
+    // overall algorithm for nmodlrandom is similar to nrnthread_dat2_mech.
+    int type = tml->index;
+    auto& indices = nrn_mech_random_indices(type);
+    if (indices.size() == 0) {
+        return;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = tml->ml;
+    int layout = corenrn.get_mech_data_layout()[type];
+    int pdsz = corenrn.get_prop_dparam_size()[type];
+    int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+    int n = ml->nodecount;
+
+    // will send back vector of 34 bit uints (aka double)
+    std::vector<double> nmodlrandom{};
+    nmodlrandom.reserve(n * indices.size());
+    for (int ix: indices) {
+        for (int j = 0; j < n; ++j) {
+            int jp = j;
+            if (ml->_permute) {
+                jp = ml->_permute[j];
+            }
+            int pv = ml->pdata[nrn_i_layout(jp, n, ix, pdsz, layout)];
+            nrnran123_State* state = (nrnran123_State*) nt._vdata[pv];
+            uint32_t seq;
+            char which;
+            nrnran123_getseq(state, &seq, &which);
+            nmodlrandom.push_back(double(seq) * 4 + which);
+        }
+    }
+
+    (*core2nrn_nmodlrandom_)(tid, type, indices, nmodlrandom);
+}
+
 /** @brief Copy event queue and related state back to NEURON.
  */
 static void core2nrn_tqueue(NrnThread&);
@@ -224,9 +291,8 @@ void core2nrn_data_return() {
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         size_t n = 0;
         double* data = nullptr;
-        double** mdata = nullptr;
         NrnThread& nt = nrn_threads[tid];
-
+        std::vector<double*> mdata{};
         n = (*nrn2core_type_return_)(0, tid, data, mdata);  // 0 means time
         if (n) {                                            // not the empty thread
             data[0] = nt._t;
@@ -248,7 +314,7 @@ void core2nrn_data_return() {
             int mtype = tml->index;
             Memb_list* ml = tml->ml;
             n = (*nrn2core_type_return_)(mtype, tid, data, mdata);
-            assert(n == size_t(ml->nodecount) && mdata);
+            assert(n == size_t(ml->nodecount) && !mdata.empty());
             if (n == 0) {
                 continue;
             }
@@ -273,6 +339,7 @@ void core2nrn_data_return() {
             }
 
             core2nrn_corepointer(tid, tml);
+            c2n_nmodlrandom(tid, tml);
         }
 
         // Copy the event queue and related state.
@@ -503,6 +570,10 @@ static bool core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
     }
     case PlayRecordEventType: {
         // nothing to transfer
+        break;
+    }
+    case ReportEventType: {
+        // no need to transfer ReportEvent
         break;
     }
     default: {

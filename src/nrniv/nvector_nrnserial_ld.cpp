@@ -330,13 +330,7 @@ void N_VPrint_NrnSerialLD(N_Vector x) {
     xd = NV_DATA_S_LD(x);
 
     for (i = 0; i < N; i++) {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-        printf("%11.8Lg\n", *xd++);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
         printf("%11.8lg\n", *xd++);
-#else
-        printf("%11.8g\n", *xd++);
-#endif
     }
     printf("\n");
 }

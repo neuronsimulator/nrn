@@ -76,7 +76,8 @@ enum ReportType {
     SynapseReport,
     IMembraneReport,
     SectionReport,
-    SummationReport
+    SummationReport,
+    LFPReport
 };
 
 // enumerate that defines the section type for a Section report

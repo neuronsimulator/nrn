@@ -668,7 +668,7 @@ General
       
       from neuron import h
       pc = h.ParallelContext()
-      
+
       #Model
       cell = h.IntFire1()
       cell.refrac = 0 # no limit on spike rate
@@ -678,13 +678,14 @@ General
       for i, nc in enumerate(nclist):
         nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
         nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
-      
+
       # Record all spikes (cell is the only one generating output spikes)
-      out = [h.Vector() for _ in range(2)]
-      pc.spike_record(-1, out[0], out[1])
-      
+      spike_ts = h.Vector()
+      spike_ids = h.Vector()
+      pc.spike_record(-1, spike_ts, spike_ids)
+
       #PatternStim
-      tvec =   h.Vector(range(10))
+      tvec = h.Vector(range(10))
       gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
       ps = h.PatternStim()
       ps.play(tvec, gidvec)
@@ -694,9 +695,10 @@ General
       pc.set_maxstep(10.)
       h.finitialize(-65)
       pc.psolve(7)
-      
-      for i, tsp in enumerate(out[0]):
-        print (tsp, int(out[1][i]))
+
+      for spike_t, spike_cell_id in zip(spike_ts, spike_ids):
+        print(f"{spike_t} {int(spike_cell_id)}")
+
 
   Output:
     Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim
@@ -704,6 +706,7 @@ General
     (1, 1) is the first spike that gets passed into a NetCon (with delay 1.1) so the
     first output spike is generated at 2.2 and that spike gets recursively regenerated every
     1.0 ms. PatternStim spikes with gid > 3 are discarded.
+    
     .. code-block::
 
         2.1 0
@@ -944,7 +947,10 @@ Mechanisms
     Syntax:
         ``h.setdata_suffix(section(x))``
 
-
+    Deprecated for Python:
+        In Python one can use the syntax ``section(x).suffix.fname(args)`` to call a FUNCTION
+        or PROCEDURE regardless of whether the function uses RANGE variables.
+        
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 

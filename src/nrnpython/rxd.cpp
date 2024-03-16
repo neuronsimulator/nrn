@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "grids.h"
+#include <cfloat>
 #include "rxd.h"
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
@@ -12,14 +13,14 @@
 
 #include <thread>
 #include <vector>
+#include "ocmatrix.h"
+#include "ivocvect.h"
 
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
-extern int _nrnunit_use_legacy_;
 int prev_structure_change_cnt = 0;
-int prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
 unsigned char initialized = FALSE;
 
 /*
@@ -73,10 +74,9 @@ int _num_reactions = 0;
 int _curr_count;
 int* _curr_indices = NULL;
 double* _curr_scales = NULL;
-double** _curr_ptrs = NULL;
+std::vector<neuron::container::data_handle<double>> _conc_ptrs, _curr_ptrs;
 int _conc_count;
 int* _conc_indices = NULL;
-double** _conc_ptrs = NULL;
 
 /*membrane fluxes*/
 int _memb_curr_total = 0;            /*number of membrane currents (sum of
@@ -94,7 +94,7 @@ int* _memb_species_count; /*array of length _memb_count
                            current*/
 
 /*arrays of size _memb_count by _memb_species_count*/
-double*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
+std::vector<std::vector<neuron::container::data_handle<double>>> _memb_cur_ptrs;
 int** _memb_cur_charges;
 int*** _memb_cur_mapped;     /*array of pairs of indices*/
 int*** _memb_cur_mapped_ecs; /*array of pointer into ECS grids*/
@@ -128,7 +128,7 @@ static void transfer_to_legacy() {
     /*TODO: support 3D*/
     int i;
     for (i = 0; i < _conc_count; i++) {
-        *(double*) _conc_ptrs[i] = states[_conc_indices[i]];
+        *_conc_ptrs[i] = states[_conc_indices[i]];
     }
 }
 
@@ -162,9 +162,7 @@ extern "C" void free_curr_ptrs() {
     if (_curr_scales != NULL)
         free(_curr_scales);
     _curr_scales = NULL;
-    if (_curr_ptrs != NULL)
-        free(_curr_ptrs);
-    _curr_ptrs = NULL;
+    _curr_ptrs.clear();
 }
 
 extern "C" void free_conc_ptrs() {
@@ -172,9 +170,7 @@ extern "C" void free_conc_ptrs() {
     if (_conc_indices != NULL)
         free(_conc_indices);
     _conc_indices = NULL;
-    if (_conc_ptrs != NULL)
-        free(_conc_ptrs);
-    _conc_ptrs = NULL;
+    _conc_ptrs.clear();
 }
 
 
@@ -182,7 +178,6 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
                                     int* curr_index,
                                     double* curr_scale,
                                     PyHocObject** curr_ptrs) {
-    int i;
     free_curr_ptrs();
     /* info for NEURON currents - to update states */
     _curr_count = num_currents;
@@ -192,9 +187,9 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
     _curr_scales = (double*) malloc(sizeof(double) * num_currents);
     memcpy(_curr_scales, curr_scale, sizeof(double) * num_currents);
 
-    _curr_ptrs = (double**) malloc(sizeof(double*) * num_currents);
-    for (i = 0; i < num_currents; i++)
-        _curr_ptrs[i] = (double*) curr_ptrs[i]->u.px_;
+    _curr_ptrs.resize(num_currents);
+    for (int i = 0; i < num_currents; i++)
+        _curr_ptrs[i] = curr_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
@@ -204,10 +199,9 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject
     _conc_count = conc_count;
     _conc_indices = (int*) malloc(sizeof(int) * conc_count);
     memcpy(_conc_indices, conc_index, sizeof(int) * conc_count);
-
-    _conc_ptrs = (double**) malloc(sizeof(double*) * conc_count);
+    _conc_ptrs.resize(conc_count);
     for (i = 0; i < conc_count; i++)
-        _conc_ptrs[i] = (double*) conc_ptrs[i]->u.px_;
+        _conc_ptrs[i] = conc_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_include_node_flux3D(int grid_count,
@@ -337,12 +331,11 @@ void apply_node_flux(int n,
                     states[j] += dt * (double) PyLong_AsLong(result) / scale[i];
                 } else if (PyInt_Check(result)) {
                     states[j] += dt * (double) PyInt_AsLong(result) / scale[i];
-                }
-
-                else {
+                } else {
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
+                Py_DECREF(result);
             }
         } else {
             PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
@@ -492,7 +485,6 @@ extern "C" void set_setup_matrices(fptr setup_matrices) {
 
 extern "C" void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
-    _setup_units();
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
@@ -617,9 +609,8 @@ static void free_currents() {
             free(_memb_cur_mapped[i][j]);
         }
         free(_memb_cur_mapped[i]);
-        free(_memb_cur_ptrs[i]);
     }
-    free(_memb_cur_ptrs);
+    _memb_cur_ptrs.clear();
     free(_memb_cur_mapped);
     free(_memb_species_count);
     free(_cur_node_indices);
@@ -666,7 +657,7 @@ extern "C" void setup_currents(int num_currents,
     _membrane_lookup = (int*) malloc(sizeof(int) * num_states);
     memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int) * num_states);
 
-    _memb_cur_ptrs = (double***) malloc(sizeof(double**) * num_currents);
+    _memb_cur_ptrs.resize(num_currents);
     _memb_cur_mapped_ecs = (int***) malloc(sizeof(int*) * num_currents);
     _memb_cur_mapped = (int***) malloc(sizeof(int**) * num_currents);
     induced_currents_ecs_idx = (int*) malloc(sizeof(int) * _memb_curr_total);
@@ -676,14 +667,13 @@ extern "C" void setup_currents(int num_currents,
     memset(induced_currents_ecs_idx, SPECIES_ABSENT, sizeof(int) * _memb_curr_total);
 
     for (i = 0, k = 0; i < num_currents; i++) {
-        _memb_cur_ptrs[i] = (double**) malloc(sizeof(double*) * num_species[i]);
-        // memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
+        _memb_cur_ptrs[i].resize(num_species[i]);
         _memb_cur_mapped_ecs[i] = (int**) malloc(sizeof(int*) * num_species[i]);
         _memb_cur_mapped[i] = (int**) malloc(sizeof(int*) * num_species[i]);
 
 
         for (j = 0; j < num_species[i]; j++, k++) {
-            _memb_cur_ptrs[i][j] = (double*) ptrs[k]->u.px_;
+            _memb_cur_ptrs[i][j] = ptrs[k]->u.px_;
             _memb_cur_mapped[i][j] = (int*) malloc(2 * sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*) malloc(2 * sizeof(int));
 
@@ -782,10 +772,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
             /*Needed for node.include_flux*/
             _setup_matrices();
-        }
-        if (prev_nrnunit_use_legacy != _nrnunit_use_legacy_) {
-            _setup_units();
-            prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
         }
     }
     switch (method) {
@@ -895,7 +881,7 @@ extern "C" void register_rate(int nspecies,
     } else {
         react->vptrs = NULL;
     }
-    react->state_idx = (int***) malloc(nseg * sizeof(double**));
+    react->state_idx = (int***) malloc(nseg * sizeof(int**));
     for (i = 0, idx = 0; i < nseg; i++) {
         react->state_idx[i] = (int**) malloc((nspecies + nparam) * sizeof(int*));
         for (j = 0; j < nspecies + nparam; j++) {
@@ -1330,7 +1316,7 @@ void _rhs_variable_step(const double* p1, double* p2) {
             rhs);
 
     /*reactions*/
-    MEM_ZERO(&ydot[num_states - _rxd_num_zvi], sizeof(double) * _ecs_count);
+    memset(&ydot[num_states - _rxd_num_zvi], 0, sizeof(double) * _ecs_count);
     get_all_reaction_rates(states, rhs, ydot);
 
 
@@ -1416,7 +1402,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                     states_for_reaction[i][j] = NAN;
                 }
             }
-            MEM_ZERO(result_array[i], react->num_regions * sizeof(double));
+            memset(result_array[i], 0, react->num_regions * sizeof(double));
         }
         for (k = 0; i < react->num_species + react->num_params; i++, k++) {
             for (j = 0; j < react->num_regions; j++) {
@@ -1442,7 +1428,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                 ecs_params_for_reaction[k] = NAN;
             }
         }
-        MEM_ZERO(ecs_result, react->num_ecs_species * sizeof(double));
+        memset(ecs_result, 0, react->num_ecs_species * sizeof(double));
 
         for (i = 0; i < react->num_mult; i++) {
             mc_mult[i] = react->mc_multiplier[i][segment];
@@ -1522,10 +1508,9 @@ void solve_reaction(ICSReactions* react,
     double pd;
     double dt = *dt_ptr;
     double dx = FLT_EPSILON;
-    MAT* jacobian = m_get(N, N);
-    VEC* b = v_get(N);
-    VEC* x = v_get(N);
-    PERM* pivot = px_get(N);
+    auto jacobian = std::make_unique<OcFullMatrix>(N, N);
+    auto b = std::make_unique<IvocVect>(N);
+    auto x = std::make_unique<IvocVect>(N);
 
     double** states_for_reaction = (double**) malloc(react->num_species * sizeof(double*));
     double** states_for_reaction_dx = (double**) malloc(react->num_species * sizeof(double*));
@@ -1581,8 +1566,8 @@ void solve_reaction(ICSReactions* react,
                     states_for_reaction_dx[i][j] = states_for_reaction[i][j];
                 }
             }
-            MEM_ZERO(result_array[i], react->num_regions * sizeof(double));
-            MEM_ZERO(result_array_dx[i], react->num_regions * sizeof(double));
+            memset(result_array[i], 0, react->num_regions * sizeof(double));
+            memset(result_array_dx[i], 0, react->num_regions * sizeof(double));
         }
         for (k = 0; i < react->num_species + react->num_params; i++, k++) {
             for (j = 0; j < react->num_regions; j++) {
@@ -1612,8 +1597,8 @@ void solve_reaction(ICSReactions* react,
         }
 
         if (react->num_ecs_species > 0) {
-            MEM_ZERO(ecs_result, react->num_ecs_species * sizeof(double));
-            MEM_ZERO(ecs_result_dx, react->num_ecs_species * sizeof(double));
+            memset(ecs_result, 0, react->num_ecs_species * sizeof(double));
+            memset(ecs_result_dx, 0, react->num_ecs_species * sizeof(double));
         }
 
         for (i = 0; i < react->num_mult; i++) {
@@ -1635,9 +1620,9 @@ void solve_reaction(ICSReactions* react,
             for (j = 0; j < react->num_regions; j++) {
                 if (react->state_idx[segment][i][j] != SPECIES_ABSENT) {
                     if (bval == NULL)
-                        v_set_val(b, idx, dt * result_array[i][j]);
+                        b->elem(idx) = dt * result_array[i][j];
                     else
-                        v_set_val(b, idx, bval[react->state_idx[segment][i][j]]);
+                        b->elem(idx) = bval[react->state_idx[segment][i][j]];
 
 
                     // set up the changed states array
@@ -1662,7 +1647,7 @@ void solve_reaction(ICSReactions* react,
                             if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                                 pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) /
                                      dx;
-                                m_set_val(jacobian, jac_idx, idx, (idx == jac_idx) - dt * pd);
+                                *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                                 jac_idx += 1;
                             }
                             result_array_dx[jac_i][jac_j] = 0;
@@ -1672,7 +1657,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->ecs_state[segment][jac_i] != NULL) {
                             pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                            m_set_val(jacobian, jac_idx, idx, -dt * pd);
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                         ecs_result_dx[jac_i] = 0;
@@ -1688,9 +1673,9 @@ void solve_reaction(ICSReactions* react,
         for (i = 0; i < react->num_ecs_species; i++) {
             if (react->ecs_state[segment][i] != NULL) {
                 if (bval == NULL)
-                    v_set_val(b, idx, dt * ecs_result[i]);
+                    b->elem(idx) = dt * ecs_result[i];
                 else
-                    v_set_val(b, idx, cvode_b[react->ecs_index[segment][i]]);
+                    b->elem(idx) = cvode_b[react->ecs_index[segment][i]];
 
 
                 // set up the changed states array
@@ -1714,7 +1699,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                             pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) / dx;
-                            m_set_val(jacobian, jac_idx, idx, -dt * pd);
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                     }
@@ -1723,10 +1708,10 @@ void solve_reaction(ICSReactions* react,
                     // pd is our Jacobian approximated
                     if (react->ecs_state[segment][jac_i] != NULL) {
                         pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                        m_set_val(jacobian, jac_idx, idx, (idx == jac_idx) - dt * pd);
+                        *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                         jac_idx += 1;
                     } else {
-                        m_set_val(jacobian, idx, idx, 1.0);
+                        *jacobian->mep(idx, idx) = 1.0;
                     }
                     // reset dx array
                     ecs_states_for_reaction_dx[i] -= dx;
@@ -1735,8 +1720,7 @@ void solve_reaction(ICSReactions* react,
             }
         }
         // solve for x, destructively
-        LUfactor(jacobian, pivot);
-        LUsolve(jacobian, pivot, b, x);
+        jacobian->solv(b.get(), x.get(), false);
 
         if (bval != NULL)  // variable-step
         {
@@ -1744,15 +1728,14 @@ void solve_reaction(ICSReactions* react,
                 for (j = 0; j < react->num_regions; j++) {
                     idx = react->state_idx[segment][i][j];
                     if (idx != SPECIES_ABSENT) {
-                        bval[idx] = v_get_val(x, jac_idx++);
+                        bval[idx] = x->elem(jac_idx++);
                     }
                 }
             }
             for (i = 0; i < react->num_ecs_species; i++) {
                 if (react->ecs_state[segment][i] != NULL)
-                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,
-                                                                                       jac_idx++);
-                // cvode_b[react->ecs_index[segment][i]] = v_get_val(x, jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = x->elem(jac_idx++);
+                // cvode_b[react->ecs_index[segment][i]] = x->elem(jac_idx++);
             }
         } else  // fixed-step
         {
@@ -1760,21 +1743,16 @@ void solve_reaction(ICSReactions* react,
                 for (j = 0; j < react->num_regions; j++) {
                     idx = react->state_idx[segment][i][j];
                     if (idx != SPECIES_ABSENT)
-                        states[idx] += v_get_val(x, jac_idx++);
+                        states[idx] += x->elem(jac_idx++);
                 }
             }
             for (i = 0; i < react->num_ecs_species; i++) {
                 if (react->ecs_state[segment][i] != NULL)
-                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,
-                                                                                       jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = x->elem(jac_idx++);
             }
         }
     }
     free(ecsindex);
-    m_free(jacobian);
-    v_free(b);
-    v_free(x);
-    px_free(pivot);
     for (i = 0; i < react->num_species; i++) {
         free(states_for_reaction[i]);
         free(states_for_reaction_dx[i]);
@@ -1811,7 +1789,7 @@ void do_ics_reactions(double* states, double* b, double* cvode_states, double* c
 void get_all_reaction_rates(double* states, double* rates, double* ydot) {
     ICSReactions* react;
     if (_membrane_flux)
-        MEM_ZERO(_rxd_induced_currents, sizeof(double) * _memb_curr_total);
+        memset(_rxd_induced_currents, 0, sizeof(double) * _memb_curr_total);
     for (react = _reactions; react != NULL; react = react->next) {
         if (react->icsN + react->ecsN > 0)
             get_reaction_rates(react, states, rates, ydot);

@@ -7,7 +7,6 @@ include:
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
 
-
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/263401 for why we specify the flags like this now
 # 130 characters seems to be the point at which jobs refuse to run
 .matrix:
@@ -37,19 +36,38 @@ mac_m1_cmake_build:
   tags:
     - macos-arm64
   script:
-    - python3 -m virtualenv venv
+    # Using macOS + ASan + virtual environments requires that you remove shims
+    # before creating the venv. CMake would tell us this if we got it wrong.
+    # See sanitizers.cmake for more information. If we find this gets copied to
+    # too many different places, put the .py script in the repository.
+    - |
+      cat > resolve_shim.py << END_SCRIPT
+      import ctypes
+      dyld = ctypes.cdll.LoadLibrary('/usr/lib/system/libdyld.dylib')
+      namelen = ctypes.c_ulong(1024)
+      name = ctypes.create_string_buffer(b'\\000', namelen.value)
+      dyld._NSGetExecutablePath(ctypes.byref(name), ctypes.byref(namelen))
+      print(name.value.decode())
+      END_SCRIPT
+    - real_python=$(python3 resolve_shim.py)
+    - echo "python3=$(command -v python3) is really ${real_python}"
+    - PYTHONEXECUTABLE=${real_python} ${real_python} -mvenv venv
+    - venv/bin/python3 -m ensurepip --upgrade --default-pip
     - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
-    - venv/bin/python --version
-    - 'venv/bin/python -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
+    - git submodule update --init --recursive --force --depth 1 -- external/nmodl
+    - venv/bin/pip install --upgrade -r external/nmodl/requirements.txt
+    - source ./venv/bin/activate
+    - export PYTHON=${PWD}/venv/bin/python
+    - ${PYTHON} --version
+    - '${PYTHON} -c "import os,matplotlib; f = open(os.path.join(os.path.dirname(matplotlib.__file__), \"mpl-data/matplotlibrc\"),\"a\"); f.write(\"backend: TkAgg\");f.close();"'
     - 'export CXX=${CXX:-g++}'
     - 'export CC=${CC:-gcc}'
-    - export PYTHON=$(pwd)/venv/bin/python3
+    - brew install flex bison
+    - export PATH="/opt/homebrew/opt/flex/bin:/opt/homebrew/opt/bison/bin:$PATH"
     - export INSTALL_DIR=$(pwd)/install
     - echo $LANG
     - echo $LC_ALL
-    - source venv/bin/activate
     - 'export PYTHONPATH=$(${PYTHON} -c "import site; print(\":\".join(site.getsitepackages()))")'
-    - 'export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/'
     - ${PYTHON} -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
     - cmake_args=(-G Ninja)
     - if [[ -n "${sanitizer}" ]]; then
@@ -81,6 +99,7 @@ mac_m1_cmake_build:
     - ctest --output-on-failure
     - cmake --build . --target install
     - 'export PATH=${INSTALL_DIR}/bin:${PATH}'
+    - 'export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/'
     - if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
     -   echo --- bin/nrn-enable-sanitizer ---
     -   cat bin/nrn-enable-sanitizer
@@ -90,10 +109,7 @@ mac_m1_cmake_build:
     - else
     -   echo nrn-enable-sanitizer not found, not using it
     - fi
-    - if [[ ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-    -   $PYTHON --version && ${nrn_enable_sanitizer_preload} python -c 'import neuron; neuron.test()'
-    - fi;
-    - ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+    - $PYTHON --version && ${nrn_enable_sanitizer_preload} python -c 'import neuron; neuron.test()'
     - if [[ ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF"
             && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
     -   ${nrn_enable_sanitizer_preload} python ../share/lib/python/neuron/rxdtests/run_all.py
@@ -155,7 +171,7 @@ simulation_stack:
 
 .spack_intel:
   variables:
-    SPACK_PACKAGE_COMPILER: intel
+    SPACK_PACKAGE_COMPILER: oneapi
 .spack_nvhpc:
   variables:
     SPACK_PACKAGE_COMPILER: nvhpc
@@ -171,6 +187,7 @@ simulation_stack:
     bb5_constraint: volta
     bb5_cpus_per_task: 2
     bb5_partition: prod # assume this is a good source of GPU nodes
+    bb5_exclusive: user # allocate gpu node exclusively for the CI user (to avoid errors from oversubscription)
 .test_neuron:
   extends: [.ctest]
   variables:
@@ -190,53 +207,37 @@ build:nmodl:
   extends: [.build_neuron]
   needs: ["build:nmodl"]
 
-.build_neuron_mod2c:
-  extends: [.build_neuron]
-
-build:neuron:mod2c:intel:shared:
-  extends: [.build_neuron_mod2c, .spack_intel]
-  variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
-
 build:neuron:nmodl:intel:legacy:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~openmp~shared~sympy+tests build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:intel:shared:
   extends: [.build_neuron_nmodl, .spack_intel]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
-
-build:neuron:mod2c:nvhpc:acc:shared:
-  extends: [.build_neuron_mod2c, .spack_nvhpc]
-  variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~nmodl~openmp+shared+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper~gpu+coreneuron~legacy-unit~openmp+shared+sympy+tests build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:acc:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:acc:shared:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit+nmodl~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
+    SPACK_PACKAGE_SPEC: ~rx3d~caliper+gpu+coreneuron~legacy-unit~openmp+shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy
 
 build:neuron:nmodl:nvhpc:omp:legacy:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+openmp~shared~sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
 
 build:neuron:nmodl:nvhpc:omp:
   extends: [.build_neuron_nmodl, .spack_nvhpc]
   variables:
-    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+nmodl+openmp~shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
+    SPACK_PACKAGE_SPEC: ~rx3d+caliper+gpu+coreneuron~legacy-unit+openmp~shared+sympy+tests~unified build_type=FastDebug model_tests=channel-benchmark,olfactory,tqperf-heavy ^caliper+cuda cuda_arch=70
 
 # Test NEURON
-test:neuron:mod2c:intel:shared:
-  extends: [.test_neuron]
-  needs: ["build:neuron:mod2c:intel:shared"]
 
 test:neuron:nmodl:intel:legacy:
   extends: [.test_neuron]
@@ -245,10 +246,6 @@ test:neuron:nmodl:intel:legacy:
 test:neuron:nmodl:intel:shared:
   extends: [.test_neuron]
   needs: ["build:neuron:nmodl:intel:shared"]
-
-test:neuron:mod2c:nvhpc:acc:shared:
-  extends: [.test_neuron, .gpu_node]
-  needs: ["build:neuron:mod2c:nvhpc:acc:shared"]
 
 test:neuron:nmodl:nvhpc:acc:legacy:
   extends: [.test_neuron, .gpu_node]
@@ -265,3 +262,60 @@ test:neuron:nmodl:nvhpc:omp:legacy:
 test:neuron:nmodl:nvhpc:omp:
   extends: [.test_neuron, .gpu_node]
   needs: ["build:neuron:nmodl:nvhpc:omp"]
+
+
+# Container building
+mac_m1_container_build:
+  stage: .pre
+  tags:
+    - macos-arm64
+  script:
+    - if [ -z "${ARM64_IMAGE_TAG}" ]; then
+    -   echo "Please set the ARM64_IMAGE_TAG variable"
+    -   exit 1
+    - fi
+    - cd packaging/python
+    - echo "Replacing symlinks with their targets to keep podman happy"
+    - find . -type l -exec cp $(realpath {}) ./TEMP \; -exec rm {} \; -exec mv TEMP {} \;
+    - ls -l
+    - export BUILDAH_FORMAT=docker # enables ONBUILD instructions which are not OCI compatible
+    - machine_status=$(podman machine inspect | awk '/State/ {print $2}' | tr -d '",')
+      # If you start the machine yourself, make sure BUILDAH_FORMAT and the http proxy variables are set in the shell before doing so!
+    - if [[ "${machine_status}" != "running" ]]; then
+    -     echo "Machine is in ${machine_status} status - starting"
+    -     podman machine start
+    - fi
+    - podman build -t neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG} --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+    - podman login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_AUTH_TOKEN} docker.io
+    - podman push neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG}
+    - podman rmi localhost/neuronsimulator/neuron_wheel:${ARM64_IMAGE_TAG}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+  when: manual
+
+x86_64_container_build:
+  stage: .pre
+  image:
+    name: quay.io/buildah/stable
+    entrypoint: [""]
+  variables:
+    KUBERNETES_CPU_LIMIT: 4
+    KUBERNETES_CPU_REQUEST: 2
+    KUBERNETES_MEMORY_LIMIT: 8Gi
+    KUBERNETES_MEMORY_REQUEST: 4Gi
+  tags:
+    - kubernetes
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+  when: manual
+  script:
+    - if [ -z "${X86_IMAGE_TAG}" ]; then
+    -   echo "Please set the X86_IMAGE_TAG variable"
+    -   exit 1
+    - fi
+    - export STORAGE_DRIVER=vfs    # allows to build inside containers without additional mounts
+    - export BUILDAH_FORMAT=docker # enables ONBUILD instructions which are not OCI compatible
+    - cd packaging/python
+    - buildah bud --iidfile image_id -t neuronsimulator/neuron_wheel:${X86_IMAGE_TAG} -f Dockerfile .
+    - buildah login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_AUTH_TOKEN} docker.io
+    - buildah push $(<image_id) docker://docker.io/neuronsimulator/neuron_wheel:${X86_IMAGE_TAG}

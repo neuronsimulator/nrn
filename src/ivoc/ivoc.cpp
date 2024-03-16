@@ -4,14 +4,13 @@
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "neuron/container/soa_container.hpp"
 #include <nrnmutdec.h>
 #include "oc2iv.h"
 #include "ocfunc.h"
 #include "ocnotify.h"
 #include "oc_ansi.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
+#include "ocjump.h"
 
 #if HAVE_IV
 #include "utility.h"
@@ -31,6 +30,9 @@ static FList* f_list;
 
 static nrn::tool::bimap<void*, Observer*>* pvob;
 static nrn::tool::bimap<double*, Observer*>* pdob;
+using identifier_observer_bimap =
+    nrn::tool::bimap<neuron::container::non_owning_identifier_without_container, Observer*>;
+static identifier_observer_bimap* phob;
 
 // fast insert, find, and remove of (double*, Observer*) using either as
 // a key. Use pair of multimap since there can be many observers of the
@@ -39,10 +41,6 @@ static nrn::tool::bimap<double*, Observer*>* pdob;
 // a part of is freed. So the upper_bound property is needed
 
 int nrn_err_dialog_active_;
-
-
-void* (*nrnpy_save_thread)();
-void (*nrnpy_restore_thread)(void*);
 
 void nrn_notify_freed(PF pf) {
     if (!f_list) {
@@ -77,8 +75,59 @@ void nrn_notify_pointer_disconnect(Observer* ob) {
     if (pdob) {
         pdob->obremove(ob);
     }
+    if (phob) {
+        phob->obremove(ob);
+    }
     MUTUNLOCK
 }
+
+namespace neuron::container {
+/**
+ * @brief Register that `obs` should be notified when `dh` dies.
+ *
+ * In general this should happen less often than before, as data_handle<double> can remain valid
+ * even when the pointed-to value changes address.
+ */
+void notify_when_handle_dies(data_handle<double> dh, Observer* obs) {
+    if (dh.refers_to_a_modern_data_structure()) {
+        assert(dh);  // strange to set up notification-on-death for something that's already dead
+        MUTLOCK
+        if (!phob) {
+            phob = new identifier_observer_bimap{};
+        }
+        phob->insert(dh.identifier(), obs);
+        MUTUNLOCK
+    } else {
+        // The handle is wrapping a raw pointer, fall back to the old code
+        nrn_notify_when_double_freed(static_cast<double*>(dh), obs);
+    }
+}
+namespace detail {
+/**
+ * @brief Respond to the news that data_handles relying on `p` are now dead.
+ *
+ * The data_handle<T> and generic_data_handle wrappers ultimately hold something like `vector_ptr`
+ * and `p`, where `p` is basically `std::size_t*`, and yield vector_ptr->at(*p). When the relevant
+ * value gets deleted, `*p` is set to a sentinel value, then this method is called, and then `p`
+ * is transferred to a garbage heap.
+ */
+void notify_handle_dying(non_owning_identifier_without_container p) {
+    // call Observer::update on everything that was observing `p`, and remove those entries from the
+    // table
+    if (!phob) {
+        return;
+    }
+    MUTLOCK
+    non_owning_identifier_without_container pv;
+    Observer* ob;
+    while (phob->find(p, pv, ob)) {
+        ob->update(nullptr);
+        phob->remove(pv, ob);
+    }
+    MUTUNLOCK
+}
+}  // namespace detail
+}  // namespace neuron::container
 
 void notify_pointer_freed(void* pt) {
     if (pvob) {
@@ -86,7 +135,7 @@ void notify_pointer_freed(void* pt) {
         void* pv;
         Observer* ob;
         while (pvob->find(pt, pv, ob)) {
-            ob->update(NULL);
+            ob->update(nullptr);
             pvob->remove(pv, ob);
         }
         MUTUNLOCK
@@ -124,7 +173,6 @@ char* cxx_char_alloc(size_t sz) {
 
 
 #ifndef MINGW  // actual implementation in ivocwin.cpp
-void nrniv_bind_thread(void);
 void nrniv_bind_thread() {
     hoc_pushx(1.);
     hoc_ret();
@@ -184,7 +232,6 @@ void ivoc_style();
 // because NEURON can no longer maintain its own copy of dialogs.cpp
 // we communicate with the InterViews version through a callback.
 extern bool (*IVDialog_setAcceptInput)(bool);
-bool setAcceptInputCallback(bool);
 bool setAcceptInputCallback(bool b) {
     Oc oc;
     return oc.setAcceptInput(b);
@@ -211,7 +258,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -246,10 +293,6 @@ void ReqErr1::Error() {
 static ReqErr1* reqerr1;
 #endif
 
-#if MAC
-static HandleStdin* hsd_;
-#endif
-
 #ifdef MINGW
 static HandleStdin* hsd_;
 void winio_key_press() {
@@ -275,11 +318,11 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if !defined(WIN32) && !defined(MAC)
+#if !defined(WIN32)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
-#if defined(MINGW) || defined(MAC)
+#if defined(MINGW)
         hsd_ = handleStdin_ = new HandleStdin;
 #else
         handleStdin_ = new HandleStdin;
@@ -287,9 +330,6 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
         Dispatcher::instance().link(0, Dispatcher::ExceptMask, handleStdin_);
 #endif
         hoc_interviews = 1;
-#if MAC
-        hoc_print_first_instance = 0;
-#endif
         String str;
         if (session_->style()->find_attribute("first_instance_message", str)) {
             if (str == "on") {
@@ -306,7 +346,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW) && !defined(MAC)
+#if !defined(MINGW)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -325,8 +365,25 @@ int Oc::run(int argc, const char** argv) {
 }
 
 int Oc::run(const char* buf, bool show_err_mes) {
+    int hem = hoc_execerror_messages;
     hoc_execerror_messages = show_err_mes;
-    return hoc_oc(buf);
+    int err{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        err = hoc_oc(buf);
+    } catch (std::exception const& e) {
+        if (show_err_mes) {
+            std::cerr << "Oc::run: caught exception";
+            std::string_view what{e.what()};
+            if (!what.empty()) {
+                std::cerr << ": " << what;
+            }
+            std::cerr << std::endl;
+        }
+        err = 1;
+    }
+    hoc_execerror_messages = hem;
+    return err;
 }
 
 Symbol* Oc::parseExpr(const char* expr, Symlist** ps) {
@@ -353,10 +410,6 @@ void Oc::notify_freed(PF pf) {
 
 void Oc::notify_when_freed(void* p, Observer* ob) {
     nrn_notify_when_void_freed(p, ob);
-}
-
-void Oc::notify_when_freed(double* p, Observer* ob) {
-    nrn_notify_when_double_freed(p, ob);
 }
 
 void Oc::notify_pointer_disconnect(Observer* ob) {
@@ -393,7 +446,7 @@ void ivoc_cleanup() {}
 
 int run_til_stdin() {
     Session* session = Oc::getSession();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     Oc oc;
     oc.notify();
 #endif
@@ -402,18 +455,10 @@ int run_til_stdin() {
 #endif
     session->run();
     WinDismiss::dismiss_defer();  // in case window was dismissed
-#if MAC
-    extern Boolean IVOCGoodLine;
-    if (IVOCGoodLine) {
-        return 1;
-    } else {
-        return 0;
-    }
-#endif
 #ifdef WIN32
     return 0;
 #else
-    return Oc::getStdinSeen();  // MAC should not reach this point
+    return Oc::getStdinSeen();
 #endif
 }
 
@@ -423,12 +468,6 @@ void single_event_run() {
     Event e;
     // actually run till no more events
     Oc::setAcceptInput(false);
-#if MAC
-    extern bool read_if_pending(Event&);
-    while (!session->done() && read_if_pending(e)) {
-        e.handle();
-    }
-#else
     bool dsav = session->done();
     session->unquit();
     while (session->pending() && !session->done()) {
@@ -438,13 +477,8 @@ void single_event_run() {
     if (dsav) {
         session->quit();
     }
-#endif
     Oc::setAcceptInput(true);
-    ;
     HocPanel::keep_updated();
-#if MAC
-    Session::instance()->screen_update();
-#endif
     WinDismiss::dismiss_defer();  // in case window was dismissed
 }
 

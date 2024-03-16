@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 //#include <string.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -26,8 +27,6 @@
 //#include <OS/string.h>
 
 #include <IV-look/kit.h>
-#else
-#include <OS/list.h>
 #endif
 
 #if defined(SVR4)
@@ -42,9 +41,6 @@ extern void exit(int status);
 #endif
 
 #include "gui-redirect.h"
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
 
 #ifndef PI
 #ifndef M_PI
@@ -116,7 +112,7 @@ static double dmaxint_ = 9007199254740992;
 #include "ivocvect.h"
 
 // definition of random numer generator
-#include "random1.h"
+#include "Rand.hpp"
 #include <Uniform.h>
 
 #if HAVE_IV
@@ -399,6 +395,16 @@ int is_vector_arg(int i) {
         return 0;
     }
     return 1;
+}
+
+Object** new_vect(Vect* v, ssize_t delta, ssize_t start, ssize_t step) {
+    // Creates a new vector of values delta steps from start
+    std::size_t size{(size_t) delta};
+    auto* y = new Vect(size);
+    for (int i = 0; i < delta; ++i) {
+        y->elem(i) = v->elem(int(i * step + start));
+    }
+    return y->temp_objvar();
 }
 
 int vector_arg_px(int i, double** px) {
@@ -977,18 +983,27 @@ static Object** v_plot(void* v) {
             // passed a vector
             Vect* vp2 = vector_arg(2);
             n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i)
-                gv->add(vp2->elem(i), y + i);
+            for (i = 0; i < n; ++i) {
+                gv->add(vp2->elem(i),
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               y + i});
+            }
         } else {
             // passed xinterval
             double interval = *getarg(2);
-            for (i = 0; i < n; ++i)
-                gv->add(i * interval, y + i);
+            for (i = 0; i < n; ++i) {
+                gv->add(i * interval,
+                        neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                               y + i});
+            }
         }
     } else {
         // passed line attributes or nothing
-        for (i = 0; i < n; ++i)
-            gv->add(i, y + i);
+        for (i = 0; i < n; ++i) {
+            gv->add(i,
+                    neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                           y + i});
+        }
     }
 
     if (vp->label_) {
@@ -1559,7 +1574,6 @@ static Object** v_copy(void* v) {
     return y->temp_objvar();
 }
 
-
 static Object** v_at(void* v) {
     auto* x = static_cast<Vect*>(v);
     std::size_t start{};
@@ -1570,14 +1584,11 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    std::size_t size{end - start};
-    auto* y = new Vect(size);
-    // ZFM: fixed bug -- i<size, not i<=size
-    for (std::size_t i = 0; i < size; ++i) {
-        y->elem(i) = x->elem(i + start);
-    }
-    return y->temp_objvar();
+    // Creation of a new vector has been moved to new_vect to allow slicing
+    ssize_t delta = end - start;
+    return new_vect(x, delta, start, 1);
 }
+
 
 typedef struct {
     double x;
@@ -1673,7 +1684,6 @@ static Object** v_interpolate(void* v) {
     if (flag) {
         delete ys;
     }
-
     return yd->temp_objvar();
 }
 
@@ -2358,7 +2368,11 @@ static Object** v_mul(void* v1) {
 static Object** v_div(void* v1) {
     Vect* x = (Vect*) v1;
     if (hoc_argtype(1) == NUMBER) {
-        std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        if (*getarg(1) == 0.0) {
+            hoc_execerror("Vector", "Division by zero");
+        } else {
+            std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        }
     }
     if (hoc_is_object_arg(1)) {
         Vect* y = vector_arg(1);
@@ -3862,198 +3876,9 @@ void Vector_reg() {
 #endif
 }
 
-// hacked version of gsort from ../gnu/d_vec.cpp
-// the transformation is that everything that used to be a double* becomes
-// an int* and cmp(*arg1, *arg2) becomes cmp(vec[*arg1], vec[*arg2])
-// I am not sure what to do about the BYTES_PER_WORD
-
-// An adaptation of Schmidt's new quicksort
-
-static inline void SWAP(int* A, int* B) {
-    int tmp = *A;
-    *A = *B;
-    *B = tmp;
-}
-
-/* This should be replaced by a standard ANSI macro. */
-#define BYTES_PER_WORD 8
-#define BYTES_PER_LONG 4
-
-/* The next 4 #defines implement a very fast in-line stack abstraction. */
-
-#define STACK_SIZE (BYTES_PER_WORD * BYTES_PER_LONG)
-#define PUSH(LOW, HIGH)   \
-    do {                  \
-        top->lo = LOW;    \
-        top++->hi = HIGH; \
-    } while (0)
-#define POP(LOW, HIGH)     \
-    do {                   \
-        LOW = (--top)->lo; \
-        HIGH = top->hi;    \
-    } while (0)
-#define STACK_NOT_EMPTY (stack < top)
-
-/* Discontinue quicksort algorithm when partition gets below this size.
-   This particular magic number was chosen to work best on a Sun 4/260. */
-#define MAX_THRESH 4
-
-
-/* Order size using quicksort.  This implementation incorporates
-   four optimizations discussed in Sedgewick:
-
-   1. Non-recursive, using an explicit stack of pointer that
-      store the next array partition to sort.  To save time, this
-      maximum amount of space required to store an array of
-      MAX_INT is allocated on the stack.  Assuming a 32-bit integer,
-      this needs only 32 * sizeof (stack_node) == 136 bits.  Pretty
-      cheap, actually.
-
-   2. Chose the pivot element using a median-of-three decision tree.
-      This reduces the probability of selecting a bad pivot value and
-      eliminates certain extraneous comparisons.
-
-   3. Only quicksorts TOTAL_ELEMS / MAX_THRESH partitions, leaving
-      insertion sort to order the MAX_THRESH items within each partition.
-      This is a big win, since insertion sort is faster for small, mostly
-      sorted array segements.
-
-   4. The larger of the two sub-partitions is always pushed onto the
-      stack first, with the algorithm then concentrating on the
-      smaller partition.  This *guarantees* no more than log (n)
-      stack size is needed! */
-
 int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double)) {
-    /* Stack node declarations used to store unfulfilled partition obligations. */
-    struct stack_node {
-        int* lo;
-        int* hi;
-    };
-    int pivot_buffer;
-    int max_thresh = MAX_THRESH;
-
-    if (total_elems > MAX_THRESH) {
-        int* lo = base_ptr;
-        int* hi = lo + (total_elems - 1);
-        int* left_ptr;
-        int* right_ptr;
-        stack_node stack[STACK_SIZE]; /* Largest size needed for 32-bit int!!! */
-        stack_node* top = stack + 1;
-
-        while (STACK_NOT_EMPTY) {
-            {
-                int* pivot = &pivot_buffer;
-                {
-                    /* Select median value from among LO, MID, and HI. Rearrange
-                       LO and HI so the three values are sorted. This lowers the
-                       probability of picking a pathological pivot value and
-                       skips a comparison for both the LEFT_PTR and RIGHT_PTR. */
-
-                    int* mid = lo + ((hi - lo) >> 1);
-
-                    if (cmp(vec[*mid], vec[*lo]) < 0)
-                        SWAP(mid, lo);
-                    if (cmp(vec[*hi], vec[*mid]) < 0) {
-                        SWAP(mid, hi);
-                        if (cmp(vec[*mid], vec[*lo]) < 0)
-                            SWAP(mid, lo);
-                    }
-                    *pivot = *mid;
-                    pivot = &pivot_buffer;
-                }
-                left_ptr = lo + 1;
-                right_ptr = hi - 1;
-
-                /* Here's the famous ``collapse the walls'' section of quicksort.
-                   Gotta like those tight inner loops!  They are the main reason
-                   that this algorithm runs much faster than others. */
-                do {
-                    while (cmp(vec[*left_ptr], vec[*pivot]) < 0)
-                        left_ptr += 1;
-
-                    while (cmp(vec[*pivot], vec[*right_ptr]) < 0)
-                        right_ptr -= 1;
-
-                    if (left_ptr < right_ptr) {
-                        SWAP(left_ptr, right_ptr);
-                        left_ptr += 1;
-                        right_ptr -= 1;
-                    } else if (left_ptr == right_ptr) {
-                        left_ptr += 1;
-                        right_ptr -= 1;
-                        break;
-                    }
-                } while (left_ptr <= right_ptr);
-            }
-
-            /* Set up pointers for next iteration.  First determine whether
-               left and right partitions are below the threshold size. If so,
-               ignore one or both.  Otherwise, push the larger partition's
-               bounds on the stack and continue sorting the smaller one. */
-
-            if ((right_ptr - lo) <= max_thresh) {
-                if ((hi - left_ptr) <= max_thresh) /* Ignore both small partitions. */
-                    POP(lo, hi);
-                else /* Ignore small left partition. */
-                    lo = left_ptr;
-            } else if ((hi - left_ptr) <= max_thresh) /* Ignore small right partition. */
-                hi = right_ptr;
-            else if ((right_ptr - lo) > (hi - left_ptr)) /* Push larger left partition indices. */
-            {
-                PUSH(lo, right_ptr);
-                lo = left_ptr;
-            } else /* Push larger right partition indices. */
-            {
-                PUSH(left_ptr, hi);
-                hi = right_ptr;
-            }
-        }
-    }
-
-    /* Once the BASE_PTR array is partially sorted by quicksort the rest
-       is completely sorted using insertion sort, since this is efficient
-       for partitions below MAX_THRESH size. BASE_PTR points to the beginning
-       of the array to sort, and END_PTR points at the very last element in
-       the array (*not* one beyond it!). */
-
-
-    {
-        int* end_ptr = base_ptr + 1 * (total_elems - 1);
-        int* run_ptr;
-        int* tmp_ptr = base_ptr;
-        int* thresh = (end_ptr < (base_ptr + max_thresh)) ? end_ptr : (base_ptr + max_thresh);
-
-        /* Find smallest element in first threshold and place it at the
-           array's beginning.  This is the smallest array element,
-           and the operation speeds up insertion sort's inner loop. */
-
-        for (run_ptr = tmp_ptr + 1; run_ptr <= thresh; run_ptr += 1)
-            if (cmp(vec[*run_ptr], vec[*tmp_ptr]) < 0)
-                tmp_ptr = run_ptr;
-
-        if (tmp_ptr != base_ptr)
-            SWAP(tmp_ptr, base_ptr);
-
-        /* Insertion sort, running from left-hand-side up to `right-hand-side.'
-           Pretty much straight out of the original GNU qsort routine. */
-
-        for (run_ptr = base_ptr + 1; (tmp_ptr = run_ptr += 1) <= end_ptr;) {
-            while (cmp(vec[*run_ptr], vec[*(tmp_ptr -= 1)]) < 0)
-                ;
-
-            if ((tmp_ptr += 1) != run_ptr) {
-                int* trav;
-
-                for (trav = run_ptr + 1; --trav >= run_ptr;) {
-                    int c = *trav;
-                    int *hi, *lo;
-
-                    for (hi = lo = trav; (lo -= 1) >= tmp_ptr; hi = lo)
-                        *hi = *lo;
-                    *hi = c;
-                }
-            }
-        }
-    }
+    std::sort(base_ptr, base_ptr + total_elems, [&](int a, int b) {
+        return cmp(vec[a], vec[b]) < 0;
+    });
     return 1;
 }

@@ -42,11 +42,9 @@ typedef struct NrnThreadBAList {
     struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
-typedef struct _nrn_Fast_Imem {
-    double* _nrn_sav_rhs;
-    double* _nrn_sav_d;
-} _nrn_Fast_Imem;
-
+struct hoc_Item;
+using hoc_List = hoc_Item;
+struct Object;
 
 /**
  * \class NrnThread
@@ -69,20 +67,34 @@ struct NrnThread {
     int _stop_stepping;   /* delivered an all thread HocEvent */
     int _ecell_child_cnt; /* see _ecell_children below */
 
-    double* _actual_rhs;
-    double* _actual_d;
-    double* _actual_a;
-    double* _actual_b;
-    double* _actual_v;
-    double* _actual_area;
+    /** @brief Offset in the global node data where this NrnThread's values start.
+     */
+    std::size_t _node_data_offset{};
+
+    [[nodiscard]] double* node_a_storage();
+    [[nodiscard]] double* node_area_storage();
+    [[nodiscard]] double* node_b_storage();
+    [[nodiscard]] double* node_d_storage();
+    [[nodiscard]] double* node_rhs_storage();
+    [[nodiscard]] double* node_sav_d_storage();
+    [[nodiscard]] double* node_sav_rhs_storage();
+    [[nodiscard]] double* node_voltage_storage();
+    [[nodiscard]] double& actual_d(std::size_t row) {
+        return node_d_storage()[row];
+    }
+    [[nodiscard]] double& actual_rhs(std::size_t row) {
+        return node_rhs_storage()[row];
+    }
+
     int* _v_parent_index;
     Node** _v_node;
     Node** _v_parent;
+    double* _sp13_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
+                                    need to be transfered to actual_rhs */
     char* _sp13mat;              /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list; /* normally nil */
+    Memb_list* _ecell_memb_list; /* normally nullptr */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
-    _nrn_Fast_Imem* _nrn_fast_imem;
-    void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
+    void* _vcv;                  /* replaces old cvode_instance and nrn_cvode_ */
 
 #if 1
     double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
@@ -98,15 +110,17 @@ extern int nrn_nthread;
 extern NrnThread* nrn_threads;
 void nrn_threads_create(int n, bool parallel);
 extern void nrn_thread_error(const char*);
-extern void nrn_multithread_job(void* (*) (NrnThread*) );
+using worker_job_t = void* (*) (NrnThread*);
+using worker_job_with_token_t = void (*)(neuron::model_sorted_token const&, NrnThread&);
+void nrn_multithread_job(worker_job_t);
+void nrn_multithread_job(neuron::model_sorted_token const&, worker_job_with_token_t);
 extern void nrn_onethread_job(int, void* (*) (NrnThread*) );
 extern void nrn_wait_for_threads();
-extern void nrn_thread_table_check();
+void nrn_thread_table_check(neuron::model_sorted_token const&);
 extern void nrn_threads_free();
 extern int nrn_user_partition();
 extern void reorder_secorder();
 extern void nrn_thread_memblist_setup();
-extern void nrn_imem_defer_free(double*);
 extern std::size_t nof_worker_threads();
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)

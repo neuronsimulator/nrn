@@ -1,6 +1,9 @@
 function:constructor(Object*)
 function:ctng.cpp
 implicit-integer-sign-change:double vector[2] Eigen::internal::pabs<double vector[2]>(double vector[2] const&)
+implicit-integer-sign-change:double vector[2] Eigen::internal::pnegate<double vector[2]>(double vector[2] const&)
+implicit-integer-sign-change:Eigen::internal::Packet1cd Eigen::internal::pconj<Eigen::internal::Packet1cd>(Eigen::internal::Packet1cd const&)
+implicit-integer-sign-change:Eigen::internal::Packet1cd Eigen::internal::pmul<Eigen::internal::Packet1cd>(Eigen::internal::Packet1cd const&, Eigen::internal::Packet1cd const&)
 implicit-integer-sign-change:fgets_unlimited_nltrans(HocStr*, _IO_FILE*, int)
 implicit-integer-sign-change:invlfiresha.c
 implicit-integer-sign-change:ivRegexp::Search(char const*, int, int, int)
@@ -12,6 +15,8 @@ nonnull-attribute:_ode_reinit(double*)
 nonnull-attribute:_rhs_variable_step(double const*, double*)
 null:GPolyLine::brush(ivBrush const*)
 null:GPolyLine::color(ivColor const*)
+null:ColorPalette::color(int)
+null:BrushPalette::brush(int)
 pointer-overflow:_rhs_variable_step(double const*, double*)
 pointer-overflow:_rhs_variable_step_ecs(double const*, double*)
 pointer-overflow:coreneuron::_net_receive_kernel(double, coreneuron::Point_process*, int, double)

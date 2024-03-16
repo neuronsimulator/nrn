@@ -33,19 +33,15 @@ option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" 
 option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of libsonata for soma reports" OFF)
-option(CORENRN_ENABLE_MPI "Enable MPI-based execution" ON)
-option(CORENRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI support" OFF)
 option(CORENRN_ENABLE_HOC_EXP "Enable wrapping exp with hoc_exp()" OFF)
 option(CORENRN_ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" ON)
 option(CORENRN_ENABLE_NET_RECEIVE_BUFFER "Enable event buffering in net_receive function" ON)
-option(CORENRN_ENABLE_NMODL "Enable external nmodl source-to-source compiler" OFF)
 option(CORENRN_ENABLE_CALIPER_PROFILING "Enable Caliper instrumentation" OFF)
 option(CORENRN_ENABLE_LIKWID_PROFILING "Enable LIKWID instrumentation" OFF)
 option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" OFF)
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC or OpenMP" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
-option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_NMODL_DIR
@@ -129,15 +125,10 @@ if(CORENRN_ENABLE_GPU)
       "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe --diag_suppress=3057,--diag_suppress=3085"
   )
 
-  if(CORENRN_ENABLE_NMODL)
-    # NMODL supports both OpenACC and OpenMP target offload
-    if(CORENRN_ENABLE_OPENMP AND CORENRN_ENABLE_OPENMP_OFFLOAD)
-      set(CORENRN_ACCELERATOR_OFFLOAD "OpenMP")
-    else()
-      set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
-    endif()
+  # NMODL supports both OpenACC and OpenMP target offload
+  if(CORENRN_ENABLE_OPENMP AND CORENRN_ENABLE_OPENMP_OFFLOAD)
+    set(CORENRN_ACCELERATOR_OFFLOAD "OpenMP")
   else()
-    # MOD2C only supports OpenACC offload
     set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
   endif()
 endif()
@@ -175,11 +166,9 @@ endif()
 # =============================================================================
 # Build option specific compiler flags
 # =============================================================================
-if(CORENRN_ENABLE_NMODL)
-  # We use Eigen for "small" matrices with thread-level parallelism handled at a higher level; tell
-  # Eigen not to try to multithread internally
-  list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_PARALLELIZE)
-endif()
+# We use Eigen for "small" matrices with thread-level parallelism handled at a higher level; tell
+# Eigen not to try to multithread internally
+list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_PARALLELIZE)
 if(CORENRN_HAVE_NVHPC_COMPILER)
   # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
   list(APPEND CORENRN_COMPILE_DEFS EIGEN_DONT_VECTORIZE=1)
@@ -191,11 +180,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
-  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
-  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
-  if(CMAKE_VERSION VERSION_LESS 3.19)
-    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
-  endif()
 endif()
 
 if(CORENRN_ENABLE_SHARED)
@@ -204,16 +188,14 @@ else()
   set(COMPILE_LIBRARY_TYPE "STATIC")
 endif()
 
-if(CORENRN_ENABLE_MPI)
-  find_package(MPI REQUIRED)
+if(NRN_ENABLE_MPI)
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=1)
-  # avoid linking to C++ bindings
-  list(APPEND CORENRN_COMPILE_DEFS MPI_NO_CPPBIND=1)
-  list(APPEND CORENRN_COMPILE_DEFS OMPI_SKIP_MPICXX=1)
-  list(APPEND CORENRN_COMPILE_DEFS MPICH_SKIP_MPICXX=1)
 else()
   list(APPEND CORENRN_COMPILE_DEFS NRNMPI=0)
   list(APPEND CORENRN_COMPILE_DEFS NRN_MULTISEND=0)
+endif()
+if(NRN_ENABLE_MPI_DYNAMIC)
+  list(APPEND CORENRN_COMPILE_DEFS NRNMPI_DYNAMICLOAD=1)
 endif()
 
 if(CORENRN_ENABLE_OPENMP)
@@ -256,27 +238,6 @@ if(CORENRN_ENABLE_REPORTING)
   include_directories(${sonatareport_INCLUDE_DIR})
 endif()
 
-if(CORENRN_ENABLE_LEGACY_UNITS)
-  set(CORENRN_USE_LEGACY_UNITS 1)
-else()
-  set(CORENRN_USE_LEGACY_UNITS 0)
-endif()
-list(APPEND CORENRN_COMPILE_DEFS CORENEURON_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS})
-# Propagate Legacy Units flag to backends.
-set(MOD2C_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
-set(NMODL_ENABLE_LEGACY_UNITS
-    ${CORENRN_ENABLE_LEGACY_UNITS}
-    CACHE BOOL "" FORCE)
-
-if(CORENRN_ENABLE_MPI_DYNAMIC)
-  if(NOT CORENRN_ENABLE_MPI)
-    message(FATAL_ERROR "Cannot enable dynamic mpi without mpi")
-  endif()
-  list(APPEND CORENRN_COMPILE_DEFS CORENEURON_ENABLE_MPI_DYNAMIC)
-endif()
-
 if(CORENRN_ENABLE_PRCELLSTATE)
   set(CORENRN_NRN_PRCELLSTATE 1)
 else()
@@ -289,55 +250,61 @@ endif()
 # =============================================================================
 # NMODL specific options
 # =============================================================================
-if(CORENRN_ENABLE_NMODL)
-  find_package(nmodl)
-  if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-    message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-  endif()
-  if(nmodl_FOUND)
-    set(CORENRN_MOD2CPP_BINARY ${nmodl_BINARY})
-    set(CORENRN_MOD2CPP_INCLUDE ${nmodl_INCLUDE})
-    # path to python interface
-    set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-    set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
-  else()
-    set(NMODL_ENABLE_PYTHON_BINDINGS
-        OFF
-        CACHE BOOL "Disable NMODL python bindings")
-    include(AddNmodlSubmodule)
-    set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-    set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
-    set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
-    set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
-    set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-    set(NMODL_TARGET_TO_DEPEND nmodl)
-  endif()
-
-  # set correct arguments for nmodl for cpu/gpu target
-  set(CORENRN_NMODL_FLAGS
-      ""
-      CACHE STRING "Extra NMODL options such as passes")
-else()
-  include(AddMod2cSubmodule)
-  set(NMODL_TARGET_TO_DEPEND mod2c_core)
-  set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
-  set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
+find_package(nmodl)
+if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
+  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
 endif()
+if(nmodl_FOUND)
+  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
+  set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
+  # path to python interface
+  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
+else()
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      ON
+      CACHE BOOL "Disable NMODL python bindings")
+  nrn_add_external_project(nmodl OFF)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
+  set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
+  set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
+  set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+  set(NMODL_TARGET_TO_DEPEND nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  # install nrnunits.lib and libpywrapper.so from external/nmodl
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    DESTINATION lib
+    COMPONENT pywrapper
+    OPTIONAL)
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    DESTINATION share/nmodl
+    COMPONENT nrnunits)
+endif()
+set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
+
+# set correct arguments for nmodl for cpu/gpu target
+set(CORENRN_NMODL_FLAGS
+    ""
+    CACHE STRING "Extra NMODL options such as passes")
 
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
 if(CORENRN_ENABLE_CALIPER_PROFILING)
   find_package(caliper REQUIRED)
-  list(APPEND CORENRN_COMPILE_DEFS CORENEURON_CALIPER)
+  list(APPEND CORENRN_COMPILE_DEFS NRN_CALIPER)
   set(CORENRN_CALIPER_LIB caliper)
 endif()
 
 if(CORENRN_ENABLE_LIKWID_PROFILING)
-  find_package(likwid REQUIRED)
+  include(GetLIKWID)
+
   list(APPEND CORENRN_COMPILE_DEFS LIKWID_PERFMON)
-  # TODO: avoid this part, probably by using some likwid CMake target
-  include_directories(${likwid_INCLUDE_DIRS})
+  set(CORENRN_LIKWID_LIB nrn_likwid)
 endif()
 
 # enable debugging code with extra logs to stdout
@@ -351,7 +318,7 @@ endif()
 # Do not set this when building wheels. The nrnivmodl workflow means that we do not know what
 # compiler will be invoked with these flags, so we have to use flags that are as generic as
 # possible.
-if(NOT DEFINED NRN_WHEEL_BUILD OR NOT NRN_WHEEL_BUILD)
+if(NOT DEFINED NRN_BINARY_DIST_BUILD OR NOT NRN_BINARY_DIST_BUILD)
   list(APPEND CORENRN_EXTRA_CXX_FLAGS "${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif()
 
@@ -384,9 +351,9 @@ file(
   "utils/*/*.cpp")
 
 set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
-if(CORENRN_ENABLE_MPI)
+if(NRN_ENABLE_MPI)
   # Building these requires -ldl, which is only added if MPI is enabled.
-  list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp" "mpi/core/nrnmpidec.cpp")
+  list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp")
 endif()
 
 file(COPY ${PROJECT_SOURCE_DIR}/external/Random123/include/Random123
@@ -439,22 +406,6 @@ set(CORENEURON_BUILTIN_MODFILES
 # coreneuron GPU library
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
-  # ~~~
-  # artificial cells and some other cpp files (using Random123) should be compiled
-  # without OpenACC to avoid use of GPU Random123 streams
-  # OL210813: this shouldn't be needed anymore, but it may have a small performance benefit
-  # ~~~
-  set(OPENACC_EXCLUDED_FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/pattern.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/nrn_setup.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/setup_fornetcon.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
-
-  set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
-                                                                   "-DDISABLE_OPENACC")
   # Only compile the explicit CUDA implementation of the Hines solver in GPU builds. Because of
   # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
   # this cannot be included in the same shared library as the rest of the OpenACC code.
@@ -467,14 +418,14 @@ if(CORENRN_ENABLE_GPU)
   # different matrix sizes in partial_piv_lu.cpp (with CUDA attributes but without OpenACC or OpenMP
   # annotations) and dispatch to these from a wrapper in partial_piv_lu.h that does have
   # OpenACC/OpenMP annotations.
-  if(CORENRN_ENABLE_NMODL AND EXISTS ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    list(APPEND CORENEURON_CODE_FILES ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
+  if(EXISTS ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
+    list(APPEND CORENEURON_CODE_FILES ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
     if(CORENRN_ENABLE_GPU
        AND CORENRN_HAVE_NVHPC_COMPILER
        AND CMAKE_BUILD_TYPE STREQUAL "Debug")
       # In this case OpenAccHelper.cmake passes -gpu=debug, which makes these Eigen functions
       # extremely slow. Downgrade that to -gpu=lineinfo for this file.
-      set_source_files_properties(${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
+      set_source_files_properties(${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
                                   PROPERTIES COMPILE_FLAGS "-gpu=lineinfo,nodebug -O1")
     endif()
   endif()
@@ -490,12 +441,12 @@ set(CORENRN_MPI_LIB_NAME
     CACHE INTERNAL "")
 
 # for non-dynamic mpi mode just build object files
-if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
   target_include_directories(
-    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR}/src
+    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_C_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/src
                                     ${CMAKE_BINARY_DIR}/generated)
-  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB})
+  target_link_libraries(${CORENRN_MPI_LIB_NAME} ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
@@ -529,7 +480,7 @@ foreach(target coreneuron-core ${coreneuron_cuda_target})
 endforeach()
 
 # we can link to MPI libraries in non-dynamic-mpi build
-if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(coreneuron-core PUBLIC ${MPI_CXX_LIBRARIES})
 endif()
 
@@ -543,7 +494,7 @@ endif()
 target_link_libraries(coreneuron-core PUBLIC ${CMAKE_DL_LIBS})
 
 # this is where we handle dynamic mpi library build
-if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
+if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
   # store mpi library targets that will be built
   list(APPEND corenrn_mpi_targets "")
 
@@ -569,7 +520,7 @@ if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
     list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
     add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB})
+    target_link_libraries(core${libname}_lib ${CORENRN_CALIPER_LIB} ${CORENRN_LIKWID_LIB})
     target_include_directories(
       core${libname}_lib
       PUBLIC ${include}
@@ -598,7 +549,7 @@ endif()
 # Suppress some compiler warnings.
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}
-                                             ${likwid_LIBRARIES})
+                                             ${CORENRN_LIKWID_LIB})
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
@@ -606,11 +557,6 @@ get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECT
 target_include_directories(
   coreneuron-core SYSTEM PRIVATE ${CLI11_HEADER_DIRECTORY}
                                  ${PROJECT_SOURCE_DIR}/external/Random123/include)
-
-# See: https://en.cppreference.com/w/cpp/filesystem#Notes
-if(CMAKE_CXX_COMPILER_IS_GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-  target_link_libraries(coreneuron-core PUBLIC stdc++fs)
-endif()
 
 if(CORENRN_ENABLE_GPU)
   # nrnran123.cpp uses Boost.Pool in GPU builds if it's available.
@@ -643,8 +589,10 @@ set(output_binaries "${nrniv_core_prefix}/special-core" "${corenrn_mech_library}
 add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
-  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m
-          ${CORENRN_MOD2CPP_BINARY} -n "internal" -p 4 "."
+  COMMAND
+    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
+    "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   COMMENT "Running nrnivmodl-core with internal mod files")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
@@ -688,17 +636,19 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-configure_file("${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp"
-               "${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp" COPYONLY)
+configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
 foreach(header ${main_headers})
-  configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
 endforeach()
 
-configure_file("utils/profile/profiler_interface.h"
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
 # main program required for building special-core
-file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)
+cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
@@ -751,12 +701,8 @@ install(
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
-# copy mod2c/nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_MOD2CPP_BINARY} DESTINATION bin)
-
-if(NOT CORENRN_ENABLE_NMODL)
-  install(FILES ${NMODL_UNITS_FILE} DESTINATION share/mod2c)
-endif()
+# copy nmodl for nrnivmodl-core
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
 install(
@@ -800,10 +746,10 @@ message(STATUS "--------------------+-------------------------------------------
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
 message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
-message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
-if(CORENRN_ENABLE_MPI)
-  message(STATUS "  DYNAMIC           | ${CORENRN_ENABLE_MPI_DYNAMIC}")
-  if(CORENRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
+message(STATUS "MPI                 | ${NRN_ENABLE_MPI}")
+if(NRN_ENABLE_MPI)
+  message(STATUS "  DYNAMIC           | ${NRN_ENABLE_MPI_DYNAMIC}")
+  if(NRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
     # ~~~
     # for dynamic mpi, rely on neuron for list of libraries to build
     # this is to avoid cmake code duplication on the coreneuron side
@@ -817,16 +763,12 @@ if(CORENRN_ENABLE_MPI)
       message(STATUS "    INC             | ${include}")
     endforeach(val)
   else()
-    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
+    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_DIRS}")
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
-message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
-message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
-if(CORENRN_ENABLE_NMODL)
-  message(STATUS "  FLAGS             | ${CORENRN_NMODL_FLAGS}")
-endif()
-message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
+message(STATUS "NMODL PATH          | ${CORENRN_NMODL_BINARY}")
+message(STATUS "NMODL FLAGS         | ${CORENRN_NMODL_FLAGS}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
 if(CORENRN_ENABLE_GPU)
   message(STATUS "  CUDA              | ${CUDAToolkit_LIBRARY_DIR}")
@@ -845,5 +787,5 @@ if(CORENRN_ENABLE_REPORTING)
   message(STATUS "  sonatareport_INC  | ${sonatareport_INCLUDE_DIR}")
   message(STATUS "  sonatareport_LIB  | ${sonatareport_LIBRARY}")
 endif()
-message(STATUS "--------------+--------------------------------------------------------------")
+message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "")

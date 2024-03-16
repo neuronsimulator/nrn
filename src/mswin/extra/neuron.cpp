@@ -103,7 +103,6 @@ int main(int argc, char** argv) {
     char* const msg = new char[msg_size];
 
     // Windows 11 exits immediately
-    // err = WinExec(buf, SW_SHOW);
     // https://stackoverflow.com/questions/2255608/force-application-to-wait-until-winexec-has-completed
     // WinExec is no longer recommended. You can use CreateProcess and WaitForSingleObject as
     // shown in this example on Creating Processes.

@@ -1,9 +1,10 @@
 SortIncludes: false
 Standard: c++17
-StatementMacros: [MKDLL, MKDLLdec, MKDLLif, MKDLLvp, MKDLLvpf, PyObject_HEAD,
+StatementMacros: [MKDLL, MKDLLdec, MKDLLif, MKDLLvp, MKDLLvpf, MUTDEC, PyObject_HEAD,
 declareActionCallback, declareAdjustStepper, declareArrowGlyph, declareFieldEditorCallback,
 declareFieldSEditorCallback, declareFileChooserCallback, declareIOCallback, declareList, 
 declarePtrList, declareRubberCallback, declareSelectionCallback, declareTable, declareTable2,
+HocContextRestore, HocTopContextSet,
 implementActionCallback, implementAdjustStepper, implementArrowGlyph, implementFieldEditorCallback,
 implementFieldSEditorCallback, implementFileChooserCallback, implementIOCallback, implementList,
 implementPtrList, implementRubberCallback, implementSelectionCallback, implementTable,

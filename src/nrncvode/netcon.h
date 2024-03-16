@@ -2,14 +2,13 @@
 #define netcon_h
 
 #undef check
-#if MAC
-#define NetCon nrniv_Dinfo
-#endif
 
 #include "htlist.h"
+#include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
-#include "pool.h"
+#include "pool.hpp"
+#include "tqitem.hpp"
 
 #include <InterViews/observe.h>
 
@@ -27,7 +26,6 @@ class PreSyn;
 class PlayRecord;
 class Cvode;
 class TQueue;
-class TQItem;
 struct NrnThread;
 class NetCvode;
 class HocEvent;
@@ -261,7 +259,7 @@ class STECondition: public WatchCondition {
 
 class PreSyn: public ConditionEvent {
   public:
-    PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+    PreSyn(neuron::container::data_handle<double> src, Object* osrc, Section* ssrc = nullptr);
     virtual ~PreSyn();
     virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
@@ -281,15 +279,15 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
+        assert(thvar_);
         return *thvar_ - threshold_;
     }
 
     void update(Observable*);
     void disconnect(Observable*);
-    void update_ptr(double*);
     void record_stmt(const char*);
     void record_stmt(Object*);
-    void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
+    void record(IvocVect*, IvocVect* idvec = nullptr, int rec_id = 0);
     void record(double t);
     void init();
     double mindelay();
@@ -298,7 +296,7 @@ class PreSyn: public ConditionEvent {
     NetConPList dil_;
     double threshold_;
     double delay_;
-    double* thvar_;
+    neuron::container::data_handle<double> thvar_{};
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;
@@ -358,7 +356,7 @@ class HocEvent: public DiscreteEvent {
     HocEvent();
     virtual ~HocEvent();
     virtual void pr(const char*, double t, NetCvode*);
-    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nil);
+    static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact = nullptr);
     void hefree();
     void clear();  // called by hepool_->free_all
     virtual void deliver(double, NetCvode*, NrnThread*);

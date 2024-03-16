@@ -1,8 +1,8 @@
+#include "../../nrnconf.h"
 #include "nrnmpiuse.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
-#include "nrnpython_config.h"
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
@@ -13,13 +13,6 @@
 #include <iostream>
 #include <string>
 
-#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
-// when compiled with different Python.h, force correct value
-#undef NRNPYTHON_DYNAMICLOAD
-#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
-#endif
-
-
 extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
 extern int ivocmain(int, const char**, const char**);
@@ -28,17 +21,12 @@ extern int nrn_main_launch;
 
 // int nrn_global_argc;
 extern char** nrn_global_argv;
-
-extern void nrnpy_augment_path();
 extern void (*p_nrnpython_finalize)();
 extern PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
-extern std::string nrnmpi_load(int is_python);
-#endif
-#if NRNPYTHON_DYNAMICLOAD
-extern int nrnpy_site_problem;
+extern std::string nrnmpi_load();
 #endif
 
 #if NRN_ENABLE_THREADS
@@ -260,14 +248,14 @@ extern "C" PyObject* PyInit_hoc() {
      * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
      * and there is no '-mpi' arg.
      * We call nrnmpi_load to load MPI library which returns:
-     *  - nil if loading is successfull
+     *  - nullptr if loading is successfull
      *  - error message in case of loading error
      */
     if (env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {
         libnrnmpi_is_loaded = 0;
     }
     if (libnrnmpi_is_loaded) {
-        pmes = nrnmpi_load(1);
+        pmes = nrnmpi_load();
         if (!pmes.empty() && env_mpi == NULL) {
             // common case on MAC distribution is no NEURON_INIT_MPI and
             // no MPI installed (so nrnmpi_load fails)
@@ -312,7 +300,8 @@ extern "C" PyObject* PyInit_hoc() {
     }
 
 #endif  // NRNMPI
-    std::string buf{NRNHOSTCPU "/.libs/libnrnmech.so"};
+    std::string buf{neuron::config::system_processor};
+    buf += "/.libs/libnrnmech.so";
     // printf("buf = |%s|\n", buf);
     FILE* f;
     if ((f = fopen(buf.c_str(), "r")) != 0) {
@@ -375,10 +364,6 @@ extern "C" PyObject* PyInit_hoc() {
 
     nrn_main_launch = 2;
     ivocmain(argc, (const char**) argv, (const char**) env);
-//	nrnpy_augment_path();
-#if NRNPYTHON_DYNAMICLOAD
-    nrnpy_site_problem = 0;
-#endif  // NRNPYTHON_DYNAMICLOAD
     return nrnpy_hoc();
 }
 

@@ -137,6 +137,9 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
             report_type = SynapseReport;
         } else if (report.type_str == "summation") {
             report_type = SummationReport;
+        } else if (report.type_str == "lfp") {
+            nrn_use_fast_imem = true;
+            report_type = LFPReport;
         } else {
             std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
             nrn_abort(1);

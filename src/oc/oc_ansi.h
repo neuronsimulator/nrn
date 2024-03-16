@@ -1,10 +1,15 @@
 #pragma once
+#include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
+
 #include <cstdio>
 #include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+
+#include "memory.hpp"
 /**
  * \dir
  * \brief HOC Interpreter
@@ -25,7 +30,6 @@
 
 struct Arrayinfo;
 struct cTemplate;
-struct Datum;
 struct DoubScal;
 struct DoubVec;
 struct HocSymExtension;
@@ -35,6 +39,11 @@ union Objectdata;
 struct Symbol;
 struct Symlist;
 struct VoidFunc;
+struct Prop;
+
+namespace neuron {
+struct model_sorted_token;
+}
 
 // nocpout.cpp
 Symbol* hoc_get_symbol(const char* var);
@@ -43,9 +52,6 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-void* hoc_Emalloc(size_t size);
-void hoc_malchk();
 [[noreturn]] void hoc_execerror(const char*, const char*);
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
@@ -86,7 +92,6 @@ decltype(auto) invoke_method_that_may_throw(Callable message_prefix, Args&&... a
 }  // namespace neuron::oc
 
 double* hoc_getarg(int);
-double* hoc_pgetarg(int);
 int ifarg(int);
 
 int vector_instance_px(void*, double**);
@@ -131,6 +136,7 @@ extern int nrnignore;
  */
 int hoc_obj_run(const char*, Object*);
 
+void hoc_prstack();
 int hoc_argtype(int);
 int hoc_is_double_arg(int);
 int hoc_is_pdouble_arg(int);
@@ -161,6 +167,11 @@ void hoc_plt(int, double, double);
 void hoc_plprint(const char*);
 void hoc_ret(); /* but need to push before returning */
 
+void hoc_push(neuron::container::generic_data_handle handle);
+template <typename T>
+void hoc_push(neuron::container::data_handle<T> const& handle) {
+    hoc_push(neuron::container::generic_data_handle{handle});
+}
 void hoc_pushx(double);
 void hoc_pushstr(char**);
 void hoc_pushobj(Object**);
@@ -170,7 +181,77 @@ void hoc_pushs(Symbol*);
 void hoc_pushi(int);
 void hoc_push_ndim(int);
 int hoc_pop_ndim();
+int hoc_stack_type();
 bool hoc_stack_type_is_ndim();
+
+namespace neuron::oc::detail {
+template <typename>
+struct hoc_get_arg_helper;
+template <typename>
+struct hoc_pop_helper;
+}  // namespace neuron::oc::detail
+
+/** @brief Pop an object of type T from the HOC stack.
+ *
+ *  The helper type neuron::oc::detail::hoc_pop must be specialised for all
+ *  supported (families of) T.
+ */
+template <typename T>
+T hoc_pop() {
+    return neuron::oc::detail::hoc_pop_helper<T>::impl();
+}
+
+/** @brief Get the nth (1..N) argument on the stack.
+ *
+ *  This is a templated version of hoc_getarg, hoc_pgetarg and friends.
+ *
+ *  @todo Should the stack be modified such that this can return const
+ *  references, even for things like data_handle<T> that at the moment are not
+ *  exactly stored (we store generic_data_handle, which can produce a
+ *  data_handle<T> on demand but which does not, at present, actually *contain*
+ *  a data_handle<T>)?
+ */
+template <typename T>
+[[nodiscard]] T hoc_get_arg(std::size_t narg) {
+    return neuron::oc::detail::hoc_get_arg_helper<T>::impl(narg);
+}
+
+namespace neuron::oc::detail {
+template <>
+struct hoc_get_arg_helper<neuron::container::generic_data_handle> {
+    static neuron::container::generic_data_handle impl(std::size_t);
+};
+template <typename T>
+struct hoc_get_arg_helper<neuron::container::data_handle<T>> {
+    static neuron::container::data_handle<T> impl(std::size_t narg) {
+        return neuron::container::data_handle<T>{
+            hoc_get_arg<neuron::container::generic_data_handle>(narg)};
+    }
+};
+template <>
+struct hoc_pop_helper<neuron::container::generic_data_handle> {
+    /** @brief Pop a generic data handle from the HOC stack.
+     *
+     *  This function is not used from translated MOD files, so we can assume
+     *  that the generic_data_handle is not in permissive mode.
+     */
+    static neuron::container::generic_data_handle impl();
+};
+
+template <typename T>
+struct hoc_pop_helper<neuron::container::data_handle<T>> {
+    /** @brief Pop a data_handle<T> from the HOC stack.
+     */
+    static neuron::container::data_handle<T> impl() {
+        return neuron::container::data_handle<T>{hoc_pop<neuron::container::generic_data_handle>()};
+    }
+};
+}  // namespace neuron::oc::detail
+
+[[nodiscard]] inline double* hoc_pgetarg(int narg) {
+    return static_cast<double*>(hoc_get_arg<neuron::container::data_handle<double>>(narg));
+}
+
 double hoc_xpop();
 Symbol* hoc_spop();
 double* hoc_pxpop();
@@ -184,9 +265,28 @@ char** hoc_strpop();
 int hoc_ipop();
 void hoc_nopop();
 
+/** @brief Shorthand for hoc_pop<data_handle<T>>().
+ */
+template <typename T>
+neuron::container::data_handle<T> hoc_pop_handle() {
+    return hoc_pop<neuron::container::data_handle<T>>();
+}
+
+/**
+ * @brief Shorthand for hoc_get_arg<data_handle<T>>(narg).
+ *
+ * Migrating code to be data_handle-aware typically involves replacing hoc_pgetarg with
+ * hoc_hgetarg<double>.
+ */
+template <typename T>
+[[nodiscard]] neuron::container::data_handle<T> hoc_hgetarg(int narg) {
+    return hoc_get_arg<neuron::container::data_handle<T>>(narg);
+}
+
 [[noreturn]] void hoc_execerror_mes(const char*, const char*, int);
 void hoc_warning(const char*, const char*);
 double* hoc_val_pointer(const char*);
+neuron::container::data_handle<double> hoc_val_handle(std::string_view);
 Symbol* hoc_table_lookup(const char*, Symlist*);
 Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
@@ -199,7 +299,7 @@ template <typename T>
 T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
 void hoc_stkobj_unref(Object*, int stkindex);
-size_t hoc_total_array_data(Symbol*, Objectdata*);
+size_t hoc_total_array_data(const Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);
 
 char* hoc_object_pathname(Object*);
@@ -211,7 +311,10 @@ void hoc_obj_unref(Object*); /* NULL allowed */
 void hoc_dec_refcount(Object**);
 Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
 Object** hoc_temp_objptr(Object*);
+Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
+Object* nrn_pntproc_nmodlrandom_wrap(void* pnt, Symbol* sym);
+Object* nrn_nmodlrandom_wrap(Prop* prop, Symbol* sym);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);
 Object* hoc_obj_get(int i);
@@ -219,10 +322,6 @@ void hoc_obj_set(int i, Object*);
 void nrn_hoc_lock();
 void nrn_hoc_unlock();
 
-void* hoc_Erealloc(void* ptr, std::size_t size);
-
-void* nrn_cacheline_alloc(void** memptr, std::size_t size);
-void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
 [[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
@@ -262,8 +361,6 @@ int is_vector_arg(int);
 char* vector_get_label(IvocVect*);
 void vector_set_label(IvocVect*, char*);
 
-void hoc_regexp_compile(const char*);
-int hoc_regexp_search(const char*);
 Symbol* hoc_install_var(const char*, double*);
 void hoc_class_registration();
 void hoc_spinit();
@@ -272,7 +369,6 @@ int hoc_arayinfo_install(Symbol*, int);
 void hoc_free_arrayinfo(Arrayinfo*);
 void hoc_free_val_array(double*, std::size_t);
 std::size_t hoc_total_array(Symbol*);
-void hoc_menu_cleanup();
 void frame_debug();
 void hoc_oop_initaftererror();
 void hoc_init();
@@ -331,7 +427,6 @@ int nrn_is_cable();
 void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
 Symbol* hoc_get_symbol(const char* var);
 
-extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 void bbs_done(void);
 int hoc_main1(int, const char**, const char**);
 char* cxx_char_alloc(std::size_t size);

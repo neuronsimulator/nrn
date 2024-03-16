@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <classreg.h>
+#include <vector>
+
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
@@ -9,20 +11,14 @@
 #include "hoclist.h"
 #include "nrn_ansi.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
-#include <nrnpython_config.h>
 #include "ocfunc.h"
 
 
 #define PDEBUG 0
 
-#if USE_PYTHON
-Symbol* nrnpy_pyobj_sym_;
-void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
-void (*nrnpy_hpoasgn)(Object* o, int type);
-void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
-#endif
-
+Symbol* nrnpy_pyobj_sym_{};
 #include "section.h"
 #include "nrniv_mf.h"
 int section_object_seen;
@@ -34,8 +30,9 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-int hoc_print_first_instance = 1;
+std::vector<const char*> py_exposed_classes{};
 
+int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
@@ -91,7 +88,7 @@ size_t hoc_total_array(Symbol* s) /* total number of elements in array pointer *
     return total;
 }
 
-size_t hoc_total_array_data(Symbol* s,
+size_t hoc_total_array_data(const Symbol* s,
                             Objectdata* obd) /* total number of elements in array pointer */
 {
     Arrayinfo* a;
@@ -154,11 +151,7 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
     assert(sym->cpublic != 2);
     if (pmes && hoc_symlist == hoc_top_level_symlist) {
         int b = 0;
-#if USE_NRNFILEWRAP
-        b = (hoc_fin && hoc_fin->f == stdin);
-#else
         b = (hoc_fin == stdin);
-#endif
         if (nrnmpi_myid_world == 0 && (hoc_print_first_instance && b)) {
             Printf("first instance of %s\n", sym->name);
         }
@@ -955,6 +948,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
             hoc_execerror(sym->name, "section property can't have argument");
         }
         hoc_pushs(sym);
+    } else if (sym->type == RANGEOBJ) {
+        // must return NMODLObject on stack
+        assert(sym->subtype == NMODLRANDOM);  // the only possibility at the moment
+        double x{0.5};
+        if (narg) {
+            if (narg > 1) {
+                hoc_execerr_ext("%s range object can have only one arg length parameter",
+                                sym->name);
+            }
+            x = xpop();
+        }
+        Section* sec{nrn_sec_pop()};
+        auto const i = node_index(sec, x);
+        Prop* m = nrn_mechanism_check(sym->u.rng.type, sec, i);
+        Object* ob = nrn_nmodlrandom_wrap(m, sym);
+        hoc_push_object(ob);
     } else {
         hoc_execerror(sym->name, "suffix not a range variable or section property");
     }
@@ -1028,7 +1037,7 @@ void hoc_object_component() {
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
             } else {
-                (*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+                neuron::python::methods.py2n_component(obp, sym0, nindex, isfunc);
             }
             return;
         }
@@ -1270,9 +1279,19 @@ void hoc_object_component() {
         hoc_nopop(); /* get rid of iterator statement context */
         break;
     }
+    case RANGEOBJ: {
+        assert(sym->subtype == NMODLRANDOM);
+        if (sym->subtype == NMODLRANDOM) {  // NMODL NEURON block RANDOM var
+            // RANGE type. The void* is a nrnran123_State*. Wrap in a
+            // NMODLRandom and push_object
+            Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
+            hoc_pop_defer();
+            hoc_push_object(o);
+        }
+        break;
+    }
     default:
         if (cplus) {
-            double* pd;
             if (nindex) {
                 if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
@@ -1294,9 +1313,9 @@ void hoc_object_component() {
             }
             hoc_pushs(sym);
             (*obp->ctemplate->steer)(obp->u.this_pointer);
-            pd = hoc_pxpop();
+            auto dh = hoc_pop_handle<double>();
             hoc_pop_defer();
-            hoc_pushpx(pd);
+            hoc_push(std::move(dh));
         } else {
             hoc_execerror(sym->name, ": can't push that type onto stack");
         }
@@ -1368,7 +1387,7 @@ void hoc_ob_pointer(void) {
             } else {
                 x = .5;
             }
-            hoc_pushpx(nrn_rangepointer(sec, sym, x));
+            hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
@@ -1410,7 +1429,11 @@ void hoc_object_asgn() {
             }
             *pd = d;
         } else {
-            nrn_rangeconst(sec, sym, &d, op);
+            nrn_rangeconst(sec,
+                           sym,
+                           neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                  &d},
+                           op);
         }
         hoc_pushx(d);
         return;
@@ -1464,7 +1487,7 @@ void hoc_object_asgn() {
         if (op) {
             hoc_execerror("Invalid assignment operator for PythonObject", nullptr);
         }
-        (*nrnpy_hpoasgn)(o, type1);
+        neuron::python::methods.hpoasgn(o, type1);
     } break;
 #endif
     default:
@@ -1567,13 +1590,13 @@ void hoc_endtemplate(Symbol* t) {
     }
 }
 
-void class2oc(const char* name,
-              void* (*cons)(Object*),
-              void (*destruct)(void*),
-              Member_func* m,
-              int (*checkpoint)(void**),
-              Member_ret_obj_func* mobjret,
-              Member_ret_str_func* strret) {
+void class2oc_base(const char* name,
+                   void* (*cons)(Object*),
+                   void (*destruct)(void*),
+                   Member_func* m,
+                   int (*checkpoint)(void**),
+                   Member_ret_obj_func* mobjret,
+                   Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
     Symbol *tsym, *s;
     cTemplate* t;
@@ -1582,6 +1605,7 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
+
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);
@@ -1593,6 +1617,7 @@ void class2oc(const char* name,
     t->destructor = destruct;
     t->steer = 0;
     t->checkpoint = checkpoint;
+
     if (m)
         for (i = 0; m[i].name; ++i) {
             s = hoc_install(m[i].name, FUNCTION, 0.0, &hoc_symlist);
@@ -1614,6 +1639,17 @@ void class2oc(const char* name,
     hoc_endtemplate(tsym);
 }
 
+
+void class2oc(const char* name,
+              void* (*cons)(Object*),
+              void (*destruct)(void*),
+              Member_func* m,
+              int (*checkpoint)(void**),
+              Member_ret_obj_func* mobjret,
+              Member_ret_str_func* strret) {
+    class2oc_base(name, cons, destruct, m, checkpoint, mobjret, strret);
+    py_exposed_classes.push_back(name);
+}
 
 Symbol* hoc_decl(Symbol* s) {
     Symbol* ss;
@@ -2078,7 +2114,7 @@ void check_obj_type(Object* obj, const char* type_name) {
         if (obj) {
             Sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
         } else {
-            Sprintf(buf, "object type is nil instead of");
+            Sprintf(buf, "object type is nullptr instead of");
         }
         hoc_execerror(buf, type_name);
     }
@@ -2094,11 +2130,9 @@ int is_obj_type(Object* obj, const char* type_name) {
 
 
 void* nrn_opaque_obj2pyobj(Object* ho) {
-#if USE_PYTHON
     // The PyObject* reference is not incremented. Use only as last resort
-    if (nrnpy_opaque_obj2pyobj_p_) {
-        return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+    if (neuron::python::methods.opaque_obj2pyobj) {
+        return neuron::python::methods.opaque_obj2pyobj(ho);
     }
-#endif
     return nullptr;
 }

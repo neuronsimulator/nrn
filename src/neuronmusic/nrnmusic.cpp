@@ -9,6 +9,7 @@
 #include "netcvode.h"
 #include "multicore.h"
 #include "nrnmusic.h"
+#include "nrnpy.h"
 #include "netpar.h"
 #include <unordered_map>
 
@@ -22,9 +23,6 @@ void nrnmusic_injectlist(void* vp, double tt);
 void nrnmusic_inject(void* port, int gindex, double tt);
 void nrnmusic_spikehandle(void* vport, double tt, int gindex);
 
-extern Object* (*nrnpy_p_po2ho)(PyObject*);
-extern PyObject* (*nrnpy_p_ho2po)(Object*);
-extern Object* hoc_new_object(Symbol*, void*);
 extern NetCvode* net_cvode_instance;
 
 MUSIC::Setup* nrnmusic_setup;
@@ -169,8 +167,8 @@ NRNMUSIC::EventInputPort* NRNMUSIC::publishEventInput(std::string id) {
 
 PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     // analogous to pc.gid_connect
-    assert(nrnpy_p_po2ho);
-    Object* target = (*nrnpy_p_po2ho)(ptarget);
+    assert(neuron::python::methods.po2ho);
+    Object* target = neuron::python::methods.po2ho(ptarget);
     if (!is_point_process(target)) {
         hoc_execerror("target arg must be a Point_process", 0);
     }
@@ -182,7 +180,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     }
     // nrn_assert (gi_table.count(gi) == 0);
     if (gi_table->count(gi) == 0) {
-        ps = new PreSyn(NULL, NULL, NULL);
+        ps = new PreSyn({}, {}, {});
         net_cvode_instance->psl_append(ps);
         (*gi_table)[gi] = ps;
         ps->gid_ = -2;
@@ -193,8 +191,8 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     NetCon* nc = new NetCon(ps, target);
     Object* o = hoc_new_object(nrn_netcon_sym(), nc);
     nc->obj_ = o;
-    assert(nrnpy_p_ho2po);
-    PyObject* po = (*nrnpy_p_ho2po)(o);
+    assert(neuron::python::methods.ho2po);
+    PyObject* po = neuron::python::methods.ho2po(o);
     // printf("index2target %d %s\n", gi, hoc_object_name(target));
     return po;
 }

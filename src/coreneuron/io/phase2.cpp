@@ -50,6 +50,7 @@ int (*nrn2core_get_dat2_mech_)(int tid,
                                int*& nodeindices,
                                double*& data,
                                int*& pdata,
+                               std::vector<uint32_t>& nmodlrandom,
                                std::vector<int>& pointer2type);
 
 int (*nrn2core_get_dat2_3_)(int tid,
@@ -181,6 +182,13 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
             if (sz) {
                 auto& p2t = tmls.back().pointer2type;
                 p2t = F.read_vector<int>(sz);
+            }
+
+            // nmodlrandom
+            sz = F.read_int();
+            if (sz) {
+                auto& nmodlrandom = tmls.back().nmodlrandom;
+                nmodlrandom = F.read_vector<uint32_t>(sz);
             }
         }
     }
@@ -325,13 +333,24 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         int* nodeindices_ = nullptr;
         double* data_ = _data + offset;
         int* pdata_ = const_cast<int*>(tml.pdata.data());
+
+        // nmodlrandom, receives:
+        // number of random variables
+        // dparam index (neuron side) of each random variable
+        // 5 uint32 for each var of each instance
+        // id1, id2, id3, seq, uint32_t(which)
+        // all instances of ranvar1 first, then all instances of ranvar2, etc.
+        auto& nmodlrandom = tml.nmodlrandom;
+
         (*nrn2core_get_dat2_mech_)(thread_id,
                                    i,
                                    dparam_sizes[type] > 0 ? dsz_inst : 0,
                                    nodeindices_,
                                    data_,
                                    pdata_,
+                                   nmodlrandom,
                                    tml.pointer2type);
+
         if (dparam_sizes[type] > 0)
             dsz_inst++;
         offset += nrn_soa_padded_size(nodecounts[i], layout) * param_sizes[type];
@@ -1036,9 +1055,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             num_point_process += n;
         }
     }
-    nt.pntprocs = (Point_process*) ecalloc_align(num_point_process,
-                                                 sizeof(Point_process));  // includes acell with and
-                                                                          // without gid
+    nt.pntprocs = new Point_process[num_point_process]{};  // includes acell with and without gid
     nt.n_pntproc = num_point_process;
     nt._ndata = offset;
 
@@ -1111,6 +1128,31 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                 pp->_i_instance = i;
                 nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
                 pp->_tid = nt.id;
+            }
+        }
+
+        auto& r = tmls[itml].nmodlrandom;
+        if (r.size()) {
+            size_t ix{};
+            uint32_t n_randomvar = r[ix++];
+            assert(r.size() == 1 + n_randomvar + 5 * n_randomvar * n);
+            std::vector<uint32_t> indices(n_randomvar);
+            for (uint32_t i = 0; i < n_randomvar; ++i) {
+                indices[i] = r[ix++];
+            }
+            int cnt = ml->nodecount;
+            for (auto index: indices) {
+                // should we also verify that index on corenrn side same as on nrn side?
+                // sonarcloud thinks ml_pdata can be nullptr, so ...
+                assert(index >= 0 && index < szdp);
+                for (int i = 0; i < n; ++i) {
+                    nrnran123_State* state = nrnran123_newstream3(r[ix], r[ix + 1], r[ix + 2]);
+                    nrnran123_setseq(state, r[ix + 3], char(r[ix + 4]));
+                    ix += 5;
+                    int ipd = ml->pdata[nrn_i_layout(i, cnt, index, szdp, layout)];
+                    assert(ipd >= 0 && ipd < n_vdata + extra_nv);
+                    nt._vdata[ipd] = state;
+                }
             }
         }
     }

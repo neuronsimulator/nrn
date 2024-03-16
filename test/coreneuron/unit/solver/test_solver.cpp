@@ -11,8 +11,8 @@
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/sim/multicore.hpp"
 
-#define BOOST_TEST_MODULE CoreNEURON solver
-#include <boost/test/included/unit_test.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
 #include <iostream>
 #include <functional>
@@ -22,8 +22,6 @@
 #include <vector>
 
 using namespace coreneuron;
-namespace utf = boost::unit_test;
-
 
 struct SolverData {
     std::vector<double> d, rhs;
@@ -158,15 +156,15 @@ struct SetupThreads {
             }
             // Check we didn't mess up populating any parent indices
             for (auto i = 0; i < nt.end; ++i) {
-                BOOST_REQUIRE(parent_indices[i] != magic_index_value);
+                REQUIRE(parent_indices[i] != magic_index_value);
                 // Root nodes should come first for --cell-permute=0
                 if (i < nt.ncell) {
-                    BOOST_REQUIRE(parent_indices[i] == -1);
+                    REQUIRE(parent_indices[i] == -1);
                 }
             }
             if (interleave_permute_type) {
                 nt._permute = interleave_order(nt.id, nt.ncell, nt.end, parent_indices);
-                BOOST_REQUIRE(nt._permute);
+                REQUIRE(nt._permute);
                 permute_data(vec_a, nt.end, nt._permute);
                 permute_data(vec_b, nt.end, nt._permute);
                 // This isn't done in CoreNEURON because these are reset every
@@ -191,8 +189,8 @@ struct SetupThreads {
             std::cout << "\n...no more warnings expected" << std::endl;
         }
         // Make sure we produced the number of cells we were aiming for
-        BOOST_REQUIRE(total_cells == config.num_cells);
-        BOOST_REQUIRE(num_cells_remaining == 0);
+        REQUIRE(total_cells == config.num_cells);
+        REQUIRE(num_cells_remaining == 0);
     }
 
     ~SetupThreads() {
@@ -236,9 +234,9 @@ struct SetupThreads {
             }
             delete[] inv_permute;
             for (auto i = 0; i < nt.end; ++i) {
-                BOOST_REQUIRE(sd.d[i] != magic_double_value);
-                BOOST_REQUIRE(sd.parent_index[i] != magic_index_value);
-                BOOST_REQUIRE(sd.rhs[i] != magic_double_value);
+                REQUIRE(sd.d[i] != magic_double_value);
+                REQUIRE(sd.parent_index[i] != magic_index_value);
+                REQUIRE(sd.rhs[i] != magic_double_value);
             }
         }
         return ret;
@@ -285,24 +283,21 @@ void compare_solver_data(
     // CellPermute0_CPU is the simplest version of the solver, it should always
     // be present and it's a good reference to use
     constexpr auto ref_impl = SolverImplementation::CellPermute0_CPU;
-    BOOST_REQUIRE(solver_data.find(ref_impl) != solver_data.end());
+    REQUIRE(solver_data.find(ref_impl) != solver_data.end());
     auto const& ref_data = solver_data.at(ref_impl);
     for (auto const& [impl, impl_data]: solver_data) {
         // Must have compatible numbers of threads.
-        BOOST_REQUIRE(impl_data.size() == ref_data.size());
+        REQUIRE(impl_data.size() == ref_data.size());
         std::cout << "Comparing " << impl << " to " << ref_impl << std::endl;
         for (auto n_thread = 0ul; n_thread < impl_data.size(); ++n_thread) {
             // Must have compatible numbers of segments/data entries
-            BOOST_REQUIRE(impl_data[n_thread].d.size() == ref_data[n_thread].d.size());
-            BOOST_REQUIRE(impl_data[n_thread].parent_index.size() ==
-                          ref_data[n_thread].parent_index.size());
-            BOOST_REQUIRE(impl_data[n_thread].rhs.size() == ref_data[n_thread].rhs.size());
-            BOOST_TEST(impl_data[n_thread].d == ref_data[n_thread].d,
-                       boost::test_tools::per_element());
-            BOOST_TEST(impl_data[n_thread].parent_index == ref_data[n_thread].parent_index,
-                       boost::test_tools::per_element());
-            BOOST_TEST(impl_data[n_thread].rhs == ref_data[n_thread].rhs,
-                       boost::test_tools::per_element());
+            REQUIRE(impl_data[n_thread].d.size() == ref_data[n_thread].d.size());
+            REQUIRE(impl_data[n_thread].parent_index.size() ==
+                    ref_data[n_thread].parent_index.size());
+            REQUIRE(impl_data[n_thread].rhs.size() == ref_data[n_thread].rhs.size());
+            CHECK_THAT(impl_data[n_thread].d, Catch::Approx(ref_data[n_thread].d));
+            REQUIRE(impl_data[n_thread].parent_index == ref_data[n_thread].parent_index);
+            CHECK_THAT(impl_data[n_thread].rhs, Catch::Approx(ref_data[n_thread].rhs));
         }
     }
 }
@@ -321,39 +316,38 @@ auto compare_all_active_implementations(Args&&... args) {
 // from the pseudorandom seeded tests.
 constexpr double default_tolerance = 2e-11;
 
-// May need to add some different tolerances here
-BOOST_AUTO_TEST_CASE(SingleCellAndThread, *utf::tolerance(default_tolerance)) {
+TEST_CASE("SingleCellAndThread", "[solver][single-thread]") {
     constexpr std::size_t segments = 32;
     ToyModelConfig config{};
     config.num_segments_per_cell = segments;
     auto const solver_data = compare_all_active_implementations(config);
     for (auto const& [impl, data]: solver_data) {
-        BOOST_REQUIRE(data.size() == 1);  // nthreads
-        BOOST_REQUIRE(data[0].d.size() == segments);
-        BOOST_REQUIRE(data[0].parent_index.size() == segments);
-        BOOST_REQUIRE(data[0].rhs.size() == segments);
+        REQUIRE(data.size() == 1);  // nthreads
+        REQUIRE(data[0].d.size() == segments);
+        REQUIRE(data[0].parent_index.size() == segments);
+        REQUIRE(data[0].rhs.size() == segments);
     }
 }
 
-BOOST_AUTO_TEST_CASE(UnbalancedCellSingleThread, *utf::tolerance(default_tolerance)) {
+TEST_CASE("UnbalancedCellSingleThread", "[solver][single-thread]") {
     ToyModelConfig config{};
     config.num_segments_per_cell = 19;  // not a nice round number
     compare_all_active_implementations(config);
 }
 
-BOOST_AUTO_TEST_CASE(LargeCellSingleThread, *utf::tolerance(default_tolerance)) {
+TEST_CASE("LargeCellSingleThread", "[solver][single-thread]") {
     ToyModelConfig config{};
     config.num_segments_per_cell = 4096;
     compare_all_active_implementations(config);
 }
 
-BOOST_AUTO_TEST_CASE(ManySmallCellsSingleThread, *utf::tolerance(default_tolerance)) {
+TEST_CASE("ManySmallCellsSingleThread", "[solver][single-thread]") {
     ToyModelConfig config{};
     config.num_cells = 1024;
     compare_all_active_implementations(config);
 }
 
-BOOST_AUTO_TEST_CASE(ManySmallCellsMultiThread, *utf::tolerance(default_tolerance)) {
+TEST_CASE("ManySmallCellsMultiThread", "[solver][multi-thread]") {
     ToyModelConfig config{};
     config.num_cells = 1024;
     config.num_threads = 2;
@@ -379,13 +373,13 @@ auto random_config() {
     return config;
 }
 
-BOOST_AUTO_TEST_CASE(LargeCellSingleThreadRandom, *utf::tolerance(default_tolerance)) {
+TEST_CASE("LargeCellSingleThreadRandom", "[solver][single-thread][random]") {
     auto config = random_config();
     config.num_segments_per_cell = 4096;
     compare_all_active_implementations(config);
 }
 
-BOOST_AUTO_TEST_CASE(ManySmallCellsSingleThreadRandom, *utf::tolerance(default_tolerance)) {
+TEST_CASE("ManySmallCellsSingleThreadRandom", "[solver][single-thread][random]") {
     auto config = random_config();
     config.num_cells = 1024;
     compare_all_active_implementations(config);

@@ -36,7 +36,7 @@ static void multisplit_v_setup();
 static void multisplit_solve();
 
 extern double nrnmpi_rtcomp_time_;
-#if PARANEURON
+#if NRNMPI
 extern double nrnmpi_splitcell_wait_;
 #else
 static double nrnmpi_splitcell_wait_;
@@ -59,10 +59,8 @@ static double nrnmpi_wtime() {
 class MultiSplit;
 class MultiSplitControl;
 
-#define A(i)   VEC_A(i)
-#define B(i)   VEC_B(i)
-#define D(i)   VEC_D(i)
-#define RHS(i) VEC_RHS(i)
+#define D(i)   vec_d[i]
+#define RHS(i) vec_rhs[i]
 #define S1A(i) sid1A[i]
 #define S1B(i) sid1B[i]
 
@@ -365,7 +363,6 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 	if (sid >= 1000) { pmat(sid>1000); return; }
 #endif
     if (sid < 0) {
-        nrn_cachevec(1);
         if (classical_root_to_multisplit_) {
             nrn_multisplit_setup_ = multisplit_v_setup;
             nrn_multisplit_solve_ = multisplit_solve;
@@ -1003,6 +1000,8 @@ bb_relation[j], rthost[j]);
             for (j = 0; j < 2; ++j) {
                 NrnThread* _nt = nrn_threads + threadid[i];
                 Node* nd = _nt->_v_node[inode[i + j]];
+                auto* const vec_d = _nt->node_d_storage();
+                auto* const vec_rhs = _nt->node_rhs_storage();
                 if (nd->_classical_parent && nd->sec_node_index_ < nd->sec->nnode - 1) {
                     if (rthost[i] == nrnmpi_myid) {
                         Area2RT& art = area2rt_[narea2rt_];
@@ -1474,6 +1473,8 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
         for (MultiSplit* ms: *multisplit_list_) {
             NrnThread* _nt = nrn_threads + ms->ithread;
             MultiSplitThread& t = mth_[ms->ithread];
+            auto* const vec_d = _nt->node_d_storage();
+            auto* const vec_rhs = _nt->node_rhs_storage();
             if (ms->rthost == nrnmpi_myid) {
                 // printf("%d nrtree_=%d i=%d rt=%p\n", nrnmpi_myid, nrtree_, i, rt[i]);
                 int j = ms->nd[0]->v_node_index;
@@ -1657,8 +1658,8 @@ void MultiSplitControl::rt_map_update() {
         Area2RT& art = area2rt_[i];
         MultiSplit& ms = *art.ms;
         NrnThread* _nt = nrn_threads + ms.ithread;
-        art.pd[0] = &D(art.inode);
-        art.pd[1] = &RHS(art.inode);
+        art.pd[0] = _nt->node_d_storage() + art.inode;
+        art.pd[1] = _nt->node_rhs_storage() + art.inode;
         if (art.n == 3) {
             MultiSplitThread& t = mth_[ms.ithread];
             if (art.inode == ms.nd[0]->v_node_index) {
@@ -2000,18 +2001,21 @@ void MultiSplitControl::multisplit_nocap_v_part1(NrnThread* _nt) {
     // non-zero area nodes (because current from zero area not added)
     // so encode v into D and sum of zero-area rhs will end up in
     // rhs.
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
-            VEC_D(ab.inode) = 1e50;  // sentinal
-            VEC_RHS(ab.inode) = VEC_V(ab.inode) * 1e50;
+            vec_d[ab.inode] = 1e50;  // sentinal
+            vec_rhs[ab.inode] = vec_v[ab.inode] * 1e50;
         }
     // also scale the non-zero area elements on this host
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
-            VEC_D(ar.inode) = 1e50;
-            VEC_RHS(ar.inode) = VEC_V(ar.inode) * 1e50;
+            vec_d[ar.inode] = 1e50;
+            vec_rhs[ar.inode] = vec_v[ar.inode] * 1e50;
         }
     }
 }
@@ -2027,24 +2031,27 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
     // But for non-zero area nodes, D is the sum of all zero-area
     // node d, and RHS is the sum of all zero-area node rhs.
     int i;
-
+    auto* const vec_area = _nt->node_area_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
             int j = ab.inode;
-            double afac = 100. / VEC_AREA(j);
-            ab.adjust_rhs_ = (VEC_RHS(j) - VEC_D(j) * VEC_V(j)) * afac;
+            double afac = 100. / vec_area[j];
+            ab.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz1 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
-            // nrnmpi_myid, i, D(i), RHS(i), VEC_V(j), afac, ab.adjust_rhs_);
+            // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ab.adjust_rhs_);
         }
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         if (_nt->id == ar.ms->ithread) {
             int j = ar.inode;
-            double afac = 100. / VEC_AREA(j);
-            ar.adjust_rhs_ = (VEC_RHS(j) - VEC_D(j) * VEC_V(j)) * afac;
+            double afac = 100. / vec_area[j];
+            ar.adjust_rhs_ = (vec_rhs[j] - vec_d[j] * vec_v[j]) * afac;
             // printf("%d nz2 %d D=%g RHS=%g V=%g afac=%g adjust=%g\n",
-            // nrnmpi_myid, i, D(i), RHS(i), VEC_V(j), afac, ar.adjust_rhs_);
+            // nrnmpi_myid, i, D(i), RHS(i), vec_v[j], afac, ar.adjust_rhs_);
         }
     }
 }
@@ -2055,10 +2062,11 @@ void nrn_multisplit_adjust_rhs(NrnThread* nt) {
 
 void MultiSplitControl::multisplit_adjust_rhs(NrnThread* _nt) {
     int i;
+    auto* const vec_rhs = _nt->node_rhs_storage();
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
             Area2Buf& ab = area2buf_[i];
-            VEC_RHS(ab.inode) += ab.adjust_rhs_;
+            vec_rhs[ab.inode] += ab.adjust_rhs_;
         }
     // also scale the non-zero area elements on this host
     for (i = 0; i < narea2rt_; ++i) {
@@ -2066,7 +2074,7 @@ void MultiSplitControl::multisplit_adjust_rhs(NrnThread* _nt) {
         if (_nt->id == ar.ms->ithread) {
             // printf("%d adjust %d %g %g\n",
             // nrnmpi_myid, ar.inode, ar.adjust_rhs_, VEC_RHS(ar.inode));
-            VEC_RHS(ar.inode) += ar.adjust_rhs_;
+            vec_rhs[ar.inode] += ar.adjust_rhs_;
         }
     }
 }
@@ -2126,8 +2134,8 @@ nrnmpi_myid, i, mt.displ_, mt.size_, mt.host_, tag);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            tbuf[j++] = D(k);
-            tbuf[j++] = RHS(k);
+            tbuf[j++] = _nt->actual_d(k);
+            tbuf[j++] = _nt->actual_rhs(k);
         }
         // each sent backbone will have added 2 to mt.nnode_rt_
         for (jj = 0; jj < mt.nnode_rt_; ++jj) {
@@ -2158,7 +2166,7 @@ nrnmpi_myid, mt.host_, jj, tbuf[jj]);
     for (i = 0; i < narea2buf_; ++i) {
         Area2Buf& ab = area2buf_[i];
         _nt = nrn_threads + ab.ms->ithread;
-        double afac = 0.01 * VEC_AREA(ab.inode);
+        double afac = 0.01 * _nt->node_area_storage()[ab.inode];
         tbuf = tsendbuf_;
         for (j = 0; j < ab.n; ++j) {
             tbuf[ab.ibuf[j]] *= afac;
@@ -2215,7 +2223,7 @@ for (i=0; i < tbsize_; ++i) { printf("%d trecvbuf[%d] = %g\n", nrnmpi_myid, i, t
     for (i = 0; i < narea2rt_; ++i) {
         Area2RT& ar = area2rt_[i];
         NrnThread* _nt = nrn_threads + ar.ms->ithread;
-        double afac = 0.01 * VEC_AREA(ar.inode);
+        double afac = 0.01 * _nt->node_area_storage()[ar.inode];
         for (j = 0; j < ar.n; ++j) {
             *ar.pd[j] *= afac;
         }
@@ -2279,8 +2287,8 @@ nrnmpi_myid, mt.host_, mt.nnode_, mt.nnode_rt_, mt.size_, mt.tag_);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) += tbuf[j++];
-            RHS(k) += tbuf[j++];
+            _nt->actual_d(k) += tbuf[j++];
+            _nt->actual_rhs(k) += tbuf[j++];
         }
 #if 0
 if (nrnmpi_myid == 4) {
@@ -2293,7 +2301,7 @@ nrnmpi_myid, mt.host_, 2*j, tbuf[2*j], 2*j+1, tbuf[2*j+1], mt.nodeindex_[j]);
     }
 #endif  // EXCHANGE_ON
 
-#if PARANEURON
+#if NRNMPI
     nrnmpi_splitcell_wait_ += nrnmpi_wtime() - wt;
 #endif
     errno = 0;
@@ -2335,8 +2343,8 @@ nrnmpi_myid, i, mt.displ_, mt.size_, mt.host_, tag);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            tbuf[j++] = D(k);
-            tbuf[j++] = RHS(k);
+            tbuf[j++] = _nt->actual_d(k);
+            tbuf[j++] = _nt->actual_rhs(k);
         }
         // each sent backbone will have added 2 to mt.nnode_rt_
         for (jj = 0; jj < mt.nnode_rt_; ++jj) {
@@ -2421,8 +2429,8 @@ for (i=0; i < tbsize_; ++i) { printf("%d trecvbuf[%d] = %g\n", nrnmpi_myid, i, t
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) = tbuf[j++];
-            RHS(k) = tbuf[j++];
+            _nt->actual_d(k) = tbuf[j++];
+            _nt->actual_rhs(k) = tbuf[j++];
         }
 #if 0
 		for (j = 0; j < mt.nnode_; ++j) {
@@ -2478,8 +2486,8 @@ nrnmpi_myid, mt.host_, mt.nnode_, mt.nnode_rt_, mt.size_, mt.tag_);
         for (jj = 0; jj < mt.nnode_; ++jj) {
             k = mt.nodeindex_[jj];
             _nt = nrn_threads + mt.nodeindex_th_[jj];
-            D(k) = tbuf[j++];
-            RHS(k) = tbuf[j++];
+            _nt->actual_d(k) = tbuf[j++];
+            _nt->actual_rhs(k) = tbuf[j++];
         }
 #if 0
 if (nrnmpi_myid == 4) {
@@ -2492,7 +2500,7 @@ nrnmpi_myid, mt.host_, 2*j, tbuf[2*j], 2*j+1, tbuf[2*j+1], mt.nodeindex_[j]);
     }
 #endif  // EXCHANGE_ON
 
-#if PARANEURON
+#if NRNMPI
     nrnmpi_splitcell_wait_ += nrnmpi_wtime() - wt;
 #endif
     errno = 0;
@@ -2670,22 +2678,22 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
             if (rmap[i] >= trbuf && rmap[i] < (trbuf + tsize)) {
                 Printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i] - trbuf);
             }
-            if (rmap[i] >= nt->_actual_rhs && rmap[i] < (nt->_actual_rhs + nt->end)) {
-                Node* nd = nt->_v_node[rmap[i] - nt->_actual_rhs];
+            if (rmap[i] >= nt->node_rhs_storage() && rmap[i] < (nt->node_rhs_storage() + nt->end)) {
+                Node* nd = nt->_v_node[rmap[i] - nt->node_rhs_storage()];
                 Printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n",
                        i,
                        irmap[i],
                        irmap[i],
-                       rmap[i] - nt->_actual_rhs,
+                       rmap[i] - nt->node_rhs_storage(),
                        secname(nd->sec),
                        nd->sec_node_index_);
             }
-            if (rmap[i] >= nt->_actual_d && rmap[i] < (nt->_actual_d + nt->end)) {
+            if (rmap[i] >= nt->node_d_storage() && rmap[i] < (nt->node_d_storage() + nt->end)) {
                 Printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n",
                        i,
                        irmap[i],
                        irmap[i] - n,
-                       rmap[i] - nt->_actual_d);
+                       rmap[i] - nt->node_d_storage());
             }
             if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
                 Printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]",
@@ -2855,11 +2863,15 @@ void ReducedTree::fillsmap(int sid, double* prhs, double* pd) {
 void MultiSplitThread::triang_subtree2backbone(NrnThread* _nt) {
     int i, ip;
     double p;
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     // eliminate a of the subtrees
     for (i = i3 - 1; i >= backbone_end; --i) {
         ip = _nt->_v_parent_index[i];
-        p = A(i) / D(i);
-        D(ip) -= p * B(i);
+        p = vec_a[i] / vec_d[i];
+        vec_d[ip] -= p * vec_b[i];
         RHS(ip) -= p * RHS(i);
     }
 #if 0
@@ -2876,17 +2888,21 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
     double p;
     // begin the backbone triangularization. This eliminates a and fills in
     // sid1A column. Begin with pivot equation adjacent to sid1.
+    auto* const vec_a = _nt->node_a_storage();
     for (i = backbone_sid1_begin; i < backbone_end; ++i) {
         // what is the equation index for A(i)
         j = _nt->_v_parent_index[i] - backbone_begin;
-        S1A(j) = A(i);
+        S1A(j) = vec_a[i];
     }
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     for (i = backbone_sid1_begin - 1; i >= backbone_interior_begin; --i) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         jp = ip - backbone_begin;
-        p = A(i) / D(i);
-        D(ip) -= p * B(i);
+        p = vec_a[i] / D(i);
+        D(ip) -= p * vec_b[i];
         RHS(ip) -= p * RHS(i);
         S1A(jp) = -p * S1A(j);
         // printf("iter i=%d ip=%d j=%d jp=%d D(ip)=%g RHS(ip)=%g S1A(ip)=%g\n",
@@ -2900,11 +2916,11 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         if (ip < backbone_interior_begin) {
-            S1B(j) = B(i);
+            S1B(j) = vec_b[i];
             continue;
         }
         jp = ip - backbone_begin;
-        p = B(i) / D(ip);
+        p = vec_b[i] / D(ip);
         RHS(i) -= p * RHS(ip);
         S1A(j) -= p * S1A(jp);
         S1B(j) = -p * S1B(jp);
@@ -2916,11 +2932,11 @@ void MultiSplitThread::triang_backbone(NrnThread* _nt) {
         ip = _nt->_v_parent_index[i];
         j = i - backbone_begin;
         if (ip < backbone_interior_begin) {
-            S1B(j) = B(i);
+            S1B(j) = vec_b[i];
             continue;
         }
         jp = ip - backbone_begin;
-        p = B(i) / D(ip);
+        p = vec_b[i] / D(ip);
         RHS(i) -= p * RHS(ip);
         D(i) -= p * S1A(jp);
         S1B(j) = -p * S1B(jp);
@@ -2938,6 +2954,8 @@ for (i=i1; i < backbone_end; ++i) {
 // exchange of d and rhs of sids has taken place and we can solve for the
 // backbone nodes
 void MultiSplitThread::bksub_backbone(NrnThread* _nt) {
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     int i, j;
     double a, b, p, vsid1;
     // need to solve the 2x2 consisting of sid0 and sid1 points
@@ -2983,6 +3001,8 @@ for (i=i1; i < backbone_end; ++i) {
 }
 
 void MultiSplitThread::bksub_short_backbone_part1(NrnThread* _nt) {
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     int i, j;
     double a, b, p;
     // solve the 2x2 consisting of sid0 and sid1 points.
@@ -3022,6 +3042,9 @@ nrnmpi_myid, RHS(i), RHS(j));
 
 // solve the subtrees,  rhs on the backbone is already solved
 void MultiSplitThread::bksub_subtrees(NrnThread* _nt) {
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
     int i, ip;
     // solve all rootnodes not part of a backbone
     for (i = i1; i < backbone_begin; ++i) {
@@ -3030,7 +3053,7 @@ void MultiSplitThread::bksub_subtrees(NrnThread* _nt) {
     // solve the subtrees
     for (i = backbone_end; i < i3; ++i) {
         ip = _nt->_v_parent_index[i];
-        RHS(i) -= B(i) * RHS(ip);
+        RHS(i) -= vec_b[i] * RHS(ip);
         RHS(i) /= D(i);
     }
 #if 0
@@ -3074,8 +3097,6 @@ void MultiSplitControl::v_setup() {
     // thread nt->_v_node and ms->ithread. Hence anything that
     // changes the overall structure
     // requires a complete start over from the point prior to splitting.
-
-    assert(use_cachevec);
     assert(!use_sparse13);
     int i;
     // first time through, nth_ = 0
@@ -3510,6 +3531,8 @@ void MultiSplitControl::pmat1(const char* s) {
     double a, b, d, rhs;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;
+        auto* const vec_d = _nt->node_d_storage();
+        auto* const vec_rhs = _nt->node_rhs_storage();
         MultiSplitThread& t = mth_[it];
         int i1 = 0;
         int i3 = _nt->end;

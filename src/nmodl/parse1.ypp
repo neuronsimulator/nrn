@@ -111,6 +111,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
+%token	<qp>	RANDOM RANDOMVAR
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -186,6 +187,11 @@ Name:	NAME
 		  SYM($1) = checklocal(SYM($1));  /* it was a bug
 			when this was done to the lookahead token in lex */
 		}
+	| RANDOMVAR error {
+		  std::string s{SYM($1)->name};
+		  s += " RANDOM var can only be used as the first arg of a random_ function";
+		  myerr(s.c_str());
+		}
 	;
 declare: parmblk | indepblk | depblk | stateblk
 	| neuronblk | unitblk | constblk
@@ -228,7 +234,9 @@ limits: /*nothing*/
 		}
 	;
 name:	Name
+		{check_range_in_func(SYM($1));}
 	| PRIME
+		{check_range_in_func(SYM($1));}
 	;
 number: NUMBER	{lastok = $1;}
 	| '-' NUMBER
@@ -397,6 +405,7 @@ ostmt:	fromstmt
 	| conducthint
 	| VERBATIM 
 		{inblock(SYM($1)->name);
+                check_range_in_func(nullptr);
 		replacstr($1, "\n/*VERBATIM*/\n");
 		if (!assert_threadsafe && !saw_verbatim_) {
  		 fprintf(stderr, "Notice: VERBATIM blocks are not thread safe\n");
@@ -609,6 +618,7 @@ funccall: NAME '('
 		{ if (SYM($1)->subtype & EXTDEF2) { extdef2 = 1;}}
 	   exprlist ')'
 		{lastok = $5; SYM($1)->usage |= FUNCT;
+		 check_range_in_func(SYM($1));
 		 if (SYM($1)->subtype & EXTDEF2) { extdef2 = 0;}
 		 if (SYM($1)->subtype & EXTDEF3) { add_reset_args($2);}
 		 if (SYM($1)->subtype & EXTDEF4) { add_nrnthread_arg($2);}
@@ -618,10 +628,21 @@ fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
 				vectorize = 0;
 			}
 		 }
+		 Item* arg = $2->next;
+		 if (SYM($1)->subtype & EXTDEF_RANDOM) {
+		    if (arg == $2 || arg->itemtype != SYMBOL || SYM(arg)->type != RANDOMVAR) {
+		        diag(SYM($1)->name, " must have RANDOM var as first argument");
+		    }
+		 }else{
+		    if (arg != $2 && arg->itemtype == SYMBOL && SYM(arg)->type == RANDOMVAR) {
+		        diag(SYM($1)->name, " cannot have RANDOM var as an argument");
+		    }
+		 }
 		 vectorize_use_func($1,$2,$4,$5,blocktype);
 		}
 	;
 exprlist: /*nothing*/{$$ = ITEM0;}
+	| RANDOMVAR
 	| expr
 	| STRING
 	| exprlist ',' expr
@@ -707,7 +728,7 @@ functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		}
 	;
 funcblk: FUNCTION1 NAME '(' arglist ')' units
-		{IGNORE(copylocal(SYM($2)));}
+		{IGNORE(copylocal(SYM($2))); set_inside_func(SYM($2));}
 	stmtlist '}'
 		/* boilerplate added to form double function(){...}
 		   Note all arguments have prefix _l */
@@ -727,6 +748,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		SYM($2)->subtype |= FUNCT;
 		SYM($2)->usage |= FUNCT;
 		hocfunc(s, $3, $5);
+		set_inside_func(nullptr);
 		poplocal(); freelist(&$4);}
 	;
 arglist: /*nothing*/ {pushlocal(); $$ = LIST0; argcnt_ = 0;}
@@ -741,20 +763,21 @@ arglist1: name units
 		 ++argcnt_;
 		}
 	;
-procedblk: PROCEDURE NAME '(' arglist ')' units stmtlist '}'
+procedblk: PROCEDURE NAME '(' arglist ')' units {set_inside_func(SYM($2));} stmtlist '}'
 		{Symbol *s = SYM($2);
 		s->u.i = 0; 	/* avoid objectcenter warning if solved */
 		s->varnum = argcnt_; /* allow proper number of "double" in prototype */
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
 		replacstr($1, "\nstatic int "); defarg($3, $5);
-		Insertstr($8, " return 0;");
-		movelist($1, $8, procfunc);
+		Insertstr($9, " return 0;");
+		movelist($1, $9, procfunc);
 		if (SYM($2)->subtype & PROCED) {
 			diag(SYM($2)->name, " declared as PROCEDURE twice");
 		}
 		SYM($2)->subtype |= PROCED;
 		SYM($2)->usage |= FUNCT;
 		hocfunc(s, $3, $5);
+                set_inside_func(nullptr);
 		poplocal(); freelist(&$4);}
 	;
 netrecblk: NETRECEIVE '(' arglist ')'
@@ -924,13 +947,13 @@ factordef: NAME '=' real unit
 	| NAME '=' unit unit
 		{
 		    SYM($1)->subtype |= nmodlCONST;
-		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $4);
+		    nrnunit_str(buf, SYM($1)->name, $3, $4);
 		    Lappendstr(firstlist, buf);
 		}
 	| NAME '=' unit '-' GT unit 
 		{
 		    SYM($1)->subtype |= nmodlCONST;
-		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $6);
+		    nrnunit_str(buf, SYM($1)->name, $3, $6);
 		    Lappendstr(firstlist, buf);
 		}
 	| error {myerr("Unit factor syntax: examples:\n\
@@ -1004,6 +1027,8 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt THREADSAFE
 		{ assert_threadsafe = 1; }
+	| nrnstmt RANDOM nrnlist
+	        { nrn_list($2, $3);}
 	;
 nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}

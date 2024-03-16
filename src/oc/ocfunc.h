@@ -11,7 +11,7 @@ extern void hoc_System(void), hoc_Prmat(void), hoc_solve(void), hoc_eqinit(void)
 extern void hoc_symbols(void), hoc_PRintf(void), hoc_Xred(void), hoc_Sred(void);
 extern void hoc_ropen(void), hoc_wopen(void), hoc_xopen(void), hoc_Fscan(void), hoc_Fprint(void);
 extern void hoc_Graph(void), hoc_Graphmode(void), hoc_Plot(void), hoc_axis(void), hoc_Sprint(void);
-extern void hoc_fmenu(void), hoc_Getstr(void), hoc_Strcmp(void);
+extern void hoc_Getstr(void), hoc_Strcmp(void);
 extern void hoc_Lw(void), hoc_machine_name(void), hoc_Saveaudit(void), hoc_Retrieveaudit(void);
 extern void hoc_plotx(void), hoc_ploty(void), hoc_regraph(void);
 extern void hoc_startsw(void), hoc_stopsw(void), hoc_object_id(void);
@@ -32,7 +32,6 @@ extern void hoc_neuronhome(void), hoc_Execerror(void);
 extern void hoc_sscanf(void), hoc_save_session(void), hoc_print_session(void);
 extern void hoc_Chdir(void), hoc_getcwd(void), hoc_Symbol_units(void), hoc_stdout(void);
 extern void hoc_name_declared(void), hoc_unix_mac_pc(void), hoc_show_winio(void);
-extern void hoc_usemcran4(void), hoc_mcran4(void), hoc_mcran4init(void);
 extern void hoc_nrn_load_dll(void), hoc_nrnversion(void), hoc_object_pushed(void);
 extern void hoc_mallinfo(void);
 extern void hoc_Setcolor(void);

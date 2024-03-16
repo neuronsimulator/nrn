@@ -5,13 +5,13 @@ extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if MAC || defined(WIN32)
+#if defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
 #endif
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 #define SNAPSHOT 0
 #else
 #define SNAPSHOT 1
@@ -41,19 +41,10 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 char* hoc_back2forward(char*);
 #endif
 
-#if MAC
-#include <fstream.h>
-#include <file_io.h>
-#define IOS_OUT (ios::out | ios::trunc)
-extern char* mktemp(char*);
-extern int unlink(const char*);
-#include <IV-Mac/mprinter.h>
-extern void debugfile(const char*, ...);
-#else  //! MAC
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define IOS_OUT std::ios::out
-#endif  // MAC
-
 
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
@@ -432,10 +423,6 @@ void PWMDismiss::execute() {
 char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
-
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-extern double (*nrnpy_object_to_double_)(Object*);
-extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 
 static void* pwman_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("PWManager", NULL);
@@ -1166,13 +1153,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Menu *mbar, *mprint, *mses, *mother;
 #if 0
-#if !MAC
 	if (q->value_is_on("pwm_help")) {
 		vb->append(kit.push_button("Help",
 			new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::help)
 		));
 	}
-#endif
 #endif
     hb->append(mbar = kit.menubar());
 
@@ -1212,7 +1197,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("To Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::do_print0));
-#if 1 || !MAC
+
     mi = K::menu_item("PostScript");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::file_control));
@@ -1222,7 +1207,6 @@ PrintableWindowManager::PrintableWindowManager() {
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::snapshot_control));
 #endif
-#endif
 
     mi = K::menu_item("Idraw");
     mprint->append_item(mi);
@@ -1231,15 +1215,10 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC
-    mi = K::menu_item("Setup Printer");
-    mprint->append_item(mi);
-    mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
-#else
+
     mi = K::menu_item("Select Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::printer_control));
-#endif
 
     mi = K::check_menu_item("Window Titles Printed");
     mprint->append_item(mi);
@@ -1273,11 +1252,9 @@ PrintableWindowManager::PrintableWindowManager() {
     mses->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::virt_screen));
 
-#if 1 || !MAC
     mi = K::menu_item("Land/Port");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::landscape));
-#endif
 
     mi = K::menu_item("Tray");
     mses->append_item(mi);
@@ -1297,11 +1274,7 @@ PrintableWindowManager::PrintableWindowManager() {
 #if OCSMALL
         pwmi_->w_->xplace(-800, 0);
 #else
-#if MAC
-        pwmi_->w_->xplace(0, 40);
-#else
         pwmi_->w_->xplace(0, 0);
-#endif
 #endif
         //		pwmi_->w_->map();
         PrintableWindow::intercept(ocg);
@@ -1430,9 +1403,6 @@ void PrintableWindowManager::xplace(int left, int top, bool m) {
     } else {
         w->hide();
     }
-#if MAC
-    reconfigured(w);
-#endif
 }
 
 void PrintableWindowManager::update(Observable* o) {
@@ -1631,13 +1601,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC
-        if (!mprinter_) {
-            continue_dialog("First select SetupPrinter");
-        } else {
-            mac_do_print();
-        }
-#else
+
         if (!b_printer_) {
             printer_control();
             if (!printer_control_accept_) {
@@ -1648,7 +1612,6 @@ void PWMImpl::do_print0() {
         }
         CopyString name(b_printer_->text()->string());
         do_print(use_printer, name.string());
-#endif
     } else {
         if (!fc_print_) {
             file_control();
@@ -1659,12 +1622,6 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC
-    if (use_printer) {
-        mac_do_print();
-        return;
-    }
-#endif
 #if defined(WIN32)
     if (use_printer && strcmp(name, "Windows") == 0) {
         mac_do_print();
@@ -1699,12 +1656,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC
-    mprinter()->prolog();
-    t.scale(sfac, sfac);
-#else
     mprinter()->prolog(sfac);
-#endif
     mprinter()->push_transform();
     mprinter()->transform(t);
     common_print(mprinter(), false, true);
@@ -1712,7 +1664,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     mprinter()->epilog();
 #endif
 
-#if (!MAC || DARWIN) && !defined(WIN32)
+#if !defined(WIN32)
     // must be a postscript printer so can use landscape mode
     if (!b_printer_) {
         printer_control();
@@ -1743,9 +1695,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     Style* s = Session::instance()->style();
     static char* tmpfile = (char*) 0;
     std::filebuf obuf;
-#if MAC && !DARWIN
-    obuf.open(name, std::ios::out | std::ios::trunc);
-#else
     if (!tmpfile) {
         tmpfile = ivoc_get_temp_file();
     }
@@ -1753,7 +1702,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     unlink(tmpfile);
 #endif
     obuf.open(tmpfile, IOS_OUT);
-#endif
     std::ostream o(&obuf);
     Printer* pr = new Printer(&o);
     pr->prolog();
@@ -1795,7 +1743,7 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     }
     pr->epilog();
     obuf.close();
-#if !MAC || DARWIN
+
     String filt("cat");
     s->find_attribute("pwm_postscript_filter", filt);
     auto const buf_size = 200 + strlen(name) + strlen(filt.string()) + 2 * strlen(tmpfile);
@@ -1820,7 +1768,6 @@ void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style,
     delete[] buf;
 #ifdef WIN32
     unlink(tmpfile);
-#endif
 #endif
     delete pr;  // input handlers later crash doing pr->damage()
 }
@@ -1934,9 +1881,7 @@ void PWMImpl::common_print(Printer* pr, bool land_style, bool ses_style) {
         // flush the allocation tables for InputHandler glyphs so
         // no glyphs try to use the Printer after it has been deleted
         pw->print_glyph()->undraw();
-#if !MAC
         redraw(pw);
-#endif
         // print the window titles
         if ((ses_style || p_title_->test(TelltaleState::is_chosen) == true)
 #if DECO
@@ -2058,7 +2003,7 @@ void PrintableWindowManager::psfilter(const char* filename) {
     }
 }
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 void pwmimpl_redraw(Window* pw);
 #endif
 
@@ -2069,7 +2014,7 @@ void PWMImpl::redraw(Window* pw) {
     }
     Canvas* c = pw->canvas();
     c->damage_all();
-#if defined(WIN32) || MAC
+#if defined(WIN32)
     pwmimpl_redraw(pw);
 #else
     Requisition req;
@@ -3391,22 +3336,10 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC
-    FSSpec spec;
-    tmpfile = new char[512];
-    __temp_file_name(tmpfile, &spec);
-#else
     const char* tdir = getenv("TEMP");
     if (!tdir) {
         tdir = "/tmp";
     }
-#if defined(WIN32) && defined(__MWERKS__)
-    char tname[L_tmpnam + 1];
-    tmpnam(tname);
-    auto const length = strlen(tdir) + 1 + strlen(tname) + 1;
-    tmpfile = new char[length];
-    std::snprintf(tmpfile, length, "%s/%s", tdir, tname);
-#else
     auto const length = strlen(tdir) + 1 + 9 + 1;
     tmpfile = new char[length];
     std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
@@ -3419,10 +3352,8 @@ char* ivoc_get_temp_file() {
 #else
     mktemp(tmpfile);
 #endif
-#endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
-#endif
 #endif
     return tmpfile;
 }

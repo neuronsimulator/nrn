@@ -24,9 +24,6 @@
 
 #ifndef iv_geometry_h
 #define iv_geometry_h
-#if MAC
-#undef require
-#endif
 
 #include <InterViews/coord.h>
 

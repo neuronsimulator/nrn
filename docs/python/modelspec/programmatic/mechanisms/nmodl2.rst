@@ -44,6 +44,7 @@ Description:
            POINT_PROCESS ... 
            POINTER pointer1, ...
            BBCOREPOINTER bbcore1, ...
+           RANDOM ranvar1, ...
            EXTERNAL external1, ...
            THREADSAFE
            REPRESENTS ontology_id
@@ -410,6 +411,55 @@ Description:
 
     ``TODO``: Add description (?) and existing example mod file (provided by link)
 
+.. _nmodlrandom:
+
+RANDOM
+######
+
+Description:
+    .. code-block::
+
+        NEURON {
+            RANDOM ranvar1, ...
+        }
+
+    These names refer to random variable streams that are automatically
+    associated with nrnran123 generators. Such nrnran123 generators are also used, for example to implement
+    :meth:`Random.Random123`
+    These names are analogous to range variables in that the streams are distinct for every mechanism instance
+    of a POINT_PROCESS, ARTIFICIAL_CELL, or instance of a density mechanism in a segment of a cable section.
+    Each stream exists for the lifetime of the mechanism instance. While a stream exists, its properties can
+    be changed from the interpreter.
+
+    Prior to the introduction of this keyword, random streams required a POINTER variable and
+    fairly elaborate VERBATIM blocks
+    to setup the streams and manage  the stream properties from HOC or Python so that each stream was
+    statistically independent of all other streams.
+    
+    From the interpreter, the ranvar1 stream properties are assigned and evaluated using standard
+    range variable syntax where mention of ranvar1 returns a :class:`~NMODLRandom` object that wraps the stream
+    and provides method calls to get and set the three stream ids and the starting sequence number.
+
+    When a stream is instantiated, its identifier triplet is default initialized to
+    (1, :meth:`mpiworldrank <ParallelContext.id_world>`, ++internal_id3)
+    so all streams are statistically independent (at launch time, internal_id3 = 0).
+    However since the identifier triplet depends on the order of
+    construction, it is recommended for parallel simulation reproducibility that triplets be algorithmically specified
+    at the interpreter level. And see :meth:`Random.Random123_globalindex`.
+
+    At present, the list of random_... methods available for use within mod files (outside of VERBATIM blocks) are:
+
+        * random_setseq(ranvar1, uint34_value)
+        * random_setids(ranvar1, id1_uint32, id2_uint32, id3_uint32)
+        * x = random_uniform(ranvar1) : uniform 0 to 1 -- minimum value is 2.3283064e-10 and max value is 1-min
+        * x = random_uniform(ranvar1, min, max)
+        * x = random_negexp(ranvar1) : mean 1.0 -- min value is 2.3283064e-10, max is 22.18071
+        * x = random_negexp(ranvar1, mean)
+        * x = random_normal(ranvar1) : mean 1.0, std 1.0
+        * x = random_normal(ranvar1, mean, std)
+        * x = random_ipick(ranvar1) : range 0 to 2^32-1
+        * x = random_dpick(ranvar1)
+  
 
 EXTERNAL
 ########

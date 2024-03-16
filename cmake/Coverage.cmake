@@ -27,17 +27,16 @@
 
 if(NRN_ENABLE_COVERAGE)
   find_program(LCOV lcov)
-  if(LCOV-NOTFOUND)
-    message(ERROR "lcov is not installed.")
+  if(LCOV STREQUAL "LCOV-NOTFOUND")
+    message(ERROR "lcov is required with NRN_ENABLE_COVERAGE=ON and it was not found.")
   endif()
-  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -O0 -fno-inline -g)
-  set(NRN_COVERAGE_FLAGS "--coverage -O0 -fno-inline -g")
-  set(NRN_COVERAGE_LIB gcov)
-
-  if(NRN_MACOS_BUILD)
-    unset(NRN_COVERAGE_LIB)
-    add_link_options(-fprofile-arcs)
+  string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+  if(NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    message(WARNING "Using CMAKE_BUILD_TYPE=Debug is recommended with NRN_ENABLE_COVERAGE")
   endif()
+  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -fno-inline)
+  string(JOIN " " NRN_COVERAGE_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
+  set(NRN_COVERAGE_LINK_FLAGS --coverage)
 
   if(NRN_COVERAGE_FILES)
     # ~~~
@@ -59,9 +58,13 @@ if(NRN_ENABLE_COVERAGE)
     set(NRN_ADDED_COVERAGE_FLAGS
         "${NRN_COVERAGE_FLAGS}"
         CACHE INTERNAL "Remind that this is always in effect from now on" FORCE)
-    add_compile_options(${NRN_COVERAGE_FLAGS_UNQUOTED})
-    link_libraries(${NRN_COVERAGE_LIB})
+    list(APPEND NRN_COMPILE_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
+    list(APPEND CORENRN_EXTRA_CXX_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
+    list(APPEND CORENRN_EXTRA_MECH_CXX_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
   endif()
+  list(APPEND NRN_LINK_FLAGS ${NRN_COVERAGE_LINK_FLAGS})
+  list(APPEND CORENRN_EXTRA_LINK_FLAGS ${NRN_COVERAGE_LINK_FLAGS})
+  list(APPEND NRN_COMPILE_DEFS NRN_COVERAGE_ENABLED)
 else()
   unset(NRN_COVERAGE_FLAGS)
   unset(NRN_COVERAGE_FILES CACHE)
@@ -74,21 +77,42 @@ else()
 endif()
 
 if(NRN_ENABLE_COVERAGE)
-
+  set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")
+  set(cover_baseline_command
+      "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
+      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info")
+  set(cover_collect_command
+      "${LCOV}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
+      "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
+  set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
+                            "coverage-run.info" "--output-file" "coverage-combined.info")
+  set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
+  add_custom_target(
+    cover_clean
+    COMMAND ${cover_clean_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(
+    cover_baseline
+    COMMAND ${cover_baseline_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
   add_custom_target(
     cover_begin
-    COMMAND find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete"
-    COMMAND "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
-            "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
+    COMMAND ${cover_clean_command}
+    COMMAND ${cover_baseline_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(
+    cover_collect
+    COMMAND ${cover_collect_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+  add_custom_target(
+    cover_combine
+    COMMAND ${cover_combine_command}
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
   add_custom_target(
     cover_html
-    COMMAND ${LCOV} "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
-            ${PROJECT_BINARY_DIR} "--output-file" "coverage-run.info"
-    COMMAND "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile" "coverage-run.info"
-            "--output-file" "coverage-combined.info"
-    COMMAND genhtml "coverage-combined.info" "--output-directory" html
+    COMMAND ${cover_collect_command}
+    COMMAND ${cover_combine_command}
+    COMMAND ${cover_html_command}
     COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 endif()

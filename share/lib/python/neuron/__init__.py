@@ -6,7 +6,7 @@ neuron
 For empirically-based simulations of neurons and networks of neurons in Python.
 
 This is the top-level module of the official python interface to
-the NEURON simulation environment (http://neuron.yale.edu/neuron/).
+the NEURON simulation environment (https://nrn.readthedocs.io).
 
 Documentation is available in the docstrings.
 
@@ -106,6 +106,19 @@ import weakref
 
 embedded = True if "hoc" in sys.modules else False
 
+# First, check that the compiled extension (neuron.hoc) was built for this version of
+# Python. If not, fail early and helpfully.
+from ._config_params import supported_python_versions
+
+current_version = "{}.{}".format(*sys.version_info[:2])
+if current_version not in supported_python_versions:
+    message = (
+        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
+        "NEURON with support for this version, use a supported version of Python, or try using "
+        "nrniv -python so that NEURON can suggest a compatible version for you."
+    ).format(current_version, " ".join(supported_python_versions))
+    raise ImportError(message)
+
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
     nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
@@ -131,17 +144,21 @@ try:
 except:
     pass
 
-try:
-    from . import hoc
-except:
-    import neuron.hoc
+# Import the compiled HOC extension. We already checked above that it exists for the
+# current Python version.
+from . import hoc
 
+# These are strange beasts that are defined inside the compiled `hoc` extension, all
+# efforts to make them relative imports (because they are internal) have failed. It's
+# not clear if the import of _neuron_section is needed, and this could probably be
+# handled more idiomatically.
 import nrn
 import _neuron_section
 
 h = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
+_userrxd = False
 
 # Initialise neuron.config.arguments
 from neuron import config
@@ -219,6 +236,8 @@ if not hasattr(hoc, "__file__"):
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__
+
+
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
@@ -489,7 +508,7 @@ def psection(section):
 
     See:
 
-    https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
+    https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/topology.html#psection
     """
     warnings.warn(
         "neuron.psection() is deprecated; use print(sec.psection()) instead",
@@ -521,7 +540,7 @@ def init():
         from neuron.units import mV
         h.finitialize(-65 * mV)
 
-    https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
+    https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html#finitialize
 
     """
     warnings.warn(
@@ -656,12 +675,11 @@ def nrn_dll_sym_nt(name, type):
 
     if len(nt_dlls) == 0:
         b = "bin"
-        if h.nrnversion(8).find("i686") == 0:
-            b = "bin"
         path = os.path.join(h.neuronhome().replace("/", "\\"), b)
-        fac = 10 if sys.version_info[1] < 10 else 100  # 3.9 is 39 ; 3.10 is 310
-        p = sys.version_info[0] * fac + sys.version_info[1]
-        for dllname in ["libnrniv.dll", "libnrnpython%d.dll" % p]:
+        for dllname in [
+            "libnrniv.dll",
+            "libnrnpython{}.{}.dll".format(*sys.version_info[:2]),
+        ]:
             p = os.path.join(path, dllname)
             try:
                 nt_dlls.append(ctypes.cdll[p])
@@ -994,7 +1012,8 @@ class _PlotShapePlot(_WrapperPlot):
     ps.plot(pyplot)
     pyplot.show()
 
-    Limitations: many. Currently only supports plotting a full cell colored based on a variable."""
+    Limitations: many. Currently only supports plotting a full cell colored based on a variable.
+    """
 
     # TODO: handle pointmark, specified sections, color
     def __call__(self, graph, *args, **kwargs):
@@ -1002,6 +1021,7 @@ class _PlotShapePlot(_WrapperPlot):
 
         def _get_pyplot_axis3d(fig):
             """requires matplotlib"""
+            from . import rxd
             from matplotlib.pyplot import cm
             import matplotlib.pyplot as plt
             from mpl_toolkits.mplot3d import Axes3D
@@ -1036,7 +1056,15 @@ class _PlotShapePlot(_WrapperPlot):
                     return self
 
                 def _do_plot(
-                    self, val_min, val_max, sections, variable, cmap=cm.cool, **kwargs
+                    self,
+                    val_min,
+                    val_max,
+                    sections,
+                    variable,
+                    mode,
+                    line_width=2,
+                    cmap=cm.cool,
+                    **kwargs,
                 ):
                     """
                     Plots a 3D shapeplot
@@ -1056,17 +1084,25 @@ class _PlotShapePlot(_WrapperPlot):
 
                     h.define_shape()
 
-                    # default color is black
-                    kwargs.setdefault("color", "black")
-
                     # Plot each segement as a line
                     lines = {}
                     lines_list = []
                     vals = []
+
+                    if isinstance(variable, rxd.species.Species):
+                        if len(variable.regions) > 1:
+                            raise Exception("Please specify region for the species.")
+
                     for sec in sections:
                         all_seg_pts = _segment_3d_pts(sec)
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
-                            (line,) = self.plot(xs, ys, zs, "-", **kwargs)
+                            if mode == 0:
+                                width = seg.diam
+                            else:
+                                width = line_width
+                            (line,) = self.plot(
+                                xs, ys, zs, "-", linewidth=width, **kwargs
+                            )
                             if variable is not None:
                                 val = _get_variable_seg(seg, variable)
                                 vals.append(val)
@@ -1083,18 +1119,25 @@ class _PlotShapePlot(_WrapperPlot):
                             for sec in sections:
                                 for line, val in zip(lines_list, vals):
                                     if val is not None:
-                                        col = _get_color(
-                                            variable,
-                                            val,
-                                            cmap,
-                                            val_min,
-                                            val_max,
-                                            val_range,
-                                        )
-                                        line.set_color(col)
+                                        if "color" not in kwargs:
+                                            col = _get_color(
+                                                variable,
+                                                val,
+                                                cmap,
+                                                val_min,
+                                                val_max,
+                                                val_range,
+                                            )
+                                        else:
+                                            col = kwargs["color"]
+                                    else:
+                                        col = kwargs.get("color", "black")
+                                    line.set_color(col)
                     return lines
 
-            return Axis3DWithNEURON(fig)
+            ax = Axis3DWithNEURON(fig)
+            fig.add_axes(ax)
+            return ax
 
         def _get_variable_seg(seg, variable):
             if isinstance(variable, str):
@@ -1132,7 +1175,7 @@ class _PlotShapePlot(_WrapperPlot):
             z = np.interp(seg_l, arc3d, z3d)
             return x, y, z
 
-        def _do_plot_on_matplotlib_figure(fig):
+        def _do_plot_on_matplotlib_figure(fig, *args, **kwargs):
             import ctypes
 
             get_plotshape_data = nrn_dll_sym("get_plotshape_data")
@@ -1144,7 +1187,9 @@ class _PlotShapePlot(_WrapperPlot):
                 variable = varobj
             kwargs.setdefault("picker", 2)
             result = _get_pyplot_axis3d(fig)
-            _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
+            ps = self._data
+            mode = ps.show()
+            _lines = result._do_plot(lo, hi, secs, variable, mode, *args, **kwargs)
             result._mouseover_text = ""
 
             def _onpick(event):
@@ -1172,7 +1217,7 @@ class _PlotShapePlot(_WrapperPlot):
                 elif val > hi:
                     col = color_to_hex(cmap(255))
                 else:
-                    val = color_to_hex(128)
+                    col = color_to_hex(cmap(128))
             else:
                 col = color_to_hex(
                     cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range)))
@@ -1185,14 +1230,16 @@ class _PlotShapePlot(_WrapperPlot):
                 [item if len(item) == 2 else "0" + item for item in items]
             )
 
-        def _do_plot_on_plotly():
+        def _do_plot_on_plotly(width=2, color=None, cmap=None):
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
+            from . import rxd
             import plotly.graph_objects as go
 
             class FigureWidgetWithNEURON(go.FigureWidget):
                 def mark(self, segment, marker="or", **kwargs):
                     """plot a marker on a segment
+
 
                     Args:
                         segment = the segment to mark
@@ -1221,12 +1268,16 @@ class _PlotShapePlot(_WrapperPlot):
             variable, varobj, lo, hi, secs = get_plotshape_data(
                 ctypes.py_object(self._data)
             )
+
+            ps = self._data
+            mode = ps.show()
+
             if varobj is not None:
                 variable = varobj
             if secs is None:
                 secs = list(h.allsec())
 
-            if variable is None:
+            if variable is None and varobj is None:
                 kwargs.setdefault("color", "black")
 
                 data = []
@@ -1242,7 +1293,7 @@ class _PlotShapePlot(_WrapperPlot):
                             name="",
                             hovertemplate=str(sec),
                             mode="lines",
-                            line=go.scatter3d.Line(color=kwargs["color"], width=2),
+                            line=go.scatter3d.Line(color=kwargs["color"], width=width),
                         )
                     )
                 return FigureWidgetWithNEURON(data=data, layout={"showlegend": False})
@@ -1255,13 +1306,19 @@ class _PlotShapePlot(_WrapperPlot):
                     kwargs["cmap"] = cm.cool
 
                 cmap = kwargs["cmap"]
-                show_diam = False
+
+                # show_diam = False
 
                 # calculate bounds
 
                 val_range = hi - lo
 
                 data = []
+
+                if isinstance(variable, rxd.species.Species):
+                    if len(variable.regions) > 1:
+                        raise Exception("Please specify region for the species.")
+
                 for sec in secs:
                     all_seg_pts = _segment_3d_pts(sec)
                     for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
@@ -1269,11 +1326,15 @@ class _PlotShapePlot(_WrapperPlot):
                         hover_template = str(seg)
                         if val is not None:
                             hover_template += "<br>" + ("%.3f" % val)
-                        col = _get_color(variable, val, cmap, lo, hi, val_range)
-                        if show_diam:
+                        if color is None:
+                            col = _get_color(variable, val, cmap, lo, hi, val_range)
+                        else:
+                            col = color
+                        if mode == 0:
                             diam = seg.diam
                         else:
-                            diam = 2
+                            diam = width
+
                         data.append(
                             go.Scatter3d(
                                 x=xs,
@@ -1291,9 +1352,9 @@ class _PlotShapePlot(_WrapperPlot):
         if hasattr(graph, "__name__"):
             if graph.__name__ == "matplotlib.pyplot":
                 fig = graph.figure()
-                return _do_plot_on_matplotlib_figure(fig)
+                return _do_plot_on_matplotlib_figure(fig, *args, **kwargs)
             elif graph.__name__ == "plotly":
-                return _do_plot_on_plotly()
+                return _do_plot_on_plotly(*args, **kwargs)
         elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
             return _do_plot_on_matplotlib_figure(graph)
         raise NotImplementedError
@@ -1614,25 +1675,26 @@ def nrnpy_pr(stdoe, s):
     return 0
 
 
+# nrnpy_pr callback in place of hoc printf
+# ensures consistent with python stdout even with jupyter notebook.
+# nrnpy_pass callback used by h.doNotify() in MINGW when not called from
+# gui thread in order to allow the gui thread to run.
+# When this was introduced in ef4da5dbf293580ee1bf86b3a94d3d2f80226f62 it was wrapped in a
+# try .. except .. pass block for reasons that are not obvious to olupton, who removed it.
 if not embedded:
-    try:
-        # nrnpy_pr callback in place of hoc printf
-        # ensures consistent with python stdout even with jupyter notebook.
-        # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
-        # gui thread in order to allow the gui thread to run.
+    # Unconditionally redirecting NEURON printing via Python seemed to cause re-ordering
+    # of NEURON output in the ModelDB CI. This might be because the redirection is only
+    # triggered by `import neuron`, and an arbitrary amount of NEURON code may have been
+    # executed before that point.
+    nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
 
-        nrnpy_set_pr_etal = nrn_dll_sym("nrnpy_set_pr_etal")
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
+    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 
-        nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-        nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
-        nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
-
-        nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-        nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
-        nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
-    except:
-        print("Failed to setup nrnpy_pr")
-        pass
+    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
+    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
 
 
 def nrnpy_vec_math(op, flag, arg1, arg2=None):
@@ -1672,6 +1734,10 @@ def _nrnpy_rvp_pyobj_callback(f):
     if f_type not in (
         "<class 'neuron.rxd.species.SpeciesOnRegion'>",
         "<class 'neuron.rxd.species.Species'>",
+        "<class 'neuron.rxd.species.State'>",
+        "<class 'neuron.rxd.species.Parameter'>",
+        "<class 'neuron.rxd.species.StateOnRegion'>",
+        "<class 'neuron.rxd.species.ParameterOnRegion'>",
     ):
         return f
 
@@ -1682,6 +1748,8 @@ def _nrnpy_rvp_pyobj_callback(f):
     fref = weakref.ref(f)
 
     def result(x):
+        if x == 0 or x == 1:
+            raise Exception("Concentration is only defined for interior.")
         sp = fref()
         if sp:
             try:

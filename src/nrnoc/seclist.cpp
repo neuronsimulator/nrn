@@ -1,8 +1,8 @@
 #include <../../nrnconf.h>
 #define HOC_L_LIST 1
-#include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
+#include "nrnpy.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
@@ -145,9 +145,6 @@ static double allroots(void* v) {
 }
 
 static double seclist_remove(void* v) {
-#if USE_PYTHON
-    extern Symbol* nrnpy_pyobj_sym_;
-#endif
     Section *sec, *s;
     Item *q, *q1;
     List* sl;
@@ -277,7 +274,7 @@ extern int hoc_returning;
 
 static void check(Object* ob) {
     if (!ob) {
-        hoc_execerror("nil object is not a SectionList", (char*) 0);
+        hoc_execerror("nullptr object is not a SectionList", nullptr);
     }
     if (ob->ctemplate->constructor != constructor) {
         hoc_execerror(ob->ctemplate->sym->name, " is not a SectionList");

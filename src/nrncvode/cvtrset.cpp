@@ -9,9 +9,7 @@
 #include "membfunc.h"
 #include "neuron.h"
 
-void Cvode::rhs(NrnThread* _nt) {
-    int i;
-
+void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     CvodeThreadData& z = CTD(_nt->id);
     if (diam_changed) {
         recalc_diam();
@@ -19,25 +17,25 @@ void Cvode::rhs(NrnThread* _nt) {
     if (z.v_node_count_ == 0) {
         return;
     }
-    for (i = 0; i < z.v_node_count_; ++i) {
+    for (int i = 0; i < z.v_node_count_; ++i) {
         NODERHS(z.v_node_[i]) = 0.;
     }
-    if (_nt->_nrn_fast_imem) {
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-        for (i = 0; i < z.v_node_count_; ++i) {
+    auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
+    if (vec_sav_rhs) {
+        for (int i = 0; i < z.v_node_count_; ++i) {
             Node* nd = z.v_node_[i];
-            p[nd->v_node_index] = 0;
+            vec_sav_rhs[nd->v_node_index] = 0;
         }
     }
 
-    rhs_memb(z.cv_memb_list_, _nt);
-    nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
+    rhs_memb(sorted_token, z.cv_memb_list_, _nt);
+    auto const vec_rhs = _nt->node_rhs_storage();
+    nrn_nonvint_block_current(_nt->end, vec_rhs, _nt->id);
 
-    if (_nt->_nrn_fast_imem) {
-        double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
-        for (i = 0; i < z.v_node_count_; ++i) {
-            Node* nd = z.v_node_[i];
-            p[nd->v_node_index] -= NODERHS(nd);
+    if (vec_sav_rhs) {
+        for (int i = 0; i < z.v_node_count_; ++i) {
+            auto const node_index = z.v_node_[i]->v_node_index;
+            vec_sav_rhs[node_index] -= vec_rhs[node_index];
         }
     }
 
@@ -45,27 +43,30 @@ void Cvode::rhs(NrnThread* _nt) {
     /* now the internal axial currents.
         rhs += ai_j*(vi_j - vi)
     */
-    for (i = z.rootnodecount_; i < z.v_node_count_; ++i) {
-        Node* nd = z.v_node_[i];
-        Node* pnd = z.v_parent_[i];
-        double dv = NODEV(pnd) - NODEV(nd);
-        /* our connection coefficients are negative so */
-        NODERHS(nd) -= NODEB(nd) * dv;
-        NODERHS(pnd) += NODEA(nd) * dv;
+    auto const vec_a = _nt->node_a_storage();
+    auto const vec_b = _nt->node_b_storage();
+    auto const vec_v = _nt->node_voltage_storage();
+    for (auto i = z.rootnodecount_; i < z.v_node_count_; ++i) {
+        auto const node_i = z.v_node_[i]->v_node_index;
+        auto const parent_i = z.v_parent_[i]->v_node_index;
+        auto const dv = vec_v[parent_i] - vec_v[node_i];
+        // our connection coefficients are negative
+        vec_rhs[node_i] -= vec_b[node_i] * dv;
+        vec_rhs[parent_i] += vec_a[node_i] * dv;
     }
 }
 
-void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
+void Cvode::rhs_memb(neuron::model_sorted_token const& sorted_token,
+                     CvMembList* cmlist,
+                     NrnThread* _nt) {
     errno = 0;
     for (CvMembList* cml = cmlist; cml; cml = cml->next) {
-        Memb_func* mf = memb_func + cml->index;
-        Pvmi s = mf->current;
-        if (s) {
-            Memb_list* ml = cml->ml;
-            (*s)(_nt, ml, cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during calculation of currents", (char*) 0);
+        const Memb_func& mf = memb_func[cml->index];
+        if (auto const current = mf.current; current) {
+            for (auto& ml: cml->ml) {
+                current(sorted_token, _nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
+                    hoc_warning("errno set during calculation of currents", nullptr);
                 }
             }
         }
@@ -75,7 +76,7 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
     activclamp_rhs();
 }
 
-void Cvode::lhs(NrnThread* _nt) {
+void Cvode::lhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) {
     int i;
 
     CvodeThreadData& z = CTD(_nt->id);
@@ -86,11 +87,13 @@ void Cvode::lhs(NrnThread* _nt) {
         NODED(z.v_node_[i]) = 0.;
     }
 
-    lhs_memb(z.cv_memb_list_, _nt);
-    nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
-    nrn_cap_jacob(_nt, z.cmlcap_->ml);
+    lhs_memb(sorted_token, z.cv_memb_list_, _nt);
+    nrn_nonvint_block_conductance(_nt->end, _nt->node_rhs_storage(), _nt->id);
+    for (auto& ml: z.cmlcap_->ml) {
+        nrn_cap_jacob(sorted_token, _nt, &ml);
+    }
 
-    // _nrn_fast_imem not needed since exact icap added in nrn_div_capacity
+    // fast_imem not needed since exact icap added in nrn_div_capacity
 
     /* now add the axial currents */
     for (i = 0; i < z.v_node_count_; ++i) {
@@ -101,18 +104,17 @@ void Cvode::lhs(NrnThread* _nt) {
     }
 }
 
-void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
+void Cvode::lhs_memb(neuron::model_sorted_token const& sorted_token,
+                     CvMembList* cmlist,
+                     NrnThread* _nt) {
     CvMembList* cml;
     for (cml = cmlist; cml; cml = cml->next) {
-        Memb_func* mf = memb_func + cml->index;
-        Memb_list* ml = cml->ml;
-        Pvmi s = mf->jacob;
-        if (s) {
-            Pvmi s = mf->jacob;
-            (*s)(_nt, ml, cml->index);
-            if (errno) {
-                if (nrn_errno_check(cml->index)) {
-                    hoc_warning("errno set during calculation of di/dv", (char*) 0);
+        const Memb_func& mf = memb_func[cml->index];
+        if (auto const jacob = mf.jacob; jacob) {
+            for (auto& ml: cml->ml) {
+                jacob(sorted_token, _nt, &ml, cml->index);
+                if (errno && nrn_errno_check(cml->index)) {
+                    hoc_warning("errno set during calculation of di/dv", nullptr);
                 }
             }
         }

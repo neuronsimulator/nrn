@@ -16,6 +16,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
   if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20" AND ${CMAKE_VERSION} VERSION_LESS "3.20.3")
     string(APPEND CMAKE_DEPFILE_FLAGS_CXX "-MD<DEP_FILE>")
   endif()
+
+  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
+  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997. Also, stdinit.h include
+  # behaviour is different with -A (ANSI C++) and result into an error mentioned in
+  # https://github.com/neuronsimulator/nrn/issues/2563
+  if(CMAKE_VERSION VERSION_LESS 3.19)
+    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
+  endif()
+
   if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 20.7)
     # https://forums.developer.nvidia.com/t/many-all-diagnostic-numbers-increased-by-1-from-previous-values/146268/3
     # changed the numbering scheme in newer versions. The following list is from a clean start 16
@@ -28,17 +37,13 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/modlunit/units.cpp", warning #170-D: pointer points outside of underlying object
     # "src/nrnpython/grids.cpp", warning #174-D: expression has no effect
     # "src/nmodl/nocpout.cpp", warning #177-D: variable "j" was declared but never referenced
-    # "src/mesch/conjgrad.c", warning #180-D: argument is incompatible with formal parameter
     # "src/nrniv/partrans.cpp", warning #186-D: pointless comparison of unsigned integer with zero
-    # "src/mesch/machine.h", warning #301-D: typedef name has already been declared (with same type)
     # "src/nrnpython/rxdmath.cpp", warning #541-D: allowing all exceptions is incompatible with previous function
     # "src/nmodl/nocpout.cpp", warning #550-D: variable "sion" was set but never used
     # "src/gnu/neuron_gnu_builtin.h", warning #816-D: type qualifier on return type is meaningless"
-    # "src/oc/fmenu.cpp", warning #941-D: missing return statement at end of non-void function "ibmgetc"
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
-    list(APPEND NRN_COMPILE_FLAGS
-         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
+    list(APPEND NRN_COMPILE_FLAGS --diag_suppress=1,47,111,128,170,174,177,186,541,550,816,2465)
   endif()
   list(APPEND NRN_COMPILE_FLAGS -noswitcherror)
   list(APPEND NRN_LINK_FLAGS -noswitcherror)
@@ -46,7 +51,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # Random123 does not play nicely with NVHPC 21.11+'s detection of ABM features, see:
     # https://github.com/BlueBrain/CoreNeuron/issues/724 and
     # https://github.com/DEShawResearch/random123/issues/6.
-    list(APPEND NRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
+    list(APPEND NRN_R123_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
 else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)

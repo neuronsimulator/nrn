@@ -1,10 +1,5 @@
 /* auto include file for metrowerks codewarrior for all nrn */
-#if __MWERKS__ >= 7
-#define _MSL_DIRENT_H
-#else
 #include <Win32Headers.mch>
-#endif
-#define HAVE_LIMITS_H 1
 #pragma once off
 #ifndef __WIN32__
 #define __WIN32__ 1

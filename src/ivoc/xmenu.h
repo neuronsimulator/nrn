@@ -9,7 +9,7 @@
 #include <IV-look/kit.h>
 #include <IV-look/stepper.h>
 #include <IV-look/dialogs.h>
-#if defined(MINGW) || defined(MAC)
+#if defined(MINGW)
 #define UseFieldEditor 1
 #else
 #define UseFieldEditor 0  // Use the FieldSEditor
@@ -42,9 +42,6 @@ class ValEdLabel;
 class ScenePicker;
 struct HocSymExtension;
 
-declarePtrList(HocUpdateItemList, HocUpdateItem)
-declarePtrList(HocItemList, HocItem)
-declarePtrList(HocPanelList, HocPanel)
 
 class HocPanel: public OcGlyph {
   public:
@@ -53,7 +50,7 @@ class HocPanel: public OcGlyph {
     virtual void map_window(int scroll = -1);  // -1 leave up to panel_scroll attribute
 
     void pushButton(const char* name, const char* action, bool activate = false, Object* pyact = 0);
-    void stateButton(double* pd,
+    void stateButton(neuron::container::data_handle<double> pd,
                      const char* name,
                      const char* action,
                      int style,
@@ -64,7 +61,7 @@ class HocPanel: public OcGlyph {
                        const char* action,
                        bool activate = false,
                        Object* pyact = 0);
-    MenuItem* menuStateItem(double* pd,
+    MenuItem* menuStateItem(neuron::container::data_handle<double> pd,
                             const char* name,
                             const char* action,
                             Object* pyvar = NULL,
@@ -73,7 +70,7 @@ class HocPanel: public OcGlyph {
                  const char* variable,
                  const char* action = 0,
                  bool canrun = false,
-                 double* pd = NULL,
+                 neuron::container::data_handle<double> pd = {},
                  bool deflt = false,
                  bool keep_updated = false,
                  HocSymExtension* extra = NULL,
@@ -87,7 +84,7 @@ class HocPanel: public OcGlyph {
                  bool keep_updated = false);
 
     // ZFM added vert
-    void slider(double*,
+    void slider(neuron::container::data_handle<double>,
                 float low = 0,
                 float high = 100,
                 float resolution = 1,
@@ -111,10 +108,6 @@ class HocPanel: public OcGlyph {
     static void save_all(std::ostream&);
     void data_path(HocDataPaths*, bool);
     void item_append(HocItem*);
-#if MAC
-    void mac_menubar();
-    void mac_menubar(int&, int&, int);  // recurse per menu through list
-#endif
     static void keep_updated();
     static void keep_updated(HocUpdateItem*, bool);
     static void paneltool(const char* name,
@@ -123,13 +116,12 @@ class HocPanel: public OcGlyph {
                           ScenePicker*,
                           Object* pycallback = NULL,
                           Object* pyselact = NULL);
-    static void update_ptrs();
 
   private:
     PolyGlyph* box_;
-    HocUpdateItemList elist_;
-    HocItemList ilist_;
-    static HocUpdateItemList* update_list_;
+    std::vector<HocUpdateItem*> elist_;
+    std::vector<HocItem*> ilist_;
+    static std::vector<HocUpdateItem*>* update_list_;
     bool horizontal_;
     InputHandler* ih_;
 };
@@ -142,9 +134,7 @@ class HocItem: public Resource {
     const char* getStr();
     virtual void help(const char* childpath = NULL);
     virtual void help_parent(HocItem*);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     CopyString str_;
     HocItem* help_parent_;
@@ -155,9 +145,7 @@ class HocPushButton: public HocItem {
     HocPushButton(const char*, HocAction*, HocItem* parent = NULL);
     virtual ~HocPushButton();
     virtual void write(std::ostream&);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     HocAction* a_;
 };
@@ -167,9 +155,7 @@ class HocRadioButton: public HocItem {
     HocRadioButton(const char*, HocRadioAction*, HocItem* parent = NULL);
     virtual ~HocRadioButton();
     virtual void write(std::ostream&);
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     HocRadioAction* a_;
 };
@@ -185,9 +171,7 @@ class HocMenu: public HocItem {
     virtual MenuItem* item() {
         return mi_;
     }
-#if MAC
-    virtual int mac_menubar(int&, int, int);
-#endif
+
   private:
     MenuItem* mi_;
     Menu* menu_;
@@ -201,8 +185,6 @@ class HocUpdateItem: public HocItem {
     virtual void update_hoc_item();
     virtual void check_pointer(void*, int vector_size);
     virtual void data_path(HocDataPaths*, bool);
-    virtual void update_ptrs() {}
-    void update_ptrs_helper(double**);
 };
 
 class HocLabel: public HocItem {
@@ -225,7 +207,7 @@ class HocVarLabel: public HocUpdateItem {
     Patch* p_;
     char** cpp_;
     char* cp_;
-    CopyString* variable_;
+    std::string variable_{};
     Object* pyvar_;
 };
 
@@ -311,7 +293,7 @@ class HocValEditor: public HocUpdateItem {
                  const char* variable,
                  ValEdLabel*,
                  HocValAction*,
-                 double* pd = 0,
+                 neuron::container::data_handle<double> pd = {},
                  bool canrun = false,
                  HocItem* parent = NULL,
                  Object* pvar = NULL);
@@ -342,7 +324,6 @@ class HocValEditor: public HocUpdateItem {
     bool active() {
         return active_;
     }
-    virtual void update_ptrs();
 
   private:
     friend class HocEditorForItem;
@@ -351,8 +332,8 @@ class HocValEditor: public HocUpdateItem {
     bool active_;
     bool canrun_;
     HocAction* action_;
-    CopyString* variable_;
-    double* pval_;
+    std::string variable_{};
+    neuron::container::data_handle<double> pval_;
     ValEdLabel* prompt_;
     float* domain_limits_;
     Object* pyvar_;
@@ -364,7 +345,7 @@ class HocDefaultValEditor: public HocValEditor {
                         const char* variable,
                         ValEdLabel*,
                         HocValAction*,
-                        double* pd = 0,
+                        neuron::container::data_handle<double> pd = {},
                         bool canrun = false,
                         HocItem* parent = NULL,
                         Object* pyvar = NULL);
@@ -396,7 +377,7 @@ class HocValEditorKeepUpdated: public HocValEditor {
                             const char* variable,
                             ValEdLabel*,
                             HocValAction*,
-                            double*,
+                            neuron::container::data_handle<double>,
                             HocItem* parent = NULL,
                             Object* pyvar = NULL);
     virtual ~HocValEditorKeepUpdated();
@@ -433,7 +414,7 @@ class HocValAction: public HocAction {
 // ZFM added vert_
 class OcSlider: public HocUpdateItem, public Observer {
   public:
-    OcSlider(double*,
+    OcSlider(neuron::container::data_handle<double>,
              float low,
              float high,
              float resolution,
@@ -454,7 +435,6 @@ class OcSlider: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int vector_size);
     virtual void data_path(HocDataPaths*, bool);
     virtual double slider_val();
-    virtual void update_ptrs();
 
   private:
     void audit();
@@ -463,9 +443,9 @@ class OcSlider: public HocUpdateItem, public Observer {
     float resolution_;
     BoundedValue* bv_;
     HocCommand* send_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
-    CopyString* variable_;
+    std::string variable_{};
     bool scrolling_;
     bool vert_;
     bool slow_;
@@ -474,7 +454,7 @@ class OcSlider: public HocUpdateItem, public Observer {
 
 class HocStateButton: public HocUpdateItem, public Observer {
   public:
-    HocStateButton(double*,
+    HocStateButton(neuron::container::data_handle<double>,
                    const char*,
                    Button*,
                    HocAction*,
@@ -491,14 +471,13 @@ class HocStateButton: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int);
     virtual void data_path(HocDataPaths*, bool);
     virtual void print(Printer*, const Allocation&) const;
-    virtual void update_ptrs();
     enum { CHECKBOX, PALETTE };
 
   private:
     int style_;
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     Button* b_;
     HocAction* action_;
@@ -507,7 +486,7 @@ class HocStateButton: public HocUpdateItem, public Observer {
 
 class HocStateMenuItem: public HocUpdateItem, public Observer {
   public:
-    HocStateMenuItem(double*,
+    HocStateMenuItem(neuron::container::data_handle<double>,
                      const char*,
                      MenuItem*,
                      HocAction*,
@@ -523,12 +502,11 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     virtual void check_pointer(void*, int);
     virtual void data_path(HocDataPaths*, bool);
     virtual void print(Printer*, const Allocation&) const;
-    virtual void update_ptrs();
 
   private:
-    CopyString* variable_;
+    std::string variable_{};
     CopyString* name_;
-    double* pval_;
+    neuron::container::data_handle<double> pval_;
     Object* pyvar_;
     MenuItem* b_;
     HocAction* action_;

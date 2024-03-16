@@ -5,25 +5,6 @@ add_compile_definitions(${NRN_COMPILE_DEFS})
 add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
-# List of python executables to build nrnpython against
-# =============================================================================
-if(NRN_ENABLE_PYTHON_DYNAMIC)
-  if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
-    set(NRN_PYTHON_EXE_LIST
-        ${PYTHON_EXECUTABLE}
-        CACHE INTERNAL "" FORCE)
-  else()
-    set(NRN_PYTHON_EXE_LIST
-        ${NRN_PYTHON_DYNAMIC}
-        CACHE INTERNAL "" FORCE)
-  endif()
-else()
-  set(NRN_PYTHON_EXE_LIST
-      ${PYTHON_EXECUTABLE}
-      CACHE INTERNAL "" FORCE)
-endif()
-
-# =============================================================================
 # rxdmath libraries (always build)
 # =============================================================================
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
@@ -32,7 +13,6 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 # =============================================================================
 # nrnpython libraries (one lib per python)
 # =============================================================================
-
 set(nrnpython_lib_list)
 
 # user has selected dynamic python support (could be multiple versions)
@@ -44,41 +24,34 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ../nrnoc
       ../ivoc
       ../nrniv
-      ../ivos
       ../gnu
-      ../mesch
       ../nrnmpi
       ${PROJECT_BINARY_DIR}/src/nrnpython
       ${PROJECT_BINARY_DIR}/src/ivos
-      ${PROJECT_BINARY_DIR}/src/oc
-      ${IV_INCLUDE_DIR})
-
-  if(LINK_AGAINST_PYTHON)
-    list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
-    math(EXPR num_pythons "${_num_pythons} - 1")
-    foreach(val RANGE ${num_pythons})
-      list(GET NRN_PYTHON_VER_LIST ${val} pyver)
-      list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
-      list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
-      add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-      target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
-      add_dependencies(nrnpython${pyver} nrniv_lib)
-      list(APPEND nrnpython_lib_list nrnpython${pyver})
-      install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-    endforeach()
+      ${PROJECT_BINARY_DIR}/src/oc)
+  if(NRN_ENABLE_INTERVIEWS)
+    list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
   else()
-    # build python3 library and install it
-    if(NRNPYTHON_INCLUDE3)
-      add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      add_dependencies(nrnpython3 nrniv_lib)
-      target_include_directories(nrnpython3 PRIVATE "${NRN_OC_GENERATED_SOURCES}")
-      list(APPEND nrnpython_lib_list nrnpython3)
-      target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
-      install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-    endif()
+    list(APPEND INCLUDE_DIRS ../ivos)
   endif()
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+    target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
+    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
+    if(NRN_LINK_AGAINST_PYTHON)
+      target_link_libraries(nrnpython${pyver} ${pylib})
+    endif()
+    add_dependencies(nrnpython${pyver} nrniv_lib)
+    list(APPEND nrnpython_lib_list nrnpython${pyver})
+    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+  endforeach()
 endif()
+
+configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
+               @ONLY)
 
 # Install package files that were created in build (e.g. .py.in)
 install(
@@ -119,9 +92,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   set(binary_dir_filename ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
-  set(inithoc_hdeps
-      ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
+  set(inithoc_hdeps ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h
+                    ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h)
 
   add_custom_command(
     OUTPUT ${binary_dir_filename}
@@ -187,20 +159,23 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(NRN_SETUP_PY_BUILD_EXT_OPTIONS "build_ext")
   if(NRN_ENABLE_MUSIC)
     # NRN_SETUP_PY_INC_DIRS is crafted for the MUSIC build, to be extended to other if needed
-    set(NRN_SETUP_PY_INC_DIRS "${MUSIC_INCDIR};${MPI_INCLUDE_PATH}")
+    set(NRN_SETUP_PY_INC_DIRS "${MUSIC_INCDIR};${MPI_C_INCLUDE_DIRS}")
     string(REPLACE ";" ":" NRN_SETUP_PY_INC_DIRS "${NRN_SETUP_PY_INC_DIRS}")
     list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--include-dirs=${NRN_SETUP_PY_INC_DIRS}")
   endif()
+  set(defines ${NRN_COMPILE_DEFS})
   if(MINGW)
-    list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--define=MS_WIN64")
+    list(APPEND defines "MS_WIN64")
   endif()
+  list(JOIN defines , defines_str)
+  list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--define=${defines_str}")
   # force rebuild of cython generated files for PYTHON_DYNAMIC
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--force")
   endif()
 
   # Build python module
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
+  foreach(pyexe ${NRN_PYTHON_EXECUTABLES})
     add_custom_command(
       TARGET hoc_module
       POST_BUILD
@@ -215,4 +190,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_dependencies(hoc_module nrniv_lib rxdmath ${nrnpython_lib_list})
   install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
+else()
+  # Make sure this is included in the wheels
+  install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
+          DESTINATION lib/python/neuron)
 endif()

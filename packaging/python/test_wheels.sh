@@ -22,20 +22,7 @@ python_exe=$1   # python to be used for testing
 python_wheel=$2 # python wheel to be tested
 use_venv=$3     # if $3 is not "false" then use virtual environment
 
-# There are some considerations to test coreneuron with gpu support:
-# - if coreneuron support exist then we can always run all tests on cpu
-# - if coreneuron gpu support exist then we can run always binaries like
-#   nrniv and nrniv-core without existence of NVC/NVC++ compilers
-# - if coreneuron gpu support exist and nvc compiler available then we
-#   can compile mod files and run tests via special binary
-# - Note that the tests that use coreneuron can not be launched using
-#   python or nrniv -python because in gpu build coreneuron is created
-#   as a static library and linked to special. Hence only special can
-#   be used to launch GPU tests
 has_coreneuron=false   # true if coreneuron support is available
-has_gpu_support=false  # true if coreneuron gpu support is available
-has_dev_env=true       # true if c/c++ dev environment exist to compile mod files
-run_gpu_test=false     # true if test should be run on the gpu
 
 # python version being used
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
@@ -74,13 +61,6 @@ run_mpi_test () {
       rm -rf *.dat
   fi
 
-  # rest of the tests we need development environment. For GPU wheel
-  # make sure we have necessary compiler.
-  if [[ "$has_dev_env" == "false" ]]; then
-      echo "WARNING: Development environment missing, skipping rest of the MPI tests!"
-      return
-  fi
-
   # build new special
   rm -rf $ARCH_DIR
   nrnivmodl tmp_mod
@@ -96,18 +76,12 @@ run_mpi_test () {
     rm -rf $ARCH_DIR
     nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
-    # python as a launcher can be used only with non-gpi build
-    if [[ "$has_gpu_support" == "false" ]]; then
-      $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
-    fi
+    $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
 
     # using -python doesn't work on Azure CI
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
-      fi
-      run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
-      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
+      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
   fi
 
@@ -133,12 +107,6 @@ run_serial_test () {
         nrniv-core --datpath .
         diff -w out.dat out.nrn.dat
         rm -rf *.dat
-    fi
-
-    # rest of the tests we need development environment
-    if [[ "$has_dev_env" == "false" ]]; then
-        echo "WARNING: Development environment missing, skipping rest of the serial tests!"
-        return
     fi
 
     # Test 4: execute nrnivmodl
@@ -168,30 +136,17 @@ run_serial_test () {
       rm -rf $ARCH_DIR
 
       # first test vanialla coreneuron support, without nrnivmodl
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $python_exe test/coreneuron/test_psolve.py
-      fi
+      $python_exe test/coreneuron/test_psolve.py
 
       nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
       # coreneuron+gpu can be used via python but special only
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $python_exe test/coreneuron/test_direct.py
-      fi
+      $python_exe test/coreneuron/test_direct.py
 
       # using -python doesn't work on Azure CI
       if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-        # we can run special with or without gpu wheel
         ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-
-        # python and nrniv can be used only for non-gpu wheel
-        if [[ "$has_gpu_support" == "false" ]]; then
-          nrniv -python test/coreneuron/test_direct.py
-        fi
-
-        if [[ "$run_gpu_test" == "true" ]]; then
-          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-        fi
+        nrniv -python test/coreneuron/test_direct.py
       fi
 
       rm -rf $ARCH_DIR
@@ -210,14 +165,16 @@ run_parallel_test() {
     # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
+      BREW_PREFIX=$(brew --prefix)
 
       brew unlink openmpi
       brew link mpich
-      BREW_PREFIX=$(brew --prefix)
+      export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
       run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
+      export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/open-mpi/lib:$DYLD_LIBRARY_PATH
       run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
     # CI Linux or Azure Linux
@@ -299,12 +256,11 @@ $python_exe -m pip install --upgrade pip
 
 
 # install numpy, pytest and neuron
-$python_exe -m pip install numpy pytest
+# we install setuptools because since python 3.12 it is no more installed
+# by default
+$python_exe -m pip install numpy pytest setuptools
 $python_exe -m pip install $python_wheel
-$python_exe -m pip show neuron \
-    || $python_exe -m pip show neuron-nightly \
-    || $python_exe -m pip show neuron-gpu \
-    || $python_exe -m pip show neuron-gpu-nightly
+$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
 # check the existence of coreneuron support
@@ -313,27 +269,8 @@ if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
 
-# check if the gpu support is enabled
-if echo $compile_options | grep "CORENRN_ENABLE_GPU=ON" > /dev/null ; then
-  has_gpu_support=true
-fi
-
-# in case of gpu support, nvc/nvc++ compiler must exist to compile mod files
-if [[ "$has_gpu_support" == "true" ]]; then
-  if ! command -v nvc &> /dev/null; then
-    has_dev_env=false
-  fi
-
-  # check if nvidia gpu exist (todo: not a robust check)
-  if pgaccelinfo -nvidia | grep -q "Device Name"; then
-    run_gpu_test=true
-  fi
-fi
-
-
 # run tests
-test_wheel $(which python)
-
+test_wheel "${python_exe}"
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then

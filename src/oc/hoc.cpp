@@ -1,12 +1,12 @@
 #include <../../nrnconf.h>
-
-#include "../nrnpython/nrnpython_config.h"
 #include "hoc.h"
 #include "hocstr.h"
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -16,10 +16,12 @@
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
+#include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -33,7 +35,6 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
@@ -124,10 +125,6 @@ void add_profile(int i) {}
 void pr_profile(void) {}
 #endif
 
-#ifdef MAC
-#define READLINE 0
-#endif
-
 #if OCSMALL
 #define READLINE 0
 #endif
@@ -198,7 +195,7 @@ const char** gargv; /* global argument list */
 int gargc;
 static int c = '\n'; /* global for use by warning() */
 
-#if defined(WIN32) || MAC
+#if defined(WIN32)
 void set_intset() {
     hoc_intset++;
 }
@@ -220,7 +217,7 @@ static int backslash(int c);
     exit(i);
 }
 
-#if defined(WIN32) || defined(MAC)
+#if defined(WIN32)
 #define HAS_SIGPIPE 0
 #else
 #define HAS_SIGPIPE 1
@@ -643,7 +640,6 @@ int yystart;
 void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from run-time error */
     hoc_in_yyparse = 0;
     yystart = 1;
-    hoc_menu_cleanup();
     hoc_errno_check();
     if (debug_message_ || prnt) {
         hoc_warning(s, t);
@@ -786,7 +782,6 @@ RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
     execerror("Floating point exception.", (char*) 0);
 }
 
-#if HAVE_SIGSEGV
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -797,7 +792,6 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
     }
     execerror("Aborting.", (char*) 0);
 }
-#endif
 
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig) {
@@ -1006,8 +1000,8 @@ void inputReadyThread() {
 void hoc_final_exit(void) {
     char* buf;
 #if defined(USE_PYTHON)
-    if (p_nrnpython_start) {
-        (*p_nrnpython_start)(0);
+    if (neuron::python::methods.interpreter_start) {
+        neuron::python::methods.interpreter_start(0);
     }
 #endif
     bbs_done();
@@ -1016,7 +1010,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     hoc_close_plot();
-#if READLINE && !defined(MINGW) && !defined(MAC)
+#if READLINE && !defined(MINGW)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1095,18 +1089,6 @@ int hoc_moreinput() {
 #endif
     }
 #endif  // WIN32
-#if MAC
-    if (gargc == 0) {
-        fin = nrn_fw_set_stdin();
-        infile = 0;
-        hoc_xopen_file_[0] = 0;
-#if defined(USE_PYTHON)
-        return use_python_interpreter ? 0 : 1;
-#else
-        return 1;
-#endif
-    }
-#endif  // MAC
     if (fin && !nrn_fw_eq(fin, stdin)) {
         IGNORE(nrn_fw_fclose(fin));
     }
@@ -1171,6 +1153,12 @@ int hoc_moreinput() {
         hpfi = hoc_print_first_instance;
         fin = (NrnFILEWrap*) 0;
         hoc_print_first_instance = 0;
+        // This is processing HOC code via -c on the commandline. That HOC code could include
+        // nrnpython(...), so the Python interpreter needs to be configured appropriately for
+        // that (i.e. sys.path[0] = '').
+        if (neuron::python::methods.interpreter_set_path) {
+            neuron::python::methods.interpreter_set_path({});
+        }
         err = hoc_oc(hs->buf);
         hoc_print_first_instance = hpfi;
         hocstr_delete(hs);
@@ -1182,12 +1170,11 @@ int hoc_moreinput() {
         if (!p_nrnpy_pyrun) {
             hoc_execerror("Python not available to interpret", infile);
         }
-        (*p_nrnpy_pyrun)(infile);
+        if (!p_nrnpy_pyrun(infile)) {
+            hoc_execerror("Python error", infile);
+        }
         return hoc_moreinput();
     } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
-#if OCSMALL
-        hoc_menu_cleanup();
-#endif
         Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {
@@ -1202,6 +1189,17 @@ int hoc_moreinput() {
             hoc_xopen_file_ = static_cast<char*>(erealloc(hoc_xopen_file_, hoc_xopen_file_size_));
         }
         strcpy(hoc_xopen_file_, infile);
+        // This is, unfortunately rather implicitly, how we trigger execution of HOC files on a
+        // commandline like `nrniv a.hoc b.hoc`. To make HOC treatment similar to Python treatment
+        // we would pass hoc_xopen_file_ here, which would imply that nrnpython("...") inside
+        // test.hoc sees sys.path[0] == "/dir/" when we run `nrniv /dir/test.hoc`, however it seems
+        // that legacy models (183300) assume that sys.path[0] == '' in this context, so we stick
+        // with that. There is no particular reason to follow Python conventions when launching HOC
+        // scripts, in contrast to Python scripts where we strive to make `nrniv foo.py` and
+        // `python foo.py` behave in the same way.
+        if (neuron::python::methods.interpreter_set_path) {
+            neuron::python::methods.interpreter_set_path({});
+        }
     }
     return 1;
 }
@@ -1213,9 +1211,7 @@ static SignalType signals[4];
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
     signals[1] = signal(SIGFPE, fpecatch);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, sigsegvcatch);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
 #endif
@@ -1224,9 +1220,7 @@ static void set_signals(void) {
 static void restore_signals(void) {
     signals[0] = signal(SIGINT, signals[0]);
     signals[1] = signal(SIGFPE, signals[1]);
-#if HAVE_SIGSEGV
     signals[2] = signal(SIGSEGV, signals[2]);
-#endif
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
 #endif
@@ -1530,9 +1524,6 @@ int hoc_yyparse(void) {
 #ifdef WIN32
 #define INTERVIEWS 1
 #endif
-#ifdef MAC
-#define INTERVIEWS 1
-#endif
 
 int hoc_interviews = 0;
 #if INTERVIEWS
@@ -1615,7 +1606,6 @@ static int event_hook(void) {
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 
-#if 1 || MAC
 /*
  On Mac combinations of /n /r /r/n require binary mode
  (otherwise /r/n is /n/n)
@@ -1671,55 +1661,7 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
     }
     return (CHAR*) 0;
 }
-#endif
 
-#if MAC
-int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
-    if (*ctp) {
-        hoc_execerror("Internal error:", "Not finished with previous input line");
-    }
-    ctp = cbuf;
-    *ctp = '\0';
-    if (pipeflag == 3) {
-        nrn_inputbuf_getline();
-        if (*ctp == '\0') {
-            return EOF;
-        }
-    } else if (pipeflag) {
-        if (hoc_strgets_need() > hoc_cbufstr->size) {
-            hocstr_resize(hoc_cbufstr, hoc_strgets_need());
-        }
-        if (hoc_strgets(cbuf, hoc_cbufstr->size - 1) == (char*) 0) {
-            return EOF;
-        }
-    } else {
-        if (nrn_fw_wrap(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
-#if MAC
-            for (;;) {
-                extern CHAR* hoc_console_buffer;
-                hoc_console_buffer = cbuf;
-                if (run_til_stdin()) {
-                    // printf("%s", cbuf);
-                    // strcpy(cbuf, hoc_console_buffer);
-                    break;
-                } else {
-                    return EOF;
-                }
-            }
-#endif
-        } else if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (CHAR*) 0) {
-            return EOF;
-        }
-    }
-    //	printf("%d %s", lineno, cbuf);
-    errno = 0;
-    lineno++;
-    ctp = cbuf = hoc_cbufstr->buf;
-    hoc_ictp = 0;
-    return 1;
-}
-
-#else
 int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
     if (*ctp) {
         hoc_execerror("Internal error:", "Not finished with previous input line");
@@ -1801,12 +1743,12 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
                 return EOF;
             }
         }
-#else
+#else  // READLINE
 #if INTERVIEWS
         if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin());
         }
-#endif
+#endif  // INTERVIEWS
 #if defined(WIN32)
         if (nrn_fw_eq(fin, stdin)) {
             if (gets(cbuf) == (char*) 0) {
@@ -1815,13 +1757,13 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
             strcat(cbuf, "\n");
         } else
-#endif
+#endif  // WIN32
         {
             if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (char*) 0) {
                 return EOF;
             }
         }
-#endif
+#endif  // READLINE
     }
     errno = 0;
     lineno++;
@@ -1829,7 +1771,6 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
     hoc_ictp = 0;
     return 1;
 }
-#endif
 
 void hoc_help(void) {
 #if INTERVIEWS

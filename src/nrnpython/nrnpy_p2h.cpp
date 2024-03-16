@@ -6,105 +6,36 @@
 #include <classreg.h>
 #include <nrnpython.h>
 #include <hoccontext.h>
+#include "nrnpy.h"
 #include "nrnpy_utils.h"
+#include "oc_ansi.h"
 
 #include "parse.hpp"
-extern void hoc_nopop();
-extern void hoc_pop_defer();
-extern Object* hoc_new_object(Symbol*, void*);
-extern int hoc_stack_type();
-extern char** hoc_strpop();
-extern Object** hoc_objpop();
-extern void hoc_tobj_unref(Object**);
-extern int hoc_ipop();
-PyObject* nrnpy_hoc2pyobject(Object*);
-PyObject* hocobj_call_arg(int);
-Object* nrnpy_pyobject_in_obj(PyObject*);
-int nrnpy_ho_eq_po(Object*, PyObject*);
-char* nrnpyerr_str();
-extern void* (*nrnpy_save_thread)();
-extern void (*nrnpy_restore_thread)(void*);
-static void* save_thread() {
-    return PyEval_SaveThread();
-}
-static void restore_thread(void* g) {
-    PyEval_RestoreThread((PyThreadState*) g);
-}
-extern Symbol* nrnpy_pyobj_sym_;
-extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
-extern void (*nrnpy_hpoasgn)(Object*, int);
-extern double (*nrnpy_praxis_efun)(Object*, Object*);
-extern int (*nrnpy_hoccommand_exec)(Object*);
-extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
-extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
-extern double (*nrnpy_func_call)(Object*, int, int*);
-extern Object* (*nrnpy_callable_with_args)(Object*, int);
-extern double (*nrnpy_guigetval)(Object*);
-extern void (*nrnpy_guisetval)(Object*, double);
-extern int (*nrnpy_guigetstr)(Object*, char**);
-extern char* (*nrnpy_po2pickle)(Object*, size_t* size);
-extern Object* (*nrnpy_pickle2po)(char*, size_t size);
-extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
-extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
-extern Object* (*nrnpympi_alltoall_type)(int, int);
-extern Object* (*nrnpy_p_po2ho)(PyObject*);
-extern PyObject* (*nrnpy_p_ho2po)(Object*);
-typedef struct {
-    PyObject_HEAD
-    Section* sec_;
-    char* name_;
-    PyObject* cell_;
-} NPySecObj;
-extern NPySecObj* newpysechelp(Section* sec);
-extern void (*nrnpy_call_python_with_section)(Object*, Section*);
-extern "C" void nrnpython_reg_real();
-PyObject* nrnpy_ho2po(Object*);
-void nrnpy_decref_defer(PyObject*);
-PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
-
-Object* nrnpy_po2ho(PyObject*);
-static void py2n_component(Object*, Symbol*, int, int);
-static void hpoasgn(Object*, int);
-static double praxis_efun(Object*, Object*);
-static int hoccommand_exec(Object*);
-static int hoccommand_exec_strret(Object*, char*, int);
-static void grphcmdtool(Object*, int, double, double, int);
-static double func_call(Object*, int, int*);
-static Object* callable_with_args(Object*, int);
-static double guigetval(Object*);
-static void guisetval(Object*, double);
-static int guigetstr(Object*, char**);
-static char* po2pickle(Object*, size_t* size);
-static Object* pickle2po(char*, size_t size);
-static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
-static Object* py_alltoall_type(int, int);
-static int pysame(Object*, Object*);
+static void nrnpy_decref_defer(PyObject*);
+static char* nrnpyerr_str();
+static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
-#if NRNPYTHON_DYNAMICLOAD
-extern int nrnpy_site_problem;
-extern int* nrnpy_site_problem_p;
-#endif
 
-class Py2Nrn {
-  public:
-    Py2Nrn();
-    virtual ~Py2Nrn();
-    int type_;  // 0 toplevel
-    PyObject* po_;
+struct Py2Nrn final {
+    ~Py2Nrn() {
+        PyLockGIL lock{};
+        Py_XDECREF(po_);
+    }
+    int type_{};  // 0 toplevel
+    PyObject* po_{};
 };
 
 static void* p_cons(Object*) {
-    Py2Nrn* p = new Py2Nrn();
-    return p;
+    return new Py2Nrn{};
 }
 
 static void p_destruct(void* v) {
-    delete (Py2Nrn*) v;
+    delete static_cast<Py2Nrn*>(v);
 }
 
-Member_func p_members[] = {{0, 0}};
+Member_func p_members[] = {{nullptr, nullptr}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
     PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
@@ -128,58 +59,11 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     }
 }
 
-extern void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 static void* opaque_obj2pyobj(Object* ho) {
     assert(ho && ho->ctemplate->sym == nrnpy_pyobj_sym_);
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     assert(po);
     return po;
-}
-
-extern "C" void nrnpython_reg_real() {
-    // printf("nrnpython_reg_real()\n");
-    class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
-    Symbol* s = hoc_lookup("PythonObject");
-    assert(s);
-    nrnpy_pyobj_sym_ = s;
-    nrnpy_py2n_component = py2n_component;
-    nrnpy_call_python_with_section = call_python_with_section;
-    nrnpy_hpoasgn = hpoasgn;
-    nrnpy_praxis_efun = praxis_efun;
-    nrnpy_hoccommand_exec = hoccommand_exec;
-    nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
-    nrnpy_cmdtool = grphcmdtool;
-    nrnpy_func_call = func_call;
-    nrnpy_callable_with_args = callable_with_args;
-    nrnpy_guigetval = guigetval;
-    nrnpy_guisetval = guisetval;
-    nrnpy_guigetstr = guigetstr;
-    nrnpy_po2pickle = po2pickle;
-    nrnpy_pickle2po = pickle2po;
-    nrnpy_callpicklef = call_picklef;
-    nrnpympi_alltoall_type = py_alltoall_type;
-    nrnpy_pysame = pysame;
-    nrnpy_save_thread = save_thread;
-    nrnpy_restore_thread = restore_thread;
-    nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
-    nrnpy_p_ho2po = nrnpy_ho2po;
-    nrnpy_p_po2ho = nrnpy_po2ho;
-    dlist = hoc_l_newlist();
-#if NRNPYTHON_DYNAMICLOAD
-    nrnpy_site_problem_p = &nrnpy_site_problem;
-#endif
-}
-
-
-Py2Nrn::Py2Nrn() {
-    po_ = NULL;
-    type_ = 0;
-    //	printf("Py2Nrn() %p\n", this);
-}
-Py2Nrn::~Py2Nrn() {
-    PyLockGIL lock;
-    Py_XDECREF(po_);
-    //	printf("~Py2Nrn() %p\n", this);
 }
 
 int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
@@ -189,7 +73,8 @@ int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
     return 0;
 }
 
-int pysame(Object* o1, Object* o2) {
+// contain same Python object
+static int pysame(Object* o1, Object* o2) {
     if (o2->ctemplate->sym == nrnpy_pyobj_sym_) {
         return nrnpy_ho_eq_po(o1, ((Py2Nrn*) o2->u.this_pointer)->po_);
     }
@@ -220,11 +105,12 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
+static PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
-    HocTopContextSet PyObject* p = PyObject_CallObject(callable, args);
+    HocTopContextSet
+    PyObject* p = PyObject_CallObject(callable, args);
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -233,29 +119,29 @@ PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
     HocContextRestore
-        // It would be nice to handle the error here, ending with a hoc_execerror
-        // for any Exception (note, that does not include SystemExit). However
-        // since many, but not all, of the callers need to clean up and
-        // release the GIL, errors get handled by the caller or higher up.
-        // The almost generic idiom is:
-        /**
-        if (!p) {
-          char* mes = nrnpyerr_str();
-          if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
-            hoc_execerror("Call of Python Callable failed", NULL);
-          }
-          if (PyErr_Occurred()) {
-            PyErr_Print(); // Python process will exit with the error code specified by the
-        SystemExit instance.
-          }
-        }
-        **/
-        return p;
+    // It would be nice to handle the error here, ending with a hoc_execerror
+    // for any Exception (note, that does not include SystemExit). However
+    // since many, but not all, of the callers need to clean up and
+    // release the GIL, errors get handled by the caller or higher up.
+    // The almost generic idiom is:
+    /**
+    if (!p) {
+      char* mes = nrnpyerr_str();
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+        hoc_execerror("Call of Python Callable failed", NULL);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print(); // Python process will exit with the error code specified by the
+    SystemExit instance.
+      }
+    }
+    **/
+    return p;
 }
 
-void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
+static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 #if 0
 	if (isfunc) {
 	printf("py2n_component %s.%s(%d)\n", hoc_object_name(ob), sym->name, nindex);
@@ -295,7 +181,13 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     if (isfunc) {
         args = PyTuple_New(nindex);
         for (i = 0; i < nindex; ++i) {
-            PyObject* arg = nrnpy_hoc_pop();
+            PyObject* arg = nrnpy_hoc_pop("isfunc py2n_component");
+            if (!arg) {
+                PyErr2NRNString e;
+                e.get_pyerr();
+                Py_DECREF(args);
+                hoc_execerr_ext("arg %d error: %s", i, e.c_str());
+            }
             // PyObject_Print(arg, stdout, 0);
             // printf(" %d   arg %d\n", arg->ob_refcnt,  i);
             if (PyTuple_SetItem(args, nindex - 1 - i, arg)) {
@@ -334,7 +226,11 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (hoc_stack_type() == NUMBER) {
             arg = Py_BuildValue("l", (long) hoc_xpop());
         } else {
-            arg = nrnpy_hoc_pop();
+            // I don't think it is syntactically possible
+            // for this to be a VAR. It is possible for it to
+            // be an Object but the GetItem below will raise
+            // TypeError: list indices must be integers or slices, not hoc.HocObject
+            arg = nrnpy_hoc_pop("nindex py2n_component");
         }
         result = PyObject_GetItem(tail, arg);
         if (!result) {
@@ -433,7 +329,7 @@ static void hpoasgn(Object* o, int type) {
     }
 }
 
-void nrnpy_decref_defer(PyObject* po) {
+static void nrnpy_decref_defer(PyObject* po) {
     if (po) {
 #if 0
 		PyObject* ps = PyObject_Str(po);
@@ -512,9 +408,10 @@ static int hoccommand_exec(Object* ho) {
     if (r == NULL) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
+            tmp.append(mes);
             free(mes);
-            hoc_execerror("Python Callback failed", 0);
+            hoc_execerror(tmp.c_str(), nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -581,7 +478,8 @@ static Object* callable_with_args(Object* ho, int narg) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        // not used with datahandle args.
+        PyObject* item = nrnpy_hoc_pop("callable_with_args");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -613,7 +511,7 @@ static double func_call(Object* ho, int narg, int* err) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop();
+        PyObject* item = nrnpy_hoc_pop("func_call");
         if (item == NULL) {
             Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
@@ -751,7 +649,7 @@ static char* pickle(PyObject* p, size_t* size) {
     return buf;
 }
 
-static char* po2pickle(Object* ho, size_t* size) {
+static char* po2pickle(Object* ho, std::size_t* size) {
     setpickle();
     if (ho && ho->ctemplate->sym == nrnpy_pyobj_sym_) {
         PyObject* po = nrnpy_hoc2pyobject(ho);
@@ -772,7 +670,7 @@ static PyObject* unpickle(char* s, size_t size) {
     return po;
 }
 
-static Object* pickle2po(char* s, size_t size) {
+static Object* pickle2po(char* s, std::size_t size) {
     setpickle();
     PyObject* po = unpickle(s, size);
     Object* ho = nrnpy_pyobject_in_obj(po);
@@ -783,7 +681,7 @@ static Object* pickle2po(char* s, size_t size) {
 /** Full python traceback error message returned as string.
  *  Caller should free the return value if not NULL
  **/
-char* nrnpyerr_str() {
+static char* nrnpyerr_str() {
     if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_Exception)) {
         PyObject *ptype, *pvalue, *ptraceback;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -841,7 +739,7 @@ char* nrnpyerr_str() {
     return NULL;
 }
 
-char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
+char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize) {
     // fname is a pickled callable, narg is the number of args on the
     // hoc stack with types double, char*, hoc Vector, and PythonObject
     // callable return must be pickleable.
@@ -859,7 +757,7 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
 
     args = PyTuple_New(narg);
     for (int i = 0; i < narg; ++i) {
-        PyObject* arg = nrnpy_hoc_pop();
+        PyObject* arg = nrnpy_hoc_pop("call_picklef");
         if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
             assert(0);
         }
@@ -992,7 +890,7 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
 
 // type 1-alltoall, 2-allgather, 3-gather, 4-broadcast, 5-scatter
 // size for 3, 4, 5 refer to rootrank.
-Object* py_alltoall_type(int size, int type) {
+static Object* py_alltoall_type(int size, int type) {
     int np = nrnmpi_numprocs;  // of subworld communicator
     PyObject* psrc = NULL;
     PyObject* pdest = NULL;
@@ -1214,4 +1112,52 @@ Object* py_alltoall_type(int size, int type) {
     assert(0);
     return NULL;
 #endif
+}
+
+static PyThreadState* save_thread() {
+    return PyEval_SaveThread();
+}
+static void restore_thread(PyThreadState* g) {
+    PyEval_RestoreThread(g);
+}
+
+void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
+void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
+
+/**
+ * @brief Populate NEURON state with information from a specific Python.
+ * @param ptrs Logically a return value; avoidi
+ */
+extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
+    assert(ptrs);
+    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
+    assert(nrnpy_pyobj_sym_);
+    ptrs->callable_with_args = callable_with_args;
+    ptrs->call_func = func_call;
+    ptrs->call_picklef = call_picklef;
+    ptrs->call_python_with_section = call_python_with_section;
+    ptrs->cmdtool = grphcmdtool;
+    ptrs->guigetstr = guigetstr;
+    ptrs->guigetval = guigetval;
+    ptrs->guisetval = guisetval;
+    ptrs->hoccommand_exec = hoccommand_exec;
+    ptrs->hoccommand_exec_strret = hoccommand_exec_strret;
+    ptrs->ho2po = nrnpy_ho2po;
+    ptrs->hpoasgn = hpoasgn;
+    ptrs->mpi_alltoall_type = py_alltoall_type;
+    ptrs->opaque_obj2pyobj = opaque_obj2pyobj;
+    ptrs->pickle2po = pickle2po;
+    ptrs->po2ho = nrnpy_po2ho;
+    ptrs->po2pickle = po2pickle;
+    ptrs->praxis_efun = praxis_efun;
+    ptrs->pysame = pysame;
+    ptrs->py2n_component = py2n_component;
+    ptrs->restore_thread = restore_thread;
+    ptrs->save_thread = save_thread;
+    // call a function in nrnpython.cpp to register the functions defined there
+    nrnpython_reg_real_nrnpython_cpp(ptrs);
+    // call a function in nrnpy_hoc.cpp to register the functions defined there
+    nrnpython_reg_real_nrnpy_hoc_cpp(ptrs);
+    dlist = hoc_l_newlist();
 }

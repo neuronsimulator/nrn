@@ -3,9 +3,6 @@
 
 // allow communication between src/ivoc/symdir.cpp and src/nrniv/pysecname.cpp
 
-#include <OS/list.h>
-#include <OS/string.h>
-
 class SymbolItem {
   public:
     SymbolItem(const char*, int whole_array = 0);
@@ -19,7 +16,7 @@ class SymbolItem {
         return ob_;
     }
     void no_object();
-    const String& name() const {
+    const std::string& name() const {
         return name_;
     }
     bool is_directory() const;
@@ -30,15 +27,13 @@ class SymbolItem {
     int pysec_type_; /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
     void* pysec_;    /* Name2Section* or Section* */
   private:
-    CopyString name_;
+    std::string name_;
     Symbol* symbol_;
     int index_;
     Object* ob_;
     int whole_array_;
 };
 
-declarePtrList(SymbolList, SymbolItem);
-
-void nrn_symdir_load_pysec(SymbolList& sl, void*);
+void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void*);
 
 #endif

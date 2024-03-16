@@ -3,7 +3,7 @@
 #define hocdec_h
 #define INCLUDEHOCH 1
 
-
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
@@ -24,7 +24,6 @@ struct Symbol;
 struct Arrayinfo;
 struct Proc;
 struct Symlist;
-struct Datum;
 struct cTemplate;
 union Objectdata;
 struct Object;
@@ -143,42 +142,9 @@ struct Symbol { /* symbol table entry */
 
 using hoc_List = hoc_Item;
 
-struct Datum { /* interpreter stack type */
-    template <typename T>
-    [[nodiscard]] T& literal_value() {
-        static_assert(std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T> &&
-                      sizeof(T) <= sizeof(this));
-        return *reinterpret_cast<T*>(&*this);  // Eww
-    }
-
-    template <typename T>
-    explicit operator T() = delete;
-
-    template <typename T>
-    T get() {
-        return literal_value<T>();
-    }
-
-    template <typename T>
-    Datum& operator=(const T& value) {
-        literal_value<T>() = value;
-        return *this;
-    }
-
-  private:
-    union {
-        double val;
-        Symbol* sym;
-        int i;
-        double* pval; /* first used with Eion in NEURON */
-        Object** pobj;
-        Object* obj; /* sections keep this to construct a name */
-        char** pstr;
-        hoc_Item* itm;
-        hoc_List* lst;
-        void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-    };
-};
+/** @brief Type of pdata in mechanisms.
+ */
+using Datum = neuron::container::generic_data_handle;
 
 struct cTemplate {
     Symbol* sym;
@@ -194,7 +160,7 @@ struct cTemplate {
     void* observers; /* hook to c++ ClassObservable */
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
-    void (*steer)(void*); /* normally nil */
+    void (*steer)(void*); /* normally nullptr */
     int (*checkpoint)(void**);
 };
 
@@ -257,10 +223,6 @@ struct HocParmUnits { /* units for symbol values */
 };
 
 #include "oc_ansi.h"
-
-void* emalloc(size_t n);
-void* ecalloc(size_t n, size_t size);
-void* erealloc(void* ptr, size_t n);
 
 extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst* hoc_pc;

@@ -128,6 +128,7 @@ extern List* _LST(Item* q, char* file, int line);
 #define LOCL          0400000L
 #define CNVFAC        01000000L
 #define UFACTOR       02000000L
+#define RANGEOBJ      04000000L
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
@@ -140,18 +141,11 @@ extern char *inputline(), /* used only by parser to get title line */
 const char* unit_str();
 extern const char* decode_units(Symbol*);
 
-extern List
-#if HAVE_STDARG_H || MAC
-		*makelist(int narg, ...),
-		*itemarray(int narg, ...),	/* item  ITEMARRAY, array of item pointers */
-#else
-		*makelist(),	/* item LIST */
-		*itemarray(),	/* item  ITEMARRAY, array of item pointers */
-#endif
-		*prepend(),
-		*newlist(),	/* begins new empty list */
-		*inputtext();	/* used by parser to get block text from
-				 * VERBATIM and COMMENT */
+extern List *makelist(int narg, ...),
+    *itemarray(int narg, ...), /* item  ITEMARRAY, array of item pointers */
+    *prepend(), *newlist(),    /* begins new empty list */
+    *inputtext();              /* used by parser to get block text from
+                                * VERBATIM and COMMENT */
 extern Item *putintoken(const char*s, short type, short), /* construct symbol and store input tokens
                                                            */
     *insertstr(Item*item, const char*str),                /* before a known Item */

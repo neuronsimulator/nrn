@@ -1,5 +1,6 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
+# Augmented to also test RANDOM (Bounce2) with coreneuron permutation.
 from neuron.tests.utils.strtobool import strtobool
 import os
 
@@ -13,7 +14,7 @@ h.dt = 1.0 / h.steps_per_ms
 
 
 class Cell:
-    def __init__(self, gid):
+    def __init__(self, gid, bounce=0):
         self.soma = h.Section(name="soma", cell=self)
         if gid % 2 == 0:
             # CoreNEURON permutation not the identity if cell topology not homogeneous
@@ -21,11 +22,13 @@ class Cell:
             self.dend.connect(self.soma(0.5))
         self.gid = gid
         pc.set_gid2node(gid, pc.id())
-        self.r = h.Random()
-        self.r.Random123(gid, 0, 0)
-        self.syn = h.Bounce(self.soma(0.5))
+        if bounce == 0:
+            self.syn = h.Bounce(self.soma(0.5))
+            self.syn.noiseFromRandom123(gid, 0, 1)
+        else:
+            self.syn = h.Bounce2(self.soma(0.5))
+            self.syn.ran.set_ids(gid, 0, 1)
         pc.cell(gid, h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma))
-        self.syn.noiseFromRandom123(gid, 0, 1)
         self.t1vec = h.Vector()
         self.t1vec.record(self.syn._ref_t1, sec=self.soma)
         self.xvec = h.Vector()
@@ -44,7 +47,7 @@ class Cell:
         )
 
 
-def test_watchrange():
+def watchrange():
     from neuron import coreneuron
 
     coreneuron.enable = False
@@ -88,7 +91,6 @@ def test_watchrange():
     stdlist = [cell.result() for cell in cells]
 
     print("CoreNEURON run")
-    h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
     coreneuron.gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
@@ -146,16 +148,26 @@ def test_watchrange():
     for mode in [0, 1, 2]:
         runassert(mode)
 
+    # replace Bounce with Bounce2 (Uses RANDOM declaration)
+    pc.gid_clear()
+    cells = [Cell(gid, bounce=2) for gid in gids]
+    for mode in [0, 1, 2]:
+        runassert(mode)
+
     coreneuron.enable = False
     # teardown
     pc.gid_clear()
     return stdlist, tvec
 
 
+def test_watchrange():
+    watchrange()
+
+
 if __name__ == "__main__":
     from neuron import gui
 
-    stdlist, tvec = test_watchrange()
+    stdlist, tvec = watchrange()
     g = h.Graph()
     print("n_high  n_mid  n_low")
     for i, result in enumerate(stdlist):

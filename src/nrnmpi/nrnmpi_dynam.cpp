@@ -29,6 +29,7 @@ extern const char* path_prefix_to_libnrniv();
 #endif
 
 #include <cstddef>
+#include <string>  // for nrnmpi_str_broadcast_world
 
 #include "mpispike.h"
 #include "nrnmpi_def_cinc" /* nrnmpi global variables */
@@ -92,7 +93,7 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
     return handle;
 }
 
-std::string nrnmpi_load(int is_python) {
+std::string nrnmpi_load() {
     std::string pmes;
     void* handle = nullptr;
     // If libmpi already in memory, find name and dlopen that.
@@ -231,8 +232,15 @@ std::string nrnmpi_load(int is_python) {
         return name;
     };
     auto const nrn_mpi_library = mpi_path("nrnmpi_");
-    // TODO this will be wrong if CoreNEURON is installed externally
     corenrn_mpi_library = mpi_path("corenrnmpi_");
+
+    // This env variable is only needed in usage like neurodamus where
+    // `solve_core()` is directly called by MOD file and it doesn't have
+    // an easy way to know which MPI library to load.
+    // TODO: remove when BlueBrain/neurodamus/issues/17 is fixed.
+#if defined(HAVE_SETENV)
+    setenv("NRN_CORENRN_MPI_LIB", corenrn_mpi_library.c_str(), 0);
+#endif
 
     if (!load_nrnmpi(nrn_mpi_library.c_str(), pmes)) {
         return pmes;
@@ -247,8 +255,8 @@ std::string nrnmpi_load(int is_python) {
 // nrnmpi_load cannot safely be called from nrnmpi.cpp because of pre/post-C++11
 // ABI compatibility issues with std::string. See
 // https://github.com/neuronsimulator/nrn/issues/1963 for more information.
-void nrnmpi_load_or_exit(bool is_python) {
-    auto const err = nrnmpi_load(is_python);
+void nrnmpi_load_or_exit() {
+    auto const err = nrnmpi_load();
     if (!err.empty()) {
         std::cout << err << std::endl;
         std::exit(1);

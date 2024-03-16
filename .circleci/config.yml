@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@0.3.2
+  python: circleci/python@2.1.1
 
 jobs:
   manylinux2014-aarch64:
@@ -13,7 +13,7 @@ jobs:
         type: string
 
     machine:
-      image: ubuntu-2004:202101-01
+      image: default
 
     resource_class: arm.medium
 
@@ -49,25 +49,17 @@ jobs:
             # choose available python versions from pyenv
             pyenv_py_ver=""
             case << parameters.NRN_PYTHON_VERSION >> in
-              38) pyenv_py_ver="3.8.7" ;;
-              39) pyenv_py_ver="3.9.1" ;;
-              310) pyenv_py_ver="3.10.1" ;;
-              311) pyenv_py_ver="3.11.0" ;;
-              *) echo "Error: pyenv python version not specified!" && exit 1;;
+              38) pyenv_py_ver="3.8" ;;
+              39) pyenv_py_ver="3.9" ;;
+              310) pyenv_py_ver="3.10" ;;
+              311) pyenv_py_ver="3.11" ;;
+              312) pyenv_py_ver="3.12" ;;
+              *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
             esac
 
-            # install python dependencies: .10 is not available pyenv
-            if [ "<< parameters.NRN_PYTHON_VERSION >>" == "310" ]; then
-              sudo apt install software-properties-common -y
-              sudo add-apt-repository ppa:deadsnakes/ppa -y
-              sudo apt install python3.10 libpython3.10 python3.10-venv
-              export PYTHON_EXE=$(which python3.10)
-            else
-              cd /opt/circleci/.pyenv/plugins/python-build/../.. && git pull && cd -
-              env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
-              pyenv global $pyenv_py_ver
-              export PYTHON_EXE=$(which python)
-            fi
+            env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
+            pyenv global $pyenv_py_ver
+            export PYTHON_EXE=$(which python)
 
             # test wheel
             packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
@@ -76,6 +68,7 @@ jobs:
           name: Upload nightly wheel to pypi.org
           command: |
             if [ "<< parameters.NRN_NIGHTLY_UPLOAD >>" == "true" ]; then
+              python -m pip install --upgrade pip
               python -m pip install twine
               python -m twine upload --verbose --skip-existing -u $TWINE_USERNAME -p $TWINE_PASSWORD  wheelhouse/*.whl
             else
@@ -94,7 +87,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["311"]
+              NRN_PYTHON_VERSION: ["312"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
@@ -109,5 +102,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
+              NRN_PYTHON_VERSION: ["38", "39", "310", "311", "312"]
               NRN_NIGHTLY_UPLOAD: ["true"]

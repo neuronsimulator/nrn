@@ -48,6 +48,7 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrnmpi_spike_compress(int nspike, bool gidcompress, int xchng);
 extern bool nrn_use_bin_queue_;
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
@@ -67,4 +68,10 @@ extern int cellorder_nwarp;
 
 // Mechanism pdata index values into _actual_v and _actual_area data need to be updated.
 enum Layout { SoA = 0, AoS = 1 };
+
+// Blocks associated with BEFORE and AFTER have different values based on type.
+// There values are based on neuron/coreneuron implementation details.
+struct BAType {
+    enum { Breakpoint = 1, Solve = 2, Initial = 3, Step = 4, Before = 10, After = 20 };
+};
 }  // namespace coreneuron

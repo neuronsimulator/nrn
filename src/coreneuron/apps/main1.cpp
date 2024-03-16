@@ -15,6 +15,7 @@
 #include <cstring>
 #include <climits>
 #include <dlfcn.h>
+#include <filesystem>
 #include <memory>
 #include <vector>
 
@@ -40,19 +41,15 @@
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
-#include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/core2nrn_data_return.hpp"
 #include "coreneuron/utils/utils.hpp"
 
+namespace fs = std::filesystem;
+
 extern "C" {
 const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
-}
-
-// the CORENEURON_USE_LEGACY_UNITS determined by CORENRN_ENABLE_LEGACY_UNITS
-bool corenrn_units_use_legacy() {
-    return CORENEURON_USE_LEGACY_UNITS;
 }
 
 void (*nrn2core_part2_clean_)();
@@ -77,23 +74,7 @@ void set_openmp_threads(int nthread) {
  * Convert char* containing arguments from neuron to char* argv[] for
  * coreneuron command line argument parser.
  */
-char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, const char* arg) {
-    // first construct all arguments as string
-    std::string args(arg);
-    args.insert(0, " coreneuron ");
-    args.append(" --skip-mpi-finalize ");
-    if (use_mpi) {
-        args.append(" --mpi ");
-    }
-
-    // if neuron has passed name of MPI library then add it to CLI
-    std::string corenrn_mpi_lib{mpi_lib};
-    if (!corenrn_mpi_lib.empty()) {
-        args.append(" --mpi-lib ");
-        corenrn_mpi_lib += " ";
-        args.append(corenrn_mpi_lib);
-    }
-
+char* prepare_args(int& argc, char**& argv, std::string& args) {
     // we can't modify string with strtok, make copy
     char* first = strdup(args.c_str());
     const char* sep = " ";
@@ -108,13 +89,16 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, co
     free(first);
 
     // now build char*argv
-    argv = new char*[argc];
+    argv = new char*[argc + 1];
     first = strdup(args.c_str());
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
         argv[i] = token;
         token = strtok(nullptr, sep);
     }
+
+    // make sure argv is terminated by NULL!
+    argv[argc] = nullptr;
 
     // return actual data to be freed
     return first;
@@ -436,7 +420,7 @@ std::unique_ptr<ReportHandler> create_report_handler(const ReportConfiguration& 
 
 using namespace coreneuron;
 
-#if NRNMPI && defined(CORENEURON_ENABLE_MPI_DYNAMIC)
+#if NRNMPI && defined(NRNMPI_DYNAMICLOAD)
 static void* load_dynamic_mpi(const std::string& libname) {
     dlerror();
     void* handle = dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -458,7 +442,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
-#ifdef CORENEURON_ENABLE_MPI_DYNAMIC
+#ifdef NRNMPI_DYNAMICLOAD
         // coreneuron rely on neuron to detect mpi library distribution and
         // the name of the library itself. Make sure the library name is specified
         // via CLI option.
@@ -517,7 +501,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // Create outpath if it does not exist
     if (nrnmpi_myid == 0) {
-        mkdir_p(corenrn_param.outpath.c_str());
+        fs::create_directories(corenrn_param.outpath);
     }
 
     if (!corenrn_param.reportfilepath.empty()) {
@@ -538,7 +522,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     std::string output_dir = corenrn_param.outpath;
 
     if (nrnmpi_myid == 0) {
-        mkdir_p(output_dir.c_str());
+        fs::create_directories(output_dir);
     }
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
@@ -637,7 +621,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     // copy weights back to NEURON NetCon
-    if (nrn2core_all_weights_return_) {
+    if (nrn2core_all_weights_return_ && corenrn_embedded) {
         // first update weights from gpu
         update_weights_from_gpu(nrn_threads, nrn_nthread);
 
@@ -651,7 +635,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
         (*nrn2core_all_weights_return_)(weights);
     }
 
-    core2nrn_data_return();
+    if (corenrn_embedded) {
+        core2nrn_data_return();
+    }
 
     {
         Instrumentor::phase p("checkpoint");

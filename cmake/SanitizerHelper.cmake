@@ -8,11 +8,14 @@ set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
     float-divide-by-zero implicit-signed-integer-truncation unsigned-integer-overflow
     CACHE STRING "" FORCE)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
+include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
+
 # Propagate the sanitizer flags to the NEURON sources
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 # And to CoreNEURON as we don't have CORENRN_SANITIZERS any more
 list(APPEND CORENRN_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND CORENRN_EXTRA_MECH_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND CORENRN_EXTRA_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 if(NRN_SANITIZER_LIBRARY_DIR)
   # At least Clang 14 does not add rpath entries for the sanitizer runtime libraries. Adding this
@@ -32,6 +35,9 @@ if(NRN_SANITIZERS)
   if("address" IN_LIST nrn_sanitizers)
     list(APPEND NRN_COMPILE_DEFS NRN_ASAN_ENABLED)
   endif()
+  if("thread" IN_LIST nrn_sanitizers)
+    list(APPEND NRN_COMPILE_DEFS NRN_TSAN_ENABLED)
+  endif()
   # generate and install a launcher script called nrn-enable-sanitizer [--preload] that sets
   # *SAN_OPTIONS variables and, optionally, LD_PRELOAD -- this is useful both in CI configuration
   # and when using the sanitizers "downstream" of NEURON
@@ -42,8 +48,8 @@ if(NRN_SANITIZERS)
   # directory
   foreach(sanitizer ${nrn_sanitizers})
     if(EXISTS "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp")
-      configure_file(".sanitizers/${sanitizer}.supp" "share/nrn/sanitizers/${sanitizer}.supp"
-                     COPYONLY)
+      configure_file("${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
+                     "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp" COPYONLY)
       install(FILES "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp"
               DESTINATION "${CMAKE_INSTALL_PREFIX}/share/nrn/sanitizers")
     endif()
@@ -56,10 +62,4 @@ if(NRN_SANITIZERS)
   if(NRN_SANITIZER_LIBRARY_PATH)
     set(NRN_SANITIZER_LD_PRELOAD "${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH}")
   endif()
-  # Needed for using sanitizers on macOS
-  cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
-  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
-  install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()

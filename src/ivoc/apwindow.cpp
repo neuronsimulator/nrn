@@ -11,13 +11,8 @@
 #include <IV-Win/event.h>
 #include <IV-Win/window.h>
 #else
-#ifdef MAC
-#include <IV-Mac/event.h>
-#include <IV-Mac/window.h>
-#else
 #include <IV-X11/xevent.h>
 #include <IV-X11/xwindow.h>
-#endif
 #endif
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
@@ -44,10 +39,6 @@ extern void handle_old_focus();
 #ifdef WIN32
 #include <windows.h>
 extern int iv_mere_dismiss;
-#endif
-
-#if MAC
-extern void ivoc_dismiss_defer();
 #endif
 
 // just because avoiding virtual resource
@@ -104,10 +95,7 @@ void WinDismiss::execute() {
     if (win_) {
         win_->unmap();
     }
-#if MAC
-#else
     Session::instance()->quit();
-#endif
     dismiss_defer();
     win_defer_ = win_;
     win_ = NULL;
@@ -179,11 +167,7 @@ DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
     dbutton_ = NULL;
     Style* style = Session::instance()->style();
     String str("Close");
-#if MAC
-    if (0) {
-#else
     if ((style->find_attribute("dismiss_button", str) && str != "off") || force_menubar) {
-#endif
         if (!PrintableWindow::leader()) {
             style->find_attribute("pwm_dismiss_button", str);
         }
@@ -257,18 +241,10 @@ void DismissableWindow::name(const char* s) {
         {
             SetWindowText(hw, s);
         }
-    } else
-#endif
-#if MAC
-        Str255 st;
-    strncpy(&st[1], s, 254);
-    st[0] = strlen(s);
-    WindowPtr theWin = Window::rep()->macWindow();
-    if (theWin) {
-        SetWTitle(theWin, st);
-    }
-#endif
+    } else if (style()) {
+#else  // not WIN32
     if (style()) {
+#endif
         style()->attribute("name", s);
         set_props();  // replaces following two statements
         //		rep()->wm_name(this);
@@ -384,12 +360,6 @@ Glyph* PrintableWindow::print_glyph() {
 void PrintableWindow::map() {
     if (mappable_) {
         DismissableWindow::map();
-#if MAC
-        // just can't transform between top and bottom and also take into account decorations.
-        if (xplace_) {
-            xmove(xleft_, xtop_);
-        }
-#endif
         single_event_run();
         notify();
     } else {
@@ -435,13 +405,6 @@ bool PrintableWindow::receive(const Event& e) {
     return DismissableWindow::receive(e);
 }
 #else
-#if MAC
-bool PrintableWindow::receive(const Event& e) {
-    reconfigured();
-    notify();
-    return (false);
-}
-#else
 bool PrintableWindow::receive(const Event& e) {
     DismissableWindow::receive(e);
     if (e.type() == Event::other_event) {
@@ -484,13 +447,12 @@ bool PrintableWindow::receive(const Event& e) {
     return false;
 }
 #endif
-#endif
 
 void PrintableWindow::type(const char* s) {
     type_ = s;
 }
 const char* PrintableWindow::type() const {
-    return type_.string();
+    return type_.c_str();
 }
 
 // StandardWindow

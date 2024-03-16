@@ -5,6 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <cassert>
@@ -19,12 +20,13 @@
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
-#include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
+
+namespace fs = std::filesystem;
 
 namespace coreneuron {
 // Those functions comes from mod file directly
@@ -37,7 +39,7 @@ CheckPoints::CheckPoints(const std::string& save, const std::string& restore)
     , restored(false) {
     if (!save.empty()) {
         if (nrnmpi_myid == 0) {
-            mkdir_p(save.c_str());
+            fs::create_directories(save);
         }
     }
 }
@@ -71,6 +73,8 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
     /**
      * if openmp threading needed:
      *  #pragma omp parallel for private(i) shared(nt, nb_threads) schedule(runtime)
+     *  but note that nrn_mech_random_indices(type) is not threadsafe on first
+     *  call for each type.
      */
     for (int i = 0; i < nb_threads; i++) {
         if (nt[i].ncell || nt[i].tml) {
@@ -305,12 +309,41 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 }
             }
             fh.write_array<int>(d, cnt * sz);
-            delete[] d;
             size_t s = pointer2type.size();
             fh << s << " npointer\n";
             if (s) {
                 fh.write_array<int>(pointer2type.data(), s);
             }
+
+            // nmodlrandom
+            auto& indices = nrn_mech_random_indices(type);
+            s = indices.size() ? (1 + indices.size() + 5 * cnt * indices.size()) : 0;
+            fh << s << " nmodlrandom\n";
+            if (s) {
+                std::vector<uint32_t> nmodlrandom{};
+                nmodlrandom.reserve(s);
+                nmodlrandom.push_back((uint32_t) indices.size());
+                for (auto ix: indices) {
+                    nmodlrandom.push_back((uint32_t) ix);
+                }
+                for (auto ix: indices) {
+                    uint32_t data[5];
+                    char which;
+                    for (int i = 0; i < cnt; ++i) {
+                        void* v = nt._vdata[d[i * sz + ix]];
+                        nrnran123_State* r = (nrnran123_State*) v;
+                        nrnran123_getids3(r, &data[0], &data[1], &data[2]);
+                        nrnran123_getseq(r, &data[3], &which);
+                        data[4] = uint32_t(which);
+                        for (auto j: data) {
+                            nmodlrandom.push_back(j);
+                        }
+                    }
+                }
+                fh.write_array<uint32_t>(nmodlrandom.data(), nmodlrandom.size());
+            }
+
+            delete[] d;
         }
     }
 
