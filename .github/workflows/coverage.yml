@@ -1,7 +1,8 @@
 name: NEURON Code Coverage
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -110,7 +111,7 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
-          
+
 
       - name: Build & Test
         id: build-test

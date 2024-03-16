@@ -156,7 +156,7 @@ We do not need to worry about bin queueing since it is the delivery time that
 is enqueueed and that is always in the future.
 
 When bin queueing is used, a mechanism is needed to avoid the assertion
-error in BinQ::enqueue (see nrncvode/sptbinq.cpp) when the enqueued event
+error in BinQ::enqueue (see nrncvode/tqueue.cpp) when the enqueued event
 has a delivery time earlier than the binq current time. One possibility
 is to turn off bin queueing and force all events on the standard queue
 to be on binq boundaries. Another possibility is for bbsavestate to
@@ -169,7 +169,6 @@ callback to bbss_early when needed.
 
 #include "bbsavestate.h"
 #include "classreg.h"
-#include "ndatclas.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "nrnran123.h"
@@ -185,7 +184,7 @@ callback to bbss_early when needed.
 
 #include "netcon.h"
 #include "nrniv_mf.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "vrecitem.h"
 
 // on mingw, OUT became defined
@@ -1029,12 +1028,10 @@ static void ssi_def() {
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
     ssi = new StateStructInfo[n_memb_func]{};
-    int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty np{memb_func[im].sym->name};
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -1045,16 +1042,19 @@ static void ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np.prop()->param_size();  // sum over array dims
+            ssi[im].size = nrn_prop_param_size_[im];  // sum over array dims
         } else {
-            for (Symbol* sym = np.first_var(); np.more_var(); sym = np.next_var()) {
-                if (np.var_type(sym) == STATE || sym->subtype == _AMBIGUOUS) {
+            Symbol* msym = memb_func[im].sym;
+            for (int i = 0; i < msym->s_varn; ++i) {
+                Symbol* sym = msym->u.ppsym[i];
+                int vartype = nrn_vartype(sym);
+                if (vartype == STATE || vartype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np.prop_index(sym);
+                        ssi[im].offset = sym->u.rng.index;
                     } else {
                         // assert what we assume: that after this code the variables we want are
                         // `size` contiguous legacy indices starting at `offset`
-                        assert(ssi[im].offset + ssi[im].size == np.prop_index(sym));
+                        assert(ssi[im].offset + ssi[im].size == sym->u.rng.index);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
@@ -1078,9 +1078,6 @@ static void ssi_def() {
             //}
         }
     }
-    // Following set to 1 when NrnProperty constructor calls prop_alloc.
-    // so set back to original value.
-    v_structure_change = sav;
 }
 
 // if we know the Point_process, we can find the NetCon
@@ -1968,6 +1965,22 @@ void BBSaveState::seccontents(Section* sec) {
     }
 }
 
+// If extracellular, then save/restore not just v but also vext
+void BBSaveState::v_vext(Node* nd) {
+    if (nd->extnode) {
+        int n = 1 + nlayer;
+        std::vector<double*> tmp{};
+        tmp.reserve(n);
+        tmp.push_back(static_cast<double*>(nd->v_handle()));
+        for (int i = 0; i < nlayer; ++i) {
+            tmp.push_back(&nd->extnode->v[i]);
+        }
+        f->d(n, tmp.data());
+    } else {
+        f->d(1, nd->v_handle());
+    }
+}
+
 // all Point_process and mechanisms -- except IGNORE point process instances
 void BBSaveState::node(Node* nd) {
     if (debug) {
@@ -1976,7 +1989,7 @@ void BBSaveState::node(Node* nd) {
     }
     int i;
     Prop* p;
-    f->d(1, nd->v_handle());
+    v_vext(nd);
     // count
     // On restore, new point processes may have been inserted in
     // the section and marked IGNORE. So we need to count only the
@@ -2015,7 +2028,11 @@ void BBSaveState::node01(Section* sec, Node* nd) {
     // It is not clear why the zero area node voltages need to be saved.
     // Without them, we get correct simulations after a restore for
     // whole cells but not for split cells.
-    f->d(1, nd->v_handle());
+    // I don't know if there is duplicate saving of zero area node voltages.
+    // or, if so, it can be avoided. There was mention above of split cells
+    // and, with extracellular, there can be no such thing.
+    v_vext(nd);
+
     // count
     for (i = 0, p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
@@ -2055,7 +2072,10 @@ void BBSaveState::mech(Prop* p) {
     char buf[100];
     Sprintf(buf, "//%s", memb_func[type].sym->name);
     f->s(buf, 1);
-    {
+
+    if (type == EXTRACELL) {
+        // skip - vext states saved by caller and we are not saving parameters.
+    } else {
         auto const size = ssi[p->_type].size;  // sum over array dimensions for range variables
         auto& random_indices = nrn_mech_random_indices(p->_type);
         auto size_random = random_indices.size();

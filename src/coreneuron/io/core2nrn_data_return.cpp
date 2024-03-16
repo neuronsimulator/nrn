@@ -572,6 +572,10 @@ static bool core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
         // nothing to transfer
         break;
     }
+    case ReportEventType: {
+        // no need to transfer ReportEvent
+        break;
+    }
     default: {
         // In particular, InputPreSyn does not appear in tqueue as it
         // immediately fans out to NetCon.
