@@ -24,8 +24,6 @@ class NodeList(list):
                     r.append(i)
             except RxDException:
                 pass
-        if len(r) == 0:
-            raise RxDException(f"unrecognized node condition: {restriction}")
         return NodeList(r)
 
     def __getitem__(self, key):
