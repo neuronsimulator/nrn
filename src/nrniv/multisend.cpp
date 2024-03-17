@@ -43,6 +43,8 @@ of spikes sent is equal to the number of spikes sent.
 // setup time with a bgp.dma_send_ so as to pass on the spike to the
 // phase2 list of target hosts.
 
+#include <utils/pool.hpp>
+
 // asm/msr.h no longer compiles on my machine.
 // only for basic testing of logic when not on blue gene/p
 #define USE_RDTSCL 0
@@ -94,7 +96,6 @@ struct Phase2Buffer {
     double spiketime;
 };
 
-#include <structpool.h>
 
 using SpkPool = Pool<NRNMPI_Spike>;
 
@@ -163,7 +164,7 @@ Multisend_ReceiveBuffer::Multisend_ReceiveBuffer() {
     count_ = 0;
     size_ = MULTISEND_RECEIVEBUFFER_SIZE;
     buffer_ = new NRNMPI_Spike*[size_];
-    pool_ = new SpkPool(MULTISEND_RECEIVEBUFFER_SIZE);
+    pool_ = new SpkPool{};
     psbuf_ = 0;
 #if ENQUEUE == 1
     psbuf_ = new PreSyn*[size_];
@@ -174,7 +175,7 @@ Multisend_ReceiveBuffer::Multisend_ReceiveBuffer() {
 Multisend_ReceiveBuffer::~Multisend_ReceiveBuffer() {
     assert(busy_ == 0);
     for (int i = 0; i < count_; ++i) {
-        pool_->hpfree(buffer_[i]);
+        pool_->deallocate(buffer_[i]);
     }
     delete[] buffer_;
     delete pool_;
@@ -187,7 +188,7 @@ void Multisend_ReceiveBuffer::init(int index) {
     timebase_ = 0;
     nsend_cell_ = nsend_ = nrecv_ = busy_ = maxcount_ = 0;
     for (int i = 0; i < count_; ++i) {
-        pool_->hpfree(buffer_[i]);
+        pool_->deallocate(buffer_[i]);
     }
     count_ = 0;
     phase2_head_ = phase2_tail_ = 0;
@@ -210,7 +211,7 @@ void Multisend_ReceiveBuffer::incoming(int gid, double spiketime) {
             psbuf_ = new PreSyn*[size_];
         }
     }
-    NRNMPI_Spike* spk = pool_->alloc();
+    NRNMPI_Spike* spk = pool_->allocate();
     spk->gid = gid;
     spk->spiketime = spiketime;
     buffer_[count_++] = spk;
@@ -241,7 +242,7 @@ void Multisend_ReceiveBuffer::enqueue() {
             pb.spiketime = spk->spiketime;
         }
         ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
-        pool_->hpfree(spk);
+        pool_->deallocate(spk);
     }
 #endif
     count_ = 0;
@@ -289,7 +290,7 @@ void Multisend_ReceiveBuffer::enqueue2() {
         NRNMPI_Spike* spk = buffer_[i];
         PreSyn* ps = psbuf_[i];
         ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
-        pool_->hpfree(spk);
+        pool_->deallocate(spk);
     }
     count_ = 0;
     nrecv_ = 0;
