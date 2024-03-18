@@ -69,7 +69,7 @@ int main(int argc, const char* argv[]) {
     std::vector<fs::path> mod_files;
 
     /// true if debug logger statements should be shown
-    std::string verbose("info");
+    std::string verbose("warning");
 
     /// true if code is to be generated for NEURON
     bool neuron_code(false);
