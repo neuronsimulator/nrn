@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <string>
 #include <sstream>
+#include <fstream>
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern std::string nrnpy_pyexe;
@@ -119,16 +120,57 @@ static void nrnpython_set_path(std::string_view fname) {
  * @return 0 on failure, 1 on success.
  */
 int nrnpy_pyrun(const char* fname) {
-    nrnpython_set_path(fname);
-    auto* const fp = fopen(fname, "r");
+    auto* fp = fopen(fname, "r");
     if (fp) {
-        int const code = PyRun_AnyFile(fp, fname);
-        fclose(fp);
-        return !code;
+        nrnpython_set_path(fname);
     } else {
         std::cerr << "Could not open " << fname << std::endl;
         return 0;
     }
+    fclose(fp);
+#if !defined(MINGW)
+    fp = fopen(fname, "r");
+    if (fp) {
+        int const code = PyRun_AnyFile(fp, fname);
+        fclose(fp);
+        return !code;
+    }
+    return 0;
+#else   // MINGW
+    // MINGW and Python have incompatible FILE* so try to accomplish
+    // with pure Python
+    std::string exec{"with open('"};
+    exec += fname;
+    exec +=
+        "', 'rb') as nrnmingw_file:"
+        " exec(nrnmingw_file.read(), globals())\n";
+    int const code = PyRun_SimpleString(exec.c_str());
+    if (code) {
+        PyErr_Print();
+        return 0;
+    }
+    PyRun_SimpleString("del nrnmingw_file\n");
+    return 1;
+#endif  // MINGW
+}
+
+/**
+ * @brief Execute Python interpreter lines (gotten from hoc readline).
+ * @return 0 on success, nonzero on failure.
+ */
+static int nrnmingw_pyrun_interactiveloop() {
+    int code{};
+    std::string lines[3]{
+        "import code as nrnmingw_code\n",
+        "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
+        "nrnmingw_interpreter.interact(\"Hello\")\n"};
+    for (const auto& line: lines) {
+        if (PyRun_SimpleString(line.c_str())) {
+            PyErr_Print();
+            return -1;
+        }
+    }
+    return 0;
 }
 
 extern PyObject* nrnpy_hoc();
@@ -301,28 +343,12 @@ static int nrnpython_start(int b) {
             }
 #if !defined(MINGW)
             PyRun_InteractiveLoop(hoc_fin, "stdin");
-            // clang-format off
-            /*
-            Thread 1 received signal ? , Unknown signal.
-                #0  0x00007ffb3a0adf28 in ucrtbase!_invoke_watson() from C : \Windows\System32\ucrtbase.dll
-                #5  0x00007ffaa3af4bb5 in python311!PyOS_Readline() from E : \Python311\python311.dll
-                #16 0x00007ffaa3b0ffe1 in python311!PyRun_InteractiveLoopFlags() from E : \Python311\python311.dll
-                #17 0x00007ffaa3711ec7 in nrnpython_start(b = 2) at  nrn/src/nrnpython/nrnpython.cpp : 211
-            */
-            // clang-format on
-            // I attribute this to mean that FILE is incompatible in
-            // Windows 11 between nrniv and Python311
 #else
-            char* arg0 = strdup("nrniv");
-            char* arg1 = strdup("-q");  // no Python banner
-            char* args[] = {arg0, arg1};
-            int ret = Py_BytesMain(2, args);
-            free(arg0);
-            free(arg1);
+            // mingw FILE incompatible with windows11 Python FILE.
+            int ret = nrnmingw_pyrun_interactiveloop();
             if (ret) {
                 python_error_encountered = ret;
             }
-            Py_Initialize();
 #endif
         }
         return python_error_encountered;
