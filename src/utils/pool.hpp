@@ -60,7 +60,7 @@ class Pool {
 template <typename T, bool M>
 Pool<T, M>::Pool() {
     constexpr std::size_t count = 1000;
-    auto ptr = pools_.emplace_back(count);
+    auto& ptr = pools_.emplace_back(count);
     items_.resize(count);
     std::transform(ptr.begin(), ptr.end(), items_.begin(), [](auto &it) { return &it; });
 }
@@ -76,7 +76,7 @@ void Pool<T, M>::grow() {
 
     items_.resize(2 * total_size);
 
-    auto ptr = pools_.emplace_back(total_size);
+    auto& ptr = pools_.emplace_back(total_size);
     std::transform(ptr.begin(), ptr.end(), items_.begin() + total_size, [](auto &it) { return &it; });
 }
 
