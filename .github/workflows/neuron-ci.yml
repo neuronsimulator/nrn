@@ -1,12 +1,12 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
   push:
-    branches: 
+    branches:
       - master
       - release/**
   pull_request:
@@ -79,6 +79,13 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
+
+      - name: Fix kernel mmap rnd bits
+        if: ${{matrix.os == 'ubuntu-22.04'}}
+        # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
+        # high-entropy ASLR in much newer kernels that GitHub runners are
+        # using leading to random crashes: https://reviews.llvm.org/D148280
+        run: sudo sysctl vm.mmap_rnd_bits=28
 
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
@@ -156,7 +163,7 @@ jobs:
           fi
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
