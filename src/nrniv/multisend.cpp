@@ -174,9 +174,7 @@ Multisend_ReceiveBuffer::Multisend_ReceiveBuffer() {
 }
 Multisend_ReceiveBuffer::~Multisend_ReceiveBuffer() {
     assert(busy_ == 0);
-    for (int i = 0; i < count_; ++i) {
-        pool_->deallocate(buffer_[i]);
-    }
+    pool_->free_all();
     delete[] buffer_;
     delete pool_;
     if (psbuf_)

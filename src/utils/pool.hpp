@@ -7,7 +7,6 @@
 
 // the pool doubles in size every time a new pool is added.
 
-#include <list>
 #include <vector>
 #include <stdexcept>
 #include <mutex>
@@ -61,11 +60,9 @@ class Pool {
 template <typename T, bool M>
 Pool<T, M>::Pool() {
     constexpr std::size_t count = 1000;
-    auto* ptr = pools_.emplace_back(count).data();
+    auto ptr = pools_.emplace_back(count);
     items_.resize(count);
-    for (std::size_t i = 0; i < count; ++i) {
-        items_[i] = ptr + i;
-    }
+    std::transform(ptr.begin(), ptr.end(), items_.begin(), [](auto &it) { return &it; });
 }
 
 template <typename T, bool M>
@@ -79,10 +76,8 @@ void Pool<T, M>::grow() {
 
     items_.resize(2 * total_size);
 
-    auto* ptr = pools_.emplace_back(total_size).data();
-    for (std::size_t i = total_size, j = 0; j < total_size; ++i, ++j) {
-        items_[i] = ptr + j;
-    }
+    auto ptr = pools_.emplace_back(total_size);
+    std::transform(ptr.begin(), ptr.end(), items_.begin() + total_size, [](auto &it) { return &it; });
 }
 
 template <typename T, bool M>
@@ -120,6 +115,13 @@ void Pool<T, M>::free_all() {
 #endif
     get_ = 0;
     put_ = 0;
+    nget_ = 0;
+    // Populate again items_ with real ones
+    auto it = items_.begin();
+    for (auto& pool: pools_) {
+        std::transform(pool.begin(), pool.end(), it, [](auto& i){return &i;});
+        it += pool.size();
+    }
     if (clear_) {
         for (auto& item: items_) {
             std::invoke(clear_, item);
@@ -135,5 +137,5 @@ bool Pool<T, M>::is_valid_ptr(const T* p) const {
             return (p - &pool.front()) % sizeof(T) == 0;
         }
     }
-    return true;
+    return false;
 }
