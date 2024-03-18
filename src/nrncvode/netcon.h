@@ -10,7 +10,7 @@
 #include "pool.hpp"
 #include "tqitem.hpp"
 
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 
 #include <memory>
 #include <unordered_map>

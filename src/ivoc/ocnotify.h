@@ -1,5 +1,5 @@
 #pragma once
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 #include "neuron/container/data_handle.hpp"
 
 #include <cstddef>  // std::size_t

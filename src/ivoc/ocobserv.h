@@ -3,7 +3,7 @@
 
 #include "oc_ansi.h"
 
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 
 struct Object;
 struct cTemplate;
