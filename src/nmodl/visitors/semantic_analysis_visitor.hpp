@@ -12,6 +12,12 @@
  * \brief \copybrief nmodl::visitor::SemanticAnalysisVisitor
  */
 
+#include "ast/ast.hpp"
+#include "visitors/ast_visitor.hpp"
+
+namespace nmodl {
+namespace visitor {
+
 /**
  * \addtogroup visitor_classes
  * \{
@@ -19,7 +25,7 @@
 
 /**
  * \class SemanticAnalysisVisitor
- * \brief %Visitor to check some semantic rules on the ast
+ * \brief %Visitor to check some semantic rules on the AST
  *
  * Current checks:
  *
@@ -34,11 +40,6 @@
  * 8. Check that at most one derivative block is present.
  * 9. Check that RANDOM variable is mentioned only as first arg in random function.
  */
-#include "ast/ast.hpp"
-#include "visitors/ast_visitor.hpp"
-
-namespace nmodl {
-namespace visitor {
 
 class SemanticAnalysisVisitor: public ConstAstVisitor {
   private:
