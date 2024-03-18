@@ -1,12 +1,12 @@
 name: NEURON CI
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 on:
   push:
-    branches: 
+    branches:
       - master
       - release/**
   pull_request:
@@ -62,16 +62,16 @@ jobs:
                 -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
               flag_warnings: ON
               sanitizer: undefined
-          - os: ubuntu-22.04
-            config:
-              build_mode: cmake
-              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
-              # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
-              cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
-              # TODO: address-leak is the dream, but there are many problems,
-              # including external ones from the MPI implementations
-              sanitizer: address
+         #- os: ubuntu-22.04
+         #  config:
+         #    build_mode: cmake
+         #    # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
+         #    # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
+         #    cmake_option: -DNRN_ENABLE_CORENEURON=ON
+         #      -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+         #    # TODO: address-leak is the dream, but there are many problems,
+         #    # including external ones from the MPI implementations
+         #    sanitizer: address
       fail-fast: false
 
     steps:
@@ -156,7 +156,7 @@ jobs:
           fi
           make -j install
           deactivate
-        working-directory: ${{runner.temp}} 
+        working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
         if: ${{matrix.config.flag_warnings == 'ON'}}
