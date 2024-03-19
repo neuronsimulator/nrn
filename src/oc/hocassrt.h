@@ -1,6 +1,4 @@
-
-#ifndef hocassrt_h
-#define hocassrt_h
+#pragma once
 #include <assert.h>
 #undef assert
 #undef _assert
@@ -32,5 +30,4 @@
 #else
 #define _assert(ex) ;
 #define assert(ex)  ;
-#endif
 #endif

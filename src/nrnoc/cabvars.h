@@ -1,6 +1,5 @@
 /* /local/src/master/nrn/src/nrnoc/cabvars.h,v 1.5 1999/02/05 18:09:50 hines Exp */
-#ifndef NRN_CABVARS_H
-#define NRN_CABVARS_H
+#pragma once
 #define XMECH 0
 
 
@@ -74,5 +73,3 @@ extern void morph_alloc(Prop*);
 
 
 extern std::vector<Memb_func> memb_func;
-
-#endif  // NRN_CABVARS_H

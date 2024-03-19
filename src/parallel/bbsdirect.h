@@ -1,5 +1,4 @@
-#ifndef bbsdirect_h
-#define bbsdirect_h
+#pragma once
 
 #include <nrnmpiuse.h>
 
@@ -60,5 +59,3 @@ class BBSDirect: public BBSImpl {
     bbsmpibuf *sendbuf_, *recvbuf_;
 #endif
 };
-
-#endif

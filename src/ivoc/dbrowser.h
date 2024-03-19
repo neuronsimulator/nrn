@@ -26,8 +26,7 @@
  * DocBrowser -- browse a directory
  */
 
-#ifndef dbrowser_h
-#define dbrowser_h
+#pragma once
 
 #include <IV-look/browser.h>
 
@@ -58,5 +57,3 @@ class DocBrowser: public Browser {
   private:
     DocBrowserImpl* impl_;
 };
-
-#endif
