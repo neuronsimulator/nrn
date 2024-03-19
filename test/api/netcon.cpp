@@ -14,18 +14,18 @@ using std::ofstream;
 constexpr std::array<double, 6> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
     -0x1.04p+6,
-    0x1.d8340689fafcdp+3,
-    -0x1.2e02b18fab641p+6,
-    -0x1.0517fe92a58d9p+6,
-    -0x1.03e59d79732fcp+6,
-    -0x1.03e51f949532bp+6,
+    -0x1.085a63d029bc3p+6,
+    -0x1.112a5e95eb67cp+6,
+    -0x1.1795abaec26c1p+6,
+    -0x1.0422351f3f9dcp+6,
+    -0x1.03e5317ac368cp+6,
 #else
     -0x1.04p+6,
-    0x1.d9fa4f205318p+3,
-    -0x1.2e0327138fc9p+6,
-    -0x1.051caef48c1p+6,
-    -0x1.03e62a34d83f2p+6,
-    -0x1.03e5860b6c0c1p+6,
+    -0x1.085a703d657a7p+6,
+    -0x1.112d0039e9c38p+6,
+    -0x1.17974aa201b7bp+6,
+    -0x1.041fdf57a182bp+6,
+    -0x1.03e58fad20b92p+6,
 #endif
 };
 
@@ -54,6 +54,11 @@ int main(void) {
     nrn_property_set(ns, "noise", 1);
     nrn_property_set(ns, "interval", 5);
     nrn_property_set(ns, "number", 10);
+
+    nrn_double_push(1);
+    nrn_double_push(2);
+    nrn_double_push(3);
+    nrn_method_call(ns, nrn_method_symbol(ns, "noiseFromRandom123"), 3);
 
     // syn = h.ExpSyn(soma(0.5))
     nrn_double_push(0.5);
