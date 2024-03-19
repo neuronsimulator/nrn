@@ -21,6 +21,7 @@
 #include "nrnmpi.h"
 
 #include <vector>
+#include <unordered_map>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
@@ -111,6 +112,7 @@ int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
+static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
                                            {"L", {1e-4, 1e20}},
@@ -159,6 +161,7 @@ int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
 void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
@@ -381,6 +384,7 @@ void hoc_last_init(void) {
     SectionList_reg();
     SectionRef_reg();
     register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    hoc_register_parm_default(MORPHOLOGY, &morph_parm_default);
     neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
@@ -463,7 +467,7 @@ void initialize_memb_func(int mechtype,
                           nrn_init_t initialize,
                           int vectorized);
 void check_mech_version(const char** m);
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax);
+int count_variables_in_mechanism(const char** m2, int modltypemax);
 void register_mech_vars(const char** var_buffers,
                         int modltypemax,
                         Symbol* mech_symbol,
@@ -503,9 +507,9 @@ void nrn_register_mech_common(const char** m,
     } else {
         modltypemax = NRNPOINTER;
     }
-    auto [nvartypes, nvars] = count_variables_in_mechanism(m2, modltypemax);
+    int nvars = count_variables_in_mechanism(m2, modltypemax);
     mech_symbol->s_varn = nvars;
-    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
+    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvars * sizeof(Symbol*)));
 
     register_mech_vars(m2, modltypemax, mech_symbol, mechtype, nrnpointerindex);
     ++mechtype;
@@ -552,16 +556,8 @@ void register_mech_vars(const char** var_buffers,
                 nsub = 1;
                 varname.erase(subscript);
             }
-            /*SUPPRESS 624*/
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-#if 0
-                if (var_symbol->subtype != RANGEVAR) {
-                    IGNORE(fprintf(stderr, CHKmes,
-                    varname.c_str()));
-                }
-#else   // not 0
                 IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
-#endif  // not 0
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;
@@ -595,16 +591,18 @@ void register_mech_vars(const char** var_buffers,
     }
 }
 
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax) {
-    int j, k, modltype;
+int count_variables_in_mechanism(const char** m2, int modltypemax) {
+    int j;
+    int modltype;
+    int nvars;
     // count the number of variables registered in this mechanism
-    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
+    for (j = 0, nvars = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
         // while we have not encountered a 0 (sentinel for variable type)
         while (m2[j++]) {
-            k++;
+            nvars++;
         }
     }
-    return std::make_pair(j, k);
+    return nvars;
 }
 
 void reallocate_mech_data(int mechtype) {
@@ -751,6 +749,10 @@ void register_mech(const char** m,
     }
 }
 
+void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
+    memb_func[mechtype].parm_default = pd;
+}
+
 void nrn_writes_conc(int mechtype, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;
@@ -772,30 +774,24 @@ namespace {
  *
  * This logic used to live inside hoc_register_dparam_semantics.
  */
+
+// name to int map for the negative types
+// xx_ion and #xx_ion will get values of type and type+1000 respectively
+static std::unordered_map<std::string, int> name_to_negint = {{"area", -1},
+                                                              {"iontype", -2},
+                                                              {"cvodeieq", -3},
+                                                              {"netsend", -4},
+                                                              {"pointer", -5},
+                                                              {"pntproc", -6},
+                                                              {"bbcorepointer", -7},
+                                                              {"watch", -8},
+                                                              {"diam", -9},
+                                                              {"fornetcon", -10},
+                                                              {"random", -11}};
+
 int dparam_semantics_to_int(std::string_view name) {
-    // only interested in area, iontype, cvode_ieq, netsend, pointer, pntproc, bbcorepointer, watch,
-    // diam, fornetcon, xx_ion and #xx_ion which will get a semantics value of -1, -2, -3, -4, -5,
-    // -6, -7, -8, -9, -10 type, and type+1000 respectively
-    if (name == "area") {
-        return -1;
-    } else if (name == "iontype") {
-        return -2;
-    } else if (name == "cvodeieq") {
-        return -3;
-    } else if (name == "netsend") {
-        return -4;
-    } else if (name == "pointer") {
-        return -5;
-    } else if (name == "pntproc") {
-        return -6;
-    } else if (name == "bbcorepointer") {
-        return -7;
-    } else if (name == "watch") {
-        return -8;
-    } else if (name == "diam") {
-        return -9;
-    } else if (name == "fornetcon") {
-        return -10;
+    if (auto got = name_to_negint.find(std::string{name}); got != name_to_negint.end()) {
+        return got->second;
     } else {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
@@ -805,9 +801,80 @@ int dparam_semantics_to_int(std::string_view name) {
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
 }
+
+std::vector<int> indices_of_type(
+    const char* semantic_type,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices{};
+    int inttype = dparam_semantics_to_int(std::string{semantic_type});
+    for (auto i = 0; i < dparam_info.size(); ++i) {
+        if (dparam_semantics_to_int(dparam_info[i].second) == inttype) {
+            indices.push_back(i);
+        }
+    }
+    return indices;
+}
+
+static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+
+void update_mech_ppsym_for_modlrandom(
+    int mechtype,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices = indices_of_type("random", dparam_info);
+    mech_random_indices[mechtype] = indices;
+    if (indices.empty()) {
+        return;
+    }
+    Symbol* mechsym = memb_func[mechtype].sym;
+    int is_point = memb_func[mechtype].is_point;
+
+    int k = mechsym->s_varn;
+    mechsym->s_varn += int(indices.size());
+    mechsym->u.ppsym = (Symbol**) erealloc(mechsym->u.ppsym, mechsym->s_varn * sizeof(Symbol*));
+
+
+    for (auto i: indices) {
+        auto& p = dparam_info[i];
+        Symbol* ransym{};
+        if (is_point) {
+            ransym = hoc_install(p.first, RANGEOBJ, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
+        } else {
+            std::string s{p.first};
+            s += "_";
+            s += mechsym->name;
+            ransym = hoc_install(s.c_str(), RANGEOBJ, 0.0, &hoc_symlist);
+        }
+        ransym->subtype = NMODLRANDOM;
+        ransym->u.rng.type = mechtype;
+        ransym->cpublic = 1;
+        ransym->u.rng.index = i;
+        mechsym->u.ppsym[k++] = ransym;
+    }
+}
+
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
+
+// Use this if string.c_str() causes possibility of
+// AddressSanitizer: stack-use-after-scope on address
+void register_data_fields(int mechtype,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_info) {
+    std::vector<std::pair<const char*, int>> params{};
+    std::vector<std::pair<const char*, const char*>> dparams{};
+
+    for (auto&& [str, i]: param_info) {
+        params.emplace_back(str.c_str(), i);
+    }
+    for (auto&& [str1, str2]: dparam_info) {
+        dparams.emplace_back(str1.c_str(), str2.c_str());
+    }
+
+    register_data_fields(mechtype, params, dparams);
+}
+
 
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
@@ -845,6 +912,7 @@ void register_data_fields(int mechtype,
                                                                        // of double-valued
                                                                        // per-instance variables
     memb_list[mechtype].set_storage_pointer(&mech_data);
+    update_mech_ppsym_for_modlrandom(mechtype, dparam_info);
 }
 }  // namespace neuron::mechanism::detail
 namespace neuron::mechanism {
@@ -910,6 +978,17 @@ void hoc_register_prop_size(int mechtype, int psize, int dpsize) {
  */
 void hoc_register_dparam_semantics(int mechtype, int ix, const char* name) {
     assert(memb_func[mechtype].dparam_semantics[ix] == dparam_semantics_to_int(name));
+}
+
+int nrn_dparam_semantics_to_int(const char* name) {
+    return dparam_semantics_to_int(name);
+}
+
+/**
+ * @brief dparam indices with random semantics for mechtype
+ */
+std::vector<int>& nrn_mech_random_indices(int type) {
+    return mech_random_indices[type];
 }
 
 void hoc_register_cvode(int i,

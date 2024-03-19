@@ -104,7 +104,6 @@ set(OC_FILE_LIST
     ocerf.cpp
     plot.cpp
     plt.cpp
-    regexp.cpp
     scoprand.cpp
     settext.cpp
     symbol.cpp
@@ -230,6 +229,7 @@ set(NRNIV_FILE_LIST
     multisplit.cpp
     ndatclas.cpp
     netpar.cpp
+    nmodlrandom.cpp
     nonlinz.cpp
     neuronapi.cpp
     nrncore_write.cpp

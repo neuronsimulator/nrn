@@ -167,7 +167,7 @@ extern void nrn_clear_mark(void);
 extern short nrn_increment_mark(Section*);
 extern short nrn_value_mark(Section*);
 extern int is_point_process(Object*);
-extern int nrn_vartype(Symbol*);  // nrnocCONST, DEP, STATE
+extern int nrn_vartype(const Symbol*);  // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
 extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);
 extern bool nrn_use_fast_imem;
