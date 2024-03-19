@@ -22,6 +22,9 @@
  * OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifdef iv_os__scope_h
+#undef iv_os__scope_h
 
 #include <OS/_undefs.h>
+
+#endif

@@ -22,7 +22,8 @@
  * OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef iv_os__scope_h
+#define iv_os__scope_h
 
 #include <OS/os.h>
 
@@ -38,5 +39,7 @@
 #define iv_os_u_char
 
 typedef unsigned char u_char;
+
+#endif
 
 #endif
