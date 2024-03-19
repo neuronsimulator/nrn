@@ -19,7 +19,6 @@
 #include "nrnneosm.h"
 #include "datapath.h"
 #include "objcmd.h"
-#include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
 #include "utils/enumerate.h"
@@ -44,6 +43,8 @@
 
 #include <array>
 #include <unordered_set>
+#include <sundials/sundials_math.h>
+#include "netcon.h"
 #include <utility>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
@@ -1358,6 +1359,7 @@ void NetCvode::del_cv_memb_list() {
         }
     }
 }
+
 void NetCvode::del_cv_memb_list(Cvode* cvode) {
     if (!cvode) {
         return;

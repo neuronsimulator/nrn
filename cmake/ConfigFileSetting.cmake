@@ -194,7 +194,6 @@ nrn_configure_dest_src(nmodlconf.h . cmake_nrnconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
 nrn_configure_file(nrnconfigargs.h src/nrnoc)
 nrn_configure_file(nrnneosm.h src/nrncvode)
-nrn_configure_file(sundials_config.h src/sundials)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib
      DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
