@@ -22,11 +22,14 @@
  * OF THIS SOFTWARE.
  */
 
-#pragma once
+#ifndef iv__current_h
+#define iv__current_h
 
 #ifdef iv__2_6_h
 #undef iv__2_6_h
 #ifndef MAKEDEPEND
 #include <InterViews/_names.h>
 #endif
+#endif
+
 #endif
