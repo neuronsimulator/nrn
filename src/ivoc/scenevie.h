@@ -364,4 +364,3 @@ inline Coord Scene::y1() const {
 inline Coord Scene::y2() const {
     return y2_;
 }
-

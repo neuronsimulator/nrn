@@ -510,4 +510,3 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     MenuItem* b_;
     HocAction* action_;
 };
-
