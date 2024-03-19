@@ -92,7 +92,7 @@ try:
 
     # if version is not a valid PEP440 version, then create a bogus version
     # that will be used only for development purposes which appends the commit hash
-    if not re.match(r"^\d+(\.\d+)*$", __version__):
+    if not re.match(r"^\d+(\.\d+)*(.?dev[0-9]*)?$", __version__):
         __version__ = "0.0.dev0+g" + (
             subprocess.run(
                 ["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE
