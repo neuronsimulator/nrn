@@ -319,17 +319,19 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
     }
 }
 
+/// @brief Creates a new section and registers with the global section list
+Section* section_new(Symbol* sym) {
+    Section* sec = new_section(nullptr, sym, 0);
+    auto itm = lappendsec(section_list, sec);
+    sec->prop->dparam[8] = {neuron::container::do_not_search, itm};
+    return sec;
+}
+
 #if USE_PYTHON
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj* v) {
-    Item* itm;
-    Section* sec;
-    sec = new_section((Object*) 0, (Symbol*) 0, 0);
-#if USE_PYTHON
+    auto sec = section_new(nullptr);
     sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
-#endif
-    itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif

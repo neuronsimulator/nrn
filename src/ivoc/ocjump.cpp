@@ -131,6 +131,29 @@ bool OcJump::execute(const char* stmt, Object* ob) {
     }
 }
 
+void OcJump::execute_throw_on_exception(Object* obj, Symbol* sym, int narg) {
+    saved_state before{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        hoc_call_ob_proc(obj, sym, narg);
+    } catch (...) {
+        before.restore();
+        throw;
+    }
+}
+
+void OcJump::execute_throw_on_exception(Symbol* sym, int narg) {
+    // NOTE: return value is left on the stack
+    saved_state before{};
+    try_catch_depth_increment tell_children_we_will_catch{};
+    try {
+        hoc_pushx(hoc_call_func(sym, narg));
+    } catch (...) {
+        before.restore();
+        throw;
+    }
+}
+
 void* OcJump::fpycall(void* (*f)(void*, void*), void* a, void* b) {
     saved_state before{};
     try_catch_depth_increment tell_children_we_will_catch{};
