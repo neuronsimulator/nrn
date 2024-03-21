@@ -237,7 +237,7 @@ class coreneuron(object):
 
     @model_path.setter
     def model_path(self, value):
-        self._model_path = str(value) if value is not None else value
+        self._model_path = str(value) if value else value
 
     @property
     def save_path(self):
@@ -246,7 +246,7 @@ class coreneuron(object):
 
     @save_path.setter
     def save_path(self, value):
-        self._save_path = str(value) if value is not None else value
+        self._save_path = str(value) if value else value
 
     @property
     def restore_path(self):
@@ -255,7 +255,7 @@ class coreneuron(object):
 
     @restore_path.setter
     def restore_path(self, value):
-        self._restore_path = str(value) if value is not None else value
+        self._restore_path = str(value) if value else value
 
     @property
     def skip_write_model_to_disk(self):
