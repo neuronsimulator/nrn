@@ -112,6 +112,17 @@ struct Memb_list {
                                                            int variable,
                                                            int array_index = 0) const;
 
+
+    /**
+     * @brief Get the number of fields/variables of this mechanism.
+     */
+    [[nodiscard]] int get_num_variables() const;
+
+    /**
+     * @brief Get the array_dims of field `variable`.
+     */
+    [[nodiscard]] int get_array_dims(int variable) const;
+
     /**
      * @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
