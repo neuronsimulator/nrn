@@ -394,6 +394,7 @@ int nrnthread_dat2_mech(int tid,
     int vdata_offset = cg.ml_vdata_offset[i];
     int isart = nrn_is_artificial_[type];
     int n = ml->nodecount;
+    int n_vars = ml->get_num_variables();
     int sz = nrn_prop_param_size_[type];
 
     // As the NEURON data is now transposed then for now always create a new
@@ -403,8 +404,11 @@ int nrnthread_dat2_mech(int tid,
         data = new double[n * sz];
     }
     for (auto instance = 0, k = 0; instance < n; ++instance) {
-        for (auto variable = 0; variable < sz; ++variable) {
-            data[k++] = ml->data(instance, variable);
+        for (int variable = 0; variable < n_vars; ++variable) {
+            auto array_dim = ml->get_array_dims(variable);
+            for (int array_index = 0; array_index < array_dim; ++array_index) {
+                data[k++] = ml->data(instance, variable, array_index);
+            }
         }
     }
 
