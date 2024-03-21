@@ -781,13 +781,13 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
 void bbss_save_global(void* bbss, char* buffer,
                       int sz) {  // call only on host 0
     usebin_ = 1;
-    auto io = BBSS_BufferOut(buffer, sz);
+    BBSS_BufferOut io(buffer, sz);
     io.d(1, nrn_threads->_t);
 }
 void bbss_restore_global(void* bbss, char* buffer,
                          int sz) {  // call on all hosts
     usebin_ = 1;
-    auto io = BBSS_BufferIn(buffer, sz);
+    BBSS_BufferIn io(buffer, sz);
     io.d(1, nrn_threads->_t);
     t = nrn_threads->_t;
     bbss_restore_begin();
