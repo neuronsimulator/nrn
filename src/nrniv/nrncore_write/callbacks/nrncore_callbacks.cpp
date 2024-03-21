@@ -146,10 +146,12 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
  *  The ARTIFICIAL_CELL type case is special as there is no thread specific
  *  Memb_list for those.
  */
-size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata) {
+size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata, std::vector<int>& array_dims) {
+
     size_t n = 0;
     data = NULL;
     mdata.clear();
+    array_dims.clear();
     if (tid >= nrn_nthread) {
         return n;
     }
@@ -157,25 +159,34 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
     if (type == voltage) {
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         data = nt.node_voltage_storage();
+        array_dims.push_back(1);
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         data = nt.node_sav_rhs_storage();
+        array_dims.push_back(1);
         n = size_t(nt.end);
     } else if (type == 0) {  // time
         data = &nt._t;
+        array_dims.push_back(1);
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
+        auto set_mdata = [type, tid, &mdata, &array_dims](Memb_list* ml) -> size_t {
+            mdata = ml->data();
+            for(int i = 0; i < int(mdata.size()); ++i) {
+                array_dims.push_back(ml->get_array_dims(i));
+            }
+            return ml->nodecount;
+        };
+
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->data();
-            n = ml->nodecount;
+          n = set_mdata(ml);
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
                 ml = &memb_list[type];
-                mdata = ml->data();
-                n = ml->nodecount;
+                n = set_mdata(ml);
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
                 // artificial cells to the end. Turns out that
@@ -183,9 +194,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
                 // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
                 // has already been deleted.  So we defer deletion of the necessary
                 // cellgroups_ portion (deleting it on return from nrncore_run).
-                auto& ml = CellGroup::deferred_type2artml_[tid][type];
-                n = size_t(ml->nodecount);
-                mdata = ml->data();
+                Memb_list* ml = CellGroup::deferred_type2artml_[tid][type];
+                n = set_mdata(ml);
             }
         }
     }

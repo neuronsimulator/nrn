@@ -125,5 +125,5 @@ extern void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 extern size_t (*nrn2core_type_return_)(int type,
                                        int tid,
                                        double*& data,
-                                       std::vector<double*>& mdata);
+                                       std::vector<double*>& mdata, std::vector<int>& array_dims);
 }  // extern "C"
