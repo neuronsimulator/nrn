@@ -771,7 +771,7 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
     if (nrnmpi_myid == 0) {  // save global time
-        auto io = BBSS_Cnt();
+        BBSS_Cnt io{};
         io.d(1, nrn_threads->_t);
         *global_size = io.bytecnt();
     }
