@@ -651,10 +651,13 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     } else if (mtype > 0 && mtype < static_cast<int>(corenrn.get_memb_funcs().size())) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
+        std::cout << "type = " << mtype << ", index = " << index << "\n";
         int ix = nrn_param_layout(index, mtype, ml);
+        std::cout << "       " << mtype << ", ix = " << ix << "\n";
         if (ml->_permute) {
             ix = nrn_index_permute(ix, mtype, ml);
         }
+        std::cout << "       " << mtype << ", ix = " << ix << "\n";
         return ml->data + ix;
     } else if (mtype == 0) {  // time
         return &nt._t;
