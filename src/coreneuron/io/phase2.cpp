@@ -915,14 +915,10 @@ void Phase2::set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc) {
         nrn_assert(vecPlay.vtype == VecPlayContinuousType);
 #if CHKPNTDEBUG
         ntc.vtype[i] = vecPlay.vtype;
-#endif
-#if CHKPNTDEBUG
         ntc.mtype[i] = vecPlay.mtype;
-#endif
-        Memb_list* ml = nt._ml_list[vecPlay.mtype];
-#if CHKPNTDEBUG
         ntc.vecplay_ix[i] = vecPlay.ix;
 #endif
+        Memb_list* ml = nt._ml_list[vecPlay.mtype];
 
         vecPlay.ix = nrn_param_layout(vecPlay.ix, vecPlay.mtype, ml);
         if (ml->_permute) {
