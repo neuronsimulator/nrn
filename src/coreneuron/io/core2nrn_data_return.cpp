@@ -111,7 +111,7 @@ static void soaos_unpermuted_copy_cnrn2nrn(size_t n,
                                            double const* const src,
                                            std::vector<double*>& dest,
                                            const std::vector<int>& array_dims) {
-    // i : runs over instances: 0, ... n.
+    // i : runs over instances: 0, ..., n.
     // k : runs over array dimension: 0, ..., array_dims[i_var] =: K.
 
     int n_vars = array_dims.size();

@@ -141,12 +141,14 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
         // In the CoreNEURON world this is an offset into the voltage array part
         // of _data
         index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        std::cout << "1: index = " << index << std::endl;
         return 0;
     }
     if (dh.refers_to<neuron::container::Node::field::FastIMemSavRHS>(neuron::model().node_data())) {
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
         index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
+        std::cout << "2: index = " << index << std::endl;
         return 0;
     }
     auto* const pd = static_cast<double*>(dh);
@@ -155,8 +157,10 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
             continue;
         }
         if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
+            std::cout << "maybe_index = " << maybe_index << std::endl;
             type = tml->index;
             index = maybe_index;
+            std::cout << "3: index = " << index << std::endl;
             break;
         }
     }
