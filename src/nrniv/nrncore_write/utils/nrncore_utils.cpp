@@ -132,7 +132,11 @@ void nrnbbcore_register_mapping() {
 int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
-                        int& index) {
+                        int& index,
+                        int const *& array_dims,
+                        int const *& array_prefix_sums,
+                        int& variable_count) {
+
     int nnode = nt.end;
     type = 0;
     if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
@@ -141,14 +145,18 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
         // In the CoreNEURON world this is an offset into the voltage array part
         // of _data
         index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
-        std::cout << "1: index = " << index << std::endl;
+        array_dims = nullptr;
+        array_prefix_sums = nullptr;
+        variable_count = 1;
         return 0;
     }
     if (dh.refers_to<neuron::container::Node::field::FastIMemSavRHS>(neuron::model().node_data())) {
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         type = i_membrane_;  // signifies an index into i_membrane_ array portion of _data
         index = dh.current_row() - cache_token.thread_cache(nt.id).node_data_offset;
-        std::cout << "2: index = " << index << std::endl;
+        array_dims = nullptr;
+        array_prefix_sums = nullptr;
+        variable_count = 1;
         return 0;
     }
     auto* const pd = static_cast<double*>(dh);
@@ -157,15 +165,25 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
             continue;
         }
         if (auto const maybe_index = tml->ml->legacy_index(pd); maybe_index >= 0) {
-
-            std::cout << "maybe_index = " << maybe_index << std::endl;
             type = tml->index;
             index = maybe_index;
-            std::cout << "3: index = " << index << std::endl;
+
+            array_dims = tml->ml->get_array_dims();
+            array_prefix_sums = tml->ml->get_array_prefix_sums();
+            variable_count = tml->ml->get_num_variables();
+
             break;
         }
     }
     return type == 0 ? 1 : 0;
+}
+
+int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
+                        NrnThread& nt,
+                        int& type,
+                        int& index) {
+
+  throw std::runtime_error("Not implemented.");
 }
 
 

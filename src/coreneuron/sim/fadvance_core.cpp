@@ -298,7 +298,6 @@ void nrncore2nrn_send_values(NrnThread* nth) {
                                async(nth->stream_id))
             nrn_pragma_omp(target teams distribute parallel for simd if(nth->compute_gpu))
             for (int i = 0; i < tr->n_trajec; ++i) {
-                std::cout << "gather[i] = " << *tr->gather[i] << "\n";
                 tr->varrays[i][vs] = *tr->gather[i];
             }
         } else if (tr->scatter) {  // scatter to NEURON and notify each step.

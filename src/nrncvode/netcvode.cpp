@@ -110,7 +110,10 @@ extern "C" void nrnthread_get_trajectory_requests(int tid,
                                                   int*& types,
                                                   int*& indices,
                                                   double**& pvars,
-                                                  double**& varrays);
+                                                  double**& varrays,
+                                                  int const **& array_dims,
+                                                  int const **& array_prefixsums,
+                                                  int*& variable_count);
 extern "C" void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
 extern "C" void nrnthread_trajectory_return(int tid,
                                             int n_pr,
@@ -5529,7 +5532,10 @@ static int trajec_buffered(NrnThread& nt,
                            int* types,
                            int* indices,
                            double** pvars,
-                           double** varrays) {
+                           double** varrays,
+                           int const **& array_dims,
+                           int const **& array_prefixsums,
+                           int*& variable_counts) {
     int err = 0;  // success
     if (bsize > 0) {
         int cur_size = v->size();
@@ -5547,8 +5553,11 @@ static int trajec_buffered(NrnThread& nt,
     if (static_cast<double const*>(pd) == &nt._t) {
         types[i_trajec] = 0;
         indices[i_trajec] = 0;
+        array_dims[i_trajec] = nullptr;
+        array_prefixsums[i_trajec] = nullptr;
+        variable_counts[i_trajec] = 1;
     } else {
-        err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
+        err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec], array_dims[i_trajec], array_prefixsums[i_trajec], variable_counts[i_trajec]);
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
@@ -5582,7 +5591,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                        int*& types,
                                        int*& indices,
                                        double**& pvars,
-                                       double**& varrays) {
+                                       double**& varrays,
+                                       int const **& array_dims,
+                                       int const **& array_prefixsums,
+                                       int*& variable_counts) {
     if (bsize > 0) {  // but would NEURON rather use per time step mode
         if (nrn_trajectory_request_per_time_step_) {
             bsize = 0;
@@ -5595,6 +5607,10 @@ void nrnthread_get_trajectory_requests(int tid,
     vpr = NULL;
     varrays = NULL;
     pvars = NULL;
+    array_dims = NULL;
+    array_prefixsums = NULL;
+    variable_counts = NULL;
+
     if (tid < nrn_nthread) {
         NrnThread& nt = nrn_threads[tid];
         auto* fr = net_cvode_instance->fixed_record_;
@@ -5645,6 +5661,11 @@ void nrnthread_get_trajectory_requests(int tid,
         } else {
             pvars = new double*[n_trajec];
         }  // if both varrays and pvars are NULL then CoreNEURON will return values every time step
+
+        array_dims = new int const*[n_trajec];
+        array_prefixsums = new int const*[n_trajec];
+        variable_counts = new int[n_trajec];
+
         // everything allocated, start over and fill
         n_pr = 0;
         n_trajec = 0;
@@ -5666,7 +5687,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                               types,
                                               indices,
                                               pvars,
-                                              varrays);
+                                              varrays,
+                                              array_dims,
+                                              array_prefixsums,
+                                              variable_counts);
                         if (err) {
                             n_pr--;
                             n_trajec--;
@@ -5684,7 +5708,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                               types,
                                               indices,
                                               pvars,
-                                              varrays);
+                                              varrays,
+                                              array_dims,
+                                              array_prefixsums,
+                                              variable_counts);
                         if (err) {
                             n_pr--;
                             n_trajec--;
@@ -5708,7 +5735,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                                   types,
                                                   indices,
                                                   pvars,
-                                                  varrays);
+                                                  varrays,
+                                                  array_dims,
+                                                  array_prefixsums,
+                                                  variable_counts);
                             if (err) {
                                 n_pr--;
                                 n_trajec--;
@@ -5732,7 +5762,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                                       types,
                                                       indices,
                                                       pvars,
-                                                      varrays);
+                                                      varrays,
+                                                      array_dims,
+                                                      array_prefixsums,
+                                                      variable_counts);
                                 if (err) {
                                     break;
                                 }
@@ -5760,7 +5793,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                                           types,
                                                           indices,
                                                           pvars,
-                                                          varrays);
+                                                          varrays,
+                                                          array_dims,
+                                                          array_prefixsums,
+                                                          variable_counts);
                                     if (err) {
                                         break;
                                     }
