@@ -125,6 +125,7 @@ def test_spikes(
             run(mode)
         # Make sure that file mode also works with custom coreneuron.data_path
         if file_mode:
+            coreneuron.file_mode = True
             temp_coreneuron_data_folder = tempfile.TemporaryDirectory(
                 "coreneuron_input"
             )  # auto removed
