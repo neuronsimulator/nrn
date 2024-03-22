@@ -34,7 +34,6 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/io/phase1.hpp"
 #include "coreneuron/io/phase2.hpp"
-#include "coreneuron/io/phase3.hpp"
 #include "coreneuron/io/mech_report.h"
 #include "coreneuron/io/reports/nrnreport.hpp"
 
@@ -517,7 +516,7 @@ void nrn_setup(const char* filesdat,
     }
 
     if (is_mapping_needed)
-        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams, !corenrn_file_mode);
+        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams);
 
     *mindelay = set_mindelay(*mindelay);
 
@@ -929,16 +928,37 @@ void read_phase2(NrnThread& nt, UserParams& userParams) {
 
 /** read mapping information for neurons */
 void read_phase3(NrnThread& nt, UserParams& userParams) {
+    /** restore checkpoint state (before restoring queue items */
+    auto& F = userParams.file_reader[nt.id];
+    F.restore_checkpoint();
+
     /** mapping information for all neurons in single NrnThread */
     NrnThreadMappingInfo* ntmapping = new NrnThreadMappingInfo();
 
-    Phase3 p3;
-    if (corenrn_embedded && !corenrn_file_mode) {
-        p3.read_direct(ntmapping);
-    } else {
-        auto& F = userParams.file_reader[nt.id];
-        F.restore_checkpoint();
-        p3.read_file(F, ntmapping);
+    int count = 0;
+
+    F.read_mapping_cell_count(&count);
+
+    /** number of cells in mapping file should equal to cells in NrnThread */
+    nrn_assert(count == nt.ncell);
+
+    /** for every neuron */
+    for (int i = 0; i < nt.ncell; i++) {
+        int gid, nsec, nseg, nseclist;
+
+        // read counts
+        F.read_mapping_count(&gid, &nsec, &nseg, &nseclist);
+
+        CellMapping* cmap = new CellMapping(gid);
+
+        // read section-segment mapping for every section list
+        for (int j = 0; j < nseclist; j++) {
+            SecMapping* smap = new SecMapping();
+            F.read_mapping_info(smap, ntmapping, cmap);
+            cmap->add_sec_map(smap);
+        }
+
+        ntmapping->add_cell_mapping(cmap);
     }
 
     // make number #cells match with mapping size

@@ -26,7 +26,6 @@ class NetCvode;
 #define PreSynType        4
 #define NetParEventType   7
 #define InputPreSynType   20
-#define ReportEventType   8
 
 struct DiscreteEvent {
     DiscreteEvent() = default;
