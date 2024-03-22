@@ -34,8 +34,7 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
     case Layout::AoS:
         return icnt * sz + isz;
     case Layout::SoA:
-        int padded_cnt = nrn_soa_padded_size(cnt,
-                                             layout);  // may want to factor out to save time
+        int padded_cnt = nrn_soa_padded_size(cnt, layout);
         return icnt + isz * padded_cnt;
     }
 
