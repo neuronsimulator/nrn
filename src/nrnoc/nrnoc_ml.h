@@ -124,6 +124,22 @@ struct Memb_list {
     [[nodiscard]] int get_array_dims(int variable) const;
 
     /**
+     * @brief Get the array_dims of field `variable`.
+     */
+    [[nodiscard]] int const * get_array_dims() const;
+
+    /**
+     * @brief Get the array_dims of field `variable`.
+     */
+    [[nodiscard]] int get_array_prefix_sums(int variable) const;
+
+    /**
+     * @brief Get the array_dims of field `variable`.
+     */
+    [[nodiscard]] int const * get_array_prefix_sums() const;
+
+
+    /**
      * @brief Calculate a legacy index of the given pointer in this mechanism data.
      *
      * This used to be defined as ptr - ml->_data[0] if ptr belonged to the
