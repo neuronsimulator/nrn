@@ -28,8 +28,7 @@ c_red, c_green = 1.0, -1.0
 def upsilon(i, c, t):
     return c * np.sin((i + 1.0) * t)
 
-# m = 16
-m = 13
+m = 16
 
 t_vector = h.Vector().record(h._ref_t)
 upsilon_vector = [
@@ -37,6 +36,13 @@ upsilon_vector = [
     h.Vector().record(h.soma(0.25)._ref_upsilon_green[m - 1]),
     h.Vector().record(h.soma(0.25)._ref_upsilon_red[0]),
     h.Vector().record(h.soma(0.25)._ref_upsilon_red[m - 1]),
+]
+
+labels = [
+    "u_green[0]",
+    f"u_green[{m-1}]",
+    "u_red[0]",
+    f"u_red[{m-1}]",
 ]
 
 
@@ -59,15 +65,23 @@ upsilon_exact = [
     for i, c in zip([0, m - 1, 0, m - 1], [-1.0, -1.0, 1.0, 1.0])
 ]
 
-# for u in upsilon_exact:
-#     plt.plot(t, u, "-k", linewidth=2)
-#
-for u in upsilon_approx:
-    plt.plot(t, u, "--", linewidth=2)
+for k, u in enumerate(upsilon_exact):
+    if k == 0:
+        legend_kwargs = {"label": "exact"}
+    else:
+        legend_kwargs = dict()
 
+    plt.plot(t, u, "-k", linewidth=2, **legend_kwargs)
+
+for u, label in zip(upsilon_approx, labels):
+    plt.plot(t, u, "--", linewidth=2, label=label)
+
+plt.legend()
+plt.xlabel("time")
+plt.xlabel("upsilon")
+plt.savefig("upsilon_traces.png", dpi=300)
 plt.show()
 
 for k, (u_exact, u_approx) in enumerate(zip(upsilon_exact, upsilon_approx)):
-
     assert np.all(np.abs(u_approx - u_exact) < 1e-10)
     assert np.all(np.abs(u_approx - u_exact) < 1e-10)
