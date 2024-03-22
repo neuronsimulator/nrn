@@ -1,11 +1,12 @@
 NEURON {
     SUFFIX red
-    RANGE upsilon
+    RANGE tau,  upsilon
 }
 
 DEFINE M 16
 
 ASSIGNED {
+    tau
     upsilon[M]
 }
 
