@@ -64,8 +64,8 @@ void (*nrn2core_get_trajectory_requests_)(int tid,
                                           int*& indices,
                                           double**& pvars,
                                           double**& varrays,
-                                          int const **& array_dims,
-                                          int const **& array_prefixsums,
+                                          int const**& array_dims,
+                                          int const**& array_prefixsums,
                                           int*& variable_counts);
 
 void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
@@ -636,17 +636,21 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // mech_type enum or non-artificial cell mechanisms.
 // take into account alignment, layout, permutation
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
-double* stdindex2ptr(int mtype, int index, int const * array_dims, int const * array_prefixsums, int variable_count, NrnThread& nt) {
-
+double* stdindex2ptr(int mtype,
+                     int index,
+                     int const* array_dims,
+                     int const* array_prefixsums,
+                     int variable_count,
+                     NrnThread& nt) {
     if (mtype == voltage) {  // voltage
-        int ix = index;       // relative to _actual_v
+        int ix = index;      // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
         return nt._actual_v + ix;
     } else if (mtype == i_membrane_) {  // membrane current from fast_imem calculation
-        int ix = index;                  // relative to nrn_fast_imem->nrn_sav_rhs
+        int ix = index;                 // relative to nrn_fast_imem->nrn_sav_rhs
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
@@ -661,17 +665,18 @@ double* stdindex2ptr(int mtype, int index, int const * array_dims, int const * a
 
         int column_index = index % row_width;
         int variable_index = 0;
-        for(size_t k = 1; k < variable_count; ++k) {
-          if(column_index >= array_prefixsums[k-1]) {
-            variable_index = k;
-          }
+        for (size_t k = 1; k < variable_count; ++k) {
+            if (column_index >= array_prefixsums[k - 1]) {
+                variable_index = k;
+            }
         }
-        int array_index = variable_index == 0 ? column_index : column_index - array_prefixsums[variable_index-1];
+        int array_index = variable_index == 0 ? column_index
+                                              : column_index - array_prefixsums[variable_index - 1];
 
         int padded_cnt = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
 
         int cnrn_offset = 0;
-        for(int k = 0; k < variable_index; ++k) {
+        for (int k = 0; k < variable_index; ++k) {
             cnrn_offset += array_dims[k] * padded_cnt;
         }
 
@@ -681,7 +686,7 @@ double* stdindex2ptr(int mtype, int index, int const * array_dims, int const * a
         // int ix = nrn_param_layout(index, mtype, ml);
         if (ml->_permute) {
             throw std::runtime_error("Not implemented.");
-        //     ix = nrn_index_permute(ix, mtype, ml);
+            //     ix = nrn_index_permute(ix, mtype, ml);
         }
         return ml->data + ix;
     } else if (mtype == 0) {  // time

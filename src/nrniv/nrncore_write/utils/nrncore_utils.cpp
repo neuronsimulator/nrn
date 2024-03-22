@@ -133,10 +133,9 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index,
-                        int const *& array_dims,
-                        int const *& array_prefix_sums,
+                        int const*& array_dims,
+                        int const*& array_prefix_sums,
                         int& variable_count) {
-
     int nnode = nt.end;
     type = 0;
     if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
@@ -182,8 +181,7 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index) {
-
-  throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Not implemented.");
 }
 
 

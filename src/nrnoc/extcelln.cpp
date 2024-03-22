@@ -86,7 +86,7 @@ static void update_parmsize() {
 #endif
     );
     // clang-format on
-    int prop_size = nparm + 3*(nrn_nlayer_extracellular - 1);
+    int prop_size = nparm + 3 * (nrn_nlayer_extracellular - 1);
     hoc_register_prop_size(EXTRACELL, prop_size, 0);
 }
 

@@ -209,9 +209,8 @@ template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
     if (layout == Layout::AoS) {
         return cnt;
-    }
-    else {
-        return ((cnt + chunk - 1)/chunk) * chunk;
+    } else {
+        return ((cnt + chunk - 1) / chunk) * chunk;
     }
 }
 

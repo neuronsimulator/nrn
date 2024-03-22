@@ -38,7 +38,12 @@ extern void set_globals(const char* path, bool cli_global_seed, int cli_global_s
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern double* stdindex2ptr(int mtype, int index, NrnThread&);
-extern double* stdindex2ptr(int mtype, int index, int const * array_dims, int const * array_prefixsums, int variable_count, NrnThread&);
+extern double* stdindex2ptr(int mtype,
+                            int index,
+                            int const* array_dims,
+                            int const* array_prefixsums,
+                            int variable_count,
+                            NrnThread&);
 extern void delete_trajectory_requests(NrnThread&);
 extern void nrn_cleanup();
 extern void nrn_cleanup_ion_map();

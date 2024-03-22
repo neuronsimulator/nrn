@@ -17,8 +17,8 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index,
-                        int const *& array_dims,
-                        int const *& array_prefix_sums,
+                        int const*& array_dims,
+                        int const*& array_prefix_sums,
                         int& variable_count);
 
 #include "nrnwrap_dlfcn.h"

@@ -106,8 +106,8 @@ extern void (*nrn2core_get_trajectory_requests_)(int tid,
                                                  int*& indices,
                                                  double**& pvars,
                                                  double**& varrays,
-                                                 int const **& array_dims,
-                                                 int const **& array_prefixsums,
+                                                 int const**& array_dims,
+                                                 int const**& array_prefixsums,
                                                  int*& variable_counts);
 
 /* send values to NEURON on each time step */
@@ -128,5 +128,6 @@ extern void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 extern size_t (*nrn2core_type_return_)(int type,
                                        int tid,
                                        double*& data,
-                                       std::vector<double*>& mdata, std::vector<int>& array_dims);
+                                       std::vector<double*>& mdata,
+                                       std::vector<int>& array_dims);
 }  // extern "C"

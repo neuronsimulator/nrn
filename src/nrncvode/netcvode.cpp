@@ -111,8 +111,8 @@ extern "C" void nrnthread_get_trajectory_requests(int tid,
                                                   int*& indices,
                                                   double**& pvars,
                                                   double**& varrays,
-                                                  int const **& array_dims,
-                                                  int const **& array_prefixsums,
+                                                  int const**& array_dims,
+                                                  int const**& array_prefixsums,
                                                   int*& variable_count);
 extern "C" void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
 extern "C" void nrnthread_trajectory_return(int tid,
@@ -5533,8 +5533,8 @@ static int trajec_buffered(NrnThread& nt,
                            int* indices,
                            double** pvars,
                            double** varrays,
-                           int const **& array_dims,
-                           int const **& array_prefixsums,
+                           int const**& array_dims,
+                           int const**& array_prefixsums,
                            int*& variable_counts) {
     int err = 0;  // success
     if (bsize > 0) {
@@ -5557,7 +5557,13 @@ static int trajec_buffered(NrnThread& nt,
         array_prefixsums[i_trajec] = nullptr;
         variable_counts[i_trajec] = 1;
     } else {
-        err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec], array_dims[i_trajec], array_prefixsums[i_trajec], variable_counts[i_trajec]);
+        err = nrn_dblpntr2nrncore(pd,
+                                  nt,
+                                  types[i_trajec],
+                                  indices[i_trajec],
+                                  array_dims[i_trajec],
+                                  array_prefixsums[i_trajec],
+                                  variable_counts[i_trajec]);
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
@@ -5592,8 +5598,8 @@ void nrnthread_get_trajectory_requests(int tid,
                                        int*& indices,
                                        double**& pvars,
                                        double**& varrays,
-                                       int const **& array_dims,
-                                       int const **& array_prefixsums,
+                                       int const**& array_dims,
+                                       int const**& array_prefixsums,
                                        int*& variable_counts) {
     if (bsize > 0) {  // but would NEURON rather use per time step mode
         if (nrn_trajectory_request_per_time_step_) {

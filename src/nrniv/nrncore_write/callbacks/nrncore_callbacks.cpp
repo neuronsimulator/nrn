@@ -146,8 +146,11 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
  *  The ARTIFICIAL_CELL type case is special as there is no thread specific
  *  Memb_list for those.
  */
-size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata, std::vector<int>& array_dims) {
-
+size_t nrnthreads_type_return(int type,
+                              int tid,
+                              double*& data,
+                              std::vector<double*>& mdata,
+                              std::vector<int>& array_dims) {
     size_t n = 0;
     data = NULL;
     mdata.clear();
@@ -173,7 +176,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
     } else if (type > 0 && type < n_memb_func) {
         auto set_mdata = [type, tid, &mdata, &array_dims](Memb_list* ml) -> size_t {
             mdata = ml->data();
-            for(int i = 0; i < int(mdata.size()); ++i) {
+            for (int i = 0; i < int(mdata.size()); ++i) {
                 array_dims.push_back(ml->get_array_dims(i));
             }
             return ml->nodecount;
@@ -181,7 +184,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
 
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-          n = set_mdata(ml);
+            n = set_mdata(ml);
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
@@ -370,7 +373,7 @@ int nrnthread_dat2_mech(int tid,
     for (auto instance = 0, k = 0; instance < n; ++instance) {
         for (int variable = 0; variable < n_vars; ++variable) {
             auto array_dim = ml->get_array_dims(variable);
-            for(int array_index = 0; array_index < array_dim; ++array_index) {
+            for (int array_index = 0; array_index < array_dim; ++array_index) {
                 data[k++] = ml->data(instance, variable, array_index);
             }
         }

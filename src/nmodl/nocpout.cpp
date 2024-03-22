@@ -1803,8 +1803,7 @@ static void var_count(Symbol* s) {
         field.append(", ");
         field.append(std::to_string(s->araydim));
         prop_size += s->araydim;
-    }
-    else {
+    } else {
         prop_size += 1;
     }
     // **ATTENTION** in AoS NEURON then parraycount was incremented by s->araydim if the variable

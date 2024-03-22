@@ -126,7 +126,7 @@ struct Memb_list {
     /**
      * @brief Get the array_dims of field `variable`.
      */
-    [[nodiscard]] int const * get_array_dims() const;
+    [[nodiscard]] int const* get_array_dims() const;
 
     /**
      * @brief Get the array_dims of field `variable`.
@@ -136,7 +136,7 @@ struct Memb_list {
     /**
      * @brief Get the array_dims of field `variable`.
      */
-    [[nodiscard]] int const * get_array_prefix_sums() const;
+    [[nodiscard]] int const* get_array_prefix_sums() const;
 
 
     /**

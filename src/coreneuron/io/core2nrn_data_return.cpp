@@ -27,7 +27,11 @@
  *  Return is size of either the returned data pointer or the number
  *  of pointers in mdata. tid is the thread index.
  */
-size_t (*nrn2core_type_return_)(int type, int tid, double*& data, std::vector<double*>& mdata, std::vector<int>& array_dims);
+size_t (*nrn2core_type_return_)(int type,
+                                int tid,
+                                double*& data,
+                                std::vector<double*>& mdata,
+                                std::vector<int>& array_dims);
 
 /** @brief, Call NEURON mechanism bbcore_read.
  *  Inverse of bbcore_write for transfer from NEURON to CoreNEURON.
@@ -104,27 +108,25 @@ static void soa2aos_inverse_permute_copy(size_t n,
  */
 static void soaos_unpermuted_copy_cnrn2nrn(size_t n,
                                            int stride,
-                                           double const * const src,
+                                           double const* const src,
                                            std::vector<double*>& dest,
-                                           const std::vector<int>& array_dims
-                                           ) {
-
+                                           const std::vector<int>& array_dims) {
     std::cout << "soaos_unpermuted_copy_cnrn2nrn" << std::endl;
 
     // i : runs over instances: 0, ..., n.
     // k : runs over array dimension: 0, ..., array_dims[i_var] =: K.
 
     int n_vars = array_dims.size();
-    for(size_t i_var = 0; i_var < n_vars; ++i_var) {
-      size_t K = array_dims[i_var];
-      size_t ld_var = K * stride;
+    for (size_t i_var = 0; i_var < n_vars; ++i_var) {
+        size_t K = array_dims[i_var];
+        size_t ld_var = K * stride;
 
-      // memcpy(dest[i_var], src + i_var*ld_var, n*K);
-      for(size_t i = 0; i < n; ++i) {
-        for(size_t k = 0; k < K; ++k) {
-          dest[i_var][i*K + k] = src[i_var * ld_var + i*K + k];
+        // memcpy(dest[i_var], src + i_var*ld_var, n*K);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t k = 0; k < K; ++k) {
+                dest[i_var][i * K + k] = src[i_var * ld_var + i * K + k];
+            }
         }
-      }
     }
 }
 
@@ -334,7 +336,7 @@ void core2nrn_data_return() {
         std::vector<double*> mdata{};
         std::vector<int> array_dims;
         n = (*nrn2core_type_return_)(0, tid, data, mdata, array_dims);  // 0 means time
-        if (n) {                                            // not the empty thread
+        if (n) {                                                        // not the empty thread
             data[0] = nt._t;
         }
 

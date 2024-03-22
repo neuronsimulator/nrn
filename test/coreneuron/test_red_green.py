@@ -25,8 +25,10 @@ h.tstop = 6.0
 # the value:
 c_red, c_green = 1.0, -1.0
 
+
 def upsilon(i, c, t):
     return c * np.sin((i + 1.0) * t)
+
 
 m = 16
 
@@ -61,8 +63,7 @@ else:
 t = np.array(t_vector.as_numpy())
 upsilon_approx = [np.array(u.as_numpy()) for u in upsilon_vector]
 upsilon_exact = [
-    upsilon(i, c, t)
-    for i, c in zip([0, m - 1, 0, m - 1], [-1.0, -1.0, 1.0, 1.0])
+    upsilon(i, c, t) for i, c in zip([0, m - 1, 0, m - 1], [-1.0, -1.0, 1.0, 1.0])
 ]
 
 for k, u in enumerate(upsilon_exact):
