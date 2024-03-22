@@ -45,7 +45,6 @@ extern "C" {
 
 /// global variables from coreneuron library
 extern bool corenrn_embedded;
-extern bool corenrn_file_mode;
 extern int corenrn_embedded_nthread;
 
 /// parse arguments from neuron and prepare new one for coreneuron
@@ -108,8 +107,7 @@ int corenrn_embedded_run(int nthread,
                          int use_mpi,
                          int use_fast_imem,
                          const char* mpi_lib,
-                         const char* nrn_arg,
-                         int file_mode) {
+                         const char* nrn_arg) {
     bool corenrn_skip_write_model_to_disk = false;
     const std::string corenrn_skip_write_model_to_disk_arg{"--skip-write-model-to-disk"};
     // If "only_simulate_str" exists in "nrn_arg" then avoid transferring any data between NEURON
@@ -125,7 +123,6 @@ int corenrn_embedded_run(int nthread,
     }
     // set coreneuron's internal variable based on neuron arguments
     corenrn_embedded = !corenrn_skip_write_model_to_disk;
-    corenrn_file_mode = file_mode;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps != 0;
     coreneuron::nrn_use_fast_imem = use_fast_imem != 0;
@@ -183,8 +180,6 @@ int solve_core(int argc, char** argv) {
         args.append(argv[i]);
         args.append(" ");
     }
-
-    corenrn_file_mode = true;
 
     // add mpi library argument
     add_mpi_library_arg("", args);

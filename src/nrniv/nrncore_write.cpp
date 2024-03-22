@@ -270,25 +270,6 @@ static void part2(const char* path) {
 
 
 #if defined(HAVE_DLFCN_H)
-
-/** Return neuron.coreneuron.enable */
-int nrncore_is_enabled() {
-    if (nrnpy_nrncore_enable_value_p_) {
-        int result = (*nrnpy_nrncore_enable_value_p_)();
-        return result;
-    }
-    return 0;
-}
-
-/** Return value of neuron.coreneuron.file_mode flag */
-int nrncore_is_file_mode() {
-    if (nrnpy_nrncore_file_mode_value_p_) {
-        int result = (*nrnpy_nrncore_file_mode_value_p_)();
-        return result;
-    }
-    return 0;
-}
-
 /** Launch CoreNEURON in direct memory mode */
 int nrncore_run(const char* arg) {
     // using direct memory mode
@@ -324,7 +305,7 @@ int nrncore_run(const char* arg) {
     map_coreneuron_callbacks(handle);
 
     // lookup symbol from coreneuron for launching
-    using launcher_t = int (*)(int, int, int, int, const char*, const char*, int);
+    using launcher_t = int (*)(int, int, int, int, const char*, const char*);
     auto* const coreneuron_launcher = reinterpret_cast<launcher_t>(
         dlsym(handle, "corenrn_embedded_run"));
     if (!coreneuron_launcher) {
@@ -352,13 +333,8 @@ int nrncore_run(const char* arg) {
 #endif
 
     // launch coreneuron
-    int result = coreneuron_launcher(nrn_nthread,
-                                     have_gap,
-                                     nrnmpi_use,
-                                     nrn_use_fast_imem,
-                                     corenrn_mpi_library.c_str(),
-                                     arg,
-                                     nrncore_is_file_mode());
+    int result = coreneuron_launcher(
+        nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, corenrn_mpi_library.c_str(), arg);
 
     // close handle and return result
     dlclose(handle);
@@ -375,6 +351,24 @@ int nrncore_run(const char* arg) {
     CellGroup::clean_deferred_netcons();
 
     return result;
+}
+
+/** Return neuron.coreneuron.enable */
+int nrncore_is_enabled() {
+    if (nrnpy_nrncore_enable_value_p_) {
+        int b = (*nrnpy_nrncore_enable_value_p_)();
+        return b;
+    }
+    return 0;
+}
+
+/** Return value of neuron.coreneuron.file_mode flag */
+int nrncore_is_file_mode() {
+    if (nrnpy_nrncore_file_mode_value_p_) {
+        int result = (*nrnpy_nrncore_file_mode_value_p_)();
+        return result;
+    }
+    return 0;
 }
 
 /** Find folder set for --datpath CLI option in CoreNEURON to dump the CoreNEURON data
