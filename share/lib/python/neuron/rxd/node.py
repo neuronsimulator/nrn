@@ -1,7 +1,7 @@
 import neuron
 from neuron import h, nrn, hoc, nrn_dll_sym
 from . import region, constants
-from . import rxdsection
+from . import rxdsection, rxdmath
 import numpy
 import weakref
 from .rxdException import RxDException
@@ -10,6 +10,7 @@ import ctypes
 
 from collections.abc import Callable
 
+_sources = []
 
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
@@ -119,6 +120,15 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
 
 
 _numpy_element_ref = neuron.numpy_element_ref
+
+
+def eval_arith_flux(arith, region, node):
+    func, species = rxdmath._compile(arith, [region])
+    c = compile(list(func.values())[0][0], "f", "eval")
+    s = []
+    for specie in species:
+        s.append(specie().nodes(node.segment).value)
+    return eval(c, {"species": s})
 
 
 class Node(object):
@@ -340,8 +350,12 @@ class Node(object):
                     f = float(args[0])
                     source = f
                     success = True
-                except:
-                    pass
+                except TypeError:
+                    arith = rxdmath._ensure_arithmeticed(args[0])
+                    source = lambda: eval_arith_flux(arith, self.region, self)
+                    _sources.append(source)
+                    scale = 1 / self.volume
+                    success = True
             if not success:
                 raise RxDException("unsupported flux form")
         _node_fluxes["index"].append(self._index)
