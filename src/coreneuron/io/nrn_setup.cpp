@@ -63,7 +63,10 @@ void (*nrn2core_get_trajectory_requests_)(int tid,
                                           int*& types,
                                           int*& indices,
                                           double**& pvars,
-                                          double**& varrays);
+                                          double**& varrays,
+                                          int const**& array_dims,
+                                          int const**& array_prefixsums,
+                                          int*& variable_counts);
 
 void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
 
@@ -633,7 +636,12 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // mech_type enum or non-artificial cell mechanisms.
 // take into account alignment, layout, permutation
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
-double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
+double* stdindex2ptr(int mtype,
+                     int index,
+                     int const* array_dims,
+                     int const* array_prefixsums,
+                     int variable_count,
+                     NrnThread& nt) {
     if (mtype == voltage) {  // voltage
         int ix = index;      // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
@@ -651,9 +659,34 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     } else if (mtype > 0 && mtype < static_cast<int>(corenrn.get_memb_funcs().size())) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
-        int ix = nrn_param_layout(index, mtype, ml);
+
+        int row_width = array_prefixsums[variable_count - 1];
+        int instance = index / row_width;
+
+        int column_index = index % row_width;
+        int variable_index = 0;
+        for (size_t k = 1; k < variable_count; ++k) {
+            if (column_index >= array_prefixsums[k - 1]) {
+                variable_index = k;
+            }
+        }
+        int array_index = variable_index == 0 ? column_index
+                                              : column_index - array_prefixsums[variable_index - 1];
+
+        int padded_cnt = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+
+        int cnrn_offset = 0;
+        for (int k = 0; k < variable_index; ++k) {
+            cnrn_offset += array_dims[k] * padded_cnt;
+        }
+
+        int cnrn_index = cnrn_offset + instance * array_dims[variable_index] + array_index;
+        int ix = cnrn_index;
+
+        // int ix = nrn_param_layout(index, mtype, ml);
         if (ml->_permute) {
-            ix = nrn_index_permute(ix, mtype, ml);
+            throw std::runtime_error("Not implemented.");
+            //     ix = nrn_index_permute(ix, mtype, ml);
         }
         return ml->data + ix;
     } else if (mtype == 0) {  // time
@@ -663,6 +696,10 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
         nrn_assert(0);
     }
     return nullptr;
+}
+
+double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
+    throw std::runtime_error("Not implemented.");
 }
 
 // from i to (icnt, isz)

@@ -105,7 +105,10 @@ extern void (*nrn2core_get_trajectory_requests_)(int tid,
                                                  int*& types,
                                                  int*& indices,
                                                  double**& pvars,
-                                                 double**& varrays);
+                                                 double**& varrays,
+                                                 int const**& array_dims,
+                                                 int const**& array_prefixsums,
+                                                 int*& variable_counts);
 
 /* send values to NEURON on each time step */
 extern void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
