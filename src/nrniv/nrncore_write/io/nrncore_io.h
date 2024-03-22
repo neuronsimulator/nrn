@@ -1,5 +1,4 @@
-#ifndef NRN_NRNCORE_IO_H
-#define NRN_NRNCORE_IO_H
+#pragma once
 #include "hocdec.h"
 
 #include <string>
@@ -44,6 +43,3 @@ void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 
 void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo);
-
-
-#endif  // NRN_NRNCORE_IO_H

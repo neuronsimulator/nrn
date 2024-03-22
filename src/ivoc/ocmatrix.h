@@ -1,5 +1,4 @@
-#ifndef ocmatrix_h
-#define ocmatrix_h
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -224,5 +223,3 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     Eigen::SparseMatrix<double, Eigen::RowMajor> m_{};
     std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
 };
-
-#endif
