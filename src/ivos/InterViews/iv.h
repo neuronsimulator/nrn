@@ -22,8 +22,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef _lib_iv_h
-#define _lib_iv_h
+#pragma once
 
 #if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
 #define _lib_iv(name) iv##name
@@ -31,6 +30,4 @@
 #else
 #define _lib_iv(name) iv/**/name
 #define _lib_iv2_6(name) iv2_6_/**/name
-#endif
-
 #endif

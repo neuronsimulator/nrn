@@ -1,5 +1,4 @@
-#ifndef ocpicker_h
-#define ocpicker_h
+#pragma once
 
 #include <vector>
 
@@ -70,4 +69,3 @@ class StandardPicker {
     EventButton mb_;
     std::vector<ButtonHandler*>* handlers_[unknown];
 };
-#endif

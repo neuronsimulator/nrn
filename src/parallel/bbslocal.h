@@ -1,5 +1,4 @@
-#ifndef bbslocal_h
-#define bbslocal_h
+#pragma once
 
 #include "bbsimpl.h"
 
@@ -48,5 +47,3 @@ class BBSLocal: public BBSImpl {
   private:
     KeepArgs* keepargs_;
 };
-
-#endif

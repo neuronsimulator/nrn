@@ -15,11 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _DiscreteUniform_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _DiscreteUniform_h 1
+#pragma once
 
 #include "Random.h"
 
@@ -68,5 +64,3 @@ inline long DiscreteUniform::high(long x) {
   delta = (pHigh - pLow) + 1;
   return tmp;
 }
-
-#endif
