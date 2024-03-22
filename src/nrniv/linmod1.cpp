@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 #include "ocnotify.h"
 #if HAVE_IV
 #include "ivoc.h"

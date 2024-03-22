@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <InterViews/resource.h>
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 struct Object;
 class OcListBrowser;
 struct cTemplate;

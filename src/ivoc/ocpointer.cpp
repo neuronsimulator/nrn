@@ -9,7 +9,7 @@
       assignment. It will be executed (and p.val assigned) when
     p.assign(val)
 */
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 #include <string.h>
 #include "classreg.h"
 #include "oc_ansi.h"

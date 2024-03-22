@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 #if HAVE_IV
 #include <InterViews/action.h>
 #include "rubband.h"

@@ -185,9 +185,6 @@
 #undef OLDialogKit
 #undef OLKit
 #undef OLKitImpl
-#undef Observable
-#undef Observer
-#undef ObserverList
 #undef OptionDesc
 #undef PSFont
 #undef PSFontImpl

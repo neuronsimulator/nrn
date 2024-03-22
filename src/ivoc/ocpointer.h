@@ -1,7 +1,7 @@
 #ifndef ocpointer_h
 #define ocpointer_h
 
-#include <InterViews/observe.h>
+#include "utils/observe.hpp"
 #include "oc2iv.h"
 class StmtInfo;
 
