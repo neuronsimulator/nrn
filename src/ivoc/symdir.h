@@ -1,5 +1,4 @@
-#ifndef symdir_h
-#define symdir_h
+#pragma once
 
 #include <InterViews/resource.h>
 #include <map>
@@ -56,5 +55,3 @@ class SymDirectory: public Resource {
   private:
     SymDirectoryImpl* impl_;
 };
-
-#endif

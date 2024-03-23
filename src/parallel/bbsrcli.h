@@ -1,5 +1,4 @@
-#ifndef bbsrcli_h
-#define bbsrcli_h
+#pragma once
 
 #include <nrnmpiuse.h>
 #include "bbsimpl.h"
@@ -58,5 +57,3 @@ class BBSClient: public BBSImpl {  // implemented as PVM Client
     bbsmpibuf *sendbuf_, *recvbuf_, *request_;
 #endif
 };
-
-#endif
