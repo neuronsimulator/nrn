@@ -54,7 +54,7 @@ SaveState
 
             h.continuerun(5 * ms)
 
-            # this function is here solely for the demo to show the staet has changed
+            # this function is here solely for the demo to show the state has changed
             # there's no need to do this in your code
             def get_state():
                 return (
