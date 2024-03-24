@@ -1,6 +1,5 @@
 from neuron.tests.utils.strtobool import strtobool
 import os
-import tempfile
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
 enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
@@ -119,18 +118,16 @@ def test_spikes(
     # CORENEURON run
     from neuron import coreneuron
 
-    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
+    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode):
         run_modes = [0] if file_mode else [0, 1, 2]
         for mode in run_modes:
             run(mode)
-        # Make sure that file mode also works with custom coreneuron.data_path
+        # Make sure that file mode also works with custom coreneuron.model_path
         if file_mode:
-            coreneuron.file_mode = True
-            temp_coreneuron_data_folder = tempfile.TemporaryDirectory(
-                "coreneuron_input"
-            )  # auto removed
-            coreneuron.data_path = temp_coreneuron_data_folder.name
+            coreneuron.model_path = "coreneuron_input"
             run(0)
+            # revert setting for the following coreneuron runs
+            coreneuron._model_path = None
 
     return h
 
