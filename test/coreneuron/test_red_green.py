@@ -79,7 +79,7 @@ for u, label in zip(upsilon_approx, labels):
 
 plt.legend()
 plt.xlabel("time")
-plt.xlabel("upsilon")
+plt.ylabel("upsilon")
 plt.savefig("upsilon_traces.png", dpi=300)
 plt.show()
 

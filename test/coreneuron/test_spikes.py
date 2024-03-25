@@ -2,6 +2,8 @@ from neuron.tests.utils.strtobool import strtobool
 import os
 import tempfile
 
+import numpy as np
+
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
 enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
@@ -142,7 +144,7 @@ def test_spikes(
             for i, c in zip([0, m - 1, 0, m - 1], [-1.0, -1.0, 1.0, 1.0])
         ]
 
-        for k, (u_exact, u_appox) in enumerate(zip(u_exact, u_approx)):
+        for k, (u_exact, u_approx) in enumerate(zip(upsilon_exact, upsilon_approx)):
             assert np.all(np.abs(u_approx - u_exact)) < 1e-10
 
     # CORENEURON run
