@@ -135,7 +135,7 @@ build_wheel_osx() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install -U delocate -r packaging/python/build_requirements.txt
+    pip install -U 'delocate<0.11' -r packaging/python/build_requirements.txt
     pip_numpy_install
 
     echo " - Building..."
