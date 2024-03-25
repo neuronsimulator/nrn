@@ -23,8 +23,6 @@
 #include <vector>
 #include <unordered_map>
 
-#include "backward.hpp"
-
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
 
@@ -883,11 +881,8 @@ void register_data_fields(int mechtype,
 static int count_prop_param_size(const std::vector<std::pair<const char*, int>>& param_info) {
     int float_variables = 0;
     for (const auto& [i, n]: param_info) {
-        std::cout << "n += " << n << "\n";
         float_variables += n;
     }
-
-    std::cout << "n == " << float_variables << std::endl;
 
     return float_variables;
 }
@@ -981,15 +976,6 @@ std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
  * Superseded by neuron::mechanism::register_data_fields.
  */
 void hoc_register_prop_size(int mechtype, int psize, int dpsize) {
-    if (nrn_prop_param_size_[mechtype] != psize) {
-        // #ifdef USE_BACKWARD
-        backward::StackTrace st;
-        st.load_here(32);
-        backward::Printer p;
-        p.print(st, std::cout);
-        // #endif
-    }
-    std::cout << "prop_size: " << nrn_prop_param_size_[mechtype] << " ?= " << psize << std::endl;
     assert(nrn_prop_param_size_[mechtype] == psize);
     assert(nrn_prop_dparam_size_[mechtype] == dpsize);
 }
