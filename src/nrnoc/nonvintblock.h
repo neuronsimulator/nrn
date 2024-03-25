@@ -1,5 +1,4 @@
-#ifndef nonvintblock_h
-#define nonvintblock_h
+#pragma once
 
 
 /*
@@ -72,6 +71,3 @@ nonvintblock_extern int (
 
 /* multiply the existing values in y (cvode.atol()) with appropriate scale factors */
 #define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(10, size, y, 0, tid)
-
-
-#endif

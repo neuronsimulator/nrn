@@ -1,5 +1,4 @@
-#ifndef nrnsymdiritem_h
-#define nrnsymdiritem_h
+#pragma once
 
 // allow communication between src/ivoc/symdir.cpp and src/nrniv/pysecname.cpp
 
@@ -35,5 +34,3 @@ class SymbolItem {
 };
 
 void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void*);
-
-#endif

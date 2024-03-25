@@ -1,5 +1,4 @@
-#ifndef netcvode_h
-#define netcvode_h
+#pragma once
 
 #define PRINT_EVENT 1
 
@@ -262,5 +261,3 @@ class NetCvode {
     void allthread_handle();
     HocEventList* allthread_hocevents_;
 };
-
-#endif

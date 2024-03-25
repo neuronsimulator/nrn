@@ -1,5 +1,4 @@
-#ifndef netcon_h
-#define netcon_h
+#pragma once
 
 #undef check
 
@@ -417,5 +416,3 @@ class NetParEvent: public DiscreteEvent {
 };
 
 extern PreSyn* nrn_gid2outputpresyn(int gid);
-
-#endif

@@ -15,11 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _MLCG_h
-#define _MLCG_h 1 
-#ifdef __GNUG__
-//#pragma interface
-#endif
+#pragma once
 
 #include "RNG.h"
 #include <math.h>
@@ -83,5 +79,3 @@ MLCG::reseed(int32_t s1, int32_t s2)
     initialSeedTwo = s2;
     reset();
 }
-
-#endif
