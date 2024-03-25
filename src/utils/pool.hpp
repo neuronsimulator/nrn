@@ -21,7 +21,7 @@ class Pool {
     Pool();
     template <typename F>
     void set_function(F f) {
-        clear_(f);
+        clear_ = f;
     }
     T* allocate(std::size_t = 1);
     void deallocate(T*, std::size_t = 1);
