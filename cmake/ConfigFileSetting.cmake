@@ -138,7 +138,6 @@ check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;str
 # NRN_HEADERS_INCLUDE_LIST is second argument (headers) is empty.
 nrn_check_symbol_exists("bcopy" "strings.h" HAVE_BCOPY)
 nrn_check_symbol_exists("bzero" "strings.h" HAVE_BZERO)
-nrn_check_symbol_exists("gettimeofday" "sys/time.h" HAVE_GETTIMEOFDAY)
 nrn_check_symbol_exists("index" "strings.h" HAVE_INDEX)
 nrn_check_symbol_exists("isatty" "unistd.h" HAVE_ISATTY)
 nrn_check_symbol_exists("iv" "" HAVE_IV)
