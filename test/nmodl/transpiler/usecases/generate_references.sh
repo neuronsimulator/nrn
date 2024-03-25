@@ -8,21 +8,20 @@ if [[ $# -eq 3 ]]
 then
   output_dir="$3"
 else
-  script_dir="$(dirname "$(realpath "$0")")"
+  script_dir="$(cd "$(dirname "$0")"; pwd -P)"
   output_dir="${script_dir}/references/$(basename "$2")"
 fi
 
 function sanitize() {
   for f in "${1}"/*.cpp
   do
-    if [[ "$(uname)" == 'Darwin' ]]
-    then
-        sed_cmd="sed -i''"
+    if [[ "$(uname)" == 'Darwin' ]]; then
+        sed_cmd=("sed" "-i" "")
     else
-        sed_cmd="sed -i"
+        sed_cmd=("sed" "-i")
     fi
-    ${sed_cmd} "s/Created         : .*$/Created         : DATE/" "$f"
-    ${sed_cmd} "s/NMODL Compiler  : .*$/NMODL Compiler  : VERSION/" "$f"
+    "${sed_cmd[@]}" "s/Created         : .*$/Created         : DATE/" "$f"
+    "${sed_cmd[@]}" "s/NMODL Compiler  : .*$/NMODL Compiler  : VERSION/" "$f"
   done
 }
 
