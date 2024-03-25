@@ -181,7 +181,8 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index) {
-    throw std::runtime_error("Not implemented.");
+    backward_wrapper();
+    throw std::runtime_error("Not implemented. [ivue]");
 }
 
 
