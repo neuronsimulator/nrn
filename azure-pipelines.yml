@@ -91,7 +91,7 @@ stages:
           Python38:
             python.version: '3.8'
             python.org.version: '3.8.9'
-            python.installer.name: 'macos10.9.pkg'
+            python.installer.name: 'macosx10.9.pkg'
           Python39:
             python.version: '3.9'
             python.org.version: '3.9.13'
