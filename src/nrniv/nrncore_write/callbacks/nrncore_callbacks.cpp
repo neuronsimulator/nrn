@@ -1199,8 +1199,23 @@ void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
             if (ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+
+                // TODO can be tidied up by making the original overload
+                // functional again.
+                int const* array_dims;
+                int const* array_prefix_sums;
+                int variable_count;
+                nrn_dblpntr2nrncore(ps->thvar_,
+                                    *ps->nt_,
+                                    type,
+                                    index_v,
+                                    array_dims,
+                                    array_prefix_sums,
+                                    variable_count);
                 assert(type == voltage);
+                assert(array_dims == nullptr);
+                assert(array_prefix_sums == nullptr);
+                assert(variable_count == 1);
                 if (presyns_flag_true.erase(index_v)) {
                     ps->flag_ = true;
                     if (presyns_flag_true.empty()) {
@@ -1227,7 +1242,21 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
             if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                int const* array_dims;
+                int const* array_prefix_sums;
+                int variable_count;
+                nrn_dblpntr2nrncore(ps->thvar_,
+                                    *ps->nt_,
+                                    type,
+                                    index_v,
+                                    array_dims,
+                                    array_prefix_sums,
+                                    variable_count);
+
+                assert(type == voltage);
+                assert(array_dims == nullptr);
+                assert(array_prefix_sums == nullptr);
+                assert(variable_count == 1);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
             }
