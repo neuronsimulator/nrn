@@ -1,5 +1,4 @@
-#ifndef bbslsrv_h
-#define bbslsrv_h
+#pragma once
 
 #include <InterViews/resource.h>
 
@@ -71,5 +70,3 @@ class BBSLocalServer {
     ResultList* results_;
     int next_id_;
 };
-
-#endif

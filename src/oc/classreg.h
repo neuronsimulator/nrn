@@ -1,5 +1,4 @@
-#ifndef classreg_h
-#define classreg_h
+#pragma once
 #include <stdio.h>
 
 #include <hocdec.h>
@@ -13,6 +12,3 @@ extern void class2oc(const char*,
                      int (*checkpoint)(void**),
                      Member_ret_obj_func*,
                      Member_ret_str_func*);
-
-
-#endif

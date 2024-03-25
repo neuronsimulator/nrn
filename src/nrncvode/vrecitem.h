@@ -1,5 +1,4 @@
-#ifndef vrecitem_h
-#define vrecitem_h
+#pragma once
 
 #include <InterViews/observe.h>
 #include <netcon.h>
@@ -328,5 +327,3 @@ class VecPlayContinuousSave: public PlayRecordSave {
     int discon_index_;
     int ubound_index_;
 };
-
-#endif
