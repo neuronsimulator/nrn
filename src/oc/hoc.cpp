@@ -95,35 +95,9 @@ void nrn_feenableexcept() {
     hoc_pushx((double) result);
 }
 
-#if 0
-/* performance debugging when gprof is inadequate */
-#include <sys/time.h>
-static unsigned long usec[30];
-static unsigned long oldusec[30];
-static struct timeval tp;
-void start_profile(int i){
-	gettimeofday(&tp, 0);
-	oldusec[i] = tp.tv_usec;
-}
-void add_profile(int i) {
-	gettimeofday(&tp, 0);
-	if (tp.tv_usec > oldusec[i]) {
-		usec[i] += tp.tv_usec - oldusec[i];
-	}
-}
-void pr_profile(void) {
-	int i;
-	for (i=0; i < 30; ++i) {
-		if (usec[i]) {
-			printf("sec[%d]=%g\n", i, ((double)usec[i])/1000000.);
-		}
-	}
-}
-#else
 void start_profile(int i) {}
 void add_profile(int i) {}
 void pr_profile(void) {}
-#endif
 
 #if OCSMALL
 #define READLINE 0
