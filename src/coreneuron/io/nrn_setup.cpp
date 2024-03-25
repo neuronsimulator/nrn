@@ -685,7 +685,7 @@ double* stdindex2ptr(int mtype,
 
         // int ix = nrn_param_layout(index, mtype, ml);
         if (ml->_permute) {
-            throw std::runtime_error("Not implemented.");
+            throw std::runtime_error("Not implemented. [iojdw]");
             //     ix = nrn_index_permute(ix, mtype, ml);
         }
         return ml->data + ix;
@@ -699,7 +699,7 @@ double* stdindex2ptr(int mtype,
 }
 
 double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
-    throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Not implemented. [nvopoi]");
 }
 
 // from i to (icnt, isz)
