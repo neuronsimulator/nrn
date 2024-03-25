@@ -148,10 +148,15 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
  *  The ARTIFICIAL_CELL type case is special as there is no thread specific
  *  Memb_list for those.
  */
-size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata) {
+size_t nrnthreads_type_return(int type,
+                              int tid,
+                              double*& data,
+                              std::vector<double*>& mdata,
+                              std::vector<int>& array_dims) {
     size_t n = 0;
     data = NULL;
     mdata.clear();
+    array_dims.clear();
     if (tid >= nrn_nthread) {
         return n;
     }
@@ -159,25 +164,34 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
     if (type == voltage) {
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         data = nt.node_voltage_storage();
+        array_dims.push_back(1);
         n = size_t(nt.end);
     } else if (type == i_membrane_) {  // i_membrane_
         auto const cache_token = nrn_ensure_model_data_are_sorted();
         data = nt.node_sav_rhs_storage();
+        array_dims.push_back(1);
         n = size_t(nt.end);
     } else if (type == 0) {  // time
         data = &nt._t;
+        array_dims.push_back(1);
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
+        auto set_mdata = [type, tid, &mdata, &array_dims](Memb_list* ml) -> size_t {
+            mdata = ml->data();
+            for (int i = 0; i < int(mdata.size()); ++i) {
+                array_dims.push_back(ml->get_array_dims(i));
+            }
+            return ml->nodecount;
+        };
+
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->data();
-            n = ml->nodecount;
+            n = set_mdata(ml);
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
                 ml = &memb_list[type];
-                mdata = ml->data();
-                n = ml->nodecount;
+                n = set_mdata(ml);
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
                 // artificial cells to the end. Turns out that
@@ -185,9 +199,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
                 // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
                 // has already been deleted.  So we defer deletion of the necessary
                 // cellgroups_ portion (deleting it on return from nrncore_run).
-                auto& ml = CellGroup::deferred_type2artml_[tid][type];
-                n = size_t(ml->nodecount);
-                mdata = ml->data();
+                Memb_list* ml = CellGroup::deferred_type2artml_[tid][type];
+                n = set_mdata(ml);
             }
         }
     }
@@ -384,6 +397,7 @@ int nrnthread_dat2_mech(int tid,
     int vdata_offset = cg.ml_vdata_offset[i];
     int isart = nrn_is_artificial_[type];
     int n = ml->nodecount;
+    int n_vars = ml->get_num_variables();
     int sz = nrn_prop_param_size_[type];
 
     // As the NEURON data is now transposed then for now always create a new
@@ -393,8 +407,11 @@ int nrnthread_dat2_mech(int tid,
         data = new double[n * sz];
     }
     for (auto instance = 0, k = 0; instance < n; ++instance) {
-        for (auto variable = 0; variable < sz; ++variable) {
-            data[k++] = ml->data(instance, variable);
+        for (int variable = 0; variable < n_vars; ++variable) {
+            auto array_dim = ml->get_array_dims(variable);
+            for (int array_index = 0; array_index < array_dim; ++array_index) {
+                data[k++] = ml->data(instance, variable, array_index);
+            }
         }
     }
 
@@ -632,16 +649,15 @@ int* datum2int(int type,
         int ioff = i * sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
-            int etype = di.ion_type[jj];
-            int eindex = di.ion_index[jj];
+            int etype = di.datum_type[jj];
+            int eindex = di.datum_index[jj];
             const int seman = semantics[j];
             // Would probably be more clear if use seman for as many as
             // possible of the cases
             // below and within each case deal with etype appropriately.
-            // ion_type and ion_index have become misnomers as they no longer
-            // refer to ions specificially but the mechanism type where the
+            // datum_type and datum_index refer to mechanism type where the
             // range variable lives (and otherwise is generally the same as
-            // seman). And ion_index refers to the index of the range variable
+            // seman). And datum_index refers to the index of the range variable
             // within the mechanism (or voltage, area, etc.)
             if (seman == -5) {  // POINTER to range variable (e.g. voltage)
                 pdata[jj] = eindex;
@@ -774,7 +790,6 @@ int nrnthread_dat2_vecplay_inst(int tid,
                         continue;
                     }
                     Memb_list* ml = tml->ml;
-                    int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
                     auto const legacy_index = ml->legacy_index(pd);
                     if (legacy_index >= 0) {
                         mtype = tml->index;
@@ -1219,8 +1234,23 @@ void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
             if (ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+
+                // TODO can be tidied up by making the original overload
+                // functional again.
+                int const* array_dims;
+                int const* array_prefix_sums;
+                int variable_count;
+                nrn_dblpntr2nrncore(ps->thvar_,
+                                    *ps->nt_,
+                                    type,
+                                    index_v,
+                                    array_dims,
+                                    array_prefix_sums,
+                                    variable_count);
                 assert(type == voltage);
+                assert(array_dims == nullptr);
+                assert(array_prefix_sums == nullptr);
+                assert(variable_count == 1);
                 if (presyns_flag_true.erase(index_v)) {
                     ps->flag_ = true;
                     if (presyns_flag_true.empty()) {
@@ -1247,7 +1277,21 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
             if (ps->flag_ && ps->thvar_) {
                 int type = 0;
                 int index_v = -1;
-                nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+                int const* array_dims;
+                int const* array_prefix_sums;
+                int variable_count;
+                nrn_dblpntr2nrncore(ps->thvar_,
+                                    *ps->nt_,
+                                    type,
+                                    index_v,
+                                    array_dims,
+                                    array_prefix_sums,
+                                    variable_count);
+
+                assert(type == voltage);
+                assert(array_dims == nullptr);
+                assert(array_prefix_sums == nullptr);
+                assert(variable_count == 1);
                 assert(type == voltage);
                 presyns_flag_true.insert(index_v);
             }

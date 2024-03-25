@@ -433,11 +433,13 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
         assert(field_index >= 0);
         assert(array_index >= 0);
         if (auto const num_fields = m_tag.num_variables(); field_index >= num_fields) {
+            backward_wrapper();
             throw std::runtime_error(get_name(m_tag, field_index) + "/" +
                                      std::to_string(num_fields) + ": out of range");
         }
         auto const array_dim = m_array_dims[field_index];
         if (array_index >= array_dim) {
+            backward_wrapper();
             throw std::runtime_error(get_name(m_tag, field_index) + ": index " +
                                      std::to_string(array_index) + " out of range");
         }

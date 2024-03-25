@@ -126,7 +126,10 @@ void nrnthread_get_trajectory_requests(int tid,
                                        int*& types,
                                        int*& indices,
                                        double**& pvars,
-                                       double**& varrays);
+                                       double**& varrays,
+                                       int const**& array_dims,
+                                       int const**& array_prefixsums,
+                                       int*& variable_counts);
 void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
 void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 }
@@ -135,7 +138,11 @@ extern "C" {
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec,
                                        std::vector<int>& spikegidvec);
 void nrnthreads_all_weights_return(std::vector<double*>& weights);
-size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<double*>& mdata);
+size_t nrnthreads_type_return(int type,
+                              int tid,
+                              double*& data,
+                              std::vector<double*>& mdata,
+                              std::vector<int>& array_dims);
 int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iarray, double* darray);
 int core2nrn_nmodlrandom(int tid,
                          int type,

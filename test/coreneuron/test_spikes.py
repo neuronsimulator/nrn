@@ -2,6 +2,8 @@ from neuron.tests.utils.strtobool import strtobool
 import os
 import tempfile
 
+import numpy as np
+
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
 enable_gpu = bool(strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false")))
 mpi4py_option = bool(strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false")))
@@ -43,6 +45,8 @@ def test_spikes(
     h.soma.L = 5.6419
     h.soma.diam = 5.6419
     h.soma.insert("hh")
+    h.soma.insert("red")
+    h.soma.insert("green")
     h.soma.nseg = 3
     ic = h.IClamp(h.soma(0.25))
     ic.delay = 0.1
@@ -70,6 +74,23 @@ def test_spikes(
     # rank 0 record spikes for all gid while others
     # for specific gid. this is for better test coverage.
     pc.spike_record(-1 if pc.id() == 0 else (pc.id() + 1), nrn_spike_t, nrn_spike_gids)
+
+    # upsilon is an array variable with at least `m` elements. It's assigned
+    # the value:
+    c_red, c_green = 1.0, -1.0
+
+    def upsilon(i, c, t):
+        return c * np.sin((i + 1.0) * t)
+
+    m = 16
+
+    t_vector = h.Vector().record(h._ref_t)
+    upsilon_vector = [
+        h.Vector().record(h.soma(0.25)._ref_upsilon_green[0]),
+        h.Vector().record(h.soma(0.25)._ref_upsilon_green[m - 1]),
+        h.Vector().record(h.soma(0.25)._ref_upsilon_red[0]),
+        h.Vector().record(h.soma(0.25)._ref_upsilon_red[m - 1]),
+    ]
 
     h.run()
 
@@ -115,6 +136,16 @@ def test_spikes(
             )
         assert nrn_spike_t == corenrn_all_spike_t_py
         assert nrn_spike_gids == corenrn_all_spike_gids_py
+
+        t = np.array(t_vector.as_numpy())
+        upsilon_approx = [np.array(u.as_numpy()) for u in upsilon_vector]
+        upsilon_exact = [
+            upsilon(i, c, t)
+            for i, c in zip([0, m - 1, 0, m - 1], [-1.0, -1.0, 1.0, 1.0])
+        ]
+
+        for k, (u_exact, u_approx) in enumerate(zip(upsilon_exact, upsilon_approx)):
+            assert np.all(np.abs(u_approx - u_exact)) < 1e-10
 
     # CORENEURON run
     from neuron import coreneuron
