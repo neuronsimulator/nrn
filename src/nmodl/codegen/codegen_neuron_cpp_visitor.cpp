@@ -507,7 +507,7 @@ std::string CodegenNeuronCppVisitor::float_variable_name(const SymbolType& symbo
 std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& symbol,
                                                        const std::string& name,
                                                        bool use_instance) const {
-    auto position = position_of_int_var(name);
+    // auto position = position_of_int_var(name);
     if (symbol.is_index) {
         if (use_instance) {
             throw std::runtime_error("Not implemented. [wiejo]");
@@ -785,7 +785,8 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
     }
 
 
-    for (const auto& f: info.function_tables) {
+    // for (const auto& f: info.function_tables) {
+    if (!info.function_tables.empty()) {
         throw std::runtime_error("Not implemented, global function tables.");
     }
 
@@ -1033,7 +1034,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
 
     for (int i = 0; i < codegen_int_variables_size; ++i) {
         const auto& int_var = codegen_int_variables[i];
-        const auto& name = int_var.symbol->get_name();
         if (i != info.semantics[i].index) {
             throw std::runtime_error("Broken logic.");
         }
@@ -1149,7 +1149,6 @@ void CodegenNeuronCppVisitor::print_make_instance() const {
 }
 
 void CodegenNeuronCppVisitor::print_node_data_structure(bool print_initializers) {
-    auto const value_initialize = print_initializers ? "{}" : "";
     printer->add_newline(2);
     printer->fmt_push_block("struct {} ", node_data_struct());
 

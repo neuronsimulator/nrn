@@ -97,7 +97,6 @@ void SemanticAnalysisVisitor::visit_name(const ast::Name& node) {
     // There are only two contexts where a random_var is allowed. As the first arg of a random
     // function or as an item in the RANDOM declaration.
     // Only the former needs checking.
-    bool ok = true;
     auto name = node.get_node_name();
 
     // only check for variables exist in the symbol table (e.g. SUFFIX has type Name but it's not
