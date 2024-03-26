@@ -1,5 +1,4 @@
-#ifndef hocparse_h
-#define hocparse_h
+#pragma once
 
 #include "hoc.h"
 
@@ -37,6 +36,3 @@ extern void hoc_obvar_declare(Symbol* sym, int type, int pmes);
 extern void hoc_help(void);
 extern char* hoc_strgets(char*, int);
 extern int hoc_strgets_need(void);
-
-
-#endif

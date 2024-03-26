@@ -1,5 +1,4 @@
-#ifndef sceneview_h
-#define sceneview_h
+#pragma once
 
 /*
  A universe where data is placed is a scene. There can be 0 or many
@@ -365,6 +364,3 @@ inline Coord Scene::y1() const {
 inline Coord Scene::y2() const {
     return y2_;
 }
-
-
-#endif

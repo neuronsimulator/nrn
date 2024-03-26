@@ -1,5 +1,4 @@
-#ifndef nonlinz_h
-#define nonlinz_h
+#pragma once
 
 class NonLinImpRep;
 
@@ -22,5 +21,3 @@ class NonLinImp {
   private:
     NonLinImpRep* rep_{};
 };
-
-#endif

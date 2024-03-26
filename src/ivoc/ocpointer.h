@@ -1,5 +1,4 @@
-#ifndef ocpointer_h
-#define ocpointer_h
+#pragma once
 
 #include <InterViews/observe.h>
 #include "oc2iv.h"
@@ -27,5 +26,3 @@ class StmtInfo {
     Symlist* symlist_;
     Symbol* symstmt_;
 };
-
-#endif

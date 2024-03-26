@@ -1,5 +1,4 @@
-#ifndef dismiswin_h
-#define dismiswin_h
+#pragma once
 
 #include <string>
 
@@ -160,5 +159,3 @@ class PrintableWindowManager: public Observer {
   private:
     static PrintableWindowManager* current_;
 };
-
-#endif
