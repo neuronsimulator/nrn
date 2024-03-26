@@ -9,12 +9,9 @@
 
 #include <vector>
 #include <stdexcept>
-#include <mutex>
 #include <functional>
 
-constexpr bool PoolMutexed = true;
-
-template <typename T, bool M = false>
+template <typename T>
 class Pool {
   public:
     using value_type = T;
@@ -51,22 +48,18 @@ class Pool {
     std::vector<std::vector<T>> pools_{};
 
     std::function<void(T*)> clear_{};
-
-#if NRN_ENABLE_THREADS && M
-    std::mutex mut_;
-#endif
 };
 
-template <typename T, bool M>
-Pool<T, M>::Pool() {
+template <typename T>
+Pool<T>::Pool() {
     constexpr std::size_t count = 1000;
     auto& ptr = pools_.emplace_back(count);
     items_.resize(count);
     std::transform(ptr.begin(), ptr.end(), items_.begin(), [](auto& it) { return &it; });
 }
 
-template <typename T, bool M>
-void Pool<T, M>::grow() {
+template <typename T>
+void Pool<T>::grow() {
     const std::size_t total_size = items_.size();
 
     // Everything is already allocated so reset put_ to the beginning of items
@@ -82,11 +75,8 @@ void Pool<T, M>::grow() {
     });
 }
 
-template <typename T, bool M>
-T* Pool<T, M>::allocate(std::size_t n) {
-#if NRN_ENABLE_THREADS && M
-    std::lock_guard<std::mutex> l(mut_);
-#endif
+template <typename T>
+T* Pool<T>::allocate(std::size_t n) {
     if (n != 1) {
         throw std::runtime_error("Pool allocator can only allocate one object at a time");
     }
@@ -100,21 +90,15 @@ T* Pool<T, M>::allocate(std::size_t n) {
     return item;
 }
 
-template <typename T, bool M>
-void Pool<T, M>::deallocate(T* item, std::size_t) {
-#if NRN_ENABLE_THREADS && M
-    std::lock_guard<std::mutex> l(mut_);
-#endif
+template <typename T>
+void Pool<T>::deallocate(T* item, std::size_t) {
     --nget_;
     items_[put_] = item;
     put_ = (++put_) % items_.size();
 }
 
-template <typename T, bool M>
-void Pool<T, M>::free_all() {
-#if NRN_ENABLE_THREADS && M
-    std::lock_guard<std::mutex> l(mut_);
-#endif
+template <typename T>
+void Pool<T>::free_all() {
     get_ = 0;
     put_ = 0;
     nget_ = 0;
@@ -131,8 +115,8 @@ void Pool<T, M>::free_all() {
     }
 }
 
-template <typename T, bool M>
-bool Pool<T, M>::is_valid_ptr(const T* p) const {
+template <typename T>
+bool Pool<T>::is_valid_ptr(const T* p) const {
     for (const auto& pool: pools_) {
         if (p >= &pool.front() && p <= &pool.back()) {
             // Check that the pointer is on a value and not in the middle

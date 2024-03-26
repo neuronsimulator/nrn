@@ -12,6 +12,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include <utils/mutexed_pool.hpp>
+
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
@@ -19,7 +21,7 @@ using PreSynTable = std::unordered_map<neuron::container::data_handle<double>, P
 class NetCon;
 class DiscreteEvent;
 class SelfEvent;
-using SelfEventPool = Pool<SelfEvent, PoolMutexed>;
+using SelfEventPool = MutexedPool<SelfEvent>;
 struct hoc_Item;
 class PlayRecord;
 class IvocVect;
