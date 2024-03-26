@@ -13,7 +13,7 @@
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
-#include "pool.hpp"
+#include "utils/pool.hpp"
 #include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
@@ -427,7 +427,6 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-using SelfEventPool = MutexPool<SelfEvent>;
 typedef std::vector<TQItem*> TQList;
 
 // allows marshalling of all items in the event queue that need to be
@@ -1032,10 +1031,10 @@ Object** NetCvode::netconlist() {
 
 #define ITE_SIZE 10
 NetCvodeThreadData::NetCvodeThreadData() {
-    tpool_ = new TQItemPool(1000, 1);
+    tpool_ = new TQItemPool();
     // tqe_ accessed only by thread i so no locking
     tqe_ = new TQueue(tpool_, 0);
-    sepool_ = new SelfEventPool(1000, 1);
+    sepool_ = new SelfEventPool();
     selfqueue_ = nullptr;
     psl_thr_ = nullptr;
     tq_ = nullptr;
@@ -2295,7 +2294,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-    SelfEvent* se = p.sepool_->alloc();
+    SelfEvent* se = p.sepool_->allocate();
     se->flag_ = flag;
     se->target_ = pnt;
     se->weight_ = weight;
@@ -2331,7 +2330,7 @@ void artcell_net_send(Datum* v, double* weight, Point_process* pnt, double td, d
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
         NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-        SelfEvent* se = p.sepool_->alloc();
+        SelfEvent* se = p.sepool_->allocate();
         se->flag_ = flag;
         se->target_ = pnt;
         se->weight_ = weight;
@@ -3366,7 +3365,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
     }
     NetCvodeThreadData& nctd = ns->p[PP2NT(target_)->id];
     --nctd.unreffed_event_cnt_;
-    nctd.sepool_->hpfree(this);
+    nctd.sepool_->deallocate(this);
 }
 
 void SelfEvent::pr(const char* s, double tt, NetCvode* ns) {

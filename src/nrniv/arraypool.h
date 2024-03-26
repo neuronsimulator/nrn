@@ -25,21 +25,12 @@ class ArrayPool {
     ~ArrayPool();
     T* alloc();
     void hpfree(T*);
-    int maxget() {
-        return maxget_;
-    }
     int size() {
         return count_;
     }
     void free_all();
     T* pool() {
         return pool_;
-    }
-    long get() {
-        return get_;
-    }
-    long put() {
-        return put_;
     }
     long nget() {
         return nget_;
@@ -50,24 +41,13 @@ class ArrayPool {
     long d2() {
         return d2_;
     }
-    T* element(long i) {
-        return pool_ + i * d2_;
-    }
-    T** items() {
-        return items_;
-    }
-    void grow(long ninc);
     ArrayPool* chain() {
         return chain_;
-    }
-    long chain_size() {
-        return pool_size_;
     }
 
   private:
     void grow_(long ninc);
 
-  private:
     T** items_;
     T* pool_;
     long pool_size_;
@@ -98,14 +78,8 @@ ArrayPool<T>::ArrayPool(long count, long d2) {
     nget_ = 0;
     ntget_ = 0;
     maxget_ = 0;
-    chain_ = 0;
+    chain_ = nullptr;
     chainlast_ = this;
-}
-
-template <typename T>
-void ArrayPool<T>::grow(long ninc) {
-    grow_(ninc);
-    put_ = get_;
 }
 
 template <typename T>

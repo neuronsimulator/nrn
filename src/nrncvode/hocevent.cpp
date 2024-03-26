@@ -1,10 +1,10 @@
 #include <objcmd.h>
-#include <pool.hpp>
+#include <utils/mutexed_pool.hpp>
 #include <netcon.h>
 #include <nrnoc2iv.h>
 #include <mymath.h>
 
-using HocEventPool = MutexPool<HocEvent>;
+using HocEventPool = MutexedPool<HocEvent>;
 HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
@@ -27,11 +27,12 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* p
     if (!hepool_) {
         nrn_hoc_lock();
         if (!hepool_) {
-            hepool_ = new HocEventPool(100, 1);
+            hepool_ = new HocEventPool();
+            hepool_->set_function(&HocEvent::clear);
         }
         nrn_hoc_unlock();
     }
-    HocEvent* he = hepool_->alloc();
+    HocEvent* he = hepool_->allocate();
     he->stmt_ = nullptr;
     he->ppobj_ = ppobj;
     he->reinit_ = reinit;
@@ -48,7 +49,7 @@ void HocEvent::hefree() {
         delete stmt_;
         stmt_ = nullptr;
     }
-    hepool_->hpfree(this);
+    hepool_->deallocate(this);
 }
 
 void HocEvent::clear() {
