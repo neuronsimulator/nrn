@@ -58,10 +58,18 @@ void write_memb_mech_types_direct(std::ostream& s) {
     for (int type = 2; type < n_memb_func; ++type) {
         const char* w = " ";
         Memb_func& mf = memb_func[type];
+        Memb_list& ml = memb_list[type];
         s << mf.sym->name << w << type << w << int(pnt_map[type])
           << w  // the pointtype, 0 means not a POINT_PROCESS
           << nrn_is_artificial_[type] << w << nrn_is_ion(type) << w << nrn_prop_param_size_[type]
-          << w << bbcore_dparam_size[type] << std::endl;
+          << w << bbcore_dparam_size[type] << w;
+
+        int n_vars = ml.get_num_variables();
+        s << n_vars;
+        for (size_t i = 0; i < n_vars; ++i) {
+            s << w << ml.get_array_dims(i);
+        }
+        s << std::endl;
 
         if (nrn_is_ion(type)) {
             s << nrn_ion_charge(mf.sym) << std::endl;
