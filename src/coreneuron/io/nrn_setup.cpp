@@ -185,9 +185,18 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
         nrn_fatal_error("No input file ( %s ) with nrnthreads, exiting...", filesdat);
     }
 
-    char version[256];
-    nrn_assert(fscanf(fp, "%s\n", version) == 1);
+    char* version;
+    errno = 0;
+    int nscan = fscanf(fp, "%ms\n", version);
+    if (nscan != 1) {
+        if (errno != 0) {
+            perror("fscanf version");
+        }
+        fprintf(stderr, "fscanf did not scan version\n");
+        assert(0);
+    }
     check_bbcore_write_version(version);
+    free(version);
 
     int iNumFiles = 0;
     nrn_assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
