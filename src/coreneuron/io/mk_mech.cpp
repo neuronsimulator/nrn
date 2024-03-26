@@ -92,9 +92,16 @@ static void mk_mech(std::istream& s) {
     /// Read all the mechanisms and their meta data
     for (int i = 2; i < n; ++i) {
         char mname[100];
-        int type = 0, pnttype = 0, is_art = 0, is_ion = 0, dsize = 0, pdsize = 0;
-        nrn_assert(s >> mname >> type >> pnttype >> is_art >> is_ion >> dsize >> pdsize);
+        int type = 0, pnttype = 0, is_art = 0, is_ion = 0, dsize = 0, pdsize = 0, vsize = 0;
+        nrn_assert(s >> mname >> type >> pnttype >> is_art >> is_ion >> dsize >> pdsize >> vsize);
         nrn_assert(i == type);
+
+        std::vector<int> array_dims(vsize);
+        for (size_t i = 0; i < vsize; ++i) {
+            nrn_assert(s >> array_dims[i]);
+        }
+        corenrn.get_array_dims().at(type) = array_dims;
+
 #ifdef DEBUG
         printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
