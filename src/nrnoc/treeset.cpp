@@ -502,11 +502,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         spClear(_nt->_sp13mat);
     }
 
-    // Make sure the SoA node diagonals are also zeroed (is this needed?)
     auto* const vec_d = _nt->node_d_storage();
-    for (int i = i1; i < i3; ++i) {
-        vec_d[i] = 0.;
-    }
 
     auto const vec_sav_d = _nt->node_sav_d_storage();
     if (vec_sav_d) {
