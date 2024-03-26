@@ -87,26 +87,40 @@ int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
 
 namespace coreneuron {
 template <typename T>
-inline void mech_data_layout_transform(T* data, int cnt, int sz, int layout) {
+void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims, int layout) {
     if (layout == Layout::AoS) {
-        return;
+        throw std::runtime_error("Not implemented. [idowie]");
     }
-    // layout is equal to Layout::SoA
-    int align_cnt = nrn_soa_padded_size(cnt, layout);
-    std::vector<T> d(cnt * sz);
-    // copy matrix
-    for (int i = 0; i < cnt; ++i) {
-        for (int j = 0; j < sz; ++j) {
-            d[i * sz + j] = data[i * sz + j];
+
+    int n_vars = array_dims.size();
+    int row_width = std::accumulate(array_dims.begin(), array_dims.end(), 0);
+    int padded_cnt = nrn_soa_padded_size(cnt, layout);
+
+    std::vector<T> tmp(padded_cnt * row_width);
+    std::copy(data, data + cnt * row_width, tmp.begin());
+
+    size_t offset_var = 0;
+    for (size_t i_var = 0; i_var < n_vars; ++i_var) {
+        size_t K = array_dims[i_var];
+
+        for (size_t i = 0; i < cnt; ++i) {
+            for (size_t k = 0; k < K; ++k) {
+                size_t i_dst = padded_cnt * offset_var + i * K + k;
+                size_t i_src = i * row_width + offset_var + k;
+                data[i_dst] = tmp[i_src];
+            }
         }
-    }
-    // transform memory layout
-    for (int i = 0; i < cnt; ++i) {
-        for (int j = 0; j < sz; ++j) {
-            data[i + j * align_cnt] = d[i * sz + j];
-        }
+
+        offset_var += K;
     }
 }
+
+template <typename T>
+inline void mech_data_layout_transform(T* data, int cnt, int sz, int layout) {
+    std::vector<int> array_dims(sz, 1);
+    mech_data_layout_transform(data, cnt, array_dims, layout);
+}
+
 
 void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     n_real_cell = F.read_int();
@@ -1081,12 +1095,14 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         int n = ml->nodecount;
         int szp = nrn_prop_param_size_[type];
         int szdp = nrn_prop_dparam_size_[type];
+
+        const std::vector<int>& array_dims = corenrn.get_array_dims()[type];
         int layout = corenrn.get_mech_data_layout()[type];
 
         ml->nodeindices = (int*) ecalloc_align(ml->nodecount, sizeof(int));
         std::copy(tmls[itml].nodeindices.begin(), tmls[itml].nodeindices.end(), ml->nodeindices);
 
-        mech_data_layout_transform<double>(ml->data, n, szp, layout);
+        mech_data_layout_transform<double>(ml->data, n, array_dims, layout);
 
         if (szdp) {
             ml->pdata = (int*) ecalloc_align(nrn_soa_padded_size(n, layout) * szdp, sizeof(int));
