@@ -774,7 +774,6 @@ int nrnthread_dat2_vecplay_inst(int tid,
                         continue;
                     }
                     Memb_list* ml = tml->ml;
-                    int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
                     auto const legacy_index = ml->legacy_index(pd);
                     if (legacy_index >= 0) {
                         mtype = tml->index;
