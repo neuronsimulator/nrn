@@ -118,7 +118,7 @@ def test_spikes(
     # CORENEURON run
     from neuron import coreneuron
 
-    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode):
+    with coreneuron(enable=True, gpu=enable_gpu, file_mode=file_mode, verbose=0):
         run_modes = [0] if file_mode else [0, 1, 2]
         for mode in run_modes:
             run(mode)
