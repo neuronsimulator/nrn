@@ -1016,10 +1016,11 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     // see patternstim.cpp
     int extra_nv = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
     nt._nvdata = n_vdata;
-    if (nt._nvdata + extra_nv)
+    if (nt._nvdata + extra_nv) {
         nt._vdata = (void**) ecalloc_align(nt._nvdata + extra_nv, sizeof(void*));
-    else
+    } else {
         nt._vdata = nullptr;
+    }
 
     // The data format begins with the matrix data
     int n_data_padded = nrn_soa_padded_size(nt.end, SOA_LAYOUT);

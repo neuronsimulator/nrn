@@ -334,6 +334,7 @@ add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 file(
   GLOB
   CORENEURON_CODE_FILES
+  CONFIGURE_DEPENDS
   "apps/main1.cpp"
   "apps/corenrn_parameters.cpp"
   "gpu/nrn_acc_manager.cpp"

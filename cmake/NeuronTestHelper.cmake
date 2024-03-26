@@ -82,7 +82,7 @@
 #    cpp_cc_configure_sanitizers; this needs to be set when the test executable
 #    is *not* built by NEURON, typically because it is `python`.
 #    The remaining arguments can documented in nrn_add_test_group. The default
-#    values specified there can be overriden on a test-by-test basis by passing
+#    values specified there can be overridden on a test-by-test basis by passing
 #    the same arguments here.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
