@@ -115,16 +115,19 @@ static void soaos_unpermuted_copy_cnrn2nrn(size_t n,
     // k : runs over array dimension: 0, ..., array_dims[i_var] =: K.
 
     int n_vars = array_dims.size();
+    size_t offset_var = 0;
     for (size_t i_var = 0; i_var < n_vars; ++i_var) {
         size_t K = array_dims[i_var];
-        size_t ld_var = K * stride;
 
-        // memcpy(dest[i_var], src + i_var*ld_var, n*K);
+        // memcpy(dest[i_var], src + offset_var, n*K);
         for (size_t i = 0; i < n; ++i) {
             for (size_t k = 0; k < K; ++k) {
-                dest[i_var][i * K + k] = src[i_var * ld_var + i * K + k];
+                size_t i_src = offset_var + i * K + k;
+                dest[i_var][i * K + k] = src[i_src];
             }
         }
+
+        offset_var += stride * K;
     }
 }
 
