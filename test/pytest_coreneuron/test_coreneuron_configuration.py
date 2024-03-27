@@ -13,7 +13,7 @@ def test_coreneuron_configuration():
         assert coreneuron.model_path == "coredat"
         assert coreneuron.skip_write_model_to_disk == True
 
-    #  back to the old values out of the "with" scope
+    #  back to the old values outside the "with" context
     assert coreneuron.restore_path is None
     assert coreneuron.save_path is None
     assert coreneuron.model_path is None
