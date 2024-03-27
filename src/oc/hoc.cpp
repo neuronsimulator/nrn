@@ -20,6 +20,7 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include <cfenv>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -48,21 +49,11 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FEENABLEEXCEPT
-#define NRN_FLOAT_EXCEPTION 1
-#else
-#define NRN_FLOAT_EXCEPTION 0
-#endif
-
-#if NRN_FLOAT_EXCEPTION
-#if !defined(__USE_GNU)
-#define __USE_GNU
-#endif
-#include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
+    const int e = std::fetestexcept(FEEXCEPT);
     /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (fegetexcept()) {
+    switch (e) {
     case FE_DIVBYZERO:
         fprintf(stderr, "Floating exception: Divide by zero\n");
         break;
@@ -74,7 +65,6 @@ static void matherr1(void) {
         break;
     }
 }
-#endif
 
 int nrn_mpiabort_on_error_{1};
 
