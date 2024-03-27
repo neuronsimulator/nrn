@@ -480,33 +480,28 @@ T* SPTree<T>::fast_first() const {
 
 template <typename T>
 T* SPTree<T>::fast_next(T* n) const {
-    T* next;
-
-    /* a long version, avoids splaying for fast average,
-     * poor amortized bound
-     */
-
-    if (n == nullptr)
+    if (n == nullptr) {
         return n;
+    }
 
-    T* x = n->rightlink;
-    if (x != nullptr) {
+    // If there is a right element, the next element is the smallest item on the most left of this right element
+    if (T* x = n->rightlink; x != nullptr) {
         while (x->leftlink != nullptr) {
             x = x->leftlink;
         }
-        next = x;
-    } else /* x == nullptr */
-    {
-        x = n->uplink;
-        next = nullptr;
-        while (x != nullptr) {
-            if (x->leftlink == n) {
-                next = x;
-                x = nullptr;
-            } else {
-                n = x;
-                x = n->uplink;
-            }
+        return x;
+    }
+
+    // Otherwise we have to go up and left
+    T* next{};
+    T* x = n->uplink;
+    while (x != nullptr) {
+        if (x->leftlink == n) {
+            next = x;
+            x = nullptr;
+        } else {
+            n = x;
+            x = n->uplink;
         }
     }
 
