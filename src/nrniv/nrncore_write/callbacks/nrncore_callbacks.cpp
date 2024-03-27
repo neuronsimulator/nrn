@@ -632,16 +632,15 @@ int* datum2int(int type,
         int ioff = i * sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
-            int etype = di.ion_type[jj];
-            int eindex = di.ion_index[jj];
+            int etype = di.datum_type[jj];
+            int eindex = di.datum_index[jj];
             const int seman = semantics[j];
             // Would probably be more clear if use seman for as many as
             // possible of the cases
             // below and within each case deal with etype appropriately.
-            // ion_type and ion_index have become misnomers as they no longer
-            // refer to ions specificially but the mechanism type where the
+            // datum_type and datum_index refer to mechanism type where the
             // range variable lives (and otherwise is generally the same as
-            // seman). And ion_index refers to the index of the range variable
+            // seman). And datum_index refers to the index of the range variable
             // within the mechanism (or voltage, area, etc.)
             if (seman == -5) {  // POINTER to range variable (e.g. voltage)
                 pdata[jj] = eindex;

@@ -227,8 +227,8 @@ void CellGroup::datumtransform(CellGroup* cgs) {
                 DatumIndices& di = cg.datumindices[i++];
                 di.type = type;
                 int n = ml->nodecount * sz;
-                di.ion_type = new int[n];
-                di.ion_index = new int[n];
+                di.datum_type = new int[n];
+                di.datum_index = new int[n];
                 // fill the indices.
                 // had tointroduce a memb_func[i].dparam_semantics registered by each mod file.
                 datumindex_fill(ith, cg, di, ml);
@@ -361,8 +361,8 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
                 hoc_execerror(errmes, memb_func[di.type].sym->name);
             }
-            di.ion_type[offset + j] = etype;
-            di.ion_index[offset + j] = eindex;
+            di.datum_type[offset + j] = etype;
+            di.datum_index[offset + j] = eindex;
         }
     }
 }
