@@ -742,16 +742,26 @@ Description:
         COMPARTMENT volume {state1 state2 . . . }
 
     where the STATE s named in the braces have the same compartment volume given by the volume
-    expression after the COMPARTMENT keyword. 
+    expression after the COMPARTMENT keyword.
     In case a mechanism involves many compartments whose relative volumes are specified by the
     elements of an array the syntax is:
 
     .. code-block::
         none
 
-        COMPARTMENT index, volume [ index ] { state1 state2 . . . }
+        COMPARTMENT index, volume { state1 state2 . . . }
 
-    where the STATEs that are diffusing are listed inside the braces.
+    where the STATEs that are diffusing are listed inside the braces. Note that
+    STATEs for the diffusing variables must be array variables, and volume
+    should be the expression to compute the volume for index ``index``.
+
+    The following example states that the volume of the compartment for
+    ``s[i]`` is ``a[i]*b``.
+
+    .. code-block::
+        none
+
+        COMPARTMENT i, a[i]*b { s }
 
 
 LONGITUDINAL_DIFFUSION
