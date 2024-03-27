@@ -336,7 +336,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 // must be a pointer into nt->_data. Handling is similar to eion so
                 // give proper index into the type.
                 auto const pd = static_cast<neuron::container::data_handle<double>>(dparam[j]);
-                nrn_dblpntr2nrncore(pd, nt, etype, eindex);
+
+                int const * array_dims;
+                int const * array_prefix_sums;
+                int variable_counts;
+
+                nrn_dblpntr2nrncore(pd, nt, etype, eindex, array_dims, array_prefix_sums, variable_counts);
                 if (etype == 0) {
                     fprintf(stderr,
                             "POINTER is not pointing to voltage or mechanism data. Perhaps it "
