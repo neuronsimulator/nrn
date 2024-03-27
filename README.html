@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON Documentation &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">NEURON Documentation</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-documentation">
+<h1>NEURON Documentation<a class="headerlink" href="#neuron-documentation" title="Link to this heading"></a></h1>
+<section id="online">
+<h2>Online<a class="headerlink" href="#online" title="Link to this heading"></a></h2>
+<p>Latest NEURON documentation is available on:</p>
+<ul class="simple">
+<li><p>ReadTheDocs &#64; <a class="reference external" href="https://nrn.readthedocs.io/en/latest/">https://nrn.readthedocs.io/en/latest/</a>.</p></li>
+<li><p>GithubPages &#64; <a class="reference external" href="https://neuronsimulator.github.io/nrn/">https://neuronsimulator.github.io/nrn/</a>.</p></li>
+</ul>
+<p>Contents:</p>
+<ul class="simple">
+<li><p>Documentation on building NEURON</p></li>
+<li><p>User documentation (HOC, Python, tutorials, rxd)</p></li>
+<li><p>Developer documentation (SCM, technical topics, Doxygen)</p></li>
+</ul>
+</section>
+<section id="local-build">
+<h2>Local build<a class="headerlink" href="#local-build" title="Link to this heading"></a></h2>
+<section id="virtual-environment">
+<h3>Virtual environment<a class="headerlink" href="#virtual-environment" title="Link to this heading"></a></h3>
+<p>It is recommended to use a Python virtual environment, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</pre></div>
+</div>
+<p>In order to build documentation locally, you need to pip install the <code class="docutils literal notranslate"><span class="pre">docs_requirements.txt</span></code> :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">docs</span><span class="o">/</span><span class="n">docs_requirements</span><span class="o">.</span><span class="n">txt</span> <span class="o">--</span><span class="n">upgrade</span>
+</pre></div>
+</div>
+<p>Also, make sure to have <code class="docutils literal notranslate"><span class="pre">Doxygen</span></code> and <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> installed, and the dependencies listed in <a class="reference download internal" download="" href="_downloads/edc99893538b70336e3aaae0f08bd4ff/conda_environment.yml"><span class="xref download myst">conda_environment.yml</span></a>
+Note that this conda environment file is tailored to the online ReadTheDocs setup (but it lists out all desired requirements, so make sure to check it out).</p>
+</section>
+<section id="anaconda-environment">
+<h3>Anaconda environment<a class="headerlink" href="#anaconda-environment" title="Link to this heading"></a></h3>
+<p>After installing Anaconda, create a new environment with the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>--quiet<span class="w"> </span>--name<span class="w"> </span>rtd<span class="w"> </span>--file<span class="w"> </span>docs/conda_environment.yml
+conda<span class="w"> </span>activate<span class="w"> </span>rtd
+</pre></div>
+</div>
+<p>This will install all dependencies needed to build the documentation locally, in a similar way as on ReadTheDocs. However ReadTheDocs has a different setup, so it is of interest to head over and check the build logs for additional information.</p>
+</section>
+<section id="confguring-the-build">
+<h3>Confguring the build<a class="headerlink" href="#confguring-the-build" title="Link to this heading"></a></h3>
+<p>With all dependencies installed, configure project with CMake (&gt;= v3.17) as described in <a class="reference internal" href="cmake_doc/options.html#nrn-enable-docs-bool-off"><span class="std std-ref">CMake Build Options</span></a>.</p>
+<p>e.g. in your CMake build folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span> <span class="o">..</span> <span class="o">-</span><span class="n">DNRN_ENABLE_DOCS</span><span class="o">=</span><span class="n">ON</span>
+</pre></div>
+</div>
+</section>
+<section id="building-the-documentation">
+<h3>Building the documentation<a class="headerlink" href="#building-the-documentation" title="Link to this heading"></a></h3>
+<p>Note that executing the jupyter notebooks requires working NEURON installation. So make sure the neuron python
+module can be imported. For this, you can build and install neuron from source first or you could also do a
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">neuron</span></code> (in case you don’t want/need to compile NEURON from source).</p>
+<p>In order to build the full documentation (Doxygen, Jupyter notebooks, Sphinx):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">docs</span>
+</pre></div>
+</div>
+<p>That will build everything in the <code class="docutils literal notranslate"><span class="pre">nrn/docs/_build</span></code> folder from where you can open <code class="docutils literal notranslate"><span class="pre">index.html</span></code> locally.</p>
+<p>In case you just want the Sphinx build to be performed(i.e. you are not working on Jupyter notebooks or doxygen):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">sphinx</span>
+</pre></div>
+</div>
+</section>
+<section id="faster-local-iterations">
+<h3>Faster Local Iterations<a class="headerlink" href="#faster-local-iterations" title="Link to this heading"></a></h3>
+<p>When working locally on documentation, depending on what you work on, be aware of the following targets to speed up building process:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">doxygen</span></code> 			- build the API documentation only. Ends up in <code class="docutils literal notranslate"><span class="pre">_generated</span></code> folder under <code class="docutils literal notranslate"><span class="pre">docs</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notebooks</span></code> 			- execute &amp; embed outputs in-place into jupyter notebooks, see <a class="reference download internal" download="" href="_downloads/467f860ea42fb2ac970f7e41bb052697/notebooks.sh"><span class="xref download myst">notebooks.sh</span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notebooks-clean</span></code>     - clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don’t want those committed to the repo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sphinx</span></code> 				- build Sphinx documentation</p></li>
+</ul>
+<p><strong>NOTE</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docs</span></code> target calls: <code class="docutils literal notranslate"><span class="pre">doxygen</span></code> <code class="docutils literal notranslate"><span class="pre">notebooks</span></code> <code class="docutils literal notranslate"><span class="pre">sphinx</span></code> and <code class="docutils literal notranslate"><span class="pre">notebooks-clean</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sphinx</span></code> target is the one that will assemble all generated output (doxygen, notebooks).</p></li>
+</ul>
+</section>
+</section>
+<section id="readthedocs-setup">
+<h2>ReadTheDocs setup<a class="headerlink" href="#readthedocs-setup" title="Link to this heading"></a></h2>
+<section id="config-file">
+<h3>Config file<a class="headerlink" href="#config-file" title="Link to this heading"></a></h3>
+<p>Configuration file is in the top directory: <a class="reference download internal" download="" href="_downloads/aee468cb7d875987a5744d72aca8b0e4/.readthedocs.yml"><span class="xref download myst">../.readthedocs.yml</span></a>.</p>
+</section>
+<section id="documentation-not-handled-by-rtd">
+<h3>Documentation not handled by RTD<a class="headerlink" href="#documentation-not-handled-by-rtd" title="Link to this heading"></a></h3>
+<p>For RTD we need to call <code class="docutils literal notranslate"><span class="pre">doxygen</span></code> and <code class="docutils literal notranslate"><span class="pre">notebooks</span></code> make targets, since only <code class="docutils literal notranslate"><span class="pre">sphinx</span></code> executable is called therein.
+To that end we are using conda to be able to install packages like CMake in RTD.
+All conda dependencies are listed under <a class="reference download internal" download="" href="_downloads/edc99893538b70336e3aaae0f08bd4ff/conda_environment.yml"><span class="xref download myst">conda_environment.yml</span></a>.</p>
+</section>
+<section id="leveraging-conf-py">
+<h3>Leveraging <code class="docutils literal notranslate"><span class="pre">conf.py</span></code><a class="headerlink" href="#leveraging-conf-py" title="Link to this heading"></a></h3>
+<p>The only way to gather extra documentation in RTD is to make use of <code class="docutils literal notranslate"><span class="pre">conf.py</span></code>.
+Have a look at <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">os.environ.get(&quot;READTHEDOCS&quot;):</span></code> block in <a class="reference download internal" download="" href="_downloads/fb0d0d7ff27f33697ba3b787ec894677/conf.py"><span class="xref download myst">conf.py</span></a> to see how we leverage the aforementioned targets and outputs.</p>
+</section>
+<section id="notebooks-execution-with-neuron-wheels">
+<h3>Notebooks execution with <code class="docutils literal notranslate"><span class="pre">neuron</span></code> wheels<a class="headerlink" href="#notebooks-execution-with-neuron-wheels" title="Link to this heading"></a></h3>
+<p>For <code class="docutils literal notranslate"><span class="pre">notebooks</span></code> we are using <code class="docutils literal notranslate"><span class="pre">neuron</span></code> Python wheel as follows:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">neuron-nightly</span></code> for <code class="docutils literal notranslate"><span class="pre">master</span></code> RTD builds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">neuron==X.Y.Z</span></code> for <code class="docutils literal notranslate"><span class="pre">release</span></code> RTD builds. Note that wheels need to be published first (see next section).</p></li>
+</ul>
+<p>To achieve this, we parse the RTD environment variable <code class="docutils literal notranslate"><span class="pre">READTHEDOCS_VERSION</span></code> and <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> it (see <a class="reference download internal" download="" href="_downloads/fb0d0d7ff27f33697ba3b787ec894677/conf.py"><span class="xref download myst">conf.py</span></a>) .</p>
+</section>
+<section id="new-release-on-rtd">
+<h3>New release on RTD<a class="headerlink" href="#new-release-on-rtd" title="Link to this heading"></a></h3>
+<p>Follow the following steps:</p>
+<ul class="simple">
+<li><p>create a new release (see <a class="reference external" href="https://github.com/neuronsimulator/nrn/actions?query=workflow%3A%22NEURON+Release%22">GHA Neuron Release - Manual Workflow</a>)</p></li>
+<li><p>publish the wheels (these will be pip-installed by RTD)</p></li>
+<li><p>go to <a class="reference external" href="https://readthedocs.org/projects/nrn/versions/">NRN RTD Versions page</a> and activate the new tag.</p></li>
+</ul>
+<p><strong>NOTE</strong>: build can be re-launched as many times as needed</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

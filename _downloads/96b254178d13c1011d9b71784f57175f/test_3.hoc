@@ -1,0 +1,13 @@
+load_file("nrngui.hoc")
+load_file("ipulse3rig.ses") // cell, RunControl, graphs,
+  // and two PointProcessManagers:
+  // one that manages a NetStim
+  // and another that manages an Ipulse3
+
+objref ns, nc, ipls
+
+ns = NetStim[0]
+ipls = Ipulse3[0]
+
+nc = new NetCon(ns, ipls)
+nc.delay = 0

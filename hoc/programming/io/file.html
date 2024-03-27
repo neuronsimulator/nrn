@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Access (Recommended Way) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Read from Terminal and Files" href="read.html" />
+    <link rel="prev" title="Printf (Formatted Output)" href="printf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../hoc.html">HOC Language</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../hocsyntax.html">HOC Syntax</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ockeywor.html">HOC Keywords</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../io.html">Input and Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../oop.html">Object Oriented Programming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../predec.html">Predeclared Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../hoc.html">HOC Language</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">Input and Output</a></li>
+      <li class="breadcrumb-item active">File Access (Recommended Way)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/programming/io/file.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/programming/io/file.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#File" title="Link to this definition">File</a></dt><dd><a href="#File.aopen" title="Link to this definition">aopen</a> &middot; <a href="#File.chooser" title="Link to this definition">chooser</a> &middot; <a href="#File.close" title="Link to this definition">close</a> &middot; <a href="#File.dir" title="Link to this definition">dir</a> &middot; <a href="#File.eof" title="Link to this definition">eof</a> &middot; <a href="#File.flush" title="Link to this definition">flush</a> &middot; <a href="#File.getname" title="Link to this definition">getname</a> &middot; <a href="#File.gets" title="Link to this definition">gets</a> &middot; <a href="#File.isopen" title="Link to this definition">isopen</a> &middot; <a href="#File.mktemp" title="Link to this definition">mktemp</a> &middot; <a href="#File.printf" title="Link to this definition">printf</a> &middot; <a href="#File.ropen" title="Link to this definition">ropen</a> &middot; <a href="#File.scanstr" title="Link to this definition">scanstr</a> &middot; <a href="#File.scanvar" title="Link to this definition">scanvar</a> &middot; <a href="#File.seek" title="Link to this definition">seek</a> &middot; <a href="#File.tell" title="Link to this definition">tell</a> &middot; <a href="#File.unlink" title="Link to this definition">unlink</a> &middot; <a href="#File.vread" title="Link to this definition">vread</a> &middot; <a href="#File.vwrite" title="Link to this definition">vwrite</a> &middot; <a href="#File.wopen" title="Link to this definition">wopen</a> &middot; <a href="#File.xopen" title="Link to this definition">xopen</a></dd></dl></p><section id="file-access-recommended-way">
+<span id="hoc-file"></span><h1>File Access (Recommended Way)<a class="headerlink" href="#file-access-recommended-way" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="File">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">File</span></span><a class="headerlink" href="#File" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fobj</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">File()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">fobj</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">File(&quot;filename&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This class allows you to open several files at once, whereas the top level
+functions, <a class="reference internal" href="ropen.html#ropen" title="ropen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">ropen()</span></code></a> and <a class="reference internal" href="ropen.html#wopen" title="wopen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">wopen()</span></code></a> ,
+allow you to deal only with one file at a time.</p>
+<p>The functionality of <a class="reference internal" href="ropen.html#xopen" title="xopen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xopen()</span></code></a> is not implemented in this class so use</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    strdef tstr
+    fobj.getname(tstr)
+    xopen(tstr)
+</pre></div>
+</div>
+<p>to execute a sequence of interpreter commands in a file.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref f1, f2, f3   //declare object references
+f1 = new File()             //state that f1, f2, and f3 are pointers to the File class
+f2 = new File()
+f3 = new File()
+f1.ropen(&quot;file1&quot;)   //open file1 for reading
+f2.wopen(&quot;file2&quot;)   //open file2 for writing
+f3.aopen(&quot;file3&quot;)   //open file3 for appending to the end of the file
+</pre></div>
+</div>
+<p>opens file1, file2, and file3 for reading, writing, and appending (respectively).</p>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The mswindows/dos version must deal with the difference between
+binary and text mode files. The difference is transparent to the
+user except for one limitation. If you mix text and binary data
+and you write text first to the file, then you need to do a
+File.seek(0) to explicitly switch to binary mode just after opening the file
+and prior to the first File.printf.
+An error message will occur if you
+read/write text to a file in text mode and then try to read/write a binary
+vector.  This issue does not arise with the unix version.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="printf.html#hoc-printf-doc"><span class="std std-ref">Printf (Formatted Output)</span></a>, <a class="reference internal" href="ropen.html#ropen" title="ropen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">ropen()</span></code></a>, <a class="reference internal" href="ropen.html#xopen" title="xopen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xopen()</span></code></a>, <a class="reference internal" href="ropen.html#wopen" title="wopen"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">wopen()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.ropen">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">ropen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.ropen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.ropen()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.ropen(&quot;name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Open the file for reading. If the argument is
+not present it opens (for reading) the last specified file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.wopen">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">wopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.wopen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.wopen()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.wopen(&quot;name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Open the file for writing.  If the argument is
+not present it opens the last specified file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.aopen">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">aopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.aopen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.aopen()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.aopen(&quot;name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Open the file for appending to the end of the file. If the argument is
+not present it opens the last specified file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.xopen">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">xopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.xopen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.xopen()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.xopen(&quot;name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Open the file and execute it. (not implemented)</p>
+<p>Note: if instead of a “<em>name</em>”, the number 0,1,or 2 is specified then
+the stdin, stdout, or stderr is opened. (not implemented)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.close">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.close" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.close()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Flush and close the file. This occurs automatically
+whenever opening another file or destroying the object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.mktemp">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">mktemp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.mktemp" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">f.mktemp()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets the name to a temporary filename in the /tmp directory (or other
+writable path for mswin and mac). Success returns 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.unlink">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.unlink" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">f.unlink()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Remove the file specified by the current name. A return value of
+1 means the file was removed (or at least it’s link count was reduced by
+one and the filename no longer exists).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.printf">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">printf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.printf" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.printf(&quot;format&quot;,</span> <span class="pre">args,</span> <span class="pre">...)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>As in standard C <code class="docutils literal notranslate"><span class="pre">printf</span></code> and the normal
+hoc <a class="reference internal" href="printf.html#printf" title="printf"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">printf()</span></code></a> .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.scanvar">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">scanvar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.scanvar" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.scanvar()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Reads the next number as in the hoc function <code class="docutils literal notranslate"><span class="pre">fscan()</span></code> and
+returns its value.</p>
+<p>Note: in order that .eof will return
+true after the last number, the last digit of that number
+should either be the last character in the file or
+be followed by a newline which is the last character in the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.scanstr">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">scanstr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.scanstr" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.scanstr(strdef)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Read the next string (delimited by whitespace) into
+<code class="docutils literal notranslate"><span class="pre">strdef</span></code>. Returns the length of a string (if failure then returns
+-1 and <code class="docutils literal notranslate"><span class="pre">strdef</span></code> is unchanged).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.gets">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">gets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.gets" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.gets(strdef)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Read up to and including end of line. Returns length of string.
+If at the end of file, returns -1 and does not change the argument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.getname">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">getname</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.getname" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">=</span> <span class="pre">file.getname()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">=</span> <span class="pre">file.getname(strdef)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the name of the last specified file as a strdef.
+For backward compatibility, if the arg is present also copy it to that.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.dir">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.dir" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">=</span> <span class="pre">file.dir()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the pathname of the last directory moved to in the chooser.
+If the <a class="reference internal" href="#File.chooser" title="File.chooser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">File.chooser()</span></code></a> has not been created, return the empty string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.eof">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">eof</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.eof" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.eof()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return true if at end of ropen’d file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.flush">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.flush" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.flush()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Flush pending output to the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.isopen">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">isopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.isopen" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.isopen()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return true if a file is open.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.chooser">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">chooser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.chooser" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.chooser()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.chooser(&quot;w,r,a,x,d</span> <span class="pre">or</span> <span class="pre">nothing&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.chooser(&quot;w,r,a,x,d</span> <span class="pre">or</span> <span class="pre">nothing&quot;,</span> <span class="pre">&quot;Banner&quot;,</span> <span class="pre">&quot;filter&quot;,</span> <span class="pre">&quot;accept&quot;,</span> <span class="pre">&quot;cancel&quot;,</span> <span class="pre">&quot;path&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>File chooser interface for writing , reading, appending, or
+just specifying a directory or filename without opening. The banner is
+optional. The filter, eg. <code class="docutils literal notranslate"><span class="pre">&quot;*.dat&quot;</span></code> specifies the files shown
+in the browser part of the chooser.
+The “path” arg specifies the file or directory to use when the
+browser first pops up.
+The form with args sets the style of the chooser but
+does not pop it up. With no args, the browser pops up and can
+be called several times. Each time starting where it left
+off previously.</p>
+<p>The “d” style is used for selecting a directory (in
+contrast to a file).
+With the “d” style, three buttons are placed beneath the
+browser area with <span class="guilabel">Open</span> centered beneath the <span class="guilabel">Show</span>, <span class="guilabel">Cancel</span> button pair.
+The <span class="guilabel">Open</span> button must be pressed for the
+dialog to return the name of the directory. The <span class="guilabel">Show</span> button merely
+selects the highlighted browser entry and shows the relevant directory
+contents. A returned directory
+string always has a final “/”.</p>
+<p>The “<em>x</em>” style is unimplemented. Use</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>            f.chooser(&quot;&quot;, &quot;Execute a hoc file&quot;, &quot;*.hoc&quot;, &quot;Execute&quot;)
+            if (f.chooser()) {
+                    f.getname(*str*)
+                    xopen(*str*)
+            }
+</pre></div>
+</div>
+<p>The following comes courtesy of Zach Mainen, <code class="docutils literal notranslate"><span class="pre">zach&#64;helmholtz.sdsc.edu</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.vwrite">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">vwrite</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.vwrite" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.vwrite(&amp;x)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.vwrite(n,</span> <span class="pre">&amp;x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Write binary doubles to a file from an array or variable
+using <code class="docutils literal notranslate"><span class="pre">fwrite()</span></code>. The form with two arguments specifies the
+number of elements to write and the address from which to
+begin writing.  With one argument, <em>n</em> is assumed to be 1.
+Must be careful that  <em>x</em>[] has at least <em>n</em>
+elements after its passed address.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.vread">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">vread</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.vread" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.vread(&amp;x)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.vread(n,</span> <span class="pre">&amp;x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Read binary doubles from a file into a pre-existing array
+or variable using <code class="docutils literal notranslate"><span class="pre">fread()</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#File.vwrite" title="File.vwrite"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">vwrite()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.seek">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">seek</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.seek" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.seek()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.seek(offset)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.seek(offset,origin)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Set the file position.  Any subsequent file access will access
+data beginning at the new position.  Without arguments, goes to
+the beginning of file.  Offset is in characters and is measured
+from the beginning of the file unless origin is 1 (measures from
+the current position) or 2 (from the end of the file).  Returns
+0 if successful, non-zero on error.  Used with <a class="reference internal" href="#File.tell" title="File.tell"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">tell()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="File.tell">
+<span class="sig-prename descclassname"><span class="pre">File.</span></span><span class="sig-name descname"><span class="pre">tell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#File.tell" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.tell()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the current file position or -1 on error.  Used with <a class="reference internal" href="#File.seek" title="File.seek"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">seek()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="printf.html" class="btn btn-neutral float-left" title="Printf (Formatted Output)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="read.html" class="btn btn-neutral float-right" title="Read from Terminal and Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

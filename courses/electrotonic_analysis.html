@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electrotonic Analysis with NEURON &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Working with Shape Plots" href="working_with_shape_plots.html" />
+    <link rel="prev" title="Numerical Methods Exercises" href="numerical-methods-exercises.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Electrotonic Analysis with NEURON</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-s-all-this-then">What’s all this, then?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercises">Exercises</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-frequency-tool">The Frequency Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-path-tool">The Path Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-log-a-vs-x-tool">The log(A) vs x tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-shape-tool">The Shape Tool</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Electrotonic Analysis with NEURON</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/electrotonic_analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="electrotonic-analysis-with-neuron">
+<span id="electrotonic-analysis"></span><h1>Electrotonic Analysis with NEURON<a class="headerlink" href="#electrotonic-analysis-with-neuron" title="Link to this heading"></a></h1>
+<section id="what-s-all-this-then">
+<h2>What’s all this, then?<a class="headerlink" href="#what-s-all-this-then" title="Link to this heading"></a></h2>
+<p>NEURON has a powerful, convenient, and flexible set of tools that facilitate analysis of electrotonic architecture. These tools compute the following :</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>input impedance ZN</p></td>
+<td><p>(local voltage change)/(local current injection)</p></td>
+</tr>
+<tr class="row-even"><td><p>transfer impedance Zc</p></td>
+<td><p>(local voltage change)/(remote current injection)</p>
+<blockquote>
+<div><p>equal to</p>
+</div></blockquote>
+<p>(remote voltage change)/(local current injection)</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>voltage transfer ratio k</p></td>
+<td><p>(voltage downstream)/(voltage upstream)</p>
+<blockquote>
+<div><p>Identical to current and charge transfer ratio in the opposite direction.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="row-even"><td><p>voltage attenuation A</p></td>
+<td><p>(voltage upstream)/(voltage downstream)</p>
+<p>Identical to current and charge attenuation in the opposite direction.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>electrotonic distance L (see Note below)</p></td>
+<td><p>natural log of A</p></td>
+</tr>
+</tbody>
+</table>
+<p>These tools are based on the <em>electrotonic transformation</em> and their use led to the discovery of <em>passive normalization</em> (see <a class="reference internal" href="#citations"><span class="std std-ref">citations</span></a>).</p>
+<blockquote>
+<div><p>NOTE: The electrotonic distance computed by NEURON is defined by attenuation, but the classical definition is (anatomical distance/length constant). These two measures of electrotonic length are identical for an infinite cylindrical cable. However, the measure computed by NEURON always has a simple, direct relationship to attenuation, regardless of cellular anatomy, whereas the classical measure only has meaning in cells that meet several very specific constraints (such as the “3/2 power branching criterion”), and even then it does <em>not</em> have a simple relationship to attenuation. The new definition of electrotonic distance also preserves the direction-dependence of attenuation, which the classical definition obscures.</p>
+</div></blockquote>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<p>Start <code class="docutils literal notranslate"><span class="pre">neurondemo</span></code> and select the Pyramidal cell model. Examine the side view of the anatomy of the cell in the Shape plot. Rotate, zoom in, and check it out from different vantage points (if you have any questions, <a class="reference internal" href="working_with_shape_plots.html#working-with-shape-plots"><span class="std std-ref">here’s how</span></a>).</p>
+<p>NEURON’s tools for electrotonic analysis are gathered into four different “styles”:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../python/simctrl/stdrun.html#frequency"><span class="std std-ref">Frequency</span></a></p></li>
+<li><p><a class="reference internal" href="../python/simctrl/stdrun.html#path"><span class="std std-ref">Path</span></a></p></li>
+<li><p><a class="reference internal" href="#log-a-vs-x"><span class="std std-ref">log(A) vs. X</span></a></p></li>
+<li><p><a class="reference internal" href="#electrotonic-shape-tool"><span class="std std-ref">Shape</span></a></p></li>
+</ul>
+<p>They are accessible through <span class="menuselection">NEURON Main Menu ‣ Tools ‣ Impedance</span>. In this exercise you will start to learn how to use each of them. To save screen space, close a tool when you are done with it.</p>
+<section id="the-frequency-tool">
+<span id="frequency"></span><h3>The Frequency Tool<a class="headerlink" href="#the-frequency-tool" title="Link to this heading"></a></h3>
+<p>The Frequency tool can be used to study electrical coupling between any two points in a cell. Suppose an interesting signal is generated at some location in a neuron, e.g. by a synapse or by active conductances. An electrode is attached to the cell, but not necessarily where the signal is produced. The electrode may be used with a current clamp to inject current and record fluctuations in membrane potential Vm, or with a voltage clamp that records the clamp current Ic that is needed to regulate Vm.</p>
+<p>This experimental situation brings several questions to mind, such as</p>
+<ol class="arabic simple">
+<li><p>How accurately does observed Vm reflect what is actually happening at the site where the signal is generated?</p></li>
+<li><p>How does the location of a synapse or active conductance change its effect on Vm elsewhere in the cell?</p></li>
+<li><p>If the cell is voltage clamped, what fraction of the current generated by the signal source will the clamp capture?</p></li>
+<li><p>If current is injected through the electrode to change local Vm, how does this affect Vm at the site of the “interesting signal”?</p></li>
+<li><p>What does frequency do to the spread of signals between two points?</p></li>
+</ol>
+<p>Bring up the Frequency tool: <span class="menuselection">NEURON Main Menu ‣ Tools ‣ Impedance ‣ Frequency</span></p>
+<img alt="../_images/freq.gif" class="align-center" src="../_images/freq.gif" />
+<p>Top panel controls operation of the tool, and tells what is happening. Note particularly:</p>
+<ul>
+<li><p>Select Location enables the use of a mouse in the middle panel to change the sites of current injection and voltage measurement, or to swap these locations.</p></li>
+<li><p>Plot brings up a menu of items that can be plotted as functions of frequency</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Log(Attenuation) plot natural log of voltage attenuation (shown here)</p></li>
+<li><p>Zin and Ztransfer plot input or transfer impedance</p></li>
+<li><p>Vmeasure/Vinject plots voltage transfer ratio, i.e. the reciprocal of voltage attenuation</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>Middle panel shows anatomy of the cell, indicating where current is injected (blue dot) and where Vm is measured (red dot). Zoom in or out as needed to see the whole cell.</p>
+<p>Bottom panel in this example shows natural log of voltage attenuation from the injection site to the measurement site as a function of frequency over the range 0.1 to 1000 Hz. For most cells, attenuations at DC and 0.1 Hz are nearly identical.</p>
+<p>Things to do:</p>
+<ol class="arabic simple">
+<li><p>Move the injection and measurement sites to different locations in the cell and Redraw.</p></li>
+<li><p>What happens to attenuation when the injection and measurement sites are swapped?</p></li>
+<li><p>How do Zin and Ztransfer vary with frequency and location in the cell?</p></li>
+<li><p>Is Ztransfer sensitive to direction (swap the inject and measure sites to find out)? How does this differ from attenuation, and why?</p></li>
+</ol>
+</section>
+<section id="the-path-tool">
+<span id="path"></span><h3>The Path Tool<a class="headerlink" href="#the-path-tool" title="Link to this heading"></a></h3>
+<p>The Path tool is useful when the general location of the signal source is known, or when there are several independent signal sources at different locations. It performs the same kind of analyses that the Frequency tool does, but it allows the user to examine signaling between an electrode and a region instead of a specific location.</p>
+<p>Bring up the Path tool: <span class="menuselection">NEURON Main Menu ‣ Tools ‣ Impedance ‣ Path</span></p>
+<img alt="../_images/path.gif" class="align-center" src="../_images/path.gif" />
+<p>Top panel. Note particularly</p>
+<ul class="simple">
+<li><p>The frequency field editor, which sets the frequency at which ln(A) is calculated.</p></li>
+<li><p>The Vin and Vout buttons, which specify the direction of signal flow relative to the electrode.</p></li>
+</ul>
+<p>Middle panel. Click on the Shape Plot to set the location of the electrode (red dot), the path start (blue dot), and the path end (green dot). The direct path between the start and end is highlighted in red. Anatomical distance along this path is the independent variable against which analysis results of are plotted.</p>
+<p>Bottom panel. For all points on the path, shows natural log(A) for voltage spreading toward (Vin) or away from (Vout) the electrode, according to the choice set in the Top panel. The path start is on the left of the horizontal axis, and the end is on the right. If the electrode is located on the path, this is the distance from the electrode in um; if the electrode is not on the path, this is the distance to the location on the path that is closest to the electrode.</p>
+<p>Things to do:</p>
+<ol class="arabic">
+<li><p>Leave the measure location at the soma, and move the path start and end to the positions shown above.</p></li>
+<li><p>Examine the spatial profile of voltage attenuation in the somatopetal (Vin) direction. Where does Vin attenuation increase most rapidly with distance (where is the plot steepest): along the apical path or along the basilar path?</p></li>
+<li><p>Switch to the Vout (somatofugal) direction. What happens to the magnitude and spatial profile of attenuation? Now where does it increase most rapidly?</p></li>
+<li><p>How does frequency affect attenuation in the Vout direction (compare 0 Hz and 30 Hz)? in the Vin direction?</p></li>
+<li><p>What does membrane resistance do to attenuation? Bring up the “Distributed Mechanism/Manager/Homogeneous spec” window and use its MechType button to view the parameters of the passive mechanism.</p>
+<p>The axon of the cell, which has the hh mechanism but not the pas mechanism, should be black in the shape plot for this manager.</p>
+<p>Change g_pas from its default value of 0.0001 (Rm = 10000 ohm cm^2) to 0.00002 (Rm = 50000 ohm cm^2). Then press the Redraw button in the Path tool window. Does increasing Rm make attenuation more or less sensitive to frequency?</p>
+</li>
+<li><p>How does cytoplasmic resistivity affect attenuation? Notice the axial resistivity in the NEURON Main Panel. This should be 100 ohm cm. Try doubling or halving this value and see what happens to attenuation. Don’t forget to press Redraw in the Path tool window.</p></li>
+</ol>
+</section>
+<section id="the-log-a-vs-x-tool">
+<span id="log-a-vs-x"></span><h3>The log(A) vs x tool<a class="headerlink" href="#the-log-a-vs-x-tool" title="Link to this heading"></a></h3>
+<p>This tool is the ultimate extension of the approach used by the Path tool: it shows the log of voltage attenuation for each point in the cell relative to the electrode or reference point.</p>
+<p>Bring up the log(A) vs x tool: <span class="menuselection">NEURON Main Menu ‣ Tools ‣ Impedance ‣ log(A) vs x</span></p>
+<img alt="../_images/logAvsx.gif" class="align-center" src="../_images/logAvsx.gif" />
+<p>Top panel. The only significant difference from the Path tool is the button labeled Shape Select Action. This button enables two important operations in the Shape Plot (middle panel). The first is “Move electrode” which lets you move the electrode to a new location by clicking on a neurite. The second is “Show Position” which helps you discover the mapping from the Shape Plot to the log(A) vs x plot: click on a neurite to see both it and the corresponding line in the log A vs. x plot turn red. The bottom panel’s graph menu has a “Show position” item that does the same thing in the opposite direction.</p>
+<p>Middle panel. Since attenuation is computed over the entire cell, the only location the user specifies is the position of the electrode (red dot).</p>
+<p>Bottom panel. For every section throughout the cell, this panel shows ln(A) for voltage spreading toward (Vin) or away from (Vout) the electrode. The abscissa is the distance in um along the direct path from the soma (not the electrode) to each point. To discover which neurite corresponds to a line in this graph, click on the menu box (square in upper left corner of this graph) and select the “show position” item. Then click on a line to see it and the corresponding neurite turn red.</p>
+<p>Things to do:</p>
+<p>Leave the electrode at the soma.</p>
+<ol class="arabic simple">
+<li><p>Which of the traces in the bottom panel correspond to the</p>
+<ul class="simple">
+<li><p>basilar dendrites?</p></li>
+<li><p>primary apical dendrite and its major branches?</p></li>
+<li><p>distal apical tuft?</p></li>
+<li><p>axon?</p></li>
+</ul>
+</li>
+<li><p>How does the plot change with frequency? g_pas? axial resistivity?</p></li>
+<li><p>For the Vin direction, in what part of the cell does attenuation increase most rapidly with distance? What about the Vout direction?</p></li>
+</ol>
+<p>Follow these steps to discover passive normalization for yourself!</p>
+<ol class="arabic simple">
+<li><p>Leave the electrode at the soma.</p></li>
+<li><p>Switch the plot to voltage transfer (click on the Plot button and select the V(measure)/V(inject) item).</p></li>
+<li><p>Click on the Vin radio button, then click on Redraw.</p></li>
+<li><p>Use the bottom panel’s View = plot so you can see the entire range of y values.</p></li>
+</ol>
+<p>This graph now shows a plot of the somatic response to a 1 mV signal as a function of the distance between the soma and the location where the signal is being applied to the cell. If synapses were voltage sources, this is how the somatic PSP would vary as a function of synaptic location. Based on this result, you would expect synaptic efficacy to decline most rapidly with distance in the basilar dendrites.</p>
+<p>But synapses aren’t voltage sources. They’re much more like current sources. In other words, a synapse would deliver nearly the same current to a neuron regardless of where it is attached to the cell. Therefore voltage transfer ratio in the Vin direction (from synapse to soma) does not predict the relationship between synaptic efficacy and synaptic location. Instead, the best predictor of synaptic efficacy is normalized transfer impedance. This is identical to the voltage transfer ratio in the <em>Vout</em> direction!</p>
+<p>So just click on the <em>Vout</em> radio button and you see that a synapse attached to a basilar dendrite will produce nearly the same somatic PSP no matter how far it is from the soma! This is the phenomenon that David Jaffe and I call passive normalization : variation of somatic PSP amplitude with synaptic distance is reduced (“normalization”), and it doesn’t require active currents to happen (“passive”). For more information, see our <a class="reference internal" href="#citations"><span class="std std-ref">paper</span></a>.</p>
+</section>
+<section id="the-shape-tool">
+<span id="electrotonic-shape-tool"></span><h3>The Shape Tool<a class="headerlink" href="#the-shape-tool" title="Link to this heading"></a></h3>
+<p>Perhaps the most intuitive representation of electrotonic architecture is to redraw the branched anatomy of the cell in a way that preserves the relative orientation of the branches, using line segments that are proportional to natural log(A) between adjacent points instead of the anatomical branch lengths. These <em>neuromorphic renderings</em> of the electrotonic transform warp the anatomy of the cell so that the proximity of points to each other is a direct indication of the degree of electrical coupling between them: tightly coupled points appear close to each other, and points that are electrically remote from each other are shown farther apart. The overall form of a neuromorphic figure parallels cellular anatomy, so it is easy to identify structural features of the cell, such as basilar or apical dendrites and particular dendritic segments or branch points.</p>
+<p>Bring up the Shape tool: <span class="menuselection">NEURON Main Menu ‣ Tools ‣ Impedance ‣ Shape</span></p>
+<img alt="../_images/shapetool.gif" class="align-center" src="../_images/shapetool.gif" />
+<p>Top panel. The controls for the Shape tool are very simple. Because of the direct visual parallels between the Shape plot (middle panel) and the form of the neuromorphic rendering (bottom panel), there is no need for special functions to demonstrate the correspondence between lines in these two panels. There is no Plot button because there is no way to represent Zin or Ztransfer by changing branch lengths in the neuromorphic figure.</p>
+<p>Middle panel. This shows the anatomy of the cell and the location of the electrode or reference point (red dot), as in the log(A) vs x style.</p>
+<p>Bottom panel. This displays the neuromorphic rendering of one of the components of the electrotonic transform. The distance of a point from the site of the electrode is proportional to the natural logarithm of attenuation for voltage spreading toward (Vin) or away from (Vout) the electrode, according to the selection in the Top panel. The calibration bar represents one log unit of attenuation, i.e. the distance that signifies an e-fold decay of voltage.</p>
+<p>Things to do:</p>
+<p>Leave the electrode at the soma.</p>
+<ol class="arabic simple">
+<li><p>Examine the Vin and Vout transforms at 0 Hz. How does the overall electrotonic extent of the cell vary with direction of signal transfer? Which parts of the cell are responsible for most attenuation in the Vin transform (ignore the axon)? in the Vout transform?</p></li>
+<li><p>Change the frequency to 1, 3, 10, 30, and 100 Hz. At what frequency do you first see a noticable increase of electrotonic extent? Does this frequency depend on the direction of signal transfer? Note: to ensure similar sensitivity for detecting relative changes in the Vin and Vout transforms, first apply View = plot at 0 Hz.</p></li>
+<li><p>Move the reference point to different locations and see what happens to the Vin transform. Do the same for the Vout transform. Can you explain the effect of changing the reference point? Hint: see Fig. 2 in Carnevale et al. 1995.</p></li>
+</ol>
+<p id="citations">Carnevale, N.T., Tsai, K.Y., Claiborne, B.J., and Brown, T.H. The electrotonic transformation: a tool for relating neuronal form to function. In: Advances in Neural Information Processing Systems, vol. 7, edited by G. Tesauro, D.S. Touretzky, and T.K. Leen. Cambridge, MA: MIT Press, 1995, p. 69-76. <a class="reference external" href="https://proceedings.neurips.cc/paper/1994/file/4b6538a44a1dfdc2b83477cd76dee98e-Paper.pdf">http://papers.nips.cc/paper/945-the-electrotonic-transformation-a-tool-for-relating-neuronal-form-to-function.pdf</a></p>
+<p>Jaffe, D.B. and Carnevale, N.T. Passive normalization of synaptic integration influenced by dendritic architecture. Journal of Neurophysiology 82:3268-3285, 1999. <a class="reference external" href="https://journals.physiology.org/doi/full/10.1152/jn.1999.82.6.3268">doi:10.1152/jn.1999.82.6.3268</a></p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="numerical-methods-exercises.html" class="btn btn-neutral float-left" title="Numerical Methods Exercises" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="working_with_shape_plots.html" class="btn btn-neutral float-right" title="Working with Shape Plots" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

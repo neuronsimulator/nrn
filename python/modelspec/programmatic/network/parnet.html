@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ParallelNetManager &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="NetCon" href="netcon.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="lyttonmpi.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ste.html">StateTransitionEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../network.html">Networks</a></li>
+      <li class="breadcrumb-item active">ParallelNetManager</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../hoc/modelspec/programmatic/network/parnet.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/python/modelspec/programmatic/network/parnet.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#ParallelNetManager" title="Link to this definition">ParallelNetManager</a></dt><dd><a href="#ParallelNetManager.create_cell" title="Link to this definition">create_cell</a> &middot; <a href="#ParallelNetManager.gatherspikes" title="Link to this definition">gatherspikes</a> &middot; <a href="#ParallelNetManager.gid_exists" title="Link to this definition">gid_exists</a> &middot; <a href="#ParallelNetManager.nc_append" title="Link to this definition">nc_append</a> &middot; <a href="#ParallelNetManager.pcontinue" title="Link to this definition">pcontinue</a> &middot; <a href="#ParallelNetManager.pinit" title="Link to this definition">pinit</a> &middot; <a href="#ParallelNetManager.prstat" title="Link to this definition">prstat</a> &middot; <a href="#ParallelNetManager.prun" title="Link to this definition">prun</a> &middot; <a href="#ParallelNetManager.psolve" title="Link to this definition">psolve</a> &middot; <a href="#ParallelNetManager.register_cell" title="Link to this definition">register_cell</a> &middot; <a href="#ParallelNetManager.round_robin" title="Link to this definition">round_robin</a> &middot; <a href="#ParallelNetManager.set_gid2node" title="Link to this definition">set_gid2node</a> &middot; <a href="#ParallelNetManager.spike_record" title="Link to this definition">spike_record</a> &middot; <a href="#ParallelNetManager.splitcell" title="Link to this definition">splitcell</a> &middot; <a href="#ParallelNetManager.want_all_spikes" title="Link to this definition">want_all_spikes</a></dd></dl></p><section id="parallelnetmanager">
+<span id="parnet"></span><h1>ParallelNetManager<a class="headerlink" href="#parallelnetmanager" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="ParallelNetManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParallelNetManager</span></span><a class="headerlink" href="#ParallelNetManager" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm</span> <span class="pre">=</span> <span class="pre">h.ParallelNetManager(ncell)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Manages the setup and running of a network simulation on a cluster
+of workstations or any parallel computer that has mpi installed.
+A version for PVM is also available. This class, implemented
+in <code class="file docutils literal notranslate"><span class="pre">nrn/share/lib/hoc/netparmpi.hoc</span></code>, presents an interface
+compatible with the NetGUI style of network specification, and is implemented
+using the <a class="reference internal" href="parcon.html#parallelnetwork"><span class="std std-ref">Parallel Network</span></a> methods. Those methods are
+available only if NEURON has been built with the configuration option,
+–with-mpi. The <code class="file docutils literal notranslate"><span class="pre">netparmpi.hoc</span></code> file at last count was only 430 lines long
+so if you have questions about how it works that are not answered here,
+take a look.</p>
+<p>Experience with published network models where there is an order of magnitude
+more segments or cells than machines, suggests that superlinear speedup
+occurs up to about 20 to 50 machines due to the fact that the parallel
+machine has much more effective high speed cache memory than a single
+cpu. Basically, good performance will occur if there is a lot for each
+machine to do and the amount of effort to simulate each machine’s subnet
+is about equal. If cell granularity causes load balance to be
+a signficant problem see <a class="reference internal" href="#ParallelNetManager.splitcell" title="ParallelNetManager.splitcell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.splitcell()</span></code></a>.
+The “lot for each machine to do” is relative to the
+number of spikes that must be exchanged between machines and how often
+these exchanges take place. The latter is determined by the minimum
+delay between a spike event generated on one machine that must be delivered
+to another machine since that defines the interval that each machine
+is allowed to integrate before having to share all spikes it generated
+which are destined for other machines.</p>
+<p>The fundamental requirement for the use of this class is for the
+programmer to be able to associate a unique global id (gid) for each
+cell and define the connectivity by means of the source_cell_gid and the
+target_cell_gid. If the target cell happens to have synapses, we assume
+they can be found via a local synapse index into the target cell’s synapse list.
+We absolutely must use global indices because it
+will be the case that when a connection is requested
+on a machine that either the source or the target cell or both may not
+actually exist on the machine – the last case is a no-op.</p>
+<p>The following describes the author’s intention as to how this class can
+be used to construct and simulate a parallel network.
+It is assumed that every machine
+executes exactly the same code (though with different data).</p>
+<ol class="arabic" start="0">
+<li><p>So that the concatenation of all the following fragments will
+end up being a valid network simulation for a ring of 128 artificial
+cells where cell i sends a spike to cell i+1, let’s start out with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;stdrun.hoc&#39;</span><span class="p">)</span>
+<span class="n">tstop</span> <span class="o">=</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+<p>Yes, I know that this example is foolish since there is no computation
+going on except when a cell receives a spike. I don’t expect any benefit
+from parallelization but it is simple enough to allow me to focus on the process
+of setup and run instead of cluttering the example with a large cell class.</p>
+</li>
+<li><p>load the <code class="file docutils literal notranslate"><span class="pre">netparmpi.hoc</span></code> file and create a ParallelNetManager</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;netparmpi.hoc&quot;</span><span class="p">)</span>
+<span class="n">ncell</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="n">pnm</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ParallelNetManager</span><span class="p">(</span><span class="n">ncell</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you know the global number of cells put it in. For the non-MPI
+implementation of ParallelNetManager, ncell is absolutely necessary
+since that implementation constructs many mapping vectors that allow
+it to figure out what cell is being talked about when the gid is
+known. The MPI implementation uses dynamically constructed maps and
+it is not necessary to know the global number of cells at this time.
+Note that ncell refers to the global number of cells and NOT the
+number of cells to be created on this machine.</p>
+</li>
+<li><p>Tell the system which gid’s are on which machines.
+The simplest distribution mechanism is <a class="reference internal" href="#ParallelNetManager.round_robin" title="ParallelNetManager.round_robin"><code class="xref py py-func docutils literal notranslate"><span class="pre">round_robin()</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pnm</span><span class="o">.</span><span class="n">round_robin</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>which will certainly give good load balance if the number of each
+cell type to be constructed is an integer multiple of the number
+of machines. Otherwise specify which gid’s are on which machines through
+the use of <a class="reference internal" href="#ParallelNetManager.set_gid2node" title="ParallelNetManager.set_gid2node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.set_gid2node()</span></code></a> . Note that you only
+HAVE to call <code class="docutils literal notranslate"><span class="pre">pnm.set_gid2node(gid,</span> <span class="pre">myid)</span></code> for the subset of gid’s that
+are supposed to be associated with this machines
+particular <code class="docutils literal notranslate"><span class="pre">myid</span> <span class="pre">=</span> <span class="pre">pnm.pc.id</span></code> but it is usually simpler just to call
+it for all gid’s since the <code class="docutils literal notranslate"><span class="pre">set_gid2node</span></code> call is a no-op when the second
+argument does not match the pc.id. Also, the PVM version REQUIRES that
+you call the function for all the gid values.</p>
+<p>There are three performance considerations with regard to sprinkling gid
+values on machines.</p>
+<ol class="upperalpha simple">
+<li><p>By far the most important is load balance. That is
+simple if all your cells take the same time to integrate over the same
+interval. If cells have very different sizes or cpu’s end up with
+very different amounts of work to do so that load balance is a
+serious problem then <a class="reference internal" href="#ParallelNetManager.splitcell" title="ParallelNetManager.splitcell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.splitcell()</span></code></a> can be used to
+solve it.</p></li>
+<li><p>Of lesser importance but still quite important is to maximize the
+delay of NetCon’s that span machines. This isn’t an issue if all your
+NetCon delays are the same.  The minimum delay across machines defines
+the maximum step size that each machine can integrate before having
+to share spikes. In principle, Metis can help with this and C) but don’t
+waste your time unless you have established that communication overhead
+is your rate limiting step. See <a class="reference internal" href="#ParallelNetManager.prstat" title="ParallelNetManager.prstat"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.prstat()</span></code></a> and
+<a class="reference internal" href="parcon.html#ParallelContext.wait_time" title="ParallelContext.wait_time"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.wait_time()</span></code></a> .</p></li>
+<li><p>I am only guessing that this is less important than B, it is certainly
+related, but obviously
+things will be better if you minimize the number of spanning NetCon’s.
+For our ring example it obviously would be best to keep neighboring cells together
+but the improvement may be too small to measure.</p></li>
+</ol>
+</li>
+<li><p>Now create only the cells that are supposed to be on this machine
+using <a class="reference internal" href="#ParallelNetManager.register_cell" title="ParallelNetManager.register_cell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.register_cell()</span></code></a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncell</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pnm</span><span class="o">.</span><span class="n">gid_exists</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+        <span class="n">pnm</span><span class="o">.</span><span class="n">register_cell</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">IntFire1</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Notice how we don’t construct a cell if the gid does not exist.
+You only HAVE to call
+register_cell for those gid’s which are actually owned by this machine and
+need to send spikes to other machines.
+If the gid does not exist, then register_cell will call gid_exists for you.
+Note that 2) and 3) can
+be combined but it is a serious bug if a gid exists on more than one machine.
+You can even start connecting
+as discussed in item 4) but of course a NetCon presupposes the existence
+of whatever cells it needs on this machine.</p>
+<p>Of course this presupposes that you have
+already read the files that define your cell classes.
+We assume your
+cell classes for “real” cells follow the NetworkReadyCell policy required by
+the NetGUI tool. That is, each “real” cell type has a synapse list, eg. the
+first synapse is <code class="docutils literal notranslate"><span class="pre">cell.synlist.object(0)</span></code> (the programmer will have to
+make use of those synapse indices when such cells are the target of a NetCon)
+and each “real” cell type has a connect2target method that constructs
+a netcon (returns it in the second argument)
+with that cell as the source and its first argument as the
+synapse or artificial cell object.</p>
+<p>Artificial cells can either be unwrapped or follow the NetGUI tool policy
+where they are wrapped in a cell class in which the actual artificial cell
+is given by the <code class="docutils literal notranslate"><span class="pre">cell.pp</span></code> field and the cell class also has a
+connect2target method.</p>
+<p>If you don’t know what I’ve been talking about in the last two paragraphs,
+use the NetGUI tool on a single machine to construct a toy network consisting
+of a few real and artificial cells and save it to a hoc file for examination.</p>
+</li>
+<li><p>Connect the cells using <a class="reference internal" href="#ParallelNetManager.nc_append" title="ParallelNetManager.nc_append"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.nc_append()</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncell</span><span class="p">):</span>
+    <span class="n">pnm</span><span class="o">.</span><span class="n">nc_append</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">ncell</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Again, it only has to be called if i, or i + 1, or both, are on this machine.
+It is a no-op if neither are on this machine and usually a no-op if only
+the source is on this machine since it will only mark the source cell
+as output cell, once.</p>
+<p>The -1 just refers to the
+synapse index which should be -1 for artificial cells.
+The delay is 2 ms and the weight is 1.1 which guarantees
+that the IntFire1 cell will fire when it receives a spike.</p>
+<p>Our example requires a stimulus and this is not an
+unreasonable time to stimulate the net.
+Let’s get the ring going by forcing the gid==4
+cell to fire.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># stimulate</span>
+<span class="k">if</span> <span class="n">pnm</span><span class="o">.</span><span class="n">gid_exists</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">stim</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetStim</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ncstim</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">stim</span><span class="p">,</span> <span class="n">pnm</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">gid2obj</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+    <span class="n">ncstim</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.1</span>
+    <span class="n">ncstim</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">stim</span><span class="o">.</span><span class="n">number</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">stim</span><span class="o">.</span><span class="n">start</span><span class="o">=</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>Note the stimulator does not require a gid even though it is an artificial
+cell because its connections do not span machines. But it does have to be
+on the machine that has the cell it is connecting to.</p>
+</li>
+<li><p>Have the system figure out the minimum spanning NetCon delay so it knows
+the maximum step size.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pnm</span><span class="o">.</span><span class="n">set_maxstep</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="c1"># will end up being 2</span>
+</pre></div>
+</div>
+</li>
+<li><p>Decide what output to collect</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pnm</span><span class="o">.</span><span class="n">want_all_spikes</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If you want to record spikes from only a few cells you can use
+<a class="reference internal" href="#ParallelNetManager.spike_record" title="ParallelNetManager.spike_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.spike_record()</span></code></a> explicitly. If you want to
+record range variable trajectories, check that the cell exists with
+<a class="reference internal" href="#ParallelNetManager.gid_exists" title="ParallelNetManager.gid_exists"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.gid_exists()</span></code></a> and then use <a class="reference internal" href="../../../programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a>.</p>
+</li>
+<li><p>Initialize and run.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="n">h</span><span class="o">.</span><span class="n">stdinit</span><span class="p">()</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">pnm</span><span class="o">.</span><span class="n">psolve</span><span class="p">(</span><span class="n">tstop</span><span class="p">)</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">runtime</span>
+</pre></div>
+</div>
+</li>
+<li><p>Print the results.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">spike</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pnm</span><span class="o">.</span><span class="n">spikevec</span><span class="p">,</span> <span class="n">pnm</span><span class="o">.</span><span class="n">idvec</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">spike</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you save the stdout to a file you can sort the results. A nice idiom
+is
+<code class="docutils literal notranslate"><span class="pre">sort</span> <span class="pre">-k</span> <span class="pre">1n,1n</span> <span class="pre">-k</span> <span class="pre">2n,2n</span> <span class="pre">temp1</span> <span class="pre">&gt;</span> <span class="pre">temp</span></code></p>
+<p>A perhaps more flexible alternative is to separate the master from all the
+workers somewhere after item 4) and before item 8) using <a class="reference internal" href="parcon.html#ParallelContext.runworker" title="ParallelContext.runworker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.runworker()</span></code></a>
+and then making use of the <a class="reference internal" href="#ParallelNetManager.prun" title="ParallelNetManager.prun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.prun()</span></code></a> and
+<a class="reference internal" href="#ParallelNetManager.gatherspikes" title="ParallelNetManager.gatherspikes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.gatherspikes()</span></code></a> with the normal ParallelContext control
+in a master worker framework.</p>
+<p>At any rate, before we quit we have to call it so that the master can
+tell all the workers to quit.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pnm</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">runworker</span><span class="p">()</span>
+<span class="n">pnm</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.set_gid2node">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">set_gid2node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.set_gid2node" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.set_gid2node(gid,</span> <span class="pre">machine_id)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When MPI is being used, this is just
+a wrapper for the ParallelContext version of
+<a class="reference internal" href="parcon.html#ParallelContext.set_gid2node" title="ParallelContext.set_gid2node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.set_gid2node()</span></code></a> .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.round_robin">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">round_robin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.round_robin" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.round_robin()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The gid ranging from 0 to ncell-1
+is assigned to machine <code class="docutils literal notranslate"><span class="pre">(gid</span> <span class="pre">+</span> <span class="pre">1)</span> <span class="pre">%</span> <span class="pre">nhost</span></code>. There is no good reason
+anymore for the “+1”. <a class="reference internal" href="parcon.html#ParallelContext.nhost" title="ParallelContext.nhost"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.nhost()</span></code></a> is the number of machines
+available.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.gid_exists">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">gid_exists</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.gid_exists" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">result</span> <span class="pre">=</span> <span class="pre">pnm.gid_exists(gid)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 1 if the gid exists on this machine, 2 if it exists and has been
+declared to be an output cell. 0 otherwise.
+Just a wrapper for <a class="reference internal" href="parcon.html#ParallelContext.gid_exists" title="ParallelContext.gid_exists"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_exists()</span></code></a> when MPI is being used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.create_cell">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">create_cell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.create_cell" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cellobject</span> <span class="pre">=</span> <span class="pre">pnm.create_cell(gid,</span> <span class="pre">&quot;obexpr&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This is deprecated. Use <a class="reference internal" href="#ParallelNetManager.register_cell" title="ParallelNetManager.register_cell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.register_cell()</span></code></a> .</p>
+<p>If the gid exists on this machine the obexpr is executed in HOC in a statement
+equivalent to <code class="docutils literal notranslate"><span class="pre">pnm.cells.append(obexpr)</span></code>. Obexpr should be something like
+<code class="docutils literal notranslate"><span class="pre">&quot;new</span> <span class="pre">Pyramid()&quot;</span></code> or any function that returns a cell object. Valid
+“real” cell objects should have a connect2target method and a synlist
+synapse list field just as the types used by the NetGUI builder.
+Artificial cell objects can be bare or enclosed in a wrapper class
+using the pp field.</p>
+<p>Note: the following has been changed so that the source is always
+an outputcell.</p>
+<p>At the end of this call, <code class="docutils literal notranslate"><span class="pre">pnm.gid_exists(gid)</span></code> will return either
+0 or 1 because the cell has not yet been declared to be an outputcell.
+That will be done when the first connection is requested for which
+this cell is a source but the target is on another machine.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.register_cell">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">register_cell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.register_cell" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.register_cell(gid,</span> <span class="pre">cellobject)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Associate gid and cellobject. If <a class="reference internal" href="parcon.html#ParallelContext.gid_exists" title="ParallelContext.gid_exists"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_exists()</span></code></a>
+is zero then this procedure calls <a class="reference internal" href="parcon.html#ParallelContext.set_gid2node" title="ParallelContext.set_gid2node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.set_gid2node()</span></code></a>
+If the cell is “real” or encapsulates a point process artificial cell, then
+the cellobject.connect2target is called. The cellobject is declared to
+be an <a class="reference internal" href="parcon.html#ParallelContext.outputcell" title="ParallelContext.outputcell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.outputcell()</span></code></a> .</p>
+<p>This method supersedes the create_cell method since it more easily handles
+cell creation arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.nc_append">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">nc_append</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.nc_append" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">pnm.nc_append(src_gid,</span> <span class="pre">target_gid,</span> <span class="pre">synapse_id,</span> <span class="pre">weight,</span> <span class="pre">delay)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If the source and target exist on this machine a NetCon is created
+and added to the pnm.nclist.</p>
+<p>If the target exists and is a real cell
+the synapse object is <code class="docutils literal notranslate"><span class="pre">pnm.gid2obj(target_gid).synlist(synapse_id)</span></code>.</p>
+<p>If the target exists and is a wrapped artificial cell then the
+synapse_id should be -1 and the target artificial cell is
+<code class="docutils literal notranslate"><span class="pre">pnm.gid2obj(target_gid).pp</span></code>.
+If the target exists and is an ArtificialCell
+the synapse_id should be -1 and the target artificial cell is
+<code class="docutils literal notranslate"><span class="pre">pnm.gid2obj(target_gid)</span></code>. Note that
+the target is an unwrapped artificial cell if
+<a class="reference internal" href="../../../programming/strfun.html#StringFunctions.is_point_process" title="StringFunctions.is_point_process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StringFunctions.is_point_process()</span></code></a> returns a non-zero value.</p>
+<p>If the target exists but not the source, the netcon
+is created via <a class="reference internal" href="parcon.html#ParallelContext.gid_connect" title="ParallelContext.gid_connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_connect()</span></code></a> and added to the
+pnm.nclist.</p>
+<p>If the source exists but not the target, and
+<a class="reference internal" href="parcon.html#ParallelContext.gid_exists" title="ParallelContext.gid_exists"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_exists()</span></code></a> returns
+1 (instead of 2) then the cell is marked to be an
+<a class="reference internal" href="parcon.html#ParallelContext.outputcell" title="ParallelContext.outputcell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.outputcell()</span></code></a> .</p>
+<p>If the source exists and is a real cell or wrapped artificial
+cell <code class="docutils literal notranslate"><span class="pre">pnm.gid2obj(src_id).connect2target(synapse_target_object,</span> <span class="pre">nc)</span></code>
+is used to
+create the NetCon.</p>
+<p>If the source exists and is a artificial cell
+then the NetCon is created directly.</p>
+<p>If neither the source or target exists,
+there is nothing to do.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.want_all_spikes">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">want_all_spikes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.want_all_spikes" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.want_all_spikes()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Records all spikes of all cells on this machine into the
+pnm.spikevec and pnm.idvec Vector objects. The spikevec holds spike times
+and the idvec holds the corresponding gid values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.spike_record">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">spike_record</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.spike_record" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.spike_record(gid)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Wraps <a class="reference internal" href="parcon.html#ParallelContext.spike_record" title="ParallelContext.spike_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.spike_record()</span></code></a> but calls it only if
+<a class="reference internal" href="parcon.html#ParallelContext.gid_exists" title="ParallelContext.gid_exists"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_exists()</span></code></a> is nonzero and records the spikes
+into the pnm.spikevec and pnm.gidvec Vector objects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.prun">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">prun</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.prun" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.prun()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>All the workers and the master are asked to <a class="reference internal" href="#ParallelNetManager.pinit" title="ParallelNetManager.pinit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.pinit()</span></code></a>
+and <a class="reference internal" href="#ParallelNetManager.pcontinue" title="ParallelNetManager.pcontinue"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelNetManager.pcontinue()</span></code></a> up to tstop.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.psolve">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">psolve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.psolve" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.psolve(tstop)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Wraps <a class="reference internal" href="parcon.html#ParallelContext.psolve" title="ParallelContext.psolve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.psolve()</span></code></a> .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.pinit">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">pinit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.pinit" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.pinit()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>All the workers and the master execute a call to
+<a class="reference internal" href="parcon.html#ParallelContext.set_maxstep" title="ParallelContext.set_maxstep"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.set_maxstep()</span></code></a> to determine the maximum possible step size
+and all the workers and the master execute a call to
+the stdinit() of the
+standard run system.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.pcontinue">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">pcontinue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.pcontinue" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.pcontinue(tstop)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>All the workers and the master execute a call to <a class="reference internal" href="parcon.html#ParallelContext.psolve" title="ParallelContext.psolve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.psolve()</span></code></a>
+to integrate from the current value of t to the argument value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.prstat">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">prstat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.prstat" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.prstat(0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">pnm.prstat(1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints a high resolution amount of time all the machines have waited for
+spike exchange. If some are much higher than others then there is likely
+a load balance problem. If they are all high relative to the simulation
+time then spike exchange may be the rate limiting step.</p>
+<p>If the argument is 1, then, in addition to wait time, spike_statistics
+are printed. The format is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pc.id wait_time(s) nsendmax nsend nrecv nrecv_useful
+%d\t  %g\t %d\t %d\t %d\t %d\n
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="parcon.html#ParallelContext.wait_time" title="ParallelContext.wait_time"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.wait_time()</span></code></a>, <a class="reference internal" href="parcon.html#ParallelContext.spike_statistics" title="ParallelContext.spike_statistics"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.spike_statistics()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.gatherspikes">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">gatherspikes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.gatherspikes" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.gatherspikes</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>All the workers are asked to post their spikevec and idvec Vectors
+for taking by the master and concatenated to the master’s spikevec
+and idvec Vectors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="ParallelNetManager.splitcell">
+<span class="sig-prename descclassname"><span class="pre">ParallelNetManager.</span></span><span class="sig-name descname"><span class="pre">splitcell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ParallelNetManager.splitcell" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pnm.splitcell(hostcas,</span> <span class="pre">hostparent,</span> <span class="pre">sec=split_at)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The cell is split at the section <code class="docutils literal notranslate"><span class="pre">split_at</span></code> and that section’s
+parent into two subtrees rooted at the old connection end of <code class="docutils literal notranslate"><span class="pre">split_at</span></code>
+and the old <code class="docutils literal notranslate"><span class="pre">split_at</span></code> connecting point of the parent (latter must be
+0 or 1). The <code class="docutils literal notranslate"><span class="pre">split_at</span></code> subtree will be preserved on the host specified
+by hostcas and the parent subtree will be destroyed. The parent subtree
+will be preserved on the host specified by hostparent and the <code class="docutils literal notranslate"><span class="pre">split_at</span></code>
+subtree destroyed. Hostparent must be either <code class="docutils literal notranslate"><span class="pre">host_split_at+1</span></code> or <code class="docutils literal notranslate"><span class="pre">host_split_at-1</span></code>.</p>
+<p>Splitcell works only if NEURON has been configured with the
+–with-paranrn option. A split cell has exactly the same stability
+and accuracy properties as if it were on a single machine. Splitcell
+cannot be used with variable step methods at this time. A cell can
+be split into only two pieces.</p>
+<p>Splitcell is implemented using the <a class="reference internal" href="parcon.html#ParallelContext.splitcell" title="ParallelContext.splitcell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.splitcell()</span></code></a> method
+of <a class="reference internal" href="parcon.html#ParallelContext" title="ParallelContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lyttonmpi.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="netcon.html" class="btn btn-neutral float-right" title="NetCon" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

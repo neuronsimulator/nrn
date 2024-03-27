@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Numerical Methods Exercises &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Electrotonic Analysis with NEURON" href="electrotonic_analysis.html" />
+    <link rel="prev" title="Using the Neuroscience Gateway (NSG) portal" href="using_nsg_portal.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Numerical Methods Exercises</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-1">Exercise 1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-2">Exercise 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-3">Exercise 3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-4">Exercise 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-5">Exercise 5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-6">Exercise 6</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Numerical Methods Exercises</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/numerical-methods-exercises.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="numerical-methods-exercises">
+<span id="id1"></span><h1>Numerical Methods Exercises<a class="headerlink" href="#numerical-methods-exercises" title="Link to this heading"></a></h1>
+<section id="exercise-1">
+<h2>Exercise 1<a class="headerlink" href="#exercise-1" title="Link to this heading"></a></h2>
+<p>Consider the differential equation <span class="math notranslate nohighlight">\(\frac{dy}{dt} = y^2\)</span></p>
+<p><em>Note</em>: <span class="math notranslate nohighlight">\(y=0\)</span> is a fixed point; i.e. the derivative there is 0.
+This means if <span class="math notranslate nohighlight">\(y\)</span> is ever 0, then <span class="math notranslate nohighlight">\(y\)</span> would stay 0 forever. Thus if
+<span class="math notranslate nohighlight">\(y\)</span> is ever negative, then <span class="math notranslate nohighlight">\(y\)</span> stays negative for all time. Likewise if <span class="math notranslate nohighlight">\(y\)</span> is ever positive, then <span class="math notranslate nohighlight">\(y\)</span> stays positive for all time.</p>
+<p>Analytically solve this differential equation using the method of separation of variables subject to the initial condition <span class="math notranslate nohighlight">\(y(0) = -1\)</span>.
+Note that the solution has a singularity at <span class="math notranslate nohighlight">\(t=-1\)</span>.</p>
+<p>What is the value of <span class="math notranslate nohighlight">\(y(1)\)</span>?</p>
+<p>Thing to consider: Can every differential equation be solved this way? Can the Hodgkin-Huxley equations?</p>
+</section>
+<section id="exercise-2">
+<h2>Exercise 2<a class="headerlink" href="#exercise-2" title="Link to this heading"></a></h2>
+<p>Use the Explicit Euler method to numerically solve the differential equation
+<span class="math notranslate nohighlight">\(\frac{dy}{dt} = y^2\)</span> subject to the initial condition <span class="math notranslate nohighlight">\(y(0) = -1\)</span>.</p>
+<p>Implement the algorithm yourself; do not use an ode solver library.</p>
+<p>Graphically compare the solutions you obtain from several different choices of timestep with each other and with the exact solution you found in exercise 1. Plot the error at
+<span class="math notranslate nohighlight">\(t=1\)</span> versus the time step. Describe the relationship between the two.</p>
+<p><em>Bonus challenge</em>: implement the algorithm in a way that allows easily switching to solve a different differential equation.</p>
+<p><em>Bonus challenge</em>: implement the algorithm in a way that solves systems of differential equations. Test with <span class="math notranslate nohighlight">\(\frac{dx}{dt} = -y\)</span> and <span class="math notranslate nohighlight">\(\frac{dy}{dt} = x\)</span>  where
+<span class="math notranslate nohighlight">\(x(0)=1\)</span> and <span class="math notranslate nohighlight">\(y(0)=0\)</span>. For this example, plot <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> vs
+<span class="math notranslate nohighlight">\(t\)</span>. In a separate graph, plot <span class="math notranslate nohighlight">\(y\)</span> vs <span class="math notranslate nohighlight">\(x\)</span>. Describe the shape of the
+trajectory in this second plot.</p>
+</section>
+<section id="exercise-3">
+<h2>Exercise 3<a class="headerlink" href="#exercise-3" title="Link to this heading"></a></h2>
+<p>Repeat the main part of exercise 2 (not the bonus challenges) using the Implicit Euler method instead.</p>
+<p><em>Hint</em>: Your code will have to solve a quadratic. Remember that the solution to
+<span class="math notranslate nohighlight">\(ax^2+bx+c=0`\)</span> is <span class="math notranslate nohighlight">\(x=(-b\pm \sqrt{b^2-4ac})/(2a)\)</span>.</p>
+<p><em>Hint</em>: To decide whether to add or subtract, recall the observation in exercise 1 that <span class="math notranslate nohighlight">\(y&lt;0\)</span> for all time.</p>
+<p><em>Bonus challenge</em>: Repeat the same exercise except with the Implicit Midpoint Method: <span class="math notranslate nohighlight">\(y_{n+1}=y_n+dt f(\frac{1}{2}(y_n+y_{n+1}))\)</span>. Although the formula and process is similar to Implicit Euler, the error convergence is different. How might this difference in error convergence rates affect your choice of integration method?</p>
+</section>
+<section id="exercise-4">
+<h2>Exercise 4<a class="headerlink" href="#exercise-4" title="Link to this heading"></a></h2>
+<p>A major component of exercise 3 was using the quadratic formula to solve for <span class="math notranslate nohighlight">\(y\)</span> or for <span class="math notranslate nohighlight">\(\Delta y\)</span>. Most algebraic functions, however, do not have closed form solutions.</p>
+<p>In particular consider the function: <span class="math notranslate nohighlight">\(f(x)=e^x-x-2\)</span>.</p>
+<p>Since <span class="math notranslate nohighlight">\(f'(x)=e^x-1\)</span> is positive for <span class="math notranslate nohighlight">\(x&gt;0\)</span>, <span class="math notranslate nohighlight">\(f\)</span> is monotonic on that domain, so it has at most one root (place where it is 0) there. Further as <span class="math notranslate nohighlight">\(f\)</span> is continuous, <span class="math notranslate nohighlight">\(f(0)=-1\)</span>, and <span class="math notranslate nohighlight">\(\displaystyle \lim_{x \to \infty} f(x)= \infty\)</span>, by the intermediate value theorem there must be at least one root on (x&gt;0). Therefore there is exactly one root on <span class="math notranslate nohighlight">\(x&gt;0\)</span>. A similar argument shows there is exactly one root on <span class="math notranslate nohighlight">\(x&lt;0\)</span>.</p>
+<p>Plot the graph of <span class="math notranslate nohighlight">\(f\)</span> on an appropriate domain to convince yourself that there are in fact exactly two roots and to identify their approximate locations.</p>
+<p>Newton’s Method is one strategy for locating roots. Starting with a point <span class="math notranslate nohighlight">\(x_0\)</span>, we can define a sequence <span class="math notranslate nohighlight">\(x_{n+1}=x_n-f(x_n) / f ' (x_n)\)</span>. Intuitively, this algorithm chooses the next point to be where the function would be 0 based on its slope if it were a linear function. Under appropriate conditions on <span class="math notranslate nohighlight">\(f\)</span>, the sequence will converge to a root.</p>
+<p>Use Newton’s Method to approximate both roots of <span class="math notranslate nohighlight">\(f(x)=e^x-x-2\)</span>.</p>
+</section>
+<section id="exercise-5">
+<h2>Exercise 5<a class="headerlink" href="#exercise-5" title="Link to this heading"></a></h2>
+<p>Newton’s Method required us to know the derivative of the function. If that information is not available, it may be approximated by the forward difference</p>
+<div class="math notranslate nohighlight">
+\[f ' (x) \approx \frac{f(x+dx) - f(x)}{dx}\]</div>
+<p>or by the central difference</p>
+<div class="math notranslate nohighlight">
+\[f ' (x)\approx \frac{f(x+dx) - f(x-dx)}{2\, dx}\]</div>
+<p>for small values of <span class="math notranslate nohighlight">\(dx\)</span>.</p>
+<p>For both approximations, estimate the value of <span class="math notranslate nohighlight">\(f '(1)\)</span> for <span class="math notranslate nohighlight">\(f(x)=e^x-x-2\)</span> for several choices of <span class="math notranslate nohighlight">\(dx\)</span>. How does the errors compare for the two approaches as <span class="math notranslate nohighlight">\(dx \to 0\)</span>?</p>
+<p>Modify your Newton’s Method code from exercise 4 to work for an arbitrary function by approximating the derivative using the approximation from this exercise that converges most quickly.</p>
+</section>
+<section id="exercise-6">
+<h2>Exercise 6<a class="headerlink" href="#exercise-6" title="Link to this heading"></a></h2>
+<p>We cannot simply choose arbitrarily small choices of dx to get better approximations. While this would work in exact arithmetic, computers have limited precision due to how they represent numbers internally (usually IEEE 754).</p>
+<p>Consider the following Python session:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1e-10</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1e-100</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Clearly in both cases the two quantities are not equal, but in the second case we have numerical equality.</p>
+<p>Find the value of <em>machine epsilon</em>, which is defined as the smallest number that when added to one is not numerically equal to 1.</p>
+<p>Find two positive numbers <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span> with <span class="math notranslate nohighlight">\(b\)</span> less than machine
+epsilon but <span class="math notranslate nohighlight">\(a + b \ne a\)</span> numerically.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using_nsg_portal.html" class="btn btn-neutral float-left" title="Using the Neuroscience Gateway (NSG) portal" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="electrotonic_analysis.html" class="btn btn-neutral float-right" title="Electrotonic Analysis with NEURON" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/guide/data/solution.ses.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>load_file(“nrngui.hoc”)
+objectvar save_window_, rvp_
+objectvar scene_vector_[7]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(409,22,1)}</p>
+<p>//Begin nrniv
+{
+load_file(“single.hoc”)
+}
+ocbox_ = new SingleCompartment(0)
+ocbox_.inserter = new Inserter(0)
+{object_push(ocbox_.inserter)}
+{
+mt.select(“hh”) i = mt.selected()
+ms[i] = new MechanismStandard(“hh”)
+ms[i].set(“gnabar_hh”, 0.12, 0)
+ms[i].set(“gkbar_hh”, 0.036, 0)
+ms[i].set(“gl_hh”, 0.0003, 0)
+ms[i].set(“el_hh”, -54.3, 0)
+mstate[i]= 1
+maction(i)
+}
+{object_pop() doNotify()}
+{object_push(ocbox_)}
+{inserter.v1.map()}
+{endbox()}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.vbox
+ocbox_.map(“nrniv”, 300, 107, 93.12, 96)
+}
+objref ocbox_
+//End nrniv</p>
+<p>//Begin PointProcessManager
+{
+load_file(“pointman.hoc”)
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select(“IClamp”) i = mt.selected()
+ms[i] = new MechanismStandard(“IClamp”)
+ms[i].set(“del”, 0.5, 0)
+ms[i].set(“dur”, 0.1, 0)
+ms[i].set(“amp”, 0.2, 0)
+mt.select(“IClamp”) i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map(“PointProcessManager”, 71, 497, 208.32, 326.4)
+}
+objref ocbox_
+//End PointProcessManager</p>
+<p>{
+xpanel(“RunControl”, 0)
+v_init = -65
+xvalue(“Init”,”v_init”, 1,”stdinit()”, 1, 1 )
+xbutton(“Init &amp; Run”,”run()”)
+xbutton(“Stop”,”stoprun=1”)
+runStopAt = 5
+xvalue(“Continue til”,”runStopAt”, 1,”{continuerun(runStopAt) stoprun=1}”, 1, 1 )
+runStopIn = 1
+xvalue(“Continue for”,”runStopIn”, 1,”{continuerun(t + runStopIn) stoprun=1}”, 1, 1 )
+xbutton(“Single Step”,”steprun()”)
+t = 0
+xvalue(“t”,”t”, 2 )
+tstop = 5
+xvalue(“Tstop”,”tstop”, 1,”tstop_changed()”, 0, 1 )
+dt = 0.025
+xvalue(“dt”,”dt”, 1,”setdt()”, 0, 1 )
+steps_per_ms = 40
+xvalue(“Points plotted/ms”,”steps_per_ms”, 1,”setdt()”, 0, 1 )
+xcheckbox(“Quiet”,&amp;stdrun_quiet,””)
+realtime = 0
+xvalue(“Real Time”,”realtime”, 0,””, 0, 1 )
+xpanel(6,105)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -80, 5, 120, 300, 235, 300.48, 200.32)}
+graphList[0].append(save_window_)
+save_window_.save_name(“graphList[0].”)
+save_window_.addexpr(“v(.5)”, 1, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-1,1)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -1, 5, 2, 300, 500, 300.48, 200.32)}
+graphList[1].append(save_window_)
+save_window_.save_name(“graphList[1].”)
+save_window_.addvar(“soma.ik( 0.5 )”, 3, 1, 0.541214, 0.919169, 2)
+save_window_.addvar(“soma.ina( 0.5 )”, 2, 1, 0.276038, 0.248243, 2)
+save_window_.addvar(“soma.il_hh( 0.5 )”, 1, 1, 0.336741, 0.789776, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-0.2,5.1,-0.003,0.04)
+scene_vector_[5] = save_window_
+{save_window_.view(-0.2, -0.003, 5.3, 0.043, 629, 235, 300.48, 200.32)}
+graphList[2].append(save_window_)
+save_window_.save_name(“graphList[2].”)
+save_window_.addvar(“soma.gna_hh( 0.5 )”, 2, 1, 0.563578, 0.919169, 2)
+save_window_.addvar(“soma.gk_hh( 0.5 )”, 3, 1, 0.592332, 0.861661, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5.1,-0.05,1.2)
+scene_vector_[6] = save_window_
+{save_window_.view(0, -0.05, 5.1, 1.25, 629, 500, 300.48, 200.32)}
+graphList[2].append(save_window_)
+save_window_.save_name(“graphList[2].”)
+save_window_.addexpr(“(ena - v(0.5))/(ena - v_init)”, 1, 1, 0.113099, 0.909585, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}</p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

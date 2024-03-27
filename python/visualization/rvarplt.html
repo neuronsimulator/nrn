@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RangeVarPlot &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Shape" href="shape.html" />
+    <link rel="prev" title="PlotShape Window" href="plotshape.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">RangeVarPlot</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#RangeVarPlot"><code class="docutils literal notranslate"><span class="pre">RangeVarPlot</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">RangeVarPlot</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/rvarplt.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/rvarplt.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#RangeVarPlot" title="Link to this definition">RangeVarPlot</a></dt><dd><a href="#RangeVarPlot.begin" title="Link to this definition">begin</a> &middot; <a href="#RangeVarPlot.color" title="Link to this definition">color</a> &middot; <a href="#RangeVarPlot.end" title="Link to this definition">end</a> &middot; <a href="#RangeVarPlot.from_vector" title="Link to this definition">from_vector</a> &middot; <a href="#RangeVarPlot.left" title="Link to this definition">left</a> &middot; <a href="#RangeVarPlot.list" title="Link to this definition">list</a> &middot; <a href="#RangeVarPlot.origin" title="Link to this definition">origin</a> &middot; <a href="#RangeVarPlot.plot" title="Link to this definition">plot</a> &middot; <a href="#RangeVarPlot.right" title="Link to this definition">right</a> &middot; <a href="#RangeVarPlot.to_vector" title="Link to this definition">to_vector</a> &middot; <a href="#RangeVarPlot.vector" title="Link to this definition">vector</a></dd></dl></p><section id="rangevarplot">
+<span id="rvarplt"></span><h1>RangeVarPlot<a class="headerlink" href="#rangevarplot" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="RangeVarPlot">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RangeVarPlot</span></span><a class="headerlink" href="#RangeVarPlot" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.RangeVarPlot(&quot;rangevar&quot;</span> <span class="pre">[,</span> <span class="pre">start_segment,</span> <span class="pre">stop_segment])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.RangeVarPlot(py_callable</span> <span class="pre">[,</span> <span class="pre">start_segment,</span> <span class="pre">stop_segment])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Class for making a space plot. eg. voltage as function of path between
+two points on a cell.  Specification of the start and stop segments is
+optional, but if one is specified both must be specified.</p>
+<p>For Interviews plotting, an object of this type needs
+to be inserted in a Graph with <code class="docutils literal notranslate"><span class="pre">g.addobject(rvp)</span></code>. Alternatively, in
+NEURON 7.7+, the RangeVarPlot’s plot method can be used to plot a snapshot
+of the values on a Graph object, a bokeh plot, a matplotlib plot, or anything
+with a compatible interface to the last two.
+By default, the location of the path nearest the root is location 0
+(the origin) of the space plot.</p>
+<p>If the <em>rangevar</em> does not exist at certain places in the path it
+is assumed to have a value of 0.</p>
+<p>The first form where <em>rangevar</em> is “<em>v</em>” or “<em>m_hh</em>”, etc. is very
+efficient since the object can store pointers to the variables
+for fast plotting.</p>
+<p>The second form is much slower since the expression
+must be executed by the interpreter for each point along the path
+for each plot.  Execution of the expression is equivalent to
+<code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">sec</span> <span class="pre">in</span> <span class="pre">h.allsec():</span> <span class="pre">for</span> <span class="pre">seg</span> <span class="pre">in</span> <span class="pre">sec:</span> <span class="pre">f(seg.x)</span></code>
+where the expression is the body of f. All section-dependent NEURON
+functions will default to the correct section for the call; i.e. there is no need
+to say <code class="docutils literal notranslate"><span class="pre">sec=</span></code> unless you want to refer to a section that is not the one
+whose data is being plotted. The current section may be read via <code class="docutils literal notranslate"><span class="pre">h.cas()</span></code>.</p>
+<p>In NEURON 7.7+, RangeVarPlot’s constructor takes optional begin and end arguments.
+In Python, these would typically be segments, but they can also be normalized position
+on a single segment.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../modelspec/programmatic/topology/geometry.html#distance" title="distance"><code class="xref py py-func docutils literal notranslate"><span class="pre">distance()</span></code></a>, <a class="reference internal" href="graph.html#Graph.addobject" title="Graph.addobject"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addobject()</span></code></a>, <a class="reference internal" href="#RangeVarPlot.plot" title="RangeVarPlot.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">RangeVarPlot.plot()</span></code></a></p>
+</div>
+<p>Example (plotting by name):</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">dend1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dend1&#39;</span><span class="p">)</span>
+<span class="n">dend2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dend2&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">501</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">dend2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dend1</span><span class="p">)</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">rvp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">RangeVarPlot</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="n">dend1</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">dend2</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">addobject</span><span class="p">(</span><span class="n">rvp</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1002</span><span class="p">,</span> <span class="o">-</span><span class="mi">70</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../../_images/rangevarplot1.png" class="align-center" src="../../_images/rangevarplot1.png" />
+</div></blockquote>
+<p>Example (plotting a function):</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">dend1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dend1&#39;</span><span class="p">)</span>
+<span class="n">dend2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dend2&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">501</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">dend2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dend1</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">my_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">sec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">cas</span><span class="p">()</span>  <span class="c1"># find out which section</span>
+    <span class="k">if</span> <span class="n">sec</span> <span class="o">==</span> <span class="n">dend1</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+<span class="n">rvp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">RangeVarPlot</span><span class="p">(</span><span class="n">my_func</span><span class="p">,</span> <span class="n">dend1</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">dend2</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">addobject</span><span class="p">(</span><span class="n">rvp</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1002</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/rangevarplot2.png" class="align-center" src="../../_images/rangevarplot2.png" />
+</div></blockquote>
+<dl>
+<dt>Example (transfer impedance):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">imp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Impedance</span><span class="p">()</span>
+
+<span class="n">rvp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">RangeVarPlot</span><span class="p">(</span><span class="n">imp</span><span class="o">.</span><span class="n">transfer</span><span class="p">)</span>
+<span class="n">rvp</span><span class="o">...</span> <span class="c1">#specify range begin and end</span>
+<span class="n">imp</span><span class="o">...</span> <span class="c1">#specify impedance computation</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">addobject</span><span class="p">(</span><span class="n">rvp</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Example (plotting a rxd species):</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">rxd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">dend1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="s2">&quot;dend1&quot;</span><span class="p">)</span>
+<span class="n">dend1</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span><span class="mi">4</span>
+
+<span class="n">cyt1</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">dend1</span><span class="o">.</span><span class="n">wholetree</span><span class="p">(),</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+<span class="n">ca1</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca1&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+
+<span class="n">ca1</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">include_flux</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+<span class="n">ca1</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mf">0.4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">include_flux</span><span class="p">(</span><span class="o">-</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">ca1</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mf">0.7</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">include_flux</span><span class="p">(</span><span class="mi">70</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">dt</span> <span class="o">/=</span> <span class="mi">512</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mf">0.025</span><span class="p">)</span>
+
+<span class="n">a_1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">RangeVarPlot</span><span class="p">(</span><span class="n">ca1</span><span class="p">,</span> <span class="n">dend1</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">dend1</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">a_1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plt</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/rangevarplotrxd.png" class="align-center" src="../../_images/rangevarplotrxd.png" />
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.plot">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.plot" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.plot(graph_object)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">rvp.plot(graph_object,</span> <span class="pre">arg1,</span> <span class="pre">...,</span> <span class="pre">kwarg1=val1,</span> <span class="pre">...)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>In NEURON 7.7+, RangeVarPlot.plot plots the current state of the path on any of a number of types of graphs,
+including NEURON Graph objects, matplotlib, bokeh, and anything with a .plot or .line method taking x and y values.
+Any additional arguments or keyword arguments are passed to the graph’s plotting method.</p>
+</dd>
+<dt>Example:</dt><dd><p>Plotting to a matplotlib axis (instead of pyplot itself), bokeh, and NEURON’s Graph objects and passing optional
+arguments to each:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+<span class="kn">import</span> <span class="nn">bokeh.plotting</span> <span class="k">as</span> <span class="nn">b</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">dend</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dend&#39;</span><span class="p">)</span>
+<span class="n">dend</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">55</span>
+<span class="n">dend</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mf">6.28</span>
+
+<span class="c1">#looping over dend.allseg instead of dend to set 0 and 1 ends</span>
+<span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">dend</span><span class="o">.</span><span class="n">allseg</span><span class="p">():</span>
+    <span class="n">seg</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dend</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="n">seg</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">RangeVarPlot</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="n">dend</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">dend</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="c1">#Three argument constructor in 7.7+</span>
+
+<span class="c1">#matplotlib</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+<span class="c1">#NEURON graph</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">exec_menu</span><span class="p">(</span><span class="s1">&#39;View = plot&#39;</span><span class="p">)</span>
+
+<span class="c1">#Bokeh</span>
+<span class="n">bg</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">bg</span><span class="p">)</span>
+
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.begin">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">begin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.begin" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.begin(segment)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">rvp.begin(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Begins the path for the space plot at the specified segment. Using the first syntax
+is recommended in later code; the second is another way to specify the segment <code class="docutils literal notranslate"><span class="pre">section(x)</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
+RangeVarPlot constructor; e.g. <code class="docutils literal notranslate"><span class="pre">rvp</span> <span class="pre">=</span> <span class="pre">h.RangeVarPlot('v',</span> <span class="pre">soma(0),</span> <span class="pre">distal(1)</span></code></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.end">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.end" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.end(segment)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">rvp.end(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Ends the path for the space plot at the specified segment. Using the first syntax
+is recommended in later code; the second is another way to specify the segment <code class="docutils literal notranslate"><span class="pre">section(x)</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
+RangeVarPlot constructor; e.g. <code class="docutils literal notranslate"><span class="pre">rvp</span> <span class="pre">=</span> <span class="pre">h.RangeVarPlot('v',</span> <span class="pre">soma(0),</span> <span class="pre">distal(1)</span></code></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.origin">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">origin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.origin" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.origin(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Defines the origin (location 0) of the space plot as <code class="docutils literal notranslate"><span class="pre">section(x)</span></code>.
+The default is usually
+suitable unless you want to have several rangvarplots in one graph
+in which case this function is used to arrange all the plots relative
+to each other.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.left">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">left</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.left" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.left()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the coordinate of the beginning of the path.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.right">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">right</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.right" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.right()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the coordinate of the end of the path. The total length
+of the path is <code class="docutils literal notranslate"><span class="pre">rvp.right()</span> <span class="pre">-</span> <span class="pre">rvp.left()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.list">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.list" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.list(sectionlist)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>append the path of sections to the <a class="reference internal" href="../modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> object argument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.color">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.color" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.color(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Change the color property. To see the change on an already plotted
+RangeVarPlot in a Graph, the Graph should be <a class="reference internal" href="graph.html#Graph.flush" title="Graph.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flush()</span></code></a>ed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.vector">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.vector" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">yvec</span> <span class="pre">=</span> <span class="pre">rvp.vector()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy the range variable values to a new <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> yvec.
+(<code class="docutils literal notranslate"><span class="pre">len(yvec)</span></code> will be equal to the number of range points.)</p>
+</dd>
+<dt>Note:</dt><dd><p>New in NEURON 8.0.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.addobject" title="Graph.addobject"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addobject()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.to_vector">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">to_vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.to_vector" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.to_vector(yvec)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">rvp.to_vector(yvec,</span> <span class="pre">xvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy the range variable values to the <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref py py-func docutils literal notranslate"><span class="pre">Vector()</span></code></a> yvec. yvec is resized
+to the number of range points. If the second arg is present then
+the locations are copied to xvec. A plot of <code class="docutils literal notranslate"><span class="pre">yvec.line(g,</span> <span class="pre">xvec)</span></code> would
+be identical to a plot using <code class="docutils literal notranslate"><span class="pre">g.addobject(rvp)</span></code>. Returns the number of
+range points.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.addobject" title="Graph.addobject"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addobject()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="RangeVarPlot.from_vector">
+<span class="sig-prename descclassname"><span class="pre">RangeVarPlot.</span></span><span class="sig-name descname"><span class="pre">from_vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#RangeVarPlot.from_vector" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">rvp.from_vector(yvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy the values in yvec to the range variables along the rvp path.
+The size of the vector must be consistent with rvp.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="plotshape.html" class="btn btn-neutral float-left" title="PlotShape Window" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="shape.html" class="btn btn-neutral float-right" title="Shape" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

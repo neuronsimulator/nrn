@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MechanismType &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="StateTransitionEvent" href="ste.html" />
+    <link rel="prev" title="Electrode" href="electrod.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="electrod.html">Electrode</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ste.html">StateTransitionEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Model Specification</a></li>
+      <li class="breadcrumb-item active">MechanismType</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/modelspec/programmatic/mechtype.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/modelspec/programmatic/mechtype.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#MechanismType" title="Link to this definition">MechanismType</a></dt><dd><a href="#MechanismType.action" title="Link to this definition">action</a> &middot; <a href="#MechanismType.code" title="Link to this definition">code</a> &middot; <a href="#MechanismType.count" title="Link to this definition">count</a> &middot; <a href="#MechanismType.file" title="Link to this definition">file</a> &middot; <a href="#MechanismType.has_net_event" title="Link to this definition">has_net_event</a> &middot; <a href="#MechanismType.internal_type" title="Link to this definition">internal_type</a> &middot; <a href="#MechanismType.is_artificial" title="Link to this definition">is_artificial</a> &middot; <a href="#MechanismType.is_netcon_target" title="Link to this definition">is_netcon_target</a> &middot; <a href="#MechanismType.make" title="Link to this definition">make</a> &middot; <a href="#MechanismType.menu" title="Link to this definition">menu</a> &middot; <a href="#MechanismType.pp_begin" title="Link to this definition">pp_begin</a> &middot; <a href="#MechanismType.pp_next" title="Link to this definition">pp_next</a> &middot; <a href="#MechanismType.remove" title="Link to this definition">remove</a> &middot; <a href="#MechanismType.select" title="Link to this definition">select</a> &middot; <a href="#MechanismType.selected" title="Link to this definition">selected</a></dd></dl></p><section id="mechanismtype">
+<span id="mechtype"></span><h1>MechanismType<a class="headerlink" href="#mechanismtype" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="MechanismType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MechanismType</span></span><a class="headerlink" href="#MechanismType" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt</span> <span class="pre">=</span> <span class="pre">h.MechanismType(0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mt</span> <span class="pre">=</span> <span class="pre">h.MechanismType(1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Provides a way of iterating over all membrane mechanisms or point
+processes and allows selection via a menu or under hoc control.</p>
+<p>The 0 argument creates a list of all available distributed
+membrane mechanisms (as opposed to PointProcesses). eg “hh”, “pas”, “extracellular”. that can
+be inserted into a section.</p>
+<p>The 1 argument creates a
+list of all available Point Processes.
+eg. IClamp, AlphaSynapse, VClamp.</p>
+<p>Mechanism order is the same as the argument order that created the “special”
+during <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span></code> or <code class="docutils literal notranslate"><span class="pre">mknrndll</span></code>. Therefore when a saved session depends
+on information in a <code class="docutils literal notranslate"><span class="pre">MechanismType</span></code> it is dependent on a particular special
+or dll.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="c1"># Print the names of all density mechanisms</span>
+<span class="n">mt</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">MechanismType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mname</span>  <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">count</span><span class="p">()):</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">selected</span><span class="p">(</span><span class="n">mname</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">mname</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../programming/mechstan.html#MechanismStandard" title="MechanismStandard"><code class="xref py py-class docutils literal notranslate"><span class="pre">MechanismStandard</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.select">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.select" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt.select(&quot;name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mt.select(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>selects either the named mechanism or the i’th mechanism in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.selected">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">selected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.selected" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">=</span> <span class="pre">mt.selected([strdef])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the index of the current selection.  If present, strdef is assigned
+to the name of the current selection.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">strdef</span></code> must be a NEURON string reference (e.g. one created via <code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">=</span> <span class="pre">h.ref('')</span></code>);
+to access its contents use <code class="docutils literal notranslate"><span class="pre">strdef[0]</span></code>; see the example for the constructor above. In
+particular <code class="docutils literal notranslate"><span class="pre">strdef</span></code> cannot be a Python string.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.remove">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt.remove(sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>For distributed mechanisms invoked with the “insert” statement.
+Deletes selected mechanism from the specified section. A noop
+if the mechanism is not in the section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.make">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">make</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.make" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt.make(sec=section)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mt.make(objectref)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">mt.make(sec=section)</span></code></dt><dd><p>For distributed mechanisms. Inserts selected mechanism into <code class="docutils literal notranslate"><span class="pre">section</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">mt.make(objectref)</span></code></dt><dd><p>For point processes.  The arg becomes a reference to a new point process
+of type given by the selection.
+Note that the newly created point process is not located in any section.
+If <em>objectref</em> was the only reference to another object then
+that object is destroyed. <em>objectref</em> is a NEURON pointer to an object, and
+may be created via <code class="docutils literal notranslate"><span class="pre">objectref</span> <span class="pre">=</span> <span class="pre">h.ref(None)</span></code>; the object created by a call
+to <code class="docutils literal notranslate"><span class="pre">make</span></code> may be accessed via <code class="docutils literal notranslate"><span class="pre">objectref[0]</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.count">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.count" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">=</span> <span class="pre">mt.count()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The number of different mechanisms in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.menu">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.menu" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt.menu()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Inserts a special menu into the currently open <code class="docutils literal notranslate"><span class="pre">xpanel</span></code>. The menu
+label always reflects the current selection. Submenu items are indexed
+according to position with the first item being item 0.  When the mouse
+button is released on a submenu item that item becomes the selection
+and the action (if any) is executed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.action">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.action" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mt.action(py_callable)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When a submenu item is selected, <code class="docutils literal notranslate"><span class="pre">py_callable</span></code> is invoked with two arguments:
+the MechanismType object, and the index.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">cb</span><span class="p">(</span><span class="n">mt</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">nameref</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">selected</span><span class="p">(</span><span class="n">nameref</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;selected </span><span class="si">{</span><span class="n">nameref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">mtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">MechanismType</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;MechanismTypes&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">mtypes</span><span class="p">:</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="n">cb</span><span class="p">)</span>
+    <span class="n">mt</span><span class="o">.</span><span class="n">menu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Python support for this method was added in NEURON 7.5.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.is_netcon_target">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">is_netcon_target</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.is_netcon_target" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span>&#160; <span class="pre">mt.is_netcon_target(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The i’th point process has a NET_RECEIVE block and can therefore be
+a target for a <a class="reference internal" href="network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.has_net_event">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">has_net_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.has_net_event" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">mt.has_net_event(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The i’th point process has a net_event call in its NET_RECEIVE block
+and can therefore be a source for a <a class="reference internal" href="network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> object.
+This means it is <a class="reference internal" href="network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> stimulator or that
+the point process can be used as an artificial neural network cell.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.is_artificial">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">is_artificial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.is_artificial" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">mt.is_artificial(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The i’th point process is an ARTIFICIAL_CELL
+and can therefore be a source for a <a class="reference internal" href="network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> object.
+This means it is <a class="reference internal" href="network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> stimulator or that
+the point process can be used as an artificial neural network cell.</p>
+<p>This seems to have, but does not, equivalent functionality to
+<a class="reference internal" href="#MechanismType.has_net_event" title="MechanismType.has_net_event"><code class="xref py py-func docutils literal notranslate"><span class="pre">has_net_event()</span></code></a> and was introduced because ARTIFICIAL_CELL objects are no
+longer located in sections. Some ARTIFICIAL_CELLs such as the PatternStim
+do not make use of net_event in their implementation, and some PointProcesses
+do use net_event and must be located in sections for their proper function,
+e.g. reciprocal synapses.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.pp_begin">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">pp_begin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.pp_begin" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">obj</span> <span class="pre">=</span> <span class="pre">mt.pp_begin(sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Initializes an iterator used to iterate over point processes of
+a particular type in <code class="docutils literal notranslate"><span class="pre">section</span></code>.
+Returns the first point process in
+<code class="docutils literal notranslate"><span class="pre">section</span></code> having the type specified by the <a class="reference internal" href="#MechanismType.select" title="MechanismType.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MechanismType.select()</span></code></a>
+statement. This only works if the the MechanismType was instantiated
+with the (1) argument. If there is no such point process in the
+section the method returns None. Note that, prior to version
+6.2, although
+the x=1 node is normally
+considered to be part of the section, the parent node
+was not looked at (normally x = 0) unless the section was the
+root of the tree. As of version 6.2, both the 0 and 1 locations
+are looked at and if the point process used the section to locate
+it, then it is returned. If the point process used the child or
+parent section to locate it, it is not returned.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">cable</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cable&#39;</span><span class="p">)</span>
+<span class="n">cable</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">stim</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">cable</span><span class="p">(</span><span class="n">i</span><span class="o">/</span><span class="mf">2.</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+
+<span class="n">mt</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">MechanismType</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">mt</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;IClamp&quot;</span><span class="p">)</span>
+<span class="n">pp</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">pp_begin</span><span class="p">()</span>
+<span class="k">while</span> <span class="n">h</span><span class="o">.</span><span class="n">object_id</span><span class="p">(</span><span class="n">pp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">seg</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">get_segment</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pp</span><span class="si">}</span><span class="s2"> located at </span><span class="si">{</span><span class="n">seg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">pp</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">pp_next</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.pp_next">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">pp_next</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.pp_next" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">obj</span> <span class="pre">=</span> <span class="pre">mt.pp_next()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the next point process of the type and in the section that
+were specified in the earlier call to <a class="reference internal" href="#MechanismType.pp_begin" title="MechanismType.pp_begin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">MechanismType.pp_begin()</span></code></a> .
+When there are no more point processes, the return value is NULLobject.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.internal_type">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">internal_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.internal_type" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">internal_type</span> <span class="pre">=</span> <span class="pre">mt.internal_type()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the internal type index of the selected mechanism.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.file">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.file" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">file_name</span> <span class="pre">=</span> <span class="pre">mt.file()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the mod file name for the currently selected mechanism.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="n">mt</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">MechanismType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mt</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;hh&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">file</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="MechanismType.code">
+<span class="sig-prename descclassname"><span class="pre">MechanismType.</span></span><span class="sig-name descname"><span class="pre">code</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#MechanismType.code" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">code_string</span> <span class="pre">=</span> <span class="pre">mt.code()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the nmodl code for the currently selected mechanism.
+.. code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span>
+
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="n">mt</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">MechanismType</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mt</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;hh&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[:</span><span class="mi">4</span><span class="p">]))</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="electrod.html" class="btn btn-neutral float-left" title="Electrode" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ste.html" class="btn btn-neutral float-right" title="StateTransitionEvent" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

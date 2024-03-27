@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mcell_ran4 &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="GUIMath" href="guimath.html" />
+    <link rel="prev" title="Pseudo-Random Number Generation" href="random.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../hoc.html">HOC Language</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../mathematics.html">Mathematics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="constants.html">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="functions.html">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="matrix.html">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vector.html">Vector</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="random.html">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../mathematics.html">Mathematics</a></li>
+          <li class="breadcrumb-item"><a href="random.html">Pseudo-Random Number Generation</a></li>
+      <li class="breadcrumb-item active">mcell_ran4</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/programming/math/mcran4.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/programming/math/mcran4.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#mcell_ran4" title="Link to this definition">mcell_ran4</a> &middot; <a href="#mcell_ran4_init" title="Link to this definition">mcell_ran4_init</a> &middot; <a href="#use_mcell_ran4" title="Link to this definition">use_mcell_ran4</a></p><section id="mcell-ran4">
+<h1>mcell_ran4<a class="headerlink" href="#mcell-ran4" title="Link to this heading"></a></h1>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="mcell_ran4">
+<span class="sig-name descname"><span class="pre">mcell_ran4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mcell_ran4" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">mcell_ran4(&amp;highindex)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A 64bit cryptographic quality random number generator. Uniformly distributed
+in the range 0-1.  The highindex integer (0 &lt;= highindex &lt;= 2^32-1)
+is incremented by one on each call. Multiple independent
+streams are possible, each associated with a separate  highindex
+with different starting values but the difference between highindex starting
+values should be greater than the length of each stream.
+The lowindex 32 bits are 0 by default and
+can be set using <a class="reference internal" href="#mcell_ran4_init" title="mcell_ran4_init"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a> . Streams can be replayed at any index
+(as long as the lowindex is the same).</p>
+<p>See <a class="reference internal" href="random.html#Random.Random123" title="Random.Random123"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> for an even more useful alternative.</p>
+<p>This generator was obtained from Tom Bartol <code class="docutils literal notranslate"><span class="pre">&lt;bartol&#64;salk.edu&gt;</span></code>
+who uses them in his mcell program. (hence the mcell prefix)
+He comments:
+For MCell, Ran4 has the distinct advantage of generating
+streams of random bits not just random numbers.  This means that you can
+break the 32 bits of a single returned random number into several smaller
+chunks without fear of correlations between the chunks.  Ran4 is not the
+fastest generator in the universe but it’s pretty fast (16 million
+floating point random numbers per second on my 1GHz Intel PIII and 20
+million integer random numbers per second) and of near cryptographic
+quality. I’ve modified it so that a given seed will generate the same
+sequence on Intel, Alpha, RS6000, PowerPC, and MIPS architectures (and
+probably anything else out there).  It’s also been modified to generate
+arbitrary length vectors of random numbers.  This makes generating numbers
+more efficient because you can generate many numbers per function call.
+MCell generates them in chunks of 10000 at a time.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref vec, g1, g2, hist
+vec = new Vector(1000)
+g1 = new Graph()
+g2 = new Graph()
+g1.size(0, 1000, 0, 1)
+g2.size(0, 1, 0, 150)
+
+highindex = 1
+lowindex = mcell_ran4_init()
+
+proc doit() {local i
+        g1.erase() g2.erase()
+    for i=0, vec.size-1 {
+            vec.x[i] = mcell_ran4(&amp;highindex)
+    }
+        hist = vec.histogram(0, 1, 0.1)
+        vec.line(g1)
+        hist.line(g2, .1)
+        g1.flush g2.flush
+}
+
+variable_domain(&amp;highindex, 0, 2^32-1)
+xpanel(&quot;mcell_ran4 test&quot;)
+xbutton(&quot;Sample&quot;, &quot;doit()&quot;)
+xpvalue(&quot;highindex&quot;, &amp;highindex, 1, &quot;doit()&quot;)
+xpvalue(&quot;lowindex&quot;, &amp;lowindex, 1, &quot;mcell_ran4_init(lowindex) doit()&quot;)
+xpanel()
+
+doit()
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="random.html#Random" title="Random"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Random</span></code></a>, <a class="reference internal" href="random.html#Random.MCellRan4" title="Random.MCellRan4"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a>, <a class="reference internal" href="#use_mcell_ran4" title="use_mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">use_mcell_ran4()</span></code></a>, <a class="reference internal" href="#mcell_ran4_init" title="mcell_ran4_init"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a>,
+<a class="reference internal" href="random.html#Random.Random123" title="Random.Random123"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="use_mcell_ran4">
+<span class="sig-name descname"><span class="pre">use_mcell_ran4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#use_mcell_ran4" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">previous</span> <span class="pre">=</span> <span class="pre">use_mcell_ran4(next)</span> <span class="pre">//</span> <span class="pre">next</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">0</span> <span class="pre">or</span> <span class="pre">1</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">use_mcell_ran4()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>use_mcell_ran4(1) causes scop_random in model descriptions to use
+the <a class="reference internal" href="#mcell_ran4" title="mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a> cryptographic quality random generator. Otherwise, the
+low quality (but faster) linear congruential generator is used.</p>
+<p>At present (version 5.2) the default is 0.</p>
+<p>Note that this affects the random numbers computed within
+model descriptions that use the functions:
+scop_random, exprand, normrand, and poisrand. Also note that when a model
+description uses set_seed(seed) and use_mcell_ran4 is true then the
+seed refers to the 32 bit highindex as in <a class="reference internal" href="#mcell_ran4" title="mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a> .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="mcell_ran4_init">
+<span class="sig-name descname"><span class="pre">mcell_ran4_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mcell_ran4_init" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">previous_lowindex</span> <span class="pre">=</span> <span class="pre">mcell_ran4_init(lowindex)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">lowindex=</span> <span class="pre">mcell_ran4_init()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets the 32 bit lowindex of the <a class="reference internal" href="#mcell_ran4" title="mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a> generator. The default lowindex
+is 0. This affects random number streams (when use_mcell_ran4() returns 1)
+in model descriptions using scop_rand, etc. It also affects Random
+class streams that are using the <a class="reference internal" href="random.html#Random.MCellRan4" title="Random.MCellRan4"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> generator.</p>
+<p><a class="reference internal" href="random.html#Random.Random123_globalindex" title="Random.Random123_globalindex"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123_globalindex()</span></code></a> plays a similar role as this function for
+the <a class="reference internal" href="random.html#Random.Random123" title="Random.Random123"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> generator.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="random.html" class="btn btn-neutral float-left" title="Pseudo-Random Number Generation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="guimath.html" class="btn btn-neutral float-right" title="GUIMath" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

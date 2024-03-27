@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to develop and debug your own code &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How to develop and debug your own code</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/how_to_develop_and_debug_code.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-to-develop-and-debug-your-own-code">
+<span id="id1"></span><h1>How to develop and debug your own code<a class="headerlink" href="#how-to-develop-and-debug-your-own-code" title="Link to this heading"></a></h1>
+<section id="rule-i-don-t-write-a-bunch-of-code-or-create-a-bunch-of-gui-windows-all-at-once-and-then-expect-everything-to-work-the-first-time-you-try-it">
+<h2>Rule I: Don’t write a bunch of code (or create a bunch of GUI windows) all at once, and then expect everything to work the first time you try it.<a class="headerlink" href="#rule-i-don-t-write-a-bunch-of-code-or-create-a-bunch-of-gui-windows-all-at-once-and-then-expect-everything-to-work-the-first-time-you-try-it" title="Link to this heading"></a></h2>
+<p>Algorithm for developing code that works:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>First, break the problem into a sequence of small tasks that can be implemented and tested, one at a time.</p></li>
+<li><p>Pick the first task.</p></li>
+<li><p>Write the code, or create the GUI tool, that accomplishes this task.
+If this involves anything that you aren’t absolutely sure about,
+read the relevant entries in Programmer’s Reference,
+and/or use the GUI on a toy problem to make sure you know what you’re doing.</p></li>
+<li><p>Repeat. Test your program to see if it works. If it doesn’t work, re-read the Programmer’s Reference and revise the code (or work with the GUI tool) until your program works.</p></li>
+<li><p>If no more tasks remain, your job is done.
+Otherwise, pick the next task and go to step 3.</p></li>
+</ol>
+</div></blockquote>
+</section>
+<section id="rule-ii-learn-how-to-debug-your-own-code">
+<h2>Rule II: Learn how to debug your own code.<a class="headerlink" href="#rule-ii-learn-how-to-debug-your-own-code" title="Link to this heading"></a></h2>
+<p>Algorithm for debugging code:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Try to break the code into chunks that accomplish a sequence of small tasks.</p></li>
+<li><p>Comment out all of the code except for the little bit that accomplishes the first task.</p></li>
+<li><p>Repeat.
+Test the code to see if it works.
+If it doesn’t work, re-read the Programmer’s Reference, then revise the code
+until the code works.</p></li>
+<li><p>If no more chunks of code remain, your job is done.
+Otherwise, uncomment the next chunk of code, and go to step 3.</p></li>
+</ol>
+</div></blockquote>
+</section>
+<section id="the-python-debugger-pdb">
+<h2>The Python Debugger: pdb<a class="headerlink" href="#the-python-debugger-pdb" title="Link to this heading"></a></h2>
+<p>NEURON models implemented in Python may also be examined using <a class="reference external" href="https://docs.python.org/3/library/pdb.html">Python’s built-in debugger pdb</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

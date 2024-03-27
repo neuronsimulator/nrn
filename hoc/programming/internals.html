@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Debugging and Internals Access &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Model Specification GUI Tools" href="../modelspec/guitools.html" />
+    <link rel="prev" title="HOC accessing Python" href="python-from-hoc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Debugging and Internals Access</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#namespace-related">Namespace Related</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#object-related">Object Related</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+      <li class="breadcrumb-item active">Debugging and Internals Access</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/internals.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/internals.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#allobjects" title="Link to this definition">allobjects</a> &middot; <a href="#allobjectvars" title="Link to this definition">allobjectvars</a> &middot; <a href="#hoc_pointer_" title="Link to this definition">hoc_pointer_</a> &middot; <a href="#name_declared" title="Link to this definition">name_declared</a> &middot; <a href="#object_id" title="Link to this definition">object_id</a> &middot; <a href="#object_pop" title="Link to this definition">object_pop</a> &middot; <a href="#object_push" title="Link to this definition">object_push</a> &middot; <a href="#symbols" title="Link to this definition">symbols</a></p><section id="debugging-and-internals-access">
+<h1>Debugging and Internals Access<a class="headerlink" href="#debugging-and-internals-access" title="Link to this heading"></a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">neuron.nrn_dll()</span></code></p>
+</div>
+<section id="namespace-related">
+<h2>Namespace Related<a class="headerlink" href="#namespace-related" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="name_declared">
+<span class="sig-name descname"><span class="pre">name_declared</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#name_declared" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">name_declared(&quot;name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">name_declared(&quot;name&quot;,</span> <span class="pre">1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">name_declared(&quot;name&quot;,</span> <span class="pre">2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return 0 if the name is not in the symbol table. The first form looks
+for names in the top level symbol table. The second form looks in the
+current object context. The last form also looks in the top level
+symbol table but is useful in Python to distinguish subtypes of
+variables which appear as doubles in HOC but internally are really
+not doubles and so cannot be pointed to by double*, eg. h.secondorder
+which is &lt;type ‘int’&gt; or h.nseg which returns either
+<code class="docutils literal notranslate"><span class="pre">TypeError:</span> <span class="pre">Section</span> <span class="pre">access</span> <span class="pre">unspecified</span></code> or
+<code class="docutils literal notranslate"><span class="pre">nseg</span>&#160; <span class="pre">not</span> <span class="pre">a</span> <span class="pre">USERPROPERTY</span> <span class="pre">that</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">pointed</span> <span class="pre">to</span></code></p>
+<p>If the name exists return</p>
+<p>2 if an objref</p>
+<p>3 if a Section</p>
+<p>4 if a <a class="reference internal" href="ockeywor.html#hoc-keyword-strdef"><span class="std std-ref">strdef</span></a></p>
+<p>5 if a scalar or <a class="reference internal" href="ockeywor.html#hoc-keyword-double"><span class="std std-ref">double</span></a> variable. (if second arg is not 2)</p>
+<blockquote>
+<div><p>if second arg is 2</p>
+<p>5 if a scalar double</p>
+<p>6 if a double array</p>
+<p>7 if an integer</p>
+<p>8 if a section property</p>
+</div></blockquote>
+<p>1 otherwise</p>
+<p>Note that names can be (re)declared only if they do not already
+exist or are already of the same type.
+This is too useful to require the user to waste an objref in creating a
+<a class="reference internal" href="strfun.html#StringFunctions" title="StringFunctions"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">StringFunctions</span></code></a> class to use <a class="reference internal" href="strfun.html#StringFunctions.is_name" title="StringFunctions.is_name"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">is_name()</span></code></a>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>name_declared(&quot;nrnmainmenu_&quot;)
+{object_push(nrnmainmenu_) print name_declared(&quot;ldfile&quot;, 0) object_pop()}
+{object_push(nrnmainmenu_) print name_declared(&quot;ldfile&quot;, 1) object_pop()}
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="symbols">
+<span class="sig-name descname"><span class="pre">symbols</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#symbols" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Name:</dt><dd><p>symbols — type the names of HOC functions and variables</p>
+</dd>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">symbols()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Types a list of functions and variable names defined in HOC.  Dimensions
+of arrays are also indicated.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>No longer works. The nearest replacement is <a class="reference internal" href="gui/symchooser.html#SymChooser" title="SymChooser"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">SymChooser()</span></code></a> .</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="object-related">
+<h2>Object Related<a class="headerlink" href="#object-related" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="object_id">
+<span class="sig-name descname"><span class="pre">object_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#object_id" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">object_id(objref)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">object_id(objref,</span> <span class="pre">1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 0 if the object reference does not point to an object instance.
+(Otherwise returns the pointer cast to a double, not a very useful number)</p>
+<p>If the second argument is 1, it returns the index of the object name. Returns
+-1 if the object is the NULLObject.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="allobjectvars">
+<span class="sig-name descname"><span class="pre">allobjectvars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#allobjectvars" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">allobjectvars()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints all the object references (objref variables) that have been
+declared along with the class type of the object they reference and the
+number of references.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Instead of printing the address of the object in hex format, it ought
+also to print the object_id and/or the internal instance name.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="allobjects">
+<span class="sig-name descname"><span class="pre">allobjects</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#allobjects" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">allobjects()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">allobjects(&quot;templatename&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">nref</span> <span class="pre">=</span> <span class="pre">allobjects(objectref)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints the internal names of all class instances (objects) available
+from the interpreter along with the number of references to them.</p>
+<p>With a templatename the list is restricted to objects of that class.</p>
+<p>With an object variable, nothing is printed but the reference count
+is returned. The count is too large by one if the argument was of the
+form templatename[index] since a temporary reference is created while
+the object is on the stack during the call.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="object_push">
+<span class="sig-name descname"><span class="pre">object_push</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#object_push" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">object_push(objref)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Enter the context of the object referenced by objref. In this context you
+can directly access any variables or call any functions, even those not
+declared as <a class="reference internal" href="oop.html#hoc-keyword-public"><span class="std std-ref">public</span></a>. Do not attempt to create any new symbol names!
+This function is generally used by the object itself to save its state
+in a session.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="object_pop">
+<span class="sig-name descname"><span class="pre">object_pop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#object_pop" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">object_pop()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Pop the last object from an <a class="reference internal" href="#object_push" title="object_push"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">object_push()</span></code></a> .</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="miscellaneous">
+<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="hoc_pointer_">
+<span class="sig-name descname"><span class="pre">hoc_pointer_</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hoc_pointer_" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">hoc_pointer_(&amp;variable)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A function used by c and c++ implementations to request a pointer to
+the variable from its interpreter name. Not needed by the user.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="python-from-hoc.html" class="btn btn-neutral float-left" title="HOC accessing Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../modelspec/guitools.html" class="btn btn-neutral float-right" title="Model Specification GUI Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaction-diffusion introduction &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Initialization Strategies" href="basic-initialization.html" />
+    <link rel="prev" title="Python RXD tutorials" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python RXD tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Reaction-diffusion introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Math">Math</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Where">Where</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Who">Who</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#How">How</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Reading-the-data">Reading the data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#NodeList">NodeList</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Node">Node</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Examples">Examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Simple-Reaction-with-Abrupt-Change-in-Reaction-Rate">Simple Reaction with Abrupt Change in Reaction Rate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Scalar-Bistable-Wave">Scalar Bistable Wave</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="basic-initialization.html">Initialization Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Changing%20initial%20conditions%20and%20parameters.html">Varying initial concentrations and parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="thresholds.html">Reaction-diffusion thresholds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extracellular.html">Extracellular reaction-diffusion tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Restricting%20reactions%20to%20certain%20sections.html">Restricting reactions to a part of a region</a></li>
+<li class="toctree-l2"><a class="reference internal" href="degradable_buffer.html">Example: Degradable buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circadian.html">Example: Circadian rhythm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcium%20waves.html">Example: Calcium waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combining%20currents%20from%20mod%20files%20with%20rxd.html">Example: combining MOD file ion channels with rxd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ip3-demo.html">IP3 demo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python RXD tutorials</a></li>
+      <li class="breadcrumb-item active">Reaction-diffusion introduction</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rxd-tutorials/Reaction-Diffusion tutorial.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Reaction-diffusion-introduction">
+<h1>Reaction-diffusion introduction<a class="headerlink" href="#Reaction-diffusion-introduction" title="Link to this heading"></a></h1>
+<p><p>This is the first in a collection of tutorials about NEURON’s reaction-diffusion module. You may also be interested in these topics:</p>
+<ul><li><p>varying initial concentrations and parameters</p>
+</li><li><p>non-uniform initial conditions</p>
+</li><li><p>calcium wave</p>
+</li><li><p>location-dependent parameters</p>
+</li><li><p>limiting a reaction to part of a region</p>
+</li><li><p>radial diffusion</p>
+</li><li><p>thresholding reactions</p>
+</li><li><p>3D intracellular</p>
+</li><li><p>extracellular diffusion</p>
+</li></ul><p>See also:</p>
+<ul><li><p>Reaction-Diffusion exercises from the 2018 NEURON course</p>
+</ul><section id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading"></a></h2>
+<p><p>Proteins, ions, etc… in a cell perform signalling functions by moving, reacting with other molecules, or both. In some cases, this movement is by active transport processes, which we do not consider here. If all movement is due to diffusion (wherein a molecule moves randomly), then such systems are known as reaction-diffusion systems.</p>
+</p><p><p>These problems are characterized by the answers to three questions: (1) Where do the dynamics occur, (2) Who are the actors, and (3) How do they interact?</p>
+</p></section>
+<section id="Math">
+<h2>Math<a class="headerlink" href="#Math" title="Link to this heading"></a></h2>
+<p><p>Reaction-diffusion equations are equations or systems of equations of the form [<span class="math">\frac{\partial u}{\partial t}</span> = <span class="math">\nabla `:nbsphinx-math:</span>cdot <cite>(d :nbsphinx-math:</cite>nabla <cite>u) + f(u, t)] where (u) is the concentration of some state variable. If the diffusion coefficient (D) is constant, (:nbsphinx-math:</cite>nabla <cite>:nbsphinx-math:</cite>cdot <cite>(d :nbsphinx-math:</cite>nabla <cite>u) = d :nbsphinx-math:</cite>nabla`^2 u) where (<span class="math">\nabla`^2) is the Laplacian operator. In
+one-dimensional Cartesian space, (:nbsphinx-math:</span>nabla`^2 u = u_{xx}), while in three-dimensional Cartesian space (:nbsphinx-math:<a href="#id1"><span class="problematic" id="id2">`</span></a>nabla`^2 u = u_{xx} + u_{yy} + u_{zz}). This form follows from Fick’s law of diffusion and the Divergence theorem and assumes that the diffusion constant (d) is uniform throughout the spatial domain.</p>
+</p><p>## Specification</p>
+<p><p>To describe a reaction-diffusion problem in NEURON, begin by loading the rxd library:</p>
+</p><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">rxd</span>
+</pre></div>
+</div>
+<p>Then answer the three questions: where, who, and how.</p>
+<section id="Where">
+<h3>Where<a class="headerlink" href="#Where" title="Link to this heading"></a></h3>
+<p><p>We begin by identifying the domain; i.e. where do the dynamics occur? For many electrophysiology simulations, the only relevant domains are the plasma membrane or the volumes immediately adjacent to it on either side, since these are the regions responsible for generating the action potential. Cell biology models, by contrast, have dynamics spanning a more varied set of locations. In addition to the previous three regions, the endoplasmic reticulum (ER), mitochondria, and nuclear envelop often
+play key roles.</p>
+</p><p><p>The rxd.Region class is used to describe the domain:</p>
+</p><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">sections</span><span class="p">,</span> <span class="n">nrn_region</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><p>In its simplest usage, rxd.Region simply takes a Python iterable (e.g. a list or a h.SectionList) of h.Section objects. In this case, the domain is the interior of the sections, but the concentrations for any species created on such a domain will only be available through the rxd.Species object and not through HOC or NMODL.</p>
+</p><p>Example: Region on all sections:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Example: Region on just a few sections:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">([</span><span class="n">soma</span><span class="p">,</span> <span class="n">apical1</span><span class="p">,</span> <span class="n">apical2</span><span class="p">])</span>
+</pre></div>
+</div>
+<p><p>If the region you are describing coincides with the domain on the immediate interior of the membrane, set nrn_region=’i’, e.g.</p>
+</p><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Concentration in these regions increases when a molecule of the species of interest crosses from outside the membrane to the inside via an NMODL or kschan mechanism. If a species on such a region is named ca, then its concentrations can be read and set via the NEURON and NMODL range variable cai.</p>
+<p>Also: for the region just outside the membrane (the Frankenhaeuser-Hodgkin space) use nrn_region=’o’. For full 3D extracellular diffusion, define the region with rxd.Extracellular; for more on extracellular diffusion in NEURON, see Newton et al., 2018 or the extracellular diffusion tutorial.</p>
+<p>Many alternative geometries are available, including: rxd.membrane, rxd.inside (this is the default), rxd.Shell (used in the radial diffusion example; coming soon), rxd.FractionalVolume (used in the calcium wave example), rxd.FixedCrossSection, and rxd.FixedPerimeter.</p>
+</section>
+<section id="Who">
+<h3>Who<a class="headerlink" href="#Who" title="Link to this heading"></a></h3>
+<p>Who are the actors? Often they are chemical species (proteins, ions), sometimes they are State variables (such as a gating variable), and other times parameters that vary throughout the domain are key actors. All three of these can be described using the rxd.Species class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">regions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atolscale</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>although we also provide rxd.State and rxd.Parameter for the second and third case, respectively. For now these are exact synonyms of rxd.Species that exist for promoting the clarity of the model code, but this will likely change in the future (so that States can only be changed over time via rxd.Rate objects and that rxd.Parameter objects will no longer occupy space in the integration matrix.)</p>
+<p>Note: charge must match the charges specified in NMODL files for the same ion, if any.</p>
+<p>The regions parameter is mandatory and is either a single rxd.Region or an iterable of them, and specifies what region(s) contain the species.</p>
+<p>Set d= to the diffusion coefficient for your species, if any.</p>
+<p>Specify an option for the name= keyword argument to allow these state variables to map to the NEURON/NMODL range variables if the region’s nrn_region is ‘i’ or ‘o’.</p>
+<p>Specify initial conditions via the initial= keyword argument. Set that to either a constant or a function that takes a node (defined below, and see also this example).</p>
+<p>Example: to have concentrations set to 47 at h.finitialize(init_v):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">47</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note: For consistency with the rest of NEURON, the units of concentration are assumed to be in mM. Many cell biology models involve concentrations on the order of μM; calcium is often even smaller. Besides the need to be consistent about units, this has implications for variable step integration which by default has an absolute tolerance of (10^{-3}) or 1 μM. To address this, use atolscale to indicate that the tolerance should be scaled for the corresponding variable; e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ca&#39;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">atolscale</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note: initial is also a property of the Species/Parameter/State and may be changed at any time, as in:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ca</span><span class="o">.</span><span class="n">initial</span> <span class="o">=</span> <span class="mf">1.2345e-3</span>
+</pre></div>
+</div>
+<p>Warning: Prior to NEURON 7.7, there was a bug in initial support: if initial=None and name=None, then concentration will not be changed at a subsequent h.finitialize(). The intended behavior is that this would reset the concentration to 0.</p>
+</section>
+<section id="How">
+<h3>How<a class="headerlink" href="#How" title="Link to this heading"></a></h3>
+<p>How do they interact? Species interact via one or more chemical reactions. The primary class used to specify reactions is rxd.Reaction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">rate_f</span><span class="p">,</span> <span class="n">rate_b</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here lhs and rhs describe the reaction scheme and are expressed using arithmetic sums of integer multiples of a Species. For example, an irreversible reaction to form calcium chloride might be written:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cacl2_reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">ca</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">cl</span><span class="p">,</span> <span class="n">cacl2</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where ca and cl are rxd.Species instances and kf is the reaction rate. Since custom_dynamics was not specified this is a mass-action reaction and given the reactants kf has units of 1 / (ms μM2). This corresponds to the system of differential equations:</p>
+<p>\begin{split} [<span class="math">\mathrm{cl}</span>]’ &amp;= - 2, k_f , [<span class="math">\mathrm{cl}</span>] ^ 2 , [<span class="math">\mathrm{ca}</span>] \ [<span class="math">\mathrm{ca}</span>]’ &amp;= - k_f , [<span class="math">\mathrm{cl}</span>] ^ 2 , [<span class="math">\mathrm{ca}</span>] \ [<span class="math">\mathrm{cacl_2}</span>]’ &amp;= k_f , [<span class="math">\mathrm{cl}</span>] ^ 2 , [<span class="math">\mathrm{ca}</span>]end{split}</p>
+<p>While we can sometimes ignore the reverse reactions due to them having a high energy barrier, the laws of physics imply that all reactions are in fact reversible. A more correct specification of a mass action reaction for calcium chloride would thus include a backward reaction rate kb here in units of 1/ms:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cacl2_reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">ca</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">cl</span><span class="p">,</span> <span class="n">cacl2</span><span class="p">,</span> <span class="n">kf</span><span class="p">,</span> <span class="n">kb</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>While mass-action works well for elementary reactions, this is often impractical for modeling intracellular dynamics where there are potentially many elementary reactions driving the observable reaction. In this case, we often turn to phenomenological models, such as Michelis-Menten kinetics or the Hill equation. To indicate these in NEURON, set custom_dynamics=True and specify the forward and backward rates as the corresponding formula, e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">enzymatic_reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">substrate</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">*</span> <span class="n">substrate</span> <span class="o">/</span> <span class="p">(</span><span class="n">km</span> <span class="o">+</span> <span class="n">substrate</span><span class="p">),</span>
+                                 <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that using Michaelis-Menten kinetics for enzymatic reactions is only appropriate under certain conditions, such as that the concentration of enzyme is low relative to the concentration of the substrate.</p>
+<p>Note: rxd.Reaction describes a single molecular reaction. That is, if the left hand side involves <span class="math notranslate nohighlight">\(aA + bB + cC\)</span> then <span class="math notranslate nohighlight">\(a\)</span>, <span class="math notranslate nohighlight">\(b\)</span>, and <span class="math notranslate nohighlight">\(c\)</span> are the stoichiometry coefficients. In particular, this means that a reaction of 2 * ca + 4 * cl goes to 2 * cacl2 is not equivalent to a reaction where ca + 2 * cl goes to cacl2, as the first requires four chloride and two calcium molecules to come together simulatenously before any reaction occurs, which would cause the
+<span class="math notranslate nohighlight">\([\mathrm{cl}]\)</span> to be raised to the fourth power instead of the second power. For more background, see the Wikipedia article on the rate equation.</p>
+<p>Reactions conserve mass. This property is especially important for stochastic simulations. Often, however, one might wish to model a source or a sink (e.g. protein degradation), or describe the dynamics of a state variable that is not a concentration. In this case, use the non-conservative rxd.Rate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">membrane_flux</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For example, if IP3 is degraded at a rate proportional to its concentration, then</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ip3_degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">ip3</span><span class="p">,</span> <span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="n">ip3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then</p>
+<div class="math notranslate nohighlight">
+\[[\mathrm{IP_3}]' = -k \, [\mathrm{IP_3}].\]</div>
+<p>The effects of multiple rxd.Rate, rxd.Reaction, etc add together.</p>
+<p>As with rxd.Reaction, the regions parameter can be used to restrict the action of an rxd.Rate to specific regions.</p>
+<p>The previous methods assume that all the reactants exist in the same region. (If they are not all present in a given location, then the reaction does not occur there.) Pumps and channels can allow material to move between compartments. These are implemented in NEURON using an rxd.MultiCompartmentReaction and using square brackets to specify regions. The rate is proportional to the area of the membrane between the regions, which must be specified. e.g. if ca is a species present on the rxd.Region
+objects er and cyt then a leak compartment across the ER membrane might be implemented as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">leak</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">MultiCompartmentReaction</span><span class="p">(</span><span class="n">ca</span><span class="p">[</span><span class="n">er</span><span class="p">],</span> <span class="n">ca</span><span class="p">[</span><span class="n">cyt</span><span class="p">],</span> <span class="n">gleak</span><span class="p">,</span> <span class="n">gleak</span><span class="p">,</span> <span class="n">membrane</span><span class="o">=</span><span class="n">cyt_er_membrane</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is explored further in the calcium wave example.</p>
+</section>
+</section>
+<section id="Reading-the-data">
+<h2>Reading the data<a class="headerlink" href="#Reading-the-data" title="Link to this heading"></a></h2>
+<section id="NodeList">
+<h3>NodeList<a class="headerlink" href="#NodeList" title="Link to this heading"></a></h3>
+<p>For a given species s, s.nodes is an rxd.NodeList of all of its nodes. NodeList objects are derived from the Python list, so they offer all the same methods, e.g. one can access the first node</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>or get the total number of nodes</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>exactly as if s.nodes was a list, but one can also read and set concentrations (concentration) and diffusion constants (diff) for all nodes in the NodeList in a vectorized way, as well as read the volumes (volume), surface areas (surface_area), regions (region), species (species), and normalized positions (x). For example, to get lists of positions (x) and concentrations (y) suitable for plotting from the NodeList nl, use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">x</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">concentration</span>
+</pre></div>
+</div>
+<p>Note that normalized positions always lie between 0 and 1, and so if there are multiple sections a more sophisticated approach is necessary.</p>
+<p>When assigning concentration or the diffusion constant, one can either set them equal to an iterable with the same length as the NodeList or to a scalar as in</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span><span class="o">.</span><span class="n">concentration</span> <span class="o">=</span> <span class="mi">47</span>
+</pre></div>
+</div>
+<p>Calling a NodeList returns a sub-NodeList of nodes satisfying a given restriction. For example,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span><span class="p">(</span><span class="n">soma</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>returns a NodeList of all Nodes lying in the h.Section referred to by soma. As this is itself a NodeList, we can get a list of the nodes from nl in the soma section belonging to the rxd.Region referred to by er:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span><span class="p">(</span><span class="n">soma</span><span class="p">)(</span><span class="n">er</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Valid restrictions for now are section objects, region objects, and normalized position <span class="math notranslate nohighlight">\(0 \le x \le 1\)</span>. Restrictions are implemented via the satisfies method of individual nodes. If you would like to extend the set of restrictions, send us a pull request on the NEURON source at GitHub.</p>
+</section>
+<section id="Node">
+<h3>Node<a class="headerlink" href="#Node" title="Link to this heading"></a></h3>
+<p>Sometimes though, it is important to work with an individual Node, such as for communication with nmodl or for plotting. NEURON’s Graph.addvar() method, for example, needs a reference to the memory location containing the concentration, which is available via the _ref_concentration property:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">g</span><span class="o">.</span><span class="n">addvar</span><span class="p">(</span><span class="s1">&#39;calcium&#39;</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If a node is mapped to a NEURON range variable (that is, if the species name is specified and the Region’s nrn_region is ‘i’ or ‘o’), then there are three equivalent ways to read the concentration in 1d simulations. Here we assume the species is named ca and the nrn_region=’i’ and that the node is at 0.5 in the h.Section soma:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">cai</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">concentration</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The latter two can also be used to set concentrations, but if you use this with the variable step solver, you must reinitialize via: h.CVode().re_init()</p>
+<p>In 1d, all three will always report the same value. In 3d, however, the values in the NEURON range variables are averaged values, and changing those will not change the 3d values.</p>
+<p>All the properties of NodeList are also available in individual Nodes, with the difference being that all values are scalars and not vectors.</p>
+</section>
+</section>
+<section id="Examples">
+<h2>Examples<a class="headerlink" href="#Examples" title="Link to this heading"></a></h2>
+<section id="Simple-Reaction-with-Abrupt-Change-in-Reaction-Rate">
+<h3>Simple Reaction with Abrupt Change in Reaction Rate<a class="headerlink" href="#Simple-Reaction-with-Abrupt-Change-in-Reaction-Rate" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+
+<span class="n">dend</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dend&quot;</span><span class="p">)</span>
+<span class="n">cyt</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+
+<span class="n">cl</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cl&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">cacl2</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cacl2&quot;</span><span class="p">)</span>
+
+<span class="n">reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cl</span> <span class="o">+</span> <span class="n">ca</span><span class="p">,</span> <span class="n">cacl2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span><span class="p">)</span>
+
+<span class="n">heading</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{t:&gt;10s}</span><span class="s2">  </span><span class="si">{cl:&gt;10s}</span><span class="s2">  </span><span class="si">{ca:&gt;10s}</span><span class="s2">  </span><span class="si">{cacl2:&gt;10s}</span><span class="s2">&quot;</span>
+<span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{t:10g}</span><span class="s2">  </span><span class="si">{cl:10g}</span><span class="s2">  </span><span class="si">{ca:10g}</span><span class="s2">  </span><span class="si">{cacl2:10g}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">advance_a_bit</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fadvance</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+                <span class="n">cl</span><span class="o">=</span><span class="n">cl</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">concentration</span><span class="p">,</span>
+                <span class="n">ca</span><span class="o">=</span><span class="n">ca</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">concentration</span><span class="p">,</span>
+                <span class="n">cacl2</span><span class="o">=</span><span class="n">cacl2</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">concentration</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">heading</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">cl</span><span class="o">=</span><span class="s2">&quot;cl&quot;</span><span class="p">,</span> <span class="n">ca</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">cacl2</span><span class="o">=</span><span class="s2">&quot;CaCl2&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">heading</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">cl</span><span class="o">=</span><span class="s2">&quot;--------&quot;</span><span class="p">,</span> <span class="n">cacl2</span><span class="o">=</span><span class="s2">&quot;--------&quot;</span><span class="p">,</span> <span class="n">ca</span><span class="o">=</span><span class="s2">&quot;--------&quot;</span><span class="p">))</span>
+
+<span class="n">advance_a_bit</span><span class="p">()</span>
+
+<span class="c1"># increase the forward reaction rate</span>
+<span class="n">reaction</span><span class="o">.</span><span class="n">f_rate</span> <span class="o">*=</span> <span class="mi">5</span>
+
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---- cacl2 production rate should speed up below here ----&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="n">advance_a_bit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+         t          cl          ca       CaCl2
+         -    --------    --------    --------
+     0.025    0.955556    0.977778   0.0222222
+      0.05    0.915565    0.957783   0.0422175
+     0.075    0.879356    0.939678   0.0603222
+       0.1    0.846386    0.923193   0.0768069
+     0.125    0.816217    0.908108   0.0918917
+
+---- cacl2 production rate should speed up below here ----
+
+      0.15    0.691965    0.845982    0.154018
+     0.175    0.602562    0.801281    0.198719
+       0.2    0.535061     0.76753     0.23247
+     0.225    0.482188    0.741094    0.258906
+      0.25     0.43957    0.719785    0.280215
+</pre></div></div>
+</div>
+</section>
+<section id="Scalar-Bistable-Wave">
+<h3>Scalar Bistable Wave<a class="headerlink" href="#Scalar-Bistable-Wave" title="Link to this heading"></a></h3>
+<p>Propagating waves are a form of regenerative signaling that allows messages to travel faster than is possible by diffusion alone; examples in neurons include action potential propagation and calcium waves.</p>
+<p>We consider the scalar bistable equation</p>
+<div class="math notranslate nohighlight">
+\[u_t = u_{xx} - u (1 - u) (\alpha - u)\]</div>
+<p>so named because it requires only a single state variable <span class="math notranslate nohighlight">\(u\)</span> and has two stable solutions <span class="math notranslate nohighlight">\(u=0\)</span> and <span class="math notranslate nohighlight">\(u=1\)</span>. This formula reproduces the phenomena of a propagating wave front but it is not based on any specific biological model. Its main advantage is that the exact analytic solution is known on the real line.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+
+<span class="c1"># needed for standard run system</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+
+<span class="n">dend</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dend&quot;</span><span class="p">)</span>
+<span class="n">dend</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">101</span>
+
+<span class="c1"># initial conditions</span>
+<span class="k">def</span> <span class="nf">my_initial</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mf">0.2</span> <span class="k">else</span> <span class="mi">0</span>
+
+
+<span class="c1"># WHERE the dynamics will take place</span>
+<span class="n">where</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">([</span><span class="n">dend</span><span class="p">])</span>
+
+<span class="c1"># WHO the actors are</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">my_initial</span><span class="p">)</span>
+
+<span class="c1"># HOW they act</span>
+<span class="n">bistable_reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="o">-</span><span class="n">u</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.3</span> <span class="o">-</span> <span class="n">u</span><span class="p">))</span>
+
+<span class="c1"># initial conditions</span>
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_it</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">concentration</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="c1"># convert x from normalized position to microns</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">dend</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+
+
+<span class="n">plot_it</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">25</span><span class="p">)</span>
+    <span class="n">plot_it</span><span class="p">()</span>
+
+<span class="n">pyplot</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;[u] (mM)&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/rxd-tutorials_Reaction-Diffusion_tutorial_89_0.png" src="../_images/rxd-tutorials_Reaction-Diffusion_tutorial_89_0.png" />
+</div>
+</div>
+<p>We could, of course, have plotted with any of a number of other graphics libraries, including NEURON’s built in Graph, Bokeh, plotnine, etc.</p>
+<p>Besides the graph, this illustrates two other features not shown in the previous example: (1) we explicitly specify the list of h.Section objects for the rxd.Region and (2) we assign non-uniform initial conditions by passing a function that takes a node and returns a value to the initial keyword argument for the rxd.Species.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Python RXD tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="basic-initialization.html" class="btn btn-neutral float-right" title="Initialization Strategies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

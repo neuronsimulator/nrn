@@ -1,0 +1,28 @@
+var sputils_8cpp =
+[
+    [ "NORM", "sputils_8cpp.html#a7fa3afb5cf2625deb1e859cbb93d2943", null ],
+    [ "SLACK", "sputils_8cpp.html#ad04b5a9527903c28f45d06a3a4d444fd", null ],
+    [ "spINSIDE_SPARSE", "sputils_8cpp.html#a13f7ff4027ddca5d6bfdde09041067ac", null ],
+    [ "ComplexCondition", "sputils_8cpp.html#a0f5b57e460fd34039f4ee7ad504e546c", null ],
+    [ "ComplexMatrixMultiply", "sputils_8cpp.html#ae605976f0ee85e657c102303d10bff8d", null ],
+    [ "ComplexTransposedMatrixMultiply", "sputils_8cpp.html#a00cb254c456b58680ea8c3bf1acb2ecd", null ],
+    [ "CountTwins", "sputils_8cpp.html#a55588389f9d45f0f80b0367d3c12fcab", null ],
+    [ "ScaleComplexMatrix", "sputils_8cpp.html#a1652e70a069cba79e45d0a8265a0aa5b", null ],
+    [ "spcColExchange", "sputils_8cpp.html#a5d414f46e3fd3c3460968c99e45cc72f", null ],
+    [ "spcFindElementInCol", "sputils_8cpp.html#a281f0f4ff272bdda66ab64f0483c64f5", null ],
+    [ "spcLinkRows", "sputils_8cpp.html#a97d1e8195aa37bc6ec32b74d3423fe95", null ],
+    [ "spCondition", "sputils_8cpp.html#a3e7f659c1c30613866ccf66234e3264b", null ],
+    [ "spcRowExchange", "sputils_8cpp.html#a13b0af83d8f63147a27287b0a016d2d1", null ],
+    [ "spDeterminant", "sputils_8cpp.html#a2f313aa13f84078d8652c325490ad015", null ],
+    [ "spLargestElement", "sputils_8cpp.html#a8c0d9a61c8e718653dfb12b35eb6ed8b", null ],
+    [ "spMNA_Preorder", "sputils_8cpp.html#a99077a6e66618effc4db9adf130de077", null ],
+    [ "spMultiply", "sputils_8cpp.html#afd4f028231e81d2f5a28b947e9fe579b", null ],
+    [ "spNorm", "sputils_8cpp.html#ac4fabdee4925e5074db244873c1b0d71", null ],
+    [ "spPseudoCondition", "sputils_8cpp.html#ae51f003ca8c4ba9bdba94c90ea0b8b82", null ],
+    [ "spRoundoff", "sputils_8cpp.html#abf4445dd101f58cf9d64d3918879d559", null ],
+    [ "spScale", "sputils_8cpp.html#a71b1e5a892953f14c99d50d19cbfc905", null ],
+    [ "spStripFills", "sputils_8cpp.html#a9762d668369115ed56576387476d6268", null ],
+    [ "SwapCols", "sputils_8cpp.html#a33c85a6205f1f0f84b689bf6a786d330", null ],
+    [ "copyright", "sputils_8cpp.html#ab1d4383be3161ac2c68b2f8d344cd587", null ],
+    [ "RCSid", "sputils_8cpp.html#a02cf6508f57c61cfd8cb1508d71bca12", null ]
+];

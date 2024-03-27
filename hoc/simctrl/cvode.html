@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CVode &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Running and Saving Batch Jobs" href="batch.html" />
+    <link rel="prev" title="Programmatic Simulation Control" href="programmatic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="programmatic.html">Programmatic Simulation Control</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">CVode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="batch.html">Running and Saving Batch Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="savstate.html">SaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bbsavestate.html">BBSaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sessionsave.html">Session Printing and Saving</a></li>
+<li class="toctree-l4"><a class="reference internal" href="programmatic.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="programmatic.html#finitializehandler">FInitializeHandler</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="stdrun.html">Standard Run Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../compilationoptions.html">Rarely Used Compilation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interpretermanagement.html">Interpreter Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="programmatic.html">Programmatic Simulation Control</a></li>
+      <li class="breadcrumb-item active">CVode</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/simctrl/cvode.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/simctrl/cvode.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#CVode" title="Link to this definition">CVode</a></dt><dd><a href="#CVode.acor" title="Link to this definition">acor</a> &middot; <a href="#CVode.active" title="Link to this definition">active</a> &middot; <a href="#CVode.atol" title="Link to this definition">atol</a> &middot; <a href="#CVode.atolscale" title="Link to this definition">atolscale</a> &middot; <a href="#CVode.cache_efficient" title="Link to this definition">cache_efficient</a> &middot; <a href="#CVode.condition_order" title="Link to this definition">condition_order</a> &middot; <a href="#CVode.current_method" title="Link to this definition">current_method</a> &middot; <a href="#CVode.dae_init_dteps" title="Link to this definition">dae_init_dteps</a> &middot; <a href="#CVode.debug_event" title="Link to this definition">debug_event</a> &middot; <a href="#CVode.dstates" title="Link to this definition">dstates</a> &middot; <a href="#CVode.error_weights" title="Link to this definition">error_weights</a> &middot; <a href="#CVode.event" title="Link to this definition">event</a> &middot; <a href="#CVode.event_queue_info" title="Link to this definition">event_queue_info</a> &middot; <a href="#CVode.f" title="Link to this definition">f</a> &middot; <a href="#CVode.fixed_step" title="Link to this definition">fixed_step</a> &middot; <a href="#CVode.free_event_queues" title="Link to this definition">free_event_queues</a> &middot; <a href="#CVode.jacobian" title="Link to this definition">jacobian</a> &middot; <a href="#CVode.maxorder" title="Link to this definition">maxorder</a> &middot; <a href="#CVode.maxstep" title="Link to this definition">maxstep</a> &middot; <a href="#CVode.minstep" title="Link to this definition">minstep</a> &middot; <a href="#CVode.netconlist" title="Link to this definition">netconlist</a> &middot; <a href="#CVode.order" title="Link to this definition">order</a> &middot; <a href="#CVode.poolshrink" title="Link to this definition">poolshrink</a> &middot; <a href="#CVode.print_event_queue" title="Link to this definition">print_event_queue</a> &middot; <a href="#CVode.queue_mode" title="Link to this definition">queue_mode</a> &middot; <a href="#CVode.re_init" title="Link to this definition">re_init</a> &middot; <a href="#CVode.record" title="Link to this definition">record</a> &middot; <a href="#CVode.record_remove" title="Link to this definition">record_remove</a> &middot; <a href="#CVode.rtol" title="Link to this definition">rtol</a> &middot; <a href="#CVode.simgraph_remove" title="Link to this definition">simgraph_remove</a> &middot; <a href="#CVode.solve" title="Link to this definition">solve</a> &middot; <a href="#CVode.spike_stat" title="Link to this definition">spike_stat</a> &middot; <a href="#CVode.state_magnitudes" title="Link to this definition">state_magnitudes</a> &middot; <a href="#CVode.statename" title="Link to this definition">statename</a> &middot; <a href="#CVode.states" title="Link to this definition">states</a> &middot; <a href="#CVode.statistics" title="Link to this definition">statistics</a> &middot; <a href="#CVode.stiff" title="Link to this definition">stiff</a> &middot; <a href="#CVode.store_events" title="Link to this definition">store_events</a> &middot; <a href="#CVode.use_daspk" title="Link to this definition">use_daspk</a> &middot; <a href="#CVode.use_fast_imem" title="Link to this definition">use_fast_imem</a> &middot; <a href="#CVode.use_local_dt" title="Link to this definition">use_local_dt</a> &middot; <a href="#CVode.use_long_double" title="Link to this definition">use_long_double</a> &middot; <a href="#CVode.use_mxb" title="Link to this definition">use_mxb</a> &middot; <a href="#CVode.ygather" title="Link to this definition">ygather</a> &middot; <a href="#CVode.yscatter" title="Link to this definition">yscatter</a></dd></dl></p><section id="cvode">
+<span id="hoc-cvode"></span><h1>CVode<a class="headerlink" href="#cvode" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="CVode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CVode</span></span><a class="headerlink" href="#CVode" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">objref</span> <span class="pre">cvode</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">CVode()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Multi order variable time step integration method which may be used in place
+of the default staggered fixed time step method.  The performance benefits
+can be substantial (factor of more than 10) for problems in which all states
+vary slowly for long periods of time between fast spikes.</p>
+<p>Although for historical reasons, this class is called CVode at the hoc level,
+in fact it is an interface to a family of methods which are implemented on
+top of the CVODES and IDA integrators of the SUNDIALS package,</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>  SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
+                   Release 2.0.1, January 2005
+     Peter Brown, Aaron Collier, Keith Grant, Alan Hindmarsh,
+      Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward
+          Center for Applied Scientific Computing, LLNL
+</pre></div>
+</div>
+<p>(see <a class="reference internal" href="#CVode.use_local_dt" title="CVode.use_local_dt"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_local_dt()</span></code></a> and <a class="reference internal" href="#CVode.use_daspk" title="CVode.use_daspk"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_daspk()</span></code></a>)</p>
+<p>When this class is <a class="reference internal" href="#CVode.active" title="CVode.active"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.active()</span></code></a> the finitialize/fadvance calls use the CVode
+integrator.
+In the default variable step context, the integrator
+chooses the time step and fadvance returns after one step. Local accuracy
+is determined by <a class="reference internal" href="#CVode.atol" title="CVode.atol"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.atol()</span></code></a> and <a class="reference internal" href="#CVode.rtol" title="CVode.rtol"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.rtol()</span></code></a>.</p>
+<p>The two major energy barriers to
+using the method are the requirement that hh type models be
+expressed in a DERIVATIVE block (instead of the explicit
+exponential integration step commonly implemented in a PROCEDURE)
+and that the solver be explicitly notified of
+the exact time of any discontinuity
+such as step changes, pulses, and synaptic conductance
+onset’s. These issues are discussed in <a class="reference internal" href="#hoc-modeldescriptionissues-channels"><span class="std std-ref">hoc_Channels</span></a>
+and <a class="reference internal" href="#hoc-modeldescriptionissues-events"><span class="std std-ref">hoc_Events</span></a>.</p>
+<p>After your mod files are generalized it will probably be
+convenient to compare the default method with CVode by
+toggling the Use variable dt checkbox in the <a class="reference internal" href="stdrun.html#hoc-variablestepcontrol"><span class="std std-ref">Variable Step Control</span></a>
+panel
+<span class="menuselection">NEURON Main Menu ‣ Tools ‣ VariableStepControl</span>.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>, <a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>, <a class="reference internal" href="programmatic.html#secondorder" title="secondorder"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">secondorder</span></code></a>, <a class="reference internal" href="programmatic.html#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a></p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The consequences of solving continuous equations can be sometimes
+surprising when one is used to discrete fixed time step simulations.
+For example if one records an action potential (with either fixed or
+variable time steps) and plays it back into a voltage clamp; the clamp
+potential is not a discrete function but an exact step function.</p>
+<p>Only the SEClamp works with CVode. VClamp cannot be used with this method.</p>
+<p>Also .mod authors must take measures to handle step changes in parameters
+(<a class="reference internal" href="#hoc-modeldescriptionissues-events"><span class="std std-ref">hoc_Events</span></a>)</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Alternative variable step methods such as <a class="reference internal" href="#CVode.use_local_dt" title="CVode.use_local_dt"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_local_dt()</span></code></a>
+and <a class="reference internal" href="#CVode.use_daspk" title="CVode.use_daspk"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_daspk()</span></code></a> have been folded into this class and it has become
+a catchall class for invoking any of the numerical methods. For example,
+<a class="reference internal" href="#CVode.use_mxb" title="CVode.use_mxb"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_mxb()</span></code></a> is used to switch between the tree structured matrix solver
+and the general sparse matrix solver. Not all components work together, see
+<a class="reference internal" href="#CVode.current_method" title="CVode.current_method"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.current_method()</span></code></a> for acceptable mixing.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.solve">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.solve" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.solve()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.solve(tout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no argument integrates for one step. All states and assigned variables
+are consistent at time t. dt is set to the size of the step.
+With the tout argument, cvode integrates til its step passes tout. Internally
+cvode returns the interpolated values of the states (at exactly tout)
+and the CVode class calls the functions necessary to update the assigned variables.
+Note that cvode.solve(tout) may be called for any value of tout greater than
+t-dt where dt is the size of its last single step.</p>
+<p>For backward compatibility with finitialize/fadvance
+it is better to use the <a class="reference internal" href="#CVode.active" title="CVode.active"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.active()</span></code></a> method instead of calling
+solve directly.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.statistics">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.statistics" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.statistics()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints information about the number of integration steps, function evaluations,
+newton iterations, etc.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#CVode.spike_stat" title="CVode.spike_stat"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.spike_stat()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.spike_stat">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">spike_stat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.spike_stat" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.spike_stat(vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Similar to <a class="reference internal" href="#CVode.statistics" title="CVode.statistics"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.statistics()</span></code></a> but returns statistics information in the
+passed <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> argument. The vector will be resized to length
+11 and the elements are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>  0  total number of equations (0 unless cvode has been active).
+  1  number of NetCon objects.
+  2  total number of events delivered.
+  3  number of NetCon events delivered.
+  4  number of PreSyn events put onto queue.
+  5  number of SelfEvents delivered.
+  6  number of SelfEvents put onto queue (net_send from mod files).
+  7  number of SelfEvents moved (net_move from mod files).
+  8  number of items inserted into event queue.
+  9  number of items moved to a new time in the event queue.
+ 10  number of items removed from event queue.
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.print_event_queue">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">print_event_queue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.print_event_queue" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.print_event_queue()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.print_event_queue(Vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no arg, prints information on the event queue.
+It should only be called after an finitialize and before changing any
+aspect of the model structure. Many types of structure changes invalidate
+pointers used in the event queue.</p>
+<p>With a vector argument, the delivery times are copied to the Vector in
+proper monotonically increasing order.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.event_queue_info">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">event_queue_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.event_queue_info" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.event_queue_info(2,</span> <span class="pre">tvec,</span> <span class="pre">list)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.event_queue_info(3,</span> <span class="pre">tvec,</span> <span class="pre">flagvec,</span> <span class="pre">list)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns NetCon (2) or SelfEvent (3) information currently on the event queue.
+If the type is 2,  NetCon information currently on the event queue
+is returned: delivery times are returned in tvec and the corresponding
+NetCon objects are returned in the List arg. If the type is 3,
+SelfEvent information is returned: delivery times are returned in tvec,
+the flags are returned in flagvec, and the SelfEvent targets
+(ArtificialCells are PointProcesses) returned in the List arg.</p>
+<p>It should only be called after an finitialize and before changing any
+aspect of the model structure. Many types of structure changes invalidate
+pointers used in the event queue.</p>
+<p>The delivery times are copied to the Vector in
+proper monotonically increasing order.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.free_event_queues">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">free_event_queues</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.free_event_queues" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.free_event_queues()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This function takes cares of clearing and free all the event queues allocated in NEURON.
+More specifically, it frees the <cite>TQItemPool</cite>, <cite>SelfEventPool</cite> and <cite>SelfQueue</cite> members of
+the <cite>NetCvodeThreadData</cite>.
+This method should be called only after the end of the NEURON simulation since calling it
+will clear all the Event Queues and it should only be used for freeing up memory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.poolshrink">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">poolshrink</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.poolshrink" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.poolshrink()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.poolshrink(1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This function is used to either print or free the <cite>DoubleArrayPool</cite> s and <cite>DatumArrayPool</cite> s
+used by the mechanisms’ data.
+If the function is called with argument <cite>1</cite> it deletes the pools if the number of items used
+is 0.
+If the function is called without arguments or with argument <cite>0</cite> it prints current number of
+items used and number of items allocated for double arrays and Datum arrays.
+This method should be called only after the end of the NEURON simulation for freeing up
+memory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.rtol">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">rtol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.rtol" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.rtol()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.rtol(relative)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the local relative error tolerance. With arg, set the relative
+tolerance. The default relative tolerance is 0.</p>
+<p>The solver attempts to use a step size so that the local error for each
+state is less than</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    rtol*|state| + atol*atolscale_for_state
+</pre></div>
+</div>
+<p>The error test passes if the error in each state, e[i], is such that
+e[i]/state[i] &lt; rtol OR e[i] &lt; atol*atolscale_for_state
+(the default atolscale_for_state is 1, see <a class="reference internal" href="#CVode.atolscale" title="CVode.atolscale"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.atolscale()</span></code></a> )</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.atol">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">atol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.atol" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.atol()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.atol(absolute)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the default local absolute error tolerance. With args, set the
+default absolute tolerance.
+The default absolute tolerance is 1e-2. A multiplier for
+specific states may be set with the <a class="reference internal" href="#CVode.atolscale" title="CVode.atolscale"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.atolscale()</span></code></a> function and also may be
+specified in model descriptions.</p>
+<p>The solver attempts to use a step size so that the local error for each
+state is less than</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    rtol*|state| + atol*atolscale_for_state
+</pre></div>
+</div>
+<p>The error test passes if the error in each state, e[i], is such that
+e[i]/state[i] &lt; rtol OR e[i] &lt; atol*atolscale_for_state</p>
+<p>Therefore states should be scaled (or the absolute tolerance reduced)
+so that when the value is close to 0, the error is not too large.</p>
+<p>(See <a class="reference internal" href="#CVode.atolscale" title="CVode.atolscale"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">atolscale()</span></code></a> for how to set distinct absolute multiplier
+tolerances for different states.)</p>
+<p>Either rtol or atol may be set to 0 but not both. (pure absolute tolerance
+or pure relative tolerance respectively).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.atolscale">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">atolscale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.atolscale" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">tol</span> <span class="pre">=</span> <span class="pre">cvode.atolscale(&amp;var,</span> <span class="pre">toleranceMultiplier)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">tol</span> <span class="pre">=</span> <span class="pre">cvode.atolscale(&amp;var)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">tol</span> <span class="pre">=</span> <span class="pre">cvode.atolscale(&quot;basename&quot;</span> <span class="pre">[,</span> <span class="pre">toleranceMultiplier])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Specifies the absolute tolerance scale multiplier (default is 1.0)
+for all STATE’s of which the address
+of var is an instance. Eg.  <code class="docutils literal notranslate"><span class="pre">cvode.atolscale(&amp;soma.v(.5),</span> <span class="pre">1e-8)</span></code> sets
+the absolute tolerance multiplier for all membrane potentials everywhere.
+(The syntax for merely specifying a name is admittedly cumbersome but
+the function is not often needed and it avoids the necessity of
+explicitly having to parse strings such as “TrigKSyn.G”.)
+The currently specified multiplier for that state name
+is returned by the function call.</p>
+<p>Specification of a particular STATEs absolute tolerance multiplier
+is only needed
+if its scale is extremely small or large and is best indicated within the
+model description file itself using the STATE declaration syntax:n</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    state (units) &lt;tolerance&gt;
+</pre></div>
+</div>
+<p>See nrn/demo/release/cabpump.mod for an example of a model which needs
+a specific scaling of absolute tolerances (ie, calcium concentration
+and pump density).</p>
+<p>The “basename” form is simpler than the pointer form and was added to
+simplify the implementation of the AtolTool. The pointer form required
+the state to actually exist at the specified location. Base names are
+“v”, “vext”, state_suffix such as m_hh, and PointProcessName.state such
+as ExpSyn.g .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.re_init">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">re_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.re_init" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.re_init()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Initializes the integrator. This is done by <a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> when cvode
+is <a class="reference internal" href="#CVode.active" title="CVode.active"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">active()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.stiff">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">stiff</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.stiff" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.stiff()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.stiff(0-2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>2 is the default. All states computed implicitly.</p>
+<p>1 only membrane potential computed implicitly.</p>
+<p>0 Adams-Bashforth integration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.active">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">active</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.active" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.active()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.active(0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.active(1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">following</span> <span class="pre">two</span> <span class="pre">not</span> <span class="pre">yet</span> <span class="pre">implemented</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.active(1,</span> <span class="pre">dt)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.active(tvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When CVode is active then <a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>
+calls <a class="reference internal" href="#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a> and  <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> calls <a class="reference internal" href="#CVode.solve" title="CVode.solve"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.solve()</span></code></a>.</p>
+<p>This function allows one to toggle between the normal integration
+method and the CVode method with no changes to existing interpreter
+code. The return value is whether CVode is active.</p>
+<p>With only a single 1 arg, the fadvance calls CVode to do a single
+variable time step.</p>
+<p>With the dt arg, fadvance returns at t+dt.</p>
+<p>With a Vector tvec argument, CVode is made active and a sequence of
+calls to fadvance returns at the times given by the elements of
+tvec. After the last tvec element, fadvance returns after each
+step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.maxorder">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">maxorder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.maxorder" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.maxorder()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.maxorder(0</span> <span class="pre">-</span> <span class="pre">12)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Default maximum order for implicit methods is 5. It is usually best to
+let cvode determine the order. 12 for Adams.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.jacobian">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">jacobian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.jacobian" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.jacobian()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">cvode.jacobian(0</span> <span class="pre">-</span> <span class="pre">2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>0 is the default. Linear solvers supplied by NEURON.
+1 use dense matrix
+2 use diagonal matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.states">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.states" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">objref</span> <span class="pre">dest_vector</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">dest_vector</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">Vector()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.states(dest_vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the destination <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> with the values of the states.
+On return dest_vector.size will be the number of states.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.dstates">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">dstates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.dstates" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.dstates(dest_vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the destination <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> with the values of d(state)/dt.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.f">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.f" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.f(t,</span> <span class="pre">yvec,</span> <span class="pre">ypvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns f(yvec, t) in ypvec. f is the existing model.
+Size of yvec must be equal to the number of states ( ie vector size
+returned by <a class="reference internal" href="#CVode.states" title="CVode.states"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.states()</span></code></a>). ypvec will be resized to the proper size.
+Note that the order of the states in the vector is indicated by the
+names returned by <a class="reference internal" href="#CVode.statename" title="CVode.statename"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.statename()</span></code></a></p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works only for global variable time step method.
+Works only with single thread.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.yscatter">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">yscatter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.yscatter" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.yscatter(yvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fills the state variables with the values specified in yvec.
+Size of yvec must be equal to the number of states ( ie vector size
+returned by <a class="reference internal" href="#CVode.states" title="CVode.states"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.states()</span></code></a>). Note that active CVode requires a subsequent
+<a class="reference internal" href="#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a> if one wishes to integrate from the yvec state point.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works only for global variable time step method.
+Works only with single thread.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.ygather">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">ygather</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.ygather" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.ygather(yvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fills yvec with the state variables (will be resized to the number of
+states). This is analogous to <a class="reference internal" href="#CVode.states" title="CVode.states"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.states()</span></code></a> after a <a class="reference internal" href="#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a>.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works only for global variable time step method.
+Works only with single thread.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.fixed_step">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">fixed_step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.fixed_step" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.fixed_step()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Uses the fixed step method to advance the simulation by <a class="reference internal" href="programmatic.html#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a> .
+The initial condition is whatever state values are present (eg subsequent
+to a previous integration step or <a class="reference internal" href="#CVode.yscatter" title="CVode.yscatter"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.yscatter()</span></code></a> or <a class="reference internal" href="#CVode.f" title="CVode.f"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.f()</span></code></a> or explicitly
+user modified state values). The model state values are those after the
+fixed step integration (but are NOT the same as the current state defined
+by CVode and returned by <a class="reference internal" href="#CVode.states" title="CVode.states"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.states()</span></code></a> (that would be the case only after
+a subsequent <a class="reference internal" href="#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a>)) To get the new current states in CVode
+vector order, use <a class="reference internal" href="#CVode.ygather" title="CVode.ygather"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.ygather()</span></code></a>.</p>
+<p>Valid under all circumstances. This is basically an <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> using
+the fixed step method and avoids the overhead of</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cvode.active(0)
+fadvance()
+cvode.active(1)
+</pre></div>
+</div>
+<p>in order to allow the use of the CVode functions assigning state and
+evaluating states and dstates/dt</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a class="reference internal" href="#CVode.dstates" title="CVode.dstates"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.dstates()</span></code></a> are invalid and should be determined by a call to
+<a class="reference internal" href="#CVode.f" title="CVode.f"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.f()</span></code></a> using the current state from <a class="reference internal" href="#CVode.ygather" title="CVode.ygather"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.ygather()</span></code></a> .</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.error_weights">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">error_weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.error_weights" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.error_weights(dest_vector)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Fill the destination <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> with the values of the weights used
+to compute the norm of the local error in cvodes and ida.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.acor">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">acor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.acor" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.acor(dest_vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the destination <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> with the values of the local errors
+on the last step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.statename">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">statename</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.statename" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.statename(i,</span> <span class="pre">dest_string)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.statename(i,</span> <span class="pre">dest_string,</span> <span class="pre">style)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the hoc name of the i’th string in dest_string
+The default style, 0, is to attempt to specify the name in terms of
+object references such as cell[3].syn[2].g. Style 1 specifies the name
+in terms of the object id, eg. ExpSyn[25].g or Cell[25].soma.v(.5).
+Style 2 returns the basename, e.g. v, or ExpSyn.g .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.netconlist">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">netconlist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.netconlist" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">cvode.netconlist(precell,</span> <span class="pre">postcell,</span> <span class="pre">target)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">cvode.netconlist(precell,</span> <span class="pre">postcell,</span> <span class="pre">target,</span> <span class="pre">list)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a new <a class="reference internal" href="../programming/gui/list.html#List" title="List"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">List</span></code></a> (or appends to the list in the 4th argument
+position and returns a reference to that) of <a class="reference internal" href="../modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> object
+references whose precell (or pre), postcell, and target match the pattern
+specified in the first three arguments. These arguments may each be either
+an object reference or a string. If an object, then each NetCon
+appended to the list will match that object exactly. String arguments
+are regular expressions
+and the NetCon will match if the name of the object has a substring that
+is accepted by the regular expression.
+(Object names are the
+internal names consisting of the template name followed by an index).
+An empty string, “”, is equivalent to “.*” and
+matches everything in that field. A template
+name will match all the objects of that particular class. Note that
+some of the useful special regular expression characters are “.*+^$&lt;&gt;”.
+The “&lt;&gt;” is used instead of the the standard special characters “[]” to specify
+a character range and obviates escaping the square bracket characters
+when attempting to match an array string. ie square brackets are not
+special and only match themselves.</p>
+</dd>
+<dt>Example:</dt><dd><p>A compact method of iterating over a set of NetCon objects is
+to create the list iterator</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>iterator ltr() {local i, cnt  localobj nil
+    for i = 0, $o2.count - 1 {
+            $o1 = $o2.object(i)
+            iterator_statement
+    }
+    $o1 = nil
+}
+</pre></div>
+</div>
+<p>and then take advantage of the automatic creation and destruction
+of lists with, for example, to print all the postcells that the
+given precell connects to:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref xo
+for ltr(xo, cvode.netconlist(precell, &quot;&quot;, &quot;&quot;)) {
+    print xo.postcell
+}
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.record">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.record" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.record(&amp;rangevar,</span> <span class="pre">yvec,</span> <span class="pre">tvec)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.record(&amp;rangevar,</span> <span class="pre">yvec,</span> <span class="pre">tvec,</span> <span class="pre">1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Similar to the Vector <a class="reference internal" href="../programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">record()</span></code></a> function but also works correctly with
+the local variable time step method. Limited to recording only range variables
+of density mechanisms and point processes.</p>
+<p>During a run, record the stream of values in the specified range
+variable into the yvec Vector along with time values into the tvec Vector.
+Note that each recorded range variable must have a separate tvec which
+will be different for different cells. On initialization
+the yvec and tvec Vectors are resized to 1 and the initial value of the
+range variable and time is stored in the Vectors.</p>
+<p>To stop recording into a particular vector, remove all the references
+either to tvec or yvec or call <a class="reference internal" href="#CVode.record_remove" title="CVode.record_remove"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">record_remove()</span></code></a> .</p>
+<p>If the fourth argument is present and equal to 1, the yvec is recorded
+only at the existing t values in tvec. This option may slow integration
+since it requires calculation of states at those particular times.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.record_remove">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">record_remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.record_remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.record_remove(yvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Remove yvec (and the corresponding xvec)
+from the list of recorded vectors. See <a class="reference internal" href="#CVode.record" title="CVode.record"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">record()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.event">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.event" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.event(t)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.event(t,</span> <span class="pre">&quot;statement&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.event(t,</span> <span class="pre">&quot;statement&quot;,</span> <span class="pre">pointprocess,</span> <span class="pre">re_init)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no argument, an event without a source or target
+is inserted into the event queue
+for “delivery” at time t. This has the side effect of causing a return
+from <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> (or <a class="reference internal" href="#CVode.solve" title="CVode.solve"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.solve()</span></code></a> or <a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.psolve" title="ParallelContext.psolve"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.psolve()</span></code></a> or <a class="reference internal" href="batch.html#batch_run" title="batch_run"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">batch_run()</span></code></a>
+exactly at time t. This is used by the stdrun.hoc file
+to make sure a simulation stops at tstop or after the appropriate
+time on pressing “continuerun” or “continuefor”. When <a class="reference internal" href="#CVode.use_local_dt" title="CVode.use_local_dt"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_local_dt()</span></code></a>
+is active, all cells are interpolated to the event time.</p>
+<p>If the hoc statement argument is present, the statement is executed (in
+the object context of the call to cvode.event) when
+the event time arrives.
+This statement is normally a call to a procedure
+which may send another cvode.event. Note that since the event queue
+is cleared upon <a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> the cvode.event must be sent after that.</p>
+<p>Multiple threads and/or the local variable time step method, sometimes require
+a bit of extra thought about the purpose of the statement. Should it be executed
+only in the context of a single thread, should it be executed only in the
+context of a single cell, and should only the integrator associated with that
+cell be initialized due to a state change caused by the statement?
+When the third arg is absent, then before the statement is executed, all cells
+of all threads are interpolated to time t, all threads
+join at time t, and the statement is executed by the main thread. A call to
+<a class="reference internal" href="#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a> is allowed. If the third arg (a POINT_PROCESS object) is
+present, then, the integrator of the cell  (if lvardt) containing the POINT_PROCESS
+is interpolated to time t, and the statement is executed by the thread
+containing the POINT_PROCESS. Meanwhile, the other threads keep executing.
+The statement should only access states and parameters associated with the
+cell containing the POINT_PROCESS. If any states or parameters are changed,
+then the fourth arg should be set to 1 to cause a re-initialization of only
+the integrator managing the cell (CVode.re_init is nonsense in this context).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.minstep">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">minstep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.minstep" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">hmin</span> <span class="pre">=</span> <span class="pre">cvode.minstep()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">hmin</span> <span class="pre">=</span> <span class="pre">cvode.minstep(hmin)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets (and sets in the arg form) the minimum time step allowed for
+a CVODE step. Default is 0.0 . An error message is printed if a time step less
+than the minimum step is used.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Not very useful. What we’d really like is a minimum first order implicit step.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.maxstep">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">maxstep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.maxstep" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">hmax</span> <span class="pre">=</span> <span class="pre">cvode.maxstep()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">hmax</span> <span class="pre">=</span> <span class="pre">cvode.maxstep(hmax)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets (and sets in the arg form) the maximum value of the step size
+allowed for a CVODE step. CVODE will not choose a step size larger than this.
+The default value is 0 and in this case means infinity.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.use_local_dt">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">use_local_dt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.use_local_dt" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_local_dt()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_local_dt(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets (and sets) the local variable time step method flag.
+When CVODE is <a class="reference internal" href="#CVode.active" title="CVode.active"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">active()</span></code></a>, this implies a separate CVODE
+instance for every cell in the simulation. <a class="reference internal" href="#CVode.record" title="CVode.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.record()</span></code></a> is the only way
+at present that variables can be properly obtained when this method is used.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Not well integrated with the existing standard run system graphics
+because cells are
+generally at different times and an fadvance only changes the variables
+for the earliest time cell.</p>
+<p><a class="reference internal" href="#CVode.use_daspk" title="CVode.use_daspk"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_daspk()</span></code></a> and use_local_dt cannot both be 1 at present. Toggling one
+on will toggle the other off.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.debug_event">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">debug_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.debug_event" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.debug_event(1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.debug_event(2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints information whenever an event is generated or delivered. When the
+argument is true, information is printed at every integration step as well.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.use_long_double">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">use_long_double</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.use_long_double" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_long_double()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">booelan</span> <span class="pre">=</span> <span class="pre">cvode.use_long_double(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When true, vector methods involving sums over the elements are accumulated
+in a long double variable. This is useful in debugging when the
+global variable time step method gives different results for different
+<a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.nthread" title="ParallelContext.nthread"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.nthread()</span></code></a> or numbers of processes. It may be the case that the difference is
+due to differences in round-off error due to the non-associativity of
+computer addition. I.e when threads are used each thread adds up its own
+group of numbers and then the group results are added together. When
+a long double is used as the accumulator for addition, the round off error
+is much more likely to be the same regardless of the order of addition. Note that
+this DOES NOT make the simulation more accurate — just more likely to be identical for
+different numbers of threads or processes (if the difference without it was due to
+round off errors during summation).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.order">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">order</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.order" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">order</span> <span class="pre">=</span> <span class="pre">cvode.order()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">order</span> <span class="pre">=</span> <span class="pre">cvode.order(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>CVODE method order used on the last step. The arg form is for the ith
+cell instance with the local step method.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.use_daspk">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">use_daspk</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.use_daspk" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_daspk()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_daspk(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets (sets for the arg form) the internal flag with regard to whether to
+use the IDA method when CVode is <a class="reference internal" href="#CVode.active" title="CVode.active"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">active()</span></code></a>. If CVode is active
+and the simulation involves <a class="reference internal" href="../modelspec/programmatic/linmod.html#LinearMechanism" title="LinearMechanism"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">LinearMechanism()</span></code></a> or <code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">extracellular()</span></code> mechanisms
+then the IDA method is automatic and required.</p>
+<p>Daspk refers to the Differential Algebraic Solver with the Preconditioned
+Krylov method. The SUNDIALS package now calls this the IDA (Integrator
+for Differential-Algebraic problems) integrator but it is really the same
+thing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.condition_order">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">condition_order</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.condition_order" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">order</span> <span class="pre">=</span> <span class="pre">cvode.condition_order()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">order</span> <span class="pre">=</span> <span class="pre">cvode.condition_order(1or2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When condition_order is 1 then <a class="reference internal" href="../modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">NetCon()</span></code></a> threshold detection takes place at a time
+step boundary. This is the default. When condition_order is 2 then
+NetCon threshold detection times  are linearly interpolated within the
+integration step interval for which the threshold occurred. Second order
+threshold is limited to variable step methods and is ignored for the
+fixed step methods. Note that second order threshold detection time may change
+due to synaptic events within the interval or even be abandoned.
+It is useful for cells with approach threshold very slowly or with large
+time steps.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.dae_init_dteps">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">dae_init_dteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.dae_init_dteps" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">eps</span> <span class="pre">=</span> <span class="pre">cvode.dae_init_dteps()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">eps</span> <span class="pre">=</span> <span class="pre">cvode.dae_init_dteps(eps)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">eps</span> <span class="pre">=</span> <span class="pre">cvode.dae_init_dteps(eps,</span> <span class="pre">style)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The size of the “infinitesimal” fixed fully implicit step used for
+initialization of the DAE solver, see <a class="reference internal" href="#CVode.use_daspk" title="CVode.use_daspk"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">use_daspk()</span></code></a> , in order to
+meet the the initial condition requirement of f(y’,y,t)=0. The default
+is 1e-9 ms.</p>
+<p>The default heuristic for meeting the initial condition requirement based
+on the pre-initialization value of all the states and an initialization time
+of t0 is:</p>
+<p>t = t0 Vector.play continuous.</p>
+<p>Two dteps voltage solve steps. (does not change t, or membrane mechanism
+states but changes v,vext).
+The initial value of  y is the present value of the
+states.</p>
+<p>t = t0 + dteps Vector.play continuous</p>
+<p>One dteps step without changing y but it does determine dy/dt of the
+v, vext portion of states.</p>
+<p>t = t0 determine the dy/dt of the membrane mechanism states.
+(note: membrane mechanism states are all derivative or kinetic
+scheme states)</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A number of things can go wrong with the heuristics used to provide
+the integrator with a consistent initial condition. When this happens
+the default behavior is to stop. However one can modify the error
+handling and/or choose a second
+initialization heuristic that might work by setting the style method.</p>
+<p>The working values of style are 0,1,2, 8,9,10. the latter style group
+(010 bit set) chooses the alternative heuristic. This alternative
+is very similar to the default except the third dteps step that determines
+y’ also is allowed to change y. This may be more reliable when the user
+is not using Vector.play continuous.</p>
+<p>If the 1 or 2 bit is
+set, a warning is printed instead of an error and the sim continues.
+If the 2 bit is set, then for the next 1e-6 ms, the integrator solves the
+equation f(y’, y, t)*(1 - exp(-1e-7(t - t0)) where t0 is the initialization
+time. I call this parasitic since it is supposed to be
+analogous to every voltage having a small capacitance to ground.
+It has not been determined if the parasitic
+heuristic has a reliable mathematical basis and the user should investigate
+the state change patterns in the neighborhood of the initialization time.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.simgraph_remove">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">simgraph_remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.simgraph_remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.simgraph_remove()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Removes all items from the list of Graph lines recorded during
+a local variable step simulation. Graph lines would have been added to this
+list with <a class="reference internal" href="../visualization/gui.html#hoc-gui-graph"><span class="std std-ref">Graph</span></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.state_magnitudes">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">state_magnitudes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.state_magnitudes" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.state_magnitudes(integer)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">cvode.state_magnitudes(Vector,</span> <span class="pre">integer)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">maxstate</span> <span class="pre">=</span> <span class="pre">cvode.state_magnitudes(&quot;basename&quot;,</span> <span class="pre">&amp;maxacor)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>cvode.state_magnitudes(1) activates the calculation of the
+running maximum magnitudes of states and acor. 0 turns it off.</p>
+<p>cvode.state_magnitudes(2) creates an internal
+list of the maximum of the maximum states and acors
+according to the state basename currently in the model. Statenames not
+in use have a maximum magnitude state and acor value of -1e9.</p>
+<p>maxstate = cvode.state_magnitudes(“basename”, &amp;maxacor)
+returns the maxstate and maxacor for the state type, e.g. “v” or
+“ExpSyn.g”, or “m_hh”. Note: state type names can be determined from
+MechanismType and MechanismStandard</p>
+<p>cvode.state_magnitudes(Vector, 0) returns all the maximum magnitudes for
+each state in the Vector. This is analogous to cvode.states(Vector).
+cvode.state_magnitudes(Vector, 1) returns the maximum magnitudes for
+each acor in the Vector.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.current_method">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">current_method</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.current_method" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">cvode.current_method()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A value that indicates</p>
+<p>modeltype + 10*use_sparse13 + 100*methodtype + 1000*localtype</p>
+<p>where modeltype has the value:
+0 if there are no sections or LinearMechanisms (i.e. empty model)
+2 if the extracellular mechanism or LinearMechanism is present. (in this
+case the fully implicit fixed step or daspk methods are required and cvode
+cannot be used.
+1 otherwise</p>
+<p>use_sparse13 is 0 if the tree structured matrix solver is used and 1
+if the general sparse matrix solver is used. The latter is required for
+daspk and not allowed for cvode. The fixed step methods can use either.
+The latter takes about twice as much time as the former.</p>
+<p>methodtype = <a class="reference internal" href="programmatic.html#secondorder" title="secondorder"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">secondorder</span></code></a> if CVode is not active. It equals 3 if CVODE is
+being used and 4 is DASPK is used.</p>
+<p>localtype = 1 if the local step method is used. This implies methodtype==3</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.use_mxb">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">use_mxb</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.use_mxb" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_mxb()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_mxb(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Switch between the tree structured matrix solver (0) and the general
+sparse matrix solver (1). Either is acceptable for fixed step methods.
+For CVODE only the tree structured solver is allowed. For DASPK only the
+general sparse solver is allowed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.use_fast_imem">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">use_fast_imem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.use_fast_imem" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_fast_imem()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">cvode.use_fast_imem(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When true, compute i_membrane_ for all segments during a simulation.
+This is closely related to i_membrane which is computed when the
+extracellular mechanism is inserted. However, i_membrane_ (note
+the trailing ‘_’), has dimensions of nA instead of mA/cm2 (ie. total
+membrane current out of the segment), is available
+at 0 area nodes (locations 0 and 1 of every section), does not require
+that extracellular be inserted (and so is much faster), and works
+during parallel simuations with variable step methods. (ie. does not
+require IDA which is currently not available in parallel).
+i_membrane_ exists as a range variable only when this function has
+been called with an argument of 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.store_events">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">store_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.store_events" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cvode.store_events(vec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Accumulates all the sent events as adjacent pairs in the vector.
+The pairs are the time at which the event was sent and the time it
+is to be delivered. The user should do a vec.resize(0) before starting
+a run. Cvode will stop storing with cvode.store_event().
+This is primarily for gathering data to design more efficient priority
+queues. It may be eliminated when the tq-exper branch is merged back to
+the main branch. Notice that there is no info about event type or where the
+event is coming from or going to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.queue_mode">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">queue_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.queue_mode" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">cvode.queue_mode(boolean</span> <span class="pre">use_fixed_step_bin_queue,</span> <span class="pre">boolean</span> <span class="pre">use_self_queue)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Normally, there is one event queue for all pending events. However, for the
+fixed step method one can obtain marginally better queue performance through
+the use of a bin queue for NetCon events. This utilizes a queue with
+bins of size dt which has a very fast insertion time and every time step
+all the events in a bin are delivered to their targets. Note that the
+numerics of the simulation will differ compared to the default splay
+tree queue (which stores double precision delivery times) if
+NetCon.delay values are not integer multiples of dt. Also, even with
+the fixed step method and and delays as integer multiples of dt, results
+can differ at the double precision round off level due to the different order
+that same time events can be received by the NET_RECEIVE block.</p>
+<p>The optional “use_self_queue” (default 0) argument can only be used if the
+the simulation is run with <a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.psolve" title="ParallelContext.psolve"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">psolve()</span></code></a> method
+of the <a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext" title="ParallelContext"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a> and must be selected prior to a call of
+<a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.set_maxstep" title="ParallelContext.set_maxstep"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.set_maxstep()</span></code></a>  since this special technique requires a
+computation of the global minimum <a class="reference internal" href="../modelspec/programmatic/network/netcon.html#NetCon.delay" title="NetCon.delay"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">NetCon.delay()</span></code></a> (not just the
+minimum interprocessor NetCon delay) and that delay must be
+greater than 0. The technique avoids the use of the  normal splay tree queue
+for self events for ARTIFICIAL_CELLs (events initiated by the net_send call
+and which may be manipulated by the net_move call in the NET_RECEIVE block).
+It may thus be considerably faster. However, every minimum NetCon delay interval,
+all the ARTIFICIAL_CELLS must be iterated to see if there are any outstanding
+net_send events that need to be handled. Thus it is likely to have a beneficial
+performance impact only for large numbers of ARTIFICIAL_CELLs which receive
+many external input events per reasonable minimum delay interval. This method
+has not receive much testing and the results should be compared with the
+default queuing method.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">2*use_self_queue</span> <span class="pre">+</span> <span class="pre">use_fixed_step_bin_queue</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.spike_compress" title="ParallelContext.spike_compress"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.spike_compress()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="CVode.cache_efficient">
+<span class="sig-prename descclassname"><span class="pre">CVode.</span></span><span class="sig-name descname"><span class="pre">cache_efficient</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#CVode.cache_efficient" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">cache_efficient(0or1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Deprecated method.
+This used to cause the G*v = R matrix and vectors to be reallocated in
+tree order so that all the elements of each type are contiguous in
+memory.
+This is no longer required because this scheme is now used all the time
+and cannot be disabled.
+Pointers to these elements used by the GUI, Vector, Pointer, etc. are updated.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<section id="modeldescriptionissues">
+<h2>ModelDescriptionIssues<a class="headerlink" href="#modeldescriptionissues" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>The following aspects of model descriptions (.mod files)
+are relevant to their use with CVode.</p>
+<p>KINETIC block - No changes required.</p>
+<p>DERIVATIVE block - No changes required.
+The Jacobian is approximated as a diagonal matrix.
+If the states are linear in state’ = f(state) the diagonal elements
+are calculated analytically, otherwise the
+diagonal elements are calculated using the numerical
+derivative (f(s+.01) - f(s))/.001 .</p>
+<p>LINEAR, NONLINEAR blocks - No changes required.
+However, at this
+time they can only be SOLVED from a PROCEDURE or FUNCTION, not
+from the BREAKPOINT block. The nrn/src/nrnoc/vclmp.mod file
+gives an example of correct usage in which the function
+icur is called from the BREAKPOINT block and in turn SOLVE’s
+a LINEAR block. If desired, it will be a simple matter to
+allow these blocks to be solved from the BREAKPOINT block.</p>
+<p>SOLVE PROCEDURE within a BREAKPOINT block - Changes probably required.
+Such a procedure is called once after each return from
+CVode.solve().</p>
+</div></blockquote>
+<section id="channels">
+<span id="hoc-modeldescriptionissues-channels"></span><h3>Channels<a class="headerlink" href="#channels" title="Link to this heading"></a></h3>
+<p>The SOLVE PROCEDURE form was often used to implement
+the exponential integration method for HH like states and was
+very efficient in the context of the Crank-Nicolson like
+staggered time step approach historically used by NEURON.
+Furthermore the exponential integration often used tables
+of rates which were calculated under the assumption of
+a fixed time step, dt. Although it can still be used under some
+circumstances, the usage to integrate states
+should be considered obsolete and converted to
+a DERIVATIVE form. To do this,</p>
+<ol class="arabic">
+<li><p>replace the PROCEDURE block with a DERIVATIVE block, eg.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>DERIVATIVE states {
+m&#39; = (minf - m)/mtau
+...
+}
+</pre></div>
+</div>
+</li>
+<li><p>replace the SOLVE statement in the BREAKPOINT block with
+<code class="docutils literal notranslate"><span class="pre">SOLVE</span> <span class="pre">states</span> <span class="pre">METHOD</span> <span class="pre">cnexp</span></code></p></li>
+<li><p>if using tables, store mtau instead of <span class="math notranslate nohighlight">\((1 -\exp(-dt/m_{tau}))\)</span>
+The nmodl translator will emit c code for both the staggered
+time step and high order variable time step methods. The only
+downside is slightly less efficiency with the staggered time
+step method since the exp(-dt…) is calculated instead of
+looked up in tables.</p></li>
+</ol>
+<p>In summary, no model should anymore depend on <a class="reference internal" href="programmatic.html#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a>.</p>
+</section>
+<section id="concentrations">
+<h3>Concentrations<a class="headerlink" href="#concentrations" title="Link to this heading"></a></h3>
+</section>
+<section id="events">
+<span id="hoc-modeldescriptionissues-events"></span><h3>Events<a class="headerlink" href="#events" title="Link to this heading"></a></h3>
+<p>How does one handle events?  This is really the only serious
+difficulty in writing models that work properly in the
+context of a variable time step method. All models which involve
+discontinuous functions of time, eg steps, pulses, synaptic
+onset, require special provision to notify the integrator that
+an event has occurred within this time step, ie between t-dt and t.
+If this is not done, the time step may be so large that it
+completely misses a pulse or synaptic event. And if it does see
+the effect of the event, there is a huge inefficiency involved in the
+variable step method’s search for the location of the event and the
+concomitant tremendous reduction in size of dt.</p>
+<p>So, if you change any variable discontinuously in the model
+at some time tevent, call
+call</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        at_time(tevent)
+</pre></div>
+</div>
+<p>The user may check the return value of this function to decide
+if something needs changing. Examples of the two styles of usage are:</p>
+<ol class="arabic">
+<li><p>Just notify and do the logic separately.</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        at_time(del)
+        at_time(del + dur)
+        if (t &gt;= del &amp;&amp; t &lt;= del + dur) {
+                istim = on_value
+        }else{
+                istim = 0
+        }
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Use the at_time return value to do the logic.</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>INITIAL {
+        istim = 0
+}
+...
+        if (at_time(del)) {
+                istim = on_value
+        }
+        if (at_time(del + dur)) {
+                istim = 0
+        }
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>Notice the requirement of initialization or else if the previous
+run was stopped before del + dur the value of istim would be on_value
+at the beginning of the next run.</p>
+<p>What happens internally when at_time(tevent) is called?</p>
+<p>The interesting case (t-dt &lt; tevent &lt;= t) —
+First, at_time returns 0. Then
+CVode changes its step size to (tevent - (t-dt) - epsilon) and redoes
+the step starting at t-dt. Note that this should be safely prior
+to the event (so at_time still returns 0),
+but if not then the above process will repeat
+until a step size is found for which there is no event.
+CVode then re-initializes it’s internal state and
+restarts from a new initial condition at tevent+epsilon.
+Now when at_time is called, it returns 1.
+Note that in its single step mode, CVode.solve() will return
+at t = tevent-epsilon, the subsequent call will start the
+initial condition at t = tevent + epsilon and return after a normal
+step (usually quite small).</p>
+<p>The case (tevent &lt;= t - dt) — at_time returns 0.</p>
+<p>The case (tevent &gt; t) — at_time returns 0.</p>
+<p>Note that
+an action potential model with
+axonal delay delivering a “message” to a synaptic model may or
+may not think it worthwhile to call at_time at the time of threshold
+(I would just do my own interpolation to set t_threshold)
+but will certainly call at_time(t_threshold + delay)  (and possibly not
+allow t_threshold to change again until it returns a 1);</p>
+<p>I am sorry that the variable time step method requires that the
+model author take careful account of events but I see no way
+to have them automatically taken care of.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="programmatic.html" class="btn btn-neutral float-left" title="Programmatic Simulation Control" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="batch.html" class="btn btn-neutral float-right" title="Running and Saving Batch Jobs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

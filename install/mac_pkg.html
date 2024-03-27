@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mac Binary Package (Apple M1 and Mac x86_64) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building Python Wheels" href="python_wheels.html" />
+    <link rel="prev" title="Developer Builds" href="developer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="developer.html">Developer Builds</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Mac Binary Package (Apple M1 and Mac x86_64)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#signing-and-notarization">Signing and Notarization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="python_wheels.html">Building Python Wheels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="windows.html">Windows build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formatting.html">Code Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_coverage.html">Code Coverage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Diagnosis and Debugging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html#profiling-and-performance-benchmarking">Profiling and performance benchmarking</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="developer.html">Developer Builds</a></li>
+      <li class="breadcrumb-item active">Mac Binary Package (Apple M1 and Mac x86_64)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/install/mac_pkg.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mac-binary-package-apple-m1-and-mac-x86-64">
+<h1>Mac Binary Package (Apple M1 and Mac x86_64)<a class="headerlink" href="#mac-binary-package-apple-m1-and-mac-x86-64" title="Link to this heading"></a></h1>
+<p>Macos binary packages are built with the
+<a class="reference external" href="https://github.com/neuronsimulator/nrn/blob/master/bldnrnmacpkgcmake.sh">bldnrnmacpkgcmake.sh</a>
+script which, near the end of its operation,
+involves code signing, package signing, and notarization.
+The build will be universal2 and work on arm64 and x86_64 architectures
+(if the pythons used are themselves, universal2).
+Preparing your Mac development environment for correct functioning of
+the script requires installing a few extra <a class="reference internal" href="#dependencies"><span class="std std-ref">Dependencies</span></a> beyond the
+<a class="reference internal" href="install_instructions.html#Mac-OS-Depend"><span class="std std-ref">normal user source build</span></a>,
+obtaining an Apple Developer Program membership,
+and requesting two signing certificates from Apple. Those actions are
+described in separate sections below.
+On an Apple M1 or x86_64,
+the script, by default, creates, e.g.,
+<code class="docutils literal notranslate"><span class="pre">nrn-8.0a-726-gb9a811a32-macosx-11-universal2-py-38-39-310.pkg</span></code>
+where the information between nrn and macosx comes from <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">describe</span></code>,
+the number after macosx refers to the <code class="docutils literal notranslate"><span class="pre">MACOSX_DEPLOYMENT_TARGET=11</span></code>
+the next item(s) before py indicate the architectures on which
+the program can run (i.e. <code class="docutils literal notranslate"><span class="pre">arm64</span></code>, <code class="docutils literal notranslate"><span class="pre">x86_64</span></code>, or <code class="docutils literal notranslate"><span class="pre">universal2</span></code>
+for both)
+and the numbers after the py indicate the python versions that are
+compatible with this package. Those python versions must be installed on
+the developer machine.
+The script will build a universal pkg only
+if all the Python’s are themselves universal.
+Presently, one must manually make sure that all the python builds used
+the same MACOSX_DEPLOYMENT_TARGET. You can check both of these with
+<code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">'import</span> <span class="pre">sysconfig;</span> <span class="pre">print(sysconfig.get_platform())'</span></code></p>
+<p>A space separated list of python executable arguments can be used in
+place of the internal default lists. <code class="docutils literal notranslate"><span class="pre">$NRN_SRC</span></code> is the location of the
+repository, default is the current working directory (hopefully you launch at the location of this script, e.g. <code class="docutils literal notranslate"><span class="pre">$HOME/neuron/nrn</span></code>). The script makes sure <code class="docutils literal notranslate"><span class="pre">$NRN_SRC/build</span></code>
+exists and uses that folder to configure and build the software. The
+software is installed in <code class="docutils literal notranslate"><span class="pre">/Applications/NEURON</span></code>.</p>
+<p>At time of writing, the cmake
+command in the script that is used to configure the build is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
+  -DNRN_ENABLE_MPI_DYNAMIC=ON \
+  -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
+  -DNRN_PYTHON_DYNAMIC=&quot;$pythons&quot; \
+  -DIV_ENABLE_X11_DYNAMIC=ON \
+  -DNRN_ENABLE_CORENEURON=OFF \
+  -DNRN_RX3D_OPT_LEVEL=2 \
+  $archs_cmake \
+  -DCMAKE_PREFIX_PATH=/usr/X11 \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+</pre></div>
+</div>
+<p><a class="footnote-reference brackets" href="#id4" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p>
+<p>The default variables above will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pythons</span><span class="o">=</span><span class="s2">&quot;python3.8;python3.9;python3.10;python3.11&quot;</span>
+<span class="n">archs_cmake</span><span class="o">=</span><span class="s1">&#39;-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64&#39;</span>
+</pre></div>
+</div>
+<p>A universal build is possible with <code class="docutils literal notranslate"><span class="pre">-DCMAKE_OSX_ARCHITECTURES=&quot;arm64;x86_64&quot;</span></code>
+but the installations of python on your machine must also be universal.
+The MPI library does not have to be universal if configuring with
+<code class="docutils literal notranslate"><span class="pre">-DNRN_ENABLE_MPI_DYNAMIC=ON</span></code> as the library is not linked against
+during the build.</p>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j</span> <span class="pre">install</span></code> <a class="footnote-reference brackets" href="#id5" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> is used to build and install in <code class="docutils literal notranslate"><span class="pre">/Applications/NEURON</span></code></p>
+<p>Runs some basic tests to verify a successful build</p>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">macpkg</span></code> ( see <code class="docutils literal notranslate"><span class="pre">src/mac/CMakeLists.txt</span></code> ) is used to:</p>
+<ul>
+<li><p>activate the apps <code class="docutils literal notranslate"><span class="pre">src/mac/activate-apps-cmake.sh</span></code></p></li>
+<li><p>codesign all the binaries <code class="docutils literal notranslate"><span class="pre">src/mac/nrn_codesign.sh</span></code>:</p>
+<ul class="simple">
+<li><p>Codesigning all binaries in the package is a prerequisite for
+notarization and not necessary if the package is not notarized. In
+that case it is a bit more trouble for users to install as they must
+ignore the scary message that pops up before the installer
+and know to right click on that message, then
+click <code class="docutils literal notranslate"><span class="pre">Open</span></code>. Then accept the option to <code class="docutils literal notranslate"><span class="pre">Open</span></code> the installer.</p></li>
+<li><p>To prevent Notarization failure the binaries need hardened runtime enabled
+and then some of the binaries need some special entitlements enabled.
+These entitlements are specified in <code class="docutils literal notranslate"><span class="pre">src/mac/nrn_entitlements.plist</span></code>
+and allow use of the Apple Events, Just in time compilation, and
+disable library validation.  The user will be asked to accept the
+first time these entitlements are invoked.</p></li>
+</ul>
+</li>
+<li><p>create NEURON.pkg . <code class="docutils literal notranslate"><span class="pre">/usr/bin/packagesbuild</span></code> uses <code class="docutils literal notranslate"><span class="pre">src/mac/macdist/pkgproj.in</span></code></p></li>
+<li><p>productsign NEURON.pkg <code class="docutils literal notranslate"><span class="pre">src/mac/nrn_productsign.sh</span></code></p></li>
+<li><p>request Apple to notarize NEURON.pkg <code class="docutils literal notranslate"><span class="pre">src/macnrn_notarize.sh</span></code></p>
+<p>If notarization succeeds it will finish with a few lines of the form</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Current</span> <span class="n">status</span><span class="p">:</span> <span class="n">Accepted</span><span class="o">........</span><span class="n">Processing</span> <span class="n">complete</span>
+  <span class="nb">id</span><span class="p">:</span> <span class="n">bda82fa9</span><span class="o">-</span><span class="n">e0ab</span><span class="o">-</span><span class="mi">4</span><span class="n">f86</span><span class="o">-</span><span class="n">aad8</span><span class="o">-</span><span class="mi">3</span><span class="n">fee1d8c2369</span>
+  <span class="n">status</span><span class="p">:</span> <span class="n">Accepted</span>
+</pre></div>
+</div>
+<p>and staple the package.</p>
+<p>If notarizaton fails, it is occasionally due to Apple
+changing the contracts and demanding that
+“You must first sign the relevant contracts online. (1048)”. In that
+case, go to <a class="reference external" href="https://appstoreconnect.apple.com">appstoreconnect.apple.com</a>
+to accept the legal docs an try again. For other notarization failures, one must consult the LogFileURL which can be obtained with <a class="footnote-reference brackets" href="#id6" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">%</span> <span class="n">xcrun</span> <span class="n">notarytool</span> <span class="n">log</span> \
+  <span class="o">--</span><span class="n">apple</span><span class="o">-</span><span class="nb">id</span> <span class="s2">&quot;$apple_id&quot;</span> \
+  <span class="o">--</span><span class="n">team</span><span class="o">-</span><span class="nb">id</span> <span class="s2">&quot;$team_id&quot;</span> \
+  <span class="o">--</span><span class="n">password</span> <span class="s2">&quot;$app_specific_password&quot;</span> \
+  <span class="s2">&quot;$id&quot;</span>
+</pre></div>
+</div>
+<p>where $id was printed by the notarization request. The apple_id, team_id, and
+app_specfic_password are set by the script to the contents of the files</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$HOME/.ssh/apple-id
+$HOME/.ssh/apple-team-id
+$HOME/.ssh/apple-notarization-password
+</pre></div>
+</div>
+</li>
+</ul>
+<p>The script ends by printing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
+  Manually upload $HOME/nrn-9.0a-88-gc6d8b9af6-macosx-10.15-universal2-py-39-310-311.pkg to github
+</pre></div>
+</div>
+<p>I’ve been uploading the <code class="docutils literal notranslate"><span class="pre">$PACKAGE_FULL_NAME</span></code> as an artifact for a
+Release version from https://github.com/neuronsimulator/nrn by choosing
+Releases, choosing the proper Release tag (e.g. Release 8.0a), Edit release,
+and clicking in the “Attach binaries …” near the bottom of the page.</p>
+<p><a name="Dependencies"></a></p>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h2>
+<p>This uses Apple M1 as the example but mostly the same for an x86_64 mac.
+<code class="docutils literal notranslate"><span class="pre">lipo</span></code> tells what architecture a binary must be run on. For example,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>lipo -archs `which python3`
+x86_64 arm64
+</pre></div>
+</div>
+<p>which is generally the case for all Big Sur mac software. On the other
+hand, <code class="docutils literal notranslate"><span class="pre">brew</span> <span class="pre">install</span> <span class="pre">...</span></code> executables and libraries are
+generally only for the architecture indicated by <code class="docutils literal notranslate"><span class="pre">uname</span> <span class="pre">-m</span></code>. That is
+ok for openmpi but since the various python libraries are linked against
+during build to create the version specific neuron modules, those python
+installers also have to be universal. Fortunately, universal python versions
+can be found at <a class="reference external" href="http://python.org/Downloads/macOS">python.org</a> at least for
+(as of 2022-01-01) python3.8, python3.9, and python3.10.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">xcode-select</span> <span class="pre">--install</span></code>:</p>
+<ul class="simple">
+<li><p>Sadly, notarization requires <code class="docutils literal notranslate"><span class="pre">altool</span></code> which is not distributed
+with the command line tools. So one needs to install the full xcode
+(at least version 12) from the App Store. That is very large and may
+take an hour or so to download. (should be checked to see if this is
+still the case.)</p></li>
+</ul>
+</li>
+<li><p>Install latest <a class="reference external" href="http://xquartz.org">XQuartz</a> release. At least XQuartz-2.8.0_rc1</p></li>
+<li><p>Install <a class="reference external" href="http://s.sudre.free.fr/Software/Packages/about.html">PackagesBuild</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">brew</span> <span class="pre">install</span> <span class="pre">coreutils</span> <span class="pre">cmake</span> <span class="pre">bison</span> <span class="pre">flex</span> <span class="pre">open-mpi</span></code></p>
+<ul>
+<li><p>Python 3.8 is already installed as /usr/bin/python3 and is universal2.</p></li>
+<li><p>The <a class="reference internal" href="install_instructions.html#Mac-OS-Depend"><span class="std std-ref">normal source build</span></a>
+explains how to install brew and add it to the PATH.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;eval $(/opt/homebrew/bin/brew shellenv)&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="nv">$HOME</span>/.zprofile
+<span class="nb">eval</span><span class="w"> </span><span class="k">$(</span>/opt/homebrew/bin/brew<span class="w"> </span>shellenv<span class="k">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Default build uses universal pythons from python.org. I also redundantly
+include their python3.8 as I find it more convenient to be able to
+explicitly specify the full name as python3.8.</p></li>
+<li><p>All pythons used for building need numpy installed, e.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span><span class="mf">.9</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">pip</span>
+<span class="n">pip3</span><span class="mf">.9</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="n">numpy</span>
+</pre></div>
+</div>
+</li>
+<li><p>At least one python3 in your PATH needs cython installed.
+And, to avoid compile errors, the minimum version is 0.29.26</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span><span class="mf">.10</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="n">cython</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="signing-and-notarization">
+<h2>Signing and Notarization<a class="headerlink" href="#signing-and-notarization" title="Link to this heading"></a></h2>
+<p>Notarization needs a $99/year <a class="reference external" href="https://help.apple.com/developer-account/">Apple Developer Program</a> membership.
+Certificates last 5 years.</p>
+<p>The most clearly explained recipe for notarization that I found is
+<a class="reference external" href="https://www.davidebarranca.com/2019/04/notarizing-installers-for-macos-catalina/">Notarizing installers for macOS Catalina</a>
+.</p>
+<p>However it took me while to figure out that it takes <a class="reference external" href="https://help.apple.com/developer-account/#/dev04fd06d56">two certificates</a>
+from apple.  I.e.  A “developerID_application.cer” to sign all the
+binaries before the pkg is built and a “developerID_installer.cer” to
+sign the pkg. Certificates can be obtained through Keychain by creating
+a <a class="reference external" href="https://help.apple.com/developer-account/#/devbfa00fef7">certificate signing request</a>
+On receipt of the certificates, I added to my keychain by clicking on them.</p>
+<p>And one must manage an <a class="reference external" href="https://support.apple.com/en-us/HT204397">App specific password</a>
+to request notarization from Apple.
+I put the password in <code class="docutils literal notranslate"><span class="pre">$HOME/.ssh/notarization-password</span></code> which is where
+<code class="docutils literal notranslate"><span class="pre">src/mac/nrn_notarize.sh</span></code> expects it.</p>
+<p>Notarization requires that we “enable hardened runtime”
+which is done during the binary signing, but that results in issues with
+regard to apple events and mismatched, unsigned, and non-system
+libraries (as well as preventing JIT compilation).  At this point
+<a class="reference external" href="https://forum.xojo.com/t/how-to-add-entitlements-to-a-xojo-app-using-codesign/49735/9">How to add entitlements…</a>
+was very helpful with regard to picking
+<a class="reference external" href="https://developer.apple.com/documentation/bundleresources/entitlements">entitlements</a>
+to develop a nrn_entitlements.plist to relax the strict hardened
+runtime.</p>
+<hr class="footnotes docutils" />
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id4" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>NRN_RX3D_OPT_LEVEL=2 can build VERY slowly (cython translated cpp file can take a half hour or more). So for testing, we generally copy the script to temp.sh and modify to NRN_RX3D_OPT_LEVEL=0</p>
+</aside>
+<aside class="footnote brackets" id="id5" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>Instead of make, the script uses Ninja. <code class="docutils literal notranslate"><span class="pre">ninja</span> <span class="pre">install</span></code> and the cmake line begins with <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">..</span> <span class="pre">-G</span> <span class="pre">Ninja</span> <span class="pre">...</span></code></p>
+</aside>
+<aside class="footnote brackets" id="id6" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p>altool has been replaced by notarytool for purposes of notarization. See
+https://developer.apple.com/documentation/technotes/tn3147-migrating-to-the-latest-notarization-tool
+and <code class="docutils literal notranslate"><span class="pre">nrn/src/mac/nrn_notarize.sh</span></code></p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="developer.html" class="btn btn-neutral float-left" title="Developer Builds" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python_wheels.html" class="btn btn-neutral float-right" title="Building Python Wheels" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

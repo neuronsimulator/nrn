@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlotShape &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="PlotShape Window" href="plotshape.html" />
+    <link rel="prev" title="Grapher" href="grapher.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">PlotShape</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#PlotShape"><code class="docutils literal notranslate"><span class="pre">PlotShape</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">PlotShape</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/plotshapeclass.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/plotshapeclass.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#PlotShape" title="Link to this definition">PlotShape</a></dt><dd><a href="#PlotShape.beginline" title="Link to this definition">beginline</a> &middot; <a href="#PlotShape.color" title="Link to this definition">color</a> &middot; <a href="#PlotShape.color_all" title="Link to this definition">color_all</a> &middot; <a href="#PlotShape.color_list" title="Link to this definition">color_list</a> &middot; <a href="#PlotShape.colormap" title="Link to this definition">colormap</a> &middot; <a href="#PlotShape.erase" title="Link to this definition">erase</a> &middot; <a href="#PlotShape.erase_all" title="Link to this definition">erase_all</a> &middot; <a href="#PlotShape.exec_menu" title="Link to this definition">exec_menu</a> &middot; <a href="#PlotShape.fastflush" title="Link to this definition">fastflush</a> &middot; <a href="#PlotShape.flush" title="Link to this definition">flush</a> &middot; <a href="#PlotShape.hinton" title="Link to this definition">hinton</a> &middot; <a href="#PlotShape.label" title="Link to this definition">label</a> &middot; <a href="#PlotShape.len_scale" title="Link to this definition">len_scale</a> &middot; <a href="#PlotShape.line" title="Link to this definition">line</a> &middot; <a href="#PlotShape.mark" title="Link to this definition">mark</a> &middot; <a href="#PlotShape.menu_action" title="Link to this definition">menu_action</a> &middot; <a href="#PlotShape.menu_tool" title="Link to this definition">menu_tool</a> &middot; <a href="#PlotShape.nearest" title="Link to this definition">nearest</a> &middot; <a href="#PlotShape.observe" title="Link to this definition">observe</a> &middot; <a href="#PlotShape.plot" title="Link to this definition">plot</a> &middot; <a href="#PlotShape.printfile" title="Link to this definition">printfile</a> &middot; <a href="#PlotShape.push_selected" title="Link to this definition">push_selected</a> &middot; <a href="#PlotShape.rotate" title="Link to this definition">rotate</a> &middot; <a href="#PlotShape.save_name" title="Link to this definition">save_name</a> &middot; <a href="#PlotShape.scale" title="Link to this definition">scale</a> &middot; <a href="#PlotShape.show" title="Link to this definition">show</a> &middot; <a href="#PlotShape.size" title="Link to this definition">size</a> &middot; <a href="#PlotShape.unmap" title="Link to this definition">unmap</a> &middot; <a href="#PlotShape.variable" title="Link to this definition">variable</a> &middot; <a href="#PlotShape.view" title="Link to this definition">view</a> &middot; <a href="#PlotShape.view_count" title="Link to this definition">view_count</a></dd></dl></p><section id="plotshape">
+<span id="pltshape-doc"></span><h1>PlotShape<a class="headerlink" href="#plotshape" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PlotShape">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PlotShape</span></span><a class="headerlink" href="#PlotShape" title="Link to this definition"></a></dt>
+<dd><p>Class for making a Shape window useful for coloring a shape
+according to a variable value and creating time and space graphs
+of a variable. The default variable is <em>v</em>. The first arg may be
+a SectionList.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.plot">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.plot" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ps.plot(graphics_object)</span></code></p>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><p>In NEURON 7.7+, PlotShape.plot works both with and without Interviews support.
+Variables, sectionlists, and scale are supported.
+Clicking on a segment displays the value and the segment id.</p>
+<p>Extra arguments and keyword arguments are passed to the underlying graphics library
+(currently only matplotlib <code class="docutils literal notranslate"><span class="pre">Figure</span></code> objects, <code class="docutils literal notranslate"><span class="pre">pyplot</span></code>, and <code class="docutils literal notranslate"><span class="pre">plotly</span></code> are
+supported, with plotly support added in 7.8).</p>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If Interviews is enabled, the flag <code class="docutils literal notranslate"><span class="pre">False</span></code> must be passed to the <code class="docutils literal notranslate"><span class="pre">h.PlotShape</span></code>
+constructor to avoid additionally displaying a PlotShape using Interviews graphics.
+See the example:</p>
+</div>
+<dl>
+<dt>Example:</dt><dd><p>If no seclist argument is provided, PlotShape.plot will plot all sections</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;c91662.ses&#39;</span><span class="p">)</span>  <span class="c1"># a morphology file</span>
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s1">&#39;apic&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">sec</span><span class="p">):</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># False tells h.PlotShape not to use NEURON&#39;s gui</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pyplot</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
+or use plotly instead.</p>
+</div>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><p>You can also pass in a SectionList argument to only plot specific sections</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span><span class="p">,</span> <span class="n">cm</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;c91662.ses&#39;</span><span class="p">)</span>
+<span class="n">sl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionList</span><span class="p">([</span><span class="n">sec</span> <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;apic&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">sec</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">sl</span><span class="p">:</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="n">sl</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">80</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pyplot</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><p>Line width across the neuron morphology is able to be altered depending on different modes. <code class="docutils literal notranslate"><span class="pre">ps.show(0)</span></code> allows for visualizing diameters for each segment across the cell. Additionally, when <code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">mode</span> <span class="pre">=</span> <span class="pre">2</span></code> , line_width argument can be passed in to specify fixed width across cell.</p>
+<p>For plotting on matplotlib:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span>
+<span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">cm</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;c91662.ses&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">//</span> <span class="mi">40</span><span class="p">))</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pyplot</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">magma</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For plotting on plotly:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">plotly</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;c91662.ses&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">//</span> <span class="mi">40</span><span class="p">))</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plotly</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="p">[</span><span class="s2">&quot;viridis&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<dl>
+<dt>Example:</dt><dd><p>Color argument can also be passed in when consistent color across cell is preferred. When not specified, the morphology will be plotted in color gradient passed as <code class="docutils literal notranslate"><span class="pre">cmap</span></code> in accordance with voltage values of each segment after simulation is initiated. To specifiy cmap,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span><span class="p">,</span> <span class="n">cm</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;c91662.ses&quot;</span><span class="p">)</span>
+<span class="n">sl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionList</span><span class="p">([</span><span class="n">sec</span> <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;apic&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">sec</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">sl</span><span class="p">:</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">80</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pyplot</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.scale">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.scale" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.scale(low,</span> <span class="pre">high)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets blue and red values for the color scale and default axes for
+time and space plots.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.view">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.view" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.view" title="Shape.view"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.view()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.size">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.size" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.size" title="Shape.size"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.size()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.view_count">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">view_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.view_count" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.view_count" title="Shape.view_count"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.view_count()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.show">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.show" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.show" title="Shape.show"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.show()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.flush">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.flush" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.flush" title="Shape.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.flush()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.fastflush">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">fastflush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.fastflush" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shapeplot.fastflush()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Speeds up drawing of <a class="reference internal" href="#PlotShape.hinton" title="PlotShape.hinton"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.hinton()</span></code></a> elements.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.variable">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">variable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.variable" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.variable(&quot;rangevar&quot;)</span></code></p>
+</dd>
+</dl>
+<p>Description:
+Range variable (v, m_hh, etc.) to be used for time, space, and
+shape plots.</p>
+<p>Additionally, the variable can also be identified by species or specific region to show the corresponding voltage across.</p>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mM</span><span class="p">,</span> <span class="n">µm</span><span class="p">,</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+<span class="kn">import</span> <span class="nn">plotly</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+
+<span class="n">dend1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="s1">&#39;dend1&#39;</span><span class="p">)</span>
+<span class="n">dend2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="s1">&#39;dend2&#39;</span><span class="p">)</span>
+<span class="n">dend2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="n">dend1</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="n">dend1</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">dend2</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="n">dend2</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">dend1</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="n">dend2</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">µm</span>
+
+<span class="n">cyt</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">dend1</span><span class="o">.</span><span class="n">wholetree</span><span class="p">(),</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+<span class="n">cyt2</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">dend2</span><span class="o">.</span><span class="n">wholetree</span><span class="p">(),</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+
+<span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">([</span><span class="n">cyt</span><span class="p">,</span><span class="n">cyt2</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">0</span> <span class="o">*</span> <span class="n">mM</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">1</span> <span class="o">*</span> <span class="n">µm</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">ca</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">dend1</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">include_flux</span><span class="p">(</span><span class="mf">1e-13</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s2">&quot;mmol/ms&quot;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="n">ca</span><span class="p">[</span><span class="n">cyt</span><span class="p">])</span>
+
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plotly</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.save_name">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">save_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.save_name" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.save_name" title="Shape.save_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.save_name()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.unmap">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">unmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.unmap" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.unmap" title="Shape.unmap"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.unmap()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.printfile">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">printfile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.printfile" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.printfile" title="Shape.printfile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.printfile()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.menu_action">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">menu_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.menu_action" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.menu_action" title="Graph.menu_action"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.menu_action()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.menu_tool">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">menu_tool</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.menu_tool" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.menu_tool" title="Shape.menu_tool"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.menu_tool()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.observe">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.observe" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.observe" title="Shape.observe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.observe()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.nearest">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">nearest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.nearest" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.nearest" title="Shape.nearest"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.nearest()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.push_selected">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">push_selected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.push_selected" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="shape.html#Shape.push_selected" title="Shape.push_selected"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.push_selected()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.exec_menu">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">exec_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.exec_menu" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.exec_menu" title="Graph.exec_menu"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.exec_menu()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.erase">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">erase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.erase" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.erase" title="Graph.erase"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.erase()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.erase_all">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">erase_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.erase_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Description:</dt><dd><p>Erases everything in the PlotShape, including all Sections and hinton plots</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.erase_all" title="Graph.erase_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.erase_all()</span></code></a>, <a class="reference internal" href="#PlotShape.observe" title="PlotShape.observe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.observe()</span></code></a>, <a class="reference internal" href="#PlotShape.hinton" title="PlotShape.hinton"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.hinton()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.beginline">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">beginline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.beginline" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.beginline" title="Graph.beginline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.beginline()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.line">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.line" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.line" title="Graph.line"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.line()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.mark">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">mark</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.mark" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">=</span> <span class="pre">h.PlotShape(False)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">ps.plot(pyplot).mark(h.soma[0](0.5)).mark(h.apical_dendrite[68](1))</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">plt.show()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Above syntax is allowed in NEURON 7.7+, for older versions:</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.mark" title="Graph.mark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.mark()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.label">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.label" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.label" title="Graph.label"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.label()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.color">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.color" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.color(i,</span> <span class="pre">sec=sec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors the specified section according to color index
+(index same as specified in Graph class). If there are several
+sections to color it is more efficient to make a SectionList and
+use <code class="docutils literal notranslate"><span class="pre">.color_list</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.color_all">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">color_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.color_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.color_all(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors all the sections</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.color_list">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">color_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.color_list" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.color_list(SectionList,</span> <span class="pre">i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors the sections in the list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.colormap">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">colormap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.colormap" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">s.colormap(size,</span> <span class="pre">[global</span> <span class="pre">=</span> <span class="pre">0])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">s.colormap(index,</span> <span class="pre">red,</span> <span class="pre">green,</span> <span class="pre">blue)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If the optional global argument is 1 then these functions refer to
+the global (default) Colormap and a change will affect all PlotShape instances
+that use it. Otherwise these function create a colormap that is local to
+this PlotShape.</p>
+<p>With a single argument, destroys the old and creates a new colormap
+for shape plots with space for size colors. All colors are initialized to
+gray.</p>
+<p>The four argument syntax, specifies the color of the index element of the
+colormap. the red, green, and blue must be integers within the range 0-255
+and specify the intensity of these colors.</p>
+<p>If an existing colormap is displayed in the view, it will be redrawn with
+the proper colors when <a class="reference internal" href="#PlotShape.scale" title="PlotShape.scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.scale()</span></code></a> is called.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.hinton">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">hinton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.hinton" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">s.hinton(_ref_varname,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">size)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">s.hinton(_ref_varname,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">xsize,</span> <span class="pre">ysize)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A filled square or rectangle is drawn with center at (x, y) and edge length given by
+size. The color depends on the <a class="reference internal" href="#PlotShape.colormap" title="PlotShape.colormap"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.colormap()</span></code></a> and <a class="reference internal" href="#PlotShape.scale" title="PlotShape.scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.scale()</span></code></a>
+and is redrawn on <a class="reference internal" href="#PlotShape.flush" title="PlotShape.flush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.flush()</span></code></a>.</p>
+<p>If there are many of these elements then <a class="reference internal" href="#PlotShape.fastflush" title="PlotShape.fastflush"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PlotShape.fastflush()</span></code></a> can
+speed plotting by up to a factor of 4 if not too many elements change
+color between fastflush calls.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span>            <span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+            <span class="kn">import</span> <span class="nn">time</span>
+
+            <span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;soma&quot;</span><span class="p">)</span>
+
+            <span class="n">sl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionList</span><span class="p">()</span>
+
+            <span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">colormap</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">colormap</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">colormap</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">colormap</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">nx</span> <span class="o">=</span> <span class="mi">30</span>
+            <span class="n">ny</span> <span class="o">=</span> <span class="mi">30</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">nx</span><span class="o">*</span><span class="n">ny</span><span class="p">)</span>
+            <span class="n">vec</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                            <span class="n">s</span><span class="o">.</span><span class="n">hinton</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">_ref_x</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">ny</span> <span class="o">+</span> <span class="n">j</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="n">nx</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="o">/</span><span class="n">ny</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="n">nx</span><span class="p">)</span>
+
+            <span class="n">s</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mf">.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">exec_menu</span><span class="p">(</span><span class="s2">&quot;Shape Plot&quot;</span><span class="p">)</span>
+
+            <span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mf">.01</span><span class="p">)</span>
+
+            <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+
+            <span class="k">def</span> <span class="nf">p</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1001</span><span class="p">):</span>
+                            <span class="n">vec</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                            <span class="n">s</span><span class="o">.</span><span class="n">fastflush</span><span class="p">()</span> <span class="c1"># faster by up to a factor of 4</span>
+                            <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+            <span class="n">p</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.len_scale">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">len_scale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.len_scale" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.len_scale(scl,</span> <span class="pre">sec=sec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>See <a class="reference internal" href="shape.html#Shape.len_scale" title="Shape.len_scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.len_scale()</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PlotShape.rotate">
+<span class="sig-prename descclassname"><span class="pre">PlotShape.</span></span><span class="sig-name descname"><span class="pre">rotate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PlotShape.rotate" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.rotate()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">shape.rotate(xorg,</span> <span class="pre">yorg,</span> <span class="pre">zorg,</span> <span class="pre">xrad,</span> <span class="pre">yrad,</span> <span class="pre">zrad)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>See <a class="reference internal" href="shape.html#Shape.rotate" title="Shape.rotate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.rotate()</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="grapher.html" class="btn btn-neutral float-left" title="Grapher" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plotshape.html" class="btn btn-neutral float-right" title="PlotShape Window" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

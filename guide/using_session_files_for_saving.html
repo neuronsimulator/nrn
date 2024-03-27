@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using Session Files for Saving and Retrieving Windows &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using the d_lambda Rule" href="using_the_d_lambda_rule.html" />
+    <link rel="prev" title="Differences between idraw and CorelDraw" href="differences_between_idraw_and_core.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="faq.html#now-that-i-ve-installed-neuron-how-do-i-run-it">Now that I’ve installed NEURON, how do I run it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-the-best-way-to-learn-how-to-use-neuron">What’s the best way to learn how to use NEURON?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-create-a-neuron-model">How do I create a NEURON model?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#help-i-m-having-a-hard-time-implementing-models">Help! I’m having a hard time implementing models!</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created">Why can’t NEURON read the text file (or <code class="docutils literal notranslate"><span class="pre">hoc</span></code> file) that I created?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-print-a-hard-copy-of-a-neuron-window">How do I print a hard copy of a NEURON window?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-plot-something-other-than-membrane-potential">How do I plot something other than membrane potential?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-save-and-edit-figures">How do I save and edit figures?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done">I’ve used the NEURON Main Menu to construct and manage models. How can I save what I have done?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-a-ses-session-file-can-i-edit-it">What is a ses (session) file? Can I edit it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-use-neuron-s-tools-for-electrotonic-analysis">How do I use NEURON’s tools for electrotonic analysis?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-should-i-use-an-odd-value-for-nseg">Why should I use an odd value for nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-a-good-stretegy-for-specifying-nseg">What’s a good stretegy for specifying nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs">How do I change the background color used in NEURON’s shape plots and other graphs?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-color-scale-used-in-shape-plots">How do I change the color scale used in shape plots?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc">I see an error message that says … procedure too big in ./foo.hoc …</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#where-can-i-find-examples-of-mod-files">Where can I find examples of mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-compile-mod-files">How do I compile mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-can-t-get-mod-files-to-compile">I can’t get mod files to compile.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version">I installed a new version of NEURON, and now I see error messages like this: ‘mecanisms fooba needs to be re-translated. its version 5.2 “c” code is incompatible with this neuron version’.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-nmodl">Is there a list of functions that are built into NMODL?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-hoc">Is there a list of functions that are built into hoc?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-units-does-neuron-use-for-current-concentration-etc">What units does NEURON use for current, concentration, etc.?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect">When I type a new value into a numeric field, it doesn’t seem to have any effect.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use">What is the difference between SEClamp and VClamp, and which should I use?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell">SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this">I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times">I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism">I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-can-i-read-data-from-a-binary-pclamp-file">How can I read data from a binary PClamp file?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything">How do I exit NEURON? I’m not using the GUI, and when I enter ^D at the oc&gt; prompt it doesn’t do anything?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-neuron">Is there a list of functions that are built into NEURON?</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="using_plotwhat_to_specify_a_variable.html">Using “Plot what?” to Specify a Variable to be plotted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="working_with_postscript_and_idraw.html">Working with PostScript and idraw figures</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_the_d_lambda_rule.html">Using the d_lambda Rule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html">How to change the background color used in shape plots and other graphs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html#how-create-a-custom-colormap">How create a custom colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="how_to_get_started_with_neuron.html">How to get started with NEURON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nmodls_built_in_functions.html">NMODL’s built-in functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html">UNITS Tutorial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#definition-of-new-units">Definition of new units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#function-and-argument-units">Function and Argument units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-for-kinetic-blocks">Units for KINETIC blocks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-in-neuron-models">Units in NEURON models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="finitialize_handler.html">FIinitializeHandler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_neuron_on_the_mac.html">Using NEURON on the Mac</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="faq.html">Frequently asked questions (FAQ)</a></li>
+      <li class="breadcrumb-item active">Using Session Files for Saving and Retrieving Windows</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/using_session_files_for_saving.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-session-files-for-saving-and-retrieving-windows">
+<span id="id1"></span><h1>Using Session Files for Saving and Retrieving Windows<a class="headerlink" href="#using-session-files-for-saving-and-retrieving-windows" title="Link to this heading"></a></h1>
+<p>Saving the windows of an interface for later re-use is an essential operation. The position, size, and contents of all the windows you have constructed often represent a great deal of labor that you don’t want to do over again. Losing a CellBuild or a MulRunFitter window can be a disaster.</p>
+<p>This article explains how to save windows, how to save them in groups in separate files in order to keep separate the ideas of specification, control, graphing, optimization, etc., and how to recover as much work as possible in the event that a saved window generates an error when it is read from a file.</p>
+<section id="what-is-a-session">
+<h2>What is a session?<a class="headerlink" href="#what-is-a-session" title="Link to this heading"></a></h2>
+<p>A “session” is the set of all of NEURON’s graphical windows, including hidden windows.</p>
+</section>
+<section id="how-and-when-to-save-all-windows-to-a-ses-file-and-how-to-retrieve-them">
+<h2>How (and when) to save all windows to a ses file, and how to retrieve them<a class="headerlink" href="#how-and-when-to-save-all-windows-to-a-ses-file-and-how-to-retrieve-them" title="Link to this heading"></a></h2>
+<p>The simplest way to save NEURON’s graphical windows is to save all of them at once with <span class="menuselection">NEURONMainMenu ‣ File ‣ save session</span>. This creates a session file which NEURON can use to recreate the windows that were saved. Session files, which are generally given the suffix “.ses” to distinguish them from user-written hoc files, are discussed below in more detail.</p>
+<p>It’s an excellent practice to save the entire session whenever a crash would cause distress because of the loss of all work since the previous save, so save early and save often. Be sure to verify that the new session file can be retrieved (<span class="menuselection">NEURONMainMenu ‣ File ‣ load session</span>) before you overwrite an earlier session file that works!</p>
+<p>It is most useful to retrieve such a session file right after launching NEURON, when no other windows are present on the screen. It is especially useful if one of the windows is a CellBuild or NetGUI, because most windows depend on the existence of information declared by them. Conflicts can arise if there are multiple CellBuild or NetGui windows that could interfere with one another, especially if they create sections with the same names.</p>
+</section>
+<section id="how-and-why-to-save-selected-windows">
+<h2>How (and why) to save selected windows<a class="headerlink" href="#how-and-why-to-save-selected-windows" title="Link to this heading"></a></h2>
+<p>The main problem with saving all windows in a single session file is that it mixes specification, control, parameter, and graphing windows. Experience has shown that it is best to segregate these categories in order to have more conceptual control over a modeling project. This allows you to easily start a simulation by retrieving the desired variant of a CellBuilder window, separately retrieving one of several possible stimulus protocols and parameter sets, and lastly retrieving groups of graph windows.</p>
+<p>If your custom interface is simple, the Print &amp; File Window Manager (PFWM) offers an easy way to save a few windows This tool is discussed elsewhere–see the FAQ list entry “Q: How do I print a hard copy of a NEURON window?” under the heading “Using NEURON–general questions”. Select the windows you want to save, just as if you were going to print them. After you have chosen the windows to be saved, click on the Session button instead of the Print button, and scroll down to the item “Save selected”.</p>
+<p>A more powerful tool for managing windows is the Window Group Manager.</p>
+<section id="the-window-group-manager">
+<h3>The Window Group Manager<a class="headerlink" href="#the-window-group-manager" title="Link to this heading"></a></h3>
+<p>The <span class="menuselection">NEURONMainMenu ‣ Window ‣ GroupManager`</span> enables the separate creation of such session files with only a little more effort than the bulk <span class="menuselection">NEURONMainMenu ‣ File ‣ save session</span>. With the “NewGroup” and “ChangeName” buttons one can define several named groups, e.g. “Cell”, “Stimulus”, “Control”, and “Voltage Graphs”.</p>
+<p>The names of window groups appear in the left panel of the window group manager. If you click on one of these names, the titles of the windows that belong to it will appear in the center panel. Clicking on one of these titles removes it from the group, and the title will now appear in the right panel, which lists the ungrouped windows. To add a window to the group, just click on the window title in the right panel. You can move a window from one window group to another by following this sequence :</p>
+<ol class="arabic simple">
+<li><p>Select the group it is currently in.</p></li>
+<li><p>Select its window title. (Makes it ungrouped)</p></li>
+<li><p>Select the group you want it to be in.</p></li>
+<li><p>Select its window title in the ungrouped list.</p></li>
+</ol>
+<p>To save any window group to its own session file, click on the SaveGroup button.</p>
+<p>The Window Group Manager is a dialog box and so must be closed before other windows will accept further input. It may be opened at any time via the <span class="menuselection">NEURONMainMenu ‣ Window ‣ GroupManager</span> menu item and groups re-saved, new windows added to existing groups, etc.</p>
+</section>
+</section>
+<section id="what-s-in-a-ses-file">
+<h2>What’s in a ses file<a class="headerlink" href="#what-s-in-a-ses-file" title="Link to this heading"></a></h2>
+<p>A session file is actually just a sequence of hoc instructions for reconstructing the windows that have been saved to it. In a session file, the instructions for each window are identified by comments. It is often a simple matter to use a text editor to modify those instructions, e.g. change the value of a parameter, or remove all the instructions for a window if it is preventing the file from being loaded. Below we discuss how the latter can happen. There are circumstances in which a window in the current session may not easily be made to start again when NEURON is exited and relaunched.</p>
+</section>
+<section id="what-can-go-wrong-and-how-to-fix-it">
+<h2>What can go wrong, and how to fix it<a class="headerlink" href="#what-can-go-wrong-and-how-to-fix-it" title="Link to this heading"></a></h2>
+<p>The most common cause of errors during retrieval of a session file is that one or more variables used by a window have not yet been defined. Thus, retrieving a point process manager window before the prerequisite cable section has been created will result in a hoc error. Retrieving a Graph of SEClamp[0].i will not succeed if SEClamp[0] does not exist. In most cases, loading the prerequisite sessions first will fix the error. To make sure that session files are loaded in the proper sequence, it can be helpful to create a file called init.hoc that contains a series of load_file statements, e.g.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">load_file</span><span class="p">(</span><span class="s">&quot;nrngui.hoc&quot;</span><span class="p">)</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;cell.ses&quot;</span><span class="p">)</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;stim.ses&quot;</span><span class="p">)</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;ctrl.ses&quot;</span><span class="p">)</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;graf.ses&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Errors due to mismatched object IDs are easy to correct by editing the session file. Mismatched object IDs can occur from particular sequences of creation and destruction of windows by the user. For example, suppose you</p>
+<ol class="arabic simple">
+<li><p>Start a PointProcessManager and create the first instance of an <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IClamp" title="IClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">IClamp</span></code></a>. This will be IClamp[0]</p></li>
+<li><p>Start another PointProcessManager and create a second instance of an IClamp. This will be IClamp[1]</p></li>
+<li><p>Close the first PointProcessManager. That destroys IClamp[0].</p></li>
+<li><p>Start a graph and plot IClamp[1].i</p></li>
+<li><p>Save the session.</p></li>
+</ol>
+<p>If you now exit and re-launch NEURON and retrieve the session, the old IClamp[1] will be re-created as IClamp[0], and the creation of the Graph window will fail due to the invalid variable name it is attempting to define. The fix is just to edit the session file and change the IClamp[1].i string to IClamp[0].i</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="differences_between_idraw_and_core.html" class="btn btn-neutral float-left" title="Differences between idraw and CorelDraw" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using_the_d_lambda_rule.html" class="btn btn-neutral float-right" title="Using the d_lambda Rule" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

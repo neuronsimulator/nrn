@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Managers &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Programmatic Model Specification" href="../programmatic.html" />
+    <link rel="prev" title="CellBuilder" href="cellbuilder.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="inserter.html">Inserter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="showmech.html">ShowMechanism</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cellbuilder.html">CellBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cellbuilder.html#kineticbuild">KineticBuild</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Managers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#viewers">Viewers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pointprocessmanager">PointProcessManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pointprocessgroupmanager">PointProcessGroupManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guitools.html">Model Specification GUI Tools</a></li>
+      <li class="breadcrumb-item active">Managers</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/modelspec/guitools/pointman.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/modelspec/guitools/pointman.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="managers">
+<span id="hoc-pointman"></span><h1>Managers<a class="headerlink" href="#managers" title="Link to this heading"></a></h1>
+<section id="pointmanager">
+<h2>PointManager<a class="headerlink" href="#pointmanager" title="Link to this heading"></a></h2>
+<p>Starts a general purpose <a class="reference internal" href="#hoc-pointprocessmanager"><span class="std std-ref">PointProcessManager</span></a> for specifying a
+location and defining what kind of point process should exist
+there. Any number of these managers can exist simultaneously.
+It is more general than the Electrode below in the sense that
+you can choose any point process and has a much cleaner
+implementation.</p>
+</section>
+<section id="pointgroup">
+<h2>PointGroup<a class="headerlink" href="#pointgroup" title="Link to this heading"></a></h2>
+<p>Starts a <a class="reference internal" href="#hoc-pointprocessgroupmanager"><span class="std std-ref">PointProcessGroupManager</span></a> for managing a collection of
+related point processes. If all the members of the collection are
+of the same type, then the values of their variables can be changed
+“globally” and all the values of a single parameter can be displayed.</p>
+</section>
+<section id="electrode">
+<h2>Electrode<a class="headerlink" href="#electrode" title="Link to this heading"></a></h2>
+<p>Starts a general purpose <a class="reference internal" href="../programmatic/electrod.html#Electrode" title="Electrode"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Electrode</span></code></a>
+voltage/current clamp (with some
+voltage clamp families) that can be moved to any position in any
+section. Any number of these may be present simultaneously. When
+one is dismissed from the screen, it is also removed from the neuron
+and the point processes it manages are destroyed. This widget is
+pretty much superseded by the <a class="reference internal" href="#hoc-pointprocessmanager"><span class="std std-ref">PointProcessManager</span></a>.</p>
+</section>
+</section>
+<section id="viewers">
+<h1>Viewers<a class="headerlink" href="#viewers" title="Link to this heading"></a></h1>
+<section id="pointprocesses">
+<h2>PointProcesses<a class="headerlink" href="#pointprocesses" title="Link to this heading"></a></h2>
+<p>Menu of possible pointprocess’s. Selecting an item pops up a panel
+that contains a browser of the locations of a particular type of
+point process, and, if global parameters exist, a button for popping
+up a panel showing the global parameters for this type of point
+process. Double clicking a location on the browser pops up a panel
+showing the values for a particular point process instance.
+See <a class="reference internal" href="../programmatic/mechanisms/mech.html#hoc-mech"><span class="std std-ref">Point Processes and Artificial Cells</span></a> for details about built-in point
+processes. The corresponding .mod file must in general be
+examined in order to understand the particulars about a given
+point process type.</p>
+</section>
+</section>
+<section id="pointprocessmanager">
+<span id="hoc-pointprocessmanager"></span><h1>PointProcessManager<a class="headerlink" href="#pointprocessmanager" title="Link to this heading"></a></h1>
+<p>Create a Point Process of a particular type at a particular location.
+Each instance of a PointProcessManager manages a single point process.</p>
+<p>The items in the <span class="guilabel">SelectPointProcess</span> menu are used to specify the
+type of the point process. After the selection, the <span class="guilabel">Show</span> menu
+is used to make the lower portion of the panel to display either the “Shape”
+(to indicate the location with a blue dot)
+or “Parameter” values of the point process. The type and location of
+the point process are also displayed in the upper portion of the panel.
+The location is changed by selecting the “Section” tool in the shape
+scene (right mouse button) and then clicking on a location (left mouse
+button).</p>
+<p>Note that when one point process is replaced by another
+the parameters are saved in a <a class="reference internal" href="../../programming/mechstan.html#MechanismStandard" title="MechanismStandard"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">MechanismStandard</span></code></a>. When
+the point process is re-installed, those parameters are restored.</p>
+<p>If the panel is saved in a session, the MechanismStandard’s are
+saved as well.</p>
+<p>hoc usage:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>section p = new PointProcessManager([xplacement, yplacement])
+</pre></div>
+</div>
+<p>p.pp is the point process currently installed in the cell.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../programmatic/mechanisms/mech.html#hoc-mech"><span class="std std-ref">Point Processes and Artificial Cells</span></a></p>
+</div>
+</section>
+<section id="pointprocessgroupmanager">
+<span id="hoc-pointprocessgroupmanager"></span><h1>PointProcessGroupManager<a class="headerlink" href="#pointprocessgroupmanager" title="Link to this heading"></a></h1>
+<p>Specify point process types, locations, and values for a set of
+point processes. Although the set may consist of different types, if
+all the types are the same then variable values can be changed “globally”
+for all pointprocesses in the set, and all values of a single parameter
+can be displayed at once.</p>
+<p>The panel consists of a control area at the top and a horizontally
+arrangement of three subpanels on the bottom.</p>
+<p>The middle subpanel (list browser)
+shows the names of the point processes in the managed set. Select
+a name by clicking on it.</p>
+<p>The left subpanel (shape scene) shows the locations of
+all the point processes in the list marked as blue dots. The selected
+name is marked as a red dot. When the “Section” tool of the shape
+scene menu (right mouse button) is selected, clicking on a location
+on the neuron will move the selected point process (red dot, highlighted
+name) to that location. The label in the control area shows the name
+and location of the selected point process.</p>
+<p>The right subpanel shows parameters in one of three styles determined
+by the <span class="guilabel">PanelStyle</span> menu. <span class="guilabel">ViewSelection</span> shows all the parameters for
+the selected (red dot, highlighted name) point process. The name of
+the selected point process is also shown at the top of this subpanel.</p>
+<p>The remaining two “PanelStyle” items work only if all the point processes
+in the list are of the same type.</p>
+<p><span class="guilabel">GlobalSpec</span> is similar to <span class="guilabel">ViewSelection</span> but any change to a parameter
+(or clicking on a value button) causes that value to be assigned to
+all the point process of the list. Note that NO assignments are made
+when the <span class="guilabel">GlobalSpec</span> panel is constructed. The user must press
+a value button or enter a new value into the field editor. This helps
+prevent accidental changing of values in the individual point processes.
+The default values in the global spec panel are those values in the
+currently selected name. In this mode, the top of the right subpanel
+shows the label: “All PP’s set to these values”.</p>
+<p>When the <span class="guilabel">ViewOneName</span> item of the <span class="guilabel">PanelStyle</span> menu is selected
+the right submenu shows a list of names of parameters. Selecting
+one of these names shows this parameter for all the managed point
+processes (each button label indicates which point process is
+referenced).</p>
+<p>In the control portion of PointProcessGroupManager, the <span class="guilabel">New</span> menu
+is used to add a point process of the indicated type to the
+list of managed point processes. The <span class="guilabel">Remove</span> button destroys the
+selected point process. The <span class="guilabel">Copy</span> button clones the selected
+point process</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cellbuilder.html" class="btn btn-neutral float-left" title="CellBuilder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../programmatic.html" class="btn btn-neutral float-right" title="Programmatic Model Specification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

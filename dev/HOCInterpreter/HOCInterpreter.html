@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOC Interpreter &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How-Do-I Guide" href="../how-do-i/how-do-i.html" />
+    <link rel="prev" title="NEURON Development topics" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Development topics</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">HOC Interpreter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#background"><strong>Background</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#source-code"><strong>Source Code</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hoc-grammar"><strong>HOC Grammar</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hoc-initialization"><strong>HOC Initialization</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hoc-interpreter-executing-the-machine"><strong><strong>HOC Interpreter - executing the machine</strong></strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hoc-interpreter-example-printf"><strong><strong>HOC Interpreter example - printf</strong></strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../how-do-i/how-do-i.html">How-Do-I Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data-structures.html">Data structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gpu-testing.html">Testing GPU functionality</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../workflow-code-paths.html">Workflow Code Paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setuptools/setuptools.html">setuptools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../morphology/morphology.html">Morphology loading in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hocdomain-sphinx.html">HOC Sphinx Domain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Development topics</a></li>
+      <li class="breadcrumb-item active">HOC Interpreter</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/dev/HOCInterpreter/HOCInterpreter.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hoc-interpreter">
+<h1>HOC Interpreter<a class="headerlink" href="#hoc-interpreter" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="#hoc-interpreter"><span class="std std-ref">HOC Interpreter</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#background"><span class="std std-ref">Background</span></a></p></li>
+<li><p><a class="reference internal" href="#source-code"><span class="std std-ref">Source Code</span></a></p></li>
+<li><p><a class="reference internal" href="#hoc-grammar"><span class="std std-ref">HOC Grammar</span></a></p></li>
+<li><p><a class="reference internal" href="#hoc-initialization"><span class="std std-ref">HOC Initialization</span></a></p></li>
+<li><p>HOC Interpreter - executing the machine</p></li>
+<li><p>HOC Interpreter example - printf</p></li>
+</ul>
+</li>
+</ul>
+<hr class="docutils" />
+<section id="background">
+<h2><strong>Background</strong><a class="headerlink" href="#background" title="Link to this heading"></a></h2>
+<p>Quote from Wikipedia</p>
+<blockquote>
+<div><p><strong>“HOC</strong>, an acronym for <strong>High Order Calculator</strong>, is an <a class="reference external" href="https://en.wikipedia.org/wiki/Interpreter_(computing)" title="Interpreter (computing)">interpreted</a> <a class="reference external" href="https://en.wikipedia.org/wiki/Programming_language" title="Programming language">programming language</a> that was used in the 1984 book <a class="reference external" href="https://en.wikipedia.org/wiki/The_Unix_Programming_Environment" title="The Unix Programming Environment">The Unix Programming Environment</a> to demonstrate how to build interpreters using <a class="reference external" href="https://en.wikipedia.org/wiki/Yacc" title="Yacc">Yacc</a>.”</p>
+</div></blockquote>
+<p>Source: <a class="reference external" href="https://en.wikipedia.org/wiki/Hoc_(programming_language)">https://en.wikipedia.org/wiki/Hoc_(programming_language)</a></p>
+<p>This books stands as ground base for the implementation of HOC Interpreter in NEURON. Points of interest are:</p>
+<ul class="simple">
+<li><p>chapter 8 → details about HOC design and development, done in 6 stages. It goes incrementally from a simple calculator to base HOC language.</p></li>
+<li><p>appendix 2 → HOC manual</p></li>
+<li><p>appendix 3 → code listing of the last stage (hoc6)</p></li>
+</ul>
+</section>
+<section id="source-code">
+<h2><strong>Source Code</strong><a class="headerlink" href="#source-code" title="Link to this heading"></a></h2>
+<p>We can distinguish several folders under <strong>‘src’:</strong></p>
+<ul class="simple">
+<li><p><strong>‘src/oc’ →</strong> Source code for the base HOC interpreter</p></li>
+<li><p><strong>‘src/ivoc’ →</strong> GUI-related code but also general purpose data structures like Vector, List or File (developed in C++)</p></li>
+<li><p><strong>‘src/nrnoc’ →</strong> NEURON-related HOC code</p></li>
+<li><p><strong>‘src/nrniv’ →</strong> modern NEURON, as it is used today; contains several C++ neuron-related additions.</p></li>
+</ul>
+<p><strong>Entry point</strong></p>
+<p>Main entry point called <strong>‘ivocmain’</strong> is found in <strong>‘ivocmain.cpp’</strong> located under <strong>‘src/ivoc’</strong>.</p>
+<p><img alt="" src="../../_images/51567124.png" /></p>
+<p>This will call ‘<strong>ivocmain_session()</strong>’ with parameter <strong>‘start_session’</strong> set to 1 that will effectively be dropping into the HOC Interpreter via <strong>‘hoc_main1()’</strong>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">ivocmain</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">env</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">ivocmain_session</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="n">env</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span>
+<span class="w">    </span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">ivocmain_session</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">env</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">start_session</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.........</span>
+<span class="w">    	</span><span class="n">hoc_main1</span><span class="p">(</span><span class="n">our_argc</span><span class="p">,</span><span class="w"> </span><span class="n">our_argv</span><span class="p">,</span><span class="w"> </span><span class="n">env</span><span class="p">);</span>
+<span class="w">    </span><span class="p">.........</span>
+<span class="w">    </span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="hoc-grammar">
+<h2><strong>HOC Grammar</strong><a class="headerlink" href="#hoc-grammar" title="Link to this heading"></a></h2>
+<p>With respect to the HOC grammar we have:</p>
+<ul>
+<li><p><strong>‘src/oc/parse.ypp’ →</strong> HOC language is defined thanks to <strong>bison/yacc;</strong> this file holds actual HOC grammar</p>
+<p>The grammar consists of token definitions, left-right precedence setup,  grammar rules (i.e. expressions like assignments) and actions; these actions represent code blocks triggered when rules have been recognised.</p>
+<p>HOC also provides functions and procedures. Grammar wise, the difference is that functions are treated as expressions whereas procedures are statements. Technically, a function will return a value and a procedure will not.</p>
+<p>Given different depth of rules, parsing makes use of a stack  where we normally push operands and operators. These are basically symbols(<strong>Symbol</strong>) or machine instructions tied to grammar actions(<strong>Inst</strong>).</p>
+<p>HOC uses an interpreter data stack, an instruction machine and a separate function/procedure (nested) call stack (combined together as a stack machine).</p>
+<p>Therefore grammar parsing type is defined as:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>%union {             /* stack type */
+   Symbol *sym;        /* symbol table pointer */
+   Inst   *inst;       /* machine instruction */
+   int    narg;        /* number of arguments */
+   void*  ptr;
+}
+</pre></div>
+</div>
+<p>which will generate</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>typedef union YYSTYPE
+</pre></div>
+</div>
+<p>Parsing relies on a lexer function that performs input tokenisation,  called <strong>‘yylex()’</strong> (implemented in <strong>‘src/oc/hoc.cpp’</strong>)<strong>.</strong></p>
+<p><img alt="" src="../../_images/58788080.png" /></p>
+<p>It “communicates” with the parser (<strong>yyparse()</strong>) via a variable of the same type as the stack:  <strong>‘YYSTYPE yylval’</strong>.</p>
+<p>As mentioned earlier, tokens are defined in the grammar.  Each of them have a type that corresponds to what we have in <strong>YYSTYPE</strong>, for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>%token &lt;sym&gt;  LOCALOBJ AUTOOBJ
+%token &lt;narg&gt; ARG NUMZERO ARGREF
+%token &lt;ptr&gt;  INTERNALSECTIONNAME PYSEC PYSECNAME PYSECOBJ
+%type  &lt;inst&gt; expr stmt asgn prlist delsym stmtlist strnasgn
+</pre></div>
+</div>
+<p>means <em><strong>LOCALOBJ</strong></em> is of type `<em><strong>Symbol</strong> <strong>*sym; /* symbol table pointer */`.</strong></em> Grammar rules can also be mapped to a type, for example <strong><em>strnasgn</em></strong> is of type `<strong><em>Inst *inst; /* machine instruction */`.</em></strong></p>
+</li>
+<li><p><strong>‘src/oc/hoc.h’ →</strong> includes two headers</p>
+<ul>
+<li><p><strong>‘redef.h’ →</strong>  some HOC redefinitions</p></li>
+<li><p><strong>‘hocdec.h’ →</strong> here we find global data structures.</p>
+<p>HOC is context aware, so to that end we have a symbol table where we put new variables but also keywords, builtins and other constructs (see <em><strong>HOC Initialisation</strong></em>). We find the <strong><em>Symbol</em></strong> struct here:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Symbol</span><span class="w"> </span><span class="p">{</span><span class="w">	</span><span class="cm">/* symbol table entry */</span>
+<span class="w">    </span><span class="kt">char</span><span class="w">	</span><span class="o">*</span><span class="n">name</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">short</span><span class="w">	</span><span class="n">type</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">short</span><span class="w">	</span><span class="n">subtype</span><span class="p">;</span><span class="w">	</span><span class="cm">/* Flag for user integers */</span>
+<span class="w">    </span><span class="kt">short</span><span class="w">	</span><span class="k">public</span><span class="p">;</span><span class="w">		</span><span class="cm">/* flag set public variable */</span>
+<span class="w">    </span><span class="kt">short</span><span class="w">	</span><span class="n">defined_on_the_fly</span><span class="p">;</span><span class="cm">/* moved here because otherwize gcc and borland do not align the same way */</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kt">int</span><span class="w">	</span><span class="n">oboff</span><span class="p">;</span><span class="w">	</span><span class="cm">/* offset into object data pointer space */</span>
+<span class="w">      </span><span class="kt">double</span><span class="w">	</span><span class="o">*</span><span class="n">pval</span><span class="p">;</span><span class="w">		</span><span class="cm">/* User defined doubles - also for alias to scalar */</span>
+<span class="w">      </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Object</span><span class="o">*</span><span class="w"> </span><span class="n">object_</span><span class="p">;</span><span class="w">	</span><span class="cm">/* alias to an object */</span>
+<span class="w">      </span><span class="kt">char</span><span class="w">	</span><span class="o">*</span><span class="n">cstr</span><span class="p">;</span><span class="w">		</span><span class="cm">/* constant string */</span>
+<span class="w">      </span><span class="kt">double</span><span class="w">	</span><span class="o">*</span><span class="n">pnum</span><span class="p">;</span><span class="w">		</span><span class="cm">/* Numbers */</span>
+<span class="w">      </span><span class="kt">int</span><span class="w">	</span><span class="o">*</span><span class="n">pvalint</span><span class="p">;</span><span class="w">	</span><span class="cm">/* User defined integers */</span>
+<span class="w">      </span><span class="kt">float</span><span class="w">	</span><span class="o">*</span><span class="n">pvalfloat</span><span class="p">;</span><span class="w">	</span><span class="cm">/* User defined floats */</span>
+<span class="w">      </span><span class="kt">int</span><span class="w">	</span><span class="n">u_auto</span><span class="p">;</span><span class="w">		</span><span class="cm">/* stack offset # for AUTO variable */</span>
+<span class="w">      </span><span class="kt">double</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="p">)();</span><span class="w">	</span><span class="cm">/* if BLTIN */</span>
+<span class="w">      </span><span class="n">Proc</span><span class="w">	</span><span class="o">*</span><span class="n">u_proc</span><span class="p">;</span>
+<span class="w">      </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">short</span><span class="w"> </span><span class="n">type</span><span class="p">;</span><span class="w">	</span><span class="cm">/* Membrane type to find Prop */</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w">	</span><span class="cm">/* prop-&gt;param[index] */</span>
+<span class="w">      </span><span class="p">}</span><span class="n">rng</span><span class="p">;</span>
+<span class="w">      </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="w"> </span><span class="o">**</span><span class="n">ppsym</span><span class="p">;</span><span class="w">	</span><span class="cm">/* Pointer to symbol pointer array */</span>
+<span class="w">      </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Template</span><span class="w"> </span><span class="o">*</span><span class="k">template</span><span class="p">;</span>
+<span class="w">      </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="o">*</span><span class="w"> </span><span class="n">sym</span><span class="p">;</span><span class="w">	</span><span class="cm">/* for external */</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">u</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w">   </span><span class="n">s_varn</span><span class="p">;</span><span class="w">	</span><span class="cm">/* dependent variable number - 0 means indep */</span>
+<span class="w">    </span><span class="n">Arrayinfo</span><span class="w"> </span><span class="o">*</span><span class="n">arayinfo</span><span class="p">;</span><span class="w">	</span><span class="cm">/* ARRAY information if null then scalar */</span>
+<span class="w">    </span><span class="n">HocSymExtension</span><span class="o">*</span><span class="w"> </span><span class="n">extra</span><span class="p">;</span><span class="w"> </span><span class="cm">/* additions to symbol allow compatibility</span>
+<span class="cm">            with old nmodl dll&#39;s */</span>
+<span class="w">    </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="w">	</span><span class="o">*</span><span class="n">next</span><span class="p">;</span><span class="w">	</span><span class="cm">/* to link to another */</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="n">Symbol</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Union <em><strong>u</strong></em> is used to hold actual value of the symbol given its type.</p>
+<p>We also have <em><strong>Inst,</strong></em> which represents the data type of a machine instruction and is tied to function pointers of different types that correspond to different functions or grammar actions:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">int</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfri</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfrv</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">double</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfrd</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Object</span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">Pfro</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">Pfrs</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+<span class="w">  </span>
+<span class="w">  </span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">int</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfri_vp</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfrv_vp</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="kt">double</span><span class="w">	</span><span class="p">(</span><span class="o">*</span><span class="n">Pfrd_vp</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Object</span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">Pfro_vp</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">Pfrs_vp</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+<span class="w">  </span>
+<span class="w">  </span>
+<span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="nc">Inst</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* machine instruction list type */</span>
+<span class="w">    </span><span class="n">Pfrv</span><span class="w">	</span><span class="n">pf</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfrd</span><span class="w">	</span><span class="n">pfd</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfro</span><span class="w">	</span><span class="n">pfo</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfrs</span><span class="w">	</span><span class="n">pfs</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfrv_vp</span><span class="w">	</span><span class="n">pfv_vp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfrd_vp</span><span class="w">	</span><span class="n">pfd_vp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfro_vp</span><span class="w">	</span><span class="n">pfo_vp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Pfrs_vp</span><span class="w">	</span><span class="n">pfs_vp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">HocUnion</span><span class="w"> </span><span class="n">Inst</span><span class="w">	</span><span class="o">*</span><span class="n">in</span><span class="p">;</span>
+<span class="w">    </span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="w">	</span><span class="o">*</span><span class="n">sym</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w">	</span><span class="n">ptr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">	</span><span class="n">i</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="n">Inst</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The interpreter data stack has the following type <strong><em>StackDatum</em></strong>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">StackDatum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">variant</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w">          </span><span class="c1">// old Datum::val</span>
+<span class="w">                                  </span><span class="n">Symbol</span><span class="o">*</span><span class="p">,</span><span class="w">         </span><span class="c1">// old Datum::sym</span>
+<span class="w">                                  </span><span class="kt">int</span><span class="p">,</span><span class="w">             </span><span class="c1">// old Datum::i</span>
+<span class="w">                                  </span><span class="n">Object</span><span class="o">**</span><span class="p">,</span><span class="w">        </span><span class="c1">// old Datum::pobj</span>
+<span class="w">                                  </span><span class="n">Object</span><span class="o">*</span><span class="p">,</span><span class="w">         </span><span class="c1">// old Datum::obj</span>
+<span class="w">                                  </span><span class="kt">char</span><span class="o">**</span><span class="p">,</span><span class="w">          </span><span class="c1">// old Datum::pstr</span>
+<span class="w">                                  </span><span class="kt">double</span><span class="o">*</span><span class="p">,</span><span class="w">         </span><span class="c1">// old Datum::pval</span>
+<span class="w">                                  </span><span class="n">std</span><span class="o">::</span><span class="n">nullptr_t</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="c1">// old STKOBJ_UNREF</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>‘src/oc/code.cpp’ →</strong> here we find the stack machine definitions and
+routines that manipulate it, and as well as functions tied to different
+functionalities or grammar actions (HOC routines), like for example
+<em><strong>call()</strong></em> that will perform a function call.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">StackDatum</span><span class="o">&gt;</span><span class="w"> </span><span class="n">stack</span><span class="p">{};</span><span class="w"> </span><span class="c1">// the data stack</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="cp">#define    NPROG  50000</span>
+<span class="w">  </span><span class="n">Inst</span><span class="w">   </span><span class="o">*</span><span class="n">prog</span><span class="p">;</span><span class="w"> </span><span class="cm">/* the machine */</span>
+<span class="w">  </span><span class="n">Inst</span><span class="w">   </span><span class="o">*</span><span class="n">progp</span><span class="p">;</span><span class="w">       </span><span class="cm">/* next free spot for code generation */</span>
+<span class="w">  </span><span class="n">Inst</span><span class="w">   </span><span class="o">*</span><span class="n">pc</span><span class="p">;</span><span class="w">      </span><span class="cm">/* program counter during execution */</span>
+<span class="w">  </span><span class="n">Inst</span><span class="w">   </span><span class="o">*</span><span class="n">progbase</span><span class="p">;</span><span class="w"> </span><span class="cm">/* start of current subprogram */</span>
+<span class="w">  </span><span class="n">Inst</span><span class="w">   </span><span class="o">*</span><span class="n">prog_parse_recover</span><span class="p">;</span><span class="w"> </span><span class="cm">/* start after parse error */</span>
+<span class="w">  </span><span class="kt">int</span><span class="w">    </span><span class="n">hoc_returning</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 1 if return stmt seen, 2 if break, 3 if continue */</span>
+<span class="w">           </span><span class="cm">/* 4 if stop */</span>
+<span class="w">  </span><span class="k">namespace</span><span class="w"> </span><span class="nn">nrn</span><span class="o">::</span><span class="nn">oc</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">struct</span><span class="w"> </span><span class="nc">frame</span><span class="w"> </span><span class="p">{</span><span class="w">             </span><span class="cm">/* proc/func call stack frame */</span>
+<span class="w">      </span><span class="n">Symbol</span><span class="o">*</span><span class="w"> </span><span class="n">sp</span><span class="p">;</span><span class="w">            </span><span class="cm">/* symbol table entry */</span>
+<span class="w">      </span><span class="n">Inst</span><span class="o">*</span><span class="w"> </span><span class="n">retpc</span><span class="p">;</span><span class="w">           </span><span class="cm">/* where to resume after return */</span>
+<span class="w">      </span><span class="n">StackDatum</span><span class="o">*</span><span class="w"> </span><span class="n">argn</span><span class="p">;</span><span class="w">      </span><span class="cm">/* n-th argument on stack */</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">nargs</span><span class="p">;</span><span class="w">             </span><span class="cm">/* number of arguments */</span>
+<span class="w">      </span><span class="n">Inst</span><span class="o">*</span><span class="w"> </span><span class="n">iter_stmt_begin</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Iterator statement starts here */</span>
+<span class="w">      </span><span class="n">Object</span><span class="o">*</span><span class="w"> </span><span class="n">iter_stmt_ob</span><span class="p">;</span><span class="w">  </span><span class="cm">/* context of Iterator statement */</span>
+<span class="w">      </span><span class="n">Object</span><span class="o">*</span><span class="w"> </span><span class="n">ob</span><span class="p">;</span><span class="w">            </span><span class="cm">/* for stack frame debug message */</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span><span class="w">  </span><span class="c1">// namespace nrn::oc</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">Frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nrn</span><span class="o">::</span><span class="n">oc</span><span class="o">::</span><span class="n">frame</span><span class="p">;</span>
+<span class="w">  </span><span class="cp">#define NFRAME 512 </span><span class="cm">/* default size */</span>
+<span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="n">Frame</span><span class="w"> </span><span class="o">*</span><span class="n">frame</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">fp</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">framelast</span><span class="p">;</span><span class="w"> </span><span class="cm">/* first, frame pointer, last */</span>
+</pre></div>
+</div>
+<p>The important thing to note here is the <em><strong>Frame</strong></em> structure, used for functions and procedures. They are installed in a symbol table and have a make us of a machine instruction <strong><em>retpc</em></strong> used to know where to return after execution.</p>
+<p>Arguments come in variably like <strong>$1, $2</strong> and so on, and the way we
+incorporate them is by pointing to the last one on the stack (<em><strong>StackDatum
+*argn</strong></em>) and passing <strong><em>int nargs.</em></strong></p>
+</li>
+<li><p><strong>‘src/oc/symbol.cpp’ →</strong> defines several symbol tables and utility functions to install and lookup symbols (see <em><strong>HOC Initialisation</strong></em>)</p></li>
+</ul>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Symlist</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  	</span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="w"> </span><span class="o">*</span><span class="n">first</span><span class="p">;</span>
+<span class="w">  	</span><span class="n">HocStruct</span><span class="w"> </span><span class="n">Symbol</span><span class="w"> </span><span class="o">*</span><span class="n">last</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span><span class="n">Symlist</span><span class="p">;</span>
+<span class="w">  </span>
+<span class="w">  </span>
+<span class="w">  </span><span class="n">Symlist</span><span class="w">	</span><span class="o">*</span><span class="n">hoc_built_in_symlist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Symlist</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="cm">/* keywords, built-in functions,	all name linked into hoc. Look in this list last */</span>
+<span class="w">  </span><span class="n">Symlist</span><span class="w">	</span><span class="o">*</span><span class="n">hoc_top_level_symlist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Symlist</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="cm">/* all user names seen at top-level	(non-public names inside templates do not appear here) */</span>
+<span class="w">  					</span>
+<span class="w">  </span><span class="n">Symlist</span><span class="w">	</span><span class="o">*</span><span class="n">symlist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Symlist</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w">	</span><span class="cm">/* the current user symbol table: linked list */</span>
+<span class="w">  </span><span class="n">Symlist</span><span class="w">	</span><span class="o">*</span><span class="n">p_symlist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Symlist</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w"> 	</span><span class="cm">/* current proc, func, or temp table */</span>
+<span class="w">  									</span><span class="cm">/* containing constants, strings, and auto */</span>
+<span class="w">  									</span><span class="cm">/* variables. Discarding these lists at */</span>
+<span class="w">  									</span><span class="cm">/* appropriate times prevents storage leakage. */</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>‘src/oc/hoc_oop.cpp’ →</strong> holds HOC functions providing support for OOP</p></li>
+</ul>
+</section>
+<section id="hoc-initialization">
+<h2><strong>HOC Initialization</strong><a class="headerlink" href="#hoc-initialization" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Argument parsing</p></li>
+</ul>
+<p>Before HOC interpreter initialisation, <strong>‘ivocmain_session()’</strong> takes into account different options passed down from command line arguments and sets variables accordingly.</p>
+<p>HOC-interpreter importance wise, we have:</p>
+<ul>
+<li><ul class="simple">
+<li><p><strong>‘NSTACK’→</strong> HOC interpreter stack space</p></li>
+<li><p><strong>‘NFRAME’ →</strong> number of frames available.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">options</span><span class="p">:</span>\<span class="n">n</span>\
+  <span class="o">.......</span>
+    <span class="o">-</span><span class="n">NSTACK</span> <span class="n">integer</span>  <span class="n">size</span> <span class="n">of</span> <span class="n">stack</span> <span class="p">(</span><span class="n">default</span> <span class="mi">1000</span><span class="p">)</span>\<span class="n">n</span>\
+    <span class="o">-</span><span class="n">NFRAME</span> <span class="n">integer</span>  <span class="n">depth</span> <span class="n">of</span> <span class="n">function</span> <span class="n">call</span> <span class="n">nesting</span> <span class="p">(</span><span class="n">default</span> <span class="mi">200</span><span class="p">)</span>\<span class="n">n</span>\
+  <span class="o">........</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Default values are used if user does not supply them → in <strong>‘src/oc/code.cpp’.</strong> We often need to specify a higher <strong>NFRAME</strong> (i.e. 1000 when we do morphology loading as that tends towards deeper function call nesting when parsing).</p>
+<p>These values are checked systematically when we use the stack or frames for
+procedures and functions (everything is in <strong>‘src/oc/code.cpp’,</strong>); the actual
+space allocation for HOC stack and frames is done in <strong>‘hoc_init_space()’.</strong></p>
+<ul>
+<li><p>Interpreter initialisation<br />
+<strong>‘hoc_main1_init()’</strong> is in charge of the HOC interpreter initialisation. In the following image we can see <strong>‘hoc_main1()’</strong> is also a caller; this is the hoc interpreter part taking input line by line and executing it, discussed in next section.<br />
+<img alt="" src="../../_images/51567142.png" /><br />
+Most of the initialisation is actually handled through <strong>‘hoc_init()’</strong></p>
+<p><img alt="" src="../../_images/51567143.png" />
+<img alt="" src="../../_images/51567144.png" /></p>
+<p><strong>‘hoc_init()’</strong> will perform the following</p>
+<ol class="arabic simple">
+<li><p>call <strong>‘hoc_init_space()’</strong> to allocate space for HOC interpreter stack and frames</p></li>
+<li><p>install symbols with the help of <strong>‘hoc_install’</strong> (alias of <strong>‘install()’</strong> function implemented in <strong>‘src/oc/symbol.cpp’</strong>):</p>
+<ol class="arabic simple">
+<li><p>keywords like : <strong>if, else, proc, localobj</strong> and so on</p></li>
+<li><p>constants like: <strong>PI, GAMMA, FARADAY</strong> and so on</p></li>
+<li><p>builtin HOC functions like: <strong>sin(), cos(), sqrt(), xopen(), sscanf(), execute(), load_file(), nrnversion()</strong> and so forth<br />
+<img alt="" src="../../_images/58788144.png" /><br />
+<img alt="" src="../../_images/58788141.png" /></p></li>
+</ol>
+</li>
+<li><p>install some variable symbols using <strong>‘hoc_install_var()’</strong> defined in <strong>‘src/oc/symbol.cpp’</strong></p></li>
+<li><p>call <strong>‘hoc_spinit()’</strong> implemented in <strong>‘src/oc/hocusr.cpp’,</strong> which will</p>
+<ol class="arabic simple">
+<li><p><strong>hoc_install()</strong> user variables ( like <strong>float/double/integer, scalars, arrays, vectors</strong>)</p></li>
+<li><p><strong>hoc_install()</strong> user functions (like <strong>pt3dadd(), finitialize(), psection()</strong> and so on)</p></li>
+<li><p>call <strong>‘hoc_last_init()’</strong> to finalise setup, including:</p>
+<ol class="arabic simple">
+<li><p>create <strong>NrnThreads</strong></p></li>
+<li><p><strong>hoc_install()</strong> neuron related variables ( <strong>t, dt, v, i_membrane_)</strong> and user properties ( <strong>nseg, L, rallbranch, Ra)</strong></p></li>
+<li><p>finish memory allocations for different neuron variables</p></li>
+<li><p>call <strong>modl_reg()</strong> and <strong>mswin_load_dll()</strong> to load external mechanisms from <strong>mech</strong> library</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>call <strong>‘hoc_class_registration()’</strong> implemented in <strong>‘src/ivoc/classreg.cpp’</strong> which will register classes found in different parts of the source tree, like:</p>
+<ol class="arabic simple">
+<li><p><strong>List, Vector, Matrix</strong> and so on, classes from <strong>‘src/ivoc/’</strong></p></li>
+<li><p><strong>Shape, BBSaveState</strong> and so on, classes from <strong>‘src/nrniv’</strong><br />
+<strong><img alt="" src="../../_images/58786474.png" /></strong></p></li>
+</ol>
+</li>
+</ol>
+</li>
+</ul>
+</section>
+<section id="hoc-interpreter-executing-the-machine">
+<h2><strong><strong>HOC Interpreter - executing the machine</strong></strong><a class="headerlink" href="#hoc-interpreter-executing-the-machine" title="Link to this heading"></a></h2>
+<p>As pointed out in previous section, <strong><strong>‘hoc_main1()’</strong></strong> launches the interpreter and executes different hoc commands either line by line from input file or from prompt.</p>
+<p>This is handled by the next routine:</p>
+<p><strong>HOC interpreter main routine</strong></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w"> 	</span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">moreinput</span><span class="p">())</span>
+<span class="w"> 		</span><span class="n">hoc_run1</span><span class="p">();</span>
+<span class="w"> 	</span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Whereas <strong>‘hoc_run1()’</strong> will perform parsing (ultimately via bison generated <strong>‘yyparse()’</strong>), which will then point to the start machine instruction <strong>Inst</strong>  that is passed on to execution via <em><strong>execute (hoc_execute()</strong> redef)</em>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">initcode</span><span class="p">();</span><span class="w"> </span><span class="n">hoc_yyparse</span><span class="p">();</span><span class="w"> </span><span class="n">initcode</span><span class="p">())</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">  		</span><span class="n">execute</span><span class="p">(</span><span class="n">progbase</span><span class="p">)</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+<p><img alt="" src="../../_images/58788147.png" /></p>
+</section>
+<section id="hoc-interpreter-example-printf">
+<h2><strong><strong>HOC Interpreter example - printf</strong></strong><a class="headerlink" href="#hoc-interpreter-example-printf" title="Link to this heading"></a></h2>
+<p>When a function (or even a procedure) is called we have:</p>
+<ul class="simple">
+<li><p>arguments parsed (and eventually computed) pushed to the interpreter data stack</p></li>
+<li><p>the interpreter machine will have</p>
+<ul>
+<li><p><em><strong>call</strong></em> opcode → this is linked to the <em><strong>call()</strong></em> function implemented in <em><strong>‘src/oc/code.cpp’</strong></em></p></li>
+<li><p><em><strong>sym</strong></em> holding the symbol table pointer for the function</p></li>
+<li><p><em><strong>nargs</strong></em> holding the number of arguments passed to the function</p></li>
+</ul>
+</li>
+<li><p>a new Frame is pushed onto the frame stack, containing</p>
+<ul>
+<li><p><strong><em>argn</em> →</strong> pointer to interpreter stack of the last argument</p></li>
+<li><p><strong><em>nargs</em> →</strong> number of arguments</p></li>
+<li><p><strong><em>retpc</em> →</strong> where to return after the function call</p></li>
+<li><p><strong><em>sp</em> →</strong> symbol table pointer of the printf</p></li>
+</ul>
+</li>
+</ul>
+<p><img alt="" src="../../_images/58791210.png" /></p>
+<p>How does this map to <em><strong>parse.ypp</strong></em> grammar? Corresponding part is :</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>expr:  
+.......
+   | function begin &#39;(&#39; arglist &#39;)&#39;
+      { $$ = $2; code(call); codesym($1); codei($4); PN;}
+</pre></div>
+</div>
+<p>Here we notice <em><strong>call</strong></em> opcode that was pushed to the interpreter machine, together with the <em><strong>sym</strong></em> of called function and the number of args via <em><strong>codei</strong></em> call.</p>
+<p>So given the following HOC call:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>oc&gt;printf(&quot;%s equals %d&quot;, &quot;one plus two&quot;, 1+2)
+</pre></div>
+</div>
+<p>the parsing will parse the arguments and the interpreter will perform <strong><em>call()</em>.</strong> At this point, program counter <em><strong>pc</strong></em>  points to the <strong><em>printf</em></strong> symbol table entry and just after we have the number of arguments <em><strong>nargs.</strong></em> We now push and setup a new <em><strong>Frame</strong></em>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// call a function</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">hoc_call</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">isec</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Symbol</span><span class="o">*</span><span class="w"> </span><span class="n">sp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pc</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">sym</span><span class="p">;</span><span class="w"> </span><span class="cm">/* symbol table entry for printf */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">++</span><span class="n">fp</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">framelast</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">--</span><span class="n">fp</span><span class="p">;</span>
+<span class="w">        </span><span class="n">execerror</span><span class="p">(</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;call nested too deeply, increase with -NFRAME framesize option&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">sp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">nargs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pc</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">i</span><span class="p">;</span>
+<span class="w">    </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">retpc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pc</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="c1">// This is where we return to after the printf call</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">argn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">();</span><span class="w"> </span><span class="c1">// pointer to the last argument</span>
+</pre></div>
+</div>
+<p>By inspecting the frame we notice:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">lldb</span><span class="p">)</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="n">fp</span>
+<span class="p">(</span><span class="n">Frame</span><span class="p">)</span><span class="w"> </span><span class="n">$1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">sp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000017092c0</span>
+<span class="w">  </span><span class="n">retpc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x000000010038c060</span>
+<span class="w">  </span><span class="n">argn</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">Active</span><span class="w"> </span><span class="n">Type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span>
+<span class="w">  </span><span class="n">nargs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">  </span><span class="n">iter_stmt_begin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span>
+<span class="w">  </span><span class="n">iter_stmt_ob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span>
+<span class="w">  </span><span class="n">ob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span>
+<span class="p">}</span>
+
+<span class="p">(</span><span class="n">lldb</span><span class="p">)</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">sp</span>
+<span class="p">(</span><span class="n">Symbol</span><span class="p">)</span><span class="w"> </span><span class="n">$2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0000600000014480</span><span class="w"> </span><span class="s">&quot;printf&quot;</span>
+<span class="w">  </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">280</span><span class="w"> </span><span class="c1">// this is the type of the symbol, which corresponds to a builtin function: FUN_BLTIN = 280</span>
+<span class="w">  </span><span class="n">subtype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="n">cpublic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="n">defined_on_the_fly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="n">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">oboff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2163136</span>
+<span class="w">    </span><span class="n">pval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">object_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">cstr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\U00000010\U0000001a\xea</span><span class="s">&quot;</span>
+<span class="w">    </span><span class="n">pnum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">pvalint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">pvalfloat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">u_auto</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2163136</span>
+<span class="w">    </span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">u_proc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span><span class="w"> </span><span class="c1">// this is the active member</span>
+<span class="w">    </span><span class="n">rng</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">448</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">24576</span><span class="p">)</span>
+<span class="w">    </span><span class="n">ppsym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">ctemplate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">    </span><span class="n">sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00006000002101c0</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">s_varn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="n">arayinfo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span>
+<span class="w">  </span><span class="n">extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span>
+<span class="w">  </span><span class="n">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0000600001709300</span>
+<span class="p">}</span>
+<span class="w">  </span>
+<span class="p">(</span><span class="n">lldb</span><span class="p">)</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">argn</span>
+<span class="p">(</span><span class="n">StackDatum</span><span class="p">)</span><span class="w"> </span><span class="n">$3</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="n">Active</span><span class="w"> </span><span class="n">Type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="w">  </span><span class="p">{</span>
+<span class="w">  </span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="c1">// value of the last argument (1+2) has already been computed</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em><strong>call()</strong></em> will continue on to check the symbol, which  tells us we are calling a builtin function (<em><strong>FUN_BLTIN = 280</strong></em>, see <em><strong>fp</strong></em> above), and call its function pointer mapped to <strong><em>hoc_PRintf</em></strong>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">FUN_BLTIN</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OBJECTFUNC</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">STRINGFUNC</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Push slots for auto</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="p">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">nauto</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">push_value</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="p">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">defn</span><span class="p">.</span><span class="n">pf</span><span class="p">))();</span><span class="w"> </span><span class="cm">/* this is where we call the printf function */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hoc_errno_check</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">hoc_warning</span><span class="p">(</span><span class="s">&quot;errno set during call of&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> equals </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;one plus two&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">Process</span> <span class="mi">15255</span> <span class="n">stopped</span>
+<span class="o">*</span> <span class="n">thread</span> <span class="c1">#1, queue = &#39;com.apple.main-thread&#39;, stop reason = breakpoint 1.1</span>
+    <span class="n">frame</span> <span class="c1">#0: 0x0000000100e7cba0 libnrniv.dylib`hoc_call() at code.cpp:1403:10</span>
+   <span class="mi">1400</span>	        <span class="k">for</span> <span class="p">(</span><span class="n">auto</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="o">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">nauto</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+   <span class="mi">1401</span>	            <span class="n">push_value</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+   <span class="mi">1402</span>	        <span class="p">}</span>
+<span class="o">-&gt;</span> <span class="mi">1403</span>	        <span class="p">(</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="o">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">defn</span><span class="o">.</span><span class="n">pf</span><span class="p">)();</span>
+   <span class="mi">1404</span>	        <span class="k">if</span> <span class="p">(</span><span class="n">hoc_errno_check</span><span class="p">())</span> <span class="p">{</span>
+   <span class="mi">1405</span>	            <span class="n">hoc_warning</span><span class="p">(</span><span class="s2">&quot;errno set during call of&quot;</span><span class="p">,</span> <span class="n">sp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+   <span class="mi">1406</span>	        <span class="p">}</span>
+<span class="n">Target</span> <span class="mi">0</span><span class="p">:</span> <span class="p">(</span><span class="n">nrniv</span><span class="p">)</span> <span class="n">stopped</span><span class="o">.</span>
+<span class="p">(</span><span class="n">lldb</span><span class="p">)</span> <span class="n">s</span>
+<span class="n">Process</span> <span class="mi">15255</span> <span class="n">stopped</span>
+<span class="o">*</span> <span class="n">thread</span> <span class="c1">#1, queue = &#39;com.apple.main-thread&#39;, stop reason = step in</span>
+    <span class="n">frame</span> <span class="c1">#0: 0x0000000100ea1a18 libnrniv.dylib`hoc_PRintf() at fileio.cpp:316:5</span>
+   <span class="mi">313</span> 	    <span class="n">char</span><span class="o">*</span> <span class="n">buf</span><span class="p">;</span>
+   <span class="mi">314</span> 	    <span class="n">double</span> <span class="n">d</span><span class="p">;</span>
+   <span class="mi">315</span>
+<span class="o">-&gt;</span> <span class="mi">316</span> 	    <span class="n">hoc_sprint1</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+   <span class="mi">317</span> 	    <span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="n">strlen</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+   <span class="mi">318</span> 	    <span class="n">plprint</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+   <span class="mi">319</span> 	    <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+<span class="n">Target</span> <span class="mi">0</span><span class="p">:</span> <span class="p">(</span><span class="n">nrniv</span><span class="p">)</span> <span class="n">stopped</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><img alt="" src="../../_images/58791244.png" /></p>
+<p><em><strong>hoc_sprint1()</strong></em> will be in charge of formatting the output using the parsed arguments. Once printing is done via <em><strong>plprint()</strong></em>, a call to <em><strong>ret()</strong></em> will perform Frame clean-up, pop arguments from interpreter data stack and set program counter <em><strong>pc</strong></em> to returning point <em><strong>retpc</strong></em>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cm">/* common return from func, proc, or iterator */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">hoc_ret</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// unref all the auto object pointers</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="p">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">nobjauto</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="o">--</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// this is going from the deepest automatic object in the stack to the shallowest</span>
+<span class="w">        </span><span class="n">hoc_obj_unref</span><span class="p">(</span><span class="n">hoc_look_inside_stack</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// Pop off the autos</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">sp</span><span class="o">-&gt;</span><span class="n">u</span><span class="p">.</span><span class="n">u_proc</span><span class="o">-&gt;</span><span class="n">nauto</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pop_value</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">frameobj_clean</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">nargs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// pop arguments</span>
+<span class="w">        </span><span class="n">hoc_nopop</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">hoc_pc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">retpc</span><span class="p">;</span>
+<span class="w">    </span><span class="o">--</span><span class="n">fp</span><span class="p">;</span>
+<span class="w">    </span><span class="n">hoc_returning</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Length of outputted string (21 here) is pushed onto the interpreter data stack.  Notice <strong><em>hoc_returning</em></strong> that is set to 1 to let the stack machine know execution is done; this is how we can signal nested calls if needed (out of scope for this example).</p>
+<p>At the end of <strong>hoc_execute()</strong> we get:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>one plus two equals 3	21
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="NEURON Development topics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../how-do-i/how-do-i.html" class="btn btn-neutral float-right" title="How-Do-I Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

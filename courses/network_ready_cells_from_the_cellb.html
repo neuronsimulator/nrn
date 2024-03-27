@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Network ready cells from the CellBuilder &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hopfield Brody synchronization (sync) model" href="hopfield_brody_network_in_python.html" />
+    <link rel="prev" title="Artificial Cells in NEURON" href="artificial_cells_neuron.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Network ready cells from the CellBuilder</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulation">Simulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ball-stick-cell-model">Ball-Stick cell model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ball-stick-cell-model-with-synapses">Ball-Stick cell model with synapses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#stimulators">Stimulators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cell-creation">Cell creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connections">Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#other-simulation-exercises">Other Simulation Exercises</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-automatically-generated-hoc-code">The automatically generated hoc code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Network ready cells from the CellBuilder</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/network_ready_cells_from_the_cellb.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="network-ready-cells-from-the-cellbuilder">
+<span id="id1"></span><h1>Network ready cells from the CellBuilder<a class="headerlink" href="#network-ready-cells-from-the-cellbuilder" title="Link to this heading"></a></h1>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading"></a></h2>
+<img alt="../_images/net2mod.gif" class="align-center" src="../_images/net2mod.gif" />
+<p>Ball-Stick model cell with distal excitation and proximal inhibition. This is another “hello world” level exercise. It shows how to use the a specification from a cell builder to create a network ready cell (spike initiation site and a set of synapses) from a NetReadyCellGUI. It shows how to use these cell types in a NetGUI to make connections between spike initiation sites and synapses.</p>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<p>The strategy is to</p>
+<ol class="arabic simple">
+<li><p>Use a CellBuilder window to create a cell type with specific morphology and membrane properties. The CellBuilder also specifies the type name and the spike initiation site.</p></li>
+<li><p>Define synapse types with a SynTypeGUI. E.g. inhibitory and excitatory synapses from suitable PointProcesses.</p></li>
+<li><p>Define a network ready cell type with a NetReadyCellGUI. I.e. specify where instances of the synapse types should be located on the cell. The NetReadyCellGUI references a CellBuilder to obtain the basic cell morphology and membrane properties. It references a SynTypeGUI which is used to obtain the synapse types.</p></li>
+<li><p>Use a NetGUI to construct the network</p></li>
+<li><p>Run a simulation and plot the input and output spike trains. If you have trouble with the following instructions, <a class="reference download internal" download="" href="../_downloads/793088e8c764b725cb4bda86c9434d70/net2run.hoc"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">executes</span> <span class="pre">a</span> <span class="pre">working</span> <span class="pre">exercise</span></code></a> — the NetReadyCellGUI (for the ball stick cell) and ArtCellGUI (for the stimulators) are in the “cell types” window group.</p></li>
+</ol>
+<section id="ball-stick-cell-model">
+<h3>Ball-Stick cell model<a class="headerlink" href="#ball-stick-cell-model" title="Link to this heading"></a></h3>
+<p>Start with the ball-stick specification in <span class="menuselection">exercises ‣ continuous_simulations_of_nets ‣ start.ses</span>. This model has</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Soma area</p></th>
+<th class="head"><p>Dendrite</p></th>
+<th class="head"><p>Ra</p></th>
+<th class="head"><p>cm</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>500 um2 with hh channels (standard density)</p></td>
+<td><p>L = 200 um, diam = 1 um with pas channel ( g_pas = .001 S/um2 and e_pas = -65 mV )</p></td>
+<td><p>100 ohm-cm</p></td>
+<td><p>1 uF/cm^2</p></td>
+</tr>
+</tbody>
+</table>
+<p>and uses d_lambda=.1 compartmentalization policy.</p>
+<p>From the CellBuild Management/CellType panel, the classname should be declared as “BallStick” and the output variable which is watched for spike event should be soma.v(1). At this point the windows should look something like this</p>
+<img alt="../_images/net2cbld.gif" class="align-center" src="../_images/net2cbld.gif" />
+</section>
+<section id="ball-stick-cell-model-with-synapses">
+<h3>Ball-Stick cell model with synapses<a class="headerlink" href="#ball-stick-cell-model-with-synapses" title="Link to this heading"></a></h3>
+<p>The <span class="menuselection">NEURONMainMenu ‣ Build ‣ NetworkCell ‣ FromCellBuilder</span> menu item starts a dialog box which requests references to a “Synapse type set” (left list) and a “CellBuild type” (right list). The synapse type set list is empty now but the CellBuild type list should have a reference to the cell builder previously loaded. Select “CellBuild[0]” and press the “Use Selection” button.</p>
+<p>This starts a NetReadyCellGUI window (nrc) and a SynTypeGUI window. (It would have also started a new CellBuild window as well if no CellBuild type had been selected in the dialog). Note that the nrc contains a drawing of the cell topology. At this time you can close the CellBuild window — It can always be re-created with the nrc’s Info menu. In fact, when saving the nrc in a session, it is best to first close both the cell builder and the SynTypeGUI to avoid saving duplicate copies in the session file. After closing the CellBuild[0] window the interface should look something like this</p>
+<img alt="../_images/net2nrc1.gif" class="align-center" src="../_images/net2nrc1.gif" />
+<p>From the SynTypeGUI window, create a “E” synapse type via a <span class="menuselection">New ‣ ExpSyn</span> followed by a Rename. Since the reversal potential for the standard <a class="reference external" href="https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html?highlight=expsyn#ExpSyn">ExpSyn</a> is 0 mV, it is already excitatory. However, change the time constant from 0.1 to 2 ms.</p>
+<p>In the same SynTypeGUI window create a “I” synapse type via a <span class="menuselection">New ‣ ExpSyn</span> followed by a Rename. Set the reversal potential “e” to -80 mV so that it will be inhibitory and set tau to 5ms.</p>
+<p>In the NetReadyCellGUI, press the Refresh button so that the new SynTypes appear.</p>
+<p>Change the cell name to “B” so the label won’t take up so much space later on when we use it in a NetGUI tool.</p>
+<p>In the NetReadyCellGUI, press the “Locate” radiobutton and drag an E to location 0.8 on the dendrite. Then drag an I to location 0.1 on the dendrite. The label in the canvas will show whether the synapse type is close enough to be attached or not. Each synapse on the cell is given an index which is the order of creation. Several synapses can be attached to the same location. The synapse label can be dragged up to two font sizes above or below the location to avoid label overlap. If a label is dragged too far away from the cell it will become detached and the larger synapse indices will be reduced by 1. The interface at this point should look something like this</p>
+<img alt="../_images/net2nrc2.gif" class="align-center" src="../_images/net2nrc2.gif" />
+<p>Enough work has been done up to this point so that you should save the NetReadyCellGUI in a session by itself (without the CellBuild or SynTypeGUI windows – these may safely be closed as well).</p>
+<p>This cell type is now ready for use in the NetGUI.</p>
+</section>
+<section id="stimulators">
+<h3>Stimulators<a class="headerlink" href="#stimulators" title="Link to this heading"></a></h3>
+<p>In analogy with the previous hands-on exercise create two stimulus types, “SE” and “SI” to provide event streams to stimulate the ball-stick model.</p>
+<p>For SE, set interval=5 , number=50 , and start=0.</p>
+<p>For SI, set interval=10, number=5, and start=20.</p>
+<p>I.e. from <span class="menuselection">NEURONMainMenu ‣ Build ‣ NetworkCell ‣ ArtificialCell</span> get an ArtCellGUI and use NetStim to define the stimulus types. After setting it up the window will look something like this</p>
+<img alt="../_images/net2stim.gif" class="align-center" src="../_images/net2stim.gif" />
+<p>At this point I created a Window Group called “cell types,” placed the ArtCellGUI and NetReadyCellGUI in it, and saved the group. In case things go wrong I can easily return to this point.</p>
+<img alt="../_images/net2wgrp.gif" class="align-center" src="../_images/net2wgrp.gif" />
+</section>
+<section id="cell-creation">
+<h3>Cell creation<a class="headerlink" href="#cell-creation" title="Link to this heading"></a></h3>
+<p>Start a NetGUI tool and create a “B0” ball-stick cell and “SE1” and “SI2” stimulators as shown in this picture</p>
+<img alt="../_images/net2cre.gif" class="align-center" src="../_images/net2cre.gif" />
+</section>
+<section id="connections">
+<h3>Connections<a class="headerlink" href="#connections" title="Link to this heading"></a></h3>
+<p>In the NetGUI window, select the “Src-&gt;Tar” radiobutton and drag a line from SE1 to B0. The string near the top of the canvas describes the operation to be performed when the mouse button is released. When the connection line gets near B0 a picture of the BallStick topology will be drawn and the mouse should be moved to the E0 synapse label. The following three figures illustrate the process.</p>
+<section id="select-the-source-cell">
+<h4>Select the source cell<a class="headerlink" href="#select-the-source-cell" title="Link to this heading"></a></h4>
+<img alt="../_images/net2con1.gif" class="align-center" src="../_images/net2con1.gif" />
+</section>
+<section id="select-the-target-cell">
+<h4>Select the target cell<a class="headerlink" href="#select-the-target-cell" title="Link to this heading"></a></h4>
+<img alt="../_images/net2con2.gif" class="align-center" src="../_images/net2con2.gif" />
+</section>
+<section id="select-the-synapse-on-the-target-cell">
+<h4>Select the synapse on the target cell<a class="headerlink" href="#select-the-synapse-on-the-target-cell" title="Link to this heading"></a></h4>
+<img alt="../_images/net2con3.gif" class="align-center" src="../_images/net2con3.gif" />
+<p>Connect SI1 to I1 of B0</p>
+<p>The NetGUI window should now look something like this</p>
+<img alt="../_images/net2edge.gif" class="align-center" src="../_images/net2edge.gif" />
+<p>Use the “Weights” button to pop up a NetEdgeGUI panel and enter the following weights.</p>
+<img alt="../_images/net2wt.gif" class="align-center" src="../_images/net2wt.gif" />
+</section>
+</section>
+<section id="id2">
+<h3>Simulation<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>In the NetGUI window, press the “Create” button. The <a class="reference internal" href="../hoc/modelspec/programmatic/topology.html#id0" title="topology"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">topology()</span></code></a> statement should produce</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>oc&gt;topology()
+
+|-|       acell_home_(0-1)
+|-|       B_BallStick[0].soma(0-1)
+`------|       B_BallStick[0].dend(0-1)
+
+        1
+oc&gt;
+</pre></div>
+</div>
+<p>Press the “SpikePlot” button to pop up a plot window.</p>
+<p>Start a <span class="menuselection">NEURONMainMenu ‣ Tools ‣ RunControl</span> and VariableStepControl. Set TStop to 500 and invoke “Use variable dt”</p>
+<p>Get a voltage style graph window and plot the soma voltage for the ball-stick cell. The ShowCellMap button on the NetGUI is useful here. The relevant interface looks something like this</p>
+<img alt="../_images/net2plt1.gif" class="align-center" src="../_images/net2plt1.gif" />
+<p>Do an Init &amp; Run.</p>
+<p>The relevant windows should now look something like this</p>
+<img alt="../_images/net2plt2.gif" class="align-center" src="../_images/net2plt2.gif" />
+</section>
+<section id="other-simulation-exercises">
+<h3>Other Simulation Exercises<a class="headerlink" href="#other-simulation-exercises" title="Link to this heading"></a></h3>
+<p>Plot the value of the conductance and current of the inhibitory synapse.</p>
+</section>
+<section id="the-automatically-generated-hoc-code">
+<h3>The automatically generated hoc code<a class="headerlink" href="#the-automatically-generated-hoc-code" title="Link to this heading"></a></h3>
+<p>The hoc file for the above spec looks like <a class="reference download internal" download="" href="../_downloads/262a1c22996ca4ef0b903a070e8be1c1/net2spec.ho.txt"><code class="xref download docutils literal notranslate"><span class="pre">this</span></code></a>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="artificial_cells_neuron.html" class="btn btn-neutral float-left" title="Artificial Cells in NEURON" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hopfield_brody_network_in_python.html" class="btn btn-neutral float-right" title="Hopfield Brody synchronization (sync) model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

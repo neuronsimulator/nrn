@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Network Builder tutorials &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to Network Construction" href="introduction_to_network_construction.html" />
+    <link rel="prev" title="Using the Import3D GUI" href="import3d.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Network Builder tutorials</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-network-builder">Using the Network Builder</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="introduction_to_network_construction.html">Introduction to Network Construction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_artificial_neurons.html">Tutorial 1: Making Networks of Artificial Neurons</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_2_hybrid_nets.html">Tutorial 2 : Making Hybrid Nets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Network Builder tutorials</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/network_builder_tutorials.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="network-builder-tutorials">
+<span id="id1"></span><h1>Network Builder tutorials<a class="headerlink" href="#network-builder-tutorials" title="Link to this heading"></a></h1>
+<section id="using-the-network-builder">
+<h2>Using the Network Builder<a class="headerlink" href="#using-the-network-builder" title="Link to this heading"></a></h2>
+<p>This exercise shows how to make model networks of artificial cells, such as pulse generators (network stimulator or “NetStim” cells) and integrate &amp; fire cells, and hybrid nets that contain both artificial cells and cells that have biophysical properties (what some might call “realistic” model cells).</p>
+<p>One feature of the Network Builder deserves special mention : it can write a hoc file that specifies the network you built with it. This hoc file shows how to use the various statements that are necessary to construct networks algorithmically. By studying such examples, you can learn how to write your own code to implement much larger nets. Another possible use of the Network Builder is to make microcircuits that can be turned into templates for a more modular approach to construction of large scale models.</p>
+<p><a class="reference internal" href="introduction_to_network_construction.html#introduction-to-network-construction"><span class="std std-ref">Introduction to network construction</span></a></p>
+<p>Before you start either tutorial, you absolutely should read this.</p>
+<p><a class="reference internal" href="tutorial_artificial_neurons.html#tutorial-artificial-neurons"><span class="std std-ref">Tutorial 1 : making a network that contains only artificial neurons</span></a></p>
+<p>This introduces material that you will need to know before moving on to the second tutorial.</p>
+<p><a class="reference internal" href="tutorial_2_hybrid_nets.html#tutorial-2-hybrid-nets"><span class="std std-ref">Tutorial 2 : making a hybrid net that contains both artificial and “real” neurons</span></a></p>
+<p>Before starting this one, make sure you know how to use the CellBuilder (if you haven’t already done so, you might want to get the <a class="reference external" href="https://nrn.readthedocs.io/en/latest/courses/cellbuilder_overview_and_hints.html?">CellBuilder tutorial</a> and work through it).</p>
+<p><a class="reference download internal" download="" href="../_downloads/73f5810b89d8f0dc2e0f97ad722f0ad3/nets.zip"><code class="xref download docutils literal notranslate"><span class="pre">This</span> <span class="pre">link</span> <span class="pre">will</span> <span class="pre">get</span> <span class="pre">you</span> <span class="pre">a</span> <span class="pre">pkzipped</span> <span class="pre">collection</span> <span class="pre">of</span> <span class="pre">these</span> <span class="pre">html</span> <span class="pre">files</span> <span class="pre">and</span> <span class="pre">images.</span></code></a></p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="import3d.html" class="btn btn-neutral float-left" title="Using the Import3D GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="introduction_to_network_construction.html" class="btn btn-neutral float-right" title="Introduction to Network Construction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

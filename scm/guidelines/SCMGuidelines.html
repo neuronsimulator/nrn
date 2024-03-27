@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON Versioning and Release Guidelines &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="NEURON Source and Release Management Guide" href="../guide/SCMGuide.html" />
+    <link rel="prev" title="NEURON SCM and Release" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON SCM and Release</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">NEURON Versioning and Release Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#release-versioning">Release Versioning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#versioning-scheme">Versioning Scheme</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#neuron-release-management-guidelines">NEURON Release Management Guidelines</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#contributing">Contributing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#managing-releases">Managing Releases</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/SCMGuide.html">NEURON Source and Release Management Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../policies/policies.html">NEURON Software Policies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON SCM and Release</a></li>
+      <li class="breadcrumb-item active">NEURON Versioning and Release Guidelines</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/scm/guidelines/SCMGuidelines.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-versioning-and-release-guidelines">
+<h1>NEURON Versioning and Release Guidelines<a class="headerlink" href="#neuron-versioning-and-release-guidelines" title="Link to this heading"></a></h1>
+<section id="release-versioning">
+<h2>Release Versioning<a class="headerlink" href="#release-versioning" title="Link to this heading"></a></h2>
+<p>NEURON has done releases with the version scheme “MAJOR.MINOR[.PATCH]”, where MAJOR.MINOR defines the main release with all new functionalities. It would possibly be followed by a set of bug-fixing “.PATCH” releases until a next main release becomes available. Besides, NEURON would also publish installers for alpha pre-releases. Additionally, in case the user wanted to try out the very latest dev version, he would have to checkout and compile the source. With the availability of automated testing, nightly builds may be created with automatic versioning based on the closest repository tag.</p>
+<p>Building on these initial practices, with the future in mind, one can formulate the NEURON releases requirements as:</p>
+<ul class="simple">
+<li><p>Release versions defined by MAJOR.MINOR.PATCH</p>
+<ul>
+<li><p>MAJOR.MINOR defines the release series, with a defined functionality set.</p></li>
+<li><p>.PATCH (&gt; 0) represents a Patch Release, having received bug-fixes only.</p></li>
+<li><p>MAJOR is only incremented when significant new features are added/modified or backwards compatibility cannot be guaranteed.</p></li>
+</ul>
+</li>
+<li><p>Provide Pre-Release versions</p>
+<ul>
+<li><p>Version id distinct from final. Use suffixes like “a” for alpha and “b” for beta [NEW]</p></li>
+<li><p>Provide binary installers (including Python wheels [NEW])</p></li>
+</ul>
+</li>
+<li><p>Maintain Previous Final Releases</p>
+<ul>
+<li><p>All active release series should receive non-functional bug-fixes</p></li>
+<li><p>At least two release series should be active: Latest and Previous-Stable.</p></li>
+</ul>
+</li>
+</ul>
+<p>Having two active release series (Latest and Previous-Stable) ensures that, upon a new release, “Latest (then renamed to “Stable”) keeps receiving updates, granting the user time to migrate, while “Stable” gets deprecated by default.</p>
+<section id="versioning-scheme">
+<h3>Versioning Scheme<a class="headerlink" href="#versioning-scheme" title="Link to this heading"></a></h3>
+<p>In software releasing, it is extremely important to adhere to standard conventions for two reasons:</p>
+<ol class="arabic simple">
+<li><p>Ensure users are able to understand the meaning of the release and compare it to another release. E.g. “This version has more/less/same functionality than X, or is more/less stable”</p></li>
+<li><p>Ensure existing deployment tools keep working with our software.</p></li>
+</ol>
+<p>For this purpose this document focuses on two main sources: Semantic Versioning 2.0, and Python’s PEP 440.</p>
+<p>According to NEURON requirements, and building on the aforementioned conventions, a relatively simple release versioning scheme may be used:</p>
+<ul class="simple">
+<li><p>Final releases should follow the scheme MAJOR.MINOR.PATCH as specified in Semantic Versioning. It matches quite well the existing NEURON practices, and therefore it should be used as the reference, namely PATCH increments must reflect bug fixes only.</p></li>
+<li><p>Pre-Releases should follow the Release Life Cycle definitions and, respecting PEP 440, these should be named:</p>
+<ul>
+<li><p>Development builds: NEURON pre-alphas should use the “.dev”N suffix as MAJOR.MINOR.”dev”N. E.g.: 8.0.dev1</p></li>
+<li><p>Alpha releases: MAJOR.MINOR”a”[N], where N is mandatory for N &gt; 1
+E.g.: 7.8a, 8.0a or 8.0a2</p></li>
+<li><p>Beta releases: MAJOR.MINOR”b”[N]. Eg.: 8.0b or 8.0b2</p></li>
+<li><p>Release Candidates: MAJOR.MINOR”rc”[N]. E.g.: 8.0rc.Note that RCs haven’t been used so far in NEURON. They are mentioned here for future reference.</p></li>
+</ul>
+</li>
+</ul>
+<p>Notice the fact that development builds have a dot “.” between MINOR and dev, as per PEP 440. Also, pre-release index N, when omitted, is equivalent to 1.</p>
+<p>Given it is desirable to track, in the SCM, which revision is the exact source of a release, we advocate the use of Git tags for every release (excluding development builds which are not true releases and create an automatic version number via git describe). Guidelines on how to use the SCM effectively to maintain several versions are discussed in the next section.</p>
+</section>
+</section>
+<section id="neuron-release-management-guidelines">
+<h2>NEURON Release Management Guidelines<a class="headerlink" href="#neuron-release-management-guidelines" title="Link to this heading"></a></h2>
+<p>Building on the introduced topics on Git technology, Versioning and Branching models, we devise guidelines for Release Management in NEURON. Among the branching models, GitLab Flow fulfills basically all NEURON’s requirements. Besides being well understood, it’s a powerful model, made for online dev platforms like GitHub/GitLab.</p>
+<p>BBP guidelines make use of tags for releases, including pre-releases. Pre-releases should receive common lightweight tags, while Final releases and a special development-beginning tag should be annotated for reasons of automated version generation using “git describe”.</p>
+<p>GitLab Flow branch types should be used and follow the following naming:</p>
+<ul class="simple">
+<li><p>Master: master</p></li>
+<li><p>Feature branches: preferably prefixed by the type of contribution. E.g.: feature/name, [bug]fix/name, hotfix/[release/]name, etc. “Hotfix” suggests one is addressing a critical bug in production and it’s therefore allowed to be merged directly into a release branch. The target release may then be provided as part of the name as well.</p></li>
+<li><p>Release Branches: release/MAJOR.MINOR</p></li>
+</ul>
+<section id="contributing">
+<h3>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h3>
+<p>Normal Feature / Bug-fix contributors should follow the standard GitHub Flow approach with the following details in mind:</p>
+<ul class="simple">
+<li><p>Ensure an Issue is open and nobody created yet a Pull Request addressing it</p></li>
+<li><p>Create a feature branch, named accordingly</p></li>
+<li><p>Do (small!) commits. Create a Pull-Request early on, against master - typically not later than one day of work. Follow conventions as in <a class="reference external" href="https://docs.google.com/document/d/15KEVxrg3dcXIRjc3Jp9sX2WOJlO_yqMCeSeg3j_lKks/edit?ts=5ebd1648#heading=h.lns0alkal5ey">Creating Changes/Pull Requests</a>. In case of bug fixes, please mention which versions are affected and should receive the patch.</p></li>
+</ul>
+<p>NOTE: In the event a release requires a hotfix which does not (easily) apply to master, the Pull Request can exceptionally be open against the release. Please mention in the PR message: “RELEASE PATCH. PLEASE PORT TO MASTER” in case the bug exists in master or “RELEASE EXCLUSIVE PATCH. DONT PORT” in case it’s a bug exclusive to this version</p>
+</section>
+<section id="managing-releases">
+<h3>Managing Releases<a class="headerlink" href="#managing-releases" title="Link to this heading"></a></h3>
+<p>At the beginning of the development towards a new release, a special annotated tag should be created in master named MAJOR.MINOR.dev. Development then proceeds naturally in master. This ensures that git describe works well to obtain a valid development version id.</p>
+<section id="from-alpha-to-final-release">
+<h4>From Alpha to Final Release<a class="headerlink" href="#from-alpha-to-final-release" title="Link to this heading"></a></h4>
+<p><img alt="" src="../../_images/image2.png" /></p>
+<p>When a considerable set of features have been implemented, cycles of pre-release -&gt; test -&gt; fixes -&gt; release happen until a final release.</p>
+<ul class="simple">
+<li><p>Alpha: Alpha marks the beginning of integration tests.</p>
+<ul>
+<li><p>A lightweight tag should be created in master directly in the commit which corresponds to such release. Tag name: MAJOR.MINOR”a”. E.g.: 8.0a</p></li>
+<li><p>Features targeting a future version may start to be developed. However, they can’t be merged to master until we reach beta and the stabilization branch exists</p></li>
+</ul>
+</li>
+<li><p>Beta: The software must be feature complete. At this point branching must occur so that merging features for future versions (here &gt;=v8.1) can happen in parallel to stabilization</p>
+<ul>
+<li><p>A lightweight tag should be created, named MAJOR.MINOR”b”. E.g.:8.0b</p></li>
+<li><p>A branch named release/MAJOR.MINOR should be created, E.g. release/8.0</p></li>
+<li><p>Bug-fixes should directly target the release branch for faster iteration.</p></li>
+<li><p>With some frequency, and on every new beta, RC or final, the release branch should be merged to master.</p></li>
+</ul>
+</li>
+<li><p>Release Candidate [optional]: The Beta phase is over and everything looks ok. If further testing is to be conducted then an RC is released with a tag named MAJOR.MINOR”rc”. Development continues like in beta. If RC is not applicable we jump to the final release.</p></li>
+<li><p>Final release. When all integration testing is finished a final release is due. An annotated tag should be created, named MAJOR.MINOR.”0”, E.g. 8.0.0</p></li>
+</ul>
+</section>
+<section id="patch-releases">
+<h4>Patch Releases<a class="headerlink" href="#patch-releases" title="Link to this heading"></a></h4>
+<p><img alt="" src="../../_images/image1.png" /></p>
+<p>After a version is released, and until it’s declared deprecated, it shall receive fixes and improvements. As mentioned in <a class="reference external" href="https://docs.google.com/document/d/15KEVxrg3dcXIRjc3Jp9sX2WOJlO_yqMCeSeg3j_lKks/edit?ts=5ebd1648#heading=h.j25n41g028t9">Contributing</a>, at this stage, patches should target master. It is therefore required to port these changes individually to the active releases they apply (e.g. patch 11 in the figure). For that, the release maintainer must cherry-pick the patch and, if necessary, make the required adjustments. However, in the case of hotfixes - critical release fixes - the process can be reversed, i.e. developed directly from the release and merged into it, allowing the release to get the fix more rapidly (figure: patch “hot-12”).</p>
+<p>After some fixes were applied to the release branch, a PATCH release may be made available. Even though some branching models make patch releases on every commit, NEURON has followed a more traditional release cycle. As guidelines, it seems reasonable to::</p>
+<ul class="simple">
+<li><p>Space releases by around two weeks if there are hotfixes</p></li>
+<li><p>Otherwise adjust the period depending on the amount of fixes, not shorter than 1 month</p></li>
+</ul>
+<p>Release Process:</p>
+<ul class="simple">
+<li><p>Ensure all fixes have been ported/backported accordingly (cherry-pick)</p></li>
+<li><p>Create an annotated tag for the release: MAJOR.MINOR.PATCH (PATCH&gt;=1), E.g. 8.0.1</p></li>
+</ul>
+</section>
+<section id="release-deprecation">
+<h4>Release Deprecation<a class="headerlink" href="#release-deprecation" title="Link to this heading"></a></h4>
+<p>Previous releases, which will stop receiving updates, should be deprecated. This process should be explicit and announced publicly. The deprecation process shall be accompanied by a migration guide that users can use to quickly adapt their codebase to the next supported release.</p>
+<p>NEURON, by default, should maintain the latest two releases. However, some exceptions might arise and should be considered on a case-by-case basis. Examples would be, for instance, to keep supporting the previous major version due to a large user base. Core developers may agree to deprecate the previous minor, or maintain all three.</p>
+<p>Suggestions for this process are:</p>
+<ul class="simple">
+<li><p>Announce in the website the deprecation of the given version, with a clear statement that it won’t receive further updates. Provide migration guidelines.</p></li>
+<li><p>Add a commit to the release branch which introduces such info in the banner, like “This version has been deprecated”. The commit message should also mention “DEPRECATED”</p></li>
+<li><p>Create a patch release</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
+<p>Guidelines extracted from <a class="reference internal" href="../guide/SCMGuide.html"><span class="std std-doc">NEURON Source and Release Management Guide</span></a></p>
+<p>Introduction to GitLab Flow <a class="reference internal" href="../../guide/data/units.dat.html#id184"><span class="std std-ref">https://docs.gitlab.com/ee/topics/gitlab_flow.html</span></a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="NEURON SCM and Release" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../guide/SCMGuide.html" class="btn btn-neutral float-right" title="NEURON Source and Release Management Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

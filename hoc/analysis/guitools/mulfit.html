@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MulRunFitter &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Impedance Tools" href="impedancetools.html" />
+    <link rel="prev" title="RunFitter" href="runfit.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#analysis">Analysis</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../programmatic.html">Programmatic Analysis Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guitools.html">GUI Analysis Tools</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="funfit.html">FunctionFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="runfit.html">RunFitter</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">MulRunFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="impedancetools.html">Impedance Tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guitools.html">GUI Analysis Tools</a></li>
+      <li class="breadcrumb-item active">MulRunFitter</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/analysis/guitools/mulfit.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/analysis/guitools/mulfit.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mulrunfitter">
+<span id="hoc-mulfit"></span><h1>MulRunFitter<a class="headerlink" href="#mulrunfitter" title="Link to this heading"></a></h1>
+<p id="index-0">A tool for fitting to data
+the output of a complex simulation involving possibly
+many runs with different stimulus protocols each with several recordings.</p>
+<p>When saved in a session, e.g. <code class="file docutils literal notranslate"><span class="pre">fit.ses</span></code>, two companion files are
+created called <code class="file docutils literal notranslate"><span class="pre">fit.ses.ft1</span></code> and <code class="file docutils literal notranslate"><span class="pre">fit.ses.fd1</span></code>. The <code class="file docutils literal notranslate"><span class="pre">*.ft1</span></code> file contains
+a readable (and modifiable) definition of the protocols and parameters.
+The <code class="file docutils literal notranslate"><span class="pre">*.fd1</span></code> file contains a copy of the data and internal parameters of
+the panels. When the <code class="file docutils literal notranslate"><span class="pre">fit.ses</span></code> is retrieved, these two files are also
+read to rebuild the state of the MulRunFitter.</p>
+<p>Because it generally takes a long time and a lot of effort to
+enter the information necessary to specify a complete multiple run
+fit strategy, it is a good idea to often save the partially built
+fitter in a session so that if something goes wrong you can always
+exit and start up again at a safe point.</p>
+<p>The usage of the MulRunFitter is expected to undergo considerable
+refinement in the future.</p>
+<p>Pressing the <span class="guilabel">ErrorValue</span> button will execute the “Generator” protocols
+and show the total error between simulation and data at this particular
+point in parameter space.</p>
+<section id="parameters-menu">
+<h2>Parameters Menu<a class="headerlink" href="#parameters-menu" title="Link to this heading"></a></h2>
+<p>The <span class="guilabel">Parameters</span> menu is used primarily to add, remove, and change
+parameter names or expressions. Parameter names can be any variable
+name or any statement involving $1. Statements involving $1 are
+extremely useful in causing a single parameter to modify many
+variables. e.g.
+<code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">Ra</span> <span class="pre">=</span> <span class="pre">$1</span></code> or <code class="docutils literal notranslate"><span class="pre">some_procedure($1)</span></code>
+Even if the parameter is a single variable name, it is most often
+more useful to express it as a “normalized expression” so that all
+“optimized” values are close to unity. e.g. <code class="docutils literal notranslate"><span class="pre">cai0_ca_ion</span> <span class="pre">=</span> <span class="pre">1e-4*$1</span></code>
+The Praxis fitter does not work efficiently (or at all) when parameters
+have very different scales. (but see the log scale factor discussion
+below)</p>
+<p>It also creates panels for:</p>
+<dl class="simple">
+<dt>ParameterPanel</dt><dd><p>Specifies the current value of the parameter.
+If the checkbox to the left of the parameter name is active, the
+parameter will be varied by the fitting algorithm. Otherwise it
+will be held constant. This panel should be Closed if a parameter
+name is added, changed, or deleted in order that the list can be
+updated.</p>
+</dd>
+<dt>DomainPanel</dt><dd><p>Specifies the minimum and maximum values of a parameter.
+Group attributes can be used to set some common domains en masse.
+If the parameter is set to a value outside this range, the error
+function will return a very large value (1e9) and not execute
+the multiple run protocols. If there is an X in the Log column then
+log scaling is used during optimization. For positive (or negative)
+definite parameters this can result in very great efficiency improvements
+during parameter search and certainly obviates scaling difficulties.
+To change an individual domain property, double click on a name
+in the domain list. A string editor will pop up and you can
+enter three space separate numbers. The first is a flag (1 or 0)
+which specifies whether log scaling is to be used for this
+parameter. If selected and the range does not include 0, an “X” will
+appear in the “Log” column. The remaining two numbers are the
+low and high values of the range. This panel should be Closed if
+a parameter name is added, changed, or deleted in order to update
+its list.</p>
+</dd>
+<dt>OptimizerPanel</dt><dd><p>This controls the fitting algorithm. This menu item
+does not really belong here since it has nothing to do with parameters
+but it had to go somewhere. Currently, the only fitting algorithm
+that can be used by the MulRunFitter tool is <a class="reference internal" href="../programmatic/optimization.html#fit_praxis" title="fit_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a> .
+“Real time”, “#multiple runs”, and “Minimum so far”
+show some statistics for the current fitting process.
+“# quad forms before return” is the argument to a <a class="reference internal" href="../programmatic/optimization.html#stop_praxis" title="stop_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">stop_praxis()</span></code></a> function
+call. A value of 0 means that praxis returns when the local space
+around the minimum it has found meets the criterion chosen by
+<a class="reference internal" href="../programmatic/optimization.html#attr_praxis" title="attr_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">attr_praxis()</span></code></a> . In this tool, the default values are
+tolerance=1e-4
+maxstepsize=.5
+printmode=0. A non-zero value indicates the number of complete
+principal axis search steps to be performed before returning.
+If the error function is a quadratic form, praxis will theoretically
+find the minimum in one of these steps. After a quad form step, praxis
+contains a quadratic form approximation to the local search space.
+The eigenvalues and eigenvectors of this quadratic form are obtainable
+from <a class="reference internal" href="../programmatic/optimization.html#pval_praxis" title="pval_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pval_praxis()</span></code></a></p>
+</dd>
+</dl>
+<p>When the <span class="guilabel">Append the path to savepath.fit</span> checkbox is checked,
+the elapsed time, fitting error value, and parameters are appended to
+a file called <code class="file docutils literal notranslate"><span class="pre">savepath.fit</span></code> every time the error value is reduced
+by a call to the error function..</p>
+<p>The <span class="guilabel">Running</span> checkbox is on when the optimizer is running. You should
+not do much gui interaction at this time such as opening new
+windows or pressing buttons that could potentially interfere with
+the protocol runs. First press the <span class="guilabel">Stop</span> button (may need to press
+it several times) to stop the optimizer. The <span class="guilabel">Optimize</span> button
+starts the fitting process.</p>
+</section>
+<section id="generators-menu">
+<h2>Generators Menu<a class="headerlink" href="#generators-menu" title="Link to this heading"></a></h2>
+<p>The <span class="guilabel">Generators</span> menu is used to add and view stimulus protocols
+(which include error functions for calculating the difference between
+simulation results and data). Each generator is a generalization of
+a <a class="reference internal" href="../../simctrl/stdrun.html#hoc-runfitter"><span class="std std-ref">Run Fitter</span></a>.</p>
+<dl class="simple">
+<dt><span class="guilabel">Add Generator</span></dt><dd><p>creates an empty “Unnamed single run protocol” which
+is turned off (the “-” in front of its name). A generator which
+is turned off is not used (does not result in a run and does not
+contribute to the total error value) during optimization or when
+the <span class="guilabel">ErrorValue</span> button is pressed.</p>
+</dd>
+<dt><span class="guilabel">Remove Generator</span></dt><dd><p>destroys a generator when a user double clicks on
+its name.</p>
+</dd>
+<dt><span class="guilabel">Change Name</span></dt><dd><p>When you double click on a generator name a
+string editor pops up in which you can enter a (hopefully meaningful)
+name for the protocol.</p>
+</dd>
+<dt><span class="guilabel">Use Generator</span></dt><dd><p>Double click on a generator name to toggle whether
+it is used by the total error function. When a generator is used,
+a “+” appears in front of its name.</p>
+</dd>
+<dt><span class="guilabel">Multiple Protocol Name</span></dt><dd><p>pops up a string editor which allows you
+to enter a name for this instance of the entire multiple run fit.</p>
+</dd>
+<dt><span class="guilabel">Display Generator</span></dt><dd><p>Single clicking, or even dragging the mouse
+over the generator list items, displays the current selection in
+a separate generator panel. When all the generators are empty this
+panel is very small. So first select a Fitness/VariableToFit
+to specify a dependent variable, e.g <code class="docutils literal notranslate"><span class="pre">soma.v(.5)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">SEClamp[0].i</span></code> to fit to data. Then close the panel and reopen
+it (requires double clicking if the item is already selected in
+the generator list) in order to see the Graph portion of the display.
+The generator panel is a <a class="reference internal" href="../../programming/gui/layout.html#Deck" title="Deck"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Deck</span></code></a> and the top card is the one
+selected in the generator list.</p>
+</dd>
+</dl>
+<section id="fitness-menu-of-a-generator-instance-in-the-generator-panel">
+<h3>Fitness menu of a Generator instance in the generator Panel<a class="headerlink" href="#fitness-menu-of-a-generator-instance-in-the-generator-panel" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><span class="guilabel">Variable to fit</span></dt><dd><p>pops up a symbol chooser for selecting a dependent
+variable which you wish to fit to data for this protocol.
+For example, possible dependent variable for which you might have
+data are  <code class="docutils literal notranslate"><span class="pre">soma.v(.5)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">SEClamp[0].i</span></code>. Any number of dependent variables can be fit for
+one protocol (run with particular stimulus values set, see below).
+For a voltage clamp family, there would only be one current (dependent
+variable) per generator and different generators for each voltage level.
+The only case in which there would be more than one dependent variable
+for a single generator is when there are multiple electrode recordings.
+The list of dependent variables for this generator is indicated
+in a sequence of radio button. The large panel below this list
+contains information about the error function for this variable
+as well as graph for the data and simulation result for the selected
+dependent variable.</p>
+</dd>
+<dt><span class="guilabel">Remove a Fit Variable</span> and <span class="guilabel">Change a Fit Variable</span></dt><dd><p>pop up
+lists in which you double click an item to perform the
+removal action or pop up a string editor to change a dependent
+variable name.</p>
+</dd>
+<dt><span class="guilabel">Change Method to</span></dt><dd><p>a menu which specifies the fitness (error)
+functions available for comparing the currently selected (radio list)
+dependent variable. “RegionFitness” is the default error function
+and is very similar to the error function for the <a class="reference internal" href="../../simctrl/stdrun.html#hoc-runfitter"><span class="std std-ref">Run Fitter</span></a> .
+In every case, the Graph menu is used to get the data from the
+clipboard.</p>
+</dd>
+<dt><span class="guilabel">RegionFitness</span></dt><dd><p>error value is the square norm between data and
+dependent variable treated as continuous curves.</p>
+</dd>
+<dt><span class="guilabel">YFitness</span></dt><dd><p>error value is the sum of the square difference of
+the selected data points (indicated by short vertical blue lines)
+and the dependent variable at those times. Several Graph menu items
+are available to add, remove, and move these points.</p>
+</dd>
+<dt><span class="guilabel">Protocol Constant</span></dt><dd><p>Pops up a symbol chooser in which you can
+select a stimulus variable. This will be added as a default field
+editor to the protocol portion of the generator panel. There can
+be any number of protocol constants. During a run of this
+generator, the values of the protocol constants are set to the
+indicated values. After the run, the constants are returned to
+their original values.</p>
+</dd>
+<dt><span class="guilabel">Remove Protocol Constant</span></dt><dd><p>Pops ups a list of the existing protocol
+constants. Double click on an item to throw one away.</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="runfit.html" class="btn btn-neutral float-left" title="RunFitter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="impedancetools.html" class="btn btn-neutral float-right" title="Impedance Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open and Write to Files (Obsolete) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Model Specification GUI Tools" href="../../modelspec/guitools.html" />
+    <link rel="prev" title="Read from Terminal and Files" href="read.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../hoc-from-python.html#neuron.hoc.HocObject"><code class="docutils literal notranslate"><span class="pre">neuron.hoc.HocObject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../hoc-from-python.html#neuron.hoc.hoc_ac"><code class="docutils literal notranslate"><span class="pre">neuron.hoc.hoc_ac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../hoc-from-python.html#neuron.h.cas"><code class="docutils literal notranslate"><span class="pre">neuron.h.cas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../hoc-from-python.html#neuron.h.Section"><code class="docutils literal notranslate"><span class="pre">neuron.h.Section</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../hoc-from-python.html#segment">Segment</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../hoc-from-python.html#mechanism">Mechanism</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+      <li class="breadcrumb-item active">Open and Write to Files (Obsolete)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/io/ropen.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/io/ropen.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#fprint" title="Link to this definition">fprint</a> &middot; <a href="#id0" title="Link to this definition">id0</a> &middot; <a href="#wopen" title="Link to this definition">wopen</a> &middot; <a href="#xopen" title="Link to this definition">xopen</a></p><section id="open-and-write-to-files-obsolete">
+<span id="ropen"></span><h1>Open and Write to Files (Obsolete)<a class="headerlink" href="#open-and-write-to-files-obsolete" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">ropen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.ropen(&quot;infile&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.ropen()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.ropen(&quot;infile&quot;)</span></code> opens <em>infile</em> for reading.  A subsequent <code class="docutils literal notranslate"><span class="pre">h.ropen()</span></code> with no arguments
+closes the previously opened <em>infile</em>. A file which is re-opened with
+<code class="docutils literal notranslate"><span class="pre">ropen(infile)</span></code> positions the stream at the beginning of the file.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">###########################################</span>
+<span class="c1">### create a file titled &quot;file.dat&quot; with: #</span>
+<span class="c1">### 42 13.7                               #</span>
+<span class="c1">### 14 64.1                               #</span>
+<span class="c1">### 12 9                                  #</span>
+<span class="c1">###########################################</span>
+
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="k">def</span> <span class="nf">r_open</span><span class="p">(</span><span class="n">ndat</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">ropen</span><span class="p">(</span><span class="s2">&quot;file.dat&quot;</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndat</span><span class="p">):</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">fscan</span><span class="p">())</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">fscan</span><span class="p">())</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">ropen</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+
+<span class="c1"># ndat is number of data points</span>
+<span class="n">ndat</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">r_open</span><span class="p">(</span><span class="n">ndat</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl class="simple">
+<dt>Diagnostics:</dt><dd><p>This function returns 0 if the file is not successfully opened.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><span class="xref std std-ref">read</span>, <a class="reference internal" href="read.html#fscan" title="fscan"><code class="xref py py-func docutils literal notranslate"><span class="pre">fscan()</span></code></a>, <a class="reference internal" href="read.html#getstr" title="getstr"><code class="xref py py-func docutils literal notranslate"><span class="pre">getstr()</span></code></a>, <a class="reference internal" href="file.html#File" title="File"><code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code></a></p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There is no way to open more than one read file at a time.  The same is
+true for write files.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="wopen">
+<span class="sig-name descname"><span class="pre">wopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wopen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.wopen(&quot;outfile&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.wopen()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.wopen()</span></code> is similar to <code class="docutils literal notranslate"><span class="pre">h.ropen()</span></code> but opens a file for writing. Contents of an
+already existing <em>outfile</em> are destroyed.  Wopened files are written to
+with <a class="reference internal" href="#fprint" title="fprint"><code class="xref py py-func docutils literal notranslate"><span class="pre">fprint()</span></code></a>. With no argument, the previously wopened file is closed.
+h.wopen() returns 0 on failure to open a file.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="k">def</span> <span class="nf">w_open</span><span class="p">(</span><span class="n">ndat</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">wopen</span><span class="p">(</span><span class="s2">&quot;file.dat&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndat</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fprint</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">wopen</span><span class="p">()</span>
+
+<span class="c1"># ndat is number of data points</span>
+<span class="n">ndat</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mf">42.0</span><span class="p">,</span> <span class="mf">14.0</span><span class="p">,</span> <span class="mf">12.0</span><span class="p">]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mf">13.7</span><span class="p">,</span> <span class="mf">64.1</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">]</span>
+<span class="n">w_open</span><span class="p">(</span><span class="n">ndat</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#fprint" title="fprint"><code class="xref py py-func docutils literal notranslate"><span class="pre">fprint()</span></code></a>, <a class="reference internal" href="file.html#File" title="File"><code class="xref py py-func docutils literal notranslate"><span class="pre">File()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xopen">
+<span class="sig-name descname"><span class="pre">xopen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xopen" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.xopen(&quot;hocfile&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.xopen(&quot;hocfile&quot;,</span> <span class="pre">&quot;RCSrevision&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.xopen()</span></code> executes the commands in <code class="docutils literal notranslate"><span class="pre">hocfile</span></code>.  This is a convenient way
+to define user functions and procedures.
+An optional second argument is the RCS revision number in the form of a
+string. The RCS file with that revision number is checked out into a
+temporary file and executed. The temporary file is then removed.  A file
+of the same primary name is unaffected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="fprint">
+<span class="sig-name descname"><span class="pre">fprint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fprint" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.fprint()</span></code></p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">fprint</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><p>Same as <a class="reference internal" href="printf.html#printf" title="printf"><code class="xref py py-func docutils literal notranslate"><span class="pre">printf()</span></code></a> but prints to a file opened with <a class="reference internal" href="#wopen" title="wopen"><code class="xref py py-func docutils literal notranslate"><span class="pre">wopen()</span></code></a>. If no file
+is opened it prints to the standard output.</p>
+</div></blockquote>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="read.html" class="btn btn-neutral float-left" title="Read from Terminal and Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../modelspec/guitools.html" class="btn btn-neutral float-right" title="Model Specification GUI Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

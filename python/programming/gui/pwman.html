@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PWManager &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Miscellaneous Menus" href="nfunc.html" />
+    <link rel="prev" title="ValueFieldEditor" href="vfe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="layout.html">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="list.html">List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="widgets.html">GUI Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">PWManager</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/gui/pwman.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/gui/pwman.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#PWManager" title="Link to this definition">PWManager</a></dt><dd><a href="#PWManager.close" title="Link to this definition">close</a> &middot; <a href="#PWManager.count" title="Link to this definition">count</a> &middot; <a href="#PWManager.deco" title="Link to this definition">deco</a> &middot; <a href="#PWManager.deiconify" title="Link to this definition">deiconify</a> &middot; <a href="#PWManager.group" title="Link to this definition">group</a> &middot; <a href="#PWManager.hide" title="Link to this definition">hide</a> &middot; <a href="#PWManager.iconify" title="Link to this definition">iconify</a> &middot; <a href="#PWManager.is_mapped" title="Link to this definition">is_mapped</a> &middot; <a href="#PWManager.landscape" title="Link to this definition">landscape</a> &middot; <a href="#PWManager.leader" title="Link to this definition">leader</a> &middot; <a href="#PWManager.manager" title="Link to this definition">manager</a> &middot; <a href="#PWManager.map" title="Link to this definition">map</a> &middot; <a href="#PWManager.name" title="Link to this definition">name</a> &middot; <a href="#PWManager.paper_place" title="Link to this definition">paper_place</a> &middot; <a href="#PWManager.printfile" title="Link to this definition">printfile</a> &middot; <a href="#PWManager.save" title="Link to this definition">save</a> &middot; <a href="#PWManager.scale" title="Link to this definition">scale</a> &middot; <a href="#PWManager.snap" title="Link to this definition">snap</a> &middot; <a href="#PWManager.window_place" title="Link to this definition">window_place</a></dd></dl></p><section id="pwmanager">
+<span id="pwman"></span><h1>PWManager<a class="headerlink" href="#pwmanager" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PWManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PWManager</span></span><a class="headerlink" href="#PWManager" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">=</span> <span class="pre">h.PWManager()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A variety of hooks into the <a class="reference internal" href="../../visualization/gui.html#pwm"><span class="std std-ref">Print &amp; File Window Manager</span></a> to allow program control
+of that tool. The implementation of the
+Window item of the NeuronMainMenu makes
+heavy use of this class. Note that the first window created is called
+the leader. It cannot be closed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.count">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.count" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cnt</span> <span class="pre">=</span> <span class="pre">p.count()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns number of “Printable” windows on the screen.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.is_mapped">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">is_mapped</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.is_mapped" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">p.is_mapped(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return 1 if the index’th window is visible.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="c1"># not mapped</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_mapped</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># mapped</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_mapped</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.map">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.map" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.map(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Makes the index’th window visible.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="c1"># mapped</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.hide">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">hide</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.hide" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.hide(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Unmaps the index’th window. The window is NOT closed.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="c1"># mapped</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_mapped</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1"># not mapped</span>
+<span class="n">p</span><span class="o">.</span><span class="n">hide</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_mapped</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.close">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.close" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.close(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Closes the index’th window. This will destroy the window and decrement the
+reference count of the associated hoc object (if any).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.iconify">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">iconify</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.iconify" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.iconify()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Hides all windows and iconifies the leader.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">iconify</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.deiconify">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">deiconify</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.deiconify" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.deiconify()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Un-iconifies the leader window and maps any windows not hidden before it was
+iconified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.leader">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">leader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.leader" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">index</span> <span class="pre">=</span> <span class="pre">p.leader()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Window index of the leader window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.manager">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">manager</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.manager" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">index</span> <span class="pre">=</span> <span class="pre">p.manager()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Window index of the <a class="reference internal" href="../../visualization/gui.html#pwm"><span class="std std-ref">Print &amp; File Window Manager</span></a> window.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">manager</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.save">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.save" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">p.save(&quot;filename&quot;,</span> <span class="pre">group_object,</span> <span class="pre">[&quot;header&quot;])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">p.save(&quot;filename&quot;,</span> <span class="pre">selected,</span> <span class="pre">[&quot;header&quot;])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a session file with the given filename
+consisting oo all windows associated with a
+particular group_object in a session file</p>
+<p>If selected == 0 then all windows are saved. If selected==1 then only
+the windows on the paper icon are saved in the session file.</p>
+<p>If the header argument exists, it is copied to the beginning of the file.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../simctrl/sessionsave.html#save_session" title="save_session"><code class="xref py py-func docutils literal notranslate"><span class="pre">save_session()</span></code></a></p>
+</div>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">selected</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">selected</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.group">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.group" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">group_obj</span> <span class="pre">=</span> <span class="pre">p.group(index,</span> <span class="pre">group_obj)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">group_obj</span> <span class="pre">=</span> <span class="pre">p.group(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Associate the index’th window with the group object and returns the
+group object associated with that window.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">g1</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">g2</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">g1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.snap">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">snap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.snap" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.snap()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">p.snap(&quot;filename&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Only works on the unix version.
+Puts the GUI in snapshot mode until the ‘p’ keyboard character is pressed.
+During this time the mouse can be used normally to pop up menus or drag
+rubberbands on graphs. When the p character is pressed all windows including
+drawings of the window decorations, menus, rubberband, and mouse arrow cursor is
+printed to a postscript file with the “filename” or filebrowser selection.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">snape</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.scale">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.scale" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.scale(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Works only under mswin.
+Immediately rescales all the windows (including font size) and their position
+relative to the top, left corner of the screen according to the absolute
+scale factor x.
+i.e, a scale value of 1 gives normal size windows.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.name">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.name" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">=</span> <span class="pre">p.name(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the window title bar string of the index’th window.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.window_place">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">window_place</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.window_place" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.window_place(index,</span> <span class="pre">left,</span> <span class="pre">top)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>moves the index window to the left,top pixel
+coordinates of the screen.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PWManager</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">window_place</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.paper_place">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">paper_place</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.paper_place" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.paper_place(index,</span> <span class="pre">show)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">p.paper_place(index,</span> <span class="pre">left,</span> <span class="pre">bottom,</span> <span class="pre">scale)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Shows or hides the ith window on the
+paper icon. If showing, this constitutes adding this window to the list of
+selected windows.</p>
+<p>The 4 arg form shows, places, and scales
+the index window on the paper icon. The scale and location only has an effect when
+the paper is printed in postscript mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.landscape">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">landscape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.landscape" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.landscape(boolean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Determines if postscript printing is in landscape
+or portrait mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.deco">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">deco</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.deco" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.deco(mode)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When printing in postscript mode,
+0 print only the interior of the window.</p>
+<p>1 print the interior and the title above each window</p>
+<p>2 print the interior and all window decorations including the window title.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="PWManager.printfile">
+<span class="sig-prename descclassname"><span class="pre">PWManager.</span></span><span class="sig-name descname"><span class="pre">printfile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#PWManager.printfile" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">p.printfile(&quot;filename&quot;,</span> <span class="pre">mode,</span> <span class="pre">selected)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Print to a file in postcript, idraw, or ascii mode (mode=0,1,2) the selected windows
+or all the windows( selected=0,1)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="vfe.html" class="btn btn-neutral float-left" title="ValueFieldEditor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nfunc.html" class="btn btn-neutral float-right" title="Miscellaneous Menus" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

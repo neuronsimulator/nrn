@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matrix &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Vector" href="vector.html" />
+    <link rel="prev" title="Common Math Functions (HOC)" href="functions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../mathematics.html">Mathematics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="constants.html">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="functions.html">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vector.html">Vector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="random.html">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../mathematics.html">Mathematics</a></li>
+      <li class="breadcrumb-item active">Matrix</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/math/matrix.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/math/matrix.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Matrix" title="Link to this definition">Matrix</a></dt><dd><a href="#Matrix.add" title="Link to this definition">add</a> &middot; <a href="#Matrix.bcopy" title="Link to this definition">bcopy</a> &middot; <a href="#Matrix.c" title="Link to this definition">c</a> &middot; <a href="#Matrix.det" title="Link to this definition">det</a> &middot; <a href="#Matrix.exp" title="Link to this definition">exp</a> &middot; <a href="#Matrix.fprint" title="Link to this definition">fprint</a> &middot; <a href="#Matrix.from_vector" title="Link to this definition">from_vector</a> &middot; <a href="#Matrix.getcol" title="Link to this definition">getcol</a> &middot; <a href="#Matrix.getdiag" title="Link to this definition">getdiag</a> &middot; <a href="#Matrix.getrow" title="Link to this definition">getrow</a> &middot; <a href="#Matrix.getval" title="Link to this definition">getval</a> &middot; <a href="#Matrix.ident" title="Link to this definition">ident</a> &middot; <a href="#Matrix.inverse" title="Link to this definition">inverse</a> &middot; <a href="#Matrix.mulm" title="Link to this definition">mulm</a> &middot; <a href="#Matrix.muls" title="Link to this definition">muls</a> &middot; <a href="#Matrix.mulv" title="Link to this definition">mulv</a> &middot; <a href="#Matrix.ncol" title="Link to this definition">ncol</a> &middot; <a href="#Matrix.nrow" title="Link to this definition">nrow</a> &middot; <a href="#Matrix.pow" title="Link to this definition">pow</a> &middot; <a href="#Matrix.printf" title="Link to this definition">printf</a> &middot; <a href="#Matrix.resize" title="Link to this definition">resize</a> &middot; <a href="#Matrix.scanf" title="Link to this definition">scanf</a> &middot; <a href="#Matrix.setcol" title="Link to this definition">setcol</a> &middot; <a href="#Matrix.setdiag" title="Link to this definition">setdiag</a> &middot; <a href="#Matrix.setrow" title="Link to this definition">setrow</a> &middot; <a href="#Matrix.setval" title="Link to this definition">setval</a> &middot; <a href="#Matrix.solv" title="Link to this definition">solv</a> &middot; <a href="#Matrix.spgetrowval" title="Link to this definition">spgetrowval</a> &middot; <a href="#Matrix.sprowlen" title="Link to this definition">sprowlen</a> &middot; <a href="#Matrix.svd" title="Link to this definition">svd</a> &middot; <a href="#Matrix.symmeig" title="Link to this definition">symmeig</a> &middot; <a href="#Matrix.to_vector" title="Link to this definition">to_vector</a> &middot; <a href="#Matrix.transpose" title="Link to this definition">transpose</a> &middot; <a href="#Matrix.x" title="Link to this definition">x</a> &middot; <a href="#Matrix.zero" title="Link to this definition">zero</a></dd></dl></p><section id="matrix">
+<span id="id1"></span><h1>Matrix<a class="headerlink" href="#matrix" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="Matrix">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Matrix</span></span><a class="headerlink" href="#Matrix" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">h.Matrix(nrow,</span> <span class="pre">ncol)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">h.Matrix(nrow,</span> <span class="pre">ncol,</span> <span class="pre">type)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A class for manipulation of two dimensional arrays of numbers. A companion
+to the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class, Matrix contains routines for m*x=b, v1=m*v2, etc.</p>
+<p>Individual element values are assigned and evaluated
+using the syntax:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m</span><span class="o">.</span><span class="n">getval</span><span class="p">(</span><span class="n">irow</span><span class="p">,</span> <span class="n">icol</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">irow</span><span class="p">,</span> <span class="n">icol</span><span class="p">,</span> <span class="n">new_val</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>which may appear anywhere in an expression or on the left hand side of
+an assignment statement. irow can range from 0 to m.nrow-1 and icol
+ranges from 0 to m.ncol-1 .</p>
+<p>When possible, Matrix methods returning a Matrix use the form,
+mobj = m.f(args, [mout]), where mobj is a newly constructed matrix (m
+is unchanged) unless
+the optional last mout argument is present, in which case the return value
+is mout and mout is used to store the matrix.  This style seems most efficient
+to me since many matrix operations cannot be done in-situ. Exceptions to
+this rule, eg m.zero(), are noted in the individual methods.</p>
+<p>Similarly, Matrix methods returning a Vector use the form,
+vobj = m.f(args, [vout]), where vobj is a newly constructed Vector unless
+the optional last vout is present for storage of the vector elements.
+Use of vout is extremely useful in those cases where the vector is graphed
+since the result of the matrix operation does not invalidate the pointers
+to the vector elements.</p>
+<p>Note that the return value allows these operations to be used as members
+of a filter chain or arguments to other functions.</p>
+<p>By default, a new Matrix is of type MFULL (= 1) and allocates storage for
+all nrow*ncol elements. Scaffolding is in place for matrices of storage
+type MSPARSE (=2) and MBAND (=3) but not many methods have been interfaced
+to the eigen library at this time. If a method is called on a matrix type
+whose method has not been implemented, an error message will be printed.
+It is intended that implemented methods will be transparent to the user, eg
+m*x=b (<code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">m.solv(b)</span></code> ) will solve the linear system
+regardless of the type of m and
+v1 = m*v2 (<code class="docutils literal notranslate"><span class="pre">v1</span> <span class="pre">=</span> <span class="pre">m.mulv(v2)</span></code> ) will perform the vector multiplication.</p>
+<p>Matrix is implemented using the <a class="reference external" href="https://eigen.tuxfamily.org">eigen3 library</a>
+which contains a large collection of routines for sparse, banded, and full matrices.
+Many of the useful routines  have not been interfaced with the hoc
+interpreter but can be easily added on request or you can add it yourself
+by analogy with the code in <code class="docutils literal notranslate"><span class="pre">nrn/src/ivoc/(matrix.c</span> <span class="pre">ocmatrix.[ch])</span></code>
+At this time the MFULL matrix type is complete enough to do useful work
+and MSPARSE can be used to multiply a matrix by a vector and solve
+Mx=b.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="Matrix.x">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#Matrix.x" title="Link to this definition"></a></dt>
+<dd><p>Not currently supported in Python; use <a class="reference internal" href="#Matrix.getval" title="Matrix.getval"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Matrix.getval()</span></code></a> and <a class="reference internal" href="#Matrix.setval" title="Matrix.setval"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Matrix.setval()</span></code></a> instead.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.nrow">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">nrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.nrow" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">m.nrow()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the row dimension of the matrix. Row indices range from 0 to m.nrow()-1</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method currently returns an integer, but prior to NEURON 7.6, it returned a float.
+In older versions, it was thus sometimes necessary to cast the result to an int before
+using e.g. range.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.ncol">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">ncol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.ncol" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>n = m.ncol()</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Description:</dt><dd><p>returns the column dimension of the matrix. Column indices range
+from 0 to m.ncol()-1</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method currently returns an integer, but prior to NEURON 7.6, it returned a float.
+In older versions, it was thus sometimes necessary to cast the result to an int before
+using e.g. range.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.resize">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.resize" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">m.resize(nrow,</span> <span class="pre">ncol)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Change the size of the matrix. As many as possible of the former elements
+are preserved. New elements are assigned the value of 0. New memory may
+not have to be allocated depending on the size history of the matrix.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="go"> 0        0        0        0        0</span>
+<span class="go"> 0        0        0        0        0</span>
+<span class="go"> 0        0        0        0        0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">setcol</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="go"> 0        1        2        3        4</span>
+<span class="go"> 0        1        2        3        4</span>
+<span class="go"> 0        1        2        3        4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="go"> 0        1        2        3        4        0        0</span>
+<span class="go"> 0        1        2        3        4        0        0</span>
+<span class="go"> 0        1        2        3        4        0        0</span>
+<span class="go"> 0        0        0        0        0        0        0</span>
+<span class="go"> 0        0        0        0        0        0        0</span>
+<span class="go"> 0        0        0        0        0        0        0</span>
+<span class="go"> 0        0        0        0        0        0        0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ignore_return</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="go"> 0        1</span>
+<span class="go"> 0        1</span>
+<span class="go"> 0        1</span>
+<span class="go"> 0        0</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.c">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">c</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.c" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mdest</span> <span class="pre">=</span> <span class="pre">msrc.c()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy the matrix. msrc is unchanged.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.bcopy">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">bcopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.bcopy" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mdest</span> <span class="pre">=</span> <span class="pre">msrc.bcopy(i0,</span> <span class="pre">j0,</span> <span class="pre">n,</span> <span class="pre">m</span> <span class="pre">[,</span> <span class="pre">mout])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mdest</span> <span class="pre">=</span> <span class="pre">msrc.bcopy(i0,</span> <span class="pre">j0,</span> <span class="pre">n,</span> <span class="pre">m,</span> <span class="pre">i1,</span> <span class="pre">j1</span> <span class="pre">[,</span> <span class="pre">mout])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy selected piece of a matrix. msrc is unchanged.
+Copies the n x m submatrix with top-left (row i0, col j0) coordinates
+to the corresponding submatrix of destination with top-left coordinates
+(i1, j1). Out is resized if necessary.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">ncol</span><span class="p">()):</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">)</span>
+
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">bcopy</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">bcopy</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">bcopy</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.getval">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">getval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.getval" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">m.getval(irow,</span> <span class="pre">jcol)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the value of the matrix element. If m is sparse and the element
+does not exist then 0 is returned without creating the element.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.setval">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">setval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.setval" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">m.setval(irow,</span> <span class="pre">jcol,</span> <span class="pre">val)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets the value of the matrix element. For sparse matrices, if the
+element is 0, this method will create the element.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.sprowlen">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">sprowlen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.sprowlen" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">m.sprowlen(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the number of existing(usually nonzero)
+elements in the ith row of the sparse
+matrix. Useful for iterating over a elements of a sparse matrix.
+This function works only for sparse matrices.
+See <a class="reference internal" href="#Matrix.spgetrowval" title="Matrix.spgetrowval"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Matrix.spgetrowval()</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.spgetrowval">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">spgetrowval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.spgetrowval" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">m.spgetrowval(i,</span> <span class="pre">jx,</span> <span class="pre">&amp;j)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the existing element value and the column index (third pointer arg)
+of the ith row and jx item. The latter ranges from 0 to m.sprowlen(i)-1
+This function works only for sparse matrices (created with a third argument
+of 2)</p>
+</dd>
+<dt>Example:</dt><dd><p>To print the elements of a sparse matrix.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="k">def</span> <span class="nf">sparse_print</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;m.nrow()&#39;</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">  &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">jx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">sprowlen</span><span class="p">(</span><span class="n">i</span><span class="p">)):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">spgetrowval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">jx</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">/</span><span class="mf">10.</span><span class="p">)</span>
+<span class="n">sparse_print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.printf">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">printf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.printf" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.printf()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.printf(&quot;element_format&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.printf(&quot;element_format&quot;,</span> <span class="pre">&quot;row_format&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Print the matrix to the standard output with a default %-8g element format
+and a default “n” row format.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Needs a separate implementation for sparse and banded matrices. Prints sparse
+as though it was full.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.fprint">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">fprint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.fprint" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.fprint(fileobj)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.fprint(fileobj,</span> <span class="pre">&quot;element_format&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.fprint(fileobj,</span> <span class="pre">&quot;element_format&quot;,</span> <span class="pre">&quot;row_format&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.fprint(0,</span> <span class="pre">fileobj</span> <span class="pre">[,...])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Same as <a class="reference internal" href="../io/printf.html#printf" title="printf"><code class="xref py py-func docutils literal notranslate"><span class="pre">printf()</span></code></a> but prints to the File object (must be open for writing)
+with a first line consisting of the two integers, nrow ncol.
+Print the matrix to the open file object with a default %-8g element format
+and a default “n” row format.
+Because of the “nrow ncol” first line, such a file can be read with <a class="reference internal" href="#Matrix.scanf" title="Matrix.scanf"><code class="xref py py-func docutils literal notranslate"><span class="pre">scanf()</span></code></a> .
+If the first arg is a 0, then the nrow ncol pair of numbers will not
+be printed.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Needs a separate implementation for sparse and banded matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.scanf">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">scanf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.scanf" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.scanf(File_object)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">m.scanf(File_object,</span> <span class="pre">nrow,</span> <span class="pre">ncol)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Read a file, including sizes, into a Matrix. The File_object is
+an object of type <a class="reference internal" href="../io/file.html#File" title="File"><code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code></a> and must be opened for reading prior to
+the scanf. If nrow,ncol arguments are not present,
+the first two numbers in the file must be nrow and mcol
+respectively. In either case those values are used to resize the matrix.
+The following nrow*mcol
+numbers are row streams, eg it is often natural to have one row on a single line
+or else to organize the file as a list of row vectors with only one number
+per line. Strings in the file that cannot be parsed as numbers are ignored.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">ropen</span><span class="p">()</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">scanf</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">(),</span> <span class="n">m</span><span class="o">.</span><span class="n">ncol</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works only for full matrix types</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="vector.html#Vector.scanf" title="Vector.scanf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.scanf()</span></code></a>, <a class="reference internal" href="../io/read.html#fscan" title="fscan"><code class="xref py py-func docutils literal notranslate"><span class="pre">fscan()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.mulv">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">mulv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.mulv" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.mulv(vin)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.mulv(vin,</span> <span class="pre">vout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Multiplication of a Matrix by a Vector, vobj = msrc*vin.
+Returns a new vector of dimension msrc.nrow. Optional Vector
+vout is used for storage of the result. Vector
+vin must have dimension msrc.ncol. vin and vout can be the same vector
+if the matrix is square.</p>
+</dd>
+<dt>Example:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">v1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="n">j</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">v1</span><span class="p">)</span>
+<span class="n">v1</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m * v1&quot;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">mulv</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>A sparse example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">v1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">))</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">##sparse matrix</span>
+<span class="c1">##reverse permutation</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">99</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">m</span><span class="o">.</span><span class="n">mulv</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.getrow">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">getrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.getrow" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getrow(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getrow(i,</span> <span class="pre">vout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the i’th row of the matrix in a new <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> (or use the storage
+in the Vector vout if that arg is present). Range of i is from 0 to msrc.nrow-1.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.getcol">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">getcol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.getcol" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getcol(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getcol(i,</span> <span class="pre">vout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the i’th column of the matrix in a new vector (or use the storage
+in vout if that arg is present). Range of i is from 0 to msrc.ncol-1.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.getdiag">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">getdiag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.getdiag" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getdiag(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.getdiag(i,</span> <span class="pre">vout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the i’th diag of the matrix in a new vector (or use the storage
+in vout if that arg is present) of size msrc.nrow.
+Range is from -(msrc.nrow-1) to msrc.ncol-1
+with 0 being the main diagonal, positive i refers to upper diagonals, and
+negative i refers to lower diagonals. Upper diagonals fill the Vector
+starting at position 0 and remaining elements are unused.
+Lower diagonals fill the Vector ending at msrc.nrow-1 and the first
+elements are unused.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">ncol</span><span class="p">()):</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span><span class="o">*</span><span class="n">j</span> <span class="o">+</span> <span class="mi">100</span><span class="o">*</span><span class="n">i</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">(),</span> <span class="n">m</span><span class="o">.</span><span class="n">ncol</span><span class="p">()):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;diagonal </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">getdiag</span><span class="p">(</span><span class="n">i</span><span class="p">))[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.solv">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">solv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.solv" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vx</span> <span class="pre">=</span> <span class="pre">msrc.solv(vb)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vx</span> <span class="pre">=</span> <span class="pre">msrc.solv(vb,</span> <span class="pre">vout</span> <span class="pre">and/or</span> <span class="pre">1</span> <span class="pre">in</span> <span class="pre">either</span> <span class="pre">order)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Solves the linear system msrc*vx = vb by LU factorization. msrc must be
+a square matrix and vb must have size equal to msrc.nrow. The answer
+will be returned in a new Vector of size msrc.nrow.
+msrc is not changed.
+The LU factorization is stored in case it
+is desired for later reuse with a different vb. Re-use of the LU factorization
+will actually take place only if the second or third argument is 1 and
+msrc has not changed in size.</p>
+<p>Note: if the LUfactor is used, changes to the actual values of msrc would
+not affect the solution on subsequent calls to solv.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">indgen</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">ncol</span><span class="p">()):</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="o">*</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;solution of m*x = b&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">solv</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">## sparse type</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">500</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">solv</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%8.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">475</span><span class="p">,</span> <span class="mi">525</span><span class="p">)</span>
+
+<span class="n">b</span><span class="p">[</span><span class="mi">500</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">499</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">solv</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%8.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">475</span><span class="p">,</span> <span class="mi">535</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.det">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.det" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mantissa</span> <span class="pre">=</span> <span class="pre">m.det(_ref_base10exponent)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Determinant of matrix m. Returns mantissa in range from -1 to 1 and
+integer _ref_base10exponent[0].</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mant</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mant</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="n">ex</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.mulm">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">mulm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.mulm" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.mulm(m)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.mulm(m,</span> <span class="pre">mout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Multiplication of a Matrix by a Matrix, mobj = msrc*m. msrc and m are
+unchanged. A new matrix is returned with size msrc.nrow x m.ncol.
+msrc.ncol and m.nrow must be the same. If mout is present, that storage is
+used for the result.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">m1</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">m1</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m1&quot;</span><span class="p">)</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m2&quot;</span><span class="p">)</span>
+<span class="n">m2</span><span class="o">.</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot; </span><span class="si">%8.5f</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m1*m2&quot;</span> <span class="p">)</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot; </span><span class="si">%8.5f</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.add">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.add" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">m1srcdest.add(m2src)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return m1srcdest + m2src. The matrices must have the same rank.
+This is one of those functions that modifies the source matrix (unless the
+last optional mout arg is present) instead of
+putting the result in a new destination matrix.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.muls">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">muls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.muls" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.muls(scalar)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Multiply the matrix by a scalar in place and return the matrix reference.
+This is one of those functions that modifies the source matrix instead of
+putting the result in a new destination matrix.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">ident</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">muls</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.setrow">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">setrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.setrow" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setrow(i,</span> <span class="pre">vin)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setrow(i,</span> <span class="pre">scalar)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the ith row of the msrcdest matrix with the values of the Vector vin.
+The vector must have size msrcdest.ncol</p>
+<p>Otherwise fill the matrix row with a constant.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.setcol">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">setcol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.setcol" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setcol(i,</span> <span class="pre">vin)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setcol(i,</span> <span class="pre">scalar)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the ith column of the msrcdest matrix with the values of the Vector vin.
+The vector must have size msrcdest.mrow</p>
+<p>Otherwise fill the matrix column with a constant.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.setdiag">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">setdiag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.setdiag" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setdiag(i,</span> <span class="pre">vin)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.setdiag(i,</span> <span class="pre">scalar)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill the ith diagonal of the msrcdest matrix with the values of the
+Vector vin. The vector must have size msrcdest.mrow. The ith diagonal
+ranges from -(mrow-1) to mcol-1. For positive diagonals, the starting
+position of vector elements is 0 and trailing elements are ignored.
+For negative diagonals, the ending position of the vector elements is
+nrow-1 and beginning elements are ignored.</p>
+<p>Otherwise fill the matrix diagonal with a constant.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">v1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">):</span>
+    <span class="n">v1</span><span class="o">.</span><span class="n">indgen</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">v1</span><span class="p">)</span>
+
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.zero">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.zero" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.zero()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fills the matrix with 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.ident">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">ident</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.ident" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.ident()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fills the principal diagonal with 1. All other elements are set to 0.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">ident</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.exp">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">exp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.exp" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.exp()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.exp(mout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a new matrix which is e^msrc. ie 1 + m + m*m/2 + m*m*m/6 + …</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">v1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">v1</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">v1</span><span class="p">)</span>
+
+<span class="n">m</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices. But doesn’t really make sense for
+any other type since the result would normally be full.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.pow">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">pow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.pow" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.pow(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.pow(i,</span> <span class="pre">mout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Raise a matrix to a non-negative integer power.
+Returns a new matrix which is msrc^i.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">ident</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices. But doesn’t really make sense for
+any other type since the result would normally be full.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.inverse">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">inverse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.inverse" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.inverse()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrc.inverse(mout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return 1/msrc in a new matrix. mobj*msrc = msrc*mobj = identity</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">v1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="n">v1</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">v1</span><span class="p">)</span>
+<span class="n">minv</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">minv</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">m</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">minv</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices. But doesn’t really make sense for
+any other type since the result would normally be full.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.svd">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">svd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.svd" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">dvec</span> <span class="pre">=</span> <span class="pre">msrc.svd()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">dvec</span> <span class="pre">=</span> <span class="pre">msrc.svd(umat,</span> <span class="pre">vmat)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Singular value decomposition of a rectangular n x m matrix.
+On return ut*d*v = m where u is an orthogonal n x n matrix,
+v is an orthogonal m x m matrix, and d is a diagonal n x m matrix
+(represented as a vector) whose elements are non-negative and sorted
+by decreasing value.
+Note that if m*x = b  then
+vmat.mulv(x).mul(dvec) = umat.mulv(b)</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="k">def</span> <span class="nf">svdtest</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="n">umat</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">()</span>
+    <span class="n">vmat</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">()</span>
+    <span class="n">dvec</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">umat</span><span class="p">,</span> <span class="n">vmat</span><span class="p">)</span>
+    <span class="n">dmat</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">nrow</span><span class="p">(),</span> <span class="n">a</span><span class="o">.</span><span class="n">ncol</span><span class="p">())</span>
+    <span class="n">dmat</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dvec</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;dvec&quot;</span><span class="p">)</span>
+    <span class="n">dvec</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;dmat&quot;</span><span class="p">)</span>
+    <span class="n">dmat</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;umat&quot;</span><span class="p">)</span>
+    <span class="n">umat</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;vmat&quot;</span><span class="p">)</span>
+    <span class="n">vmat</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;input &quot;</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ut*d*v&quot;</span><span class="p">)</span>
+    <span class="n">umat</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">dmat</span><span class="p">)</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">vmat</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">getdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">indgen</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">svdtest</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">discunif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">setrow</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">getrow</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+<span class="n">svdtest</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">setrow</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">setrow</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">svdtest</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices. umat and vmat are also full.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.transpose">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">transpose</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.transpose" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mdest</span> <span class="pre">=</span> <span class="pre">msrc.transpose()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return new matrix which is the transpose of the source matrix.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setval</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">m</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">m</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span>
+<span class="n">m</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.symmeig">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">symmeig</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.symmeig" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">veigenvalues</span> <span class="pre">=</span> <span class="pre">msrc.symmeig(eigenvectors)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the eigenvalues and eigenvectors of a real symmetric matrix.
+On exit the eigenvalues are returned  in a new vector and the
+eigenvectors are returned as an orthogonal matrix.
+Note that the i’th column of the eigenvector matrix is the eigenvector
+for the i’th element of the eigenvalue vector.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">setdiag</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+
+<span class="n">q</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">symmeig</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;eigenvectors&quot;</span><span class="p">)</span>
+<span class="n">q</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;eigenvalues&quot;</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;qt*m*q&quot;</span><span class="p">)</span>
+<span class="n">q</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;qt*q&quot;</span><span class="p">)</span>
+<span class="n">q</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">mulm</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Implemented only for full matrices.</p>
+<p>msrc must be symmetric but that fact is not checked.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.to_vector">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">to_vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.to_vector" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.to_vector()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">vobj</span> <span class="pre">=</span> <span class="pre">msrc.to_vector(vout)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copies the matrix elements into a <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> in column order.
+i.e the jth column starts
+at vobj[msrc.nrow*j] .
+The vector is sized to nrow*ncol.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">from_vector</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">to_vector</span><span class="p">()</span><span class="o">.</span><span class="n">indgen</span><span class="p">())</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works for sparse matrices but the output vector will still be size
+nrow*ncol.
+Not very efficient since vobj and msrc do not share memory.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Matrix.from_vector">
+<span class="sig-prename descclassname"><span class="pre">Matrix.</span></span><span class="sig-name descname"><span class="pre">from_vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Matrix.from_vector" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mobj</span> <span class="pre">=</span> <span class="pre">msrcdest.from_vector(vec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copies the vector elements into the matrix in column order. I.e
+m[i][j] = v[j*nrow + i].
+The size of vec must be equal to msrcdest.nrow()*msrcdest.ncol().</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">from_vector</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">to_vector</span><span class="p">()</span><span class="o">.</span><span class="n">indgen</span><span class="p">())</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Works for sparse matrices but all elements will exist so not really sparse.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="functions.html" class="btn btn-neutral float-left" title="Common Math Functions (HOC)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="vector.html" class="btn btn-neutral float-right" title="Vector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

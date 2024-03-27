@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaction-diffusion thresholds &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Extracellular reaction-diffusion tutorial" href="extracellular.html" />
+    <link rel="prev" title="Varying initial concentrations and parameters" href="Changing%20initial%20conditions%20and%20parameters.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python RXD tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Reaction-Diffusion%20tutorial.html">Reaction-diffusion introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-initialization.html">Initialization Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Changing%20initial%20conditions%20and%20parameters.html">Varying initial concentrations and parameters</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Reaction-diffusion thresholds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extracellular.html">Extracellular reaction-diffusion tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Restricting%20reactions%20to%20certain%20sections.html">Restricting reactions to a part of a region</a></li>
+<li class="toctree-l2"><a class="reference internal" href="degradable_buffer.html">Example: Degradable buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circadian.html">Example: Circadian rhythm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcium%20waves.html">Example: Calcium waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combining%20currents%20from%20mod%20files%20with%20rxd.html">Example: combining MOD file ion channels with rxd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ip3-demo.html">IP3 demo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python RXD tutorials</a></li>
+      <li class="breadcrumb-item active">Reaction-diffusion thresholds</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rxd-tutorials/thresholds.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Reaction-diffusion-thresholds">
+<h1>Reaction-diffusion thresholds<a class="headerlink" href="#Reaction-diffusion-thresholds" title="Link to this heading"></a></h1>
+<p><p>Suppose we have an rxd.Reaction or rxd.Rate that should only occur when the concentration is above (or below) a certain threshold. These functions, however, only support continuous rate functions. What can we do?</p>
+</p><p>A version of this notebook may be run online via Google Colab at <a class="reference external" href="https://tinyurl.com/rxd-thresholds">https://tinyurl.com/rxd-thresholds</a> (make a copy or open in playground mode).</p>
+<p>One approach is to use a sigmoid function such as <span class="math notranslate nohighlight">\(\tanh(x)\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;tanh(x)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/rxd-tutorials_thresholds_3_0.png" src="../_images/rxd-tutorials_thresholds_3_0.png" />
+</div>
+</div>
+<p>Consider the following transformation of <span class="math notranslate nohighlight">\(\tanh(x)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[f(x) = \frac{1 + \tanh(2m(x-a))}{2}\]</div>
+<p>One can show that <span class="math notranslate nohighlight">\(\displaystyle \lim_{x \to \infty} f(x) = 1\)</span>, <span class="math notranslate nohighlight">\(\displaystyle \lim_{x \to -\infty} f(x) = 0\)</span>, <span class="math notranslate nohighlight">\(\displaystyle f(a) = 0.5,\)</span> and <span class="math notranslate nohighlight">\(\displaystyle f'(a) = m\)</span>. Furthermore <span class="math notranslate nohighlight">\(f\)</span> is a sigmoid function that shifts between <span class="math notranslate nohighlight">\(0\)</span> and <span class="math notranslate nohighlight">\(1\)</span> arbitrarily quickly (parameterized by <span class="math notranslate nohighlight">\(m\)</span>) around <span class="math notranslate nohighlight">\(x=a\)</span>.</p>
+<p>Here, for example, is the graph of <span class="math notranslate nohighlight">\(\displaystyle g(x) = \frac{1 + \tanh(2\cdot 10(x-2))}{2}\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)))</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;g(x)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/rxd-tutorials_thresholds_8_0.png" src="../_images/rxd-tutorials_thresholds_8_0.png" />
+</div>
+</div>
+<p>Using this logic, we can scale reaction rates by a function of the form <span class="math notranslate nohighlight">\(f(x)\)</span> for suitably chosen <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(m\)</span> to approximately threshold them by a concentration.</p>
+<p>For example, suppose we wish to model a substance (we’ll arbitrarily call it IP3) that degrades exponentially (i.e. <span class="math notranslate nohighlight">\(y'=-k y\)</span>) but only when the concentration is above <span class="math notranslate nohighlight">\(0.25\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mM</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+
+<span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;soma&quot;</span><span class="p">)</span>
+<span class="n">cyt</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">([</span><span class="n">soma</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cyt&quot;</span><span class="p">,</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+<span class="n">ip3</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ip3&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="mi">1</span> <span class="o">*</span> <span class="n">mM</span><span class="p">)</span>
+<span class="n">k</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># degradation rate</span>
+<span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.25</span>  <span class="c1"># mM... called &#39;a&#39; in f(x)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># steepness of switch</span>
+<span class="n">degradation_switch</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">rxd</span><span class="o">.</span><span class="n">rxdmath</span><span class="o">.</span><span class="n">tanh</span><span class="p">((</span><span class="n">ip3</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">m</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">ip3</span><span class="p">,</span> <span class="o">-</span><span class="n">k</span> <span class="o">*</span> <span class="n">ip3</span> <span class="o">*</span> <span class="n">degradation_switch</span><span class="p">)</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">)</span>
+<span class="n">ip3_conc</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_ip3i</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ip3_conc</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;[IP3] (mM)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/rxd-tutorials_thresholds_11_0.png" src="../_images/rxd-tutorials_thresholds_11_0.png" />
+</div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Changing%20initial%20conditions%20and%20parameters.html" class="btn btn-neutral float-left" title="Varying initial concentrations and parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="extracellular.html" class="btn btn-neutral float-right" title="Extracellular reaction-diffusion tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

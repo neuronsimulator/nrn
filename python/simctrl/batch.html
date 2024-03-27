@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Running and Saving Batch Jobs &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="SaveState" href="savstate.html" />
+    <link rel="prev" title="CVode" href="cvode.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="programmatic.html">Programmatic Simulation Control</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="cvode.html">CVode</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Running and Saving Batch Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="savstate.html">SaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bbsavestate.html">BBSaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sessionsave.html">Session Printing and Saving</a></li>
+<li class="toctree-l4"><a class="reference internal" href="programmatic.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="programmatic.html#finitializehandler">FInitializeHandler</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="stdrun.html">Standard Run Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../compilationoptions.html">Rarely Used Compilation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../envvariables.html">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interpretermanagement.html">Interpreter Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="programmatic.html">Programmatic Simulation Control</a></li>
+      <li class="breadcrumb-item active">Running and Saving Batch Jobs</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/simctrl/batch.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/simctrl/batch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#batch_run" title="Link to this definition">batch_run</a> &middot; <a href="#batch_save" title="Link to this definition">batch_save</a></p><section id="running-and-saving-batch-jobs">
+<h1>Running and Saving Batch Jobs<a class="headerlink" href="#running-and-saving-batch-jobs" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_run">
+<span class="sig-name descname"><span class="pre">batch_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#batch_run" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">batch_run</span><span class="p">(</span><span class="n">tstop</span><span class="p">,</span> <span class="n">tstep</span><span class="p">,</span> <span class="s1">&#39;filename&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_run</span><span class="p">(</span><span class="n">tstop</span><span class="p">,</span> <span class="n">tstep</span><span class="p">,</span> <span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;comment&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl>
+<dt>Description:</dt><dd><p>This command replaces the set of commands:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">h</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">tstop</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tstep</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fadvance</span><span class="p">()</span>
+    <span class="c1"># print results to filename</span>
+</pre></div>
+</div>
+<p>and produces the most efficient run on any given neuron model.  This
+command was created specifically for Cray computers in order eliminate
+the interpreter overhead as the rate limiting simulation step.</p>
+<p>This command will save selected variables, as they are changed in the run,
+into a file whose name is given as the third argument.
+The 4th comment argument is placed at the beginning of the file.
+The <a class="reference internal" href="#batch_save" title="batch_save"><code class="xref py py-func docutils literal notranslate"><span class="pre">batch_save()</span></code></a> command specifies which variable are to be saved.</p>
+<p>The variables are stored in plain text and separated by spaces (see the example
+output below).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><p>The following code creates a single compartment neuron, adds Hodgkin-Huxley
+channels, applies a current clamp, runs, and stores a voltage trace.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="c1"># define a geometry</span>
+<span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;soma&quot;</span><span class="p">)</span>
+<span class="n">soma</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">soma</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># biophysics: Hodgkin-Huxley channels</span>
+<span class="n">soma</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>
+
+<span class="c1"># add a stimulus</span>
+<span class="n">iclamp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">iclamp</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">iclamp</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mf">0.3</span>
+<span class="n">iclamp</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="c1"># define variables to be stored (time and the soma&#39;s membrane potential)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">,</span> <span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>
+
+<span class="c1"># initialize, run, and save</span>
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_run</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;hhsim.dat&#39;</span><span class="p">,</span> <span class="s1">&#39;My HH sim&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The output (the time series of an action potential) is stored in the <code class="file docutils literal notranslate"><span class="pre">hhsim.dat</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>My HH sim
+batch_run from t = 0 to 2 in steps of 0.1 with dt = 0.025
+ 0 -65
+ 0.1 -64.9971
+ 0.2 -64.9943
+ 0.3 -64.9917
+ 0.4 -49.6876
+ 0.5 -34.9008
+ 0.6 -33.426
+ 0.7 -25.5015
+ 0.8 -7.00019
+ 0.9 20.989
+ 1 38.2226
+ 1.1 40.9284
+ 1.2 39.1047
+ 1.3 35.8921
+ 1.4 31.8901
+ 1.5 27.3462
+ 1.6 22.4496
+ 1.7 17.3559
+ 1.8 12.1873
+ 1.9 7.0331
+ 2 1.9538
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_save">
+<span class="sig-name descname"><span class="pre">batch_save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#batch_save" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">(</span><span class="n">varref1</span><span class="p">,</span> <span class="n">varref2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.batch_save()</span></code></dt><dd><p>starts a new list of variables to save in a <a class="reference internal" href="#batch_run" title="batch_run"><code class="xref py py-func docutils literal notranslate"><span class="pre">batch_run()</span></code></a> .</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.batch_save(varref1,</span> <span class="pre">varref2,</span> <span class="pre">...)</span></code></dt><dd><p>adds pointers to the list of variables to be saved in a <code class="docutils literal notranslate"><span class="pre">batch_run</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">()</span>    <span class="c1"># This clears whatever list existed and starts a new</span>
+                      <span class="c1"># list of variables to be saved.</span>
+<span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">,</span> <span class="n">axon</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">batch_save</span><span class="p">(</span><span class="n">dend</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="mf">0.3</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>specifies five quantities to be saved from each <a class="reference internal" href="#batch_run" title="batch_run"><code class="xref py py-func docutils literal notranslate"><span class="pre">batch_run()</span></code></a>.</p>
+</div></blockquote>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cvode.html" class="btn btn-neutral float-left" title="CVode" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="savstate.html" class="btn btn-neutral float-right" title="SaveState" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pseudo-Random Number Generation &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="mcell_ran4" href="mcran4.html" />
+    <link rel="prev" title="Vector" href="vector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../hoc.html">HOC Language</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../mathematics.html">Mathematics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="constants.html">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="functions.html">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="matrix.html">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vector.html">Vector</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../mathematics.html">Mathematics</a></li>
+      <li class="breadcrumb-item active">Pseudo-Random Number Generation</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/programming/math/random.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/programming/math/random.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Random" title="Link to this definition">Random</a></dt><dd><a href="#Random.ACG" title="Link to this definition">ACG</a> &middot; <a href="#Random.binomial" title="Link to this definition">binomial</a> &middot; <a href="#Random.discunif" title="Link to this definition">discunif</a> &middot; <a href="#Random.erlang" title="Link to this definition">erlang</a> &middot; <a href="#Random.geometric" title="Link to this definition">geometric</a> &middot; <a href="#Random.hypergeo" title="Link to this definition">hypergeo</a> &middot; <a href="#Random.lognormal" title="Link to this definition">lognormal</a> &middot; <a href="#Random.MCellRan4" title="Link to this definition">MCellRan4</a> &middot; <a href="#Random.MLCG" title="Link to this definition">MLCG</a> &middot; <a href="#Random.negexp" title="Link to this definition">negexp</a> &middot; <a href="#Random.normal" title="Link to this definition">normal</a> &middot; <a href="#Random.play" title="Link to this definition">play</a> &middot; <a href="#Random.poisson" title="Link to this definition">poisson</a> &middot; <a href="#Random.Random123" title="Link to this definition">Random123</a> &middot; <a href="#Random.Random123_globalindex" title="Link to this definition">Random123_globalindex</a> &middot; <a href="#Random.repick" title="Link to this definition">repick</a> &middot; <a href="#Random.seq" title="Link to this definition">seq</a> &middot; <a href="#Random.uniform" title="Link to this definition">uniform</a> &middot; <a href="#Random.weibull" title="Link to this definition">weibull</a></dd></dl></p><section id="pseudo-random-number-generation">
+<span id="hoc-random"></span><h1>Pseudo-Random Number Generation<a class="headerlink" href="#pseudo-random-number-generation" title="Link to this heading"></a></h1>
+<p>Pseudo-random numbers from a variety of distributions may be generated with the <a class="reference internal" href="#Random" title="Random"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Random</span></code></a> class. Multiple random number generators are provided; low level access to the mcell_ran4 generator is described in:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcran4.html">mcell_ran4</a></li>
+</ul>
+</div>
+<section id="random-class">
+<h2>Random Class<a class="headerlink" href="#random-class" title="Link to this heading"></a></h2>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="Random">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Random</span></span><a class="headerlink" href="#Random" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">Random()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">Random(seed)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">Random(seed,</span> <span class="pre">size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The Random class provides commonly used random distributions which are
+useful for stochastic
+simulations. The default distribution is normal with mean = 0 and standard
+deviation = 1.</p>
+<p>This class is an interface to the RNG class
+from the gnu c++ class library. As of version 5.2, a cryptographic quality
+RNG class wrapper for <a class="reference internal" href="mcran4.html#mcell_ran4" title="mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a> was added and is available
+with the <a class="reference internal" href="#Random.MCellRan4" title="Random.MCellRan4"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> method. The current default random generator
+is <a class="reference internal" href="#Random.ACG" title="Random.ACG"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.ACG()</span></code></a>.</p>
+<p>As of version 7.3, a more versatile cryptographic quality generator,
+Random123, is available with the <a class="reference internal" href="#Random.Random123" title="Random.Random123"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> method. This generator
+uses a 34bit counter, up to 3 32 bit identifiers, and a 32 bit global index and
+is most suitable for managing separate independent, reproducible, restartable
+streams that are unique to individual cell and synapses in large parallel
+network models.
+See: <a class="reference external" href="http://www.thesalmons.org/john/random123/papers/random123sc11.pdf">http://www.thesalmons.org/john/random123/papers/random123sc11.pdf</a></p>
+<p>Note that multiple instances of the Random class will produce different
+streams of random numbers only if their seeds are different.</p>
+<p>One can switch distributions at any time but if the distribution is
+stationary then it is more efficient to use <a class="reference internal" href="#Random.repick" title="Random.repick"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.repick()</span></code></a> to avoid
+constructor/destructor overhead.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r
+r = new Random()
+for i=1,10 print r.uniform(30, 50) // not as efficient as
+for i=1,10 print r.repick()    // this
+</pre></div>
+</div>
+<p>prints 20 random numbers ranging in value between 30 and 50.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.ACG">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">ACG</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.ACG" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.ACG()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.ACG(seed)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.ACG(seed,</span> <span class="pre">size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use a variant of the Linear Congruential Generator (algorithm M)
+described in Knuth, Art of Computer Programming, Vol. III in
+combination with a Fibonacci Additive Congruential Generator.  This is
+a “very high quality” random number generator, Default size is 55,
+giving a size of 1244 bytes to the structure. Minimum size is 7 (total
+100 bytes), maximum size is 98 (total 2440 bytes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.MLCG">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">MLCG</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.MLCG" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.MLCG()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.MLCG(seed1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.MLCG(seed1,</span> <span class="pre">seed2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use a Multiplicative Linear Congruential Generator.  Not as high
+quality as the ACG.  It uses only 8 bytes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.MCellRan4">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">MCellRan4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.MCellRan4" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4(highindex)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4(highindex,</span> <span class="pre">lowindex)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use the MCell variant of the Ran4 generator. See <a class="reference internal" href="mcran4.html#mcell_ran4" title="mcell_ran4"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a>.
+In the no argument case or if the highindex is 0, then the system selects
+an index which is the random 32 bit integer resulting from
+an mcell_ran4 call with an index equal to the
+the number of instances of the Random generator that had been created.
+Thus, each stream should be statistically independent as long as the
+highindex values differ by more than the eventual length of the stream.
+In any case, the
+initial highindex is returned and can be used to restart an instance
+of the generator. Use <a class="reference internal" href="mcran4.html#mcell_ran4_init" title="mcell_ran4_init"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a> to set the (global)
+low 32 bit index of the generator. The <a class="reference internal" href="#Random.seq" title="Random.seq"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.seq()</span></code></a> method is useful
+for getting the current sequence number and restarting at that sequence
+number (highindex).
+If the lowindex arg is present and nonzero, then that lowindex is used
+instead of the global one specified by <a class="reference internal" href="mcran4.html#mcell_ran4_init" title="mcell_ran4_init"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a>.
+This allows 2^32-1 independent streams that do not overlap.</p>
+<p>Note that for reproducibility,
+the distribution should be defined AFTER setting the seed since some
+distributions, such as <a class="reference internal" href="#Random.normal" title="Random.normal"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.normal()</span></code></a>, hold state information from
+a previous pick from the uniform distribution.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#Random.Random123" title="Random.Random123"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a></p>
+</div>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, vec, g1, g2, hist
+r = new Random()
+index = r.MCellRan4()
+r.uniform(0, 2)
+vec = new Vector(1000)
+g1 = new Graph()
+g2 = new Graph()
+g1.size(0, 1000, 0, 2)
+g2.size(0, 2, 0, 150)
+
+proc doit() {
+    g1.erase() g2.erase()
+    vec.setrand(r)
+    hist = vec.histogram(0, 2, 0.2)
+    vec.line(g1)
+    hist.line(g2, .2)
+    g1.flush g2.flush
+}
+doit()
+
+variable_domain(&amp;index, 0, 2^32-1)
+xpanel(&quot;MCellRan4 test&quot;)
+xbutton(&quot;Sample&quot;, &quot;doit()&quot;)
+xpvalue(&quot;Original index&quot;, &amp;index, 1, &quot;r.MCellRan4(index) doit()&quot;)
+xpanel()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.Random123">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">Random123</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.Random123" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">r.Random123(id1,</span> <span class="pre">id2,</span> <span class="pre">id3)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use the Random123 generator (currently philox4x32 is the crypotgraphic hash
+used) with the stream identified by the identifiers 0 &lt;= id1,2,3 &lt; 2^32
+and the global index (see <a class="reference internal" href="#Random.Random123_globalindex" title="Random.Random123_globalindex"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.Random123_globalindex()</span></code></a>). The counter,
+which increments from 0 to 2^34-1, is initialized to 0 (see <a class="reference internal" href="#Random.seq" title="Random.seq"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.seq()</span></code></a>).
+If any of the up to 3 arguments are missing, it is assumed 0.</p>
+<p>The generators should be usable in the context of threads as long as
+no instance is used in more than one thread.</p>
+<p>This generator
+uses a 34bit counter, 3 32 bit identifiers, and a 32 bit global index and
+is most suitable for managing separate independent, reproducible, restartable
+streams that are unique to individual cell and synapses in large parallel
+network models.
+See: <a class="reference external" href="http://www.thesalmons.org/john/random123/papers/random123sc11.pdf">http://www.thesalmons.org/john/random123/papers/random123sc11.pdf</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.Random123_globalindex">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">Random123_globalindex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.Random123_globalindex" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">uint32</span> <span class="pre">=</span> <span class="pre">r.Random123_globalindex([uint32])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets and sets the global index used by all instances of the Random123
+instances of Random.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.seq">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">seq</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.seq" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">currenthighindex</span> <span class="pre">=</span> <span class="pre">r.seq()</span></code>
+<code class="docutils literal notranslate"><span class="pre">r.seq(sethighindex)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>For MCellRan4,
+Gets and sets the current highindex value when the <a class="reference internal" href="#Random.MCellRan4" title="Random.MCellRan4"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> is
+in use. This allows restarting the generator at any specified point.
+Note that the currenthighindex value is incremented every <a class="reference internal" href="#Random.repick" title="Random.repick"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.repick()</span></code></a>.
+Usually the increment is 1 but some distributions, e.g. <a class="reference internal" href="#Random.poisson" title="Random.poisson"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.poisson()</span></code></a>
+can increment by more. Also, some distributions, e.g. <a class="reference internal" href="#Random.normal" title="Random.normal"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Random.normal()</span></code></a>,
+pick twice on the first repick but once thereafter.</p>
+<p>For Random123,
+Gets and sets the counter value which ranges from 0 to 2^34-1.
+The reason the the greater range is that the internal Random123 generators
+return 4 uint32 values on each call. So that is done only every 4 picks from
+the generator.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r
+r = new Random()
+//r.uniform(0,1)
+r.negexp(1)
+//r.normal(0,1)
+mcell_ran4_init(1)
+r.MCellRan4(1)
+
+for i=0, 10 print i, r.repick
+
+r.MCellRan4(1)
+for i=0, 5 print i, r.repick
+idum = r.seq
+print &quot;idum = &quot;, idum
+for i=6, 10 print i, r.repick
+
+print &quot;restarting&quot;
+r.seq(idum)
+for i=6, 10 print i, r.repick
+
+print &quot;restarting&quot;
+r.seq(idum)
+for i=6, 10 print i, r.repick
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.repick">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">repick</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.repick" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.repick()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Pick again from the distribution last used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.play">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">play</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.play" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.play(&amp;var)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>At the beginning of every call to <a class="reference internal" href="../../simctrl/programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> and <a class="reference internal" href="../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> var is set
+to a new value equivalent to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>var = r.repick()
+</pre></div>
+</div>
+<p>(but with no interpreter overhead). This is similar in concept to <a class="reference internal" href="vector.html#Vector.play" title="Vector.play"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.play()</span></code></a>.
+Play may be called several times for different variables and each variable
+will get an independent random value but with the same distribution.
+To disconnect the Random object from its list of variables, either the variables
+or the Random object must be destroyed.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// run the single script
+// use the PointProcessManager to select IClamp
+// set dur of IClamp[0] to 100
+// open a new Voltage Graph
+objref r
+r = new Random()
+r.poisson(.01)
+r.play(&amp;IClamp[0].amp)
+//open a RunControl
+// press Init&amp;Run several times
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.uniform">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.uniform" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.uniform(low,</span> <span class="pre">high)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a uniform random variable over the open interval (<em>low</em>…<em>high</em>).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, vec, g1, g2, hist
+r = new Random()
+r.uniform(0, 2)
+vec = new Vector(1000)
+vec.setrand(r)
+hist = vec.histogram(0, 2, 0.2)
+
+g1 = new Graph()
+g2 = new Graph()
+g1.size(0, 1000, 0, 2)
+g2.size(0, 2, 0, 150)
+vec.plot(g1)
+hist.plot(g2, .2)
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.discunif">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">discunif</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.discunif" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.discunif(low,</span> <span class="pre">high)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a uniform random variable over the discrete integers from
+low to high.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.normal">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">normal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.normal" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.normal(mean,</span> <span class="pre">variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gaussian distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, g, hist, vec
+r = new Random()
+r.normal(-1, .5)
+
+vec = new Vector()
+vec.indgen(-3, 2, .1)       // x-axis for plot
+hist = new Vector(vec.size())
+g = new Graph()
+g.size(-3, 2, 0, 50)
+hist.plot(g, vec)
+for(i=0; i&lt;500; i=i+1){
+    x = r.repick()
+    print i, x
+    j = int((x+3)*10) // -3 to 2 -&gt; 0 to 50
+    if (j &gt;= 0) {
+            hist.x[j] = hist.x[j]+1
+    }
+    g.flush()
+    doNotify()
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.lognormal">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">lognormal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.lognormal" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.lognormal(mean,</span> <span class="pre">variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a logarithmic normal distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, g, hist, xvec
+r = new Random()
+r.lognormal(5,2)
+n=20
+xvec = new Vector(n*3)      // bins look like discrete spikes
+for i=0,n-1 {
+    xvec.x[3*i] = i-.1
+    xvec.x[3*i+1] = i
+    xvec.x[3*i+2] = i+.1
+}
+hist = new Vector(xvec.size())
+g = new Graph()
+g.size(0, 15, 0, 120)
+hist.plot(g, xvec)
+for(i=0; i&lt;500; i=i+1){
+    x = r.repick()
+    print i, x
+    j = int(x)
+    j = 3*j+1
+    if (j &gt;= hist.size()) { // don&#39;t let any off the edge
+            j = hist.size() -1
+    }
+    hist.x[j] = hist.x[j]+1
+    g.flush()
+    doNotify()
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.poisson">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">poisson</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.poisson" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.poisson(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a poisson distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, g, hist, xvec
+
+r = new Random()
+r.poisson(3)
+
+n=20
+xvec = new Vector(n*3)
+for i=0,n-1 {
+    xvec.x[3*i] = i-.1
+    xvec.x[3*i+1] = i
+    xvec.x[3*i+2] = i+.1
+}
+hist = new Vector(xvec.size())
+g = new Graph()
+g.size(0, 15, 0, 120)
+hist.plot(g, xvec)
+for(i=0; i&lt;500; i=i+1){
+    x = r.repick()
+    print i, x
+    j = int(x)
+    j = 3*j+1
+    if (j &gt;= hist.size()) {
+            j = hist.size() -1
+    }
+    hist.x[j] = hist.x[j]+1
+    g.flush()
+    doNotify()
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.binomial">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">binomial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.binomial" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.binomial(N,p)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a binomial distribution. Returns the number of “successes” after
+<em>N</em> trials when the probability of a success after one trial is <em>p</em>.
+(n&gt;0, 0&lt;=p&lt;=1).</p>
+<p><code class="docutils literal notranslate"><span class="pre">P(n,</span> <span class="pre">N,</span> <span class="pre">p)</span> <span class="pre">=</span> <span class="pre">p</span> <span class="pre">*</span> <span class="pre">P(n-1,</span> <span class="pre">N-1,</span> <span class="pre">p)</span> <span class="pre">+</span> <span class="pre">(1</span> <span class="pre">-</span> <span class="pre">p)</span> <span class="pre">*</span> <span class="pre">P(n,</span> <span class="pre">N-1,</span> <span class="pre">p)</span></code></p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, hist, g
+r = new Random()
+r.binomial(20, .5)
+
+g = new Graph()
+g.size(0, 20, 0, 100)
+hist = new Vector(20)
+hist.plot(g)
+for(i=0; i&lt;500; i=i+1){
+    j = r.repick()
+    hist.x[j] = hist.x[j]+1
+    g.flush()
+    doNotify()
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.geometric">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">geometric</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.geometric" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.geometric(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a discrete geometric distribution.
+Given 0&lt;=*mean*&lt;=1, return the number of uniform random samples
+that were drawn before the sample was larger than the <em>mean</em> (always
+greater than 0).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, hist, g
+r = new Random()
+r.geometric(.8)
+hist = new Vector(1000)
+proc sample() {
+    hist = new Vector(1000)
+    hist.setrand(r)
+    hist = hist.histogram(0,100,1)
+    hist.plot(g)
+}
+g = new Graph()
+g.size(0,40,0,200)
+sample()
+xpanel(&quot;Resample&quot;)
+xbutton(&quot;Resample&quot;, &quot;sample()&quot;)
+xpanel()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.hypergeo">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">hypergeo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.hypergeo" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.hypergeo(mean,variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a hypergeometric distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.negexp">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">negexp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.negexp" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.negexp(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a negative exponential distribution. Distributed as the intervals
+between events in a poisson distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref r, hist, g
+r = new Random()
+r.negexp(2.5)
+hist = new Vector(1000)
+proc sample() {
+        hist = new Vector(1000)
+        hist.setrand(r)
+        hist = hist.histogram(0,20,.1)
+        hist.plot(g, .1)
+}
+g = new Graph()
+g.size(0,20,0,50)
+sample()
+xpanel(&quot;Resample&quot;)
+xbutton(&quot;Resample&quot;, &quot;sample()&quot;)
+xpanel()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.erlang">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">erlang</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.erlang" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.erlang(mean,variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create an Erlang distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Random.weibull">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">weibull</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.weibull" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.weibull(alpha,beta)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a Weibull distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="vector.html" class="btn btn-neutral float-left" title="Vector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mcran4.html" class="btn btn-neutral float-right" title="mcell_ran4" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shape &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Notification" href="notify.html" />
+    <link rel="prev" title="RangeVarPlot" href="rvarplt.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Shape</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Shape"><code class="docutils literal notranslate"><span class="pre">Shape</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">Shape</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/shape.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/shape.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Shape" title="Link to this definition">Shape</a></dt><dd><a href="#Shape.action" title="Link to this definition">action</a> &middot; <a href="#Shape.beginline" title="Link to this definition">beginline</a> &middot; <a href="#Shape.color" title="Link to this definition">color</a> &middot; <a href="#Shape.color_all" title="Link to this definition">color_all</a> &middot; <a href="#Shape.color_list" title="Link to this definition">color_list</a> &middot; <a href="#Shape.erase" title="Link to this definition">erase</a> &middot; <a href="#Shape.erase_all" title="Link to this definition">erase_all</a> &middot; <a href="#Shape.exec_menu" title="Link to this definition">exec_menu</a> &middot; <a href="#Shape.flush" title="Link to this definition">flush</a> &middot; <a href="#Shape.label" title="Link to this definition">label</a> &middot; <a href="#Shape.len_scale" title="Link to this definition">len_scale</a> &middot; <a href="#Shape.line" title="Link to this definition">line</a> &middot; <a href="#Shape.mark" title="Link to this definition">mark</a> &middot; <a href="#Shape.menu_action" title="Link to this definition">menu_action</a> &middot; <a href="#Shape.menu_tool" title="Link to this definition">menu_tool</a> &middot; <a href="#Shape.nearest" title="Link to this definition">nearest</a> &middot; <a href="#Shape.observe" title="Link to this definition">observe</a> &middot; <a href="#Shape.point_mark" title="Link to this definition">point_mark</a> &middot; <a href="#Shape.point_mark_remove" title="Link to this definition">point_mark_remove</a> &middot; <a href="#Shape.printfile" title="Link to this definition">printfile</a> &middot; <a href="#Shape.push_selected" title="Link to this definition">push_selected</a> &middot; <a href="#Shape.rotate" title="Link to this definition">rotate</a> &middot; <a href="#Shape.save_name" title="Link to this definition">save_name</a> &middot; <a href="#Shape.select" title="Link to this definition">select</a> &middot; <a href="#Shape.show" title="Link to this definition">show</a> &middot; <a href="#Shape.size" title="Link to this definition">size</a> &middot; <a href="#Shape.unmap" title="Link to this definition">unmap</a> &middot; <a href="#Shape.view" title="Link to this definition">view</a> &middot; <a href="#Shape.view_count" title="Link to this definition">view_count</a></dd></dl></p><section id="shape">
+<span id="id1"></span><h1>Shape<a class="headerlink" href="#shape" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="Shape">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Shape</span></span><a class="headerlink" href="#Shape" title="Link to this definition"></a></dt>
+<dd><p>Class for making a Shape window for executing a user defined action
+when a section is clicked on. (When the section mode is selected
+from the mouse menu.) An argument of 0 will prevent default mapping
+of the  window.
+If the first arg is a <a class="reference internal" href="../modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> (then a second arg of 0 will
+prevent default mapping) then only the sections in the list are
+drawn. Shape is redrawn automatically whenever length or diameter
+of a section changes.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The form of the constructor that takes a <a class="reference internal" href="../modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> does not
+currently work in Python.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.view">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.view" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.view(mleft,</span> <span class="pre">mbottom,</span> <span class="pre">mwidth,</span> <span class="pre">mheight,</span> <span class="pre">sleft,</span> <span class="pre">stop,</span> <span class="pre">swidth,</span> <span class="pre">sheight)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>maps a view of the Shape scene. m stands for model coordinates,
+s stands for screen pixel coordinates where 0,0 is the top left
+corner of the screen.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.size">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.size" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.size(mleft,</span> <span class="pre">mright,</span> <span class="pre">mbottom,</span> <span class="pre">mtop)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">...</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Model coordinates for the scene.
+This is the “whole scene” size.
+Since, the aspect ratio for shape views is unity, the bounding box expressed
+by the arguments may not fit exactly on the screen window. The scale factor
+is decreased so that the first view window displays the entire bounding box
+with the center of the bounding box in the center of the view.</p>
+<p>See <a class="reference internal" href="graph.html#Graph.size" title="Graph.size"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.size()</span></code></a> for other, more rarely use argument sequences.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.show">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.show" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.show(mode)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Mode for <code class="docutils literal notranslate"><span class="pre">shape.show()</span></code> can be adjusted for different way to display the cell, and can be adjusted as the following example (available from NEURON 9.0:</p>
+<dl class="simple">
+<dt>mode = 0</dt><dd><p>displays diameters</p>
+</dd>
+<dt>mode = 1</dt><dd><p>displays centroid. ie line through all the 3d points.</p>
+</dd>
+<dt>mode = 2</dt><dd><p>displays schematic. ie line through 1st and last 2d points of each
+section.</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">plotly</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;c91662.ses&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">//</span> <span class="mi">40</span><span class="p">))</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">show</span><span class="p">())</span>  <span class="c1"># prints the current mode</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># alters the mode to 0 that displays diameters for each segment</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">show</span><span class="p">())</span>  <span class="c1"># should print 0 as the mode set</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plotly</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="p">[</span><span class="s2">&quot;viridis&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.flush">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.flush" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.flush()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Redraws all views into this scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.observe">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.observe" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.observe()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">shape.observe(sectionlist)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Replace the list of observed sections in the Shape with the specified
+list. With no arguments, all sections are observed.</p>
+</dd>
+<dt>Example:</dt><dd><p>In the context of the pyramidal cell demo of neurondemo (launch via
+<code class="docutils literal notranslate"><span class="pre">neurondemo</span> <span class="pre">--python</span></code>) the following
+will change the Shape shown in the point process manager
+to show only the soma and the main part of the primary dendrite.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">sl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionList</span><span class="p">()</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">soma</span><span class="p">)</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">dendrite_1</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+<span class="n">h</span><span class="o">.</span><span class="n">Shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">sl</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.view_count">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">view_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.view_count" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.view_count()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns number of views into this scene. (stdrun.hoc removes
+scenes from the <code class="docutils literal notranslate"><span class="pre">flush_list</span></code> and <code class="docutils literal notranslate"><span class="pre">graphList[]</span></code> when this goes to
+0. If no other <code class="docutils literal notranslate"><span class="pre">objectvar</span></code> points to the scene, it will be
+freed.)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.select">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.select" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.select(sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Colors red the specified section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.action">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.action" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.action(&quot;command&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>command is executed whenever the user clicks on a section.
+The clicked section is pushed before execution and popped after.
+<code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code> contains the arc position 0 - 1 of the nearest node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.color">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.color" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.color(i,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors the specified section according to color index
+(index same as specified in <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> class). If there are several
+sections to color it is more efficient to make a <a class="reference internal" href="../modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> and
+use <code class="docutils literal notranslate"><span class="pre">.color_list</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.color_all">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">color_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.color_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.color_all(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors all the sections</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.color_list">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">color_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.color_list" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.color_list(SectionList,</span> <span class="pre">i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>colors the sections in the list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.point_mark">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">point_mark</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.point_mark" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.point_mark(objvar,</span> <span class="pre">colorindex)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.point_mark(objvar,</span> <span class="pre">colorindex,</span> <span class="pre">style)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.point_mark(objvar,</span> <span class="pre">colorindex,</span> <span class="pre">style,</span> <span class="pre">size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>draw a little filled circle with indicated color where the point process
+referenced by <code class="docutils literal notranslate"><span class="pre">objvar</span></code> is located. Note, if you subsequently relocate
+the point process or destroy it the proper thing will happen to the
+mark. (at least after a flush)</p>
+<p>The optional arguments specify the style and size as in the
+<a class="reference internal" href="graph.html#Graph.mark" title="Graph.mark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.mark()</span></code></a> method of <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a>. This extension was contributed
+by Yichun Wei <code class="docutils literal notranslate"><span class="pre">yichunwe&#64;usc.edu</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.point_mark_remove">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">point_mark_remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.point_mark_remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.point_mark_remove([objvar])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no arg, removes all the point process marks.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.save_name">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">save_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.save_name" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.save_name(&quot;name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">objectvar</span></code> used to save the scene when the print window
+manager is used to save a session.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.unmap">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">unmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.unmap" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.unmap()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>dismisses all windows that are a direct view into this scene.
+(does not unmap boxes containing scenes.) <code class="docutils literal notranslate"><span class="pre">unmap</span></code> is called
+automatically when no hoc object variable references the Shape.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.printfile">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">printfile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.printfile" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.printfile(&quot;filename&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>prints the first view of the graph as an encapsulated post script
+file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.menu_action">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">menu_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.menu_action" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.menu_action" title="Graph.menu_action"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.menu_action()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.exec_menu">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">exec_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.exec_menu" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.exec_menu" title="Graph.exec_menu"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.exec_menu()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.erase">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">erase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.erase" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.erase" title="Graph.erase"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.erase()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.erase_all">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">erase_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.erase_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Description:</dt><dd><p>Erases everything in the Shape, including all PointMarks and Sections.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.erase_all" title="Graph.erase_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.erase_all()</span></code></a>, <a class="reference internal" href="#Shape.observe" title="Shape.observe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.observe()</span></code></a>, <a class="reference internal" href="#Shape.point_mark" title="Shape.point_mark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.point_mark()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.beginline">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">beginline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.beginline" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.beginline" title="Graph.beginline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.beginline()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.line">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.line" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.line" title="Graph.line"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.line()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.mark">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">mark</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.mark" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.mark" title="Graph.mark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.mark()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.label">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.label" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.label" title="Graph.label"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.label()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.menu_tool">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">menu_tool</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.menu_tool" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">s.menu_tool(&quot;label&quot;,</span> <span class="pre">&quot;procname&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Same as <a class="reference internal" href="graph.html#Graph.menu_tool" title="Graph.menu_tool"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.menu_tool()</span></code></a> for the <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">Graph()</span></code></a> class. When procname is
+called it is given four arguments: type, x, y, keystate. Type = 1,2,3 means
+move, press, release respectively and x and are in model coordinates.
+Keystate reflects the
+state of control (bit 1), shift (bit 2), and meta (bit 3) keys, ie
+control and shift down has a value of 3.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.menu_tool" title="Graph.menu_tool"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.menu_tool()</span></code></a>, <a class="reference internal" href="#Shape.nearest" title="Shape.nearest"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.nearest()</span></code></a>, <a class="reference internal" href="#Shape.push_selected" title="Shape.push_selected"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.push_selected()</span></code></a></p>
+</div>
+<dl>
+<dt>Example:</dt><dd><p>The following example will work if executed in the context of the
+pyramidal cell demo of the neurondemo. It colors red the section
+you click nearest and prints the name and position of the selected section
+as well as the mouse distance the selection.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">ss</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">keystate</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">ss</span><span class="o">.</span><span class="n">color_all</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">arc</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">push_selected</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">arc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ss</span><span class="o">.</span><span class="n">select</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%g</span><span class="s1"> from </span><span class="si">%s</span><span class="s1">(</span><span class="si">%g</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">secname</span><span class="p">(),</span> <span class="n">a</span><span class="p">))</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+
+<span class="n">ss</span><span class="o">.</span><span class="n">menu_tool</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="n">ss</span><span class="o">.</span><span class="n">exec_menu</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.nearest">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">nearest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.nearest" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">shape.nearest(x,</span> <span class="pre">y)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the distance (in model coordinates) to the nearest section.
+The section becomes the selected section of the Shape. It is NOT
+pushed onto the section stack and it is NOT colored. The nearest
+arc position of the selected section as well
+as the section is available from <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#push_section" title="push_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">push_section()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.push_selected">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">push_selected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.push_selected" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">arc</span> <span class="o">=</span> <span class="n">shape</span><span class="o">.</span><span class="n">push_selected</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">arc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="c1"># do something, then end with:</span>
+<span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl class="simple">
+<dt>Description:</dt><dd><p>If there is a selection for the Shape class, then it is pushed onto
+the section stack (becomes the currently accessed section) and the
+arc position (0 to 1) returned. If no section is selected the function
+returns -1 and no section is pushed.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The pushed section can be read via <code class="docutils literal notranslate"><span class="pre">h.cas()</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is important that a <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#pop_section" title="pop_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">pop_section()</span></code></a> be executed if a section
+is pushed onto the stack.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The arc position is relevant only if the section was selected using
+<a class="reference internal" href="#Shape.nearest" title="Shape.nearest"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.nearest()</span></code></a>. Note, e.g., that <a class="reference internal" href="#Shape.select" title="Shape.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Shape.select()</span></code></a> does not
+set the arc position.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.len_scale">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">len_scale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.len_scale" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.len_scale(scl,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The drawing of the section length (for the specified section) in the Shape
+scene is scaled by the factor. Diameter is drawn normally.
+Note that this does not change the physical length of the section but
+only its appearance in this Shape instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Shape.rotate">
+<span class="sig-prename descclassname"><span class="pre">Shape.</span></span><span class="sig-name descname"><span class="pre">rotate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Shape.rotate" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">shape.rotate()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">shape.rotate(xorg,</span> <span class="pre">yorg,</span> <span class="pre">zorg,</span> <span class="pre">xrad,</span> <span class="pre">yrad,</span> <span class="pre">zrad)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no args the view is in the xy plane.
+With args, incrementally rotate about the indicated origin by the
+amount given in radians around the current view coordinates (order is
+sequentially about x,y,z axes)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rvarplt.html" class="btn btn-neutral float-left" title="RangeVarPlot" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="notify.html" class="btn btn-neutral float-right" title="Notification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

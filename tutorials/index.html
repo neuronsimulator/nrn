@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python tutorials &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to Python" href="pythontutorial.html" />
+    <link rel="prev" title="Other scripting languages" href="../otherscripting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pythontutorial.html">Introduction to Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-neuron-basics.html">Scripting NEURON basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html">Ball and stick 1: Basic cell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html">Ball and stick 2: Build a ring network of ball-and-stick cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html">Ball and stick 3: Extensible network of cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html">Ball and stick 4: Parallel vs serial mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Python tutorials</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="python-tutorials">
+<h1>Python tutorials<a class="headerlink" href="#python-tutorials" title="Link to this heading"></a></h1>
+<p>In this series we have some basic tutorials: an introduction to Python and how to work with NEURON through Python.
+Through the <cite>Ball and Stick</cite> tutorial, we learn how to develop a model starting from a single cell through a network.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Basic tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pythontutorial.html">Introduction to Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripting-neuron-basics.html">Scripting NEURON basics</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Ball and Stick tutorial</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ball-and-stick-1.html">Ball and stick 1: Basic cell</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Load-NEURON">Load NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Defining-the-cell-morphology">Defining the cell morphology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Instrumentation">Instrumentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Run-the-simulation">Run the simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Plot-the-results">Plot the results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Simulation-studies">Simulation studies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Exercise">Exercise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html#Advanced-exercise">Advanced exercise</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ball-and-stick-2.html">Ball and stick 2: Build a ring network of ball-and-stick cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#Generic-cell-class">Generic cell class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#Adjusting-position-and-orientation">Adjusting position and orientation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#Construct-and-position-our-cells">Construct and position our cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#A-first-synapse,-and-input-via-a-NetStim">A first synapse, and input via a NetStim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#Running-and-plotting-a-simulation">Running and plotting a simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html#Connecting-the-cells">Connecting the cells</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ball-and-stick-3.html">Ball and stick 3: Extensible network of cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html#Loading-libraries">Loading libraries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html#Generic-Cell-class">Generic Cell class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html#Make-a-Ring-class">Make a Ring class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html#Test-the-network">Test the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html#Explore-effects-of-parameters">Explore effects of parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ball-and-stick-4.html">Ball and stick 4: Parallel vs serial mode</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html#Parallel-communication-in-NEURON">Parallel communication in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html#Test-MPI-and-Parallel-NEURON">Test MPI and Parallel NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html#Back-to-the-example">Back to the example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html#Test-the-model">Test the model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html#Gathering-spikes">Gathering spikes</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../otherscripting.html" class="btn btn-neutral float-left" title="Other scripting languages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pythontutorial.html" class="btn btn-neutral float-right" title="Introduction to Python" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

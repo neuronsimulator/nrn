@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conceptual Overview of Sections &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Section and Segment Selection" href="secspec.html" />
+    <link rel="prev" title="Topology" href="../topology.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../topology.html">Topology</a></li>
+      <li class="breadcrumb-item active">Conceptual Overview of Sections</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../python/modelspec/programmatic/topology/geometry.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/hoc/modelspec/programmatic/topology/geometry.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#arc3d" title="Link to this definition">arc3d</a> &middot; <a href="#area" title="Link to this definition">area</a> &middot; <a href="#define_shape" title="Link to this definition">define_shape</a> &middot; <a href="#diam" title="Link to this definition">diam</a> &middot; <a href="#diam3d" title="Link to this definition">diam3d</a> &middot; <a href="#diam_changed" title="Link to this definition">diam_changed</a> &middot; <a href="#distance" title="Link to this definition">distance</a> &middot; <a href="#getSpineArea" title="Link to this definition">getSpineArea</a> &middot; <a href="#L" title="Link to this definition">L</a> &middot; <a href="#n3d" title="Link to this definition">n3d</a> &middot; <a href="#pt3dadd" title="Link to this definition">pt3dadd</a> &middot; <a href="#pt3dchange" title="Link to this definition">pt3dchange</a> &middot; <a href="#pt3dclear" title="Link to this definition">pt3dclear</a> &middot; <a href="#pt3dconst" title="Link to this definition">pt3dconst</a> &middot; <a href="#pt3dinsert" title="Link to this definition">pt3dinsert</a> &middot; <a href="#pt3dremove" title="Link to this definition">pt3dremove</a> &middot; <a href="#pt3dstyle" title="Link to this definition">pt3dstyle</a> &middot; <a href="#Ra" title="Link to this definition">Ra</a> &middot; <a href="#ri" title="Link to this definition">ri</a> &middot; <a href="#setSpineArea" title="Link to this definition">setSpineArea</a> &middot; <a href="#spine3d" title="Link to this definition">spine3d</a> &middot; <a href="#x3d" title="Link to this definition">x3d</a> &middot; <a href="#y3d" title="Link to this definition">y3d</a> &middot; <a href="#z3d" title="Link to this definition">z3d</a></p><section id="conceptual-overview-of-sections">
+<span id="hoc-geometry-section"></span><span id="hoc-geometry"></span><h1>Conceptual Overview of Sections<a class="headerlink" href="#conceptual-overview-of-sections" title="Link to this heading"></a></h1>
+<p>Sections are unbranched lengths of continuous cable connected together to form
+a neuron. Sections can be connected to form
+any tree-shaped structure but loops are not permitted. (You may, however,
+develop membrane mechanisms, such as electrical gap junctions
+which do not have the loop restriction. But be aware that the electrical
+current flows through such connections are calculated by a modified euler
+method instead of the more numerically robust fully implicit/crank-nicholson
+methods)</p>
+<p>Do not confuse sections with segments. Sections are divided into segments
+of equal length for numerical simulation purposes (see <a class="reference internal" href="../topology.html#nseg" title="nseg"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">nseg</span></code></a>).
+NEURON uses segments to represent the electrical circuit shown below.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>          Ra
+o/`--o--&#39;\/\/`--o--&#39;\/\/`--o--&#39;\/\/`--o--&#39;\o v
+     |          |          |          |
+    ---        ---        ---        ---
+   |   |      |   |      |   |      |   |
+    ---        ---        ---        ---
+     |          |          |          |
+-------------------------------------------- ground
+</pre></div>
+</div>
+<p>Such segments are similar to
+compartments in compartmental modeling programs.</p>
+<hr class="docutils" />
+<section id="geometry">
+<span id="hoc-geometry-geometry"></span><h2>Geometry<a class="headerlink" href="#geometry" title="Link to this heading"></a></h2>
+<p>Section geometry is used to compute the area and axial resistance of each segment.</p>
+<p>There are two ways to specify section geometry:</p>
+<ol class="arabic simple">
+<li><p>The stylized method simply specifies parameters for length and diameter.</p></li>
+<li><p>The 3-D method specifies
+a section’s shape, orientation, and location in three dimensions.</p></li>
+</ol>
+<p>Choose the stylized method if the notions of cable length and diameter
+are authoritative and where 3-d shape is irrelevant. For plotting purposes,
+length and diameter will be used to generate 3-d info automatically for
+a stylized straight cylinder. (see <a class="reference internal" href="#define_shape" title="define_shape"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">define_shape()</span></code></a>)</p>
+<p>Choose the 3-D method if the shape comes from 3-d reconstruction data
+or if your 3-d visualization is paramount. This method makes the 3-d info
+authoritative and automatically
+determines the abstract cable’s length and diameter.
+With this method, you may change a section’s length/diameter only by
+changing its 3-d info. (but see <a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a>)</p>
+<section id="stylized-specification-of-geometry">
+<h3>Stylized specification of geometry<a class="headerlink" href="#stylized-specification-of-geometry" title="Link to this heading"></a></h3>
+<p>For simulations one needs to specify L, nseg, diam, Ra, and connectivity.</p>
+<dl class="simple">
+<dt>L</dt><dd><p>For each section, L is the length of the entire section in microns.</p>
+</dd>
+<dt>nseg</dt><dd><p>The section is divided into nseg compartments of length L/nseg.
+Membrane potential will be computed at the ends of the section and the
+middle of each compartment.</p>
+</dd>
+<dt>diam</dt><dd><p>The diameter in microns.
+Note that diam is a range variable and
+therefore must be respecified whenever <a class="reference internal" href="../topology.html#nseg" title="nseg"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">nseg</span></code></a> is changed.</p>
+</dd>
+<dt>Ra</dt><dd><p>Axial resistivity in ohm-cm.</p>
+</dd>
+<dt>connectivity</dt><dd><p>This is established with the <a class="reference internal" href="../topology.html#hoc-keyword-connect"><span class="std std-ref">connect</span></a> command and defines the
+parent of the section, which end of the section
+is attached to the parent, and where on the parent the
+attachment takes place. To avoid confusion, it is best to attach the
+0 end of a section to the 1 end of its parent.</p>
+</dd>
+</dl>
+<p>In the stylized specification, the shape model used for a section is
+a sequence of right circular cylinders of length, L/nseg, with diameter
+given by the diam range variable at the center of each segment.
+The area of a segment is PI*diam*L/nseg (micron2) and the half-segment axial
+resistance is <code class="docutils literal notranslate"><span class="pre">.01*Ra*(L/2/nseg)/(PI*(diam/2)^2)</span></code>. The .01 factor is necessary
+to convert ohm-cm micron/micron2 to MegOhms. Ends of cylinders are not
+counted in the area and, in fact, the areas are very close to those of
+truncated cones as long as the diameter does not change too much.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall delete_section()
+create a
+access a
+nseg = 11
+Ra = 100
+L=1000
+diam(0:1)=11:100
+for (x) print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2)
+</pre></div>
+</div>
+<p>Note that the area (and length) of the 0,1 terminal ends is equal to 0
+and the axial resistance
+is the sum of the adjacent half-segment resistances between segment and
+parent segment. Such, niceties allow the spatial discretization error to
+be proportional to <code class="docutils literal notranslate"><span class="pre">(1/nseg)^2</span></code>. However, for second order correctness,
+all point processes must be located at the center of the segments or at the
+ends and all branches should be connected at the ends or centers of segments.
+Note that if one increases nseg by a factor of 3, old centers are preserved.</p>
+<p>For single compartment simulations it is most convenient to choose
+a membrane area of 100 micron2 so that point process currents (nanoamps)
+are equivalent to density currents (milliamps/cm2).</p>
+<p>Also note that a single compartment of length = diameter has the same
+effective area as that of a sphere of the same diameter.</p>
+<dl>
+<dt>Example:</dt><dd><p>The following example demonstrates the automatic 3-d shape construction.
+The root section “a” is drawn with its 0 end (left) at the origin and is colored
+red.</p>
+<p>Sections connected to its 1 end (sections b, c, d)
+get drawn from left to right. Sections
+descended from the 0 end (section e) of the root get drawn from right to left.</p>
+<p>Especially note the diameter pattern of section c whose “1” end is connected
+to the “b” parent. You don’t have to understand this if you always connect
+the “0” end to the parent.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall delete_section()
+create a, b, c, d, e
+connect b(0), a(1)
+connect c(1), b(1)
+connect d(0), b(1)
+connect e(0), a(0)
+forall nseg=21
+forall L=100
+forall diam(0:1) = 10:40
+
+objref s
+s = new Shape()
+s.show(0)
+a s.color(2)
+topology()
+finitialize()
+forall {
+        print secname()
+        for i=0,n3d()-1 print i, x3d(i), y3d(i), z3d(i), diam3d(i)
+}
+</pre></div>
+</div>
+<p>If you change the diameter or length, the Shape instances are
+automatically redrawn or when <a class="reference internal" href="../../../visualization/notify.html#doNotify" title="doNotify"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">doNotify()</span></code></a> is called.
+Segment area and axial resistance will be automatically recomputed prior
+to their use.</p>
+<p>Under some circumstances, involving nonlinearly varying diameters across
+a section,
+at first sight surprising results can occur
+when the stylized method is used and a Shape instance is created.
+This is because under a define_shape() with no pre-existing
+3-d points in a section, a number of 3-d points is created equal to
+the number of segments plus the end areas. When 3-d points exist,
+they determine the calculation of L, diam, area, and ri. Thus diam
+can change slightly merely due to shape creation. When
+L and diam are changed, there is first a change to the 3-d points and
+then L and diam are updated to reflect the actual values of these
+3-d points. Due to multiple interpolation effects, specifying a nonlinearly
+varying diam will, in general, not give exactly the same diameter values as the
+case where no 3-d information exists. This effect is illustrated in the
+following example</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall delete_section()
+objref s
+proc pr() {
+pt3dclear()
+nseg = $1
+diam = 10
+diam(.34:.66) = 20:20
+define_shape()
+for(x) print x*L, diam(x), area(x), ri(x)
+}
+
+xpanel(&quot;change nseg&quot;)
+xradiobutton(&quot;nseg = 3&quot;, &quot;pr(3)&quot;)
+xradiobutton(&quot;nseg = 11&quot;, &quot;pr(11)&quot;)
+xradiobutton(&quot;nseg = 101&quot;, &quot;pr(101)&quot;)
+xpanel()
+
+
+create a
+access a
+nseg=3
+{Ra=100 L=100}
+
+
+diam=10
+diam(.34:.66) = 20:20
+
+for(x) print x*L, diam(x), area(x), ri(x)
+
+s = new Shape()
+s.show(0)
+
+for i=0, n3d()-1 print i, arc3d(i), diam3d(i)
+print &quot;L=&quot;, L
+for(x) print x*L, diam(x), area(x), ri(x)
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>The difference is that the 3-d points define a series of truncated cones
+instead of a series of right circular cylinders. The difference is reduced
+with larger nseg. With the stylized method, abrupt
+changes in diameter should only take place at the
+boundaries of sections if you wish to view shape and also make use of
+the fewest possible number of segments. But remember, end area of the
+abrupt changes is not calculated. For that, you need an explicit pair
+of 3-d points with the same location and different diameters.</p>
+</section>
+<section id="d-specification-of-geometry">
+<h3>3-D specification of geometry<a class="headerlink" href="#d-specification-of-geometry" title="Link to this heading"></a></h3>
+<p>3-d information for a section is kept in a list of (x,y,z,diam) “points”.
+The first point is associated with the end of the section that is connected
+to the parent (NB: Not necessarily the 0 end) and the
+last point is associated with the opposite end. There must be at least two
+points and they should be ordered in terms of monotonically increasing
+arc length.</p>
+<p>The root section is treated as the origin of the cell with respect to
+3-d position.  When any section’s 3-d shape or length changes, all the
+sections in the child trees have their 3-d information translated to
+correspond to the new position.  So, assuming the soma is the root
+section, to translate an entire cell to another location it suffices to
+change only the location of the soma.  It will avoid confusion if,
+except for good reason, one attaches only the 0 end of a child section
+to a parent.  This will ensure that the diam(x) as x ranges from 0 to 1
+has the same sense as diam3d(i) as i ranges from 0 to n3d()-1.</p>
+<p>The shape model used for a section  when the pt3d list is non-empty
+is that of a sequence of truncated cones in which the pt3d points define
+the location and diameter of the ends. From this sequence of points,
+the effective area, diameter, and resistance is computed for each segment
+via a trapezoidal integration across the segment length. This takes
+into account the extra area due to <code class="docutils literal notranslate"><span class="pre">sqrt(dx^2</span> <span class="pre">+</span> <span class="pre">dy^2)</span></code> for fast changing
+diameters (even degenerate cones of 0 length can be specified, ie. two
+points with same coordinates but different diameters)
+but no attempt is made to deal with centroid curvature effects
+on the area. Note that the number of 3d points used to describe a shape
+has nothing to do with nseg and does not affect simulation speed.
+(Although, of course, it does affect how fast one can draw the shape)</p>
+<dl>
+<dt>Example:</dt><dd><p>The following illustrates the notion of the 3-d points as describing
+a sequence of cones. Note that the segment area and resistance is
+different than the
+simplistic calculation used in the stylized method. In this case
+the area of the segment has very little to do
+with the diameter of the center of the segment.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall delete_section()
+
+create a
+access a
+Ra=100
+nseg = 11
+pt3dclear()
+for i=0,30 {
+        x = PI*i/30
+        pt3dadd(200*sin(x), 200*cos(x), 0, 100*sin(4*x))
+}
+objref s
+s = new Shape()
+s.show(0)
+print L
+for (x) print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2)
+</pre></div>
+</div>
+<p>Note that at one point the diameter is numerically 0 and
+the axial resistance becomes
+essentially infinite thus decoupling the adjacent segments. Take care to
+avoid constructing spheres with a beginning and ending diameter of 0.
+No current
+would flow from the end to a connecting section. The end diameter should be
+the diameter of the end of the connecting section.</p>
+<p>The following loads the pyramidal cell 3-d reconstruction from the demo
+directory of your neuron system.
+Notice that you can modify the length only if the pt3dconst mode is 1.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall delete_section()
+
+xopen(&quot;$(NEURONHOME)/demo/pyramid.nrn&quot;)
+mode = 1
+pt3dconst(mode)
+objref s
+s = new Shape()
+s.action(&quot;dendrite_1[8] s.select()&quot;)
+
+dendrite_1[8] s.color(2)
+
+xpanel(&quot;Change Length&quot;)
+xvalue(&quot;dendrite_1[8].L&quot;, &quot;dendrite_1[8].L&quot;, 1)
+xcheckbox(&quot;Can&#39;t change length&quot;, &amp;mode, &quot;pt3dconst(mode)&quot;)
+xpanel()
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pt3dclear" title="pt3dclear"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dclear()</span></code></a>, <a class="reference internal" href="#pt3dadd" title="pt3dadd"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dadd()</span></code></a>, <a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a>, <a class="reference internal" href="#pt3dstyle" title="pt3dstyle"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dstyle()</span></code></a>, <a class="reference internal" href="#n3d" title="n3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">n3d()</span></code></a>, <a class="reference internal" href="#x3d" title="x3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">x3d()</span></code></a>, <a class="reference internal" href="#y3d" title="y3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">y3d()</span></code></a>, <a class="reference internal" href="#z3d" title="z3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">z3d()</span></code></a>, <a class="reference internal" href="#diam3d" title="diam3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">diam3d()</span></code></a>, <a class="reference internal" href="#arc3d" title="arc3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">arc3d()</span></code></a>
+<a class="reference internal" href="#getSpineArea" title="getSpineArea"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">getSpineArea()</span></code></a>, <a class="reference internal" href="#setSpineArea" title="setSpineArea"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">setSpineArea()</span></code></a>, <a class="reference internal" href="#spine3d" title="spine3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">spine3d()</span></code></a></p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#define_shape" title="define_shape"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">define_shape()</span></code></a>, <a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a></p>
+</div>
+<p>If 3-D shape is not an issue it is sufficient to specify the section variables
+L (length in microns),  Ra (axial resistivity in ohm-cm), and the range variable
+diam (diameter in microns).</p>
+<p>A list of 3-D points with corresponding diameters describes the geometry
+of a given section.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="defining-the-3d-shape">
+<h1>Defining the 3D Shape<a class="headerlink" href="#defining-the-3d-shape" title="Link to this heading"></a></h1>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dclear">
+<span class="sig-name descname"><span class="pre">pt3dclear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dclear" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">buffersize</span> <span class="pre">=</span>&#160; <span class="pre">pt3dclear()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">buffersize</span> <span class="pre">=</span>&#160; <span class="pre">pt3dclear(buffersize)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Destroy the 3d location info in the currently accessed section.
+With an argument, that amount of space is allocated for storage of
+3-d points in that section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dadd">
+<span class="sig-name descname"><span class="pre">pt3dadd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dadd" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pt3dadd(x,y,z,d)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Add the 3d location and diameter point at the end of the current pt3d
+list. Assume that successive additions increase the arc length
+monotonically. When pt3d points exist in a section they are used
+to compute <em>diam</em> and <em>L</em>. When <em>diam</em> or <em>L</em> are changed and <code class="docutils literal notranslate"><span class="pre">pt3dconst()==0</span></code>
+the 3-d info is changed to be consistent with the new values of
+<em>L</em> and <em>diam</em>. (Note: When <em>L</em> is changed, <code class="docutils literal notranslate"><span class="pre">diam_shape()</span></code> should be executed
+to adjust the 3-d info so that branches appear connected.)
+The existence of a spine at this point is signaled
+by a negative value for <em>d</em>.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dconst">
+<span class="sig-name descname"><span class="pre">pt3dconst</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dconst" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pt3dconst(0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">pt3dconst(1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If <code class="docutils literal notranslate"><span class="pre">pt3dconst</span></code> is set at 0, newly assigned values for <em>d</em> and <em>L</em> will
+automatically update pre-existing 3d information.
+<code class="docutils literal notranslate"><span class="pre">pt3dconst</span></code> returns its previous state on each call. Its original value is 0.</p>
+<p>Note that the <em>diam</em> information transferred to the 3d point information
+comes from the current diameter of the segments and does not change
+the number of 3d points.  Thus if there are a lot of 3d points the
+shape will appear as a string of uniform diameter cylinders each of
+length L/nseg. ie. after transfer <code class="docutils literal notranslate"><span class="pre">diam3d(i)</span> <span class="pre">==</span> <span class="pre">diam(arc3d(i))</span></code>.
+Then, after a call to an internal function such as <code class="docutils literal notranslate"><span class="pre">area()</span></code> or
+<code class="docutils literal notranslate"><span class="pre">finitialize()</span></code>, the 3d point info will be used to determine the values
+of the segment diameters.</p>
+<p>Because of the three separate interpolations:
+hoc range spec -&gt; segment diameter -&gt; 3d point diam -&gt; segment diameter,
+the final values of the segment diameter may be different from the
+case where 3d info does not exist.</p>
+<p>Because of the surprises noted above, when using 3d points
+consider treating them as the authoritative diameter info and set
+<code class="docutils literal notranslate"><span class="pre">pt3dconst(1)</span></code>.</p>
+<p>3d points are automatically generated when one uses
+the nrniv Shape class. If you want the flexibility of being able
+to specify 3d diameter using range variable notation
+(eg diam(0:1) = 10:20) you will need to experiment with <code class="docutils literal notranslate"><span class="pre">nseg</span></code> and
+<code class="docutils literal notranslate"><span class="pre">n3d()</span></code> in order to understand the exact consequences of interpolation.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pt3dstyle" title="pt3dstyle"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dstyle()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dstyle">
+<span class="sig-name descname"><span class="pre">pt3dstyle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dstyle" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">style</span> <span class="pre">=</span> <span class="pre">pt3dstyle()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">style</span> <span class="pre">=</span> <span class="pre">pt3dstyle(0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">style</span> <span class="pre">=</span> <span class="pre">pt3dstyle(1,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">style</span> <span class="pre">=</span> <span class="pre">pt3dstyle(1,</span> <span class="pre">&amp;x,</span> <span class="pre">&amp;y,</span> <span class="pre">&amp;z)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>With no args, returns 1 if using a logical connection point.</p>
+<p>With a first arg of 0, then style is NO logical connection point
+and (with <a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a> == 0 and define_shape is executed)
+the 3-d location info is translated so the first 3-d point coincides with
+the parent connection location. This is the classical and default behavior.</p>
+<p>With a first arg of 1 and x,y,z value arguments, those values are used
+to define a logical connection point relative to the first 3-d point.
+When <a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a> == 0 and define_shape is executed, the 3-d location
+info is translated so that the logical connection point coincides
+with the parent connection location. Note that logical connection points
+have absolutely no effect on the electrical properties of the structure since
+they do not affect the length or area of a section.
+They are useful mostly for accurate visualization of a dendrite connected
+to the large diameter edge of a soma that happens to be far from the
+soma centroid. The logical connection point should be set to the location
+of the parent centroid connection, i.e. most often the 0.5 location
+of the soma. Note, that under translation and scaling,
+the relative position between
+the logical connection point and the first 3-d point is preserved.</p>
+<p>With a first arg of 1 and x,y,z reference arguments, the x,y,z variables
+are assigned the values of the logical connection point (if the style
+in fact was 1).</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pt3dconst" title="pt3dconst"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dconst()</span></code></a>, <a class="reference internal" href="#define_shape" title="define_shape"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">define_shape()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dinsert">
+<span class="sig-name descname"><span class="pre">pt3dinsert</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dinsert" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pt3dinsert(i,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z,</span> <span class="pre">diam)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Insert the point (so it becomes the i’th point). If i is equal to
+<a class="reference internal" href="#n3d" title="n3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">n3d()</span></code></a> the point is appended (equivalent to <a class="reference internal" href="#pt3dadd" title="pt3dadd"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dadd()</span></code></a>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dremove">
+<span class="sig-name descname"><span class="pre">pt3dremove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dremove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pt3dremove(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Remove the i’th point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pt3dchange">
+<span class="sig-name descname"><span class="pre">pt3dchange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pt3dchange" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pt3dchange(i,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z,</span> <span class="pre">diam)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">pt3dchange(i,</span> <span class="pre">diam)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Change the i’th 3-d point info. If only two args then the second arg
+is the diameter and the location is unchanged.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pt3dchange(5, x3d(5), y3d(5), z3d(5), (spine3d(5)+1)/2 * diam3d(5))
+</pre></div>
+</div>
+<p>leaves the pt3d info unchanged.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="reading-3d-data-from-neuron">
+<h1>Reading 3D Data from NEURON<a class="headerlink" href="#reading-3d-data-from-neuron" title="Link to this heading"></a></h1>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="n3d">
+<span class="sig-name descname"><span class="pre">n3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#n3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n3d()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the number of 3d locations stored in the currently accessed section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="x3d">
+<span class="sig-name descname"><span class="pre">x3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#x3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x3d(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the x coordinate of the ith point in the 3-d list of the
+currently accessed section.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#y3d" title="y3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">y3d()</span></code></a>, <a class="reference internal" href="#z3d" title="z3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">z3d()</span></code></a>, <a class="reference internal" href="#arc3d" title="arc3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">arc3d()</span></code></a>, <a class="reference internal" href="#diam3d" title="diam3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">diam3d()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="y3d">
+<span class="sig-name descname"><span class="pre">y3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#y3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">y3d(i)</span></code></p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#x3d" title="x3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">x3d()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="z3d">
+<span class="sig-name descname"><span class="pre">z3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#z3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">z3d(i)</span></code></p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#x3d" title="x3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">x3d()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="diam3d">
+<span class="sig-name descname"><span class="pre">diam3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#diam3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">diam3d(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the diameter of the ith 3d point of the currently accessed
+section.
+<code class="docutils literal notranslate"><span class="pre">diam3d(i)</span></code> will always be positive even
+if there is a spine at the ith point.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#spine3d" title="spine3d"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">spine3d()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="arc3d">
+<span class="sig-name descname"><span class="pre">arc3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arc3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">arc3d(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This is the arc length position of the ith point in the 3d list.
+<code class="docutils literal notranslate"><span class="pre">arc3d(n3d()-1)</span> <span class="pre">==</span> <span class="pre">L</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="spine3d">
+<span class="sig-name descname"><span class="pre">spine3d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#spine3d" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">spine3d(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return 0 or 1 depending on whether a spine exists at this point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="setSpineArea">
+<span class="sig-name descname"><span class="pre">setSpineArea</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#setSpineArea" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">setSpineArea(area)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The area of an average spine in um2. <code class="docutils literal notranslate"><span class="pre">setSpineArea</span></code> merely adds to
+the total area of a segment.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="getSpineArea">
+<span class="sig-name descname"><span class="pre">getSpineArea</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#getSpineArea" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">getSpineArea()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the area of the average spine.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="define_shape">
+<span class="sig-name descname"><span class="pre">define_shape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#define_shape" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">define_shape()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Fill in empty pt3d information with a naive algorithm based on current
+values for <em>L</em> and <em>diam</em>. Sections that already have pt3d info are
+translated to ensure that their first point is at the same location
+as the parent. But see <a class="reference internal" href="#pt3dstyle" title="pt3dstyle"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">pt3dstyle()</span></code></a> with regard to the use of
+a logical connection point if the translation ruins the
+visualization.</p>
+<p>Note: This may not work right when a branch is connected to
+the interior of a parent section <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;</span> <span class="pre">x</span> <span class="pre">&lt;</span> <span class="pre">1</span></code>,
+rather only when it is connected to the parent at 0 or 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="area">
+<span class="sig-name descname"><span class="pre">area</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#area" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">area(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the area (in square microns) of the segment which contains <em>x</em>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">area(0)</span></code> and <code class="docutils literal notranslate"><span class="pre">area(1)</span></code> = 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="ri">
+<span class="sig-name descname"><span class="pre">ri</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ri" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">ri(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the resistance (in megohms) between the center of the segment containing x
+and its parent segment. This can be used to compute axial current
+given the voltage at two adjacent points. If there is no parent
+the “infinite” resistance returned is 1e30.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for (x) print x, area(x), ri(x)
+</pre></div>
+</div>
+<p>will print the arc length, the segment area at that arc length, and the resistance along that length
+for the currently accessed section.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="distance">
+<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#distance" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">distance()</span> <span class="pre">or</span> <span class="pre">distance(0,</span> <span class="pre">x)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">len</span> <span class="pre">=</span> <span class="pre">distance(x)</span> <span class="pre">or</span> <span class="pre">len</span> <span class="pre">=</span> <span class="pre">distance(1,</span> <span class="pre">x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Compute the path distance between two points on a neuron.
+If a continuous path does not exist the return value is 1e20.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">distance()</span></code> with no arguments</dt><dd><p>specifies the origin as location 0
+of the currently accessed section.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">distance(x)</span> <span class="pre">(0&lt;=x&lt;=1)</span></code></dt><dd><p>returns the distance (in microns) from the origin to
+this point on the currently accessed section.</p>
+</dd>
+</dl>
+<p>To overcome the
+old initialization restriction, distance(0, x) can be used to set the
+origin. Note that distance is measured from the centers of
+segments.</p>
+</dd>
+<dt>Example:</dt><dd><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create a, b
+connect b(0), a(1)
+a { L = 1000  nseg = 5 }
+b { L = 200   nseg = 5 }
+
+{ a distance(0, 0.5) } // origin is center of a
+b print distance(0.0) // 500
+b print distance(0.5) // 600
+b print distance(1.0) // 700
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When subtrees are connected by <a class="reference internal" href="../network/parcon.html#ParallelContext.multisplit" title="ParallelContext.multisplit"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.multisplit()</span></code></a> , the
+distance function returns 1e20 if the path spans the split location.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../../visualization/rvarplt.html#RangeVarPlot" title="RangeVarPlot"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">RangeVarPlot</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="diam_changed">
+<span class="sig-name descname"><span class="pre">diam_changed</span></span><a class="headerlink" href="#diam_changed" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">diam_changed</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Signals the system that the coefficient matrix needs to be
+recalculated.</p>
+<p>This is not needed since <code class="docutils literal notranslate"><span class="pre">Ra</span></code> is now a section variable
+and automatically sets diam_changed whenever any sections Ra is
+changed.
+Changing diam or any pt3d value will cause it to be set automatically.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="L">
+<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#L" title="Link to this definition"></a></dt>
+<dd><p>Length of a section in microns.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="diam">
+<span class="sig-name descname"><span class="pre">diam</span></span><a class="headerlink" href="#diam" title="Link to this definition"></a></dt>
+<dd><p>Diameter range variable of a section in microns.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="Ra">
+<span class="sig-name descname"><span class="pre">Ra</span></span><a class="headerlink" href="#Ra" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">Ra</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Axial resistivity in ohm-cm. This used to be a global variable
+so that it was the same for all sections. Now, it is a section
+variable and must be set individually for each section. A simple
+way to set its value is
+<code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">Ra=35.4</span></code></p>
+<p>Prior to 1/6/95 the default value for Ra was 34.5. Presently it is
+35.4.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../topology.html" class="btn btn-neutral float-left" title="Topology" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="secspec.html" class="btn btn-neutral float-right" title="Section and Segment Selection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

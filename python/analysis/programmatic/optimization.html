@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimization &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Miscellaneous" href="misc.html" />
+    <link rel="prev" title="Impedance" href="impedance.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#analysis">Analysis</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Analysis Tools</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="impedance.html">Impedance</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Optimization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">GUI Analysis Tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Analysis Tools</a></li>
+      <li class="breadcrumb-item active">Optimization</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/analysis/programmatic/optimization.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/analysis/programmatic/optimization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#attr_praxis" title="Link to this definition">attr_praxis</a> &middot; <a href="#fit_praxis" title="Link to this definition">fit_praxis</a> &middot; <a href="#pval_praxis" title="Link to this definition">pval_praxis</a> &middot; <a href="#stop_praxis" title="Link to this definition">stop_praxis</a></p><section id="optimization">
+<h1>Optimization<a class="headerlink" href="#optimization" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="fit_praxis">
+<span class="sig-name descname"><span class="pre">fit_praxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fit_praxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">min</span> <span class="pre">=</span> <span class="pre">h.fit_praxis(n,</span> <span class="pre">&quot;funname&quot;,</span> <span class="pre">x._ref_x[0])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">min</span> <span class="pre">=</span> <span class="pre">h.fit_praxis(n,</span> <span class="pre">&quot;funname&quot;,</span> <span class="pre">Vector)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">min</span> <span class="pre">=</span> <span class="pre">h.fit_praxis(...,</span> <span class="pre">...,</span> <span class="pre">...,</span> <span class="pre">&quot;after</span> <span class="pre">quad</span> <span class="pre">statement&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">min</span> <span class="pre">=</span> <span class="pre">h.fit_praxis(efun_as_python_callable,</span> <span class="pre">neuron_vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This is the principal axis method for minimizing a function. See praxis.c
+in the scopmath library.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">&lt;=</span> <span class="pre">n</span> <span class="pre">&lt;</span> <span class="pre">20</span></code></dt><dd><p>is the number of parameters to vary (number
+of arguments to <em>funname</em>).</p>
+</dd>
+<dt><em>funname</em></dt><dd><p>the name of the function to minimize, eg. least square difference between model and data.
+The funname must take two arguments, the first arg
+is the number of elements in second arg vector..</p>
+</dd>
+<dt><em>x</em></dt><dd><p>is a double <a class="reference internal" href="../../programming/math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> of at least length <em>n</em>. Prior to the call set
+it to a guess of the parameter values. On return it contains the
+values of the args that minimize <code class="docutils literal notranslate"><span class="pre">funname()</span></code>.</p>
+</dd>
+</dl>
+<p><em>funname</em> may be either
+an interpreted HOC function or a compiled NMODL function. This form of calling
+cannot optimize Python functions directly.</p>
+<p>If the variable stoprun is set to 1 during a call to fit_praxis, it will
+return immediately (when the current call to  funname returns) with
+a return value and varx values set to the best minimum found so far. Use
+<a class="reference internal" href="#stop_praxis" title="stop_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">stop_praxis()</span></code></a> to stop after finishing the current principal axis calculation.</p>
+<p>The fourth argument, if present, specifies a statement to be executed at
+the end of each principal axis evaluation.</p>
+<p>If the third argument is a Vector, then that style is used to specify
+the initial starting point and return the final value. However the
+function is still called with second arg as a pointer into a double array.</p>
+<p>The Python callable form uses a Python Callable as the function to
+minimize and it must take a single NEURON Vector argument specifying the
+values of the parameters for use in evaluation the function. On entry to
+fit_praxis the Vector specifies the number of parameters and the
+parameter starting values. On return the vector contains the values of
+parameters which generated the least minimum found so far.</p>
+<p>Example: minimize <span class="math notranslate nohighlight">\((x+y - 5)^2 + 5*((x-y) - 15)^2\)</span></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">efun</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">15</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+<span class="n">h</span><span class="o">.</span><span class="n">attr_praxis</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">fit_praxis</span><span class="p">(</span><span class="n">efun</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;e=</span><span class="si">%g</span><span class="s2"> x=</span><span class="si">%g</span><span class="s2"> y=</span><span class="si">%g</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Up to version 4.0.1, the arguments to <em>funname</em> were an explicit
+list of <em>n</em> arguments. ie <code class="docutils literal notranslate"><span class="pre">numarg()==n</span></code>.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#attr_praxis" title="attr_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">attr_praxis()</span></code></a>, <a class="reference internal" href="#stop_praxis" title="stop_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">stop_praxis()</span></code></a>, <a class="reference internal" href="#pval_praxis" title="pval_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">pval_praxis()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="attr_praxis">
+<span class="sig-name descname"><span class="pre">attr_praxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#attr_praxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.attr_praxis(tolerance,</span> <span class="pre">maxstepsize,</span> <span class="pre">printmode)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">previous_index</span> <span class="pre">=</span> <span class="pre">h.attr_praxis(mcell_ran4_index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Set the attributes of the praxis method. This must be called before
+the first call to <a class="reference internal" href="#fit_praxis" title="fit_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a>.</p>
+<dl class="simple">
+<dt>tolerance</dt><dd><p>praxis attempt to return f(x) such that if x0 is the true
+local minimum then <code class="docutils literal notranslate"><span class="pre">norm(x-x0)</span> <span class="pre">&lt;</span> <span class="pre">tolerance</span></code></p>
+</dd>
+<dt>maxstepsize</dt><dd><p>should be set to about the maximum distance from
+initial guess to the minimum.</p>
+</dd>
+<dt>printmode=0</dt><dd><p>no printing</p>
+</dd>
+<dt>printmode=1,2,3</dt><dd><p>more and more verbose</p>
+</dd>
+</dl>
+<p>The single argument form causes praxis to pick its random numbers from
+the the mcellran4 generator beginning at the specified index. This
+allows reproducible fitting. The return value is the previously picked
+index. (see <a class="reference internal" href="../../programming/math/mcran4.html#mcell_ran4" title="mcell_ran4"><code class="xref py py-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="pval_praxis">
+<span class="sig-name descname"><span class="pre">pval_praxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pval_praxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pval</span> <span class="pre">=</span> <span class="pre">h.pval_praxis(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">pval</span> <span class="pre">=</span> <span class="pre">h.pval_praxis(i,</span> <span class="pre">paxis._ref_x[0])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">pval</span> <span class="pre">=</span> <span class="pre">h.pval_praxis(i,</span> <span class="pre">Vector)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the ith principal value. If the second argument is present, <code class="docutils literal notranslate"><span class="pre">pval_praxis</span></code> also fills
+the <a class="reference internal" href="../../programming/math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> with the ith principal axis.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="stop_praxis">
+<span class="sig-name descname"><span class="pre">stop_praxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#stop_praxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.stop_praxis()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.stop_praxis(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Set a flag in the praxis function that will cause it to stop after
+it finishes the current (or ith subsequent)
+principal axis calculation. If this function
+is called before <a class="reference internal" href="#fit_praxis" title="fit_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a>, then praxis will do a single
+(or i) principal axis calculation and then exit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="impedance.html" class="btn btn-neutral float-left" title="Impedance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="misc.html" class="btn btn-neutral float-right" title="Miscellaneous" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

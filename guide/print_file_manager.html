@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Print &amp; File Manager &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The Print &amp; File Manager</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/print_file_manager.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-print-file-manager">
+<span id="print-file-manager"></span><h1>The Print &amp; File Manager<a class="headerlink" href="#the-print-file-manager" title="Link to this heading"></a></h1>
+<p>The Print &amp; File Window Manager (PFWM) has many useful features, especially saving session files, unhiding hidden windows, and bringing up the Window Group Manager. This discussion focuses on printing hard copy and generating PostScript and ASCII output files.</p>
+<img alt="../_images/print1.gif" class="align-center" src="../_images/print1.gif" />
+<p>Fig. 1. Bringing up the Print &amp; File Window Manager.</p>
+<p><span class="menuselection">NEURON Main Menu ‣ Window ‣ Print &amp; File Window Manager brings up the PFWM.</span></p>
+<img alt="../_images/print2.gif" class="align-center" src="../_images/print2.gif" />
+<p>Fig. 2. The PFWM (right lower corner) with several of NEURON’s GUI windows.</p>
+<p>The bottom panel of the PFWM contains two large boxes with red outlines (Fig. 2). The box on the left is a virtual display of the computer monitor: for each of NEURON’s graphical windows, it shows a corresponding blue rectangle. The relative positions and sizes of these rectangles represent the arrangement of NEURON’s windows. The box on the right is a “page composition” or layout area that shows which windows you have selected for printing, and allows you to change their size and location on the hard copy.</p>
+<p>The toolbar just above the red boxes offers two menu buttons (Print, Session) and three radio buttons (select, move, resize) that help you use the PFWM. The radio buttons set the “mode” of the PFWM, i.e. they determine what happens when you click on the rectangles in the virtual display and page layout area. When the PFWM first comes up, it is in select mode and the radio button next to the word “select” is highlighted.</p>
+<section id="how-to-choose-a-window-to-be-printed">
+<h2>How to choose a window to be printed<a class="headerlink" href="#how-to-choose-a-window-to-be-printed" title="Link to this heading"></a></h2>
+<p>First make sure the PFWM is in select mode. If it isn’t, click on “select” in the toolbar.</p>
+<p>Decide which blue rectangle in the virtual display corresponds to the window you want to print. If you’re not sure, drag the window on your screen to a new location, and notice which of the blue rectangles in the virtual screen moves.</p>
+<p>When you’ve decided, place the mouse cursor inside the desired blue rectangle in the virtual display …</p>
+<img alt="../_images/print3.gif" class="align-center" src="../_images/print3.gif" />
+<p>… and press the L mouse button. An outline that represents the selected window will appear in the layout area to the right of the virtual screen. More than one window can be selected for printing on a single page, and they can all be resized and positioned as desired (see below).</p>
+<blockquote>
+<div><img alt="../_images/print4.gif" class="align-center" src="../_images/print4.gif" />
+</div></blockquote>
+</section>
+<section id="page-orientation">
+<h2>Page orientation<a class="headerlink" href="#page-orientation" title="Link to this heading"></a></h2>
+<p>Right now the printout would have portrait orientation.</p>
+<p>To change to landscape, click on the Print button. This pops up a menu with several options. Scroll down to Land/Port …</p>
+<img alt="../_images/print5.gif" class="align-center" src="../_images/print5.gif" />
+<p>… and the page layout toggles to landscape. You can switch back and forth between landscape and portrait orientation by clicking on Land/Port.</p>
+<img alt="../_images/print6.gif" class="align-center" src="../_images/print6.gif" />
+</section>
+<section id="positioning-a-window-in-the-layout-area">
+<h2>Positioning a window in the layout area<a class="headerlink" href="#positioning-a-window-in-the-layout-area" title="Link to this heading"></a></h2>
+<p>Click on “move” in the toolbar to put the PFWM in move mode.</p>
+<img alt="../_images/print7.gif" class="align-center" src="../_images/print7.gif" />
+<p>Then L click inside the window you want to move …</p>
+<img alt="../_images/print8.gif" class="align-center" src="../_images/print8.gif" />
+<p>… and drag it to the desired location.</p>
+<img alt="../_images/print9.gif" class="align-center" src="../_images/print9.gif" />
+</section>
+<section id="resizing-a-window-in-the-layout-area">
+<h2>Resizing a window in the layout area<a class="headerlink" href="#resizing-a-window-in-the-layout-area" title="Link to this heading"></a></h2>
+<p>Click on “resize” in the toolbar to put the PFWM in resize mode.</p>
+<img alt="../_images/print10.gif" class="align-center" src="../_images/print10.gif" />
+<p>Then L click inside the window you want to resize …</p>
+<img alt="../_images/print11.gif" class="align-center" src="../_images/print11.gif" />
+<p>… and drag the outline to the desired size. Note that the aspect ratio is preserved.</p>
+<img alt="guide/fig/print12.gif" class="align-center" src="guide/fig/print12.gif" />
+<p>When resized windows are printed to a PostScript file or a PostScript printer, text elements will be scaled proportionally. Under MSWindows, NEURON can also print directly to a non− PostScript printer (i.e. without first passing through a rasterizer such as ghostscript), but if you do this you will find that font size remains unchanged regardless of how much each window was enlarged or reduced.</p>
+</section>
+<section id="deleting-a-window-from-the-layout-area">
+<h2>Deleting a window from the layout area<a class="headerlink" href="#deleting-a-window-from-the-layout-area" title="Link to this heading"></a></h2>
+<p>What if you don’t really want to print all of the windows you selected? In this example, the undesired window is the PFWM.</p>
+<p>To get rid of it, first make sure that “select” is on. Then put the mouse cursor inside its outline in the layout area …</p>
+<img alt="../_images/print13.gif" class="align-center" src="../_images/print13.gif" />
+<p>… and then press the L mouse button.</p>
+<img alt="../_images/print14.gif" class="align-center" src="../_images/print14.gif" />
+</section>
+<section id="printing-the-contents-of-the-layout-area">
+<h2>Printing the contents of the layout area<a class="headerlink" href="#printing-the-contents-of-the-layout-area" title="Link to this heading"></a></h2>
+<p>Click on the Print button and select the To Printer item from the popup menu.</p>
+<img alt="../_images/print15.gif" class="align-center" src="../_images/print15.gif" />
+<p>This brings up a window that gives you the option of changing where the printed output will be sent. Most MSWindows users should just accept the default (Windows), which will send the printout to the local printer; a different choice may be needed in a networked environment. For Unix or Linux the proper choice would generally be lpr (with optional command line switch).</p>
+<p>Then click on the Accept button.</p>
+<img alt="../_images/print16.gif" class="align-center" src="../_images/print16.gif" />
+</section>
+<section id="creating-a-postscript-output-file">
+<h2>Creating a PostScript output file<a class="headerlink" href="#creating-a-postscript-output-file" title="Link to this heading"></a></h2>
+<p>You may want to save the printout in a PostScript file for later printing or conversion to some other graphics format.</p>
+<p>Click on the Print button and select the Postscript item from the popup menu.</p>
+<img alt="../_images/print17.gif" class="align-center" src="../_images/print17.gif" />
+<p>This brings up a file chooser window in which you can specify the name of the file that will be generated.</p>
+<img alt="../_images/print18.gif" class="align-center" src="../_images/print18.gif" />
+<p>Type in the name of the file you want to create. Then press the Print to file button, and you’re done.</p>
+<img alt="../_images/print19.gif" class="align-center" src="../_images/print19.gif" />
+</section>
+<section id="creating-an-ascii-output-file">
+<h2>Creating an ASCII output file<a class="headerlink" href="#creating-an-ascii-output-file" title="Link to this heading"></a></h2>
+<p>No, this isn’t yet another graphics file format. It’s just a plain text file that contains a printout of the (x, y) coordinate pairs from the most recently created trace in the selected graph window. This can be a convenient way to export numeric results from NEURON to a file that can be read by other programs.</p>
+<p>Creating an ASCII file is very similar to creating a PostScript file. First click on the Print button and select the ASCII item from the popup menu. A file chooser window will appear in which you can type the name of the file that will receive the numeric values in ASCII format.</p>
+<p>The output file will contain a brief header that tells the name of the y variable and how many lines of data there are. Next comes a series of lines in which the x and y coordinates of each point are separated by tabs.</p>
+<p>Graph addvar/addexpr lines 1 201</p>
+<p>x                   Vm</p>
+<p>0                   −65</p>
+<p>0.05                −64.9985 0.1 −64.9971</p>
+<p>9.95                −73.841 10 −73.7917</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

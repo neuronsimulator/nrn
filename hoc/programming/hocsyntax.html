@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOC Syntax &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="HOC Keywords" href="ockeywor.html" />
+    <link rel="prev" title="HOC Language" href="hoc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hoc.html">HOC Language</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">HOC Syntax</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ockeywor.html">HOC Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="io.html">Input and Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="oop.html">Object Oriented Programming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="predec.html">Predeclared Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="hoc.html">HOC Language</a></li>
+      <li class="breadcrumb-item active">HOC Syntax</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/hocsyntax.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/hocsyntax.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#argtype" title="Link to this definition">argtype</a> &middot; <a href="#numarg" title="Link to this definition">numarg</a></p><section id="hoc-syntax">
+<span id="hoc-ocsyntax"></span><span id="index-0"></span><h1>HOC Syntax<a class="headerlink" href="#hoc-syntax" title="Link to this heading"></a></h1>
+<p>HOC was the original programming language supported by NEURON.
+NEURON may also be programmed in Python.</p>
+<section id="comments">
+<span id="index-1"></span><h2>comments<a class="headerlink" href="#comments" title="Link to this heading"></a></h2>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">/*...*/</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">//...</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Comments are similar in style to C++. Enclose any text in /<em>…</em>/ (but
+do not nest them).  The rest of a line after // is a comment.</p>
+</dd>
+</dl>
+</section>
+<section id="expressions">
+<span id="index-2"></span><h2>Expressions<a class="headerlink" href="#expressions" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><p>An expression has a double precision value.  It usually appears as the right
+hand side of an assignment statement.  An expression may be a number,
+variable, function call, or combination of simpler expressions.</p>
+</dd>
+<dt>Options:</dt><dd><p>The ways in which expressions can be combined are listed below
+in order of precedence. e stands for any expression, v stands for any variable
+and operators are
+left associative except for assignment operators which are right associative.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">(e)</span></code></dt><dd><p>grouping</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e^e</span></code></dt><dd><p>exponentiation</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-e</span></code></dt><dd><p>negation</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e*e</span>&#160; <span class="pre">e/e</span>&#160; <span class="pre">e%e</span></code></dt><dd><p>multiplication, division, modulus</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e+e</span>&#160; <span class="pre">e-e</span></code></dt><dd><p>addition, subtraction</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e==e</span>&#160; <span class="pre">e!=e</span>&#160; <span class="pre">e&lt;e</span>&#160; <span class="pre">e&lt;=e</span>&#160; <span class="pre">e&gt;e</span>&#160; <span class="pre">e&gt;=e</span></code></dt><dd><p>logical equal, unequal, less than, less than or equal, greater than,
+greater than or equal. These expressions have the numerical
+value 1 (true) or 0 (false). The expression is considered true if it is
+within <a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a> of being mathematically exact.</p>
+<p>Special logical expressions of the form objref1 == objref2 (and obj != obj)
+are also allowed and return 1 (0) if the object references label the same
+object. This makes the former comparison idiom using
+<a class="reference internal" href="internals.html#object_id" title="object_id"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">object_id()</span></code></a> obsolete. Logical expressions of the strdef1 == strdef2
+cannot be directly compared because of parser consistency reasons. However
+obj1.string1 == obj2.string2 will return true if the strings are identical
+in the sense of <a class="reference internal" href="strings.html#strcmp" title="strcmp"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">strcmp()</span></code></a> .</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e&amp;&amp;e</span></code></dt><dd><p>Logical and. Both expressions
+are always evaluated. A subexpression is considered false if it is within
+<a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a> of 0 and true otherwise. If the entire expression is true
+its value is 1.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">e||e</span></code></dt><dd><p>Logical or. Both expressions are always evaluated.
+A subexpression is considered false if it is within
+<a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a> of 0 and true otherwise. If the entire expression is true
+its value is 1.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">v=e</span>&#160; <span class="pre">v+=e</span>&#160; <span class="pre">v-=e</span>&#160; <span class="pre">v*=e</span>&#160; <span class="pre">v/=e</span></code></dt><dd><p>assignment. others are equivalent to <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">(v</span> <span class="pre">+</span> <span class="pre">e)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">(v</span> <span class="pre">-</span> <span class="pre">e)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">(v</span> <span class="pre">*</span> <span class="pre">e)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">(v</span> <span class="pre">/</span> <span class="pre">e)</span></code>, respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<blockquote>
+<div><p><a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a></p>
+</div></blockquote>
+</div>
+</section>
+<section id="statements">
+<span id="index-3"></span><h2>Statements<a class="headerlink" href="#statements" title="Link to this heading"></a></h2>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">{stmt}</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">{stmt</span> <span class="pre">stmt</span> <span class="pre">...stmt}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A statement is something executable that does not have a value, eg.
+for loops, procedure calls, or a compound statement between braces.
+An expression may be used anywhere a statement is required.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>i = 0   //initialize i
+j = 0   //initialize j
+if(vec.x[i] &lt;= 10 &amp;&amp; i &lt; vec.size()){   //In the parentheses is an expression:
+                                        //if the value of the ith element in vec
+                                        //is less than or equal to 10, and
+                                        //if i is an index within vec
+                                        //
+                                        //Between the braces is/are statement(s):
+        vec1.x[j] = vec.x[i]
+        i = i+1                         //increment i by 1
+        j = j+1                         //increment j by 1
+} else{
+                                        //Here is also a statement
+        i = i+1                         //simply go to the next element of vec
+}
+</pre></div>
+</div>
+<p>Statements exist between the braces following the <code class="docutils literal notranslate"><span class="pre">if</span></code> and <code class="docutils literal notranslate"><span class="pre">else</span></code> commands.
+The parentheses after the <code class="docutils literal notranslate"><span class="pre">if</span></code> command contain an expression.</p>
+</div></blockquote>
+</section>
+<section id="proc">
+<span id="hoc-proc"></span><span id="index-4"></span><h2>proc<a class="headerlink" href="#proc" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="samp docutils literal notranslate"><span class="pre">proc</span> <em><span class="pre">name</span></em><span class="pre">()</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Introduce the definition of a procedure. A procedure does not return a value.
+You should always try to distill your programs into small, manageable
+procedures and functions.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>proc printsquare() {local x
+   x = $1
+   print x*x
+ }
+printsquare(5)
+</pre></div>
+</div>
+<p>prints the square of 5.</p>
+<p>Procedures can also be called within other procedures.
+The code which produces the interactive examples for the <a class="reference internal" href="math/random.html#Random" title="Random"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Random</span></code></a> class contains procedures
+for both creating the buttons which allow you to select parameters as well as for creating
+the histograms which appear on the screen.</p>
+</div></blockquote>
+</section>
+<section id="func">
+<span id="hoc-func"></span><span id="index-5"></span><h2>func<a class="headerlink" href="#func" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="samp docutils literal notranslate"><span class="pre">func</span> <em><span class="pre">name</span></em><span class="pre">()</span> <em><span class="pre">{stmt1,</span> <span class="pre">stmt2,</span> <span class="pre">stmt3...</span></em><span class="pre">}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Introduce the definition of a function.
+A function returns a double precision value.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span> func tan() {
+        return sin($1)/cos($1)
+ }
+ tan(PI/8)
+</pre></div>
+</div>
+<p>creates a function <code class="docutils literal notranslate"><span class="pre">tan()</span></code> which takes one argument (floating point
+or whole number), and contains one
+statement.</p>
+</div></blockquote>
+</section>
+<section id="obfunc">
+<span id="hoc-obfunc"></span><span id="index-6"></span><h2>obfunc<a class="headerlink" href="#obfunc" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="samp docutils literal notranslate"><span class="pre">obfunc</span> <em><span class="pre">name</span></em><span class="pre">()</span> <em><span class="pre">{</span> <span class="pre">statements</span> </em><span class="pre">}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Introduce the definition of a function returning an objref</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>obfunc last() { // arg is List
+        return $o1.object($o1.count - 1)
+}
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="ockeywor.html#hoc-keyword-localobj"><span class="std std-ref">localobj</span></a>, <a class="reference internal" href="ockeywor.html#hoc-keyword-return"><span class="std std-ref">return</span></a></p>
+</div>
+</section>
+<section id="iterator">
+<span id="hoc-keyword-iterator"></span><span id="index-7"></span><h2>iterator<a class="headerlink" href="#iterator" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">iterator</span> <span class="pre">name()</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Define a looping construct to be used subsequently in looping
+over a statement.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>iterator case() {local i
+        for i = 2, numarg() {           //must begin at 2 because the first argument is
+                                        //in reference to the address
+                $&amp;1 = $i                //what is at the address will be changed
+                *iterator_statement*    //This is where the iterator statement will
+                                        //be executed.
+        }
+}
+</pre></div>
+</div>
+<p>In this case</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>x=0
+for case (&amp;x, 1,2,4,7,-25) {
+        print x                 //the iterator statement
+}
+</pre></div>
+</div>
+<p>will print the values 1, 2, 4, 7, -25</p>
+<p>The body of the <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">name(..)</span> <span class="pre">statement</span></code> is executed in the same
+context as a normal for statement. The name is executed in the same
+context as a normal procedure but should use only variables local to the
+iterator.</p>
+</div></blockquote>
+</section>
+<section id="arguments">
+<span id="hoc-arguments"></span><span id="index-8"></span><h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<p>Arguments to functions and procedures are retrieved positionally.
+<code class="docutils literal notranslate"><span class="pre">$1,</span> <span class="pre">$2,</span> <span class="pre">$3</span></code> refer to the first, second, and third scalar arguments
+respectively.</p>
+<p>If “<code class="docutils literal notranslate"><span class="pre">i</span></code>” is declared as a local variable, <code class="docutils literal notranslate"><span class="pre">$i</span></code> refers
+to the scalar argument in the position given by the value of <code class="docutils literal notranslate"><span class="pre">i</span></code>.
+The value of <code class="docutils literal notranslate"><span class="pre">i</span></code> must be in the
+range {1…numarg()}.</p>
+<p>The normal idiom is</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">i=1,</span> <span class="pre">numarg()</span>&#160; <span class="pre">{print</span> <span class="pre">$i}</span></code></p>
+</div></blockquote>
+<p>Scalar arguments use call by value so the variable in the calling
+statement cannot be changed.</p>
+<p>If the calling statement has a ‘&amp;’
+prepended to the variable then it is passed by reference and must
+be retrieved with the
+syntax <code class="docutils literal notranslate"><span class="pre">$&amp;1,</span> <span class="pre">$&amp;2,</span> <span class="pre">...,</span> <span class="pre">$&amp;i</span></code>. If the variable passed by reference
+is a one dimensional array then <code class="docutils literal notranslate"><span class="pre">$&amp;1</span></code> refers to the first (0th) element
+and index i is denoted <code class="docutils literal notranslate"><span class="pre">$&amp;1[i]</span></code>. Warning, NO array bounds checking is
+done and the array is treated as being one-dimensional. A scalar or
+array reference may be passed to another procedure with
+<code class="docutils literal notranslate"><span class="pre">&amp;$&amp;1</span></code>. To save a scalar reference use the <a class="reference internal" href="pointers/pointer.html#Pointer" title="Pointer"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Pointer</span></code></a> class.</p>
+<p>Retrieval of strdef arguments uses the syntax: <code class="docutils literal notranslate"><span class="pre">$s1,</span> <span class="pre">$s2,</span> <span class="pre">...,</span> <span class="pre">$si</span></code>.
+Retrieval of objref arguments uses the syntax: <code class="docutils literal notranslate"><span class="pre">$o1,</span> <span class="pre">$o2,</span> <span class="pre">...,</span> <span class="pre">$oi</span></code>.
+Arguments of type <a class="reference internal" href="ockeywor.html#hoc-keyword-strdef"><span class="std std-ref">strdef</span></a> and <code class="docutils literal notranslate"><span class="pre">objref</span></code> use call by reference so the calling
+value may be changed.</p>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>func mult(){
+        return $1*$2
+}
+</pre></div>
+</div>
+<p>defines a function which multiplies two arguments.
+Therefore <code class="docutils literal notranslate"><span class="pre">mult(4,5)</span></code> will return the value 20.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>proc pr(){
+        print $s3
+        print $1*$2
+        print $o4
+}
+</pre></div>
+</div>
+<p>defines a procedure which first prints the string defined in
+position 3, then prints the product of the two numbers in
+positions 1 and 2, and finally prints the pointer reference to an
+object in position 4.</p>
+<p>For a string ‘<code class="docutils literal notranslate"><span class="pre">s</span></code>’ which is defined as <code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">&quot;hello&quot;</span></code>, and an
+objref ‘<code class="docutils literal notranslate"><span class="pre">r</span></code>’, <code class="docutils literal notranslate"><span class="pre">pr(3,5,s,r)</span></code> will return</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>hello
+15
+Graph[0]
+</pre></div>
+</div>
+<p>assuming <code class="docutils literal notranslate"><span class="pre">r</span></code> refers to the first graph.</p>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-func"><span class="std std-ref">func</span></a>, <a class="reference internal" href="#hoc-proc"><span class="std std-ref">proc</span></a>, <a class="reference internal" href="oop.html#hoc-objref"><span class="std std-ref">objref</span></a>, <a class="reference internal" href="ockeywor.html#hoc-keyword-strdef"><span class="std std-ref">strdef</span></a>, <a class="reference internal" href="pointers/pointer.html#Pointer" title="Pointer"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Pointer</span></code></a>, <a class="reference internal" href="#numarg" title="numarg"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">numarg()</span></code></a>, <a class="reference internal" href="#argtype" title="argtype"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">argtype()</span></code></a></p>
+</div>
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="numarg">
+<span class="sig-name descname"><span class="pre">numarg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#numarg" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">numarg()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Number of arguments passed to a user written hoc function.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-arguments"><span class="std std-ref">Arguments</span></a>, <a class="reference internal" href="#argtype" title="argtype"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">argtype()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="argtype">
+<span class="sig-name descname"><span class="pre">argtype</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#argtype" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">itype</span> <span class="pre">=</span> <span class="pre">argtype(iarg)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The type of the ith arg. The return value is 0 for numbers, 1 for objref,
+2 for strdef, 3 for pointers to numbers, and -1 if the arg does not exist.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-arguments"><span class="std std-ref">Arguments</span></a>, <a class="reference internal" href="#numarg" title="numarg"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">numarg()</span></code></a></p>
+</div>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hoc.html" class="btn btn-neutral float-left" title="HOC Language" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ockeywor.html" class="btn btn-neutral float-right" title="HOC Keywords" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

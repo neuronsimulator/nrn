@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mathematics &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Constants" href="math/constants.html" />
+    <link rel="prev" title="NEURON Python documentation" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Mathematics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="math/constants.html">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/functions.html">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/matrix.html">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/vector.html">Vector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/random.html">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="math/misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">Mathematics</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/programming/mathematics.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/programming/mathematics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mathematics">
+<h1>Mathematics<a class="headerlink" href="#mathematics" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="math/constants.html">Constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="math/functions.html">Common Math Functions (HOC)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#abs"><code class="docutils literal notranslate"><span class="pre">abs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#int"><code class="docutils literal notranslate"><span class="pre">int()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#sqrt"><code class="docutils literal notranslate"><span class="pre">sqrt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#exp"><code class="docutils literal notranslate"><span class="pre">exp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#log"><code class="docutils literal notranslate"><span class="pre">log()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#log10"><code class="docutils literal notranslate"><span class="pre">log10()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#cos"><code class="docutils literal notranslate"><span class="pre">cos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#sin"><code class="docutils literal notranslate"><span class="pre">sin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#tanh"><code class="docutils literal notranslate"><span class="pre">tanh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#atan"><code class="docutils literal notranslate"><span class="pre">atan()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#atan2"><code class="docutils literal notranslate"><span class="pre">atan2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#erf"><code class="docutils literal notranslate"><span class="pre">erf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/functions.html#erfc"><code class="docutils literal notranslate"><span class="pre">erfc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/matrix.html">Matrix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/matrix.html#Matrix"><code class="docutils literal notranslate"><span class="pre">Matrix</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.x"><code class="docutils literal notranslate"><span class="pre">Matrix.x</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.nrow"><code class="docutils literal notranslate"><span class="pre">Matrix.nrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.ncol"><code class="docutils literal notranslate"><span class="pre">Matrix.ncol()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.resize"><code class="docutils literal notranslate"><span class="pre">Matrix.resize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.c"><code class="docutils literal notranslate"><span class="pre">Matrix.c()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.bcopy"><code class="docutils literal notranslate"><span class="pre">Matrix.bcopy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.getval"><code class="docutils literal notranslate"><span class="pre">Matrix.getval()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.setval"><code class="docutils literal notranslate"><span class="pre">Matrix.setval()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.sprowlen"><code class="docutils literal notranslate"><span class="pre">Matrix.sprowlen()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.spgetrowval"><code class="docutils literal notranslate"><span class="pre">Matrix.spgetrowval()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.printf"><code class="docutils literal notranslate"><span class="pre">Matrix.printf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.fprint"><code class="docutils literal notranslate"><span class="pre">Matrix.fprint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.scanf"><code class="docutils literal notranslate"><span class="pre">Matrix.scanf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.mulv"><code class="docutils literal notranslate"><span class="pre">Matrix.mulv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.getrow"><code class="docutils literal notranslate"><span class="pre">Matrix.getrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.getcol"><code class="docutils literal notranslate"><span class="pre">Matrix.getcol()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.getdiag"><code class="docutils literal notranslate"><span class="pre">Matrix.getdiag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.solv"><code class="docutils literal notranslate"><span class="pre">Matrix.solv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.det"><code class="docutils literal notranslate"><span class="pre">Matrix.det()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.mulm"><code class="docutils literal notranslate"><span class="pre">Matrix.mulm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.add"><code class="docutils literal notranslate"><span class="pre">Matrix.add()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.muls"><code class="docutils literal notranslate"><span class="pre">Matrix.muls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.setrow"><code class="docutils literal notranslate"><span class="pre">Matrix.setrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.setcol"><code class="docutils literal notranslate"><span class="pre">Matrix.setcol()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.setdiag"><code class="docutils literal notranslate"><span class="pre">Matrix.setdiag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.zero"><code class="docutils literal notranslate"><span class="pre">Matrix.zero()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.ident"><code class="docutils literal notranslate"><span class="pre">Matrix.ident()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.exp"><code class="docutils literal notranslate"><span class="pre">Matrix.exp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.pow"><code class="docutils literal notranslate"><span class="pre">Matrix.pow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.inverse"><code class="docutils literal notranslate"><span class="pre">Matrix.inverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.svd"><code class="docutils literal notranslate"><span class="pre">Matrix.svd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.transpose"><code class="docutils literal notranslate"><span class="pre">Matrix.transpose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.symmeig"><code class="docutils literal notranslate"><span class="pre">Matrix.symmeig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.to_vector"><code class="docutils literal notranslate"><span class="pre">Matrix.to_vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/matrix.html#Matrix.from_vector"><code class="docutils literal notranslate"><span class="pre">Matrix.from_vector()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/vector.html">Vector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/vector.html#Vector"><code class="docutils literal notranslate"><span class="pre">Vector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.x"><code class="docutils literal notranslate"><span class="pre">Vector.x</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.size"><code class="docutils literal notranslate"><span class="pre">Vector.size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.resize"><code class="docutils literal notranslate"><span class="pre">Vector.resize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.buffer_size"><code class="docutils literal notranslate"><span class="pre">Vector.buffer_size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.get"><code class="docutils literal notranslate"><span class="pre">Vector.get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.set"><code class="docutils literal notranslate"><span class="pre">Vector.set()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.fill"><code class="docutils literal notranslate"><span class="pre">Vector.fill()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.label"><code class="docutils literal notranslate"><span class="pre">Vector.label()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.record"><code class="docutils literal notranslate"><span class="pre">Vector.record()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.play"><code class="docutils literal notranslate"><span class="pre">Vector.play()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.play_remove"><code class="docutils literal notranslate"><span class="pre">Vector.play_remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.indgen"><code class="docutils literal notranslate"><span class="pre">Vector.indgen()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.append"><code class="docutils literal notranslate"><span class="pre">Vector.append()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.insrt"><code class="docutils literal notranslate"><span class="pre">Vector.insrt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.remove"><code class="docutils literal notranslate"><span class="pre">Vector.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.contains"><code class="docutils literal notranslate"><span class="pre">Vector.contains()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.copy"><code class="docutils literal notranslate"><span class="pre">Vector.copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.c"><code class="docutils literal notranslate"><span class="pre">Vector.c()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.cl"><code class="docutils literal notranslate"><span class="pre">Vector.cl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.at"><code class="docutils literal notranslate"><span class="pre">Vector.at()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.from_double"><code class="docutils literal notranslate"><span class="pre">Vector.from_double()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.where"><code class="docutils literal notranslate"><span class="pre">Vector.where()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.indwhere"><code class="docutils literal notranslate"><span class="pre">Vector.indwhere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.indvwhere"><code class="docutils literal notranslate"><span class="pre">Vector.indvwhere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.fwrite"><code class="docutils literal notranslate"><span class="pre">Vector.fwrite()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.fread"><code class="docutils literal notranslate"><span class="pre">Vector.fread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.vwrite"><code class="docutils literal notranslate"><span class="pre">Vector.vwrite()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.vread"><code class="docutils literal notranslate"><span class="pre">Vector.vread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.printf"><code class="docutils literal notranslate"><span class="pre">Vector.printf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.scanf"><code class="docutils literal notranslate"><span class="pre">Vector.scanf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.scantil"><code class="docutils literal notranslate"><span class="pre">Vector.scantil()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.plot"><code class="docutils literal notranslate"><span class="pre">Vector.plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.line"><code class="docutils literal notranslate"><span class="pre">Vector.line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.ploterr"><code class="docutils literal notranslate"><span class="pre">Vector.ploterr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.mark"><code class="docutils literal notranslate"><span class="pre">Vector.mark()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.histogram"><code class="docutils literal notranslate"><span class="pre">Vector.histogram()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.hist"><code class="docutils literal notranslate"><span class="pre">Vector.hist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sumgauss"><code class="docutils literal notranslate"><span class="pre">Vector.sumgauss()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.smhist"><code class="docutils literal notranslate"><span class="pre">Vector.smhist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.ind"><code class="docutils literal notranslate"><span class="pre">Vector.ind()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.addrand"><code class="docutils literal notranslate"><span class="pre">Vector.addrand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.setrand"><code class="docutils literal notranslate"><span class="pre">Vector.setrand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sin"><code class="docutils literal notranslate"><span class="pre">Vector.sin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.apply"><code class="docutils literal notranslate"><span class="pre">Vector.apply()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.reduce"><code class="docutils literal notranslate"><span class="pre">Vector.reduce()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.floor"><code class="docutils literal notranslate"><span class="pre">Vector.floor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.to_python"><code class="docutils literal notranslate"><span class="pre">Vector.to_python()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.from_python"><code class="docutils literal notranslate"><span class="pre">Vector.from_python()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.as_numpy"><code class="docutils literal notranslate"><span class="pre">Vector.as_numpy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.fit"><code class="docutils literal notranslate"><span class="pre">Vector.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.interpolate"><code class="docutils literal notranslate"><span class="pre">Vector.interpolate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.deriv"><code class="docutils literal notranslate"><span class="pre">Vector.deriv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.integral"><code class="docutils literal notranslate"><span class="pre">Vector.integral()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.median"><code class="docutils literal notranslate"><span class="pre">Vector.median()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.medfltr"><code class="docutils literal notranslate"><span class="pre">Vector.medfltr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sort"><code class="docutils literal notranslate"><span class="pre">Vector.sort()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sortindex"><code class="docutils literal notranslate"><span class="pre">Vector.sortindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.reverse"><code class="docutils literal notranslate"><span class="pre">Vector.reverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.rotate"><code class="docutils literal notranslate"><span class="pre">Vector.rotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.rebin"><code class="docutils literal notranslate"><span class="pre">Vector.rebin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.pow"><code class="docutils literal notranslate"><span class="pre">Vector.pow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sqrt"><code class="docutils literal notranslate"><span class="pre">Vector.sqrt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.log"><code class="docutils literal notranslate"><span class="pre">Vector.log()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.log10"><code class="docutils literal notranslate"><span class="pre">Vector.log10()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.tanh"><code class="docutils literal notranslate"><span class="pre">Vector.tanh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.abs"><code class="docutils literal notranslate"><span class="pre">Vector.abs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.index"><code class="docutils literal notranslate"><span class="pre">Vector.index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.min"><code class="docutils literal notranslate"><span class="pre">Vector.min()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.min_ind"><code class="docutils literal notranslate"><span class="pre">Vector.min_ind()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.max"><code class="docutils literal notranslate"><span class="pre">Vector.max()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.max_ind"><code class="docutils literal notranslate"><span class="pre">Vector.max_ind()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sum"><code class="docutils literal notranslate"><span class="pre">Vector.sum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sumsq"><code class="docutils literal notranslate"><span class="pre">Vector.sumsq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.mean"><code class="docutils literal notranslate"><span class="pre">Vector.mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.var"><code class="docutils literal notranslate"><span class="pre">Vector.var()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.stdev"><code class="docutils literal notranslate"><span class="pre">Vector.stdev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.stderr"><code class="docutils literal notranslate"><span class="pre">Vector.stderr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.dot"><code class="docutils literal notranslate"><span class="pre">Vector.dot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.mag"><code class="docutils literal notranslate"><span class="pre">Vector.mag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.add"><code class="docutils literal notranslate"><span class="pre">Vector.add()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.sub"><code class="docutils literal notranslate"><span class="pre">Vector.sub()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.mul"><code class="docutils literal notranslate"><span class="pre">Vector.mul()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.div"><code class="docutils literal notranslate"><span class="pre">Vector.div()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.scale"><code class="docutils literal notranslate"><span class="pre">Vector.scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.eq"><code class="docutils literal notranslate"><span class="pre">Vector.eq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.meansqerr"><code class="docutils literal notranslate"><span class="pre">Vector.meansqerr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="math/vector.html#fourier-analysis">Fourier Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.correl"><code class="docutils literal notranslate"><span class="pre">Vector.correl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.convlv"><code class="docutils literal notranslate"><span class="pre">Vector.convlv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.spctrm"><code class="docutils literal notranslate"><span class="pre">Vector.spctrm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.filter"><code class="docutils literal notranslate"><span class="pre">Vector.filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.fft"><code class="docutils literal notranslate"><span class="pre">Vector.fft()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.trigavg"><code class="docutils literal notranslate"><span class="pre">Vector.trigavg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.spikebin"><code class="docutils literal notranslate"><span class="pre">Vector.spikebin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.psth"><code class="docutils literal notranslate"><span class="pre">Vector.psth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.inf"><code class="docutils literal notranslate"><span class="pre">Vector.inf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/vector.html#Vector.resample"><code class="docutils literal notranslate"><span class="pre">Vector.resample()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/random.html">Pseudo-Random Number Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/mcran4.html">mcell_ran4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/mcran4.html#mcell_ran4"><code class="docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/mcran4.html#use_mcell_ran4"><code class="docutils literal notranslate"><span class="pre">use_mcell_ran4()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/mcran4.html#mcell_ran4_init"><code class="docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="math/random.html#random-class">Random Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/random.html#Random"><code class="docutils literal notranslate"><span class="pre">Random</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="math/random.html#nmodlrandom-class">NMODLRandom Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/random.html#NMODLRandom"><code class="docutils literal notranslate"><span class="pre">NMODLRandom</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/guimath.html">GUIMath</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/guimath.html#GUIMath"><code class="docutils literal notranslate"><span class="pre">GUIMath</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="math/guimath.html#GUIMath.d2line"><code class="docutils literal notranslate"><span class="pre">GUIMath.d2line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/guimath.html#GUIMath.d2line_seg"><code class="docutils literal notranslate"><span class="pre">GUIMath.d2line_seg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/guimath.html#GUIMath.inside"><code class="docutils literal notranslate"><span class="pre">GUIMath.inside()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/guimath.html#GUIMath.feround"><code class="docutils literal notranslate"><span class="pre">GUIMath.feround()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/eqnsolve.html">Solving Nonlinear Systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/eqnsolve.html#prmat"><code class="docutils literal notranslate"><span class="pre">prmat()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/eqnsolve.html#solve"><code class="docutils literal notranslate"><span class="pre">solve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/eqnsolve.html#eqinit"><code class="docutils literal notranslate"><span class="pre">eqinit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math/misc.html">Miscellaneous</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math/misc.html#float_epsilon"><code class="docutils literal notranslate"><span class="pre">float_epsilon</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="NEURON Python documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="math/constants.html" class="btn btn-neutral float-right" title="Constants" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

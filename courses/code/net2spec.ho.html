@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/courses/code/net2spec.ho.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p>//Network cell templates
+//   B_BallStick
+//Artificial cells
+create acell_home_
+access acell_home_
+//   SE_NetStim
+//   SI_NetStim</p>
+<p>begintemplate B_BallStick
+public is_art
+public init, topol, basic_shape, subsets, geom, memb
+public synlist, x, y, z, position, connect2target</p>
+<p>public soma, dend
+public all</p>
+<p>objref synlist</p>
+<p>proc init() {
+topol()
+subsets()
+geom()
+biophys()
+geom_nseg()
+synlist = new List()
+synapses()
+x = y = z = 0 // only change via position
+}</p>
+<p>create soma, dend</p>
+<p>proc topol() { local i
+connect dend(0), soma(1)
+basic_shape()
+}
+proc basic_shape() {
+soma {pt3dclear() pt3dadd(0, 0, 0, 1) pt3dadd(15, 0, 0, 1)}
+dend {pt3dclear() pt3dadd(15, 0, 0, 1) pt3dadd(105, 0, 0, 1)}
+}</p>
+<p>objref all
+proc subsets() { local i
+objref all
+all = new SectionList()
+soma all.append()
+dend all.append()</p>
+<p>}
+proc geom() {
+forsec all {  }
+soma {  /*area = 500 <em>/ L = diam = 12.6157  }
+dend {  L = 200  diam = 1  }
+}
+external lambda_f
+proc geom_nseg() {
+forsec all { nseg = int((L/(0.1</em>lambda_f(100))+.9)/2)<em>2 + 1  }
+}
+proc biophys() {
+forsec all {
+Ra = 100
+cm = 1
+}
+soma {
+insert hh
+gnabar_hh = 0.12
+gkbar_hh = 0.036
+gl_hh = 0.0003
+el_hh = -54.3
+}
+dend {
+insert pas
+g_pas = 0.001
+e_pas = -65
+}
+}
+proc position() { local i
+soma for i = 0, n3d()-1 {
+pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))
+}
+x = $1  y = $2  z = $3
+}
+proc connect2target() { //$o1 target point process, $o2 returned NetCon
+soma $o2 = new NetCon(&amp;v(1), $o1)
+}
+objref syn_
+proc synapses() {
+/</em> E0 <em>/   dend syn_ = new ExpSyn(0.8)  synlist.append(syn_)
+syn_.tau = 2
+/</em> I1 */   dend syn_ = new ExpSyn(0.1)  synlist.append(syn_)
+syn_.tau = 5
+syn_.e = -80
+}
+func is_art() { return 0 }</p>
+<p>endtemplate B_BallStick</p>
+<p>begintemplate SE_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+acell_home_ pp = new NetStim(.5)
+pp.interval = 5
+pp.number = 50
+pp.start = 0
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate SE_NetStim</p>
+<p>begintemplate SI_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+acell_home_ pp = new NetStim(.5)
+pp.number = 5
+pp.start = 20
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate SI_NetStim</p>
+<p>//Network specification interface</p>
+<p>objref cells, nclist, netcon
+{cells = new List()  nclist = new List()}</p>
+<p>func cell_append() {cells.append($o1)  $o1.position($2,$3,$4) return cells.count - 1 }</p>
+<p>func nc_append() {//srcindex, tarcelindex, synindex
+if ($3 &gt;= 0) {
+cells.object($1).connect2target(cells.object($2).synlist.object($3),netcon)
+netcon.weight = $4   netcon.delay = $5
+}else{
+cells.object($1).connect2target(cells.object($2).pp,netcon)
+netcon.weight = $4   netcon.delay = $5
+}
+nclist.append(netcon)
+return nclist.count - 1
+}</p>
+<p>//Network instantiation</p>
+<p>/* B0 <em>/  cell_append(new B_BallStick(),	-52,	 -6, 0)
+/</em> SE1 <em>/  cell_append(new SE_NetStim(),	15,	 47, 0)
+/</em> SI2 <em>/  cell_append(new SI_NetStim(),	-51,	 47, 0)
+/</em> SE1 -&gt; B0.E0 <em>/  nc_append(1,   0, 0,  0.01,1)
+/</em> SI2 -&gt; B0.I1 */  nc_append(2,   0, 1,  0.01,1)</p>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

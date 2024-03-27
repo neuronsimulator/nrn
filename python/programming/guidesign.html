@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI Design &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Layout" href="gui/layout.html" />
+    <link rel="prev" title="String Parsing (sscanf)" href="sscanf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">GUI Design</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gui/layout.html">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/list.html">List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/widgets.html">GUI Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui/misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">GUI Design</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/programming/guidesign.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/programming/guidesign.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gui-design">
+<h1>GUI Design<a class="headerlink" href="#gui-design" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gui/layout.html">Layout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/layout.html#Deck"><code class="docutils literal notranslate"><span class="pre">Deck</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.intercept"><code class="docutils literal notranslate"><span class="pre">Deck.intercept()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.map"><code class="docutils literal notranslate"><span class="pre">Deck.map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.unmap"><code class="docutils literal notranslate"><span class="pre">Deck.unmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.save"><code class="docutils literal notranslate"><span class="pre">Deck.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.flip_to"><code class="docutils literal notranslate"><span class="pre">Deck.flip_to()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.remove_last"><code class="docutils literal notranslate"><span class="pre">Deck.remove_last()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.move_last"><code class="docutils literal notranslate"><span class="pre">Deck.move_last()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#Deck.remove"><code class="docutils literal notranslate"><span class="pre">Deck.remove()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gui/layout.html#HBox"><code class="docutils literal notranslate"><span class="pre">HBox</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/layout.html#VBox"><code class="docutils literal notranslate"><span class="pre">VBox</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.intercept"><code class="docutils literal notranslate"><span class="pre">VBox.intercept()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.map"><code class="docutils literal notranslate"><span class="pre">VBox.map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.unmap"><code class="docutils literal notranslate"><span class="pre">VBox.unmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.ismapped"><code class="docutils literal notranslate"><span class="pre">VBox.ismapped()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.size"><code class="docutils literal notranslate"><span class="pre">VBox.size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.save"><code class="docutils literal notranslate"><span class="pre">VBox.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.ref"><code class="docutils literal notranslate"><span class="pre">VBox.ref()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.dismiss_action"><code class="docutils literal notranslate"><span class="pre">VBox.dismiss_action()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.dialog"><code class="docutils literal notranslate"><span class="pre">VBox.dialog()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.adjuster"><code class="docutils literal notranslate"><span class="pre">VBox.adjuster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.adjust"><code class="docutils literal notranslate"><span class="pre">VBox.adjust()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.full_request"><code class="docutils literal notranslate"><span class="pre">VBox.full_request()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/layout.html#VBox.priority"><code class="docutils literal notranslate"><span class="pre">VBox.priority()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/list.html">List</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/list.html#List"><code class="docutils literal notranslate"><span class="pre">List</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.append"><code class="docutils literal notranslate"><span class="pre">List.append()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.prepend"><code class="docutils literal notranslate"><span class="pre">List.prepend()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.insrt"><code class="docutils literal notranslate"><span class="pre">List.insrt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.remove"><code class="docutils literal notranslate"><span class="pre">List.remove()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.remove_all"><code class="docutils literal notranslate"><span class="pre">List.remove_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.index"><code class="docutils literal notranslate"><span class="pre">List.index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.count"><code class="docutils literal notranslate"><span class="pre">List.count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.browser"><code class="docutils literal notranslate"><span class="pre">List.browser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.selected"><code class="docutils literal notranslate"><span class="pre">List.selected()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.select"><code class="docutils literal notranslate"><span class="pre">List.select()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.scroll_pos"><code class="docutils literal notranslate"><span class="pre">List.scroll_pos()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.select_action"><code class="docutils literal notranslate"><span class="pre">List.select_action()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.accept_action"><code class="docutils literal notranslate"><span class="pre">List.accept_action()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.object"><code class="docutils literal notranslate"><span class="pre">List.object()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/list.html#List.o"><code class="docutils literal notranslate"><span class="pre">List.o()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/widgets.html">GUI Widgets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xpanel"><code class="docutils literal notranslate"><span class="pre">xpanel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xbutton"><code class="docutils literal notranslate"><span class="pre">xbutton()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xstatebutton"><code class="docutils literal notranslate"><span class="pre">xstatebutton()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xcheckbox"><code class="docutils literal notranslate"><span class="pre">xcheckbox()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xradiobutton"><code class="docutils literal notranslate"><span class="pre">xradiobutton()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xmenu"><code class="docutils literal notranslate"><span class="pre">xmenu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xlabel"><code class="docutils literal notranslate"><span class="pre">xlabel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xvarlabel"><code class="docutils literal notranslate"><span class="pre">xvarlabel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xvalue"><code class="docutils literal notranslate"><span class="pre">xvalue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xpvalue"><code class="docutils literal notranslate"><span class="pre">xpvalue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xfixedvalue"><code class="docutils literal notranslate"><span class="pre">xfixedvalue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#xslider"><code class="docutils literal notranslate"><span class="pre">xslider()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/widgets.html#units"><code class="docutils literal notranslate"><span class="pre">units()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/symchooser.html">SymChooser</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/symchooser.html#SymChooser"><code class="docutils literal notranslate"><span class="pre">SymChooser</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/symchooser.html#SymChooser.run"><code class="docutils literal notranslate"><span class="pre">SymChooser.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/symchooser.html#SymChooser.text"><code class="docutils literal notranslate"><span class="pre">SymChooser.text()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/secbrows.html">SectionBrowser</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/secbrows.html#SectionBrowser"><code class="docutils literal notranslate"><span class="pre">SectionBrowser</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/secbrows.html#SectionBrowser.select"><code class="docutils literal notranslate"><span class="pre">SectionBrowser.select()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/secbrows.html#SectionBrowser.select_action"><code class="docutils literal notranslate"><span class="pre">SectionBrowser.select_action()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/secbrows.html#SectionBrowser.accept_action"><code class="docutils literal notranslate"><span class="pre">SectionBrowser.accept_action()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/texteditor.html">TextEditor</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/texteditor.html#TextEditor"><code class="docutils literal notranslate"><span class="pre">TextEditor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/texteditor.html#TextEditor.text"><code class="docutils literal notranslate"><span class="pre">TextEditor.text()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/texteditor.html#TextEditor.readonly"><code class="docutils literal notranslate"><span class="pre">TextEditor.readonly()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/texteditor.html#TextEditor.map"><code class="docutils literal notranslate"><span class="pre">TextEditor.map()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/vfe.html">ValueFieldEditor</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/vfe.html#ValueFieldEditor"><code class="docutils literal notranslate"><span class="pre">ValueFieldEditor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/vfe.html#ValueFieldEditor.default"><code class="docutils literal notranslate"><span class="pre">ValueFieldEditor.default()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/pwman.html">PWManager</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/pwman.html#PWManager"><code class="docutils literal notranslate"><span class="pre">PWManager</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.count"><code class="docutils literal notranslate"><span class="pre">PWManager.count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.is_mapped"><code class="docutils literal notranslate"><span class="pre">PWManager.is_mapped()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.map"><code class="docutils literal notranslate"><span class="pre">PWManager.map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.hide"><code class="docutils literal notranslate"><span class="pre">PWManager.hide()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.close"><code class="docutils literal notranslate"><span class="pre">PWManager.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.iconify"><code class="docutils literal notranslate"><span class="pre">PWManager.iconify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.deiconify"><code class="docutils literal notranslate"><span class="pre">PWManager.deiconify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.leader"><code class="docutils literal notranslate"><span class="pre">PWManager.leader()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.manager"><code class="docutils literal notranslate"><span class="pre">PWManager.manager()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.save"><code class="docutils literal notranslate"><span class="pre">PWManager.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.group"><code class="docutils literal notranslate"><span class="pre">PWManager.group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.snap"><code class="docutils literal notranslate"><span class="pre">PWManager.snap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.scale"><code class="docutils literal notranslate"><span class="pre">PWManager.scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.name"><code class="docutils literal notranslate"><span class="pre">PWManager.name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.window_place"><code class="docutils literal notranslate"><span class="pre">PWManager.window_place()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.paper_place"><code class="docutils literal notranslate"><span class="pre">PWManager.paper_place()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.landscape"><code class="docutils literal notranslate"><span class="pre">PWManager.landscape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.deco"><code class="docutils literal notranslate"><span class="pre">PWManager.deco()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui/pwman.html#PWManager.printfile"><code class="docutils literal notranslate"><span class="pre">PWManager.printfile()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/nfunc.html">Miscellaneous Menus</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/nfunc.html#nrnglobalmechmenu"><code class="docutils literal notranslate"><span class="pre">nrnglobalmechmenu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/nfunc.html#nrnmechmenu"><code class="docutils literal notranslate"><span class="pre">nrnmechmenu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/nfunc.html#nrnpointmenu"><code class="docutils literal notranslate"><span class="pre">nrnpointmenu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/nfunc.html#nrnsecmenu"><code class="docutils literal notranslate"><span class="pre">nrnsecmenu()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/dialog.html">Dialog Boxes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/dialog.html#boolean_dialog"><code class="docutils literal notranslate"><span class="pre">boolean_dialog()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/dialog.html#continue_dialog"><code class="docutils literal notranslate"><span class="pre">continue_dialog()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/dialog.html#string_dialog"><code class="docutils literal notranslate"><span class="pre">string_dialog()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/misc.html">Style Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/misc.html#ivoc_style"><code class="docutils literal notranslate"><span class="pre">ivoc_style()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/misc.html#variable_domain"><code class="docutils literal notranslate"><span class="pre">variable_domain()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui/misc.html#printwindowmanager-placement">PrintWindowManager Placement</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/misc.html#pwman_place"><code class="docutils literal notranslate"><span class="pre">pwman_place()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sscanf.html" class="btn btn-neutral float-left" title="String Parsing (sscanf)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gui/layout.html" class="btn btn-neutral float-right" title="Layout" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

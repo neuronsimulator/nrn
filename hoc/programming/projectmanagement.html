@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Management &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="MechanismStandard (Parameter Control)" href="mechstan.html" />
+    <link rel="prev" title="Dynamic Code Loading and Execution" href="dynamiccode.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Project Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mechstan.html">MechanismStandard (Parameter Control)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#utilities">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+      <li class="breadcrumb-item active">Project Management</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/projectmanagement.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/projectmanagement.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="project-management">
+<span id="hoc-project"></span><h1>Project Management<a class="headerlink" href="#project-management" title="Link to this heading"></a></h1>
+<p>RCS control of simulation projects in a single directory. The idea is to
+be able to reproduce a simulation given its version number.
+The version number was printed along with all the neuron windows on the screen
+when the simulation was archived.
+See <a class="reference internal" href="../simctrl/stdrun.html#hoc-archiveandhardcopy"><span class="std std-ref">Archive And Hardcopy</span></a></p>
+<p>To manage parameter sets instead, use:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mechstan.html">MechanismStandard (Parameter Control)</a></li>
+</ul>
+</div>
+<p>Effective use of this management system requires that the user conform to
+a policy in which no simulation variables are changed except by changing them
+in managed files (listed in the nrnversion file). ie. during a session
+only change variables by editing a hoc file and saving it, or only change
+variables in field editors that actually appear on the screen when a simulation
+is archived. Variable values will be lost if you change them
+by direct command to the interpreter (the command does not appear in any file)
+or if you dismiss a panel after changing one of its field editors (when
+the simulation is archived, only values of field editors actually displayed
+on the screen are saved). User judgment is required to determine if these
+missing variable values will later prevent reproduction of the simulation.
+If this is the case, then when the hardcopy is printed, the user should
+manually enter this information when the log message is requested or
+else make hand written notes on the hardcopy itself.</p>
+<p>A policy that seems to work pretty well is to always start a simulation via</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    special init.hoc -      # if the simulation uses mod file
+</pre></div>
+</div>
+<p>where init.hoc xopens all necessary files to initialize the simulation.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>init.hoc
+//-------
+xopen(&quot;$(NEURONHOME)/lib/hoc/noload.hoc&quot;)   // standard run tools
+xopen(&quot;morph.hoc&quot;)  // topology, geometry, compartmentalization
+xopen(&quot;memb.hoc&quot;)   // membrane properties
+xopen(&quot;param.hoc&quot;)  // parameters that are occasionally changed
+xopen(&quot;start.ses&quot;)  // will automatically change for every new version
+//-------
+</pre></div>
+</div>
+<p>With this style, whenever an old version is checked out and run, the appearance
+of the screen should match the hardcopy and it should be possible to
+reproduce the archived simulation.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Reliance on a management policy that requires judgment is regrettable.
+However making the system failsafe while retaining the generality of the
+interpreter is probably impossible. Archive strategies consisting solely
+of checkpoints,
+eg. coredumps, use a great deal of disk space and don’t capture any
+semantic information about the logical structure of the variables and
+how they are related. This strategy is low time and high space.
+Audit trails, saving all the commands and changes, is high time and low space.
+Its problem is that it captures all the false starts and mistakes.
+Recapitulating every excruciating detail is probably too confusing.
+The current system, by developing very low space, very low time logical
+snapshots, although not failsafe, hopefully will realistically help to
+solve the very real problems of simulation management.</p>
+</div>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>The following example illustrates the initialization of an essentially
+empty project.</p>
+<p>Here are the files. After initializing the project with these, they
+can be modified to handle arbitrary complexity. These files should be
+in an otherwise empty subdirectory.</p>
+<p>init.hoc</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>xopen(&quot;$(NEURONHOME)/lib/hoc/noload.hoc&quot;)
+xopen(&quot;morph.hoc&quot;)
+xopen(&quot;memb.hoc&quot;)
+xopen(&quot;param.hoc&quot;)
+xopen(&quot;start.ses&quot;)
+</pre></div>
+</div>
+<p>morph.hoc</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma
+access soma
+L=5
+diam=100/(PI*L)
+</pre></div>
+</div>
+<p>memb.hoc</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>insert hh
+</pre></div>
+</div>
+<p>param.hoc</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>gnabar_hh = .120
+</pre></div>
+</div>
+<p>start.ses</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>nrnmainmenu()
+</pre></div>
+</div>
+<p>The project is initialized with <a class="reference internal" href="#hoc-prjnrninit"><span class="std std-ref">prjnrninit</span></a> .
+This will create an RCS directory and checkout
+a nrnversion file with the contents:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$Revision: 1.3 $
+1.1 init.hoc
+1.1 memb.hoc
+1.1 morph.hoc
+1.1 param.hoc
+1.1 start.ses
+</pre></div>
+</div>
+<p>Note that nrnversion is essentially just a manifest of the files in
+the project. To add a new file to the project one can explicitly check
+the file into RCS with the ci command and insert the appropriate line
+in the nrnversion file.</p>
+<p>At this point one can run</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>nrniv init.hoc -
+</pre></div>
+</div>
+<p>and see a neuron main menu. Use the menu to generate a graph
+of an action potential. Since there was an RCS directory with a
+nrnversion,v archive when nrnmainmenu() was executed,
+the Miscellaneous menu has an ArchiveAndHardcopy item.
+Pressing this button will archive the current version with the session
+(it is saved in start.ses), request a description of this version and
+print the version number, description, and session windows on the
+printer specified by the <code class="docutils literal notranslate"><span class="pre">$PRINT_CMD</span></code> environment variable.</p>
+<p>It is recommended that you play with this simple project for a while
+to familiarize yourself with the style before employing it in a serious
+project. Make several different hardcopies. Use <a class="reference internal" href="#hoc-prjnrnco"><span class="std std-ref">prjnrnco</span></a> to check out
+earlier versions and run them, modify parameters, and make several more
+hardcopies. Note the way branch version numbers are generated and incremented.</p>
+</section>
+<section id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h2>
+<section id="prjnrninit">
+<span id="hoc-prjnrninit"></span><h3>prjnrninit<a class="headerlink" href="#prjnrninit" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin/prjnrninit</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>In the current working directory creates an RCS directory and
+checks in (and out again with locking)
+all the hoc, ses, mod files as version 1.1. A nrnversion file
+is created (and archived) which contains a manifest of the files
+necessary to recreate a simulation. The Revision level of
+the nrnversion defines the version of the simulation.</p>
+</dd>
+</dl>
+</section>
+<section id="prjnrncmp">
+<h3>prjnrncmp<a class="headerlink" href="#prjnrncmp" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin/prjnrncmp</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If working files consistent with manifest in nrnversion return with
+exit status 0. Otherwise return with exit status 1 and print the
+names of the differing files on the standard output.</p>
+</dd>
+</dl>
+</section>
+<section id="prjnrnco">
+<span id="hoc-prjnrnco"></span><h3>prjnrnco<a class="headerlink" href="#prjnrnco" title="Link to this heading"></a></h3>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin/prjnrnco</span> <span class="pre">version</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Checkout the version from the RCS archive.</p>
+<p>Prior to checkout if the working files differ from the archive, the user
+is asked whether or not to checkout anyway. If “Checkout anyway” is chosen
+the changes to the previous working files will be lost.</p>
+</dd>
+</dl>
+</section>
+<section id="prjnrnci">
+<h3>prjnrnci<a class="headerlink" href="#prjnrnci" title="Link to this heading"></a></h3>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin/prjnrnci</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Checkin a new version to the RCS archive.</p>
+<p>The microemacs editor is run so the user can edit a description of the
+new version. On exit from the editor the user will be asked whether or
+not to continue checking in the version.</p>
+<p>A new version is checked in even if the working files are unchanged.</p>
+<p>On exit from this command, the working files are locked versions
+of the newest version. The nrnversion file contains the version number
+of the simulation (itself) as well as the version numbers of all the
+working files it needs to reconstruct the simulation.</p>
+</dd>
+</dl>
+</section>
+<section id="prjnrnpr">
+<span id="hoc-prjnrnpr"></span><h3>prjnrnpr<a class="headerlink" href="#prjnrnpr" title="Link to this heading"></a></h3>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">postscriptfile</span> <span class="pre">|</span> <span class="pre">$NEURONHOME/bin/prjnrnpr</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Checks in the working files and
+sends the postscript file to the command specified in the
+<code class="docutils literal notranslate"><span class="pre">$PRINT_CMD</span></code> (e.g. <strong class="command">lp</strong>) environment variable.</p>
+<p>If the working files are not different from their archived versions
+the user is asked whether to continue or verify that the simulation
+can be reproduced. If the latter, a new the simulation is loaded in
+an xterm window. The user should then try to reproduce the simulation
+he/she is attempting to checkin. When the xterm goes away the user
+will be asked whether or not to continue to checkin. If you can’t reproduce
+the simulation or had to change working files to reproduce it, choose “Abort”</p>
+<p>If the working files did differ then <code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">prjnrnci()</span></code> is run in an <strong class="program">xterm</strong>.</p>
+<p>The last question for the user to answer is whether to leave the working
+files at the new or old version. The answer depends on whether you envision
+this simulation as a side branch off the primary version or as
+additive.</p>
+<p>The log message entered during checkin is added to the postcript stream
+and sent to <code class="docutils literal notranslate"><span class="pre">$PRINT_CMD</span></code>.</p>
+<p>This command is called by the <a class="reference internal" href="../simctrl/stdrun.html#hoc-archiveandhardcopy"><span class="std std-ref">Archive And Hardcopy</span></a> menu item in the
+<a class="reference internal" href="../simctrl/stdrun.html#hoc-neuronmainmenu"><span class="std std-ref">NEURON Main Menu</span></a> which first saves the session in <code class="file docutils literal notranslate"><span class="pre">start.hoc</span></code> and
+sends the entire session as standard input to this command.</p>
+</dd>
+</dl>
+</section>
+<section id="ivdialog">
+<h3>ivdialog<a class="headerlink" href="#ivdialog" title="Link to this heading"></a></h3>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin/prjnrnpr</span> <span class="pre">&quot;banner&quot;</span> <span class="pre">&quot;accept&quot;</span> <span class="pre">&quot;cancel&quot;</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Pops up a boolean dialog.</p>
+<p>“1” is printed on the standard output if
+the “accept” button is pressed.</p>
+<p>“0” is printed on the standard output
+if the “cancel” button is pressed.</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dynamiccode.html" class="btn btn-neutral float-left" title="Dynamic Code Loading and Execution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mechstan.html" class="btn btn-neutral float-right" title="MechanismStandard (Parameter Control)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

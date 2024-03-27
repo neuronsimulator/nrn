@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 1. Set up a SubsetDomainIterator &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 2. Specify the model parameter(s) to be varied" href="specify_the_model_parameters_varied.html" />
+    <link rel="prev" title="Specifying parameterized variation of biophysical properties" href="cellbuilder3.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder1.html">Creating a stylized (“stick-figure”) model cell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder2.html">Managing a model cell with complex anatomy</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="cellbuilder3.html">Specifying parameterized variation of biophysical properties</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Step 1. Set up a SubsetDomainIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="specify_the_model_parameters_varied.html">Step 2. Specify the model parameter(s) to be varied</a></li>
+<li class="toctree-l4"><a class="reference internal" href="specify_and_verify_the_functions.html">Step 3. Specify and verify the functions that govern the parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_the_model_specification.html">Step 4. Use the model specification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+          <li class="breadcrumb-item"><a href="cellbuilder3.html">Specifying parameterized variation of biophysical properties</a></li>
+      <li class="breadcrumb-item active">Step 1. Set up a SubsetDomainIterator</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/set_up_a_subsetdomainiterator.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="step-1-set-up-a-subsetdomainiterator">
+<span id="set-up-a-subsetdomainiterator"></span><h1>Step 1. Set up a SubsetDomainIterator<a class="headerlink" href="#step-1-set-up-a-subsetdomainiterator" title="Link to this heading"></a></h1>
+<section id="a-specify-the-subset">
+<h2>A. Specify the subset<a class="headerlink" href="#a-specify-the-subset" title="Link to this heading"></a></h2>
+<p>First we return to the Subsets page, select the apicals subset, and then click on “Parameterized Domain Page”.</p>
+<img alt="../_images/pardompg0.gif" class="align-center" src="../_images/pardompg0.gif" />
+<p>With apicals still selected, we click on “Create a SubsetDomainIterator”.</p>
+<img alt="../_images/pd1.gif" class="align-center" src="../_images/pd1.gif" />
+<p>The right hand side of the CellBuilder now looks like this:</p>
+<img alt="../_images/pd2.gif" class="align-center" src="../_images/pd2.gif" />
+<p>Notice the new apicals_x item just below the apicals subset.</p>
+<p>SubsetDomainIterators appear in the middle panel of the Subsets page, just beneath the subset to which they apply. They’re slightly indented so you can tell them apart from names of Subsets and sections.</p>
+<p>Click on the apicals_x iterator …</p>
+<img alt="../_images/pd3.gif" class="align-center" src="../_images/pd3.gif" />
+<p>… and the right panel of the CellBuilder now shows controls for evaluating and specifying the distance metric p.</p>
+<p>The message in the right panel of the CB tells us that the path length from the “root” ranges from 20 to 920.</p>
+<p>We can see what this means by dragging the horizontal slider from left to right, and seeing what happens in the shape plot. As the slider moves back and forth, the “p=nnn” near the bottom of the canvas will change; this is a direct readout of the distance metric p.</p>
+<p>The red highlighted area in the apical tree also changes in a way that is reminiscent of a thermometer. However, instead of temperature, the leading edge of the red area marks the location(s) that correspond to the value of p.</p>
+<p>p starts at 20 because, by default, all measurements are relative to the root of the model cell–in this case, the 0 location on the soma section. But we want the origin of the distance metric to be the root of the apical tree, i.e. the proximal end of the apicals subset. Also, we want the maximum value of p to be 1, not 920.</p>
+<p>To make these changes, we will use the controls in the “metric proximal distal” bar (just below the horizontal slider).</p>
+</section>
+<section id="b-specify-the-distance-metric">
+<h2>B. Specify the distance metric<a class="headerlink" href="#b-specify-the-distance-metric" title="Link to this heading"></a></h2>
+<p>Let’s click on “metric” first.</p>
+<img alt="../_images/pd4.gif" class="align-center" src="../_images/pd4.gif" />
+<p>That shows us the options mentioned above–the distance metric can be path length from a reference point, radial distance from a reference point, or distance from a plane.</p>
+<p>We don’t need to make any changes here.</p>
+<p>Distance from a plane is called “3D projection onto line” because, instead of trying to draw a plane on the canvas, you would specify the orientation of a line that is orthogonal to the plane.</p>
+<p>Next we click on “proximal” and see what happens.</p>
+<img alt="../_images/pd5.gif" class="align-center" src="../_images/pd5.gif" />
+<p>Let’s choose “Most proximal at 0”. That shifts the origin of our distance metric to the proximal end of the apical tree. We can verify this by dragging the slider back and forth, and noticing that the minimum value of p is now 0.</p>
+<p>What about the “distal” item in the toolbar? Let’s click on it.</p>
+<img alt="../_images/pd6.gif" class="align-center" src="../_images/pd6.gif" />
+<p>“Most distal at 1” is just what we need. By choosing that, we have finished normalizing the distance metric.</p>
+<p>The message in the right panel of the CellBuilder now tells us that the distance metric is 0 at the most proximal point in the tree, and 1 at the most distal point–</p>
+<img alt="../_images/pd7.gif" class="align-center" src="../_images/pd7.gif" />
+<p>We can verify this by dragging the slider back and forth, and seeing that p varies from 0 at the proximal end of the tree, to 1 at the most distal end.</p>
+<p>Time to save the CellBuilder to a session file! Let’s call this one tapercell.ses .</p>
+<p>Having set up a SubsetDomainIterator, we’re ready to use it to specify how parameters vary in space–in this case, how the hh mechanism’s conductance densities vary with normalized distance out into the apical tree.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cellbuilder3.html" class="btn btn-neutral float-left" title="Specifying parameterized variation of biophysical properties" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="specify_the_model_parameters_varied.html" class="btn btn-neutral float-right" title="Step 2. Specify the model parameter(s) to be varied" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

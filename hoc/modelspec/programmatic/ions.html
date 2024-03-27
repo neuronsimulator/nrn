@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ions &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Dynamics (Channels, etc…)" href="mechanisms.html" />
+    <link rel="prev" title="SectionRef" href="topology/secref.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Model Specification</a></li>
+      <li class="breadcrumb-item active">Ions</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/modelspec/programmatic/ions.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/modelspec/programmatic/ions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#ion_charge" title="Link to this definition">ion_charge</a> &middot; <a href="#ion_register" title="Link to this definition">ion_register</a> &middot; <a href="#ion_style" title="Link to this definition">ion_style</a></p><section id="ions">
+<h1>Ions<a class="headerlink" href="#ions" title="Link to this heading"></a></h1>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="ion_style">
+<span class="sig-name descname"><span class="pre">ion_style</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ion_style" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">oldstyle</span> <span class="pre">=</span> <span class="pre">ion_style(&quot;name_ion&quot;,</span> <span class="pre">c_style,</span> <span class="pre">e_style,</span> <span class="pre">einit,</span> <span class="pre">eadvance,</span> <span class="pre">cinit)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">oldstyle</span> <span class="pre">=</span> <span class="pre">ion_style(&quot;name_ion&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>In the currently accessed section,
+force the named ion (eg. na_ion, k_ion, ca_ion, etc) to handle
+reversal potential and concentrations according to the indicated
+styles.
+You will not often need this function since the
+style chosen automatically on a per section basis should be
+appropriate to the set of mechanisms inserted in each section.</p>
+<p>Warning: if other mechanisms are inserted subsequent to a call
+of this function, the style will be “promoted” according to
+the rules associated with adding the used ions to the style
+previously in effect.</p>
+<p>The oldstyle value is previous internal setting of
+c_style + 4*cinit +  8*e_style + 32*einit + 64*eadvance.</p>
+<dl class="simple">
+<dt>c_style: 0, 1, 2, 3.</dt><dd><p>Concentrations respectively treated as UNUSED,
+PARAMETER, ASSIGNED, or STATE variables.  Determines which panel (if
+any) will show the concentrations.</p>
+</dd>
+<dt>e_style: 0, 1, 2, 3.</dt><dd><p>Reversal potential respectively treated as
+UNUSED, PARAMETER, ASSIGNED, or STATE variable.</p>
+</dd>
+<dt>einit: 0 or 1.</dt><dd><p>If 1 then reversal potential computed by Nernst equation
+on call to <code class="docutils literal notranslate"><span class="pre">finitialize()</span></code> using values of concentrations.</p>
+</dd>
+<dt>eadvance: 0 or 1.</dt><dd><p>If 1 then reversal potential computed every call to
+<code class="docutils literal notranslate"><span class="pre">fadvance()</span></code> using the values of the concentrations.</p>
+</dd>
+<dt>cinit: 0 or 1.</dt><dd><p>If 1 then a call to finitialize() sets the concentrations
+to the values of the global initial concentrations. eg. <code class="docutils literal notranslate"><span class="pre">nai</span></code> set to
+<code class="docutils literal notranslate"><span class="pre">nai0_na_ion</span></code> and <code class="docutils literal notranslate"><span class="pre">nao</span></code> set to <code class="docutils literal notranslate"><span class="pre">nao0_na_ion</span></code>.</p>
+</dd>
+</dl>
+<p>The automatic style is chosen based on how the set of mechanisms that
+have been inserted in a section use the ion. Note that the precedence is
+WRITE &gt; READ &gt; unused in the USEION statement; so if one mechanism
+READ’s  cai/cao and another mechanism WRITE’s them then WRITE takes precedence
+in the following table. For compactness, the table assumes the ca ion.
+Each table entry identifies the equivalent parameters to the ion_style
+function.</p>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>cai/cao -&gt;</p></th>
+<th class="head"><p>unused</p></th>
+<th class="head"><p>read</p></th>
+<th class="head"><p>write</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>eca unused</p></td>
+<td><p>0,0,0,0,0</p></td>
+<td><p>1,0,0,0,0</p></td>
+<td><p>3,0,0,0,1</p></td>
+</tr>
+<tr class="row-odd"><td><p>eca read</p></td>
+<td><p>0,1,0,0,0</p></td>
+<td><p>1,2,1,0,0</p></td>
+<td><p>3,2,1,1,1</p></td>
+</tr>
+<tr class="row-even"><td><p>eca write</p></td>
+<td><p>0,2,0,0,0</p></td>
+<td><p>1,2,0,0,0</p></td>
+<td><p>3,2,0,0,1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>For example suppose one has inserted a mechanism that READ’s eca,
+a mechanism that READ’s cai, cao and a mechanism that WRITE’s cai, cao
+Then, since WRITE takes precedence over READ in the above table,
+<code class="docutils literal notranslate"><span class="pre">cai/cao</span></code> would appear in the STATE variable panel (first arg is 3),
+<code class="docutils literal notranslate"><span class="pre">eca</span></code> would appear in the ASSIGNED variable panel (second arg is 2),
+<code class="docutils literal notranslate"><span class="pre">eca</span></code> would be calculated on a call to finitialize (third arg is 1),
+<code class="docutils literal notranslate"><span class="pre">eca</span></code> would be calculated on every call to fadvance (fourth arg is 1),
+<code class="docutils literal notranslate"><span class="pre">cai/cao</span></code> would be initialized (on finitialize) to the global variables
+<code class="docutils literal notranslate"><span class="pre">cai0_ca_ion</span></code> and <code class="docutils literal notranslate"><span class="pre">cao0_ca_ion</span></code> respectively. (note that this takes place just
+before the calculation of <code class="docutils literal notranslate"><span class="pre">eca</span></code>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="ion_register">
+<span class="sig-name descname"><span class="pre">ion_register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ion_register" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">ion_register(&quot;name&quot;,</span> <span class="pre">charge)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a new ion type with mechanism name, “name_ion”, and associated
+variables: iname, nameo, namei, ename, diname_dv.
+If any of these names already
+exists and name_ion is not already an ion, the function returns -1,
+otherwise it returns the mechanism type index. If name_ion is already
+an ion the charge is ignored but the type index is returned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="ion_charge">
+<span class="sig-name descname"><span class="pre">ion_charge</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ion_charge" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">charge</span> <span class="pre">=</span> <span class="pre">ion_charge(&quot;name_ion&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the charge for the indicated ion mechanism. An error message is
+printed if name_ion is not an ion mechanism.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topology/secref.html" class="btn btn-neutral float-left" title="SectionRef" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mechanisms.html" class="btn btn-neutral float-right" title="Dynamics (Channels, etc…)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

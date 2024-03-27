@@ -1,0 +1,152 @@
+//Network cell templates
+//   B_BallStick
+//Artificial cells
+  create acell_home_
+  access acell_home_
+//   SE_NetStim
+//   SI_NetStim
+
+
+begintemplate B_BallStick
+public is_art
+public init, topol, basic_shape, subsets, geom, memb
+public synlist, x, y, z, position, connect2target
+
+public soma, dend
+public all
+
+objref synlist
+
+proc init() {
+  topol()
+  subsets()
+  geom()
+  biophys()
+  geom_nseg()
+  synlist = new List()
+  synapses()
+  x = y = z = 0 // only change via position
+}
+
+create soma, dend
+
+proc topol() { local i
+  connect dend(0), soma(1)
+  basic_shape()
+}
+proc basic_shape() {
+  soma {pt3dclear() pt3dadd(0, 0, 0, 1) pt3dadd(15, 0, 0, 1)}
+  dend {pt3dclear() pt3dadd(15, 0, 0, 1) pt3dadd(105, 0, 0, 1)}
+}
+
+objref all
+proc subsets() { local i
+  objref all
+  all = new SectionList()
+    soma all.append()
+    dend all.append()
+
+}
+proc geom() {
+  forsec all {  }
+  soma {  /*area = 500 */ L = diam = 12.6157  }
+  dend {  L = 200  diam = 1  }
+}
+external lambda_f
+proc geom_nseg() {
+   forsec all { nseg = int((L/(0.1*lambda_f(100))+.9)/2)*2 + 1  }
+}
+proc biophys() {
+  forsec all {
+    Ra = 100
+    cm = 1
+  }
+  soma {
+    insert hh
+      gnabar_hh = 0.12
+      gkbar_hh = 0.036
+      gl_hh = 0.0003
+      el_hh = -54.3
+  }
+  dend {
+    insert pas
+      g_pas = 0.001
+      e_pas = -65
+  }
+}
+proc position() { local i
+  soma for i = 0, n3d()-1 {
+    pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))
+  }
+  x = $1  y = $2  z = $3
+}
+proc connect2target() { //$o1 target point process, $o2 returned NetCon
+  soma $o2 = new NetCon(&v(1), $o1)
+}
+objref syn_
+proc synapses() {
+  /* E0 */   dend syn_ = new ExpSyn(0.8)  synlist.append(syn_)
+    syn_.tau = 2
+  /* I1 */   dend syn_ = new ExpSyn(0.1)  synlist.append(syn_)
+    syn_.tau = 5
+    syn_.e = -80
+}
+func is_art() { return 0 }
+
+endtemplate B_BallStick
+
+begintemplate SE_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.interval = 5
+    pp.number = 50
+    pp.start = 0
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate SE_NetStim
+
+begintemplate SI_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+    pp.number = 5
+    pp.start = 20
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate SI_NetStim
+
+//Network specification interface
+
+objref cells, nclist, netcon
+{cells = new List()  nclist = new List()}
+
+func cell_append() {cells.append($o1)  $o1.position($2,$3,$4) return cells.count - 1 }
+
+func nc_append() {//srcindex, tarcelindex, synindex
+  if ($3 >= 0) {
+    cells.object($1).connect2target(cells.object($2).synlist.object($3),netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }else{
+    cells.object($1).connect2target(cells.object($2).pp,netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }
+  nclist.append(netcon)
+  return nclist.count - 1
+}
+
+//Network instantiation
+
+  /* B0 */  cell_append(new B_BallStick(),	-52,	 -6, 0)
+  /* SE1 */  cell_append(new SE_NetStim(),	15,	 47, 0)
+  /* SI2 */  cell_append(new SI_NetStim(),	-51,	 47, 0)
+  /* SE1 -> B0.E0 */  nc_append(1,   0, 0,  0.01,1)
+  /* SI2 -> B0.I1 */  nc_append(2,   0, 1,  0.01,1)

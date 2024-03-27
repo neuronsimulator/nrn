@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to plot variables that belong to biophysical cell models in a network &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to delete v(.5) from the graph" href="heres_how_delete_v5.html" />
+    <link rel="prev" title="Run a simulation and plot the input and output spike trains" href="run_simulation_plot_input_output2.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="network_builder_tutorials.html#using-the-network-builder">Using the Network Builder</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="introduction_to_network_construction.html">Introduction to Network Construction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorial_artificial_neurons.html">Tutorial 1: Making Networks of Artificial Neurons</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="tutorial_2_hybrid_nets.html">Tutorial 2 : Making Hybrid Nets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+          <li class="breadcrumb-item"><a href="tutorial_2_hybrid_nets.html">Tutorial 2 : Making Hybrid Nets</a></li>
+          <li class="breadcrumb-item"><a href="run_simulation_plot_input_output2.html">Run a simulation and plot the input and output spike trains</a></li>
+      <li class="breadcrumb-item active">How to plot variables that belong to biophysical cell models in a network</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/heres_how_page.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p id="heres-how-page">Here’s a couple of graphs that may suggest why enabling inhibition in this model prevented all spikes after the first one. In these graphs M_Cell[0].soma.v(0.5) and R_Cell[0].soma.v(0.5) are Vm at the soma of M1 and R2, respectively. First the response when inhibiton was OFF</p>
+<img alt="../_images/noinhib.gif" class="align-center" src="../_images/noinhib.gif" />
+<p>and then the response when inhibition was ON.</p>
+<img alt="../_images/inhib.gif" class="align-center" src="../_images/inhib.gif" />
+<p>The following notes tell how to set up these plots, and at the very end is an explanation of why this network responds this way.</p>
+<section id="how-to-plot-variables-that-belong-to-biophysical-cell-models-in-a-network">
+<h1>How to plot variables that belong to biophysical cell models in a network<a class="headerlink" href="#how-to-plot-variables-that-belong-to-biophysical-cell-models-in-a-network" title="Link to this heading"></a></h1>
+<p>Suppose you want to see the detailed time course of some variable that belongs to the biophysical cell models in this recurrent inhibition network.
+Bring up a new graph (<span class="menuselection">NEURON Main Menu ‣ Graph ‣ Voltage axis</span>). Delete the v(.5), which isn’t useful because the default section is acell_home, a dummy section that hosts the artificial neuron S0 (the NetStim). To avoid unintended deletes, return the cursor action to Crosshair mode. <a class="reference internal" href="heres_how_delete_v5.html#heres-how-delete-v5"><span class="std std-ref">Here’s how.</span></a></p>
+<img alt="../_images/del2.gif" class="align-center" src="../_images/del2.gif" />
+<p>Now select Plot what? from the graph’s primary menu.</p>
+<img alt="../_images/pw0.gif" class="align-center" src="../_images/pw0.gif" />
+<p>This brings up the Plot what? window. Click in its edit field (the area beneath the prompt “Enter Symbol name:”), type the name of the variable you want to plot, and presto!</p>
+<p>But wait – what <em>is</em> the name of the variable? The network has more than one biophysical cell model, each of which has a section named soma, so how do you specify which soma.v(0.5) you want?</p>
+<p>This is easy if you know the name of the cell. And you can find the name of the cell out by clicking on the Network Builder’s “Show Cell Map” button. This pops up a window that shows the association between the name of the cell in the NetGUI (left column) and the real name that has been instantiated (right column) The real name is made up of 3 parts : the name of the NetReadyCell (which you deliberately chose to be short, in order to reduce clutter in the layout area of the NetGUI), the name of the Cellbuilder Classname, and the index of the instance. The synapses on each cell also appear in this list, e.g. M1_E0 is the first synapse of type E on cell M1.</p>
+<img alt="../_images/cellmap.gif" class="align-center" src="../_images/cellmap.gif" />
+<p>So cell M1 is really M_Cell[0], and if you want to plot Vm at the middle of its soma you will need to enter the string M_Cell[0].soma.v(0.5) into the edit field of the Plot what? window.</p>
+<p>What if you’d rather not type all that stuff, or you want to see some variable whose exact name you don’t quite recall but which you’d recognize instantly if you saw it? You do have an alternative  : use Plot what? to browse through names until you find what you want. Here’s a step-by-step illustration of how to use this approach to show somatic Vm of both M1 and R2 in the same graph. This may seem complicated, but it is really very easy.</p>
+<section id="using-plot-what-to-find-names">
+<h2>Using Plot what? to find names<a class="headerlink" href="#using-plot-what-to-find-names" title="Link to this heading"></a></h2>
+<p>The Plot what? window is actually a browser for names of things. When this tool first appears, it shows the names of the sections that do not belong to objects.</p>
+<img alt="../_images/pw1.gif" class="align-center" src="../_images/pw1.gif" />
+<p>In a network model, the only section that doesn’t belong to an object is the dummy section <code class="docutils literal notranslate"><span class="pre">acell_home_</span></code>.</p>
+<p>To find the name of a variable that belongs to a section in a cell model, use Plot what? to navigate to</p>
+<ol class="arabic simple">
+<li><p>the proper cell class</p></li>
+<li><p>the proper instance of that class</p></li>
+<li><p>the proper section</p></li>
+<li><p>the proper variable</p></li>
+</ol>
+<section id="find-the-proper-cell-class">
+<h3>1. Find the proper cell class<a class="headerlink" href="#find-the-proper-cell-class" title="Link to this heading"></a></h3>
+<p>Left click on Show and scroll down to Objects.</p>
+<img alt="../_images/pw2.gif" class="align-center" src="../_images/pw2.gif" />
+<p>Release the mouse button and a list of object classes appears.</p>
+<img alt="../_images/pw3.gif" class="align-center" src="../_images/pw3.gif" />
+<p>The Network Builder’s Cell Map told us that we are looking for an M_Cell and an R_Cell. Drag the left column’s scroll bar down to find <a href="#id1"><span class="problematic" id="id2">M_Cell_</span></a></p>
+<img alt="../_images/pw4.gif" class="align-center" src="../_images/pw4.gif" />
+<p>Double click on <a href="#id3"><span class="problematic" id="id4">M_Cell_</span></a>  .  .  .</p>
+<img alt="../_images/pw5.gif" class="align-center" src="../_images/pw5.gif" />
+<p>and the string <a href="#id5"><span class="problematic" id="id6">M_Cell_</span></a> appears in the edit field. Also the middle column changes to show the index of each instance of a cell in the M_Cell class that our model network contains.</p>
+<img alt="../_images/pw6.gif" class="align-center" src="../_images/pw6.gif" />
+</section>
+<section id="find-the-proper-instance-of-that-class">
+<h3>2. Find the proper instance of that class<a class="headerlink" href="#find-the-proper-instance-of-that-class" title="Link to this heading"></a></h3>
+<p>Double clicking on the 0 in the middle column changes the string to M_Cell[0]. , and the middle column changes again to reveal the public variables and methods that belong to M_Cell[0]</p>
+<img alt="../_images/pw7.gif" class="align-center" src="../_images/pw7.gif" />
+</section>
+<section id="find-the-proper-section">
+<h3>3. Find the proper section<a class="headerlink" href="#find-the-proper-section" title="Link to this heading"></a></h3>
+<p>Drag the middle column’s scroll bar down to find soma.</p>
+<img alt="../_images/pw8.gif" class="align-center" src="../_images/pw8.gif" />
+<p>Double clicking on soma changes the edit field to M_Cell[0].soma. and the right column now contains a list of the properties of the soma section in M_Cell[0]</p>
+<img alt="../_images/pw9.gif" class="align-center" src="../_images/pw9.gif" />
+</section>
+<section id="find-the-proper-variable">
+<h3>4. Find the proper variable<a class="headerlink" href="#find-the-proper-variable" title="Link to this heading"></a></h3>
+<p>Scroll down this list to find the item v( 0.5 )</p>
+<img alt="../_images/pw10.gif" class="align-center" src="../_images/pw10.gif" />
+<p>Double click on v(0.5) and the string in the edit field is completed, becoming M_Cell[0].soma.v( 0.5 )</p>
+<img alt="../_images/pw11.gif" class="align-center" src="../_images/pw11.gif" />
+<p>Click on the Accept button.</p>
+<img alt="../_images/pw12.gif" class="align-center" src="../_images/pw12.gif" />
+<p>The Plot what? window goes away and the graph now shows a new label which is partly obscured, but will turn out to be M_Cell[0].soma.v(0.5)</p>
+<img alt="../_images/graph1.gif" class="align-center" src="../_images/graph1.gif" />
+<p>Repeat these steps to make the graph also display R_Cell[0].soma.v(0.5) (or just bring the Plot what? window back up, click in its edit field and change the M to an R, then click on the Accept button). When you’re done, the graph will look like this.</p>
+<img alt="../_images/graph2.gif" class="align-center" src="../_images/graph2.gif" />
+<p>For instructions on how to move the labels and change the colors of the plots <a class="reference internal" href="how_to_move_labels.html#how-to-move-labels"><span class="std std-ref">read this</span></a>.</p>
+</section>
+</section>
+<section id="what-s-going-on">
+<h2>What’s going on<a class="headerlink" href="#what-s-going-on" title="Link to this heading"></a></h2>
+<p>The excitatory synapse onto M1 is rather weak, so multiple EPSPs must summate to push this cell to firing threshold. When the weight of the R2 -&gt; M1.I1 inhibitory synapse is 0, M1 receives an unopposed high frequency barrage of EPSPs that forces repetitive spiking. However, the interspike trajectory of Vm is relatively depolarized, so after the first spike gNa never quite recovers from inactivation and gK stays partially activated (the reduced peak spike amplitude attests to this). This is quite unlike the situation in R2, which is driven above threshold by each of the individual EPSPs from M1, which are much larger and occur at a much longer interval.</p>
+<p>The precarious excitability of M1 after its first spike accounts for the ability of a single IPSP from the R2 -&gt; M1.I1 projection to prevent later spikes of M1, even though M1 continues to receive undiminished high frequency excitation. The shunting inhibition generated by R2 when the R2 -&gt; M1.I1 weight is 0.01 blocks the second spike of M1, while allowing Vm to remain sufficiently depolarized that continued summation of the small EPSPs causes persistent gNa inactivation that prevents later spikes as well. You can confirm this by bringing up another graph and using it to plot h_hh and n_hh at the soma of M1.</p>
+<p>Here’s a couple more questions.</p>
+<ol class="arabic simple">
+<li><p>Would excitation be equally precarious if the EPSPs occurred at a lower rate but were of larger amplitude so that the firing rate of M1 in the absence of inhibition were the same?</p></li>
+<li><p>How might the outcome differ if inhibition were hyperpolarizing?</p></li>
+<li><p>The HH mechanism isn’t very good at repetitive spiking. If mammalian gNa &amp; gK kinetics were used, would the same phenomenon occur but at a higher EPSP frequency?</p></li>
+</ol>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="run_simulation_plot_input_output2.html" class="btn btn-neutral float-left" title="Run a simulation and plot the input and output spike trains" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="heres_how_delete_v5.html" class="btn btn-neutral float-right" title="How to delete v(.5) from the graph" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

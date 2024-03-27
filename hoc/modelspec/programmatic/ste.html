@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StateTransitionEvent &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Point Processes and Artificial Cells" href="mechanisms/mech.html" />
+    <link rel="prev" title="LinearMechanism" href="linmod.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ions.html">Ions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="mechanisms.html">Dynamics (Channels, etc…)</a></li>
+      <li class="breadcrumb-item active">StateTransitionEvent</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/modelspec/programmatic/ste.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/modelspec/programmatic/ste.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#StateTransitionEvent" title="Link to this definition">StateTransitionEvent</a></dt><dd><a href="#StateTransitionEvent.state" title="Link to this definition">state</a> &middot; <a href="#StateTransitionEvent.transition" title="Link to this definition">transition</a></dd></dl></p><section id="statetransitionevent">
+<span id="hoc-ste"></span><h1>StateTransitionEvent<a class="headerlink" href="#statetransitionevent" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="StateTransitionEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StateTransitionEvent</span></span><a class="headerlink" href="#StateTransitionEvent" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">ste</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">StateTransitionEvent(nstate,</span> <span class="pre">[pointprocess])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A StateTransitionEvent describes a finite state machine which is computed during a simulation run and moves
+instantaneously from one state to another as trigger threshold conditions become true according to
+transitions defined by the set of m then specifications. Generally, it is the
+case that when a transition occurs, a callback is executed</p>
+<p><cite>nstate</cite> is the number of states available to the machine and must be &gt; 0 (1 is valid). If a state index, <code class="docutils literal notranslate"><span class="pre">istate</span></code>,
+is not the destination of a <a class="reference internal" href="#StateTransitionEvent.transition" title="StateTransitionEvent.transition"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">StateTransitionEvent.transition()</span></code></a>, then the only way to reach
+it is via an interpreter call to <a class="reference internal" href="#StateTransitionEvent.state" title="StateTransitionEvent.state"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">StateTransitionEvent.state()</span></code></a> with arg <code class="docutils literal notranslate"><span class="pre">istate</span></code>.  If <code class="docutils literal notranslate"><span class="pre">istate</span></code> is not
+the source for a transition, then the only exit from it is when a transition enters it an the consequent callback
+executes a <a class="reference internal" href="#StateTransitionEvent.state" title="StateTransitionEvent.state"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">StateTransitionEvent.state()</span></code></a> with arg different from <code class="docutils literal notranslate"><span class="pre">istate</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">pointprocess</span></code> arg is needed only if the simulation uses multiple threads or the local variable time
+step method. (an admittedly grotesque requirement to give a hint as to which thread and cell is appropriate for
+all the trigger variables specified by the transitions)</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span> <span class="c1"># use h.run(), h.cvode, etc</span>
+
+<span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">()</span> <span class="c1"># empty model not allowed.</span>
+<span class="n">ste</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">StateTransitionEvent</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">tnext</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">fteinit</span><span class="p">():</span>
+  <span class="n">tnext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># first transition at 1.0</span>
+  <span class="n">ste</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># initial state</span>
+
+<span class="n">fih</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">FInitializeHandler</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fteinit</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">src</span><span class="p">):</span> <span class="c1"># current state is the destination. arg gives the source</span>
+  <span class="nb">print</span> <span class="n">h</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot; transition &quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ste</span><span class="o">.</span><span class="n">state</span><span class="p">()),</span> <span class="s2">&quot; t-tnext =&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">t</span><span class="o">-</span><span class="n">tnext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">tnext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="c1"># update for next transition</span>
+
+<span class="n">ste</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">,</span> <span class="n">tnext</span><span class="p">,</span> <span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="nb">print</span> <span class="s2">&quot;default dt=0.025 fixed step run&quot;</span>
+<span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">steps_per_ms</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">h</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">h</span><span class="o">.</span><span class="n">steps_per_ms</span>
+<span class="nb">print</span> <span class="s2">&quot;dt=1/64 fixed step run &quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">dt</span>
+<span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]:</span>
+  <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">condition_order</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+  <span class="nb">print</span> <span class="s2">&quot;cvode.condition_order() = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">condition_order</span><span class="p">())</span>
+  <span class="n">h</span><span class="o">.</span><span class="n">cvode_active</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The results of a run are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ nrniv -python temp.py
+NEURON -- VERSION 7.4 (1353:fa0eeb93b0fb) 2015-07-22
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2015
+See http://www.neuron.yale.edu/neuron/credits
+
+default dt=0.025 fixed step run
+1.025  transition  0 0  t-tnext = 0.025
+2.025  transition  0 0  t-tnext = 0.025
+3.0  transition  0 0  t-tnext = 8.881784197e-15
+4.0  transition  0 0  t-tnext = 2.30926389122e-14
+dt=1/64 fixed step run  0.015625
+1.015625  transition  0 0  t-tnext = 0.015625
+2.015625  transition  0 0  t-tnext = 0.015625
+3.015625  transition  0 0  t-tnext = 0.015625
+4.015625  transition  0 0  t-tnext = 0.015625
+cvode.condition_order() = 1
+3.43225906488  transition  0 0  t-tnext = 2.43225906488
+cvode.condition_order() = 2
+1.0  transition  0 0  t-tnext = -1.11022302463e-16
+2.0  transition  0 0  t-tnext = 0.0
+3.0  transition  0 0  t-tnext = 0.0
+4.0  transition  0 0  t-tnext = 0.0
+5.0  transition  0 0  t-tnext = 0.0
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>Note that the dt=0.025 fixed step run exhibits round off errors with respect to repeated addition of dt to t
+when dt is not an exact binary fraction.</p>
+<p>Note that when dt is an exact binary fraction (1/64) and the trigger variable exactly equals the trigger
+threshold, that does not constitute (triggervar - triggerthreash &gt; 0) == true and so the transition occurs at
+the end of the next step.</p>
+<p>Note that cvode with condition order 1 uses very large time steps with this trivial model. This is not necessarily
+a problem in practice as time steps are generally quite small when states are changing rapidly. However, one
+should consider the benefits of condition order 2.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StateTransitionEvent.state">
+<span class="sig-prename descclassname"><span class="pre">StateTransitionEvent.</span></span><span class="sig-name descname"><span class="pre">state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StateTransitionEvent.state" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">istate</span> <span class="pre">=</span> <span class="pre">ste.state()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">ste.state(istate)</span></code></p>
+</dd>
+</dl>
+<p>Description:
+With no args, returns the index of the current state. With an arg, sets the current state to the <code class="docutils literal notranslate"><span class="pre">istate</span></code> index.</p>
+<p>When setting a state, the transitions from the previous state are deactivated and all the transitions leaving the
+<code class="docutils literal notranslate"><span class="pre">istate</span></code> index become possible during future time steps.</p>
+<p>The user should supply a type 1 <a class="reference internal" href="../../simctrl/programmatic.html#FInitializeHandler" title="FInitializeHandler"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">FInitializeHandler</span></code></a> callback to set the initial state index (and perhaps set
+state dependent transition trigger threshold values)
+when a new simulation run begins.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StateTransitionEvent.transition">
+<span class="sig-prename descclassname"><span class="pre">StateTransitionEvent.</span></span><span class="sig-name descname"><span class="pre">transition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StateTransitionEvent.transition" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">ste.transition(isrcstate,</span> <span class="pre">ideststate,</span> <span class="pre">&amp;triggervar,</span> <span class="pre">&amp;triggerthresh,</span> <span class="pre">&quot;statement&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">ste.transition(isrcstate,</span> <span class="pre">ideststate,</span> <span class="pre">hocref,</span> <span class="pre">hocref,</span> <span class="pre">pycallable)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Adds a transition from the <code class="docutils literal notranslate"><span class="pre">isrcstate</span></code> of the StateTransitionEvent instance to the <code class="docutils literal notranslate"><span class="pre">ideststate</span></code>.
+<code class="docutils literal notranslate"><span class="pre">Isrcstate</span></code> and <code class="docutils literal notranslate"><span class="pre">ideststate</span></code> must be &gt;= 0 and &lt; <code class="docutils literal notranslate"><span class="pre">nstate</span></code> (number of states specified in the constructor).
+<code class="docutils literal notranslate"><span class="pre">Isrcstate</span></code> == <code class="docutils literal notranslate"><span class="pre">ideststate</span></code> is allowed.</p>
+<p>A transition occurs when <code class="docutils literal notranslate"><span class="pre">triggervar</span></code> becomes greater than <code class="docutils literal notranslate"><span class="pre">triggerthresh</span></code>. Note: a transition does NOT
+occur when it merely becomes equal. Note: a transition does not occur if the isrcstate is entered and triggervar
+is greater than triggerthresh. ie. triggervar must first become not greater than triggervar and then become greater
+for the transition to occur.</p>
+<p>On each time step, the transitions from a source state are checked in the order in which they are created
+and the first true condition
+specifies the transition to be taken. But note a subtlety with regard to the variable step methods
+with cvode.condition_order(2). Since that
+involves interpolation back to the time at which the threshold crossing actually occurred, the transition with
+the earliest crossing will be the one actually taken.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">triggervar</span></code> may be the hoc time variable t. This will work properly with threads and local variable time steps
+as the system will point to the correct thread/cvode instance time. Hoc time as a <code class="docutils literal notranslate"><span class="pre">triggerthresh</span></code>
+will work correctly
+only for single thread fixed and global variable step methods and otherwise allow a race condition. Note that
+with multiple threads or the local variable time step method. All <code class="docutils literal notranslate"><span class="pre">triggervar</span></code> for a given <code class="docutils literal notranslate"><span class="pre">ste</span></code> need to be
+in the same thread or cell as was specified by the StateTransitionEvent constructor.</p>
+<p>In python, the syntax for a triggervar reference is, for example, h._ref_t or sec(.5)._ref_v . A reference to a
+hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a python
+reference with triggerthresh = h.ref(value) and pass that for the <code class="docutils literal notranslate"><span class="pre">triggerthresh</span></code> arg.
+One changes its value via the
+triggerthreash[0] = … syntax. Since the ste object keeps pointers to these values, it is very important that
+triggerthresh not be destroyed unless the ste instance is also destroyed.</p>
+<p><code class="docutils literal notranslate"><span class="pre">statement</span></code> or <code class="docutils literal notranslate"><span class="pre">pycallable</span></code> are optional arguments. They are executed when the transition takes place.</p>
+</dd>
+<dt>Bugs:</dt><dd><p>A time <code class="docutils literal notranslate"><span class="pre">triggervar</span></code> is handled the same way as any other range variable such as membrane potential. That is,
+it is compared every time step to its corresponding <code class="docutils literal notranslate"><span class="pre">triggerthresh</span></code>.
+It would be more efficient in most cases to handle it as a normal time event. Perhaps a time event method will
+be eventually integrated into the StateTransitionEvent class. Note that cvode.event(tevent, callback) is almost
+ok as it is easy to activate the transition when entering the source state. However, one must remember to logically
+deactivate it if a different transition leaving the source state takes place.</p>
+<p>Internal pointers to <code class="docutils literal notranslate"><span class="pre">Triggervar</span></code> and <code class="docutils literal notranslate"><span class="pre">triggerthresh</span></code> do not know if those variables have been destroyed.
+To avoid using freed memory, it is up to the user to avoid this possibility.</p>
+<p>That a transition requires a threshold crossing can be occasionally limiting when one wished to check a condition
+and immediately leave a state on entering it. However, the callback can change the current state and that will
+become the activated state on return from the callback.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="linmod.html" class="btn btn-neutral float-left" title="LinearMechanism" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mechanisms/mech.html" class="btn btn-neutral float-right" title="Point Processes and Artificial Cells" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

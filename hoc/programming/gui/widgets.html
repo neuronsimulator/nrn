@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Widgets &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="SymChooser" href="symchooser.html" />
+    <link rel="prev" title="List" href="list.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="layout.html">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="list.html">List</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">Widgets</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/programming/gui/widgets.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/programming/gui/widgets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#units" title="Link to this definition">units</a> &middot; <a href="#xbutton" title="Link to this definition">xbutton</a> &middot; <a href="#xcheckbox" title="Link to this definition">xcheckbox</a> &middot; <a href="#xfixedvalue" title="Link to this definition">xfixedvalue</a> &middot; <a href="#xlabel" title="Link to this definition">xlabel</a> &middot; <a href="#xmenu" title="Link to this definition">xmenu</a> &middot; <a href="#xpanel" title="Link to this definition">xpanel</a> &middot; <a href="#xpvalue" title="Link to this definition">xpvalue</a> &middot; <a href="#xradiobutton" title="Link to this definition">xradiobutton</a> &middot; <a href="#xslider" title="Link to this definition">xslider</a> &middot; <a href="#xstatebutton" title="Link to this definition">xstatebutton</a> &middot; <a href="#xvalue" title="Link to this definition">xvalue</a> &middot; <a href="#xvarlabel" title="Link to this definition">xvarlabel</a></p><section id="widgets">
+<span id="hoc-panel"></span><h1>Widgets<a class="headerlink" href="#widgets" title="Link to this heading"></a></h1>
+<p>The following are implemented as hoc functions. They are used to create
+panels of buttons, menus, and field editors.</p>
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xpanel">
+<span class="sig-name descname"><span class="pre">xpanel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xpanel" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xpanel(&quot;name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel(&quot;name&quot;,</span> <span class="pre">[0-1])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel(x,</span> <span class="pre">y)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel(scroll)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel(scroll,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">xpanel(&quot;name&quot;)</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">xpanel(&quot;name&quot;,</span> <span class="pre">[0-1])</span></code></dt><dd><p>Title of a new panel. Every
+button, menu, and value between this and a closing <code class="docutils literal notranslate"><span class="pre">xpanel()</span></code> command
+with no arguments (or placement args) belongs to this panel.
+If the form is used with a second argument equal to 1, then
+the panel is laid out horizontally. Otherwise the default is vertically.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel()</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">xpanel(x,</span> <span class="pre">y)</span></code></dt><dd><p>done constructing the panel. so map it to the screen with position
+optionally specified.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">xpanel(slider)</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">xpanel(slider,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>as above but if the first arg is a number, then the value determines
+whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox
+will NOT be used. Scroll = 1 means the panel will be inside a scrollbox.
+Scroll = -1 is the default value and whether or not a scrollbox is used
+is determined by the number of panel items in comparison with the
+value of the panel_scroll property in the nrn.defaults file.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xbutton">
+<span class="sig-name descname"><span class="pre">xbutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xbutton" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xbutton(&quot;command&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xbutton(&quot;prompt&quot;,</span> <span class="pre">&quot;command&quot;)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">xbutton(&quot;command&quot;)</span></code></dt><dd><p>new button with command to execute when pressed. The label
+on the button is “<em>command</em>”.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xbutton(&quot;prompt&quot;,</span> <span class="pre">&quot;command&quot;)</span></code></dt><dd><p>the label ont the button is “<em>prompt</em>”, the action
+to execute is “<em>command</em>”.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xstatebutton">
+<span class="sig-name descname"><span class="pre">xstatebutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xstatebutton" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xstatebutton(&quot;prompt&quot;,&amp;var</span> <span class="pre">[,&quot;action&quot;])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xbutton" title="xbutton"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xbutton()</span></code></a>, but when pressed var is set to 0 or 1 so that it matches the
+telltale state of the button. If the var is set by another way the
+telltale state is updated to reflect the correct value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xcheckbox">
+<span class="sig-name descname"><span class="pre">xcheckbox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xcheckbox" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xcheckbox(&quot;prompt&quot;,&amp;var</span> <span class="pre">[,&quot;action&quot;])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xstatebutton" title="xstatebutton"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xstatebutton()</span></code></a>, but checkbox appearance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xradiobutton">
+<span class="sig-name descname"><span class="pre">xradiobutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xradiobutton" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xradiobutton(&quot;name&quot;,</span> <span class="pre">&quot;action&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xradiobutton(&quot;name&quot;,</span> <span class="pre">&quot;action&quot;,</span> <span class="pre">0or1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Like an <code class="docutils literal notranslate"><span class="pre">xbutton</span></code> but highlights the most recently selected
+button of a contiguous group (like a car radio, mutually exclusive
+selection).
+If the third argument is 1, then the button will be selected when the
+panel is mapped onto the screen. However, in
+this case the action should also be explicitly executed by the programmer.
+That is not done automatically since it is often the case that the action
+is invalid when the radio button is created.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>proc a() {
+    print $1
+}
+
+strdef label, cmd
+
+xpanel(&quot;panel&quot;)
+    xmenu(&quot;menu&quot;)
+    for i =1, 10 {
+        sprint(label, &quot;item %d&quot;, i)
+        sprint(cmd, &quot;a(%d)&quot;, i)
+        xradiobutton(label, cmd)
+    }
+    xmenu()
+xpanel()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xmenu">
+<span class="sig-name descname"><span class="pre">xmenu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xmenu" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xmenu()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">&quot;stmt&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">&quot;stmt&quot;,</span> <span class="pre">1)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;)</span></code></dt><dd><p>create a button in the panel with label “title” which, when
+pressed, pops up a menu containing buttons and other menus. Every
+<code class="docutils literal notranslate"><span class="pre">xbutton</span></code> and <code class="docutils literal notranslate"><span class="pre">xmenu</span></code> command between this and the closing <code class="docutils literal notranslate"><span class="pre">xmenu()</span></code>
+command with no arguments becomes the menu.
+Don’t put values into menus.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xmenu()</span></code></dt><dd><p>done defining the menu. Menus can be nested as in</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        xmenu(&quot;one&quot;)
+          xmenu(&quot;two&quot;)
+          xmenu()
+        xmenu()
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">1)</span></code></dt><dd><p>adds the menu to the menubar. Note that a top level menu with no
+second argument starts a new menubar. Normally these menubars have only
+one top level item.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>xpanel(&quot;menubar&quot;)
+        xmenu(&quot;first&quot;)
+                xbutton(&quot;one&quot;,&quot;print 1&quot;)
+                xbutton(&quot;two&quot;,&quot;print 2&quot;)
+        xmenu()
+        xmenu(&quot;second&quot;, 1)
+                xbutton(&quot;three&quot;,&quot;print 3&quot;)
+                xbutton(&quot;four&quot;,&quot;print 4&quot;)
+                xmenu(&quot;submenu&quot;)
+                        xbutton(&quot;PI&quot;, &quot;print PI&quot;)
+                xmenu()
+        xmenu()
+        xmenu(&quot;third&quot;, 1)
+                xbutton(&quot;five&quot;,&quot;print 5&quot;)
+                xbutton(&quot;six&quot;,&quot;print 6&quot;)
+        xmenu()
+        xmenu(&quot;nextline&quot;)
+                xbutton(&quot;seven&quot;,&quot;print 7&quot;)
+                xbutton(&quot;eight&quot;,&quot;print 8&quot;)
+        xmenu()
+xpanel()
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">&quot;stmt&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">xmenu(&quot;title&quot;,</span> <span class="pre">&quot;stmt&quot;,</span> <span class="pre">1)</span></code></dt><dd><p>Dynamic menu added as item in panel or menu or (when third argument
+is 1) to a menubar. An example of the first type is the
+NEURONMainMenu/File/RecentDir and an example of the last type is the
+NEURONMainMenu/Window</p>
+<p>When the menu title button is selected, the stmt is executed in a context
+like:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        xmenu(&quot;title&quot;)
+        stmt
+        xmenu()
+</pre></div>
+</div>
+<p>which should normally build a menu list and then this list is mapped to
+the screen as a normal walking menu.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>load_file(&quot;nrngui.hoc&quot;)
+xpanel(&quot;test&quot;)
+xmenu(&quot;dynamic&quot;, &quot;make()&quot;)
+xpanel()
+
+strdef s1, s2
+n = 0
+
+proc make() {local i
+   n += 1
+   for i=1, n {
+      sprint(s1, &quot;label %d&quot;, i)
+      sprint(s2, &quot;print %d&quot;, i)
+      xbutton(s1, s2)
+   }
+}
+</pre></div>
+</div>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xlabel">
+<span class="sig-name descname"><span class="pre">xlabel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xlabel" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xlabel(&quot;string&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Show the string as a fixed label.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xvarlabel">
+<span class="sig-name descname"><span class="pre">xvarlabel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xvarlabel" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xvarlabel(strdef)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Show the string as its current value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xvalue">
+<span class="sig-name descname"><span class="pre">xvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xvalue" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;variable&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;prompt&quot;,</span> <span class="pre">&quot;variable&quot;</span> <span class="pre">[,</span> <span class="pre">boolean_deflt,</span> <span class="pre">&quot;action&quot;</span> <span class="pre">[,</span> <span class="pre">boolean_canrun,</span> <span class="pre">boolean_usepointer]])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;prompt&quot;,</span> <span class="pre">&quot;variable&quot;,</span> <span class="pre">2)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;variable&quot;)</span></code></dt><dd><p>create field editor for variable</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;prompt&quot;,</span> <span class="pre">&quot;variable&quot;</span> <span class="pre">[,</span> <span class="pre">boolean_deflt,</span> <span class="pre">&quot;action&quot;</span> <span class="pre">[,</span> <span class="pre">boolean_canrun,</span> <span class="pre">boolean_usepointer]])</span></code></dt><dd><p>create field editor for variable with the button labeled with “<em>prompt</em>”.
+If <em>boolean_deflt</em> == 1 then add a checkbox which is checked when the
+value of the field editor is different that when the editor was
+created. Execute “action” when user enters a new value. If
+<em>boolean_canrun</em> == 1 then use a default_button widget kit appearance
+instead     of a push_button widget kit appearance.
+If <em>boolean_usepointer</em> is true then (for efficiency sake) try to
+use the address of variable instead of interpreting it all the time.
+At this time you must use the address form if the button is created
+within an object, otherwise when the button is pressed, the symbol
+name won’t be parsed within the context of the object but at the
+top-level context.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">xvalue(&quot;prompt&quot;,</span> <span class="pre">&quot;variable&quot;,</span> <span class="pre">2)</span></code></dt><dd><p>a field editor that keeps getting updated every 10th <code class="docutils literal notranslate"><span class="pre">doNotify()</span></code>.</p>
+</dd>
+</dl>
+<p>The domain of values that can be entered by the user into a field editor
+may be limited to the domain specified by the
+<a class="reference internal" href="misc.html#variable_domain" title="variable_domain"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">variable_domain()</span></code></a> function , the domain specified for the variable in
+a model description file, or a default domain that exists
+for some special NEURON variables such as diam, Ra, L, etc.
+For a field editor to check the domain, domain limits must be in effect
+prior to creation of the field editor.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xpvalue">
+<span class="sig-name descname"><span class="pre">xpvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xpvalue" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xpvalue(&quot;variable&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xpvalue(&quot;prompt&quot;,</span> <span class="pre">&amp;variable,</span> <span class="pre">...)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xvalue" title="xvalue"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xvalue()</span></code></a> but definitely uses address of the variable.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#units" title="units"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">units()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xfixedvalue">
+<span class="sig-name descname"><span class="pre">xfixedvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xfixedvalue" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xfixedvalue(&quot;variable&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">xfixedvalue(&quot;prompt&quot;,</span> <span class="pre">&quot;variable&quot;,</span> <span class="pre">boolean_deflt,</span> <span class="pre">boolean_usepointer)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>like xvalue but cannot be changed by the user except under
+program control and there can be no action associated with it.
+Note: this is not implemented. For now, try to do the same thing
+with <code class="docutils literal notranslate"><span class="pre">xvarlabel()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="xslider">
+<span class="sig-name descname"><span class="pre">xslider</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xslider" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">xslider(&amp;var,</span> <span class="pre">[low,</span> <span class="pre">high],</span> <span class="pre">[&quot;send_cmd&quot;],</span> <span class="pre">[vert],</span> <span class="pre">[slow])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Slider which is attached to the variable var. Whenever the slider
+is moved, the optional <em>send_cmd</em> is executed. The default range is
+0 to 100. Steppers increase or decrease the value by 1/10 of the range.
+Resolution is .01 of the range. vert=1 makes a vertical slider and
+if there is no <em>send_cmd</em> may be the 4th arg. slow=1 removes the “repeat
+key” functionality from the slider(and arrow steppers) and also
+prevents recursive calls to the <em>send_cmd</em>. This is necessary if
+a slider action is longer than the timeout delay. Otherwise the
+slider can get in a state that appears to be an infinite loop.
+The downside of slow=1 is that the var may not get the last value
+of the slider if one releases the button during an action.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="units">
+<span class="sig-name descname"><span class="pre">units</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#units" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">current_units</span> <span class="pre">=</span> <span class="pre">units(&amp;variable)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">current_units</span> <span class="pre">=</span> <span class="pre">units(&amp;variable,</span> <span class="pre">&quot;units</span> <span class="pre">string&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;on</span> <span class="pre">or</span> <span class="pre">off&quot;</span> <span class="pre">=</span> <span class="pre">units(1</span> <span class="pre">or</span> <span class="pre">0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">current_units</span> <span class="pre">=</span> <span class="pre">units(&quot;varname&quot;,</span> <span class="pre">[&quot;units</span> <span class="pre">string&quot;])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When units are on (default on) value editor buttons display the units
+string (if it exists) along with the normal prompt string. Units for
+L, diam, Ra, t, etc are built-in and units for membrane mechanism variables
+are declared in the model description file. See modlunit .
+Note that units are NOT saved in a session. Therefore, any user defined
+variables must be given units before retrieving a session that shows them
+in a panel.</p>
+<p>The units display may be turned off with <code class="docutils literal notranslate"><span class="pre">units(0)</span></code> or by setting the
+<code class="docutils literal notranslate"><span class="pre">*units_on_flag:</span> <span class="pre">off</span></code> in the nrn/lib/nrn.defaults file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">units(&amp;variable)</span></code> returns the units string for any
+variable for which an address can be taken.</p>
+<p><code class="docutils literal notranslate"><span class="pre">units(&amp;variable,</span> <span class="pre">&quot;units</span> <span class="pre">string&quot;)</span></code> sets the units for the indicated
+variable.</p>
+<p>If the first arg is a string, it is treated as the name of the variable.
+This is restricted to hoc variable names of the style, “name”, or “classname.name”.
+Apart from the circumstance that the string arg style must be used when
+executed from Python, a benefit is that it can be used when an instance
+does not exist (no pointer to a variable of that type).
+If there are no units specified for the variable name, or the variable
+name is not defined, the return value is the empty string.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>units(&amp;t) // built in as &quot;ms&quot;
+units(&quot;t&quot;)
+units(&quot;ExpSyn.g&quot;) // built in as &quot;uS&quot;
+x = 1
+{units(&amp;x, &quot;mA/cm2&quot;)}       // declare units for variable x
+units(&amp;x)           // prints mA/cm2
+proc p () {
+    xpanel(&quot;Panel&quot;)
+    xvalue(&quot;t&quot;)
+    xvalue(&quot;prompt for x&quot;, &quot;x&quot;, 1)
+    xpanel()
+}
+p()         //shows units in panel
+units(0)    // turn off units
+p()         // does not show units in panel
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In the Python world, the first arg must be a string as the pointer style will
+raise an error.</p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="list.html" class="btn btn-neutral float-left" title="List" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="symchooser.html" class="btn btn-neutral float-right" title="SymChooser" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

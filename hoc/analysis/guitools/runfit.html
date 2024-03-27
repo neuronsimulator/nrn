@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RunFitter &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="MulRunFitter" href="mulfit.html" />
+    <link rel="prev" title="FunctionFitter" href="funfit.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#analysis">Analysis</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../programmatic.html">Programmatic Analysis Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guitools.html">GUI Analysis Tools</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="funfit.html">FunctionFitter</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">RunFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mulfit.html">MulRunFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="impedancetools.html">Impedance Tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guitools.html">GUI Analysis Tools</a></li>
+      <li class="breadcrumb-item active">RunFitter</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/analysis/guitools/runfit.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/analysis/guitools/runfit.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="runfitter">
+<span id="hoc-runfit"></span><h1>RunFitter<a class="headerlink" href="#runfitter" title="Link to this heading"></a></h1>
+<p>A tool for fitting the output of a simulation to data.
+Simulation output variable(s), and parameters can be specified by the user.
+This tool may be saved in a session. This tool uses the <a class="reference internal" href="../programmatic/optimization.html#fit_praxis" title="fit_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a>
+method and the least squares error function calls run().</p>
+<p>The minimization function used by the fitter calls the hoc “run”
+procedure (see <a class="reference internal" href="../../simctrl/runctrl.html#hoc-runcontrol-initrun"><span class="std std-ref">InitRun</span></a>).
+The output simulation variable data is stored using the
+<a class="reference internal" href="../../programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a> function, ie values are copied from the variable to the
+vector at the end of <a class="reference internal" href="../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> and at the end of <a class="reference internal" href="../../simctrl/programmatic.html#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> whenever
+t passes the x values of the data.  Fitting parameters are varied using
+one element vectors registered with <a class="reference internal" href="../../programming/math/vector.html#Vector.play" title="Vector.play"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.play()</span></code></a>, ie the value is
+copied from the vector to the parameter at the beginning of
+<a class="reference internal" href="../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>. The notion of a fitting parameter has been extended so
+that one can call an arbitrary statement so that the fit value can
+be used to assign values to a collection of hoc variables. Eg.
+globally setting a range variable.</p>
+<p>Any number of data weight regions can be specified in order to ignore
+artifacts weight critical regions more heavily.</p>
+<p>Fitting parameters and output parameters are
+registered with the play/record lists only when the “Running” checkbox shows
+that the widget is executing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Multiple instances of the RunFitter widget can be present. But make sure
+you are not Running more than one at a time. When saving a session involving
+it is necessary that on retrieval the necessary variables exist that
+are used by the fitter. In the case of extra fit variables this means
+that the master fitter should be selected prior to the slave fitters
+when using the <a class="reference internal" href="../../visualization/gui.html#hoc-pwm"><span class="std std-ref">Print &amp; File Window Manager</span></a>.</p>
+<p>When a parameter is very close to 0, its limited resolution in
+a field editor may cause problems. In this case define
+the parameter to be a scaled version of the actual desired value, eg</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>g_pas = .0001*$1
+</pre></div>
+</div>
+<p>Only change morphology parameters such as diam and L using a statement
+involving $1. Otherwise the system will not be notified that diameter
+is changing.</p>
+</div>
+<section id="readdata">
+<h2>ReadData<a class="headerlink" href="#readdata" title="Link to this heading"></a></h2>
+<p>Pops up a filechooser for reading the data file. The first number in the file is
+the number of points. Subsequent pairs of numbers are x and y values of
+the data. Alternativly the Graph menu can be used to invoke the
+<span class="guilabel">DataFromClipboard</span> item (see <a class="reference internal" href="../../simctrl/stdrun.html#hoc-stdrun-retrievefromfile"><span class="std std-ref">RetrievefromFile</span></a>).</p>
+<p>When data is read from the clipboard, that data is saved when the
+tool is saved in a session. However, if the <span class="guilabel">ReadData</span> button is used
+the filename is saved.</p>
+</section>
+<section id="currentvaluesasdefault">
+<h2>CurrentValuesAsDefault<a class="headerlink" href="#currentvaluesasdefault" title="Link to this heading"></a></h2>
+<p>Any checkmarks are removed from the default field editors in the
+parameter list.</p>
+</section>
+<section id="variabletofit">
+<h2>Variabletofit<a class="headerlink" href="#variabletofit" title="Link to this heading"></a></h2>
+<p>Pops up symbol chooser. The syntax of the variable must be in a form which
+is a valid argument to a Vector.record(var) function. Practically speaking,
+this means that if the variable happens to be a density range variable then the
+entry string must contain an explicit section arc length parameter. eg.
+soma.v(.5) . Point process variables can use either an objref prefix or the
+internal object name, eg SEClamp[0].i . Navigating to a variable name
+with the chooser generally yields a valid name. If more than one variable
+is to be fit to separate data curves, invoke a slave RunFitter with
+from the Extras/AnotherVariableToFit menu item.</p>
+</section>
+<section id="parameterstovary">
+<h2>Parameterstovary<a class="headerlink" href="#parameterstovary" title="Link to this heading"></a></h2>
+<p>Every time this button is pressed it pops up a symbol chooser for appending
+a variable to the list of parameters to be varied in order to least
+squares fit the “Variabletofit” to the data. DefaultFieldEditor’s for these
+parameters appear in the top right box of the widget. These parameters must
+be in a form acceptable to the Vector.play(var) function. ie density
+range variables must contain an explicit arc length parameter.</p>
+<p>In the case of a simulation consisting of more than one compartment, it
+is often necessary to identify a parameter with a set of values. In that
+case one can enter an arbitrary statement involving the parameter “$1”, eg</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>forall g_pas = $1
+</pre></div>
+</div>
+<p>Each parameter has a checkbox to the left of its name. When checked,
+the value will be adjusted during a fit to optimize the model to the
+data. If not checked the parameter will be held constant during the
+fit.</p>
+</section>
+<section id="extras">
+<h2>Extras<a class="headerlink" href="#extras" title="Link to this heading"></a></h2>
+<section id="dataweights">
+<h3>DataWeights<a class="headerlink" href="#dataweights" title="Link to this heading"></a></h3>
+<p>Pops up a panel showing the boundaries and weight values for each
+data region. The boundaries can also be manipulated by selecting the
+AdjustWeightRegions tool from the <span class="guilabel">Graph</span> menu (right button) and then
+dragging the boundary lines. Weights are defined so that data points
+a small region will have a total weight equal to the data points in
+a large region when the interval weight values are the same.</p>
+</section>
+<section id="parameterranges">
+<h3>ParameterRanges<a class="headerlink" href="#parameterranges" title="Link to this heading"></a></h3>
+<p>Allows specification of the allowable parameter range for a fitting parameter.
+If praxis uses a parameter outside this range, the least squares error function
+will return 1e6 without calling the run procedure. Default parameter ranges
+for all fitting parameters are initialized to 1e-6 to 1e6</p>
+</section>
+<section id="changeparmfromlist">
+<h3>Changeparmfromlist<a class="headerlink" href="#changeparmfromlist" title="Link to this heading"></a></h3>
+<p>Pops up a browser with all parameter names. Double clicking on a name
+will pop up a string dialog which can be used to change the parameter
+name or statement.</p>
+</section>
+<section id="removeparmfromlist">
+<h3>Removeparmfromlist<a class="headerlink" href="#removeparmfromlist" title="Link to this heading"></a></h3>
+<p>Pops up a browser with all parameter names. Double clicking on a name
+will remove that parameter from the list.</p>
+</section>
+<section id="saverestorefitparams">
+<h3>SaveRestoreFitParams<a class="headerlink" href="#saverestorefitparams" title="Link to this heading"></a></h3>
+<p>The SaveFitParms menu item
+saves the current values of parameters, parameter range limits, and
+and whether the parameter is to be held constant during a fit.</p>
+<p>The SaveFitBrowser menu item pops up a list browser. Double clicking
+on these items will copy the saved parameters etc, back into the current
+parameter panel.</p>
+</section>
+<section id="numberofdataregions">
+<h3>NumberOfDataRegions<a class="headerlink" href="#numberofdataregions" title="Link to this heading"></a></h3>
+<p>Select the number of data regions to use in weighting the data.</p>
+</section>
+<section id="anothervariabletofit">
+<h3>AnotherVariableToFit<a class="headerlink" href="#anothervariabletofit" title="Link to this heading"></a></h3>
+<p>Pop up a slave RunFitter to allow simultaneous fitting of several
+sets of data to several fit variables. A RunFitter Slave does not
+have a parameter panel but has independent selection of data,
+variable to fit, and data weight regions.</p>
+<p>When saving a RunFitter Slave to a session, it must be placed on the
+paper icon of the PrintWindowManager AFTER its master.</p>
+</section>
+</section>
+<section id="dofit">
+<h2>Dofit<a class="headerlink" href="#dofit" title="Link to this heading"></a></h2>
+<p>Calls praxis to do the fit. During a fit, intermediate results are
+occasionally printed to the xterm window showing the progress of the
+fit. While the widget is working the <span class="guilabel">Running</span> checkbox is checked.
+If the StopatnextQuadForm button is pressed while the fit is running,
+the fit will stop at at the end of its current main loop returning its
+current best fit along with a print of the principal axes and principal
+values. Left alone, praxis will return when it is within 1e-5 of the local
+minimum. If <span class="guilabel">Dofit</span> is pressed while the <span class="guilabel">StopatnextQuadForm</span> is checked
+praxis will stop after one main loop (calculate principal axes and values)</p>
+</section>
+<section id="singlerunfit">
+<h2>SingleRunFit<a class="headerlink" href="#singlerunfit" title="Link to this heading"></a></h2>
+<p>Call the least squares error function once. This results in a single
+simulation run with the parameter values displayed in the panel. The
+“Error of fit” field editor shows the square norm of the data - outputvariable.</p>
+</section>
+<section id="stopatnextquadform">
+<h2>StopatnextQuadForm<a class="headerlink" href="#stopatnextquadform" title="Link to this heading"></a></h2>
+<p>Cause praxis to stop after it finishes its current principal axis/value
+computation. Be patient, it may be necessary to wait for several runs
+before the computation completes. To immediately quit, press
+the <a class="reference internal" href="../../simctrl/runctrl.html#hoc-runctrl-stop"><span class="std std-ref">Stop</span></a> button on the RunControl. This will stop the fit immediately
+and set parameters to the best fit found so far.
+Only do a <kbd class="kbd docutils literal notranslate">^C</kbd> if necessity demands and then
+remove the check by pressing <span class="guilabel">SingleRunFit</span>.</p>
+</section>
+<section id="running">
+<h2>Running<a class="headerlink" href="#running" title="Link to this heading"></a></h2>
+<p>Checked when in the process of doing a Dofit or SingleRunFit. When checked
+one should not try to change the widget by changing parameters or doing
+a recursive run. The check may not be accurate if the previous run generated
+a runtime error since the check is removed only if the call to praxis
+returns normally. In this case one may press the SingleRunFit button and
+follow the instructions to remove the check.</p>
+</section>
+<section id="roughfit">
+<h2>Roughfit<a class="headerlink" href="#roughfit" title="Link to this heading"></a></h2>
+<p>Uses just 4 points per weight region to fit the data. This can
+allow the variable time step method to run much faster since there are
+many fewer recording events requested.</p>
+</section>
+<section id="bequiet">
+<h2>BeQuiet<a class="headerlink" href="#bequiet" title="Link to this heading"></a></h2>
+<p>Turns off printing by the praxis function and does not flush
+the graphs after <code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">run()</span></code> is called.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="funfit.html" class="btn btn-neutral float-left" title="FunctionFitter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mulfit.html" class="btn btn-neutral float-right" title="MulRunFitter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

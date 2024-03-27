@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetCon &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Electrode" href="../electrod.html" />
+    <link rel="prev" title="ParallelNetManager" href="parnet.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../network.html">Networks</a></li>
+      <li class="breadcrumb-item active">NetCon</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../python/modelspec/programmatic/network/netcon.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/hoc/modelspec/programmatic/network/netcon.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#NetCon" title="Link to this definition">NetCon</a></dt><dd><a href="#NetCon.active" title="Link to this definition">active</a> &middot; <a href="#NetCon.delay" title="Link to this definition">delay</a> &middot; <a href="#NetCon.event" title="Link to this definition">event</a> &middot; <a href="#NetCon.get_recordvec" title="Link to this definition">get_recordvec</a> &middot; <a href="#NetCon.postcell" title="Link to this definition">postcell</a> &middot; <a href="#NetCon.postcelllist" title="Link to this definition">postcelllist</a> &middot; <a href="#NetCon.postloc" title="Link to this definition">postloc</a> &middot; <a href="#NetCon.pre" title="Link to this definition">pre</a> &middot; <a href="#NetCon.precell" title="Link to this definition">precell</a> &middot; <a href="#NetCon.precelllist" title="Link to this definition">precelllist</a> &middot; <a href="#NetCon.prelist" title="Link to this definition">prelist</a> &middot; <a href="#NetCon.preloc" title="Link to this definition">preloc</a> &middot; <a href="#NetCon.record" title="Link to this definition">record</a> &middot; <a href="#NetCon.setpost" title="Link to this definition">setpost</a> &middot; <a href="#NetCon.srcgid" title="Link to this definition">srcgid</a> &middot; <a href="#NetCon.syn" title="Link to this definition">syn</a> &middot; <a href="#NetCon.synlist" title="Link to this definition">synlist</a> &middot; <a href="#NetCon.threshold" title="Link to this definition">threshold</a> &middot; <a href="#NetCon.valid" title="Link to this definition">valid</a> &middot; <a href="#NetCon.wcnt" title="Link to this definition">wcnt</a> &middot; <a href="#NetCon.weight" title="Link to this definition">weight</a> &middot; <a href="#NetCon.x" title="Link to this definition">x</a></dd></dl></p><section id="netcon">
+<span id="hoc-netcon"></span><h1>NetCon<a class="headerlink" href="#netcon" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="NetCon">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NetCon</span></span><a class="headerlink" href="#NetCon" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">section</span> <span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(&amp;v(x),</span> <span class="pre">target)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(source,</span> <span class="pre">target)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">section</span> <span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(&amp;v(x),</span> <span class="pre">target,</span> <span class="pre">threshold,</span> <span class="pre">delay,</span> <span class="pre">weight)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(source,</span> <span class="pre">target,</span> <span class="pre">threshold,</span> <span class="pre">delay,</span> <span class="pre">weight)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Network Connection object that defines a synaptic connection between
+a source and target. When the source variable passes threshold in the
+positive direction at time t-delay, the target will receive an event
+at time t along with weight information. There is no limit on delay
+except that it be &gt;= 0 and there is no limit on the number of events
+pending delivery.</p>
+<p>If the optional threshold, delay, and weight arguments are not
+specified, their default values are 10, 1, and 0 respectively. In
+any case, their values can be specified after the netcon has been
+constructed, see <a class="reference internal" href="#NetCon.threshold" title="NetCon.threshold"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">NetCon.threshold</span></code></a>, <a class="reference internal" href="#NetCon.weight" title="NetCon.weight"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">NetCon.weight</span></code></a>, and <a class="reference internal" href="#NetCon.delay" title="NetCon.delay"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">NetCon.delay</span></code></a> .</p>
+<p>Note that prior to 12-Jul-2006, when the first form of the constructor
+was used, (i.e. a NetCon having a pointer to a source
+variable was created, but having no threshold argument) the threshold was
+reset to the default 10 (mV) even if the threshold for that source location
+had been explicitly set earlier. That behavior caused confusion and has been
+changed so that if there is no threshold argument and the threshold location
+already exists, the previous threshold is retained.</p>
+<p>The target must be a POINT_PROCESS or ARTIFICIAL_CELL that defines a NET_RECEIVE procedure.
+The number of NET_RECEIVE procedure arguments define a weight vector
+whose elements can be accessed with through the NetCon.weight ( <a class="reference internal" href="#NetCon.weight" title="NetCon.weight"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">NetCon.weight</span></code></a> )variable
+but the weight argument in the above constructors specify the value of
+the first argument, with the normal interpretation of weight or maximum
+conductance. On initialization, all weight elements with index &gt; 0 are
+set to 0 unless the NET_RECEIVE block contains an INITIAL block. In the
+latter case, that block is executed on a call to <a class="reference internal" href="../../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>  and
+allows non-zero initialization of netcon “states” — args not initialized
+in the INITIAL block would be analogous to a <a class="reference internal" href="../mechanisms/nmodl.html#hoc-nmodl-parameter"><span class="std std-ref">hoc_Parameter</span></a> except that it
+can have a different value for different NetCon instances and can be set
+to a desired value with <a class="reference internal" href="#NetCon.weight" title="NetCon.weight"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">NetCon.weight</span></code></a>.</p>
+<p>The target is allowed to be nil (NULLObject) in which case the NetCon
+is always inactive. However this can be useful for recording (see
+<a class="reference internal" href="#NetCon.record" title="NetCon.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">NetCon.record()</span></code></a>) the spike train from an output cell.</p>
+<p>The source is normally a reference to a membrane potential which is
+watched during simulation for passage past threshold. The
+currently accessed section is required by the local variable
+time step method in order to determine the source “cell”.
+Any range variable may be a source variable but I suspect that membrane
+potential is the only practical one.</p>
+<p>N.B. For the local variable time step method <a class="reference internal" href="../../../simctrl/cvode.html#CVode.use_local_dt" title="CVode.use_local_dt"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.use_local_dt()</span></code></a> , the
+proper currently accessed section for the source must be correct during
+the creation of the NetCon so that the proper cell may be associated
+with the source. i.e,
+<code class="docutils literal notranslate"><span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(&amp;obj.sec.v(.5),</span> <span class="pre">...)</span></code>
+will not work with the local step method because, although the pointer
+is correct, the proper section was popped from the section stack prior
+to the constructor call. Instead, the proper syntax is
+<code class="docutils literal notranslate"><span class="pre">obj.sec</span> <span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(&amp;v(.5),...)</span></code></p>
+<p>The source may also be a PointProcess with a NET_RECEIVE block which
+contains a call to net_event. PointProcesses like this serve as entire
+artificial cells.</p>
+<p>The source may also
+be a PointProcess which contains a “x” variable which is watched for
+threshold crossing, but this is obsolete since NET_RECEIVE blocks which
+explicitly call net_event are much more efficient since they avoid
+the overhead of threshold detection at every time step.</p>
+<p>The source may be a NULLObject. In this case events can only occur by
+calling <a class="reference internal" href="#NetCon.event" title="NetCon.event"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">event()</span></code></a> from hoc. (It is also used by NEOSIM to implement
+its own delivery system.)</p>
+<p>A source used by multiple NetCon instances is shared by those instances
+to allow faster threshold detection (ie on a per source basis instead
+of a per NetCon basis) Therefore, there is really only one threshold
+for all NetCon objects that share a source. However, delay and weight
+are distinct for each NetCon object.</p>
+<p>The only way one can have multiple threshold values at the same location is
+to create a threshold detector point process with a NET_RECEIVE block implemented
+with a WATCH statement and calling net_event .</p>
+<p>And I’ll say it again:
+Note that prior to 12-Jul-2006, when the first form of the constructor
+was used, (i.e. a NetCon having a pointer to a source
+variable was created, but having no threshold argument) the threshold was
+reset to the default 10 (mV) even if the threshold for that source location
+had been explicitly set earlier. That behavior caused confusion and has been
+changed so that if there is no threshold argument and the threshold location
+already exists, the previous threshold is retained.</p>
+<p>From a NetCon instance, various lists of NetCon’s can be created
+with the same target, precell, or postcell. See <a class="reference internal" href="../../../simctrl/cvode.html#CVode.netconlist" title="CVode.netconlist"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.netconlist()</span></code></a>
+for creation of NetCon lists from a target, precell, or  postcell
+pattern or object.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>NetCon can currently only be used if a CVode object exists.</p>
+<p>The local variable step method does not work when the source is specified
+with the syntax <code class="docutils literal notranslate"><span class="pre">netcon</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">NetCon(&amp;soma.v(.5),...)</span></code>. The
+currently accessed section must be correct during the construction of
+the object and the above example is correct only during calculation of
+the pointer argument.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.valid">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.valid" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">netcon.valid()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 0 if the source or target have been freed. If the NetCon object
+is used when it is not valid a runtime error message will be printed on
+the console terminal.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.active">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">active</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.active" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">netcon.active(boolean)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">netcon.active()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Turns the synapse on or off in the sense that when off, no events
+are delivered using this NetCon instance. Returns the previous
+state (or current state if no argument).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.event">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.event" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">netcon.event(tdeliver)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.event(tdeliver,</span> <span class="pre">flag)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Delivers an event to the postsynaptic point process at time, tdeliver.
+tdeliver must be &gt;= t . Note that the netcon.delay is not used by this
+function. Because it is a delivery event as opposed to an initiating
+event, it will not be recorded in a NetCon.record(Vector).</p>
+<p>A flag value can only be sent to an ARTIFICIAL_CELL.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.syn">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">syn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.syn" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">target_object</span> <span class="pre">=</span> <span class="pre">netcon.syn()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a reference to the synaptic target PointProcess.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.pre">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">pre</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.pre" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">source_object</span> <span class="pre">=</span> <span class="pre">netcon.pre()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a reference to the source PointProcess. If the source is a membrane
+potential then the return value is NULLobject</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.preloc">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">preloc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.preloc" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">{x</span> <span class="pre">=</span> <span class="pre">netcon.preloc()</span> <span class="pre">...</span> <span class="pre">pop_section()}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The source section is pushed onto the section stack so that it is
+the currently accessed section. Pop_section must be called after you are
+finished with the section.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The return value of x is .5 unless the source is a membrane potential and
+located at 0, or 1, in which case value returned is 0 or 1, respectively.
+Therefore it does not necessarily correspond to the actual x value location.
+If the source was an object, the section is not pushed and the return
+value is -1.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.postloc">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">postloc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.postloc" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">{x</span> <span class="pre">=</span> <span class="pre">netcon.postloc()</span> <span class="pre">...</span> <span class="pre">pop_section()}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The section of the target point process is pushed onto the section stack
+so that it is the currently accessed section. Pop_section must be called
+after you are finished with the section. The x return value is the
+relative location of the point process in that section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.precell">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">precell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.precell" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cellobj</span> <span class="pre">=</span> <span class="pre">netcon.precell()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If the source is a membrane potential and the section was declared in
+an object (defined in a cell template), a reference to the presynaptic cell
+(object) is returned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.postcell">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">postcell</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.postcell" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cellobj</span> <span class="pre">=</span> <span class="pre">netcon.postcell()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If the synaptic point process is located in a section which was declared in
+an object (defined in a cell template), a reference to the postsynaptic cell
+(object) is returned.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.setpost">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">setpost</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.setpost" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">netcon.setpost(newtarget)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Will change the old postsynaptic POINT_PROCESS target to the one specified
+by the newtarget. If there is no argument
+or the argument is NullObject then NetCon will have no target and the
+active flag will be set to 0. Note that a target change will preserve the
+current weight vector only if the new and old targets have the same
+weight vector size (number of arguments in the NET_RECEIVE block).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.prelist">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">prelist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.prelist" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.prelist()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.prelist(List)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>List of all the NetCon objects with source the same as netcon.
+With no argument, a new List is created.
+If the List arg is present, the objects are appended.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.synlist">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">synlist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.synlist" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.synlist()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.synlist(List)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>List of all the NetCon objects with target the same as netcon.
+With no argument, a new List is created.
+If the List arg is present, the objects are appended.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../../simctrl/cvode.html#CVode.netconlist" title="CVode.netconlist"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.netconlist()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.postcelllist">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">postcelllist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.postcelllist" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.postcelllist()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.postcelllist(List)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>List of all the NetCon objects with postsynaptic cell object the same as netcon.
+With no argument, a new List is created.
+If the List arg is present, the objects are appended.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../../simctrl/cvode.html#CVode.netconlist" title="CVode.netconlist"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.netconlist()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.precelllist">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">precelllist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.precelllist" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.precelllist()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List</span> <span class="pre">=</span> <span class="pre">netcon.precelllist(List)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>List of all the NetCon objects with presynaptic cell object the same as netcon.
+With no argument, a new List is created.
+If the List arg is present, the objects are appended.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../../../simctrl/cvode.html#CVode.netconlist" title="CVode.netconlist"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.netconlist()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="NetCon.delay">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">delay</span></span><a class="headerlink" href="#NetCon.delay" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">=</span> <span class="pre">netcon.delay</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.delay</span> <span class="pre">=</span> <span class="pre">del</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Time (ms) between source crossing threshold and delivery of event
+to target. Any number of threshold events may occur before delivery of
+previous events. delay may be any value &gt;= 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.wcnt">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">wcnt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.wcnt" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">netcon.wcnt()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the size of the weight array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="NetCon.weight">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#NetCon.weight" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">=</span> <span class="pre">netcon.weight</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.weight</span> <span class="pre">=</span> <span class="pre">w</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">netcon.weight[i]</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.weight[i]</span> <span class="pre">=</span> <span class="pre">x</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Weight variable which is delivered to the target point processes
+NET_RECEIVE procedure. The number of arguments in the model descriptions
+NET_RECEIVE procedure determines the size of the weight vector.
+Generally the 0th element (no index required) refers to synaptic weight
+and remaining elements are used as storage by a synaptic model for purposes
+of distinguishing NetCon streams of events. However if the NET_RECEIVE
+block of the post synaptic point process contains an INITIAL block,
+that block is executed instead of setting all weight[i&gt;0] = 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="NetCon.threshold">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">threshold</span></span><a class="headerlink" href="#NetCon.threshold" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">th</span> <span class="pre">=</span> <span class="pre">netcon.threshold</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.threshold</span> <span class="pre">=</span> <span class="pre">th</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Source threshold. Note that many NetCon objects may share the same
+source.</p>
+<p>Note that prior to 12-Jul-2006, when a NecCon was constructed with no threshold
+argument, the threshold was
+reset to the default 10 (mV) even if the threshold for that source location
+had been explicitly set earlier. That behavior caused confusion and has been
+changed so that if the constructor has no threshold argument and the
+threshold location already exists, the previous threshold is retained.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="NetCon.x">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#NetCon.x" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">netcon.x</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.x</span> <span class="pre">=</span> <span class="pre">x</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Value of the source variable which is watched for threshold crossing.
+If the source is a membrane potential then netcon.x is a reference to
+that potential. If the source is an object, then netcon.x is a reference
+to the objects field called “x”, ie source.x .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.record">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.record" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">netcon.record(Vector)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.record()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.record(&quot;stmt&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.record(tvec,</span> <span class="pre">idvec)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">netcon.record(tvec,</span> <span class="pre">idvec,</span> <span class="pre">id)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Records the event times at the source the netcon connects to.</p>
+<p>With no argument, no vector recording at the source takes place.</p>
+<p>The vector is resized to 0 when <a class="reference internal" href="../../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> is called.</p>
+<p>NB: Recording takes place on a per source, not a per netcon basis,
+and the source only records into one vector at a time.</p>
+<p>When the argument is a “stmt”, then the statement is called on a
+source event. Like the Vector case, the source only manages
+one statement at a time. The stmt is removed when the arg is “”.</p>
+<p>If a source is recording a vector, that source is not destroyed when
+the last netcon connecting to it is destroyed and it continues to record.
+The source is notified when the vector it is recording
+ceases to exist—at that time it will be destroyed if no netcons currently
+connect to it. To do a recording of a source, the following idiom
+works:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref vec, netcon, nil
+vec = new Vector()
+netcon = new NetCon(source, nil)
+netcon.record(vec)
+objref netcon
+</pre></div>
+</div>
+<p>The source will continue to record events until record is called
+with another netcon connecting to the source or until the vec is
+destroyed. Notice that this idiom allows recording from output cells
+(which normally have no connecting netcons) as well as simplifying the
+management of recording from cells.</p>
+<p>Note that NetCon.event(t) events are NOT recorded.</p>
+<p>The netcon.record(tvec, idvec) form is similar to netcon.record(tvec) but
+in addition the id value of NetCon[id] is also recorded in idvec (or the
+specified id integer if the third arg is present). This allows
+many source recordings with a single pair of vectors and obviates the use
+of separate tvec objects for each recording.</p>
+</dd>
+<dt>Example:</dt><dd><p>To stop the simulation when a particular compartment reaches a threshold.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>load_file(&quot;nrngui.hoc&quot;)
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+
+//Begin SingleCompartment
+{
+load_file(&quot;single.hoc&quot;)
+}
+ocbox_ = new SingleCompartment(0)
+ocbox_.inserter = new Inserter(0)
+{object_push(ocbox_.inserter)}
+{
+mt.select(&quot;hh&quot;) i = mt.selected()
+ms[i] = new MechanismStandard(&quot;hh&quot;)
+ms[i].set(&quot;gnabar_hh&quot;, 0.12, 0)
+ms[i].set(&quot;gkbar_hh&quot;, 0.036, 0)
+ms[i].set(&quot;gl_hh&quot;, 0.0003, 0)
+ms[i].set(&quot;el_hh&quot;, -54.3, 0)
+mstate[i]= 1
+maction(i)
+}
+{object_pop() doNotify()}
+{object_push(ocbox_)}
+{inserter.v1.map()}
+{endbox()}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.vbox
+ocbox_.map(&quot;SingleCompartment&quot;, 382, 22, 91.2, 96)
+}
+objref ocbox_
+//End SingleCompartment
+
+
+//Begin PointProcessManager
+{
+load_file(&quot;pointman.hoc&quot;)
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select(&quot;IClamp&quot;) i = mt.selected()
+ms[i] = new MechanismStandard(&quot;IClamp&quot;)
+ms[i].set(&quot;del&quot;, 0, 0)
+ms[i].set(&quot;dur&quot;, 0.1, 0)
+ms[i].set(&quot;amp&quot;, 0.3, 0)
+mt.select(&quot;IClamp&quot;) i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map(&quot;PointProcessManager&quot;, 152, 109, 208.32, 326.4)
+}
+objref ocbox_
+//End PointProcessManager
+
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)}
+graphList[0].append(save_window_)
+save_window_.save_name(&quot;graphList[0].&quot;)
+save_window_.addexpr(&quot;v(.5)&quot;, 1, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}
+
+
+
+none
+
+// ... soma with hh, IClamp, and voltage plot ...
+
+objref nc, nil
+soma nc = new NetCon(&amp;v(.5), nil)
+nc.threshold = 0 // watch out! only one threshold per presyn location
+nc.record(&quot;handle()&quot;)
+
+proc handle() {
+    print &quot;called handle() at time &quot;, t, &quot; when soma.v(.5) = &quot;, soma.v(.5)
+    stoprun = 1 // Will stop but may go one extra step. Also with
+            // local step the cells will be at different times.
+            // So may wish to do a further...
+    cvode.event(t+1e-6)
+}
+
+cvode_active(1) // optional. but fixed step will probably do one extra time step
+cvode.condition_order(2) // optional. but much more accurate event time evaluation.
+
+run()
+print &quot;after run(), t = &quot;, t, &quot; and soma.v(.5) = &quot;, soma.v(.5)
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.get_recordvec">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">get_recordvec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.get_recordvec" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">tvec</span> <span class="pre">=</span> <span class="pre">netcon.get_recordvec()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the Vector being recorded by the netcon. If the NetCon is not
+recording or is recording via a hoc statement, the return value is
+NULLobject. Note that record vector is also returned if the NetCon is one of
+many recording into the same Vector via the NetCon.record(tvec, idvec)
+style.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="NetCon.srcgid">
+<span class="sig-prename descclassname"><span class="pre">NetCon.</span></span><span class="sig-name descname"><span class="pre">srcgid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NetCon.srcgid" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">gid</span> <span class="pre">=</span> <span class="pre">netcon.srcgid()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the global source id integer that sends events through the NetCon.
+May return -1 or -2 if the NetCon has no source or if the source does not
+send interprocessor events. If the gid &gt;= 0 then the netcon must have been
+created by a <a class="reference internal" href="parcon.html#ParallelContext.gid_connect" title="ParallelContext.gid_connect"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.gid_connect()</span></code></a> call with gid as the first
+arg or else it is connected to spike detector that was associated with a
+gid via <a class="reference internal" href="parcon.html#ParallelContext.cell" title="ParallelContext.cell"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">ParallelContext.cell()</span></code></a>.</p>
+<p>There is no way to determine the corresponding target cell gid (assuming there
+is one and only one gid source integer for each cell. But see
+<a class="reference internal" href="#NetCon.syn" title="NetCon.syn"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">NetCon.syn()</span></code></a> and <a class="reference internal" href="#NetCon.postcell" title="NetCon.postcell"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">NetCon.postcell()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="parnet.html" class="btn btn-neutral float-left" title="ParallelNetManager" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../electrod.html" class="btn btn-neutral float-right" title="Electrode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

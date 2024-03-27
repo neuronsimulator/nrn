@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOC Exercises &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Multithreaded parallelization" href="multithread_parallelization.html" />
+    <link rel="prev" title="Batch runs with bulletin board parallelization" href="batch_runs_with_bulletin_board.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">HOC Exercises</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#anything-not-explicitly-declared-is-assumed-to-be-a-number">Anything not explicitly declared is assumed to be a number</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#do-you-have-anything-to-declare-objects-and-strings">Do you have anything to declare?: objects and strings</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#operators-and-numerical-functions">Operators and numerical functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-types-numbers-strings-and-objects">Data types: numbers, strings, and objects</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Anything not explicitly declared is assumed to be a number</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Do you have anything to declare?: objects and strings</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Operators and numerical functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#blocks-of-code">Blocks of code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#procedures-and-functions">Procedures and functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#built-in-object-types-graphs-vectors-lists-files">Built-in object types: graphs, vectors, lists, files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#graph">Graph</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vector">Vector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#file">File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#list">List</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#simulation">Simulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#recording-the-simulation">Recording the simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#graphing-and-analyzing-data">Graphing and analyzing data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#roll-your-own-gui">Roll your own GUI</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">HOC Exercises</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/hoc_exercises.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hoc-exercises">
+<span id="id1"></span><h1>HOC Exercises<a class="headerlink" href="#hoc-exercises" title="Link to this heading"></a></h1>
+<p>Executable lines below are shown with the hoc prompt <code class="docutils literal notranslate"><span class="pre">oc&gt;</span></code>.</p>
+<p>Typing these, although trivial, can be a valuable way to get familiar with the language.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">// A comment</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="cm">/* ditto */</span>
+</pre></div>
+</div>
+<section id="anything-not-explicitly-declared-is-assumed-to-be-a-number">
+<h2>Anything not explicitly declared is assumed to be a number<a class="headerlink" href="#anything-not-explicitly-declared-is-assumed-to-be-a-number" title="Link to this heading"></a></h2>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">5300</span><span class="w"> </span><span class="c1">// no previous declaration as to what &#39;x&#39; is</span>
+</pre></div>
+</div>
+<ul>
+<li><p>numbers are all doubles (high precision numbers)</p>
+<blockquote>
+<div><p>there is no integer type in Hoc</p>
+</div></blockquote>
+</li>
+<li><p>Scientific notation use e or E</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="mf">5.3e3</span><span class="p">,</span><span class="mf">5.3E3</span><span class="w"> </span><span class="c1">// e preferred (see next)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>there are some useful built-in values</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">PI</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="n">FARADAY</span><span class="p">,</span><span class="w"> </span><span class="n">R</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="do-you-have-anything-to-declare-objects-and-strings">
+<h2>Do you have anything to declare?: objects and strings<a class="headerlink" href="#do-you-have-anything-to-declare-objects-and-strings" title="Link to this heading"></a></h2>
+<ul>
+<li><p>Must declare an object reference (=object variable) before making an object</p></li>
+<li><p>Objref: manipulate references to objects, not the objects themselves</p>
+<blockquote>
+<div><p>often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a Graph or vec for a Vector) but it’s important to remember that these are just for convenience and that any object reference can be used to point to any kind of object</p>
+</div></blockquote>
+</li>
+<li><p>Objects include vectors, graphs, lists, …</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// capital &#39;oh&#39; not zero</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// these are object references</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">()</span><span class="w"> </span><span class="c1">// &#39;new&#39; creates a new instance of the List class</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// XO now points to something, YO does not</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="c1">// redeclaring an objref breaks the link; if this is the only reference to that object the object is destroyed</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">()</span><span class="w"> </span><span class="c1">// a new new List</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="c1">// notice the List[#] -- this is a different List, the old one is gone</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>After creating object reference, can use it to point a new or old object</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="n">foo</span><span class="w"> </span><span class="c1">// two object refs</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Vector</span><span class="p">()</span><span class="w"> </span><span class="c1">// use &#39;new&#39; to create something</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="c1">// foo is now just another reference to the same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="o">=</span><span class="n">XO</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// vec no longer points to a vector</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objectvar</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="c1">// objref and objectvar are the same; redeclaring an objref breaks the link between it and the object it had pointed to</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// vec had no special status, foo still points equally well</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Can create an array of objrefs</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="n">XO</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">objarr</span><span class="p">,</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// two ways of saying same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="n">foo</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// piling up more references to the same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">objarr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">objarr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Exercises: Lists are useful for maintaining pointers to objects so that they are maintained when explicit object references are removed</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Make vec point to a new vector. Print out and record its identity (<em>print vec</em>). Now print using the object name (ie <em>print Vector[#] with the right #</em>). This confirms that the object exists. Destroy the object by reinitializing the vec reference. Now try to print using the object name. What does it say.</p></li>
+<li><p>As in Exercise 1: make vec point to a new vector and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still point to by the list.</p></li>
+<li><p>Identify the vector on the list: (<em>print XO.object(0)</em>). Remove the vector from the list (<em>print XO.remove(0)</em>). Confirm that this vector no longer exists.</p></li>
+</ol>
+</div></blockquote>
+</li>
+<li><p>Strings</p></li>
+<li><p>Must declare a string before assigning it</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="c1">// ERROR: needed to be declared</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">strdef</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="c1">// declaration</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="c1">// can&#39;t declare and set together</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">mystr</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;-%s-&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mystr</span><span class="p">)</span><span class="w"> </span><span class="c1">// tab-string-newline; printf=print formatted; see documentation</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>There are no string arrays; get around this using arrays of String objects</p></li>
+<li><p>Can also declare number arrays, but vectors are often more useful</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">5</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="c1">// overwrote prior value</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mi">7</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// these are the same</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<section id="operators-and-numerical-functions">
+<h1>Operators and numerical functions<a class="headerlink" href="#operators-and-numerical-functions" title="Link to this heading"></a></h1>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/programming/hoc.html#hoc-language-guide"><span class="std std-ref">HOC Language</span></a> and the <a class="reference internal" href="../hoc/index.html#hoc-prog-ref"><span class="std std-ref">NEURON HOC documentation</span></a></p>
+</div>
+<section id="data-types-numbers-strings-and-objects">
+<h2>Data types: numbers, strings, and objects<a class="headerlink" href="#data-types-numbers-strings-and-objects" title="Link to this heading"></a></h2>
+<section id="id2">
+<h3>Anything not explicitly declared is assumed to be a number<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">5300</span><span class="w"> </span><span class="c1">// no previous declaration as to what &#39;x&#39; is</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Numbers are all doubles (high-precision floating point numbers). In particular, there is no integer type in HOC.</p>
+</div>
+<p>For scientific notation use <code class="docutils literal notranslate"><span class="pre">e</span></code> or <code class="docutils literal notranslate"><span class="pre">E</span></code>.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="mf">5.3e3</span><span class="p">,</span><span class="mf">5.3E3</span><span class="w"> </span><span class="c1">// e preferred (see next)</span>
+</pre></div>
+</div>
+<p>There are some useful built-in values:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">PI</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="p">,</span><span class="w"> </span><span class="n">FARADAY</span><span class="p">,</span><span class="w"> </span><span class="n">R</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3>Do you have anything to declare?: objects and strings<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<p>Must declare an object reference (=object variable) before making an object</p>
+<p>Objref: manipulate references to objects, not the objects themselves</p>
+<ul class="simple">
+<li><p>often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a <a class="reference internal" href="../hoc/visualization/graph.html#Graph" title="Graph"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Graph</span></code></a> or vec for a <a class="reference internal" href="../hoc/programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a>) but it’s important to remember that these are just for convenience and that any object reference can be used to point to any kind of object</p></li>
+</ul>
+<section id="objects-include-vectors-graphs-lists">
+<h4>Objects include vectors, graphs, lists, …<a class="headerlink" href="#objects-include-vectors-graphs-lists" title="Link to this heading"></a></h4>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// capital &#39;oh&#39; not zero</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// these are object references</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">()</span><span class="w"> </span><span class="c1">// &#39;new&#39; creates a new instance of the List class</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="p">,</span><span class="n">YO</span><span class="w"> </span><span class="c1">// XO now points to something, YO does not</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="c1">// redeclaring an objref breaks the link; if this is the only reference to that object the object is destroyed</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">()</span><span class="w"> </span><span class="c1">// a new new List</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">XO</span><span class="w"> </span><span class="c1">// notice the List[#] -- this is a different List, the old one is gone</span>
+</pre></div>
+</div>
+</section>
+<section id="after-creating-object-reference-can-use-it-to-point-a-new-or-old-object">
+<h4>After creating object reference, can use it to point a new or old object<a class="headerlink" href="#after-creating-object-reference-can-use-it-to-point-a-new-or-old-object" title="Link to this heading"></a></h4>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="n">foo</span><span class="w"> </span><span class="c1">// two object refs</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Vector</span><span class="p">()</span><span class="w"> </span><span class="c1">// use &#39;new&#39; to create something</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="c1">// foo is now just another reference to the same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="o">=</span><span class="n">XO</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// vec no longer points to a vector</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objectvar</span><span class="w"> </span><span class="n">vec</span><span class="w"> </span><span class="c1">// objref and objectvar are the same; redeclaring an objref breaks the link between it and the object it had pointed to</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">foo</span><span class="w"> </span><span class="c1">// vec had no special status, foo still points equally well</span>
+</pre></div>
+</div>
+</section>
+<section id="can-create-an-array-of-objrefs">
+<h4>Can create an array of objrefs<a class="headerlink" href="#can-create-an-array-of-objrefs" title="Link to this heading"></a></h4>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="n">XO</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">objarr</span><span class="p">,</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// two ways of saying same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="n">foo</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">=</span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// piling up more references to the same thing</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">objarr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">objarr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">objarr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h4>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h4>
+<p>Lists are useful for maintaining pointers to objects so that they are maintained when explicit object references are removed.</p>
+<ol class="arabic simple">
+<li><p>Make vec point to a new vector. Print out and record its identity (<code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">vec</span></code>). Now print using the object name (ie print Vector[#] with the right #). This confirms that the object exists. Destroy the object by reinitializing the vec reference. Now try to print using the object name. What does it say.</p></li>
+<li><p>As in Exercise 1: make vec point to a new <a class="reference internal" href="../hoc/programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> and use print to find the vector name. Make XO a reference to a new list. Append the vector to the list: {XO.append(vec). Now dereference vec as in Exercise 1. Print out the object by name and confirm that it still exists. Even though the original objref is gone, it is still pointed to by the list.</p></li>
+<li><p>Identify the vector on the list: (<code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">XO.object(0)</span></code>). Remove the vector from the list (<code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">XO.remove(0)</span></code>). Confirm that this vector no longer exists.</p></li>
+</ol>
+</section>
+<section id="strings">
+<h4>Strings<a class="headerlink" href="#strings" title="Link to this heading"></a></h4>
+<p>Must declare a string before assigning it</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="c1">// ERROR: needed to be declared</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">strdef</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="c1">// declaration</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="c1">// can&#39;t declare and set together</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">mystr</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;-%s-&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">mystr</span><span class="p">)</span><span class="w"> </span><span class="c1">// tab-string-newline; printf=print formatted; see documentation</span>
+</pre></div>
+</div>
+<p>There are no string arrays; get around this using arrays of String objects</p>
+<p>Can also declare number arrays, but vectors are often more useful</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">5</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="c1">// overwrote prior value</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mi">7</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="c1">// these are the same</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="id4">
+<h2>Operators and numerical functions<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">8</span><span class="w"> </span><span class="c1">// assignment</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="o">+</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">*</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">/</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">%</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="mi">-7</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">^</span><span class="mi">7</span><span class="w"> </span><span class="c1">// doesn&#39;t change x</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="w"> </span><span class="c1">// comparison</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="mi">5</span><span class="o">==</span><span class="mi">3</span><span class="w"> </span><span class="c1">// logical AND, 0 is False; 1 is True</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="w"> </span><span class="err">\\</span><span class="w"> </span><span class="mi">5</span><span class="o">==</span><span class="mi">3</span><span class="w"> </span><span class="c1">// logical OR</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="o">!</span><span class="p">(</span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="c1">// logical NOT, need parens here</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="mi">18</span><span class="o">%</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">18</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="o">^</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">*</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="mf">3.1</span><span class="p">),</span><span class="w"> </span><span class="n">cos</span><span class="p">(</span><span class="mf">3.1</span><span class="p">),</span><span class="w"> </span><span class="n">log</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">log10</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">+=</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">*=</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">-=</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">/=</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="c1">// each changes value of x; no x++</span>
+</pre></div>
+</div>
+</section>
+<section id="blocks-of-code">
+<h2>Blocks of code<a class="headerlink" href="#blocks-of-code" title="Link to this heading"></a></h2>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">7</span>
+
+<span class="n">print</span><span class="w"> </span><span class="n">x</span>
+
+<span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span>
+
+<span class="n">print</span><span class="w"> </span><span class="n">x</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="conditionals">
+<h1>Conditionals<a class="headerlink" href="#conditionals" title="Link to this heading"></a></h1>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">8</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;T&quot;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;F&quot;</span><span class="w"> </span><span class="c1">// brackets optional for single statements</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">==</span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="n">print</span><span class="w"> </span><span class="s">&quot;T&quot;</span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="n">print</span><span class="w"> </span><span class="s">&quot;F&quot;</span><span class="p">}</span><span class="w"> </span><span class="c1">// usually better for clarity</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">&lt;=</span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="n">x</span><span class="o">+=</span><span class="mi">1</span><span class="p">}}</span><span class="w"> </span><span class="c1">// nested blocks, statements separate by space</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">&lt;=</span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="o">+=</span><span class="mi">1</span><span class="p">}}</span><span class="w"> </span><span class="c1">// notice difference: comma makes 2 args of print</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="c1">// simplest for loop</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span><span class="n">x</span><span class="o">&lt;=</span><span class="mi">7</span><span class="p">;</span><span class="n">x</span><span class="o">+=</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="c1">// (init;until;change)</span>
+</pre></div>
+</div>
+</section>
+<section id="procedures-and-functions">
+<h1>Procedures and functions<a class="headerlink" href="#procedures-and-functions" title="Link to this heading"></a></h1>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="n">hello</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">hello</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">func</span><span class="w"> </span><span class="n">hello</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mf">1.7</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// functions return a number</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">hello</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">$1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">$2</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1">// first and second argument, then $3, $4...</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">func</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">$1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">$2</span><span class="w"> </span><span class="p">}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="mi">7</span><span class="o">*</span><span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="c1">// can use the returned value</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">),</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">))</span><span class="w"> </span><span class="c1">// nest as much as you want</span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="n">prstuff</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">$1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;::&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">$s2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;::&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">$o3</span><span class="w"> </span><span class="p">}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">prstuff</span><span class="p">(</span><span class="mf">5.3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li><p>Use printf in a procedure to print out a formatted table of powers of 2</p></li>
+<li><p>Write a function that returns the average of 4 numbers</p></li>
+<li><p>Write a procedure that creates a section called soma and sets diam and L to 2 args</p></li>
+</ol>
+<section id="built-in-object-types-graphs-vectors-lists-files">
+<h2>Built-in object types: graphs, vectors, lists, files<a class="headerlink" href="#built-in-object-types-graphs-vectors-lists-files" title="Link to this heading"></a></h2>
+<section id="graph">
+<h3>Graph<a class="headerlink" href="#graph" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">g</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Graph</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">)</span><span class="w"> </span><span class="c1">// set x and y axes</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">beginline</span><span class="p">(</span><span class="s">&quot;line&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="c1">// start a red (2), thick (3) line</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="n">g</span><span class="p">.</span><span class="n">line</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">line</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="mi">25</span><span class="p">)}</span><span class="w"> </span><span class="c1">// draw a line (x, y) to (x, y)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span><span class="w"> </span><span class="c1">// show the line</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/visualization/graph.html#Graph" title="Graph"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Graph</span></code></a></p>
+</div>
+<section id="id5">
+<h4>Exercises<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>write <code class="docutils literal notranslate"><span class="pre">proc</span></code> that draws a colored line ($1) from (0, 0) to given coordinate ($2, $3) assume g is a <a class="reference internal" href="../hoc/visualization/graph.html#Graph" title="Graph"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Graph</span></code></a> object</p></li>
+<li><p>write a <code class="docutils literal notranslate"><span class="pre">proc</span></code> that puts up two new graphs</p></li>
+<li><p>bring up a graph using GUI, on graph use right-button right pull-down to “Object Name”; set ‘g’ objectvar to point to this graph and use <code class="docutils literal notranslate"><span class="pre">g.size()</span></code> to resize it</p></li>
+</ol>
+</section>
+</section>
+<section id="vector">
+<h3>Vector<a class="headerlink" href="#vector" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ii</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">=</span><span class="k">new</span><span class="w"> </span><span class="n">Vector</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="c1">// put 4 values in the vector</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="c1">// put on one more</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">printf</span><span class="w"> </span><span class="c1">// look at them</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">size</span><span class="w"> </span><span class="c1">// how many are there?</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">sum</span><span class="o">/</span><span class="n">vec</span><span class="p">.</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">mean</span><span class="w"> </span><span class="c1">// check average two ways</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="n">vec</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">div</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">sub</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">printf</span><span class="p">}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">vec</span><span class="p">.</span><span class="n">size</span><span class="mi">-1</span><span class="p">)</span><span class="w"> </span><span class="c1">// get rid of last value</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ii</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">size</span><span class="mi">-1</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">x</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="c1">// print values</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">copy</span><span class="p">(</span><span class="n">vec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="w"> </span><span class="c1">// copy vec into vec[1]</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">mul</span><span class="p">(</span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w"> </span><span class="c1">// element by element; must be same size</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a></p>
+</div>
+<section id="id6">
+<h4>Exercises<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
+<ol class="arabic">
+<li><p>Write a <code class="docutils literal notranslate"><span class="pre">proc</span></code> to make <code class="docutils literal notranslate"><span class="pre">$o1</span></code> vec elements the product of $o2*$o3 elements</p>
+<p>(Use <a class="reference internal" href="../hoc/programming/math/vector.html#Vector.resize" title="Vector.resize"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.resize()</span></code></a> to get <code class="docutils literal notranslate"><span class="pre">$o1</span></code> to right size; generate error if sizes wrong e.g. <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">($o2.size!=$o3.size)</span> <span class="pre">{</span> <span class="pre">print</span> <span class="pre">&quot;ERROR:</span> <span class="pre">wrong</span> <span class="pre">sizes&quot;</span> <span class="pre">return</span> <span class="pre">}</span></code>)</p>
+</li>
+<li><p>Graph vector values: <code class="docutils literal notranslate"><span class="pre">vec.line(g,</span> <span class="pre">1)</span></code> or <code class="docutils literal notranslate"><span class="pre">vec.mark(g,</span> <span class="pre">1)</span></code></p>
+<p>Play with colors and mark shapes (see documentation for details).</p>
+</li>
+<li><p>Graph one vec against another: <code class="docutils literal notranslate"><span class="pre">vec.line(g,</span> <span class="pre">vec[1])</span></code>; <code class="docutils literal notranslate"><span class="pre">vec.mark(g,</span> <span class="pre">vec[1])</span></code></p></li>
+<li><p>Write a <code class="docutils literal notranslate"><span class="pre">proc</span></code> to multiply the elements of a vector by sequential values from <code class="docutils literal notranslate"><span class="pre">1</span></code> to <code class="docutils literal notranslate"><span class="pre">size-1</span></code></p>
+<p>Hint: use <a class="reference internal" href="../hoc/programming/math/vector.html#Vector.resize" title="Vector.resize"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">vec.resize</span></code></a>, <a class="reference internal" href="../hoc/programming/math/vector.html#Vector.indgen" title="Vector.indgen"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">vec.indgen</span></code></a>, <a class="reference internal" href="../hoc/programming/math/vector.html#Vector.mul" title="Vector.mul"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">vec.mul</span></code></a></p>
+</li>
+</ol>
+</section>
+</section>
+<section id="file">
+<h3>File<a class="headerlink" href="#file" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">file</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mystr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;AA.dat&quot;</span><span class="w"> </span><span class="c1">// use as file name</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">File</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">file</span><span class="p">.</span><span class="n">wopen</span><span class="p">(</span><span class="n">mystr</span><span class="p">)</span><span class="w"> </span><span class="c1">// &#39;w&#39; means write, arg is file name</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">vwrite</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="w"> </span><span class="c1">// binary format</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">file</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="c1">// set all elements to 0</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">file</span><span class="p">.</span><span class="n">ropen</span><span class="p">(</span><span class="n">mystr</span><span class="p">)</span><span class="w"> </span><span class="c1">// &#39;r&#39; means read</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">vread</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">vec</span><span class="p">.</span><span class="n">eq</span><span class="p">(</span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;SAME&quot;</span><span class="w"> </span><span class="c1">// should be the same</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/programming/io/file.html#File" title="File"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">File</span></code></a></p>
+</div>
+<section id="id7">
+<h4>Exercises<a class="headerlink" href="#id7" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">proc</span></code> to write a vector (<code class="docutils literal notranslate"><span class="pre">$o1</span></code>) to file with name <code class="docutils literal notranslate"><span class="pre">$s2</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">proc</span></code> to read a vector (<code class="docutils literal notranslate"><span class="pre">$o1</span></code>) from file with name <code class="docutils literal notranslate"><span class="pre">$s2</span></code></p></li>
+<li><p>proc to append a number to end of a file: <code class="docutils literal notranslate"><span class="pre">tmpfile.aopen()</span></code>, <code class="docutils literal notranslate"><span class="pre">tmpfile.printf</span></code></p></li>
+</ol>
+</section>
+</section>
+<section id="list">
+<h3>List<a class="headerlink" href="#list" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">list</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">List</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span><span class="w"> </span><span class="c1">// put an object on the list</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="w"> </span><span class="c1">// can put different kind of object on</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="c1">// pointless</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">count</span><span class="p">()</span><span class="w"> </span><span class="c1">// how many things on the list</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">object</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="c1">// count from zero as with arrays</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">remove</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="c1">// remove this object</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ii</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">count</span><span class="mi">-1</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="n">object</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="w"> </span><span class="c1">// remember list.count, vec.size</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/programming/gui/list.html#List" title="List"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">List</span></code></a></p>
+</div>
+<section id="id8">
+<h4>Exercises<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>write <code class="docutils literal notranslate"><span class="pre">proc</span></code> that takes a list <code class="docutils literal notranslate"><span class="pre">$o1</span></code> with a graph (.object(0)) followed by a vector (.object(1)) and shows the vector on the graph</p></li>
+<li><p>modify this <code class="docutils literal notranslate"><span class="pre">proc</span></code> to read the vector out of file given in <code class="docutils literal notranslate"><span class="pre">$s2</span></code></p></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">create</span><span class="w"> </span><span class="n">soma</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">access</span><span class="w"> </span><span class="n">soma</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">insert</span><span class="w"> </span><span class="n">hh</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ismembrane</span><span class="p">(</span><span class="s">&quot;hh&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// make sure it&#39;s set</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span><span class="w"> </span><span class="n">soma</span><span class="p">.</span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">soma</span><span class="p">.</span><span class="n">v</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="c1">// only have 1 seg in section</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tstop</span><span class="o">=</span><span class="mi">50</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">v</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">gnabar_hh</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">gnabar_hh</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="mi">10</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="c1">// what happened?</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">gnabar_hh</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="c1">// put it back</span>
+</pre></div>
+</div>
+<section id="recording-the-simulation">
+<h3>Recording the simulation<a class="headerlink" href="#recording-the-simulation" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cvode_active</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="c1">// this turns off variable time step</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.025</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">record</span><span class="p">(</span><span class="o">&amp;</span><span class="n">soma</span><span class="p">.</span><span class="n">v</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span><span class="w"> </span><span class="c1">// &#39;&amp;&#39; gives a pointer to the voltage</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="n">stim</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">soma</span><span class="w"> </span><span class="n">stim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IClamp</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="c1">// current clamp at location 0.5 in soma</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">stim</span><span class="p">.</span><span class="n">amp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="c1">// need high amp since cell is big</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">stim</span><span class="p">.</span><span class="n">dur</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1e10</span><span class="w"> </span><span class="c1">// forever</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">run</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">tstop</span><span class="w"> </span><span class="c1">// make sure stored the right amount of data</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../hoc/programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a></p>
+</div>
+</section>
+<section id="graphing-and-analyzing-data">
+<h3>Graphing and analyzing data<a class="headerlink" href="#graphing-and-analyzing-data" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="o">=</span><span class="k">new</span><span class="w"> </span><span class="n">Graph</span><span class="p">()</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">line</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">tstop</span><span class="p">,</span><span class="w"> </span><span class="mi">-80</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">max</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">min_ind</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">.</span><span class="n">max_ind</span><span class="o">*</span><span class="n">dt</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">deriv</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">max</span><span class="p">,</span><span class="w"> </span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">max_ind</span><span class="o">*</span><span class="n">dt</span><span class="w"> </span><span class="c1">// steepest AP</span>
+</pre></div>
+</div>
+<section id="id9">
+<h4>Exercises<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>change params (<code class="docutils literal notranslate"><span class="pre">stim.amp</span></code>, <code class="docutils literal notranslate"><span class="pre">gnabar_hh</span></code>, <code class="docutils literal notranslate"><span class="pre">gkbar_hh</span></code>), regraph and reanalyze</p></li>
+<li><p>bring up the GUI and demonstrate that the GUI and command line control same parameters</p></li>
+<li><p>write <code class="docutils literal notranslate"><span class="pre">proc</span></code> to count spikes and determine spike frequency (use <code class="docutils literal notranslate"><span class="pre">vec.where</span></code>)</p></li>
+</ol>
+</section>
+</section>
+<section id="roll-your-own-gui">
+<h3>Roll your own GUI<a class="headerlink" href="#roll-your-own-gui" title="Link to this heading"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="n">sety</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">y</span><span class="o">=</span><span class="n">x</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="p">}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">xpanel</span><span class="p">(</span><span class="s">&quot;test panel&quot;</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">xvalue</span><span class="p">(</span><span class="s">&quot;Set x&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;x&quot;</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">xvalue</span><span class="p">(</span><span class="s">&quot;Set y&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;y&quot;</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">xbutton</span><span class="p">(</span><span class="s">&quot;Set y to x&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sety()&quot;</span><span class="p">)</span>
+
+<span class="n">oc</span><span class="o">&gt;</span><span class="w"> </span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="exercise">
+<h4>Exercise<a class="headerlink" href="#exercise" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>put up panel to run sim and display (in an <a class="reference internal" href="../hoc/programming/gui/widgets.html#xvalue" title="xvalue"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xvalue()</span></code></a>) the average frequency</p></li>
+</ol>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="batch_runs_with_bulletin_board.html" class="btn btn-neutral float-left" title="Batch runs with bulletin board parallelization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="multithread_parallelization.html" class="btn btn-neutral float-right" title="Multithreaded parallelization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

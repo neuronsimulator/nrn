@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using ModelDB with NEURON &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Reaction-Diffusion Exercises" href="rxd_exercises.html" />
+    <link rel="prev" title="Using NMODL files" href="using_nmodl_files.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using ModelDB with NEURON</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-moore-et-al-1983-modeldb-yale-edu-9852">Example: Moore et al. 1983 modeldb.yale.edu/9852</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#what-physical-system-is-being-represented-and-for-what-purpose">1. What physical system is being represented, and for what purpose?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#what-is-the-representation-of-the-physical-system-and-how-was-it-implemented">2. What is the representation of the physical system, and how was it implemented?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#what-is-the-user-interface-how-was-it-implemented-and-how-do-you-use-it">3. What is the user interface, how was it implemented, and how do you use it?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#another-example-mainen-and-sejnowski-1996-modeldb-yale-edu-2488">Another example: Mainen and Sejnowski 1996 modeldb.yale.edu/2488</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">1. What physical system is being represented, and for what purpose?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">2. What is the representation of the physical system, and how was it implemented?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">3. What is the user interface, how was it implemented, and how do you use it?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reuse-one-of-their-cells-in-a-model-of-your-own-design">4. Reuse one of their cells in a model of your own design</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Using ModelDB with NEURON</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/using_modeldb_and_modelview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-modeldb-with-neuron">
+<span id="using-modeldb-and-modelview"></span><h1>Using ModelDB with NEURON<a class="headerlink" href="#using-modeldb-with-neuron" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://modeldb.yale.edu/">https://modeldb.yale.edu/</a> is the the home page of ModelDB.</p>
+<p>We’ll be analyzing a couple of models in order to answer these questions:</p>
+<ol class="arabic simple">
+<li><p>What physical system is being represented, and for what purpose?</p></li>
+<li><p>What is the representation of the physical system, and how was it implemented?</p></li>
+<li><p>What is the user interface, how was it implemented, and how do you use it?</p></li>
+</ol>
+<section id="example-moore-et-al-1983-modeldb-yale-edu-9852">
+<h2>Example: Moore et al. 1983 <a class="reference external" href="https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=9852#tabs-1">modeldb.yale.edu/9852</a><a class="headerlink" href="#example-moore-et-al-1983-modeldb-yale-edu-9852" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>Moore JW, Stockbridge N, Westerfield M (1983)
+On the site of impulse initiation in a neurone.
+J. <em>Physiol</em>. 336:301-11 doi: <a class="reference external" href="https://pubmed.ncbi.nlm.nih.gov/6308224/">10.1113/jphysiol.1983.sp014582</a></p>
+</div></blockquote>
+<p>This one doesn’t have any mod files, but there’s plenty to keep us busy. Begin by downloading the model.</p>
+<section id="what-physical-system-is-being-represented-and-for-what-purpose">
+<h3>1. What physical system is being represented, and for what purpose?<a class="headerlink" href="#what-physical-system-is-being-represented-and-for-what-purpose" title="Link to this heading"></a></h3>
+<p>ModelDB provides a link to <a class="reference external" href="https://pubmed.ncbi.nlm.nih.gov/6308224/">PubMed</a> for the abstract. At some point we should also read the paper.</p>
+<p>Examine the README file. Does it provide any more clues?</p>
+</section>
+<section id="what-is-the-representation-of-the-physical-system-and-how-was-it-implemented">
+<h3>2. What is the representation of the physical system, and how was it implemented?<a class="headerlink" href="#what-is-the-representation-of-the-physical-system-and-how-was-it-implemented" title="Link to this heading"></a></h3>
+<p>Load mosinit.hoc</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;mosinit.hoc&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The PointProcessManager shows a shape plot of the cell.</p>
+<section id="using-python-to-examine-what-s-in-the-model">
+<h4>Using Python to Examine What’s in the Model<a class="headerlink" href="#using-python-to-examine-what-s-in-the-model" title="Link to this heading"></a></h4>
+<p>This model was written in HOC, but we can still use Python to explore it. To see what sections exist and how they are connected, type</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>  <span class="c1"># optional; could use print</span>
+<span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">psection</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>at the &gt;&gt;&gt; prompt.</p>
+<p>At this point, you might think you’d have to start reading source code in order to get any more information about what’s in the model. But the ModelView tool can save you a lot of time and effort, and it has the advantage of telling you exactly what the model specification is. This is a big advantage, since some programs use complex specification and initialization routines that change model structure and parameters “on the fly.”</p>
+</section>
+<section id="using-model-view-to-discover-what-s-in-a-model">
+<h4>Using Model View to Discover What’s in a Model<a class="headerlink" href="#using-model-view-to-discover-what-s-in-a-model" title="Link to this heading"></a></h4>
+<p>Select the Model Views tab from the model entry. Under “Load Model Views” you will see that there are a number of figures that this model code can generate. Select “Figure 1A”. Two windows will appear.</p>
+<p>The one on the left shows a browsable outline of the model’s properties.</p>
+<p>Plus signs mark the items that are “expandable.”</p>
+<p>Expand the outline by clicking on “1 cell with morphology”. Then peer inside the model by clicking on each of its expandable subitems.</p>
+<p>Notice what happens when you get down to</p>
+<p>1 cell with <span class="menuselection">morphology ‣ root soma ‣ 6 inserted mechanisms ‣ hh ‣ gnabar</span></p>
+<p>Mouse over the two graphs to explore the relationships between position and conductances gnabar. Do the same for gkbar and gl.</p>
+<p>A shortcut for discovering the distributions of spatially inhomogeneous parameters: <span class="menuselection">Density Mechanisms ‣ Heterogeneous parameters</span></p>
+<p>reveals all that are spatially nonuniform. Expand any one to see the values over the model.</p>
+<p>Repeat the same exercise using NEURON’s ModelView tool (<span class="menuselection">Tools ‣ Miscellaneous ‣ Model View</span>). How are the views similar? How are they different?</p>
+</section>
+<section id="analyzing-the-underlying-code">
+<h4>Analyzing the Underlying Code<a class="headerlink" href="#analyzing-the-underlying-code" title="Link to this heading"></a></h4>
+<p>Was this model specified by user-written hoc code, or was a CellBuilder used?</p>
+<p>Exit the simulation and search the hoc files for create statements.</p>
+<p>In the terminal execute</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">grep</span> <span class="n">create</span> <span class="o">*</span><span class="n">hoc</span>
+</pre></div>
+</div>
+<p>(MSWin users: first open a bash shell, then cd to the exercises/modeldb_and_modelview/moore83 directory)</p>
+<p>Alternatively you could try Windows Explorer’s semi-useful Search function, or open each hoc file with a text editor and search for create.</p>
+<p>If no hoc file contains the create keyword, maybe the CellBuilder was used.</p>
+<p>Run <code class="file docutils literal notranslate"><span class="pre">mosinit.hoc</span></code> again and look for a CellBuilder.</p>
+<p>If you don’t see one, maybe a Window Group Manager is hiding it.</p>
+<p>Click on <span class="menuselection">NEURON Main Menu ‣ Window</span> and look for one or more window names that are missing a red check mark. If you see one, scroll down to it and release the mouse button.</p>
+<p>If a CellBuilder pops up, examine its Topology, Subsets, Geometry, and Biophysics pages.</p>
+<p>Do they agree with the output of <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">sec</span> <span class="pre">in</span> <span class="pre">h.allsec():</span> <span class="pre">pprint(sec.psection(())</span></code> and/or what you discovered with the Model View tool?</p>
+<p>“Extra Credit” Question</p>
+<p>Now you know what’s in the model cell, and how it was implemented. Suppose you wanted to get a copy of it that you could use in a program of your own. Would you do this by saving a CellBuilder to a new session file, or by using a text editor to copy create, connect, insert etc. statements from one of the hoc files?</p>
+</section>
+</section>
+<section id="what-is-the-user-interface-how-was-it-implemented-and-how-do-you-use-it">
+<h3>3. What is the user interface, how was it implemented, and how do you use it?<a class="headerlink" href="#what-is-the-user-interface-how-was-it-implemented-and-how-do-you-use-it" title="Link to this heading"></a></h3>
+<p>What is that panel with all the buttons?</p>
+<p>What happens if you click on one of them?</p>
+<p>Click on a different one and see what happens to the string at the top of the panel.</p>
+<p>Click on some more and see what happens to the blue dot in the PointProcessManager’s shape plot.</p>
+<p>Is this one of the standard GUI tools you can bring up with the NEURON Main Menu?</p>
+<p>How does it work?</p>
+<blockquote>
+<div><p>Hints: look for an xpanel statement in one of the hoc files.</p>
+<p>Read about <a class="reference internal" href="../python/programming/gui/widgets.html#xpanel" title="xpanel"><code class="xref py py-func docutils literal notranslate"><span class="pre">xpanel()</span></code></a>, <a class="reference internal" href="../python/programming/gui/widgets.html#xbutton" title="xbutton"><code class="xref py py-func docutils literal notranslate"><span class="pre">xbutton()</span></code></a>, and <a class="reference internal" href="../python/programming/gui/widgets.html#xvarlabel" title="xvarlabel"><code class="xref py py-func docutils literal notranslate"><span class="pre">xvarlabel()</span></code></a> in the help files.</p>
+</div></blockquote>
+<p>Find the procedures that implement the actions that are caused by clicking on a button.</p>
+<p>The last statement in each of these procedures launches a simulation.</p>
+<p>What does the very first statement do?</p>
+<p>What does the second statement do?</p>
+<blockquote>
+<div><p>The remaining statements do one or more of the following:</p>
+<p>change model parameters (e.g. spatial distribution of HH in the dendrite)</p>
+<p>change stimulus parameters (e.g. stimulus location and duration)</p>
+<p>change simulation parameters</p>
+</div></blockquote>
+<p>Why does the space plot automatically save traces every 0.1 ms?</p>
+<blockquote>
+<div><p>Hint: analyze the procedure that actually executes a simulation</p>
+<p>Which hoc file contains this procedure?</p>
+</div></blockquote>
+<p>What procedure actually changes the stimulus location, duration, and amplitude? Read about PointProcessManager in the help files.</p>
+</section>
+</section>
+<section id="another-example-mainen-and-sejnowski-1996-modeldb-yale-edu-2488">
+<h2>Another example: Mainen and Sejnowski 1996 <a class="reference external" href="https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1">modeldb.yale.edu/2488</a><a class="headerlink" href="#another-example-mainen-and-sejnowski-1996-modeldb-yale-edu-2488" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. <em>Nature</em> 382:363-6. doi: <a class="reference external" href="https://www.nature.com/articles/382363a0#citeas">doi.org/10.1038/382363a0</a></p>
+</div></blockquote>
+<p>This one has interesting anatomy and several mod files. Begin by downloading the model from <a class="reference external" href="https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1">modeldb.yale.edu/2488</a></p>
+<p>The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in <code class="file docutils literal notranslate"><span class="pre">exercises/modeldb_and_modelview/patdemo</span></code></p>
+<section id="id2">
+<h3>1. What physical system is being represented, and for what purpose?<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>This is ModelDB’s link to <a class="reference external" href="https://pubmed.ncbi.nlm.nih.gov/8684467/">PubMed</a> for the abstract. Another paper to read.</p>
+<p>Read the README.txt file. Any more clues here?</p>
+</section>
+<section id="id4">
+<h3>2. What is the representation of the physical system, and how was it implemented?<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>Compile the mod files, then load mosinit.hoc as in the previous exercise.</p>
+<p>Four different cell morphologies are available. Select one of them, then click on the Init button to make sure that all model specification and initialization code has been executed. Use Model View to browse the model, and examine the heterogeneous parameters.</p>
+<p>Now it’s time to discover how this model was created. Where are the files that contain the pt3d statements of these cells?</p>
+<p>This program grafts a stylized myelinated axon onto 3d specifications of detailed morphometry.</p>
+<p>Where is the hoc code that accomplishes this grafting?</p>
+<p>If you load mosinit.hoc and then try to import one of the cell morphologies into the CellBuilder, do you also get the axon?</p>
+<p>Length and diameter are scaled in order to compensate for the effect of spines on dendritic surface area. Find the procedure that does this.</p>
+<p>What is an alternative way to represent the effect of spines?</p>
+<p>nseg is adjusted in each section so that no segment is longer than 50 um. What procedure does this?</p>
+<p>Five active currents and one pump mechanism are included. Examine these mod files.</p>
+<p>Do they appear to be compatible with CVODE?</p>
+<p>Check them with <code class="docutils literal notranslate"><span class="pre">modlunit</span></code>.</p>
+<p>Did you find any inconsistencies?</p>
+<p>Do any of these seem likely to affect simulation results?</p>
+<p>Are there any other warning messages?</p>
+<p>Is there anything that would cause numerical errors?</p>
+<p>How might you fix the problems that you found?</p>
+</section>
+<section id="id5">
+<h3>3. What is the user interface, how was it implemented, and how do you use it?<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<p><code class="file docutils literal notranslate"><span class="pre">mosinit.hoc</span></code> brings up a minimal GUI for selecting cells and running simulations.</p>
+<p>How did they do that?</p>
+</section>
+<section id="reuse-one-of-their-cells-in-a-model-of-your-own-design">
+<h3>4. Reuse one of their cells in a model of your own design<a class="headerlink" href="#reuse-one-of-their-cells-in-a-model-of-your-own-design" title="Link to this heading"></a></h3>
+<p>Import its morphology into a CellBuilder, then save the CellBuilder to a session file and exit the simulation.</p>
+<p>Restart <code class="docutils literal notranslate"><span class="pre">nrngui</span></code> and load the CellBuilder’s session file.</p>
+<p>Assign a plausible set and spatial distribution of biophysical properties and save to a session file.</p>
+<p>Instrument your new model and run a simulation.</p>
+<p>Save the model, with instrumentation, to a session file.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using_nmodl_files.html" class="btn btn-neutral float-left" title="Using NMODL files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rxd_exercises.html" class="btn btn-neutral float-right" title="Reaction-Diffusion Exercises" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

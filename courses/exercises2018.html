@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON Course Exercises &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to the GUI" href="intro_to_gui.html" />
+    <link rel="prev" title="Using NEURON on the Mac" href="../guide/using_neuron_on_the_mac.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NEURON Course Exercises</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">NEURON Course Exercises</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/exercises2018.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-course-exercises">
+<span id="exercises2018"></span><h1>NEURON Course Exercises<a class="headerlink" href="#neuron-course-exercises" title="Link to this heading"></a></h1>
+<p>These exercises are adapted from the 2018 NEURON summer course given in Atlanta, Georgia.</p>
+<ol class="arabic">
+<li><p><a class="reference internal" href="intro_to_gui.html#intro-to-gui"><span class="std std-ref">Introduction to the GUI</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Lipid bilayer model</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="interactive_modeling.html#interactive-modeling"><span class="std std-ref">Interactive Modeling</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Squid axon model</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="the_cellbuilder.html#the-cellbuilder"><span class="std std-ref">Using the CellBuilder</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Constructing a ball and stick model, saving session files</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="using_morphometric_data.html#using-morphometric-data"><span class="std std-ref">Working with Morphometric Data</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The Import3D tool</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="neuron_scripting_exercises.html#neuron-scripting-exercises"><span class="std std-ref">NEURON scripting exercises</span></a></p></li>
+<li><p><a class="reference internal" href="using_nmodl_files.html#using-nmodl-files"><span class="std std-ref">Using NMODL files</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Single compartment model with HHk mechanism</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="using_modeldb_and_modelview.html#using-modeldb-and-modelview"><span class="std std-ref">Using ModelDB with NEURON</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Neuroinformatics tools for finding and understanding models</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="rxd_exercises.html#rxd-exercises"><span class="std std-ref">Reaction-Diffusion Exercises</span></a></p></li>
+<li><p><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html#specifying-inhomogeneous-channel-distributions-with-the-cellbuilder"><span class="std std-ref">Inhomogeneous Channel Distribution</span></a></p></li>
+<li><p><a class="reference internal" href="custom-initialization.html#custom-initialization"><span class="std std-ref">Custom Initialization</span></a></p></li>
+<li><p><a class="reference internal" href="introduction_to_the_linear_circuit.html#introduction-to-the-linear-circuit"><span class="std std-ref">Introduction to the Linear Circuit Builder</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A two-electrode voltage clamp</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="state_and_parameter_discontinuities.html#state-and-parameter-discontinuities"><span class="std std-ref">State and parameter discontinuities</span></a></p></li>
+<li><p><a class="reference internal" href="batch_runs_with_bulletin_board.html#batch-runs-with-bulletin-board-parallelization"><span class="std std-ref">Bulletin board parallelization</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Speed up embarrassingly parallel tasks</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="hoc_exercises.html#hoc-exercises"><span class="std std-ref">HOC Exercises</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Introduction to the HOC programming language</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="multithread_parallelization.html#multithread-parallelization"><span class="std std-ref">Multithreaded parallelization</span></a></p></li>
+<li><p><a class="reference internal" href="intro_to_the_network_builder.html#intro-to-the-network-builder"><span class="std std-ref">Networks: discrete event simulations with artificial cells</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Introduction to the Network Builder</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="network_ready_cells_from_the_cellb.html#network-ready-cells-from-the-cellbuilder"><span class="std std-ref">Networks: continuous simulation of nets with biophysical model cells</span></a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Network ready cells from the CellBuilder</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><a class="reference internal" href="hopfield_brody_network_in_python.html#hopfield-brody-network-in-python"><span class="std std-ref">Hopfield-Brody network in Python</span></a></p></li>
+<li><p><a class="reference internal" href="mpi_parallelization.html#mpi-parallelization"><span class="std std-ref">MPI Parallelization</span></a></p></li>
+<li><p><a class="reference internal" href="using_nsg_portal.html#using-nsg-portal"><span class="std std-ref">Using the Neuroscience Gateway (NSG) portal</span></a></p></li>
+<li><p><a class="reference internal" href="numerical-methods-exercises.html#numerical-methods-exercises"><span class="std std-ref">Numerical Methods Exercises</span></a></p></li>
+<li><p><a class="reference internal" href="electrotonic_analysis.html#electrotonic-analysis"><span class="std std-ref">Electrotonic Analysis with NEURON</span></a></p></li>
+</ol>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../guide/using_neuron_on_the_mac.html" class="btn btn-neutral float-left" title="Using NEURON on the Mac" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="intro_to_gui.html" class="btn btn-neutral float-right" title="Introduction to the GUI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

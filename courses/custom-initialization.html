@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Initialization &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to the Linear Circuit Builder" href="introduction_to_the_linear_circuit.html" />
+    <link rel="prev" title="Overview of the Tasks" href="hints_for_inhomogeneous_channel_dist.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Custom Initialization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#physical-system">Physical System</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conceptual-model">Conceptual Model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#getting-started">Getting started</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#computational-implementation-of-the-conceptual-model">Computational implementation of the conceptual model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-the-computational-model">Using the computational model</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#exercise-initializing-to-steady-state">Exercise: initializing to steady state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#special-credit-exercise">“Special credit” Exercise</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Custom Initialization</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/custom-initialization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="custom-initialization">
+<span id="id1"></span><h1>Custom Initialization<a class="headerlink" href="#custom-initialization" title="Link to this heading"></a></h1>
+<section id="physical-system">
+<h2>Physical System<a class="headerlink" href="#physical-system" title="Link to this heading"></a></h2>
+<img alt="../_images/pyramid.gif" src="../_images/pyramid.gif" />
+</section>
+<section id="conceptual-model">
+<h2>Conceptual Model<a class="headerlink" href="#conceptual-model" title="Link to this heading"></a></h2>
+<p>A ball-and-stick approximation to the cell.</p>
+<img alt="../_images/ballstk.gif" src="../_images/ballstk.gif" />
+<p>The aim of this exercise is to learn how to perform one of the most common types of custom initializaton: initializing to steady state.</p>
+<p>We start by making a ball and stick model in which the natural resting potential of the somatic sphere and dendritic cylinder are different. No matter what v_init you choose, default initializaton to a uniform membrane potential results in simulations that show an initial drift of v as the cell settles toward a stable state.</p>
+<p>After demonstrating this initial drift, we will implement and test a method for initializing to steady state that leaves membrane potential nonuniform in space but constant in time.</p>
+<section id="getting-started">
+<h3>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h3>
+<p>In this exercise you will be creating several files, so you need to be in a working directory for which you have file “write” permission. Start NEURON with exercises/custom_initialization as the working directory.</p>
+</section>
+<section id="computational-implementation-of-the-conceptual-model">
+<h3>Computational implementation of the conceptual model<a class="headerlink" href="#computational-implementation-of-the-conceptual-model" title="Link to this heading"></a></h3>
+<p>Use the CellBuilder to make a simple ball and stick model that has these properties:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Soma</p></th>
+<th class="head"><p>Anatomy</p></th>
+<th class="head"><p>Compartmentalization</p></th>
+<th class="head"><p>Biophysics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>soma</p></td>
+<td><p>length 20 µm</p>
+<p>diameter 20 µm</p>
+</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">d_lambda</span> <span class="pre">=</span> <span class="pre">0.1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ra</span> <span class="pre">=</span> <span class="pre">160</span></code> ohm cm,</p>
+<p><code class="docutils literal notranslate"><span class="pre">Cm</span> <span class="pre">=</span> <span class="pre">1</span></code> µf / cm<sup>2</sup></p>
+<p>Hodgkin-Huxley channels</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>dend</p></td>
+<td><p>length 1000 µm</p>
+<p>diameter 5 µm</p>
+</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">d_lambda</span> <span class="pre">=</span> <span class="pre">0.1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ra</span> <span class="pre">=</span> <span class="pre">160</span></code> ohm cm,</p>
+<p><code class="docutils literal notranslate"><span class="pre">Cm</span> <span class="pre">=</span> <span class="pre">1</span></code> µf / cm<sup>2</sup></p>
+<p>passive with Rm = 10,000 ohm cm<sup>2</sup></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Turn Continuous Create ON and save your CellBuilder to a session file.</p>
+</section>
+<section id="using-the-computational-model">
+<h3>Using the computational model<a class="headerlink" href="#using-the-computational-model" title="Link to this heading"></a></h3>
+<p>Bring up a RunControl and a voltage axis graph.</p>
+<p>Set Tstop to 40 ms and run a simulation.</p>
+<p>Use View = plot to see the time course of somatic membrane potential more clearly.</p>
+<p>Add <code class="docutils literal notranslate"><span class="pre">dend.v(1)</span></code> to the graph (use Plot what?), then run another simulation.
+Use Move Text and View = plot as needed to get a better picture.</p>
+<p>Add a space plot and use its Set View to change the y axis range to <code class="docutils literal notranslate"><span class="pre">-70</span> <span class="pre">-65</span></code>.
+Run another simulation and watch how drastically v changes from the initial condition.</p>
+<p>Save everything to a session file called <code class="file docutils literal notranslate"><span class="pre">all.ses</span></code> (use <span class="menuselection">File ‣ save session</span>) and exit NEURON.</p>
+</section>
+</section>
+<section id="exercise-initializing-to-steady-state">
+<h2>Exercise: initializing to steady state<a class="headerlink" href="#exercise-initializing-to-steady-state" title="Link to this heading"></a></h2>
+<p>In the same directory, make an <code class="file docutils literal notranslate"><span class="pre">init_ss.py</span></code> file with the contents:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">ss_init</span><span class="p">(</span><span class="n">t0</span><span class="o">=-</span><span class="mf">1e3</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.025</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize to steady state.</span>
+<span class="sd">    Executes as part of h.finitialize()</span>
+<span class="sd">    Appropriate parameters depend on your model</span>
+<span class="sd">    t0 -- how far to jump back (should be &lt; 0)</span>
+<span class="sd">    dur -- time allowed to reach steady state</span>
+<span class="sd">    dt -- initialization time step</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t0</span>
+    <span class="c1"># save CVode state to restore; initialization with fixed dt</span>
+    <span class="n">old_cvode_state</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">active</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">t0</span> <span class="o">+</span> <span class="n">dur</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fadvance</span><span class="p">()</span>
+
+    <span class="c1"># restore cvode active/inactive state if necessary</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="n">old_cvode_state</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">active</span><span class="p">():</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">re_init</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fcurrent</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">frecord_init</span><span class="p">()</span>
+
+<span class="n">fih</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">FInitializeHandler</span><span class="p">(</span><span class="n">ss_init</span><span class="p">)</span>
+
+<span class="c1"># model specification</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;all.ses&#39;</span><span class="p">)</span> <span class="c1"># ball and stick model with exptl rig</span>
+</pre></div>
+</div>
+<p>Now execute <code class="file docutils literal notranslate"><span class="pre">init_ss.py</span></code>.</p>
+<p>Click on Init &amp; Run and see what happens.</p>
+</section>
+<section id="special-credit-exercise">
+<h2>“Special credit” Exercise<a class="headerlink" href="#special-credit-exercise" title="Link to this heading"></a></h2>
+<p>Another common initialization is for the initialized model to satisfy a particular criterion. Create an initialization that ensures the resting potential throughout the cell equals <code class="docutils literal notranslate"><span class="pre">v_init</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hints_for_inhomogeneous_channel_dist.html" class="btn btn-neutral float-left" title="Overview of the Tasks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="introduction_to_the_linear_circuit.html" class="btn btn-neutral float-right" title="Introduction to the Linear Circuit Builder" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

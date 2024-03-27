@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoc &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Hoc</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/hoc_chapter_11_old_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hoc">
+<span id="hoc-chapter-11-old-reference"></span><h1>Hoc<a class="headerlink" href="#hoc" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>Hoc (I pronounce it “hoak”) is based on the floating point calculator developed in ‘The Unix Programming Environment’ by Kernighan &amp; Pike (Prentice-Hall Software Series, 1984). Appendix 2 of that book contains a Hoc manual for their limited version and Chapter 8 describes Hoc’s development and design philosophy. Hoc has a C like syntax and is very similar to the ‘bc’ calculator. Considerable extensions have been made to the basic version of hoc, both in added functions and additions to the syntax. Also, the user can build his <a class="reference download internal" download="" href="../_downloads/f878d682e0add2739de603f0cfdb4470/ocfig1.ps"><code class="xref download docutils literal notranslate"><span class="pre">own</span></code></a> hoc interpreter, incorporating special functions and variables which can be called and accessed interactively.</p>
+<p>Hoc has an object oriented syntax addition which can be used to implement abstract data types, encapsulation of data, and polymorphism (but no inheritance). Most programs written using version 2 of NEURON will work correctly in version 3. The neuron3 version of the interpreter is called OC (pronounced oak) but we will only use that name when describing things that are different or a superset of what is available in Hoc. See <cite>$NEURONHOME/lib/help/oc.help</cite> for a brief synopsis of each command and function. See ivoc.help for information about graphical interface objects and functions. nrnoc.help and nrniv.help respectively contain information about neuron specific syntax/functions and neuron specific graphical interface objects. Other help files in <cite>$NEURONHOME/lib/help</cite> are devoted to miscellaneous objects (eg a vector class and random number class).</p>
+</section>
+<section id="the-interpreter-in-neuronhome-bin-cpu">
+<h2>The interpreter in $NEURONHOME/bin/$CPU<a class="headerlink" href="#the-interpreter-in-neuronhome-bin-cpu" title="Link to this heading"></a></h2>
+<p>The HOC interpreter has served as the general I/O module in many kinds of applications and as such is directly executed under many different names. The below figure illustrates some non-neural examples of hoc’s use in different domains. The simplest interface between HOC and domain specific problems consist of a set of functions and variables that are callable from hoc. This was the level of implementation of the the original CABLE program (NEURON version 1). NEURON version 2 departed from this uniform interface style by introducing neuron specific syntax into the interpreter itself. This was meant to allow the user to specify neuron properties at a level of discourse more appropriate to neurons and help relieve the confusion and reduce the mental energy required to constantly shift between high level neural concepts and their low level representation on the computer. NEURON version 3, by introducing object syntax allows much better structuring of the conceptual pieces that are assembled to build a simulation.</p>
+<img alt="../_images/ocfig.gif" class="align-center" src="../_images/ocfig.gif" />
+<p>When NEURON is installed, four programs are constructed from the combinations of whether or not the C++ graphical interface is included with the interpreter; and whether or not neuron specific syntax is included.</p>
+<p><strong>oc</strong></p>
+<blockquote>
+<div><p>The bare interpreter. No gui, no neuron specific functions. The source code for the interpreter is found in <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/oc/SRC</span></code>.</p>
+</div></blockquote>
+<p><strong>nrnoc</strong></p>
+<blockquote>
+<div><p>Analogous to version 2 of neuron but the interpreter is oc. Neuron specific c code is located in <code class="file docutils literal notranslate"><span class="pre">nrnoc/SRC</span></code>.</p>
+</div></blockquote>
+<p><strong>ivoc</strong></p>
+<blockquote>
+<div><p>OC with C++ classes and graphical interface (which is written in C++). This is the best starting place for building non-neural applications. These C++ classes are implemented in <code class="file docutils literal notranslate"><span class="pre">ivoc/SRC</span></code>. The files here are of general use apart from the neuron simulation domain and generally implement the graphical interface, eg. <a class="reference internal" href="../hoc/visualization/graph.html#Graph" title="Graph"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Graph</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/widgets.html#xpanel" title="xpanel"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xpanel()</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/layout.html#VBox" title="VBox"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">VBox</span></code></a>, etc. However the <a class="reference internal" href="../hoc/programming/io/file.html#File" title="File"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">File</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/list.html#List" title="List"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">List</span></code></a>, <a class="reference internal" href="../hoc/programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a>, and <a class="reference internal" href="../hoc/programming/math/random.html#Random" title="Random"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Random</span></code></a> class are very useful even if no window manager is present.</p>
+</div></blockquote>
+<p><strong>nrniv</strong></p>
+<blockquote>
+<div><p>Version 3 of NEURON. Contains additional C++ classes for a neuron specific interface, eg Shape, and other built-in classes which are more conveniently written in C++ than C, eg. Impedance which makes use of the gnu library’s Complex class. The C++ source is located in <code class="docutils literal notranslate"><span class="pre">nrniv/SRC/</span></code>. This is the usual starting point for building special versions with user defined mechanisms via the model description language.</p>
+</div></blockquote>
+<p><strong>neuron</strong></p>
+<blockquote>
+<div><p>Really a special version of nrniv but something ought to be called “neuron” and it has to be in a place where it does not conflict with version 2’s main executable, also called neuron. It is the demonstration version which contains extra membrane mechanisms defined in <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/demo/release</span></code>. The neuron executable for version 3 is located in the demo directory and is run by the “neurondemo” script.</p>
+</div></blockquote>
+<p><strong>neuron.exe (mswindows version)</strong></p>
+<blockquote>
+<div><p>Same as the unix version of nrniv but is capable of dynamically loading model descriptions compiled with the gcc compiler. (see mknrndll below)</p>
+</div></blockquote>
+</section>
+<section id="constructing-programs-that-contain-the-interepreter">
+<h2>Constructing programs that contain the interepreter<a class="headerlink" href="#constructing-programs-that-contain-the-interepreter" title="Link to this heading"></a></h2>
+<p>There are various shell scripts for unix workstations in <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/bin</span></code> that ease the task of incorporating the interpreter into user applications.</p>
+<p><strong>nrnivmodl</strong></p>
+<blockquote>
+<div><p>The workhorse for creating special versions of neuron with user defined membrane properties.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nrnivmodl<span class="w"> </span>file1<span class="w"> </span>file2<span class="w"> </span>...
+</pre></div>
+</div>
+<p>adds the model descriptions defined in <code class="file docutils literal notranslate"><span class="pre">file1.mod</span></code>, <code class="file docutils literal notranslate"><span class="pre">file2.mod</span></code>, etc. to <code class="docutils literal notranslate"><span class="pre">nrniv</span></code>. The resulting executable is called special. If no file arguments are present then nrnivmodl adds all the files in the current working directory that have the suffix .mod to the program called special. In order to construct an executable, the model descriptions first have to be translated into c with the nocmodl translator. Such models must contain a NEURON block which specifies the type of model (density mechanism or point process), the names of ions it uses, and which variables are to be treated as range variables in the interface to OC.</p>
+</div></blockquote>
+<p><strong>mknrndll</strong></p>
+<blockquote>
+<div><p>The mswindows version of nrnivmodl. Instead of creating a new executable it compiles and links the models into a dynamically loadable library called <code class="docutils literal notranslate"><span class="pre">nrnmech.dll</span></code>. Neuron.exe automatically looks in the current working directory for a <code class="docutils literal notranslate"><span class="pre">nrnmech.dll</span></code> file and if it exists, loads it into memory and makes the mechanisms available to the interpreter. More than one dll file can be loaded by listing them after the -dll argument to neuron.exe when it is run.</p>
+</div></blockquote>
+<p><strong>ivmodl</strong></p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ivmodl<span class="w"> </span>file
+</pre></div>
+</div>
+<p>adds the model description defined in <code class="docutils literal notranslate"><span class="pre">file.mod</span></code> to ivoc. The resulting executable is called “file”. Since the model is not in a neuron context it must be self-contained. All variables and functions defined in the model are available to the interpreter. The model description translator used is ocmodl. These kinds of models don’t necessarily have anything to do with neurons.</p>
+</div></blockquote>
+<p><strong>makeiv</strong></p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>makeiv<span class="w"> </span>name<span class="w"> </span>file1.o<span class="w"> </span>file2.o<span class="w"> </span>...
+</pre></div>
+</div>
+<p>creates a version of ivoc called “name”. <code class="docutils literal notranslate"><span class="pre">name.h</span></code> is an include file which declares in regular C syntax the variables and functions that are to be accessible from OC. C files for the corresponding objects contain the definitions of these functions and variables. The script compiles the files, translates name.h into a interface specification file that makes sense to the interpreter and links the proper libraries to make the executable. I very rarely use this style anymore since it is usually easier to use the model description language and nrniv even for non-neural problems and there is a growing set of general use interpreter classes which depend only incidentally on the existence of a section. Almost anything can be treated as a point process and then handled by the interpreter as an object.</p>
+</div></blockquote>
+<p><strong>nrnocmodl, ocmodl, makeoc</strong></p>
+<blockquote>
+<div><p>Same as their counterparts above but the C++ libraries are not included in the resulting executable program.</p>
+</div></blockquote>
+</section>
+<section id="the-stand-alone-interpreter">
+<h2>The stand-alone interpreter<a class="headerlink" href="#the-stand-alone-interpreter" title="Link to this heading"></a></h2>
+<p>The rest of this chapter describes the general aspects of the interpreter which are common to all applications that contain it. Although for concreteness we use nrniv or neuron.exe, all the examples and fragments can be typed to any program, eg. oc, that contains the interpreter.</p>
+</section>
+<section id="starting-the-interpreter">
+<h2>Starting the interpreter<a class="headerlink" href="#starting-the-interpreter" title="Link to this heading"></a></h2>
+<p>Hoc is started by typing the program name in a terminal window.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nrniv
+<span class="w">    </span>nrniv<span class="w"> </span><span class="o">[</span>filenames<span class="o">]</span><span class="w"> </span><span class="o">[</span>-<span class="o">]</span>
+</pre></div>
+</div>
+<p>When there are no filename arguments, Hoc takes its commands from the standard input and prints its results on the standard output. With filename arguments, the files are read in turn and the commands executed. After the last file is executed, hoc exits. A ‘-’ as a filename, signals that commands are to be taken from the standard input until an EOF (^D in UNIX, ‘^Z return’ in DOS ). One can also exit by executing the “quit()” expression.</p>
+<p>When starting hoc with arguments it is easy to forget the final ‘-’ and be surprised when the program quickly exits, perhaps after putting graphs on the screen. Generally the ‘-’ is left off only when running the interpreter in batch mode under control of a shell script.</p>
+<p>The mswindows version, <code class="docutils literal notranslate"><span class="pre">neuron.exe</span></code>, does not exit if the trailing ‘-’ is left out. This makes it more convenient to attach <code class="docutils literal notranslate"><span class="pre">neuron.exe</span></code> to <code class="docutils literal notranslate"><span class="pre">.hoc</span></code> files so one can merely click on the file name in a file manager. Also, <code class="docutils literal notranslate"><span class="pre">neuron.exe</span></code> starts a terminal window (derived from winio from “Undocumented Windows” by Andrew Schulman) to which one can type hoc commands. <code class="docutils literal notranslate"><span class="pre">Neuron.exe</span></code> does not support exiting by ^D or ^Z. Instead one can exit by typing quit(), choose “Close” from the title bar, or choose “Exit” from the winio File menu.</p>
+<p>On startup, neuron prints a banner showing the current version and last change date.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>%<span class="w"> </span>nrniv
+NEURON<span class="w"> </span>--<span class="w">  </span>Version<span class="w"> </span><span class="m">3</span>.0<span class="w">   </span><span class="nv">$Date</span>:<span class="w"> </span><span class="m">2003</span>/03/31<span class="w"> </span><span class="m">16</span>:42:53<span class="w"> </span>$
+by<span class="w"> </span>John<span class="w"> </span>W.<span class="w"> </span>Moore,<span class="w"> </span>Duke<span class="w"> </span>University<span class="w"> </span>Medical<span class="w"> </span>Center
+and<span class="w"> </span>Michael<span class="w"> </span>Hines,<span class="w"> </span>Yale<span class="w"> </span>University<span class="w"> </span>--<span class="w"> </span>Copyright<span class="w"> </span><span class="m">1994</span>
+We<span class="w"> </span>would<span class="w"> </span>appreciate<span class="w"> </span>reprints<span class="w"> </span>of<span class="w"> </span>publications<span class="w"> </span>which<span class="w"> </span>make<span class="w"> </span>use<span class="w"> </span>of<span class="w"> </span>this<span class="w"> </span>program.
+oc&gt;
+</pre></div>
+</div>
+<p>The “oc&gt;” prompt at the beginning of a line means the interpreter is waiting for you to type a command.</p>
+</section>
+<section id="error-handling">
+<h2>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>This is one of many areas where oc falls short. Oc is a good I/O facility but a bad general purpose language. Debugging large programs in OC is difficult and it is best to keep things short.</p>
+<p>Oc is implemented as a stack machine and this means that commands are first parsed into a more efficient stack machine representation and subsequently the stack machine is interpreted.</p>
+<p>Errors during compilation are called parse errors and range from invalid syntax:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="mi">1</span><span class="o">++</span><span class="mi">1</span>
+<span class="n">parse</span><span class="w"> </span><span class="n">error</span>
+<span class="nl">nrniv</span><span class="p">:</span><span class="w"> </span><span class="n">parse</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">3</span>
+<span class="mi">1</span><span class="o">++</span><span class="mi">1</span>
+<span class="w">    </span><span class="o">^</span>
+<span class="n">oc</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>to the use of undefined names:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+<span class="nl">nrniv</span><span class="p">:</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">array</span><span class="w"> </span><span class="n">variable</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">9</span>
+<span class="n">print</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+<span class="w">        </span><span class="o">^</span>
+</pre></div>
+</div>
+<p>These kinds of errors are usually easy to fix since they stop the parser immediately and the error message, which always refers to a symptom, generally points to the cause. Error messages specify the current line number of the file being interpreted and print the line along with a carat pointing to the location where the parser failed (usually one or two tokens from the mistake).</p>
+<p>Errors during interpretation of the stack machine are called run-time errors:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">-1</span><span class="p">)</span>
+<span class="nl">sqrt</span><span class="p">:</span><span class="w"> </span><span class="n">DOMAIN</span><span class="w"> </span><span class="n">error</span>
+<span class="nl">nrniv</span><span class="p">:</span><span class="w"> </span><span class="n">sqrt</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">domain</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">5</span>
+<span class="n">sqrt</span><span class="p">(</span><span class="mi">-1</span><span class="p">)</span>
+<span class="w">        </span><span class="o">^</span>
+</pre></div>
+</div>
+<p>These errors usually occur within a function and the error message prints the call chain:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="n">proc</span><span class="w"> </span><span class="n">p</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;sqrt(-1)&quot;</span><span class="p">)}</span>
+<span class="n">oc</span><span class="o">&gt;</span><span class="n">p</span><span class="p">()</span>
+<span class="nl">sqrt</span><span class="p">:</span><span class="w"> </span><span class="n">DOMAIN</span><span class="w"> </span><span class="n">error</span>
+<span class="nl">nrniv</span><span class="p">:</span><span class="w"> </span><span class="n">sqrt</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">domain</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">8</span>
+<span class="p">{</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">-1</span><span class="p">)}</span>
+<span class="w">        </span><span class="o">^</span>
+<span class="w">        </span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;sqrt(-1)&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="n">p</span><span class="p">()</span>
+<span class="nl">nrniv</span><span class="p">:</span><span class="w"> </span><span class="n">execute</span><span class="w"> </span><span class="n">error</span><span class="o">:</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mi">-1</span><span class="p">)</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">8</span>
+<span class="o">^</span>
+<span class="n">oc</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Unfortunately there is no trace facility to help debug run-time errors and the line number refers to the latest command instead of the location of the offending statement.</p>
+<p>Interpretation of a hoc program may be interrupted with one or two ^C’s typed at the terminal. Generally, one ^C is preferred because while the interpreter is busy it will wait til it reaches a safe place (won’t be in the middle of updating an internal data structure) before it halts and waits for further input. Two situations may necessitate the second ^C. If the program is waiting inside a system call, eg. waiting for console input. If the program is executing a compiled function that is taking so long that program control doesn’t reach a known safe place in a reasonable time. If the interpreter is in an infinite loop, as in:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>a single ^C will stop it</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="o">^</span><span class="n">Cnrniv</span><span class="o">:</span><span class="w"> </span><span class="n">interrupted</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="n">oc</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Long expressions may be continued on succeeding lines by using a backslash character <a href="#id1"><span class="problematic" id="id2">`</span></a>' as the last character in the line. Quoted strings continued in this way have a limit of 256 characters and the newlines appear in the string as though <a href="#id3"><span class="problematic" id="id4">`</span></a>n’ was used.</p>
+</section>
+</section>
+<section id="syntax">
+<h1>Syntax<a class="headerlink" href="#syntax" title="Link to this heading"></a></h1>
+<section id="names">
+<h2>Names<a class="headerlink" href="#names" title="Link to this heading"></a></h2>
+<p>A name is a string of less than 100 alphanumeric characters or ‘_’ starting with an alpha character. Names must not conflict with Keywords or built-in functions. Names are global except when the ‘local’ declaration is used to create a local scalar within a procedure or function. Or unless the name is declared within a template (class). A user created name can be associated with a</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">global</span><span class="w"> </span><span class="n">scalar</span><span class="w">       </span><span class="p">(</span><span class="n">available</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">procedures</span><span class="o">/</span><span class="n">functions</span><span class="p">)</span>
+<span class="w">    </span><span class="n">local</span><span class="w"> </span><span class="n">scalar</span><span class="w">    </span><span class="p">(</span><span class="n">created</span><span class="o">/</span><span class="n">destroyed</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">procedure</span><span class="w"> </span><span class="n">entry</span><span class="o">/</span><span class="n">exit</span><span class="p">)</span>
+<span class="w">    </span><span class="n">array</span>
+<span class="w">    </span><span class="n">string</span>
+<span class="w">    </span><span class="k">template</span><span class="w"> </span><span class="p">(</span><span class="k">class</span><span class="w"> </span><span class="nc">or</span><span class="w"> </span><span class="n">type</span><span class="p">)</span>
+<span class="w">    </span><span class="n">object</span><span class="w"> </span><span class="n">reference</span>
+</pre></div>
+</div>
+<p>The following lists the keywords, built-in constants, and built in functions of the oc interpreter. The last group of keywords are reserved for NEURON syntax. The authoritative list is in <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/oc/SRC/hoc_init.c</span></code>. Following these are lists of function and variable names introduced by nrnoc. The authoritative list here is in <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/nrnoc/SRC/neuron.h</span></code> but note that mechanism types and variables do not appear here or any other single place (see <code class="docutils literal notranslate"><span class="pre">$NEURONHOME/nrnoc/SRC/(*.mod</span> <span class="pre">capac.c</span> <span class="pre">extcell.c)</span></code> Last listed are the built-in classes (templates) of ivoc and nrniv. Even if this document becomes out of date one can find all these names in <code class="docutils literal notranslate"><span class="pre">$NEURONNHOME/(ivoc/SRC/oc_classes.h</span> <span class="pre">nrniv/SRC/nrn_classes.h)</span></code></p>
+<section id="keywords">
+<h3>Keywords<a class="headerlink" href="#keywords" title="Link to this heading"></a></h3>
+<p><strong>Control</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">return</span>
+<span class="k">break</span>
+<span class="k">continue</span>
+<span class="n">stop</span>
+<span class="k">if</span>
+<span class="k">else</span>
+<span class="k">while</span>
+<span class="k">for</span>
+<span class="n">iterator_statement</span>
+</pre></div>
+</div>
+<p><strong>General Declaration</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">proc</span>
+<span class="n">func</span>
+<span class="w">    </span><span class="n">iterator</span>
+<span class="kt">double</span>
+<span class="n">depvar</span>
+<span class="n">eqn</span>
+<span class="n">local</span>
+<span class="n">strdef</span>
+</pre></div>
+</div>
+<p><strong>Miscellaneous</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">print</span>
+<span class="k">delete</span>
+<span class="n">read</span>
+<span class="n">debug</span>
+<span class="n">em</span>
+<span class="n">parallel</span>
+<span class="n">help</span>
+</pre></div>
+</div>
+<p><strong>Object Oriented</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">begintemplate</span>
+<span class="n">endtemplate</span>
+<span class="n">objectvar</span><span class="w"> </span><span class="n">objref</span><span class="w"> </span><span class="p">(</span><span class="n">synonyms</span><span class="p">)</span>
+<span class="k">public</span>
+<span class="n">external</span>
+<span class="k">new</span>
+</pre></div>
+</div>
+<p><strong>Neuron Specific</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">create</span><span class="w">        </span><span class="n">connect</span><span class="w">        </span><span class="n">setpointer</span><span class="w">     </span><span class="n">access</span><span class="w">        </span><span class="n">insert</span>
+<span class="n">uninsert</span><span class="w">      </span><span class="n">forall</span><span class="w">         </span><span class="n">ifsec</span><span class="w">          </span><span class="n">forsec</span>
+</pre></div>
+</div>
+<p><strong>Built-In Constants</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">PI</span><span class="w">      </span><span class="n">E</span><span class="w">       </span><span class="n">GAMMA</span><span class="w">   </span><span class="n">DEG</span><span class="w">     </span><span class="n">PHI</span><span class="w">     </span><span class="n">FARADAY</span><span class="w"> </span><span class="n">R</span>
+</pre></div>
+</div>
+<p><strong>Built-In Functions</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">sin</span><span class="w"> </span><span class="n">cos</span><span class="w">     </span><span class="n">atan</span><span class="w">    </span><span class="n">log</span><span class="w">     </span><span class="n">log10</span><span class="w">   </span><span class="n">exp</span><span class="w">     </span><span class="n">sqrt</span><span class="w">    </span><span class="kt">int</span><span class="w">     </span><span class="n">abs</span><span class="w">     </span><span class="n">erf</span>
+<span class="w">    </span><span class="n">erfc</span><span class="w">    </span><span class="n">system</span><span class="w">  </span><span class="n">prmat</span><span class="w">   </span><span class="n">solve</span><span class="w">   </span><span class="n">wqinit</span><span class="w">  </span><span class="n">plt</span><span class="w">     </span><span class="n">axis</span><span class="w">    </span><span class="n">plot</span><span class="w">    </span><span class="n">plotx</span><span class="w">   </span><span class="n">ploty</span>
+<span class="w">    </span><span class="n">regraph</span><span class="w"> </span><span class="n">symbols</span><span class="w"> </span><span class="n">printf</span><span class="w">  </span><span class="n">xred</span><span class="w">    </span><span class="n">sred</span><span class="w">    </span><span class="n">ropen</span><span class="w">   </span><span class="n">wopen</span><span class="w">   </span><span class="n">xopen</span><span class="w">   </span><span class="n">fprint</span><span class="w">  </span><span class="n">fscan</span>
+<span class="w">    </span><span class="n">graph</span><span class="w">   </span><span class="n">graphmode</span><span class="w">       </span><span class="n">lw</span><span class="w">      </span><span class="n">getstr</span><span class="w">  </span><span class="n">strcmp</span><span class="w">  </span><span class="n">setcolor</span><span class="w"> </span><span class="n">startsw</span>
+<span class="w">    </span><span class="n">stopsw</span><span class="w">  </span><span class="n">object_id</span><span class="w">       </span><span class="n">allobjectvars</span><span class="w">   </span><span class="n">allobjexts</span><span class="w">      </span><span class="n">xpanel</span><span class="w">  </span><span class="n">xbutton</span>
+<span class="w">    </span><span class="n">xcheckbox</span><span class="w">       </span><span class="n">xstatebutton</span><span class="w">    </span><span class="n">xlabel</span><span class="w">  </span><span class="n">xmenu</span><span class="w">   </span><span class="n">xvalue</span><span class="w">  </span><span class="n">xpvalue</span><span class="w"> </span><span class="n">xradiobutton</span>
+<span class="w">    </span><span class="n">xfixedvalue</span><span class="w">     </span><span class="n">xvarlabel</span><span class="w">       </span><span class="n">xslider</span><span class="w"> </span><span class="n">boolean_dialog</span><span class="w">  </span><span class="n">continue_dialog</span>
+<span class="w">    </span><span class="n">string_dialog</span><span class="w">   </span><span class="n">doEvents</span><span class="w">        </span><span class="n">doNotify</span><span class="w">        </span><span class="n">numarg</span><span class="w">  </span><span class="n">hoc_pointer_</span>
+<span class="w">    </span><span class="n">execute</span><span class="w"> </span><span class="n">execute1</span><span class="w">        </span><span class="n">load_proc</span><span class="w">       </span><span class="n">load_func</span><span class="w">       </span><span class="n">load_template</span>
+<span class="w">    </span><span class="n">machine_name</span><span class="w">    </span><span class="n">saveaudit</span><span class="w">       </span><span class="n">retrieveaudit</span><span class="w">   </span><span class="n">coredump_on_error</span>
+<span class="w">    </span><span class="n">checkpoint</span><span class="w">      </span><span class="n">quit</span><span class="w">    </span><span class="n">object_push</span><span class="w">     </span><span class="n">object_pop</span><span class="w">      </span><span class="n">pwman_place</span>
+<span class="w">    </span><span class="n">show_errmess_always</span><span class="w">     </span><span class="n">numprocs</span><span class="w">        </span><span class="n">myproc</span><span class="w">  </span><span class="n">psync</span><span class="w">   </span><span class="n">settext</span>
+<span class="n">secname</span>
+</pre></div>
+</div>
+<p><strong>Variables</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">float_epsilon</span>
+<span class="w">    </span><span class="n">hoc_ac_</span>
+</pre></div>
+</div>
+</section>
+<section id="names-introduced-by-nrnoc">
+<h3>Names introduced by nrnoc<a class="headerlink" href="#names-introduced-by-nrnoc" title="Link to this heading"></a></h3>
+<p><strong>Variables</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">t</span><span class="w">   </span><span class="n">dt</span><span class="w">      </span><span class="n">clamp_resist</span><span class="w">    </span><span class="n">celsius</span><span class="w"> </span><span class="n">secondorder</span>
+<span class="w">    </span><span class="n">diam_changed</span>
+</pre></div>
+</div>
+<p><strong>Functions</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">node_data</span><span class="w">   </span><span class="n">disconnect</span><span class="w">      </span><span class="n">batch_run</span><span class="w">       </span><span class="n">batch_save</span>
+<span class="w">    </span><span class="n">pt3dclear</span><span class="w">       </span><span class="n">pt3dadd</span><span class="w"> </span><span class="n">n3d</span><span class="w">     </span><span class="n">x3d</span><span class="w">     </span><span class="n">y3d</span><span class="w">     </span><span class="n">z3d</span><span class="w">     </span><span class="n">diam3d</span><span class="w">  </span><span class="n">arc3d</span>
+<span class="w">    </span><span class="n">define_shape</span><span class="w">    </span><span class="n">p3dconst</span><span class="w">        </span><span class="n">spine3d</span><span class="w"> </span><span class="n">setSpineArea</span><span class="w">    </span><span class="n">getSpineArea</span>
+<span class="w">    </span><span class="n">area</span><span class="w">    </span><span class="n">ri</span><span class="w">      </span><span class="n">initnrn</span><span class="w"> </span><span class="n">topology</span><span class="w">        </span><span class="n">fadvance</span><span class="w">        </span><span class="n">distance</span>
+<span class="w">    </span><span class="n">finitialize</span><span class="w">     </span><span class="n">fstim</span><span class="w">   </span><span class="n">fstimi</span><span class="w">  </span><span class="n">ion_style</span><span class="w">       </span><span class="n">nernst</span><span class="w">  </span><span class="n">ghk</span>
+</pre></div>
+</div>
+<p><strong>Mechanisms with Range variables</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">hh</span><span class="w">  </span><span class="n">pas</span>
+</pre></div>
+</div>
+<p><strong>Classes</strong></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">SectionRef</span><span class="w">  </span><span class="n">SectionList</span>
+<span class="w">    </span><span class="n">VClamp</span><span class="w">  </span><span class="n">SVClamp</span><span class="w"> </span><span class="n">IClamp</span><span class="w">  </span><span class="n">AlphaSynapse</span>
+<span class="w">    </span><span class="n">APCount</span>
+</pre></div>
+</div>
+<p>Missing from the above list are the built-in object classes such as <a class="reference internal" href="../hoc/programming/gui/list.html#List" title="List"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">List</span></code></a>, <a class="reference internal" href="../hoc/visualization/graph.html#Graph" title="Graph"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Graph</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/layout.html#HBox" title="HBox"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">HBox</span></code></a>, <a class="reference internal" href="../hoc/programming/io/file.html#File" title="File"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">File</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/layout.html#Deck" title="Deck"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Deck</span></code></a>, <a class="reference internal" href="../hoc/programming/math/random.html#Random" title="Random"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Random</span></code></a>, <a class="reference internal" href="../hoc/programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> and some new functions such as <a class="reference internal" href="../hoc/analysis/programmatic/optimization.html#fit_praxis" title="fit_praxis"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">fit_praxis</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/widgets.html#xmenu" title="xmenu"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">xmenu</span></code></a>, <a class="reference internal" href="../hoc/programming/gui/widgets.html#xbutton" title="xbutton"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">xbutton</span></code></a>, etc, as well as neuron specific classes such as <a class="reference internal" href="../hoc/visualization/shape.html#Shape" title="Shape"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Shape</span></code></a>, <a class="reference internal" href="../hoc/modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionList</span></code></a>, etc. The help files in <code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">NEURONHOME/lib/help</span></code> are kept up to date but this file tends to lag behind the current version.</p>
+</section>
+</section>
+<section id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Link to this heading"></a></h2>
+<p>Double precision variables are defined when a name is assigned a value in an assignment expression. For example,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>Such scalars are available to all interpreted procedures and functions. There are several built-in variables which should be treated as constants:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">FARADAY</span><span class="w">             </span><span class="n">coulombs</span><span class="o">/</span><span class="n">mole</span>
+<span class="w">    </span><span class="n">R</span><span class="w">               </span><span class="n">molar</span><span class="w"> </span><span class="n">gas</span><span class="w"> </span><span class="n">constant</span><span class="p">,</span><span class="w"> </span><span class="n">joules</span><span class="o">/</span><span class="n">mole</span><span class="o">/</span><span class="n">deg</span><span class="o">-</span><span class="n">K</span>
+<span class="w">    </span><span class="n">DEG</span><span class="w">             </span><span class="mi">180</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">PI</span><span class="w">        </span><span class="n">degrees</span><span class="w"> </span><span class="n">per</span><span class="w"> </span><span class="n">radian</span>
+<span class="w">    </span><span class="n">E</span><span class="o">+</span><span class="w">              </span><span class="n">base</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">natural</span><span class="w"> </span><span class="n">logarithms</span>
+<span class="w">    </span><span class="n">GAMMA</span><span class="w">           </span><span class="n">Euler</span><span class="w"> </span><span class="n">constant</span>
+<span class="w">    </span><span class="n">PHI</span><span class="w">             </span><span class="n">golden</span><span class="w"> </span><span class="n">ratio</span>
+<span class="w">    </span><span class="n">PI</span><span class="w">              </span><span class="n">circular</span><span class="w"> </span><span class="n">transcendental</span><span class="w"> </span><span class="n">number</span>
+<span class="w">    </span><span class="n">float_epsilon</span><span class="w">   </span><span class="n">resolution</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">logical</span><span class="w"> </span><span class="n">comparisons</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="kt">int</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Arbitrarily dimensioned arrays are declared with the ‘double’ keyword. For example,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span><span class="w"> </span><span class="n">vector</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span><span class="w"> </span><span class="n">array</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">6</span><span class="p">],</span><span class="w"> </span><span class="n">cube</span><span class="p">[</span><span class="n">first</span><span class="p">][</span><span class="n">second</span><span class="p">][</span><span class="n">third</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Array elements are initialized to 0.0. Array indices, of course, are truncated to integers and run from 0 to the declared value minus 1. When an array name is used without its indices, indices of 0 are assumed.</p>
+<p>Arrays can be dynamically re-dimensioned within procedures.</p>
+<p>String variables are declared with the ‘strdef’ keyword. For example,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">strdef</span><span class="w"> </span><span class="n">st1</span><span class="p">,</span><span class="w"> </span><span class="n">st2</span>
+</pre></div>
+</div>
+<p>Assignments are made to string variables as in,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">st1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;this is a string&quot;</span>
+</pre></div>
+</div>
+<p>String variables may be used in any context which requires a string, but no operations, such as addition of strings, are available (but see sprint function).</p>
+<p>After a name is defined as a string or array, it cannot be changed to another type. The double and strdef keywords can appear within a compound statement and are useful for throwing away previous data and reallocating space. However the names must be originally declared at the top level before re-defining in a procedure.</p>
+</section>
+<section id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Link to this heading"></a></h2>
+<p>The arithmetic result of an expression is immediately typed on the standard output unless the expression is embedded in a statement or is an assignment expression. Thus,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span><span class="o">*</span><span class="mi">5</span>
+</pre></div>
+</div>
+<p>typed at the keyboard, prints</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="mi">10</span>
+</pre></div>
+</div>
+<p>and,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>yields</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>The operators used in expressions are, in order of precedence from high to low,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="p">()</span>
+<span class="w">    </span><span class="o">^</span><span class="w">       </span><span class="n">exponentiation</span><span class="w">  </span><span class="p">(</span><span class="n">right</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="n">precedence</span><span class="p">)</span>
+<span class="w">    </span><span class="o">-</span><span class="w"> </span><span class="o">!</span><span class="w">     </span><span class="n">unaryminus</span><span class="p">,</span><span class="w"> </span><span class="k">not</span>
+<span class="w">    </span><span class="o">*</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="o">%</span><span class="w">   </span><span class="n">multiplication</span><span class="p">,</span><span class="w"> </span><span class="n">division</span><span class="p">,</span><span class="w"> </span><span class="err">``</span><span class="n">remainder</span><span class="err">``</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="o">-</span><span class="w">     </span><span class="n">plus</span><span class="p">,</span><span class="w"> </span><span class="n">minus</span>
+<span class="w">    </span><span class="o">&gt;</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">==</span><span class="w">   </span><span class="n">logical</span><span class="w"> </span><span class="n">operators</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w">      </span><span class="n">logical</span><span class="w"> </span><span class="n">AND</span>
+<span class="w">    </span><span class="o">||</span><span class="w">      </span><span class="n">logical</span><span class="w"> </span><span class="n">OR</span>
+<span class="w">    </span><span class="o">=</span><span class="w">       </span><span class="n">assignment</span><span class="w"> </span><span class="p">(</span><span class="n">right</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="n">precedence</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Logical expressions have value 1.0 (TRUE) and 0.0 (FALSE). The remainder, a%b, is in the range, 0 &lt;= a%b &lt; b, and can be thought of as the value that results from repeatedly subtracting or adding b until result is in the range. This differs from the C syntax in which (-1)%5 = -1. For us, (-1)%5 = 4.</p>
+<p>Logical comparisons of real values are inherently ambiguous due to roundoff error. Roundoff can also be a problem when computing integers from reals and indices for vectors. For this reason the built-in global variable <code class="docutils literal notranslate"><span class="pre">float_epsilon</span></code> is used for logical comparisons and computing vector indices. In what follows, the constant e denotes <code class="docutils literal notranslate"><span class="pre">float_epsilon</span></code>. The default value is 1e-11 but can be set by the user.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">hoc</span><span class="w">         </span><span class="n">math</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="n">equivalent</span><span class="err">\</span>\
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">y</span><span class="w">          </span><span class="o">-</span><span class="n">e</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">y</span><span class="w">           </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">y</span><span class="w">          </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="w">          </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">y</span><span class="w">           </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">y</span><span class="w">          </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">e</span>
+<span class="w">    </span><span class="kt">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w">          </span><span class="p">(</span><span class="kt">int</span><span class="p">)(</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="n">a</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="w">            </span><span class="n">a</span><span class="p">[(</span><span class="kt">int</span><span class="p">)(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">e</span><span class="p">)]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="statements">
+<h1>Statements<a class="headerlink" href="#statements" title="Link to this heading"></a></h1>
+<p>A statement terminated with a newline is immediately executed. A group of statements separated with newlines or white space and enclosed in {} form a compound statement which is not executed till the closing</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="p">}</span>
+</pre></div>
+</div>
+<p>is typed. Statements typed interactively do not produce a value. An assignment is parsed by default as a statement rather than an expression, so assignments typed interactively do not print their value. Note, though, the expression,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>would print the value,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="mi">4</span>
+</pre></div>
+</div>
+<p>An expression is treated as a statement when it is within a compound statement.</p>
+</section>
+<section id="control-flow">
+<h1>Control Flow<a class="headerlink" href="#control-flow" title="Link to this heading"></a></h1>
+<p>In the syntax below, stmt stands for either a simple statement or a compound statement.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="w"> </span><span class="n">stmt</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="w"> </span><span class="n">stmt1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">stmt2</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="w"> </span><span class="n">stmt</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">expr1</span><span class="p">;</span><span class="w"> </span><span class="n">expr2</span><span class="p">;</span><span class="w"> </span><span class="n">expr3</span><span class="p">)</span><span class="w"> </span><span class="n">stmt</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expr1</span><span class="p">,</span><span class="w"> </span><span class="n">expr2</span><span class="w">   </span><span class="n">stmt</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">iterator_name</span><span class="p">(...)</span><span class="w"> </span><span class="n">stmt</span>
+</pre></div>
+</div>
+<p>In the <code class="docutils literal notranslate"><span class="pre">if</span></code> statement, stmt is executed only if expr evaluates to a non-zero value. The <code class="docutils literal notranslate"><span class="pre">else</span></code> form of the if statement executes stmt1 when expr evaluates to a non-zero (TRUE) value and stmt2 otherwise.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">while</span></code> statement is a looping construct which repeatedly executes stmt as long as expr is TRUE. The expr is evaluated prior to each execution of stmt so if the expr starts as 0, the stmt will not be executed even once.</p>
+<p>The general form of the &gt;tt&gt;for statement is executed as follows: The first expr is evaluated. As long as the second expr is true the stmt is executed. After each execution of the stmt, the third expr is evaluated.</p>
+<p>The short form of the for statement is similar to the do loop of fortran and is often more convenient to type. It is, however, very restrictive in that the increment can only be unity. If expr2 is less than expr1 the stmt will not be executed even once. Also the expressions are evaluated once at the beginning of the for loop and not reevaluated.</p>
+<p>The iterator form of the for statement is an object oriented iterative construct which separates the idea of iteration over a set of items from the idea of what work is to be performed on each item. As such it is most useful when dealing with objects which are collections of other objects. It doesn’t add any power to the language (neither does the for i=1,10 form) but it is useful whenever the iteration over a set of items has a nontrivial mapping to a sequence of numbers and is used many times. As a concrete example consider the definition of an iterator called “case”</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">iterator</span><span class="w"> </span><span class="nf">case</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="n">local</span><span class="w"> </span><span class="n">i</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">$2</span><span class="p">,</span><span class="w"> </span><span class="n">numarg</span><span class="p">()</span><span class="mi">-1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">$</span><span class="o">&amp;</span><span class="mi">1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">$i</span>
+<span class="w">                    </span><span class="n">iterator_statement</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Now it is easy to use this iterator to loop over small sets of unrelated integers as in (suppose x has already been used as a scalar variable)</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="k">case</span><span class="p">(</span><span class="o">&amp;</span><span class="no">x</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w"> </span><span class="mi">-3</span><span class="p">)</span><span class="w"> </span><span class="no">print</span><span class="w"> </span><span class="no">x</span>
+</pre></div>
+</div>
+<p>The alternative would be the relatively tedious:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span><span class="w"> </span><span class="n">num</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+<span class="w">    </span><span class="n">num</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="n">num</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span>
+<span class="w">    </span><span class="n">num</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="n">num</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">25</span>
+<span class="w">    </span><span class="n">num</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-3</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">num</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="w">            </span><span class="n">print</span><span class="w"> </span><span class="n">x</span>
+<span class="w">    </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The following statements are used to modify the normal flow of control.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">break</span><span class="w">               </span><span class="n">Exit</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">enclosing</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">loop</span><span class="p">.</span>
+<span class="k">continue</span><span class="w">    </span><span class="n">Jump</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">stmt</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">enclosing</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="k">for</span><span class="p">.</span>
+<span class="k">return</span><span class="w">              </span><span class="n">Exit</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">enclosing</span><span class="w"> </span><span class="n">procedure</span><span class="p">.</span>
+<span class="k">return</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="n">Exit</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">enclosing</span><span class="w"> </span><span class="n">function</span><span class="p">.</span>
+<span class="n">stop</span><span class="w">                </span><span class="n">Exit</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">top</span><span class="w"> </span><span class="n">level</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">interpreter</span><span class="p">.</span>
+<span class="n">quit</span><span class="p">()</span><span class="w">              </span><span class="n">Exit</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">interpreter</span><span class="p">.</span>
+</pre></div>
+</div>
+</section>
+<section id="functions-and-procedures">
+<h1>Functions and Procedures<a class="headerlink" href="#functions-and-procedures" title="Link to this heading"></a></h1>
+<p>The definition syntax is</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">proc</span><span class="w"> </span><span class="nf">name</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="n">stmt</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Procedures do not return a value.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">func</span><span class="w"> </span><span class="nf">name</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="n">stmt</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Functions must return via a</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">expr</span>
+</pre></div>
+</div>
+<p>statement.</p>
+<p>Arguments are denoted, $1, $2, etc. within the body of a function or procedure. Scalars, strings, and objects can be passed to functions and procedures. A string argument is denoted $s1, An object argument is denoted $o1. The variable, ‘i’, may be used in place of the positional constant to denote which argument is to be retrieved. eg. $i
+Formally, an argument starts with the letter ‘$’ followed by an optional ‘&amp;’ to refer to a scalar pointer, followed by an optional ‘s’ or ‘o’ to refer to string or object reference, followed by an integer or the variable ‘i’.</p>
+<p>As a trivial example of a function definition, consider:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">func</span><span class="w"> </span><span class="nf">f</span><span class="p">(){</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">$1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">$1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This defines the function <code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">f(arg1)</span></code> which returns the square of its argument. User defined functions can be used in any expression.</p>
+<p>Functions can be called recursively. For example, the factorial function, can be defined as</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">func</span><span class="w"> </span><span class="nf">fac</span><span class="p">(){</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">$1</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">fac</span><span class="p">(</span><span class="n">$1</span><span class="mi">-1</span><span class="p">)</span><span class="o">*</span><span class="n">$1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and the call</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">fac</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>would produce</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="mi">6</span>
+</pre></div>
+</div>
+<p>It would be a user error to call this function with a negative argument or non-integer argument. Besides the fact that the algorithm is numerical nonsense for those values, the function would never return since the recursive argument would never be 0. Actually after some time the stack frame list would overflow and an error message would be printed as in:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">oc</span><span class="o">&gt;</span><span class="n">fac</span><span class="p">(</span><span class="mi">-1</span><span class="p">)</span>
+<span class="w">    </span><span class="nl">nrnoc</span><span class="p">:</span><span class="w"> </span><span class="n">fac</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">nested</span><span class="w"> </span><span class="n">too</span><span class="w"> </span><span class="n">deeply</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">    </span><span class="n">fac</span><span class="p">(</span><span class="mi">-1</span><span class="p">)</span>
+<span class="w">            </span><span class="o">^</span>
+<span class="w">            </span><span class="n">fac</span><span class="p">(</span><span class="mi">-99</span><span class="p">)</span>
+<span class="w">          </span><span class="n">fac</span><span class="p">(</span><span class="mi">-98</span><span class="p">)</span>
+<span class="w">        </span><span class="n">fac</span><span class="p">(</span><span class="mi">-97</span><span class="p">)</span>
+<span class="w">      </span><span class="n">fac</span><span class="p">(</span><span class="mi">-96</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">others</span>
+<span class="w">    </span><span class="n">oc</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Notice the recommended placement of {} in the above function. The opening ‘{’ must appear on the same line as the statement to which it is a part. The closing ‘’}’ is free form but clarity is best served if it is placed directly under the beginning of the statement it closes and interior statements are indented. Local variables maintained on a stack can be defined with the “local” statement. The “local” statement must be the first statement in the function and on the same line as the “proc” statement. For example,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">proc</span><span class="w"> </span><span class="nf">squares</span><span class="p">(){</span><span class="w">     </span><span class="n">local</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="cm">/* print squares up to arg */</span>
+<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">$1</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">i</span><span class="o">*</span><span class="n">i</span>
+</pre></div>
+</div>
+<p>}</p>
+<p>This insures that any previously defined global variables with the names, i, j, or k are not affected by the procedure. Notice text between /star and star/ is treated as a comment. Also, comments to the end of the line may be started by the double slash as in</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">print</span><span class="w"> </span><span class="n">PI</span><span class="w">    </span><span class="c1">// this is a comment</span>
+</pre></div>
+</div>
+</section>
+<section id="input-and-output">
+<h1>Input and Output<a class="headerlink" href="#input-and-output" title="Link to this heading"></a></h1>
+<p>The following describes simple text based input and output. User interaction is better performed using the graphical interface and if dealing with multiple files one must use the File class.;</p>
+<p>Standard hoc supplied a read and print statement, whose use can best be seen from the example,</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">read</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">print</span><span class="w"> </span><span class="s">&quot;value is &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The return value of <code class="docutils literal notranslate"><span class="pre">read()</span></code> is 1 if a value was read, and 0 if there was an error or end of file. The print statement takes a comma separated list of arguments which may be strings or variables. A newline is printed at the end. “read” and “print” use the standard input and output respectively.</p>
+<p>For greater flexibility the following builtin functions are available:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;format string&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">arg1</span><span class="p">,</span><span class="w"> </span><span class="n">arg2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</pre></div>
+</div>
+<p>Printf is compatible with the standard C library function, allowing f, g, d, o, and x formats for scalar arguments, and the s format for strings. All the % specifications for field width apply.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">fprint</span><span class="p">(</span><span class="s">&quot;format string&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">arg1</span><span class="p">,</span><span class="w"> </span><span class="n">arg2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</pre></div>
+</div>
+<p>Fprintf is the same as the printf function except that the output goes to the file opened with the wopen(“filename”) function. Files opened with the wopen function are closed with <code class="docutils literal notranslate"><span class="pre">wopen()</span></code> with no arguments or wopen(“”). When no write file is open, fprintf defaults to the standard output. Wopen returns a 0 on failure of the attempted open.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">sprint</span><span class="p">(</span><span class="n">strdef</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;format string&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">arg1</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</pre></div>
+</div>
+<p>This function is very useful in building filenames out of other variables. For example, if data files are names dthis.1, dthis.2, dthat.1, dthat.2, etc., then the names can be generated with variables in the following fashion.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">strdef</span><span class="w"> </span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="n">prefix</span>
+<span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;this&quot;</span>
+<span class="n">num</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="n">sprint</span><span class="p">(</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;d%s.%d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">prefix</span><span class="p">,</span><span class="w"> </span><span class="n">num</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After execution of these statements the string variable, file, contains <code class="docutils literal notranslate"><span class="pre">dthis.1</span></code></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">fscan</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Fscan returns the value read sequentially from the file opened by ropen(<code class="docutils literal notranslate"><span class="pre">&quot;filename&quot;</span></code>). The file is closed with <code class="docutils literal notranslate"><span class="pre">ropen()</span></code> or by a call to ropen with another filename. “ropen” returns a 0 if the file could not be opened. If no read file is open, <code class="docutils literal notranslate"><span class="pre">scanf</span></code> takes its input from the standard input.</p>
+<p>Read files must consist of whitespace or newline separated numbers in any meaningful format. An EOF will interrupt the program with an error message. The user can avoid this with a sentinel value as the last number in the file or by knowing how many times to call scanf.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">getstr</span><span class="p">(</span><span class="n">strvar</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Getstr reads the next line from the file opened with ropen and assigns it to the string variable argument. The trailing newline is part of the string.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">xred</span><span class="p">(</span><span class="s">&quot;prompt&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">default</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Xred is a useful function which places a prompt on the standard error device along with the default value and waits for input on the standard input. If a newline is typed “xred” returns the default value. If a number is typed, it is checked to see if it is in the range defined by min and max. If so, the input value is returned. If the value to be returned is not in the range, the user is prompted again for a number within the proper range.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">xopen</span><span class="p">(</span><span class="s">&quot;filename&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The file is read in and executed by hoc. This is useful for loading previously written procedures and functions that were left out of the command line during hoc invocation. end{description}</p>
+</section>
+<section id="editing">
+<h1>Editing<a class="headerlink" href="#editing" title="Link to this heading"></a></h1>
+<p>The ‘<code class="docutils literal notranslate"><span class="pre">em</span></code>’ command invokes a public domain emacs editor (not to be confused with the EMACS with Lisp like syntax). I still like it but it is definitely showing its age in this day of mouse editors. Many people are already very comfortable with their own editor and find it more convenient to create a file and transfer it into hoc with the xopen command.</p>
+<p>The ‘em’ editor is normally in the insert mode and control keys are used as commands to the editor. Invocation is instantaneous with the cursor located where emacs was last exited. The relevant commands involving the interaction between emacs and hoc are:</p>
+<p><strong>^C</strong></p>
+<p>Return to hoc. The current edit buffer is read into hoc and executed. A syntax error will return to emacs with the cursor at the line where the parser failed. Final exit from hoc (V+^D+) will prompt for each unsaved buffer.</p>
+<p><strong>^X^F</strong></p>
+<p>Prompts for a filename to read into a new buffer with the name of the filename. The editor moves to the new buffer.</p>
+<p><strong>^XB</strong></p>
+<p>Prompts for a buffer name or number. The editor moves to that buffer.</p>
+<p><strong>^X^B</strong></p>
+<p>Lists the buffers. Use V+^X1+ to clear the buffer list window.</p>
+<p><strong>^X^R</strong></p>
+<p>Prompts for a filename and replaces the contents of the current buffer with the contents of the file.</p>
+<p><strong>^X^S</strong></p>
+<p>Updates the current filename with the contents of the current buffer.</p>
+<p><strong>^X^W</strong></p>
+<p>Prompts for a filename and writes the current buffer to that name.</p>
+<p>Note that ^C only executes a buffer. It does not save any unsaved buffer. On exit from hoc you will be prompted for each unsaved buffer whether or not to save it.</p>
+<p>HINT: Break large programs into many files and edit them in separate buffers. Buffers larger than 100 lines take a noticeable time to interpret. Use an <code class="docutils literal notranslate"><span class="pre">init.hoc</span></code> file consisting of xopen(“filename”) commands to setup the environment and run with “hoc init.hoc -”. Then edit only the files you need to change in that run.</p>
+</section>
+<section id="see-also">
+<h1>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h1>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">This</span><span class="w"> </span><span class="n">manual</span><span class="w">                 </span><span class="o">-</span><span class="w"> </span><span class="n">hoc</span><span class="p">.</span><span class="n">man</span>
+<span class="w">    </span><span class="n">Solving</span><span class="w"> </span><span class="n">simultaneous</span><span class="w"> </span><span class="n">equations</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="n">hoceqn</span><span class="p">.</span><span class="n">man</span>
+<span class="w">    </span><span class="n">Plotting</span><span class="w">                        </span><span class="o">-</span><span class="w"> </span><span class="n">hoc</span><span class="w"> </span><span class="n">functions</span>
+<span class="w">    </span><span class="n">User</span><span class="w"> </span><span class="n">extensions</span><span class="w">                 </span><span class="o">-</span><span class="w"> </span><span class="n">hocusr</span><span class="p">.</span><span class="n">man</span>
+<span class="w">    </span><span class="n">Editing</span><span class="w"> </span><span class="n">commands</span><span class="w">                </span><span class="o">-</span><span class="w"> </span><span class="n">emacs</span><span class="p">.</span><span class="n">hlp</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

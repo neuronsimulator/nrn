@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example: Circadian rhythm &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example: Calcium waves" href="calcium%20waves.html" />
+    <link rel="prev" title="Example: Degradable buffer" href="degradable_buffer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python RXD tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Reaction-Diffusion%20tutorial.html">Reaction-diffusion introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-initialization.html">Initialization Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Changing%20initial%20conditions%20and%20parameters.html">Varying initial concentrations and parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="thresholds.html">Reaction-diffusion thresholds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extracellular.html">Extracellular reaction-diffusion tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Restricting%20reactions%20to%20certain%20sections.html">Restricting reactions to a part of a region</a></li>
+<li class="toctree-l2"><a class="reference internal" href="degradable_buffer.html">Example: Degradable buffer</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Example: Circadian rhythm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Load-libraries">Load libraries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Units">Units</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Helper-functions-for-clarity">Helper functions for clarity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Define-the-morphology">Define the morphology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Declaring-proteins">Declaring proteins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Reactions">Reactions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Record-states">Record states</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Run-the-simulation">Run the simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Plot">Plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="calcium%20waves.html">Example: Calcium waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combining%20currents%20from%20mod%20files%20with%20rxd.html">Example: combining MOD file ion channels with rxd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ip3-demo.html">IP3 demo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python RXD tutorials</a></li>
+      <li class="breadcrumb-item active">Example: Circadian rhythm</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rxd-tutorials/circadian.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Example:-Circadian-rhythm">
+<h1>Example: Circadian rhythm<a class="headerlink" href="#Example:-Circadian-rhythm" title="Link to this heading"></a></h1>
+<p>A version of this notebook may be run online via Google Colab at <a class="reference external" href="https://tinyurl.com/rxd-circadian">https://tinyurl.com/rxd-circadian</a> (make a copy or open in playground mode).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">neuron</span>
+</pre></div>
+</div>
+</div>
+<p>Here we develop a NEURON implementation of the Leloup-Goldbeter model for circadian rhythms in Drosophila, using the version of the model specified in:</p>
+<p>Leloup, J. C., Gonze, D., &amp; Goldbeter, A. (1999). Limit cycle models for circadian rhythms based on transcriptional regulation in Drosophila and Neurospora. Journal of biological rhythms, 14(6), 433-448. <a class="reference external" href="https://doi.org/10.1177/074873099129000948">https://doi.org/10.1177/074873099129000948</a></p>
+<p>We’ll use the initial conditions from the BioModels version: <a class="reference external" href="https://www.ebi.ac.uk/biomodels/BIOMD0000000298">https://www.ebi.ac.uk/biomodels/BIOMD0000000298</a></p>
+<section id="Load-libraries">
+<h2>Load libraries<a class="headerlink" href="#Load-libraries" title="Link to this heading"></a></h2>
+<p>As usual, we’ll want NEURON’s h library and its standard run system as well as rxd.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>We’ll also use matplotlib to plot concentrations of circadian proteins over time. We could of course use NEURON’s graphics, bokeh, or any other plotting library.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Units">
+<h2>Units<a class="headerlink" href="#Units" title="Link to this heading"></a></h2>
+<p>Recall NEURON measures concentrations in mM and time in ms. Leloup et al., 1999, however expresses concentration in nM and time in hours. We could ignore the unit inconsistency and NEURON would still be able to run the simulation, however if we did so, this could cause problems for interacting with other NEURON mechanisms. To avoid this problem, we use the <code class="docutils literal notranslate"><span class="pre">nM</span></code> and <code class="docutils literal notranslate"><span class="pre">hour</span></code> units from <code class="docutils literal notranslate"><span class="pre">neuron.units</span></code> in addition to our usual <code class="docutils literal notranslate"><span class="pre">mV</span></code> for initializing the membrane potential:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">nM</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">mV</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Helper-functions-for-clarity">
+<h2>Helper functions for clarity<a class="headerlink" href="#Helper-functions-for-clarity" title="Link to this heading"></a></h2>
+<p>For clarity, we prefer to define parameters and species by just specifying their names and values instead of repeteadly writing rxd.Parameter or rxd.Species. Fortunately, since Python uses keyword arguments and allows functions to modify the global variable dictionary, we can define helper functions that let us do exactly that:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">declare_parameters</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;enables clean declaration of parameters in top namespace&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">declare_species</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;enables clean declaration of species in top namespace&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">atolscale</span><span class="o">=</span><span class="mf">1e-3</span> <span class="o">*</span> <span class="n">nM</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We notify NEURON’s variable step solver that we want an absolute error tolerance on the order of 1e-3 nM since Leloup et al’s concentrations are on the order of 1 nM.</p>
+<p>You don’t need to fully understand the code for these functions; their usage will be clear below, and they can be reused verbatim in many similar models.</p>
+<p>Feel free to reuse these functions in your own code if you find them helpful.</p>
+</section>
+<section id="Define-the-morphology">
+<h2>Define the morphology<a class="headerlink" href="#Define-the-morphology" title="Link to this heading"></a></h2>
+<p>Even though this simulation does not use any electrophysiology, we define the nrn_region to allow the option of easily connecting to electrophysiology kinetics in the future:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cell</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">([</span><span class="n">cell</span><span class="p">],</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Parameters">
+<h2>Parameters<a class="headerlink" href="#Parameters" title="Link to this heading"></a></h2>
+<p>Using Parameters instead of numbers makes it easier to rerun simulations. Beginning in NEURON 7.7, the rxd parameters panel allows quickly changing parameter values and rerunning simulations from the graphical user interface.</p>
+<p>Here we explicitly specify units (defined above) as the units in Leloup et al do not match NEURON’s default units. We use the helper function defined above instead of repeatedly writing rxd.Parameter.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">declare_parameters</span><span class="p">(</span>
+    <span class="n">vsP</span><span class="o">=</span><span class="mf">1.1</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">vmP</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">KmP</span><span class="o">=</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">KIP</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">ksP</span><span class="o">=</span><span class="mf">0.9</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">vdP</span><span class="o">=</span><span class="mf">2.2</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">KdP</span><span class="o">=</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">vsT</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">vmT</span><span class="o">=</span><span class="mf">0.7</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">KmT</span><span class="o">=</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">KIT</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">ksT</span><span class="o">=</span><span class="mf">0.9</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">vdT</span><span class="o">=</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">KdT</span><span class="o">=</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">kdC</span><span class="o">=</span><span class="mf">0.01</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">kdN</span><span class="o">=</span><span class="mf">0.01</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">k1</span><span class="o">=</span><span class="mf">0.8</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">k2</span><span class="o">=</span><span class="mf">0.2</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">k3</span><span class="o">=</span><span class="mf">1.2</span> <span class="o">/</span> <span class="p">(</span><span class="n">nM</span> <span class="o">*</span> <span class="n">hour</span><span class="p">),</span>
+    <span class="n">k4</span><span class="o">=</span><span class="mf">0.6</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">kd</span><span class="o">=</span><span class="mf">0.01</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V1P</span><span class="o">=</span><span class="mf">8.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V1T</span><span class="o">=</span><span class="mf">8.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V2P</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V2T</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V3P</span><span class="o">=</span><span class="mf">8.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V3T</span><span class="o">=</span><span class="mf">8.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V4P</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">V4T</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">nM</span> <span class="o">/</span> <span class="n">hour</span><span class="p">,</span>
+    <span class="n">K1P</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K1T</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K2P</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K2T</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K3P</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K3T</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K4P</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">K4T</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">n</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Declaring-proteins">
+<h2>Declaring proteins<a class="headerlink" href="#Declaring-proteins" title="Link to this heading"></a></h2>
+<p>As with the parameters, we declare all the protiens (species), their initial values, and units:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">declare_species</span><span class="p">(</span>
+    <span class="n">MP</span><span class="o">=</span><span class="mf">0.0614368</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">P0</span><span class="o">=</span><span class="mf">0.0169928</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">P1</span><span class="o">=</span><span class="mf">0.0141356</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">P2</span><span class="o">=</span><span class="mf">0.0614368</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">MT</span><span class="o">=</span><span class="mf">0.0860342</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">T0</span><span class="o">=</span><span class="mf">0.0217261</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">T1</span><span class="o">=</span><span class="mf">0.0213384</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">T2</span><span class="o">=</span><span class="mf">0.0145428</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">C</span><span class="o">=</span><span class="mf">0.207614</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+    <span class="n">CN</span><span class="o">=</span><span class="mf">1.34728</span> <span class="o">*</span> <span class="n">nM</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Reactions">
+<h2>Reactions<a class="headerlink" href="#Reactions" title="Link to this heading"></a></h2>
+<p>For the explanation of the model, see Leloup et al., 1999 or Leloup and Goldbeter 1998. Here we define all the reactions for NEURON. For those reactions that are not governed by mass-action kinetics, we specify custom_dynamics=True.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MTtranscription</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">MT</span><span class="p">,</span> <span class="n">vsT</span> <span class="o">*</span> <span class="n">KIT</span><span class="o">**</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">KIT</span><span class="o">**</span><span class="n">n</span> <span class="o">+</span> <span class="n">CN</span><span class="o">**</span><span class="n">n</span><span class="p">))</span>
+<span class="n">MPtranscription</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">MP</span><span class="p">,</span> <span class="n">vsP</span> <span class="o">*</span> <span class="n">KIP</span><span class="o">**</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">KIP</span><span class="o">**</span><span class="n">n</span> <span class="o">+</span> <span class="n">CN</span><span class="o">**</span><span class="n">n</span><span class="p">))</span>
+<span class="n">MTdegradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">MT</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">vmT</span> <span class="o">*</span> <span class="n">MT</span> <span class="o">/</span> <span class="p">(</span><span class="n">KmT</span> <span class="o">+</span> <span class="n">MT</span><span class="p">)</span> <span class="o">+</span> <span class="n">kd</span> <span class="o">*</span> <span class="n">MT</span><span class="p">))</span>
+<span class="n">MPdegradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">MP</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">vmP</span> <span class="o">*</span> <span class="n">MP</span> <span class="o">/</span> <span class="p">(</span><span class="n">KmP</span> <span class="o">+</span> <span class="n">MP</span><span class="p">)</span> <span class="o">+</span> <span class="n">kd</span> <span class="o">*</span> <span class="n">MP</span><span class="p">))</span>
+<span class="n">T0production</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">T0</span><span class="p">,</span> <span class="n">ksT</span> <span class="o">*</span> <span class="n">MT</span><span class="p">)</span>
+<span class="n">T0degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">T0</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">T0</span><span class="p">)</span>
+<span class="n">T1degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">T1</span><span class="p">)</span>
+<span class="n">T2degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">T2</span><span class="p">)</span>
+<span class="n">T2degradation_due_to_light</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="o">-</span><span class="n">vdT</span> <span class="o">*</span> <span class="n">T2</span> <span class="o">/</span> <span class="p">(</span><span class="n">KdT</span> <span class="o">+</span> <span class="n">T2</span><span class="p">))</span>
+<span class="n">T0toT1</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+    <span class="n">T0</span><span class="p">,</span> <span class="n">T1</span><span class="p">,</span> <span class="n">V1T</span> <span class="o">*</span> <span class="n">T0</span> <span class="o">/</span> <span class="p">(</span><span class="n">K1T</span> <span class="o">+</span> <span class="n">T0</span><span class="p">),</span> <span class="n">V2T</span> <span class="o">*</span> <span class="n">T1</span> <span class="o">/</span> <span class="p">(</span><span class="n">K2T</span> <span class="o">+</span> <span class="n">T1</span><span class="p">),</span> <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">T1toT2</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+    <span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">,</span> <span class="n">V3T</span> <span class="o">*</span> <span class="n">T1</span> <span class="o">/</span> <span class="p">(</span><span class="n">K3T</span> <span class="o">+</span> <span class="n">T1</span><span class="p">),</span> <span class="n">V4T</span> <span class="o">*</span> <span class="n">T2</span> <span class="o">/</span> <span class="p">(</span><span class="n">K4T</span> <span class="o">+</span> <span class="n">T2</span><span class="p">),</span> <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">P0production</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">P0</span><span class="p">,</span> <span class="n">ksP</span> <span class="o">*</span> <span class="n">MP</span><span class="p">)</span>
+<span class="n">P0degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">P0</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">P0</span><span class="p">)</span>
+<span class="n">P1degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">P1</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">P1</span><span class="p">)</span>
+<span class="n">P2degradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">P2</span><span class="p">,</span> <span class="o">-</span><span class="n">kd</span> <span class="o">*</span> <span class="n">P2</span> <span class="o">-</span> <span class="n">vdP</span> <span class="o">*</span> <span class="n">P2</span> <span class="o">/</span> <span class="p">(</span><span class="n">KdP</span> <span class="o">+</span> <span class="n">P2</span><span class="p">))</span>
+<span class="n">P0toP1</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+    <span class="n">P0</span><span class="p">,</span> <span class="n">P1</span><span class="p">,</span> <span class="n">V1P</span> <span class="o">*</span> <span class="n">P0</span> <span class="o">/</span> <span class="p">(</span><span class="n">K1P</span> <span class="o">+</span> <span class="n">P0</span><span class="p">),</span> <span class="n">V2P</span> <span class="o">*</span> <span class="n">P1</span> <span class="o">/</span> <span class="p">(</span><span class="n">K2P</span> <span class="o">+</span> <span class="n">P1</span><span class="p">),</span> <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">P1toP2</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+    <span class="n">P1</span><span class="p">,</span> <span class="n">P2</span><span class="p">,</span> <span class="n">V3P</span> <span class="o">*</span> <span class="n">P1</span> <span class="o">/</span> <span class="p">(</span><span class="n">K3P</span> <span class="o">+</span> <span class="n">P1</span><span class="p">),</span> <span class="n">V4P</span> <span class="o">*</span> <span class="n">P2</span> <span class="o">/</span> <span class="p">(</span><span class="n">K4P</span> <span class="o">+</span> <span class="n">P2</span><span class="p">),</span> <span class="n">custom_dynamics</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">P2T2toC</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">P2</span> <span class="o">+</span> <span class="n">T2</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">k3</span><span class="p">,</span> <span class="n">k4</span><span class="p">)</span>
+<span class="n">CtoCN</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">CN</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">)</span>
+<span class="n">Cdegradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="o">-</span><span class="n">kdC</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
+<span class="n">CNdegradation</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">CN</span><span class="p">,</span> <span class="o">-</span><span class="n">kdN</span> <span class="o">*</span> <span class="n">CN</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Record-states">
+<h2>Record states<a class="headerlink" href="#Record-states" title="Link to this heading"></a></h2>
+<p>We define a number of Vectors to record variables of interest. For convenience we use the recorder function defined above:</p>
+<p>First, and always, we’ll record time. Otherwise we won’t know how to interpret the remaining variables:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now the concentrations:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpvec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">MP</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+<span class="n">cnvec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">CN</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+<span class="n">p0vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">P0</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+<span class="n">p1vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">P1</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+<span class="n">p2vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">P2</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+<span class="n">cvec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_concentration</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Run-the-simulation">
+<h2>Run the simulation<a class="headerlink" href="#Run-the-simulation" title="Link to this heading"></a></h2>
+<p>Since we’re running for hours rather than ms, we’ll use the variable step solver.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">CVode</span><span class="p">()</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">72</span> <span class="o">*</span> <span class="n">hour</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+</pre></div></div>
+</div>
+</section>
+<section id="Plot">
+<h2>Plot<a class="headerlink" href="#Plot" title="Link to this heading"></a></h2>
+<p>We begin by converting the units back from NEURON’s units to nM and hours to have more intuitive values to display. We also define the variable pt which is the total concentration of PER protein, in any of its forms:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span> <span class="o">=</span> <span class="p">(</span><span class="n">p0vec</span> <span class="o">+</span> <span class="n">p1vec</span> <span class="o">+</span> <span class="n">p2vec</span> <span class="o">+</span> <span class="n">cvec</span> <span class="o">+</span> <span class="n">cnvec</span><span class="p">)</span> <span class="o">/</span> <span class="n">nM</span>
+<span class="n">mp</span> <span class="o">=</span> <span class="n">mpvec</span> <span class="o">/</span> <span class="n">nM</span>
+<span class="n">cn</span> <span class="o">=</span> <span class="n">cnvec</span> <span class="o">/</span> <span class="n">nM</span>
+<span class="n">t_in_hours</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="n">hour</span>
+</pre></div>
+</div>
+</div>
+<p>Finally the actual plot, which you can compare to Figure 2A of Leloup et al., 1999.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_in_hours</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;MP&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_in_hours</span><span class="p">,</span> <span class="n">cn</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;CN&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_in_hours</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PT&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (hours)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;concentration (nM)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;circadian.pdf&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/rxd-tutorials_circadian_34_0.png" src="../_images/rxd-tutorials_circadian_34_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="degradable_buffer.html" class="btn btn-neutral float-left" title="Example: Degradable buffer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="calcium%20waves.html" class="btn btn-neutral float-right" title="Example: Calcium waves" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SectionRef &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Ions" href="../ions.html" />
+    <link rel="prev" title="SectionList" href="seclist.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ste.html">StateTransitionEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../topology.html">Topology</a></li>
+      <li class="breadcrumb-item active">SectionRef</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../hoc/modelspec/programmatic/topology/secref.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/python/modelspec/programmatic/topology/secref.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#SectionRef" title="Link to this definition">SectionRef</a></dt><dd><a href="#SectionRef.child" title="Link to this definition">child</a> &middot; <a href="#SectionRef.exists" title="Link to this definition">exists</a> &middot; <a href="#SectionRef.has_parent" title="Link to this definition">has_parent</a> &middot; <a href="#SectionRef.has_trueparent" title="Link to this definition">has_trueparent</a> &middot; <a href="#SectionRef.is_cas" title="Link to this definition">is_cas</a> &middot; <a href="#SectionRef.nchild" title="Link to this definition">nchild</a> &middot; <a href="#SectionRef.parent" title="Link to this definition">parent</a> &middot; <a href="#SectionRef.root" title="Link to this definition">root</a> &middot; <a href="#SectionRef.sec" title="Link to this definition">sec</a> &middot; <a href="#SectionRef.trueparent" title="Link to this definition">trueparent</a></dd></dl></p><section id="sectionref">
+<span id="secref"></span><h1>SectionRef<a class="headerlink" href="#sectionref" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Much of this functionality is available in Python through <a class="reference internal" href="../topology.html#Section" title="Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">Section</span></code></a> methods in
+recent versions of NEURON. It is, however, sometimes necessary to use this class to
+interoperate with legacy code.</p>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="SectionRef">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SectionRef</span></span><a class="headerlink" href="#SectionRef" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref</span> <span class="pre">=</span> <span class="pre">h.SectionRef(sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>SectionRef keeps a pointer/reference to section. If the <code class="docutils literal notranslate"><span class="pre">sec=</span></code> argument is
+omitted, the reference is to the currently accessed section.</p>
+<p>This class overcomes a HOC limitation where sections were not treated as objects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="SectionRef.sec">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">sec</span></span><a class="headerlink" href="#SectionRef.sec" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref.sec</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the <a class="reference internal" href="../topology.html#Section" title="Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">Section</span></code></a> the <code class="docutils literal notranslate"><span class="pre">SectionRef</span></code> references.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;s2&quot;</span><span class="p">)</span>
+<span class="n">sref</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionRef</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">s2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">sref</span><span class="o">.</span><span class="n">sec</span><span class="o">==</span><span class="n">s</span><span class="p">)</span>  <span class="c1"># False</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sref</span><span class="o">.</span><span class="n">sec</span><span class="o">==</span><span class="n">s2</span><span class="p">)</span> <span class="c1"># True</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="SectionRef.parent">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">parent</span></span><a class="headerlink" href="#SectionRef.parent" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref.parent</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Returns the parent of <code class="docutils literal notranslate"><span class="pre">sref.sec</span></code>.</p>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If there is a chance that a section does not have a parent then
+<a class="reference internal" href="#SectionRef.has_parent" title="SectionRef.has_parent"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SectionRef.has_parent()</span></code></a> should be called first to avoid an execution error.
+Note that the parent is the current parent of sref.sec, not necessarily
+the parent when the SectionRef was created.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="SectionRef.trueparent">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">trueparent</span></span><a class="headerlink" href="#SectionRef.trueparent" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref.trueparent</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the trueparent of <code class="docutils literal notranslate"><span class="pre">sref.sec</span></code>.</p>
+<p>This is normally identical to <a class="reference internal" href="#SectionRef.parent" title="SectionRef.parent"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SectionRef.parent()</span></code></a> except when the
+parent’s <a class="reference internal" href="../topology.html#parent_connection" title="parent_connection"><code class="xref py py-func docutils literal notranslate"><span class="pre">parent_connection()</span></code></a> is equal to the parent’s
+<a class="reference internal" href="../topology.html#section_orientation" title="section_orientation"><code class="xref py py-func docutils literal notranslate"><span class="pre">section_orientation()</span></code></a>.</p>
+<p>If there is a chance that a section does not have a trueparent then
+<a class="reference internal" href="#SectionRef.has_trueparent" title="SectionRef.has_trueparent"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SectionRef.has_trueparent()</span></code></a> should be called first to avoid an execution error.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="SectionRef.child">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">child</span></span><a class="headerlink" href="#SectionRef.child" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref.child[i]</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the ith child of <code class="docutils literal notranslate"><span class="pre">sref.sec</span></code>.
+Generally it is used in a context like</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">sref</span><span class="o">.</span><span class="n">child</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the children are the current children of sref.sec, not necessarily
+the same as when the SectionRef was created since sections may be
+deleted or re-connected subsequent to the instantiation of the SectionRef.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py data">
+<dt class="sig sig-object py" id="SectionRef.root">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#SectionRef.root" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sref.root</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Returns the root of <code class="docutils literal notranslate"><span class="pre">sref.sec</span></code>.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="SectionRef.has_parent">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">has_parent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SectionRef.has_parent" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">sref.has_parent()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if sref.sec has a parent and <code class="docutils literal notranslate"><span class="pre">False</span></code> if sref.sec is a root section.
+Invoking sref.parent when sref.sec is a root section will print an
+error message and halt execution.</p>
+</dd>
+</dl>
+<p>Note:</p>
+<blockquote>
+<div><p>If <code class="docutils literal notranslate"><span class="pre">sec</span></code> is a Section, then <code class="docutils literal notranslate"><span class="pre">sec.parentseg()</span></code> is either the segment the section is
+attached to or <code class="docutils literal notranslate"><span class="pre">None</span></code> if <code class="docutils literal notranslate"><span class="pre">sec</span></code> does not have a parent.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="SectionRef.has_trueparent">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">has_trueparent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SectionRef.has_trueparent" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">sref.has_trueparent()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the sref.sec parent node is not the root node and <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.
+Invoking sref.trueparent when it is the root node will print an
+error message and halt execution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="SectionRef.nchild">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">nchild</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SectionRef.nchild" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">num</span> <span class="pre">=</span> <span class="pre">sref.nchild()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the number of child sections connected to sref.sec as a float.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To get the number of child sections as an int, use: <code class="docutils literal notranslate"><span class="pre">num</span> <span class="pre">=</span> <span class="pre">len(sref.child)</span></code></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="SectionRef.is_cas">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">is_cas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SectionRef.is_cas" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">sref.is_cas()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns True if this section reference is the currently accessed (default) section, False otherwise.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An equivalent expression is <code class="docutils literal notranslate"><span class="pre">(sref.sec</span> <span class="pre">==</span> <span class="pre">h.cas())</span></code>.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="SectionRef.exists">
+<span class="sig-prename descclassname"><span class="pre">SectionRef.</span></span><span class="sig-name descname"><span class="pre">exists</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SectionRef.exists" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">boolean</span> <span class="pre">=</span> <span class="pre">sref.exists()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns True if the referenced section has not been deleted, False otherwise.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../topology.html#delete_section" title="delete_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">delete_section()</span></code></a>, <a class="reference internal" href="../topology.html#section_exists" title="section_exists"><code class="xref py py-func docutils literal notranslate"><span class="pre">section_exists()</span></code></a></p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="seclist.html" class="btn btn-neutral float-left" title="SectionList" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ions.html" class="btn btn-neutral float-right" title="Ions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

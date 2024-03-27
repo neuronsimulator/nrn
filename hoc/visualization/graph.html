@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graph &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Grapher" href="grapher.html" />
+    <link rel="prev" title="Glyph" href="glyph.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Graph</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Graph"><code class="docutils literal notranslate"><span class="pre">Graph</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+      <li class="breadcrumb-item active">Graph</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/visualization/graph.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/visualization/graph.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Graph" title="Link to this definition">Graph</a></dt><dd><a href="#Graph.addexpr" title="Link to this definition">addexpr</a> &middot; <a href="#Graph.addobject" title="Link to this definition">addobject</a> &middot; <a href="#Graph.addvar" title="Link to this definition">addvar</a> &middot; <a href="#Graph.align" title="Link to this definition">align</a> &middot; <a href="#Graph.begin" title="Link to this definition">begin</a> &middot; <a href="#Graph.beginline" title="Link to this definition">beginline</a> &middot; <a href="#Graph.brush" title="Link to this definition">brush</a> &middot; <a href="#Graph.color" title="Link to this definition">color</a> &middot; <a href="#Graph.crosshair_action" title="Link to this definition">crosshair_action</a> &middot; <a href="#Graph.erase" title="Link to this definition">erase</a> &middot; <a href="#Graph.erase_all" title="Link to this definition">erase_all</a> &middot; <a href="#Graph.exec_menu" title="Link to this definition">exec_menu</a> &middot; <a href="#Graph.family" title="Link to this definition">family</a> &middot; <a href="#Graph.fastflush" title="Link to this definition">fastflush</a> &middot; <a href="#Graph.fixed" title="Link to this definition">fixed</a> &middot; <a href="#Graph.flush" title="Link to this definition">flush</a> &middot; <a href="#Graph.getline" title="Link to this definition">getline</a> &middot; <a href="#Graph.gif" title="Link to this definition">gif</a> &middot; <a href="#Graph.glyph" title="Link to this definition">glyph</a> &middot; <a href="#Graph.label" title="Link to this definition">label</a> &middot; <a href="#Graph.line" title="Link to this definition">line</a> &middot; <a href="#Graph.line_info" title="Link to this definition">line_info</a> &middot; <a href="#Graph.mark" title="Link to this definition">mark</a> &middot; <a href="#Graph.menu_action" title="Link to this definition">menu_action</a> &middot; <a href="#Graph.menu_remove" title="Link to this definition">menu_remove</a> &middot; <a href="#Graph.menu_tool" title="Link to this definition">menu_tool</a> &middot; <a href="#Graph.plot" title="Link to this definition">plot</a> &middot; <a href="#Graph.printfile" title="Link to this definition">printfile</a> &middot; <a href="#Graph.relative" title="Link to this definition">relative</a> &middot; <a href="#Graph.save_name" title="Link to this definition">save_name</a> &middot; <a href="#Graph.simgraph" title="Link to this definition">simgraph</a> &middot; <a href="#Graph.size" title="Link to this definition">size</a> &middot; <a href="#Graph.unmap" title="Link to this definition">unmap</a> &middot; <a href="#Graph.vector" title="Link to this definition">vector</a> &middot; <a href="#Graph.vfixed" title="Link to this definition">vfixed</a> &middot; <a href="#Graph.view" title="Link to this definition">view</a> &middot; <a href="#Graph.view_count" title="Link to this definition">view_count</a> &middot; <a href="#Graph.view_info" title="Link to this definition">view_info</a> &middot; <a href="#Graph.view_size" title="Link to this definition">view_size</a> &middot; <a href="#Graph.xaxis" title="Link to this definition">xaxis</a> &middot; <a href="#Graph.xexpr" title="Link to this definition">xexpr</a> &middot; <a href="#Graph.yaxis" title="Link to this definition">yaxis</a></dd></dl></p><section id="graph">
+<span id="id1"></span><h1>Graph<a class="headerlink" href="#graph" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="Graph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Graph</span></span><a class="headerlink" href="#Graph" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">Graph()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">Graph(0)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>An instance of the Graph class  manages a window on which  x-y plots can
+be drawn by calling various member functions.
+The first form immediately maps the window to the screen. With a 0 argument
+the window is not mapped but can be sized and placed with the <a class="reference internal" href="#Graph.view" title="Graph.view"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">view()</span></code></a> function.</p>
+</div></blockquote>
+<dl>
+<dt>Example:</dt><dd><p>The most basic interpreter prototype for producing a plot follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which can be made to
+            //point to any object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph instance
+                    //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.size(0, 10, -1, 1)        // specify coordinate system for the canvas drawing area
+                    // numbers refer to xmin, xmax, ymin, ymax respectively
+g.beginline()               //The next g.line command will move the drawing pen
+                    // to the indicated point without drawing anything
+for(x=0; x&lt;=10; x=x+0.1){   //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.line(x, sin(x))       //States that the y values on the plot
+                            //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+<p>The function <code class="docutils literal notranslate"><span class="pre">.line()</span></code>, however, only allows the user to plot one function
+per <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, whereas the function <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> can produce several
+plots per <code class="docutils literal notranslate"><span class="pre">for</span></code> loop and is therefore more effective in comparing plots.
+You must use <code class="docutils literal notranslate"><span class="pre">.begin()</span></code> and <code class="docutils literal notranslate"><span class="pre">.addvar()</span></code> or <code class="docutils literal notranslate"><span class="pre">.addexpr()</span></code> in
+conjunction with the <code class="docutils literal notranslate"><span class="pre">.plot</span></code> function.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.size(0, 10, -1, 1)
+g.addexpr(&quot;sin(x)&quot;) //stores sin(x) as a function to be plotted in g
+g.addexpr(&quot;cos(x)&quot;) //stores cos(x) for use with g
+g.addexpr(&quot;exp(-x)&quot;)        //stores exp(x) for use with g
+x=0
+g.begin()           //The next g.plot command will move the drawing pens
+                    // for the three curves to indicated x position
+for(x=0; x&lt;=10; x=x+0.1){
+    g.plot(x)       // The x value used for each expression in the
+                    // addexpr list
+}
+g.flush()
+</pre></div>
+</div>
+<p>The size in the above example is appropriate to show the sine waves nicely
+but the view of the exponential only shows the first few points before it
+goes out of view. Hold the right mouse button while the mouse in in the
+graph window and select the “View = plot” menu item to see the entire exponential.
+Selecting the “Whole Scene” menu item will return to the size specified
+in the size command.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.xaxis">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">xaxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.xaxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.xaxis()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.xaxis(mode)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.xaxis(xstart,</span> <span class="pre">xstop)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.xaxis(xstart,</span> <span class="pre">xstop,</span> <span class="pre">ypos,</span> <span class="pre">ntic,</span> <span class="pre">nminor,</span> <span class="pre">invert,</span> <span class="pre">shownumbers)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The single mode argument draws both x and y axes (no arg == mode 0).
+See <a class="reference internal" href="#Graph.yaxis" title="Graph.yaxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">yaxis()</span></code></a> for a complete description of the arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.yaxis">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">yaxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.yaxis" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.yaxis()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.yaxis(mode)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.yaxis(ystart,</span> <span class="pre">ystop)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.yaxis(ystart,</span> <span class="pre">ystop,</span> <span class="pre">ypos,</span> <span class="pre">ntic,</span> <span class="pre">nminor,</span> <span class="pre">invert,</span> <span class="pre">shownumbers)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The single mode argument draws both x and y axes (no arg == mode 0).</p>
+<dl class="simple">
+<dt>mode = 0</dt><dd><p>view axes (axes in each view drawn dynamically)
+when graph is created these axes are the default</p>
+</dd>
+<dt>mode = 1</dt><dd><p>fixed axes as in long form but start and stop chosen
+according to first view size.</p>
+</dd>
+<dt>mode = 2</dt><dd><p>view box (box axes drawn dynamically)</p>
+</dd>
+<dt>mode = 3</dt><dd><p>erase axes</p>
+</dd>
+<dt>Arguments which specify the numbers on the axis are rounded,</dt><dd><p>and the number of tic marks is chosen so that axis labels are short numbers
+(eg. not 3.3333333… or the like).</p>
+</dd>
+</dl>
+<p>The <em>xpos</em> argument gives the location of the yaxis on the xaxis (default 0).</p>
+<dl class="simple">
+<dt>Without the <em>ntic</em> argument (or <em>ntic</em>=-1),</dt><dd><p>the number of tics will be chosen for you.</p>
+</dd>
+<dt><em>nminor</em> is the number</dt><dd><p>of minor tic marks.</p>
+</dd>
+</dl>
+<p><em>shownumbers</em>=0 will not draw the axis labels.</p>
+<p><em>invert</em>=1 will invert the axes.</p>
+<p>Note:</p>
+<p>It is easiest to control the size of the axes and the scale of
+the graph through the graphical user interface.  Normally, when a
+new graph is declared (eg. <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">Graph()</span></code>), the y axis
+ranges from 20-180 and the x axis ranges from 50-250.
+With the mouse arrow on the graph window, click on the right button
+and set the arrow on <span class="guilabel">View</span> at the top of the button window
+column.  A second button
+window will appear to the right of the first, and from this button window
+you can select several options.  Two of the most common are:</p>
+<ol class="arabic">
+<li><dl class="simple">
+<dt>view=plot</dt><dd><p>Size the window to best-fit the plot which it contains.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>Zoom in/out</dt><dd><p>Allows you to click on the left mouse button and perform the following
+tasks:</p>
+<dl class="simple">
+<dt>move arrow to the right</dt><dd><p>scale down the x axis (eg. 50 - 250 becomes 100 - 110)</p>
+</dd>
+<dt>“shift” + move arrow to the right</dt><dd><p>view parts of the axis which are to the left of the original window</p>
+</dd>
+<dt>move arrow to the left</dt><dd><p>scale up the x axis (eg. 50 - 250 becomes -100 - 500)</p>
+</dd>
+<dt>“shift” + move arrow to the left</dt><dd><p>view parts of the axis which are to the right of the original window</p>
+</dd>
+<dt>move arrow up</dt><dd><p>scale down the y axis (eg. 20 - 180 becomes 57.5 - 62)</p>
+</dd>
+<dt>“shift” + move arrow up</dt><dd><p>view parts of the axis which are below the original window</p>
+</dd>
+<dt>move arrow down</dt><dd><p>scale up the y axis (eg. 20 - 180 becomes -10,000 - 5,000)</p>
+</dd>
+<dt>“shift” + move arrow down</dt><dd><p>view parts of the axis which are above the original window</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ol>
+<p>You can also use the size command to determine the size of what you view in the
+graph window.  Eg. <code class="docutils literal notranslate"><span class="pre">g.size(-1,1,-1,1)</span></code> makes both axes go from -1 to 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.addvar">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">addvar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.addvar" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.addvar(&quot;variable&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addvar(&quot;variable&quot;,</span> <span class="pre">color_index,</span> <span class="pre">brush_index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addvar(&quot;label&quot;,</span> <span class="pre">&quot;variable&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addvar(&quot;label&quot;,</span> <span class="pre">&quot;variable&quot;,</span> <span class="pre">color_index,</span> <span class="pre">brush_index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addvar(&quot;label&quot;,</span> <span class="pre">&amp;variable,</span> <span class="pre">...)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add the variable to the list of items graphed when <code class="docutils literal notranslate"><span class="pre">g.plot(x)</span></code> is called.
+The address of the variable is computed so this is fast. The current
+color and brush is used if the optional arguments are not present. The name
+of the variable is
+also added to the graph as a label associated with the line. If the
+first two args are strings, then the first “label” arg is associated
+with the line on the
+graph whereas the second arg defines the variable.</p>
+<p>The second arg may be an explicit pointer arg which allows g.addvar to be
+used in Python using section(x)._ref_rangevar .</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To automatically plot a variable added to a graph <code class="docutils literal notranslate"><span class="pre">g</span></code> with addvar against
+<code class="docutils literal notranslate"><span class="pre">t</span></code> during a <code class="docutils literal notranslate"><span class="pre">run()</span></code>, <code class="docutils literal notranslate"><span class="pre">stdrun.hoc</span></code> must be loaded and the graph must be
+added to a graphList, such as by executing <code class="docutils literal notranslate"><span class="pre">graphList[0].append(g)</span></code>.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.addexpr">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">addexpr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.addexpr" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.addexpr(&quot;expression&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addexpr(&quot;expression&quot;,</span> <span class="pre">color_index,</span> <span class="pre">brush_index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addexpr(&quot;label&quot;,</span> <span class="pre">&quot;expr&quot;,</span> <span class="pre">object,</span> <span class="pre">....)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add an expression (eg. sin(x), cos(x), exp(x)) to the list of items graphed when
+<code class="docutils literal notranslate"><span class="pre">g.plot(x)</span></code> is called.</p>
+<p>The current
+color and brush is used if the optional arguments are not present. A label
+is also added to the graph that indicates the name of the variable.
+The expression is interpreted every time <code class="docutils literal notranslate"><span class="pre">g.plot(x)</span></code> is
+called so it is more general than <a class="reference internal" href="#Graph.addvar" title="Graph.addvar"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">addvar()</span></code></a>, but slower.</p>
+<p>If the optional label is present that string will appear as the label instead
+of the expr string. If the optional object is present the expr will be
+evaluated in the context of that object.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which will
+            //point to the graph object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph
+g.size(0,10,-1,1)   //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.addexpr(&quot;sin(x)&quot;) //stores sin(x) as a function to be plotted in g graphs
+g.addexpr(&quot;cos(x)&quot;) //stores cos(x) for use with g
+g.addexpr(&quot;exp(-x)&quot;)        //stores exp(x) for use with g
+x=0                 // has to be defined prior to execution of expressions
+g.begin()           //Tells the interpreter that commands to plot
+                    //specific functions will follow.
+for(x=0; x&lt;=10; x=x+0.1){   //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.plot(x)       //States that the y values on the plot
+                    //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.addobject">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">addobject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.addobject" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.addobject(rangevarplot)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.addobject(rangevarplot,</span> <span class="pre">color,</span> <span class="pre">brush)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Adds the <a class="reference internal" href="rvarplt.html#RangeVarPlot" title="RangeVarPlot"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">RangeVarPlot</span></code></a> to the list of items to be plotted on
+<a class="reference internal" href="#Graph.flush" title="Graph.flush"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Graph.flush()</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.begin">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">begin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.begin" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.begin()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Initialize the list of graph variables so the next <code class="docutils literal notranslate"><span class="pre">g.plot(x)</span></code>
+is the first point of each graph line.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which will
+            //point to the graph object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph
+                    //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.addexpr(&quot;sin(x)&quot;) //stores sin(x) as a function to be plotted in g graphs
+g.addexpr(&quot;cos(x)&quot;) //stores cos(x) for use with g
+g.addexpr(&quot;-exp(x)&quot;)        //stores exp(x) for use with g
+x=0
+g.begin()           //Tells the interpreter that commands to plot
+                    //specific functions will follow.
+for(x=0; x&lt;=10; x=x+0.1){   //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.plot(x)       //States that the y values on the plot
+                    //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.plot">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.plot" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.plot(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The abscissa value for each item in the list of graph lines. Usually
+used in a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which will
+            //point to the graph object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph
+                    //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.addexpr(&quot;sin(x)&quot;) //stores sin(x) as a function to be plotted in g graphs
+g.addexpr(&quot;cos(x)&quot;) //stores cos(x) for use with g
+g.addexpr(&quot;cos(2*x)&quot;)       //stores cos(2*x) for use with g
+x=0
+g.begin()           //Tells the interpreter that commands to plot
+                    //specific functions will follow.
+for(x=0; x&lt;=10; x=x+0.1){   //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.plot(x)       //States that the y values on the plot
+                    //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.xexpr">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">xexpr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.xexpr" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.xexpr(&quot;expression&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.xexpr(&quot;expression&quot;,</span> <span class="pre">usepointer)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use this expression for plotting two-dimensional functions such as (x(<em>t</em>), y(<em>t</em>)),
+where the x and y coordinates are separately dependent on a single variable <em>t</em>.
+This expression calculates the x value each time <code class="docutils literal notranslate"><span class="pre">.plot</span></code> is called, while functions
+declared by <code class="docutils literal notranslate"><span class="pre">.addexpr</span></code> will calculate the y value when <code class="docutils literal notranslate"><span class="pre">.plot</span></code> is called.
+This can be used for phase plane plots, etc. Note that the normal argument to
+<code class="docutils literal notranslate"><span class="pre">.plot</span></code> is ignored when such an expression is invoked. When <code class="docutils literal notranslate"><span class="pre">usepointer</span></code>
+is 1 the expression must be a variable name and its address is used.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which will
+            //point to the graph object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph
+                    //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.size(-4,4,-4,4)   //sizes the window to fit the graph
+t = 0               //Declares t as a possible variable
+g.addexpr(&quot;3*sin(t)&quot;)       //stores 3*sin(t) as a function to be plotted in g graphs
+g.color(3)          //the next graph will be drawn in blue
+g.addexpr(&quot;3*sin(2*t)&quot;) //stores 3*sin(2*t) as a function to be plotted
+g.xexpr(&quot;3*cos(t)&quot;) //stores 3*cos(t) as the x function to be plotted in g graphs
+                    //sin(x) becomes the y function
+g.begin()           //Tells the interpreter that commands to plot
+                    //specific functions will follow.
+for(t=0; t&lt;=2*PI+0.1; t=t+0.1){     //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.plot(t)       //States that the y values on the plot
+                    //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+<p>plots a black circle of radius=3 and a blue infinity-like figure, spanning from x=-3
+to x=3.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.flush">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.flush" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.flush()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Actually draw what has been placed in the graph scene. (If
+you are continuing to compute you will also need to call <a class="reference internal" href="notify.html#doEvents" title="doEvents"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">doEvents()</span></code></a>
+before you see the results on the screen.) This redraws all objects
+in the scene and therefore should not be executed very much during
+plotting of lines with thousands of points.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Because Microsoft Windows is a second-class operating system, too many points, too close
+together will not appear at all on a graph window.  You can, in such a case, zoom in to view
+selected parts of the function.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.fastflush">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">fastflush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.fastflush" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.fastflush()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Flushes only the <a class="reference internal" href="oldgrph.html#plot" title="plot"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">plot()</span></code></a> (x) points since the last <a class="reference internal" href="#Graph.flush" title="Graph.flush"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">flush()</span></code></a>
+(or <code class="docutils literal notranslate"><span class="pre">fastflush</span></code>).
+This is useful for seeing the progress of <a class="reference internal" href="#Graph.addvar" title="Graph.addvar"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">addvar()</span></code></a> plots during long
+computations in which the graphlines contain many thousands of points.
+Make sure you do a normal <code class="docutils literal notranslate"><span class="pre">.flush</span></code> when the lines are complete since
+fastflush does not notify the system of the true size of the lines.
+In such cases, zooming, translation, and crosshairs do not always
+work properly till after the <code class="docutils literal notranslate"><span class="pre">flush()</span></code> command has been given.
+(Note, this is most useful for time plots).</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objectvar g
+g = new Graph()
+g.size(0,4000, -1,1)
+
+g.addexpr(&quot;cos(x/100)&quot;)
+g.addexpr(&quot;cos(x/150)&quot;)
+g.addexpr(&quot;cos(x/200)&quot;)
+g.addexpr(&quot;cos(x/250)&quot;)
+g.addexpr(&quot;cos(x/300)&quot;)
+g.addexpr(&quot;cos(x/450)&quot;)
+
+proc pl() {
+    g.erase()
+    g.begin()
+    for (x=0; x &lt; 4000; x=x+1) {
+            g.plot(x)
+            if (x%10 == 0) {
+                    g.fastflush()
+                    doNotify()
+            }
+    }
+    g.flush()
+    doNotify()
+}
+
+pl()
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.family">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">family</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.family" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.family(boolean)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.family(&quot;varname&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The first form is similar to the Keep Lines item in the graph menu of the
+graphical user interface.</p>
+<dl class="simple">
+<dt>1</dt><dd><p>equivalent to the sequence —Erase lines; Keep Lines toggled on;
+use current graph color and brush when plotting the lines.</p>
+</dd>
+<dt>0</dt><dd><p>Turn off family mode. Original color restored to plot expressions;
+Keep Lines toggled off.</p>
+</dd>
+</dl>
+<p>With a string argument which is a variable name,
+the string is printed as a label and when keep lines
+is selected each line is labeled with the value of the variable.</p>
+<p>When graphs are printed to a file in <a class="reference internal" href="gui.html#hoc-printtofile-ascii"><span class="std std-ref">Ascii</span></a> mode,
+the lines are labeled
+with these labels. If every line has a label and each line has the same size,
+then the file is printed in matrix form.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.vector">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">vector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.vector" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.vector(n,</span> <span class="pre">&amp;x[0],</span> <span class="pre">&amp;y[0])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.vector(&quot;namey&quot;)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">.vector(n,</span> <span class="pre">&amp;x[0],</span> <span class="pre">&amp;y[0])</span></code></dt><dd><p>Rudimentary graphing of a y-vector vs. a fixed x-vector. The y-vector
+is reread on each <code class="docutils literal notranslate"><span class="pre">.flush()</span></code> (x-vector is not reread). Cannot save
+and cannot keep lines.</p>
+<p>Notes:</p>
+<p>These vectors are assumed to be doubles and not vectors from
+the Vector class.  The Vector class has its own functions
+<a class="reference internal" href="../programming/math/vector.html#Vector.plot" title="Vector.plot"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.plot()</span></code></a>, <a class="reference internal" href="../programming/math/vector.html#Vector.line" title="Vector.line"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.line()</span></code></a>, <a class="reference internal" href="../programming/math/vector.html#Vector.mark" title="Vector.mark"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.mark()</span></code></a>
+for graphing vectors constructed in that class.</p>
+<p>A segmentation violation will result if
+n is greater than the vector size.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.vector(&quot;namey&quot;)</span></code></dt><dd><p>equivalent to <code class="docutils literal notranslate"><span class="pre">.vector(n,</span> <span class="pre">...,</span> <span class="pre">&amp;namey[0])</span></code> above with the advantage
+that it is saved in a session (because the symbol name is known).
+It is simpler in that the size n is obtained from the symbol but
+the plot is vs. the index of the vector. Not implemented.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.getline">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">getline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.getline" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">thisindex</span> <span class="pre">=</span> <span class="pre">g.getline(previndex,</span> <span class="pre">xvec,</span> <span class="pre">yvec)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Copy a graph line into the <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a>‘s xvec and yvec. Those vectors are
+resized to the number of points in the line. Also, if the line has a
+label, it is copied to the vector as well (see <a class="reference internal" href="../programming/math/vector.html#Vector.label" title="Vector.label"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.label()</span></code></a>).
+The index of the line is returned. To re-get the line at a later time
+(assuming no line has been inserted into the graphlist earlier than
+its index value — new lines are generally appended to the list but
+if an earlier line has been removed, the indices of all later lines will
+be reduced) then use index-1 as the argument. Note that an argument of
+-1 will always return the first line in the Graph. If the argument is
+the index of the last line then -1 is returned and xvec and yvec are
+unchanged. Note that thisindex is not necessarily equal to previndex+1.</p>
+</dd>
+<dt>Example:</dt><dd><p>To iterate over all the lines in a Graph use:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref xvec, yvec
+xvec = new Vector()
+yvec = new Vector()
+for (j=0 i=-1; (i = Graph[0].getline(i, xvec, yvec) != -1 ; j+=1 ) {
+    // xvec and yvec contain the line with Graph internal index i.
+    // and can be associated with the sequential index j.
+    print j, i, yvec.label
+    xline[j] = xvec.c
+    yline[j] = yvec.cl // clone label as well
+}
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.line_info">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">line_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.line_info" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">thisindex</span> <span class="pre">=</span> <span class="pre">g.line_info(previndex,</span> <span class="pre">Vector(5))</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>For the next line after the internal index, previndex, copy the label into the
+vector as well as colorindex, brushindex, label x location, label y location,
+and label style and return the index of the line. If the argument is the
+index of the last line then -1 is returned and Vector is unchanged.
+Note that an argument of -1 will always return the line info for the first
+polyline in the graph.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.erase">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">erase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.erase" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.erase()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Erase only the drawings of graph lines.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.erase_all">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">erase_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.erase_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">e.erase_all()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Erase everything on the graph.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.size">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.size" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.size(xstart,</span> <span class="pre">xstop,</span> <span class="pre">ystart,</span> <span class="pre">ystop)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.size(1-4)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.size(&amp;dbl[0])</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>.size(<em>xstart</em>, <em>xstop</em>, <em>ystart</em>, <em>ystop</em>)</dt><dd><p>The natural size of the scene in model coordinates. The “Whole Scene”
+menu item in the graphical user interface will change the view to this size.
+Default axes are this size.</p>
+</dd>
+<dt>.size(1-4)</dt><dd><p>Returns left, right, bottom or top of first view of the scene. Useful for programming.</p>
+</dd>
+<dt>.size(&amp;dbl[0])</dt><dd><p>Returns the xmin, xmax, ymin, ymax values of all marks and lines of more than two
+points in the graph in dbl[0],…, dbl[3] respectively. This allows
+convenient computation of a view size which will display everything on the
+graph. See <a class="reference internal" href="gui.html#hoc-gui-view-equal-plot"><span class="std std-ref">View_equal_Plot</span></a>. In the absence of any graphics, it gives
+the size as in the .size(1-4) prototype.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.label">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.label" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.label(x,</span> <span class="pre">y,</span> <span class="pre">&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.label(x,</span> <span class="pre">y)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.label(&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.label(x,</span> <span class="pre">y,</span> <span class="pre">&quot;string&quot;,</span> <span class="pre">fixtype,</span> <span class="pre">scale,</span> <span class="pre">x_align,</span> <span class="pre">y_align,</span> <span class="pre">color)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">.label(x,</span> <span class="pre">y,</span> <span class="pre">&quot;label&quot;)</span></code></dt><dd><p>Draw a label at indicated position with current color.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.label(&quot;label&quot;)</span></code></dt><dd><p>Add a label one line below the previous label</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.label(x,</span> <span class="pre">y)</span></code></dt><dd><p>Next <code class="docutils literal notranslate"><span class="pre">label(&quot;string&quot;)</span></code> will be printed at this location</p>
+</dd>
+</dl>
+<p>The many arg form is used by sessions to completely specify an individual
+label.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.fixed">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">fixed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.fixed" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.fixed(scale)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sizes labels. Future labels are by default
+attached with respect to scene coordinates. The labels maintain
+their size as the view changes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.vfixed">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">vfixed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.vfixed" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.vfixed(scale)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sizes labels. Future labels are by default
+attached with respect to relative view coordinates in which
+(0,0) is the left,bottom and (1,1) is the right,top of the view.
+Thus zooming and translation does not affect the placement of
+the label.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.relative">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">relative</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.relative" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.relative(scale)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>I never used it so I don’t know if it works. The most
+useful labels are fixed in that they maintain their size as the
+view is zoomed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.align">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">align</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.align" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.align([x_align],</span> <span class="pre">[y_align])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Alignment is a number between 0 and 1 which signifies which location
+of the label is at the x,y position. .5 means centering. 0 means
+left(bottom) alignment, 1 means right(top) alignment</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.align(0, 0)
+g.label(.5,.5, &quot;left bottom at (.5,.5)&quot;)
+g.align(0, 1)
+g.label(.5,.5, &quot;left top at (.5,.5)&quot;)
+g.align(1, 0)
+g.label(.5,.5, &quot;right bottom at (.5,.5)&quot;)
+g.align(.5,2)
+g.label(.5,.5, &quot;middle but twice height at (.5, .5)&quot;)
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.color">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">color</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.color" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.color(index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.color(index,</span> <span class="pre">&quot;colorname&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Set the default color (starts at 1 == black). The default color palette
+is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0 white
+1 black
+2 red
+3 blue
+4 green
+5 orange
+6 brown
+7 violet
+8 yellow
+9 gray
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">.color(index,</span> <span class="pre">&quot;colorname&quot;)</span></code></dt><dd><p>Install a color in the Color Palette to be accessed with that index.
+The possible indices are 0-100.</p>
+</dd>
+</dl>
+<p>The user may also use the colors/brushes button in the graphical user interface, which
+is called by placing the mouse arrow in the graph window and pressing the right button.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.brush">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">brush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.brush" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.brush(index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.brush(index,</span> <span class="pre">pattern,</span> <span class="pre">width)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">.brush(index)</span></code></dt><dd><p>Set the default brush. 0 is the thinnest line possible, 1-4 are
+thickness in pixel. Higher indices cycle through these line
+thicknesses with different brush patterns.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.brush(index,</span> <span class="pre">pattern,</span> <span class="pre">width)</span></code></dt><dd><p>Install a brush in the Brush Palette to be accessed with the index.
+The width is in pixel coords (&lt; 1000). The pattern is a 31 bit pattern
+of 1’s and 0’s which is used to make dash patterns. Fractional widths
+work with postscript but not idraw. Axes are drawn with the
+nrn.defaults property <code class="docutils literal notranslate"><span class="pre">*default_brush:</span> <span class="pre">0.0</span></code></p>
+</dd>
+</dl>
+<p>The user may also use the <a class="reference internal" href="gui.html#hoc-gui-changecolor-brush"><span class="std std-ref">ChangeColor-Brush</span></a> button in the graphical user interface, which
+is called by placing the mouse arrow in the graph window and pressing the right button.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.view">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.view" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.view(mleft,</span> <span class="pre">mbottom,</span> <span class="pre">mwidth,</span> <span class="pre">mheight,</span> <span class="pre">wleft,</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">wtop,</span> <span class="pre">wwidth,</span> <span class="pre">wheight)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.view(2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Map a view of the Shape scene. <em>m</em> stands for model coordinates
+within the window,
+<em>w</em> stands for screen coordinates for placement and size of the
+window. The placement of the window with respect to the screen
+is intended to be precise and is with respect to pixel coordinates
+where 0,0 is the top left corner of the screen.</p>
+<p>The single argument form maps a view in which the aspect ratio
+between x and y axes is always 1. eg like a shape window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.save_name">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">save_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.save_name" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.save_name(&quot;objectvar&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.save_name(&quot;objectvar&quot;,</span> <span class="pre">1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The objectvar used to save the scene when the print window
+manager is used to save a session.
+If the second arg is present then info about the graph
+is immediately saved to the open session file. This is used by objects
+that create their own graphs but need to save graph information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.beginline">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">beginline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.beginline" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.beginline()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.beginline(color_index,</span> <span class="pre">brush_index)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.beginline(&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.beginline(&quot;label&quot;,</span> <span class="pre">color,</span> <span class="pre">brush)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>State that the next <code class="docutils literal notranslate"><span class="pre">g.line(x)</span></code>
+is the first point of the next line to be graphed.
+This is a less general command than <code class="docutils literal notranslate"><span class="pre">.begin()</span></code> which prepares a graph for
+the <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> command.
+The optional label argument labels the line.</p>
+</dd>
+<dt>Example:</dt><dd><p>Notice that the argument to <code class="docutils literal notranslate"><span class="pre">g.line()</span></code> is the expression sin(x)
+itself, whereas if you were using the <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> command, the arguments
+would have to be specified before the <code class="docutils literal notranslate"><span class="pre">for</span></code> loop using <code class="docutils literal notranslate"><span class="pre">.addexpr()</span></code>
+commands. The addexpr/begin/plot method of plotting is preferred since it
+is capable of simultaneously plotting multiple lines.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g    //Creates an object reference &quot;g&quot; which will
+            //point to the graph object.
+g = new Graph()             //Assigns &quot;g&quot; the role of pointing to a Graph
+                    //created from the Graph class, and produces
+                    //a graph window with x and y axes on the
+                    //screen.
+g.beginline()               //Tells the interpreter that commands to create a line for
+                    //specific functions will follow.
+for(x=0; x&lt;=10; x=x+0.1){   //States that x values to be plotted
+                            //will go from 0 to 10 in increments
+                            //of 0.1.
+    g.line(x, sin(x))       //States that the y values on the line
+                            //will be the sin of the x values.
+}
+g.flush()   //Actually draws the plot on the graph in the window.
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.line">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.line" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.line(x,</span> <span class="pre">y)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Draw a line from the previous point to this point. This command is normally
+used inside of a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop.  It is analogous to <code class="docutils literal notranslate"><span class="pre">.plot()</span></code> and the commands which
+go along with it.  In the case of <code class="docutils literal notranslate"><span class="pre">.line()</span></code> however, all arguments are given in
+the line command itself.  Therefore, the line command only plots one line at a time, whereas
+the <code class="docutils literal notranslate"><span class="pre">.plot*()</span></code> command can plot several lines using the same for loop on the same graph.</p>
+<p>This command takes arguments for both x and y values, so it can serve the same purpose of
+the <code class="docutils literal notranslate"><span class="pre">.plot</span></code> command in conjunction with an <code class="docutils literal notranslate"><span class="pre">.addexpr()</span></code> command and an <code class="docutils literal notranslate"><span class="pre">.xexpr()</span></code>
+command.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.beginline()
+for(t=0; t&lt;=2*PI+0.1; t=t+0.1){
+    g.line(sin(t), cos(t))
+}
+g.flush()
+</pre></div>
+</div>
+<p>graphs a circle of radius=1, just as would the following code using <code class="docutils literal notranslate"><span class="pre">g.plot()</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+t = 0
+g.addexpr(&quot;sin(t)&quot;)
+g.xexpr(&quot;cos(t)&quot;)
+g.begin()
+for(t=0; t&lt;=2*PI+0.1; t=t+0.1){
+    g.plot(t)
+}
+g.flush()
+</pre></div>
+</div>
+<p>Note that the arguments to <code class="docutils literal notranslate"><span class="pre">g.line</span></code> are doubles, and not chars as they are in <code class="docutils literal notranslate"><span class="pre">g.plot()</span></code>.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.mark">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">mark</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.mark" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.mark(x,</span> <span class="pre">y)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.mark(x,</span> <span class="pre">y,</span> <span class="pre">&quot;style&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.mark(x,</span> <span class="pre">y,</span> <span class="pre">&quot;style&quot;,</span> <span class="pre">size)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.mark(x,</span> <span class="pre">y,</span> <span class="pre">&quot;style&quot;,</span> <span class="pre">size,</span> <span class="pre">color,</span> <span class="pre">brush)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Make a mark centered at the indicated position which does not
+change size when window is zoomed or resized. The style is a single
+character <code class="docutils literal notranslate"><span class="pre">+,</span> <span class="pre">o,</span> <span class="pre">s,</span> <span class="pre">t,</span> <span class="pre">O,</span> <span class="pre">S,</span> <span class="pre">T,</span> <span class="pre">|,</span> <span class="pre">-</span></code> where <code class="docutils literal notranslate"><span class="pre">o,t,s</span></code> stand for circle, triangle,
+square and capitalized means filled. Default size is 12 points.
+For the style, an integer index, 0-8, relative to the above list may
+also be used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.crosshair_action">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">crosshair_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.crosshair_action" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.crosshair_action(&quot;procedure_name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.crosshair_action(&quot;procedure_name&quot;,</span> <span class="pre">vectorflag=0)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.crosshair_action(&quot;&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>While the crosshair is visible (left mouse button pressed) one
+can type any key and the procedure will be executed with
+three arguments added:
+<code class="docutils literal notranslate"><span class="pre">procedure_name(x,</span> <span class="pre">y,</span> <span class="pre">c)</span></code>
+where x and y are the coordinates of the crosshair (in model
+coordinates) and c is the ascii code for the key pressed.</p>
+<p>The procedure will be executed in the context of the object
+where <code class="docutils literal notranslate"><span class="pre">crosshair_action</span></code> was executed.
+When the optional vectorflag argument is 1, then, just prior
+to each call of the <em>procedure_name</em> due to a keypress,
+two temporary <em>objectref</em>’s are created and assigned to a
+new <code class="docutils literal notranslate"><span class="pre">Vector()</span></code> and the line coordinate data is copied to those Vectors.
+With this form the call to the procedure has two args added:
+<code class="docutils literal notranslate"><span class="pre">procedure_name(i,</span> <span class="pre">c,</span> <span class="pre">$o3,</span> <span class="pre">$o4)</span></code>
+where <code class="docutils literal notranslate"><span class="pre">i</span></code> is the index of the crosshair into the Vector.</p>
+<p>If you wish the Vector data to persist then you can assign to
+another objectvar before returning from the <code class="docutils literal notranslate"><span class="pre">procedure_name</span></code>.
+Note that one can copy any line to a Vector with this method whereas
+the interpreter controlled <code class="docutils literal notranslate"><span class="pre">Graph.dump(&quot;expr&quot;,</span> <span class="pre">y_objectref)</span></code> is
+limited to the current graphline of an <code class="docutils literal notranslate"><span class="pre">addvar</span></code> or <code class="docutils literal notranslate"><span class="pre">addexpr</span></code>.</p>
+<p>With an empty string arg, the existing action is removed.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="gui.html#hoc-gui-pickvector"><span class="std std-ref">PickVector</span></a>, <a class="reference internal" href="#Graph.menu_tool" title="Graph.menu_tool"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">menu_tool()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.view_count">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">view_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.view_count" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.view_count()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns number of views into this scene. (stdrun.hoc removes
+scenes from the <code class="docutils literal notranslate"><span class="pre">flush_list</span></code> and <code class="docutils literal notranslate"><span class="pre">graphList[]</span></code> when this goes to
+0. If no other <code class="docutils literal notranslate"><span class="pre">objectvar</span></code> points to the scene, it will be
+freed.)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.unmap">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">unmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.unmap" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.unmap()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Dismiss all windows that are a direct view into this scene.
+(does not unmap boxes containing scenes.) <code class="docutils literal notranslate"><span class="pre">.unmap</span></code> is called
+automatically when no hoc object variable references the Graph.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.printfile">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">printfile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.printfile" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.printfile(&quot;filename&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Print the first view of the graph as an encapsulated post script
+file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.menu_remove">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">menu_remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.menu_remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.menu_remove(&quot;item</span> <span class="pre">name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Removes the named menu item from the Graph instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.exec_menu">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">exec_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.exec_menu" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.exec_menu(&quot;item</span> <span class="pre">name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Equivalent to by pressing and releasing one of the items in the
+Graph menu with the right mouse button. This executes an action for
+regular items, toggles for items like “Keep Lines”, and specifies the
+left mouse tool for radio buttons. The “item name” must be identical to
+the string in the menu item, including spaces and case. Some items may
+not work unless the graph is mapped to the screen. Selection is with respect
+to the primary (first) view, eg selecting “View = plot” of a Grapher will
+always refer to the view in the Grapher tool as opposed to other views of
+the same graph created via the “NewView” menu item. Any items created
+with <a class="reference internal" href="#Graph.menu_action" title="Graph.menu_action"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Graph.menu_action()</span></code></a> or <a class="reference internal" href="#Graph.menu_tool" title="Graph.menu_tool"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Graph.menu_tool()</span></code></a> are selectable with this
+function.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.exec_menu(&quot;Keep Lines&quot;)
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.menu_action">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">menu_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.menu_action" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.menu_action(&quot;label&quot;,</span> <span class="pre">&quot;action&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add a menu item to the Graph popup menu. When pressed, the action will be
+executed</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.menu_action(&quot;Print File&quot;, &quot;g.printfile(\&quot;temp.eps\&quot;)  system(\&quot;lp temp.eps\&quot;)&quot;)
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.menu_tool">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">menu_tool</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.menu_tool" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.menu_tool(&quot;label&quot;,</span> <span class="pre">&quot;procedure_name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.menu_tool(&quot;label&quot;,</span> <span class="pre">&quot;procedure_name&quot;,</span> <span class="pre">&quot;select_action&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add a selectable tool menu item to the Graph popup menu or else, if an
+<a class="reference internal" href="../programming/gui/widgets.html#xpanel" title="xpanel"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xpanel()</span></code></a> is open, an <a class="reference internal" href="../programming/gui/widgets.html#xradiobutton" title="xradiobutton"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xradiobutton()</span></code></a> will be added to the panel having the
+same action. (note: all menu_tool radiobuttons whether in the graph menu
+or in a panel, are in the same telltalegroup, so selecting one deselects the
+previous selection.)</p>
+<p>If the third arg exists, the select_action will be executed when
+the radioitem is pressed (if it is not already selected).</p>
+<p>When selected, the item will be marked and the label will appear on
+the window title bar (but not if the Graph is enclosed in a <a class="reference internal" href="../programming/gui/layout.html#VBox" title="VBox"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">VBox()</span></code></a> ).
+When this tool is selected, pressing the left mouse
+button, dragging the mouse, and releasing the left button, will cause
+procedure_name to be called with four arguments: type, x, y, keystate.
+x and y are the scene (model) coordinates of the mouse pointer, and type is
+2 for press, 1 for dragging, and 3 for release. Keystate reflects the
+state of control (bit 1), shift (bit 2), and meta (bit 3) keys, ie control
+and shift down has a value of 3.</p>
+<p>The rate of calls for dragging is of course dependent on the time it takes
+to execute the procedure name.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref g
+g = new Graph()
+g.menu_tool(&quot;mouse events&quot;, &quot;p&quot;)
+proc p() {
+    print $1, $2, $3, $4
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.gif">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">gif</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.gif" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.gif(&quot;file.gif&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">g.gif(&quot;file.gif&quot;,</span> <span class="pre">left,</span> <span class="pre">bottom,</span> <span class="pre">width,</span> <span class="pre">height)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Display the gif image in model coordinates with lower left corner at 0,0
+or indicated left, bottom coords. The width and height of the gif file are the
+desired width and height of the image in model coordinates, by default they
+are the pixel Width and Height of the gif file.</p>
+</dd>
+<dt>Example:</dt><dd><p>Suppose we have a gif with pixel width and height, wg and hg respectively.
+Also suppose we want the gif pixel point (xg0, yg0) mapped to graph
+model coordinate (x0, y0) and the gif pixel point (xg1, yg1) mapped to
+graph model coordinate (x1, y1). Then the last four arguments to
+g.gif should be:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>left = x0 - xg0*(x1-x0)/(xg1-xg0)
+bottom = y0 - yg0*(y1-y0)/(yg1-yg0)
+width = wg*(x1-x0)/(xg1-xg0)
+height= hg*(y1-y0)/(yg1-yg0)
+</pre></div>
+</div>
+<p>If, for example with xv, you have constructed a desired rectangle on the
+gif and the info (xv controls/Windows/Image Info)presented is
+Resolution: 377x420
+Selection: 225x279 rectangle starting at 135,44
+then use</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{wg=377 hg=420}
+{xg0=135 yg0=420-(279+44) xg1=135+225 yg1=420-44}
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In the single arg form, if the gif size is larger than the graph model
+coodinates, the graph is resized to the size of the gif. This prevents
+excessive use of memory and computation time when the graph size is on
+the order of a gif pixel.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.view_info">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">view_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.view_info" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">=</span> <span class="pre">g.view_info()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">g.view_info(i,</span> <span class="pre">case)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">g.view_info(i,</span> <span class="pre">case,</span> <span class="pre">model_coord)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Return information about the ith view.</p>
+<p>With no args the return value is the view number where the mouse is.
+If the mouse was not last in a view of g, the return value is -1. Therefore
+this no arg function call should only be made on a mouse down event and
+saved for handling the other mouse events. Note that the two arg cases
+are generally constant between a mouse down and up event.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    case 1: // width
+    case 2: // height
+    case 3: // point width
+    case 4: // point height
+    case 5: // left
+    case 6: // right
+    case 7: // bottom
+    case 8: // top
+    case 9: // model x distance for one point
+    case 10: // model y distance for one point
+The following cases (11 - 14) require a third argument
+relative location means (0,0) is lower left and (1,1) is upper right.
+    case 11: // relative x location (from x model coord)
+    case 12: // relative y location (from y model coord)
+    case 13: // points from left (from x model coord)
+    case 14: // points from top (from y model coord)
+            Note: this last is from the top, not from the bottom.
+    case 15: // height of font in points
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.view_size">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">view_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.view_size" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.view_size(i,</span> <span class="pre">left,</span> <span class="pre">right,</span> <span class="pre">bottom,</span> <span class="pre">top)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Specifies the model coordinates of the ith view of a Graph.
+It is possible to use this in a <a class="reference internal" href="#Graph.menu_tool" title="Graph.menu_tool"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Graph.menu_tool()</span></code></a> callback procedure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.glyph">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">glyph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.glyph" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.glyph(glyphobject,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">scalex,</span> <span class="pre">scaley,</span> <span class="pre">angle,</span> <span class="pre">fixtype)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add the <a class="reference internal" href="glyph.html#Glyph" title="Glyph"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">Glyph()</span></code></a> object to the graph at indicated coordinates (the origin
+of the Glyph will appear at x,y) first scaling the Glyph and then
+rotating by the indicated angle in degrees. The last four arguments
+are optional and have defaults of 1,1,0,0 respectively. Fixtype
+refers to whether the glyph moves and scales with zooming and translation,
+moves only with translation but does not scale, or neither moves nor
+scales.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Graph.simgraph">
+<span class="sig-prename descclassname"><span class="pre">Graph.</span></span><span class="sig-name descname"><span class="pre">simgraph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Graph.simgraph" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">g.simgraph()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Adds all the <a class="reference internal" href="#Graph.addvar" title="Graph.addvar"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Graph.addvar()</span></code></a> lines to a list managed by <a class="reference internal" href="../simctrl/cvode.html#CVode" title="CVode"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">CVode</span></code></a> which
+allows the local variable time step method to properly graph the lines.
+See the implementation in share/lib/hoc/stdrun.hoc for usage.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="glyph.html" class="btn btn-neutral float-left" title="Glyph" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="grapher.html" class="btn btn-neutral float-right" title="Grapher" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

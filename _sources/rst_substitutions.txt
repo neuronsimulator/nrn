@@ -1,0 +1,2 @@
+.. |neuron_with_cpp_mechanisms| replace:: NEURON 9.0[.dev]
+.. |neuron_with_soa_data| replace:: NEURON 9.0[.dev]

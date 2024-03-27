@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOC Keywords &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Input and Output" href="io.html" />
+    <link rel="prev" title="HOC Syntax" href="hocsyntax.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hoc.html">HOC Language</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hocsyntax.html">HOC Syntax</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">HOC Keywords</a></li>
+<li class="toctree-l4"><a class="reference internal" href="io.html">Input and Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="oop.html">Object Oriented Programming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="predec.html">Predeclared Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="hoc.html">HOC Language</a></li>
+      <li class="breadcrumb-item active">HOC Keywords</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/ockeywor.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/ockeywor.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hoc-keywords">
+<span id="hoc-ockeywor"></span><h1>HOC Keywords<a class="headerlink" href="#hoc-keywords" title="Link to this heading"></a></h1>
+<p id="hoc-keyword-help"><span id="index-0"></span><strong>help</strong></p>
+<blockquote>
+<div><p>invokes the help system</p>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">help</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">help</span> <span class="pre">word</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">Help</span> <span class="pre">word</span></code> sends a word to the help system.
+The word is looked up in the <code class="file docutils literal notranslate"><span class="pre">nrn/lib/helpdict</span></code> file and if found
+Netscape is sent the appropriate URL to display
+the help text. If the word is not found, the URL for the table
+of contents is sent. Netscape must be running for the help system
+to work.</p>
+</dd>
+</dl>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-return"><span id="index-1"></span><strong>return</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">return</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">expr</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">objref</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">return</span></code> command will immediately exit from a procedure
+without returning a value.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">expr</span></code> command will immediately exit from a function
+which must return a value.  This command must also be the last executable
+statement of a function.  It is possible for a function to contain more
+than one <code class="docutils literal notranslate"><span class="pre">return</span></code> command, for instance in a series of <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">else</span></code>
+statements; however, not more than one of the <code class="docutils literal notranslate"><span class="pre">return</span></code> commands may
+return a value at any given time.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">objref</span></code> command must be used to return from an
+<a class="reference internal" href="hocsyntax.html#hoc-obfunc"><span class="std std-ref">obfunc</span></a>.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>func max(){
+    if ($1 &gt; $2){
+            return $1
+    } else {
+            return $2
+    }
+}
+</pre></div>
+</div>
+<p>returns the maximum of two arguments which are read into the function.  Eg. <code class="docutils literal notranslate"><span class="pre">max(3,6)</span></code>, where $1 is the
+first argument (3) and $2 is the second argument (6).  This use of <code class="docutils literal notranslate"><span class="pre">max</span></code> would return the value 6.</p>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>See restriction of the <a class="reference internal" href="#hoc-keyword-break"><span class="std std-ref">break</span></a> statement.</p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-break"><span id="index-2"></span><strong>break</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">break</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Immediately exit from a loop. Control transfers to the next statement after
+the loop statement.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This statement, as well as “return”, “continue”, and “stop”
+cannot occur within the scope of a statement that
+modifies the section stack such as</p>
+<p>section { statement }</p>
+<p>or the stack will not be properly popped. Also it should not be placed on
+a line that contains object syntax but should be placed on a line by
+itself. eg.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    x.p() break
+</pre></div>
+</div>
+<p>should be written</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    x.p()
+    break
+</pre></div>
+</div>
+</div>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>while(1) {
+    x = fscan()
+    if (x &lt; 0) {
+            break;
+    }
+    print sqrt(x)
+}
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-continue"><span id="index-3"></span><strong>continue</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">continue</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Inside a compound statement of a loop, transfers control to the next iteration of the
+loop statement.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for i=1,10{
+    if(i==6){
+            continue
+    }
+    print i
+}
+</pre></div>
+</div>
+<p>prints the numbers: 1,2,3,4,5,7,8,9,10.  6 is left out because when i==6, the control is passed
+beyond the print statement to the next iteration of the loop.</p>
+<p>You can accomplish the same thing with the following syntax:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for i=1,10{
+    if(i&lt;6 || i&gt;6){
+            print i
+    }
+}
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>See restriction of the <a class="reference internal" href="#hoc-keyword-break"><span class="std std-ref">break</span></a> statement.</p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-stop"><span id="index-4"></span><strong>stop</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">stop</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return control to the command level of the interpreter.  This is a useful safety device
+for stopping the current execution
+of your program.  Eg. you may wish to stop the program and print out an error message
+that lets you know if you have entered unacceptable arguments.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>See restriction of the <a class="reference internal" href="#hoc-keyword-break"><span class="std std-ref">break</span></a> statement.</p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-if"><span id="index-5"></span><strong>if</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">(expr)</span> <span class="pre">stmt1</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">(expr)</span> <span class="pre">stmt1</span> <span class="pre">else</span> <span class="pre">stmt2</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Conditional statement.  When the <em>expr</em> evaluates to a nonzero number
+(true) stmt1 is executed.  With the <code class="docutils literal notranslate"><span class="pre">else</span></code> form, if the expression
+evaluates to zero (false) stm2 is executed.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>i = 0       //initialize i
+j = 0       //initialize j
+if(vec.x[i] &lt;= 10 &amp;&amp; i &lt; vec.size()){       //if the value of the ith element in vec
+                                    //is less than or equal to 10, and
+                                    //if i is an index within vec
+    vec1.x[j] = vec.x[i]            //set the jth element of vec1 equal to that
+                                    //ith element of vec
+    i = i+1                         //increment i by 1
+    j = j+1                         //increment j by 1
+} else{                                     //otherwise (This must be on the same line as the closing brace of
+                                    //the previous statement in order to indicate that the compound
+                                    //statement has not ended.)
+    i = i+1                         //simply go to the next element of vec
+}
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a>, <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#hoc-keyword-ifsec"><span class="std std-ref">ifsec</span></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-else"><span id="index-6"></span><strong>else</strong></p>
+<blockquote>
+<div><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-keyword-if"><span class="std std-ref">if</span></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-while"><span id="index-7"></span><strong>while</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">while</span> <span class="pre">(expr)</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Iteration statement.  Repeatedly execute the statement as long as the
+<em>expr</em> evaluates to true.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>numelements = 20
+i = 0
+while (i &lt; numelements){
+    print(cos(vec.x[i]))
+    print(sin(vec.x[i]))
+    i += 1
+}
+</pre></div>
+</div>
+<p>prints the cosines and the sines of the <code class="docutils literal notranslate"><span class="pre">vec</span></code> elements up to <code class="docutils literal notranslate"><span class="pre">numelements</span></code>, which in this case = 20.</p>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-keyword-for"><span class="std std-ref">for</span></a>, <a class="reference internal" href="#hoc-keyword-break"><span class="std std-ref">break</span></a>, <a class="reference internal" href="#hoc-keyword-continue"><span class="std std-ref">continue</span></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-for"><span id="index-8"></span><strong>for</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">for(stmt1;</span> <span class="pre">expr2;</span> <span class="pre">stmt3)</span> <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">var=expr1,</span> <span class="pre">expr2</span>&#160; <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(var)</span> <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(var,</span> <span class="pre">expr)</span> <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">iterator</span> <span class="pre">(args)</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Iteration statement.  The <code class="docutils literal notranslate"><span class="pre">for</span></code> statement is similar to <code class="docutils literal notranslate"><span class="pre">while</span></code> in that it iterates over
+a statement.  However, the <code class="docutils literal notranslate"><span class="pre">for</span></code> statement is more compact and contains within its parentheses
+the command to advance to the next iteration.  Statements 1 and 3 may be
+empty.</p>
+<p>This command also has a short form which always increments the iterations by one.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for *var*=*expr1*, *expr2*  stmt
+</pre></div>
+</div>
+<p>is equivalent to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for(*var*=*expr1*; *var* &lt;= *expr2*; *var*=*var*+1) stmt
+</pre></div>
+</div>
+<p>However, <em>expr1</em> and <em>expr2</em> are evaluated only once at the
+beginning of the <code class="docutils literal notranslate"><span class="pre">for</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(var)</span> <span class="pre">stmt</span></code></p>
+<p>Loops over all segments of the currently accessed section.  <em>var</em> begins
+at 0 and ends at 1.  In between <em>var</em> is set to the center position of
+each segment.  Ie.  stmt is executed nseg+2 times.</p>
+<p><code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(var,</span> <span class="pre">expr)</span> <span class="pre">stmt</span></code></p>
+<p>If the expression evaluates to a non-zero value, it is exactly equivalent
+to
+<code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(var)</span> <span class="pre">stmt</span></code>
+If it evaluates to 0 (within <a class="reference internal" href="math/misc.html#float_epsilon" title="float_epsilon"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">float_epsilon</span></code></a> ) then the iteration does
+not include the 0 or 1 points. Thus <code class="docutils literal notranslate"><span class="pre">for(x,</span> <span class="pre">0)</span> <span class="pre">{</span> <span class="pre">print</span> <span class="pre">x</span> <span class="pre">}</span></code>
+is exactly equivalent to <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">(x)</span> <span class="pre">if</span> <span class="pre">(x</span> <span class="pre">&gt;</span> <span class="pre">0</span> <span class="pre">&amp;&amp;</span> <span class="pre">x</span> <span class="pre">&lt;</span> <span class="pre">1)</span> <span class="pre">{</span> <span class="pre">print</span> <span class="pre">x</span> <span class="pre">}</span></code></p>
+<p>The <a class="reference internal" href="hocsyntax.html#hoc-keyword-iterator"><span class="std std-ref">iterator</span></a> form of the for loop executes the statement with a looping
+construct defined by the user.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for(i=0; i&lt;=9; i=i+1){
+    print i*2
+}
+</pre></div>
+</div>
+<p>is equivalent to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for i=0, 9 {
+    print i*2
+}
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create axon
+access axon
+{nseg = 5  L=1000  diam=50  insert hh }
+for (x) print x, L*x
+for (x) if (x &gt; 0 &amp;&amp; x &lt; 1) { print x, gnabar_hh(x) }
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="hocsyntax.html#hoc-keyword-iterator"><span class="std std-ref">iterator</span></a>,
+<a class="reference internal" href="#hoc-keyword-break"><span class="std std-ref">break</span></a>, <a class="reference internal" href="#hoc-keyword-continue"><span class="std std-ref">continue</span></a>, <a class="reference internal" href="#hoc-keyword-while"><span class="std std-ref">while</span></a>, <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#hoc-keyword-forall"><span class="std std-ref">forall</span></a>, <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#hoc-keyword-forsec"><span class="std std-ref">forsec</span></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-print"><span id="index-9"></span><strong>print</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">expr,</span> <span class="pre">string,</span> <span class="pre">...</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Any number of expressions and/or strings may be printed.  A newline is
+printed at the end.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>x=2
+y=3
+print x, &quot;hello&quot;, &quot;good-bye&quot;, y, 7
+</pre></div>
+</div>
+<p>prints</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>x hello good-bye 3 7
+</pre></div>
+</div>
+<p>and then moves to the next line.</p>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-delete"><span id="index-10"></span><strong>delete</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">delete</span> <span class="pre">varname</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Deletes the variable name from the global namespace.  Allows the
+varname to be declared as another type.  It is up to the user to make
+sure it is safe to execute this statement since the variable may be used
+in an existing function.</p>
+</dd>
+</dl>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-read"><span id="index-11"></span><strong>read</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">read(var)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><em>var</em> is assigned the number input by the user, or the next number in the
+standard input, or the file opened with ropen.  <code class="docutils literal notranslate"><span class="pre">read(var)</span></code>
+returns 0 on
+end of file and 1 otherwise.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>for i=1, 5 {
+    read(x)
+    print x*x
+}
+</pre></div>
+</div>
+<p>will await input from the user or from a file, and will print the square of each value typed in
+by the user, or read from the file, for the first five values.</p>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="io/read.html#xred" title="xred"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">xred()</span></code></a>, <a class="reference internal" href="io/file.html#File.ropen" title="File.ropen"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">File.ropen()</span></code></a>, <a class="reference internal" href="io/read.html#fscan" title="fscan"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fscan()</span></code></a>, <a class="reference internal" href="io/file.html#File" title="File"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">File()</span></code></a>, <a class="reference internal" href="io/read.html#getstr" title="getstr"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">getstr()</span></code></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-debug"><span id="index-12"></span><strong>debug</strong></p>
+<blockquote>
+<div><p>A toggle for parser debugging purposes. Prints the stack machine commands
+resulting from parsing a statement.  Not useful to the user.</p>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-double"><span id="index-13"></span><strong>double</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">var1[expr]</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">var2[expr1][expr2]</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">varn[expr1][expr2]...[exprn]</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Declares a one-dimensional, a two-dimensional or an n-dimensional array of doubles.
+This is reminiscent of the command which creates an array in C, however, HOC does not demand
+that you specify whether or not numbers are integers.  All numbers in all arrays will be
+doubles.</p>
+<p>The index for each dimension ranges from 0 to expr-1.  Arrays may be
+redeclared at any time, including within procedures.  Thus arrays may
+have different lengths in different objects.</p>
+<p>The <a class="reference internal" href="math/vector.html#Vector" title="Vector"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class for the ivoc interpreter provides convenient and powerful methods for
+manipulating arrays.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>double vec[40]
+</pre></div>
+</div>
+<p>declares an array with 40 elements, whereas</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref vec
+vec = new Vector(40)
+</pre></div>
+</div>
+<p>creates a vector (which is an array by a different name) with 40 elements which you can
+manipulate using the commands of the Vector class.</p>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-depvar"><span id="index-14"></span><strong>depvar</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">depvar</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Declare a variable to be a dependent variable for the purpose of
+solving simultaneous equations.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>depvar x, y, z
+ proc equations() {
+   eqn x:: x + 2*y + z =  6
+   eqn y:: x - y + z   =  2
+   eqn z:: 2*x + y -z  = -3
+ }
+equations()
+solve()
+print x,y,z
+</pre></div>
+</div>
+<p>prints the values of x, y and z.</p>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-keyword-eqn"><span class="std std-ref">eqn</span></a>, <a class="reference internal" href="math/eqnsolve.html#eqinit" title="eqinit"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">eqinit()</span></code></a>, <a class="reference internal" href="math/eqnsolve.html#solve" title="solve"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">solve()</span></code></a>, <a class="reference internal" href="math/matrix.html#Matrix" title="Matrix"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">Matrix()</span></code></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-eqn"><span id="index-15"></span><strong>eqn</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">eqn</span> <span class="pre">var::</span> <span class="pre">expr</span> <span class="pre">=</span> <span class="pre">expr</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">eqn</span> <span class="pre">var:</span> <span class="pre">expr</span> <span class="pre">=</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">eqn</span> <span class="pre">var:</span> <span class="pre">=</span> <span class="pre">expr</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Introduce a simultaneous equation.
+The single colon forms add the expressions to the indicated sides.  This is convenient for breaking
+long equations down into more manageable parts which can be added together.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>eqinit()
+depvar x, y, z
+ proc equations() {
+   eqn x:: x + 2*y + z =  6
+   eqn y:: x - y + z   =  2
+   eqn z:: 2*x + y -z  = -3
+   eqn z: = 5 + 4y
+ }
+equations()
+solve()
+print x,y,z
+</pre></div>
+</div>
+<p>makes the right hand side of the z equation “2 + 4y” and solves for the values x, y, and z.</p>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-local"><span id="index-16"></span><strong>local</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">local</span> <span class="pre">var</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Declare a list of local variables within a procedure or function
+Must be the first statement on the same line as the function declaration.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>func count() {local i, x
+    x = 0
+    for i=0,40 {
+            if (vec.x[i] == 7) {
+                     x = x+1
+            }
+    }
+    return x
+}
+</pre></div>
+</div>
+<p>returns the number of elements which have the value of 7 in the first 40 elements of <code class="docutils literal notranslate"><span class="pre">vec</span></code>. <code class="docutils literal notranslate"><span class="pre">i</span></code>
+and <code class="docutils literal notranslate"><span class="pre">x</span></code> are local variables, and their usage here will not affect variables of the same name in
+other functions and procedures of the same program.</p>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-localobj"><span id="index-17"></span><strong>localobj</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">localobj</span> <span class="pre">var</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Declare a list, comma separated, of local objrefs within a proc, func, iterator, or obfunc.
+Must be after the <a class="reference internal" href="#hoc-keyword-local"><span class="std std-ref">local</span></a> statement (if that exists)
+on the same line as the function declaration</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>func sum() { local i, j  localobj tobj // sum from $1 to $2
+    i = $1  j = $2
+    tobj = new Vector()
+    tobj.indgen(i, j ,1)
+    return tobj.sum
+}
+sum(5, 10) == 45
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-strdef"><span id="index-18"></span><strong>strdef</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">stringname</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Declare a comma separated list of string variables.  String
+variables cannot be arrays.</p>
+<p>Strings can be passed as arguments to functions.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>strdef a, b, c
+a = &quot;Hello, &quot;
+b = &quot;how are you?&quot;
+c = &quot;What is your name?&quot;
+print a, b
+print c
+</pre></div>
+</div>
+<p>will print to the screen:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Hello, how are you?
+What is your name?
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-setpointer"><span id="index-19"></span><strong>setpointer</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">setpointer</span> <span class="pre">pvar,</span> <span class="pre">var</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Connects pointer variables in membrane mechanisms to the address of var.
+eg. If <code class="file docutils literal notranslate"><span class="pre">$NEURONHOME/examples/nmodl/synpre.mod</span></code> is linked into NEURON, then:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>soma1 syn1=new synp(.5)
+setpointer syn1.vpre, axon2.v(1)
+</pre></div>
+</div>
+<p>would enable the synapse in soma1 to observe the axon2 membrane potential.</p>
+</dd>
+</dl>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-insert"><span id="index-20"></span><strong>insert</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">insert</span> <span class="pre">mechanism</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Insert the density mechanism in the currently accessed section.
+Not used for point processes–they are inserted with a different syntax.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../modelspec/programmatic/mechanisms/mech.html#hoc-mech-hh"><span class="std std-ref">hh</span></a>, <a class="reference internal" href="../modelspec/programmatic/mechanisms/mech.html#hoc-mech-pas"><span class="std std-ref">pas</span></a>, <a class="reference internal" href="../modelspec/programmatic/mechanisms/mech.html#hoc-mech-fastpas"><span class="std std-ref">fastpas</span></a>, <a class="reference internal" href="../modelspec/programmatic/topology.html#psection" title="psection"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">psection()</span></code></a>, <a class="reference internal" href="../modelspec/programmatic/mechanisms/mech.html#hoc-mech"><span class="std std-ref">Point Processes and Artificial Cells</span></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-uninsert"><span id="index-21"></span><strong>uninsert</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">uninsert</span> <span class="pre">mechanism</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Delete the indicated mechanism from the currently accessed section. Not for
+point processes.</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hocsyntax.html" class="btn btn-neutral float-left" title="HOC Syntax" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="io.html" class="btn btn-neutral float-right" title="Input and Output" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

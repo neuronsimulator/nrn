@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obsolete Plotting &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Programmatic Analysis Tools" href="../analysis/programmatic.html" />
+    <link rel="prev" title="MenuExplore" href="shapebox.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Obsolete Plotting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#graphmode"><code class="docutils literal notranslate"><span class="pre">graphmode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#graph"><code class="docutils literal notranslate"><span class="pre">graph()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#axis"><code class="docutils literal notranslate"><span class="pre">axis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plotx"><code class="docutils literal notranslate"><span class="pre">plotx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ploty"><code class="docutils literal notranslate"><span class="pre">ploty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#regraph"><code class="docutils literal notranslate"><span class="pre">regraph()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setcolor"><code class="docutils literal notranslate"><span class="pre">setcolor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#settext"><code class="docutils literal notranslate"><span class="pre">settext()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plt"><code class="docutils literal notranslate"><span class="pre">plt()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">Obsolete Plotting</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/oldgrph.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/oldgrph.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#axis" title="Link to this definition">axis</a> &middot; <a href="#graph" title="Link to this definition">graph</a> &middot; <a href="#graphmode" title="Link to this definition">graphmode</a> &middot; <a href="#plot" title="Link to this definition">plot</a> &middot; <a href="#plotx" title="Link to this definition">plotx</a> &middot; <a href="#ploty" title="Link to this definition">ploty</a> &middot; <a href="#plt" title="Link to this definition">plt</a> &middot; <a href="#regraph" title="Link to this definition">regraph</a> &middot; <a href="#setcolor" title="Link to this definition">setcolor</a> &middot; <a href="#settext" title="Link to this definition">settext</a></p><section id="obsolete-plotting">
+<span id="oldgrph"></span><h1>Obsolete Plotting<a class="headerlink" href="#obsolete-plotting" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The functions on this page should be considered obsolete and avoided in new code; use
+<a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> instead.</p>
+</div>
+<p>.fa</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="graphmode">
+<span class="sig-name descname"><span class="pre">graphmode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#graphmode" title="Link to this definition"></a></dt>
+<dd><p>obsolete. Use <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> instead.</p>
+<p>Syntax:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.graphmode(1)</span></code></dt><dd><p>Executes the list of setup statements.
+This is also done on the
+first call to <code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code> after
+a new setup statement is added to the list.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.graphmode(-1)</span></code></dt><dd><p>Flushes the stored plots. Subsequent calls to
+<code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code> will start new lines.
+Should be executed just before a <code class="docutils literal notranslate"><span class="pre">h.plt(-1)</span></code> to ensure the entire lines
+are plotted.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.graphmode(2)</span></code></dt><dd><p>Flushes the stored plots. Subsequent calls to
+<code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code> will continue the lines.
+Graphs are normally flushed every  50 points.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#graph" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Name:</dt><dd><p>graph — multiple line plots (obsolete; use <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> instead)</p>
+</dd>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.graph()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.graph(expression,</span> <span class="pre">setup)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.graphmode(mode)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The <a class="reference internal" href="#graph" title="graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">graph()</span></code></a> function solves the problem of obtaining multiple line plots during
+a single run. During calls to <code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code>, specified variables are stored
+and plotted using scales determined by calls to <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a>.</p>
+</dd>
+</dl>
+<p>Options:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.graph()</span></code></dt><dd><p>erases the old list and starts a new (empty)
+list of plot expressions and setup statements.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.graph(s1,</span> <span class="pre">s2)</span></code></dt><dd><p>Adds a new plot specification
+to the graph list. s1 must be a HOC
+string which contains an expression, usually a variable. e.g “y”. s2 is a HOC
+string which contains any number of statements used to initialize axes. etc.
+E.G “<code class="docutils literal notranslate"><span class="pre">axis(0,5,1,-1,1,2)</span> <span class="pre">axis()</span></code>”.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code></dt><dd><p>The current value of each
+expression in the graph list is saved along with the abscissa value, t.
+The line plots are flushed every 50 points.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="c1"># define a HOC variable x</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;x = 0&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">p</span><span class="p">():</span> <span class="c1"># plot ramp</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">450</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">axis</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">150</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.1</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="mf">15.</span><span class="p">)</span>    <span class="c1"># ramp</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># plots graph list if any</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># flush remaining part of graphs, if any</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">p</span><span class="p">()</span>    <span class="c1"># plots the ramp alone</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="s2">&quot;sin(x)&quot;</span><span class="p">,</span><span class="s2">&quot;axis(100, 300, 100, 300) axis()&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="s2">&quot;cos(x)&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># same axes as previous call to graph</span>
+
+<span class="n">p</span><span class="p">()</span>    <span class="c1"># plots the sin and cos along with the ramp</span>
+</pre></div>
+</div>
+<img alt="../../_images/oldgrph.png" class="align-center" src="../../_images/oldgrph.png" />
+</div></blockquote>
+<dl>
+<dt>Diagnostics:</dt><dd><p>The strings are parsed when <code class="docutils literal notranslate"><span class="pre">h.graph(s1,</span> <span class="pre">s2)</span></code> is executed.  The strings are
+executed on calls to <code class="docutils literal notranslate"><span class="pre">h.graph(t)</span></code>.</p>
+<p>The best method for complicated plots is to make the setup string a
+simple call to a user defined procedure.  This procedure can setup the
+axes, write the labels, etc.  Newlines and strings within strings are
+possible by quoting with the <code class="docutils literal notranslate"><span class="pre">\</span></code> character but generally are
+too confusing to be practical.</p>
+<p>Local variables in graph strings make no sense.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All expressions for initialization and for plotting must be specified as HOC
+expressions not as Python callables. These functions are maintained solely to
+maintain backward compatability, so this limitation is likely to never be lifted.
+New code should use <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> instead,
+which does not have this limitation.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On some modern systems, the graph window may have to be interacted with (e.g. resized)
+before the first graph will appear.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#plot" title="plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="axis">
+<span class="sig-name descname"><span class="pre">axis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#axis" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.axis()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.axis(clip)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.axis(xorg,</span> <span class="pre">xsize,</span> <span class="pre">yorg,</span> <span class="pre">ysize)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.axis(xstart,</span> <span class="pre">xstop,</span> <span class="pre">nticx,</span> <span class="pre">ystart,</span> <span class="pre">ystop,</span> <span class="pre">nticy)</span></code></p>
+</div></blockquote>
+<p>Options:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.axis()</span></code></dt><dd><p>draw axes with label values. Closes plot device.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.axis(clip)</span></code></dt><dd><p>points are not plotted if they are a factor <code class="docutils literal notranslate"><span class="pre">clip</span></code> off the axis scale.
+Default is no clipping. Set <code class="docutils literal notranslate"><span class="pre">clip</span></code> to 1 to not plot out of axis region.
+A value of 1.1 allows plotting slightly outside the axis boundaries.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.axis(xorg,</span> <span class="pre">xsize,</span> <span class="pre">yorg,</span> <span class="pre">ysize)</span></code></dt><dd><p>Size and location of the plot region.
+(Use the h.plt() absolute coordinates.)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.axis(xstart,</span> <span class="pre">xstop,</span> <span class="pre">nticx,</span> <span class="pre">ystart,</span> <span class="pre">ystop,</span> <span class="pre">nticy)</span></code></dt><dd><p>Determines relative scale and origin.</p>
+</dd>
+</dl>
+<p>Specification of the precision of axis tic labels is available by
+recompiling <code class="file docutils literal notranslate"><span class="pre">hoc/SRC/plot.c</span></code> with <code class="docutils literal notranslate"><span class="pre">#define</span> <span class="pre">Jaslove</span> <span class="pre">1+</span></code>. With this definition,
+the number of tics specified in the 3rd and 6th arguments of <code class="docutils literal notranslate"><span class="pre">axis()</span></code> should
+be of the form m.n. m is the number of tic marks, and n is the number of
+digits after the decimal point which are printed. This contribution was
+made by Stewart Jaslove.</p>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#plot" title="plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="plotx">
+<span class="sig-name descname"><span class="pre">plotx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plotx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="ploty">
+<span class="sig-name descname"><span class="pre">ploty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ploty" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="regraph">
+<span class="sig-name descname"><span class="pre">regraph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#regraph" title="Link to this definition"></a></dt>
+<dd><p>See <a class="reference internal" href="#graph" title="graph"><code class="xref py py-func docutils literal notranslate"><span class="pre">graph()</span></code></a></p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plot" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Name:</dt><dd><p>plot - plot relative to scale given by <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a></p>
+</dd>
+</dl>
+<p>Syntax:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.plot(mode)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">inrange</span> <span class="pre">=</span> <span class="pre">h.plot(x,y)</span></code></p>
+</div></blockquote>
+<dl class="simple">
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.plot()</span></code> plots relative to the origin and scale defined by
+calls to <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a>.  The default x and y axes have relative units of 0 to 1 with the plot
+located in a 5x3.5 inch area.</p>
+</dd>
+</dl>
+<p>Options:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.plot()</span></code></dt><dd><p>print parameter usage help lines.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plot(0)</span></code></dt><dd><p>subsequent calls will plot points.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plot(1)</span></code></dt><dd><p>next call will be a move, subsequent call will draw lines.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plot(x,</span> <span class="pre">y)</span></code></dt><dd><p>plots a point (or vector) relative to the axis scale.
+Return value is 0 if the point is clipped (out of range).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plot(mode,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>Like <a class="reference internal" href="#plt" title="plt"><code class="xref py py-func docutils literal notranslate"><span class="pre">plt()</span></code></a> but with scale and origin given by <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a>.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="c1"># plot the sin function from 0 to 10 radians</span>
+<span class="n">h</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">#/* setup scale */</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">101</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.1</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>  <span class="c1"># plot the function</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">axis</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/plotsin.png" class="align-center" src="../../_images/plotsin.png" />
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#plt" title="plt"><code class="xref py py-func docutils literal notranslate"><span class="pre">plt()</span></code></a>, <a class="reference internal" href="#setcolor" title="setcolor"><code class="xref py py-func docutils literal notranslate"><span class="pre">setcolor()</span></code></a>, <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="setcolor">
+<span class="sig-name descname"><span class="pre">setcolor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#setcolor" title="Link to this definition"></a></dt>
+<dd><p>obsolete.</p>
+<dl class="simple">
+<dt>Name:</dt><dd><p>setcolor - low level plot function</p>
+</dd>
+</dl>
+<p>Syntax:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.setcolor(colorval)</span></code></p>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.setcolor()</span></code> sets the color (or pen number for HP plotter) used for <a class="reference internal" href="#plt" title="plt"><code class="xref py py-func docutils literal notranslate"><span class="pre">plt()</span></code></a>.</p>
+<p>Argument to <code class="docutils literal notranslate"><span class="pre">setcolor()</span></code> produces the following screen
+colors with an EGA adapter (left), X11 graphics (right):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0      black  (pen 1 on HP plotter)         black
+1      blue                                 white
+2      green                                yellow
+3      cyan                                 red
+4      red                                  green
+5      magenta                              blue
+6      brown                                violet
+7      light gray  (pen 1 on HP plotter)    cyan
+...
+15     white                                green
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="settext">
+<span class="sig-name descname"><span class="pre">settext</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settext" title="Link to this definition"></a></dt>
+<dd><p>obsolete. See <a class="reference internal" href="#plt" title="plt"><code class="xref py py-func docutils literal notranslate"><span class="pre">plt()</span></code></a>.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="plt">
+<span class="sig-name descname"><span class="pre">plt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plt" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Name:</dt><dd><p>plt - low level plot function</p>
+</dd>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.plt(mode)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.plt(mode,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.plt()</span></code> plots points, lines, and text using
+the Tektronix 4010 standard. Absolute
+coordinates of the lower left corner and upper right corner of the plot
+region are (0,0) and (1000, 780) respectively.</p>
+<p>TURBO-C graphics drivers for VGA, EGA, CGA, and Hercules are automatically
+selected when the first plotting command is executed. An HP7475 compatible
+plotter may be connected to COM1:.</p>
+</div></blockquote>
+<p>Options:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-1)</span></code></dt><dd><p>Place cursor in home position.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-2)</span></code></dt><dd><p>Subsequent text printed starting at current coordinate position.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-3)</span></code></dt><dd><p>Erase screen, cursor in home position.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-5)</span></code></dt><dd><p>Open HP plotter on PC; the plotter will stay open until another <code class="docutils literal notranslate"><span class="pre">h.plt(-5)</span></code> is executed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(0,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>Plot point.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(1,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>Move to point without plotting.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(2,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>Draw vector from former position to new position given by (x,y).
+(<em>mode</em> can be any number &gt;= 2)</p>
+</dd>
+</dl>
+<p>Several extra options are available for X11 graphics.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-4,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>Erases area defined by previous plot position and
+the point, (x, y).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-5)</span></code></dt><dd><p>Fast mode. By default, the X11 server is flushed on every
+plot command so one can see the plot as it develops. Fast mode caches plot
+commands and only flushes on <code class="docutils literal notranslate"><span class="pre">plt(-1)</span></code> and <code class="docutils literal notranslate"><span class="pre">setcolor()</span></code>.  Fast mode is
+three times faster than the default mode.  It is most useful when
+plotting is the rate limiting step of the simulation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.plt(-6)</span></code></dt><dd><p>X11 server flushed on every plot call.</p>
+</dd>
+</dl>
+<p>When the graphic window is resized, NEURON is notified after
+the next erase command.</p>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">setcolor</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>      <span class="c1"># color 3 is red for X11; to use with EGA, change to 4</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span> <span class="c1"># y-axis</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span> <span class="c1"># x-axis (NOTE: does not correspond to origin of sine wave)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">550</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1001</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">300</span> <span class="o">+</span> <span class="mi">200</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="mf">100.</span><span class="p">))</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">plt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># close plot</span>
+</pre></div>
+</div>
+<img alt="../../_images/plotsin2.png" class="align-center" src="../../_images/plotsin2.png" />
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#plot" title="plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot()</span></code></a>, <a class="reference internal" href="#axis" title="axis"><code class="xref py py-func docutils literal notranslate"><span class="pre">axis()</span></code></a>, <code class="xref py py-func docutils literal notranslate"><span class="pre">lw()</span></code>, <a class="reference internal" href="#setcolor" title="setcolor"><code class="xref py py-func docutils literal notranslate"><span class="pre">setcolor()</span></code></a>, <a class="reference internal" href="graph.html#Graph" title="Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a></p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>EGA adaptor used extensively but CGA and Hercules used hardly at all.</p>
+<p>When the X11 graphic window is killed, NEURON exits without asking about
+unsaved edit buffers.</p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="shapebox.html" class="btn btn-neutral float-left" title="MenuExplore" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../analysis/programmatic.html" class="btn btn-neutral float-right" title="Programmatic Analysis Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

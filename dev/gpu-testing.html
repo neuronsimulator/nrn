@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing GPU functionality &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Workflow Code Paths" href="workflow-code-paths.html" />
+    <link rel="prev" title="Data structures" href="data-structures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">NEURON Development topics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="HOCInterpreter/HOCInterpreter.html">HOC Interpreter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-do-i/how-do-i.html">How-Do-I Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data-structures.html">Data structures</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Testing GPU functionality</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#accessing-gpu-resources">Accessing GPU resources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-neuron-tests">Running NEURON tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-tests-manually">Running tests manually</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="workflow-code-paths.html">Workflow Code Paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setuptools/setuptools.html">setuptools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morphology/morphology.html">Morphology loading in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hocdomain-sphinx.html">HOC Sphinx Domain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">NEURON Development topics</a></li>
+      <li class="breadcrumb-item active">Testing GPU functionality</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dev/gpu-testing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing-gpu-functionality">
+<h1>Testing GPU functionality<a class="headerlink" href="#testing-gpu-functionality" title="Link to this heading"></a></h1>
+<p>This section provides information and links that help with testing <a class="reference internal" href="../coreneuron/index.html#coreneuron"><span class="std std-ref">CoreNEURON</span></a>’s GPU support.
+Other sections of the documentation that may be relevant are:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../coreneuron/installation.html#getting-coreneuron"><span class="std std-ref">Getting CoreNEURON</span></a> section, which documents both building from source with CoreNEURON support and installing Python wheels.</p></li>
+<li><p>The <a class="reference internal" href="../coreneuron/running-a-simulation.html#coreneuron-running-a-simulation"><span class="std std-ref">Running a simulation</span></a> section, which explains the basics of porting a NEURON model to use CoreNEURON.</p></li>
+<li><p>The <a class="reference internal" href="../install/debug.html#running-gpu-benchmarks"><span class="std std-ref">Running GPU benchmarks</span></a> section, which outlines how to use profiling tools such as Caliper, NVIDIA NSight Systems, and NVIDIA NSight Compute.</p></li>
+</ul>
+<p>This section aims to add some basic information about how to test if GPU execution is working.
+This might be useful if, for example, you need to test GPU execution on a new system.</p>
+<section id="accessing-gpu-resources">
+<h2>Accessing GPU resources<a class="headerlink" href="#accessing-gpu-resources" title="Link to this heading"></a></h2>
+<p>If your local system has an (NVIDIA) GPU installed then you can probably skip this section.
+The <code class="docutils literal notranslate"><span class="pre">nvidia-smi</span></code> tool may be useful to check this; it will show the GPUs attached to a system:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>nvidia-smi
+<span class="go">+-----------------------------------------------------------------------------+</span>
+<span class="go">| NVIDIA-SMI 460.91.03    Driver Version: 460.91.03    CUDA Version: 11.2     |</span>
+<span class="go">|-------------------------------+----------------------+----------------------+</span>
+<span class="go">| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |</span>
+<span class="go">| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |</span>
+<span class="go">|                               |                      |               MIG M. |</span>
+<span class="go">|===============================+======================+======================|</span>
+<span class="go">|   0  Quadro P2200        Off  | 00000000:01:00.0 Off |                  N/A |</span>
+<span class="go">| 45%   33C    P8     4W /  75W |     71MiB /  5049MiB |      2%      Default |</span>
+<span class="go">|                               |                      |                  N/A |</span>
+<span class="go">+-------------------------------+----------------------+----------------------+</span>
+</pre></div>
+</div>
+<p>On a university cluster or supercomputer system then you will typically need to pass some kind of extra constraint to the job scheduler.
+For example on the BlueBrain5 system, which uses Slurm, you can allocate a GPU node using the <code class="docutils literal notranslate"><span class="pre">volta</span></code> constraint:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">[login node] $ </span>salloc<span class="w"> </span>-A<span class="w"> </span>&lt;account&gt;<span class="w"> </span>-C<span class="w"> </span>volta
+<span class="go">salloc: Granted job allocation 294001</span>
+<span class="go">...</span>
+<span class="gp">[compute node] $ </span>nvidia-smi
+<span class="go">+-----------------------------------------------------------------------------+</span>
+<span class="go">| NVIDIA-SMI 470.57.02    Driver Version: 470.57.02    CUDA Version: 11.4     |</span>
+<span class="go">|-------------------------------+----------------------+----------------------+</span>
+<span class="go">| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |</span>
+<span class="go">| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |</span>
+<span class="go">|                               |                      |               MIG M. |</span>
+<span class="go">|===============================+======================+======================|</span>
+<span class="go">|   0  Tesla V100-SXM2...  Off  | 00000000:1A:00.0 Off |                  Off |</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+</section>
+<section id="running-neuron-tests">
+<h2>Running NEURON tests<a class="headerlink" href="#running-neuron-tests" title="Link to this heading"></a></h2>
+<p>If you have configured NEURON with CoreNEURON, CoreNEURON GPU support and tests (<a class="reference internal" href="../cmake_doc/options.html#cmake-nrn-enable-tests-option"><span class="std std-ref">-DNRN_ENABLE_TESTS=ON</span></a>) enabled then simply running</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ctest<span class="w"> </span>--output-on-failure
+</pre></div>
+</div>
+<p>in your CMake build directory will execute a large number of tests, many of them including GPU execution.
+You can filter which tests are run by name using the <code class="docutils literal notranslate"><span class="pre">-R</span></code> option to CTest, for example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ctest<span class="w"> </span>--output-on-failure<span class="w"> </span>-R<span class="w"> </span>gpu
+<span class="go">Test project /path/to/your/build</span>
+<span class="go">Start  42: coreneuron_modtests::direct_py_gpu</span>
+<span class="go"> 1/53 Test  #42: coreneuron_modtests::direct_py_gpu .............................   Passed    1.98 sec</span>
+<span class="go">      Start  43: coreneuron_modtests::direct_hoc_gpu</span>
+<span class="go"> 2/53 Test  #43: coreneuron_modtests::direct_hoc_gpu ............................   Passed    1.03 sec</span>
+<span class="go">      Start  44: coreneuron_modtests::spikes_py_gpu</span>
+<span class="go"> ...</span>
+</pre></div>
+</div>
+</section>
+<section id="running-tests-manually">
+<h2>Running tests manually<a class="headerlink" href="#running-tests-manually" title="Link to this heading"></a></h2>
+<p>It is sometimes convenient to run basic tests outside the CTest
+infrastructure.
+A particularly useful test case is the <code class="docutils literal notranslate"><span class="pre">ringtest</span></code> that is included in
+the CoreNEURON repository.
+This is very convenient because binary input data files for CoreNEURON
+are committed to the repository – meaning that the test can be run
+without NEURON, Python, HOC, and friends – and the required mechanisms
+are compiled as part of the standard NEURON build.
+To run this test on CPU you can, from your build directory, run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./bin/x86_64/special-core<span class="w"> </span>-d<span class="w"> </span>../external/coreneuron/tests/integration/ring
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>where it is assumed that <code class="docutils literal notranslate"><span class="pre">..</span></code> is the source directory.
+To enable GPU execution, add the <code class="docutils literal notranslate"><span class="pre">--gpu</span></code> option:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./bin/x86_64/special-core<span class="w"> </span>-d<span class="w"> </span>../external/coreneuron/tests/integration/ring<span class="w"> </span>--gpu
+<span class="go">Info : 4 GPUs shared by 1 ranks per node</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>You should see that the statistics printed at the end of the simulation
+are the same.
+It can also be useful to enable some basic profiling, for example by using
+NVIDIA’s NSight Systems utility <code class="docutils literal notranslate"><span class="pre">nsys</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>nsys<span class="w"> </span>nvprof<span class="w"> </span>./bin/x86_64/special-core<span class="w"> </span>-d<span class="w"> </span>../external/coreneuron/tests/integration/ring<span class="w"> </span>--gpu
+<span class="go">WARNING: special-core and any of its children processes will be profiled.</span>
+
+<span class="go">Collecting data...</span>
+<span class="go">Info : 4 GPUs shared by 1 ranks per node</span>
+<span class="go">...</span>
+<span class="go">Number of spikes: 37</span>
+<span class="go">Number of spikes with non negative gid-s: 37</span>
+<span class="go">Processing events...</span>
+<span class="go">...</span>
+<span class="go">CUDA API Statistics:</span>
+
+<span class="go">Time(%)  Total Time (ns)  Num Calls  Average (ns)   Minimum (ns)  Maximum (ns)  StdDev (ns)             Name</span>
+<span class="go">-------  ---------------  ---------  -------------  ------------  ------------  -----------  --------------------------</span>
+<span class="go">   42.7    2,127,723,623    136,038       15,640.7         3,630    10,224,640     59,860.5  cuLaunchKernel</span>
+<span class="go">...</span>
+
+<span class="go">CUDA Kernel Statistics:</span>
+
+<span class="go">Time(%)  Total Time (ns)  Instances  Average (ns)  Minimum (ns)  Maximum (ns)  StdDev (ns)                                                  Name</span>
+<span class="go">-------  ---------------  ---------  ------------  ------------  ------------  -----------  ----------------------------------------------------------------------------------------------------</span>
+<span class="go">   32.3      346,133,763      8,000      43,266.7        42,175        50,080      1,435.3  nvkernel__ZN10coreneuron18solve_interleaved1Ei_F1L653_4</span>
+<span class="go">   12.7      136,155,806      8,002      17,015.2         3,615     1,099,738     90,544.0  nvkernel__ZN10coreneuron14nrn_cur_ExpSynEPNS_9NrnThreadEPNS_9Memb_listEi_F1L375_7</span>
+<span class="go">   10.4      111,258,439      8,002      13,903.8         3,199     1,314,489     73,556.3  nvkernel__ZN10coreneuron11nrn_cur_pasEPNS_9NrnThreadEPNS_9Memb_listEi_F1L274_4</span>
+<span class="go">   10.1      108,647,844      8,000      13,581.0         3,391     1,274,394     70,309.4  nvkernel__ZN10coreneuron16nrn_state_ExpSynEPNS_9NrnThreadEPNS_9Memb_listEi_F1L418_10</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>This can be helpful to confirm that compute kernels are really being
+launched on the GPU.
+Substrings such as <code class="docutils literal notranslate"><span class="pre">solve_interleaved1</span></code>, <code class="docutils literal notranslate"><span class="pre">solve_interleaved2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nrn_cur_</span></code> and <code class="docutils literal notranslate"><span class="pre">nrn_state_</span></code> in these kernel names indicate that the
+computationally heavy parts of the simulation are indeed being executed
+on the GPU.
+This test dataset is extremely small, so you should not pay much
+attention to the simulation time in this case.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The kernel names, which start with <code class="docutils literal notranslate"><span class="pre">nvkernel__ZN10coreneuron</span></code>
+above, are implementation details of the OpenACC or OpenMP
+implementation being used.
+They can also depend on whether you use MOD2C or NMODL to translate
+MOD files.
+If you want to do any more sophisticated profiling then you should
+use a profiling tool such as Caliper that can access the
+well-defined human-readable names for these kernels that NEURON and
+CoreNEURON define.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data-structures.html" class="btn btn-neutral float-left" title="Data structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="workflow-code-paths.html" class="btn btn-neutral float-right" title="Workflow Code Paths" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

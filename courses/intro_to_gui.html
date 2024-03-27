@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction to the GUI &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Interactive Modeling" href="interactive_modeling.html" />
+    <link rel="prev" title="NEURON Course Exercises" href="exercises2018.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Introduction to the GUI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#physical-system">Physical System</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#conceptual-model">Conceptual Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#exercises">Exercises</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Introduction to the GUI</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/intro_to_gui.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction-to-the-gui">
+<span id="intro-to-gui"></span><h1>Introduction to the GUI<a class="headerlink" href="#introduction-to-the-gui" title="Link to this heading"></a></h1>
+<section id="physical-system">
+<h2>Physical System<a class="headerlink" href="#physical-system" title="Link to this heading"></a></h2>
+<p>An electrolyte-containing vesicle with a lipid bilayer membrane that has no ion channels.</p>
+<section id="conceptual-model">
+<h3>Conceptual Model<a class="headerlink" href="#conceptual-model" title="Link to this heading"></a></h3>
+<p>A capacitor</p>
+<img alt="../_images/bilayer.gif" class="align-center" src="../_images/bilayer.gif" />
+</section>
+<section id="simulation">
+<h3>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h3>
+<section id="computational-implementation-of-the-conceptual-model">
+<h4>Computational implementation of the conceptual model<a class="headerlink" href="#computational-implementation-of-the-conceptual-model" title="Link to this heading"></a></h4>
+<p>We’re going to use the CellBuilder to make a cell that has surface area = 100 um2 and no ion channels.</p>
+<p>Alternatively, we could do this in HOC</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">create</span><span class="w"> </span><span class="n">soma</span>
+<span class="p">.</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="n">plus</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="p">.</span>
+</pre></div>
+</div>
+<p>or in Python</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;soma&#39;</span><span class="p">)</span>
+<span class="c1"># . . . plus more code . . .</span>
+</pre></div>
+</div>
+<ol class="arabic">
+<li><p><strong>Start in whatever directory you want to use for this exercise</strong></p>
+<p>Open a terminal or console (users of Windows versions prior to Windows 10 Anniversary Edition may prefer to use the bash shell in the NEURON program group), then change to that directory via e.g.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">path_to_your_Desktop/course/intro_to_gui</span></code></p>
+</div></blockquote>
+</li>
+<li><p><strong>Launch python</strong></p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">python</span></code></p>
+</div></blockquote>
+</li>
+<li><p><strong>Make Python load NEURON’s h and gui models by entering this command at the &gt;&gt;&gt; prompt:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+</pre></div>
+</div>
+<ol class="arabic" start="4">
+<li><p><strong>Get a CellBuilder</strong></p>
+<blockquote>
+<div><p><span class="menuselection">Main Menu ‣ Build ‣ CellBuilder</span></p>
+<img alt="../_images/cellbuilder.png" class="align-center" src="../_images/cellbuilder.png" />
+</div></blockquote>
+</li>
+<li><p><strong>Specify surface area</strong></p></li>
+</ol>
+<p><span class="menuselection">CellBuilder ‣ geometry</span></p>
+<p>Make sure there is a check mark in the “Specify Strategy” box.</p>
+<p>Select “area”.</p>
+<p>Click on “Specify Strategy” to clear the check mark.</p>
+<p>Make sure that area is 100 um^2.</p>
+<ol class="arabic" start="6">
+<li><p><strong>Click on “Continuous Create” box so that a check mark appears in it.</strong></p>
+<blockquote>
+<div><img alt="../_images/continuouscreate.png" class="align-center" src="../_images/continuouscreate.png" />
+</div></blockquote>
+</li>
+</ol>
+<p>Congratulations! You now have a model cell with a soma that has surface area = 100 um^2.</p>
+<p><strong>Save this to a “session file” so you can recreate it whenever you like.</strong></p>
+<p><span class="menuselection">NEURON Main Menu ‣ File ‣ save session</span></p>
+</section>
+<section id="using-the-computational-model">
+<h4>Using the computational model<a class="headerlink" href="#using-the-computational-model" title="Link to this heading"></a></h4>
+<p>You’ll need these items:</p>
+<ul class="simple">
+<li><p>controls for running simulations</p></li>
+<li><p>a graph that shows somatic membrane potential v. time</p></li>
+<li><p>a current clamp to inject a current pulse into the model cell</p></li>
+<li><p>a graph that shows the stimulus current vs. time</p></li>
+</ul>
+<p><em>Be sure to save your work to a session file as you go along!</em></p>
+<p><strong>Make a RunControl panel for launching simulations.</strong></p>
+<p><span class="menuselection">Neuron Main Menu (NMM) ‣ Tools ‣ RunControl</span></p>
+<blockquote>
+<div><img alt="../_images/runcontrol.png" class="align-center" src="../_images/runcontrol.png" />
+</div></blockquote>
+<p><strong>Make a graph that shows somatic membrane potential vs. time</strong></p>
+<p><span class="menuselection">NMM ‣ Graph ‣ Voltage axis</span></p>
+<blockquote>
+<div><img alt="../_images/voltageaxis.png" class="align-center" src="../_images/voltageaxis.png" />
+</div></blockquote>
+<p>Now run a simulation by clicking on RunControl’s “Init &amp; Run”. What happened?</p>
+<p><strong>Make a current clamp.</strong></p>
+<p><span class="menuselection">NMM ‣ Tools ‣ Point Processes ‣ Managers ‣ Point Manager</span></p>
+<blockquote>
+<div><img alt="../_images/pointmanager.png" class="align-center" src="../_images/pointmanager.png" />
+</div></blockquote>
+<p>Make this an IClamp.</p>
+<blockquote>
+<div><p><span class="menuselection">PointProcessManager ‣ SelectPointProcess ‣ IClamp</span></p>
+</div></blockquote>
+<p>Show the IClamp’s Parameters panel</p>
+<blockquote>
+<div><p><span class="menuselection">PPM ‣ Show ‣ Parameters</span></p>
+</div></blockquote>
+<p>Make it deliver a 1 nA x 1 ms current pulse that starts at 1 ms.</p>
+<blockquote>
+<div><p>del (ms) = 1</p>
+<p>dur (ms) = 1</p>
+<p>amp (nA) = 1</p>
+</div></blockquote>
+<p><strong>Make a graph that shows the stimulus current vs. time.</strong></p>
+<p><span class="menuselection">NMM ‣ Graph ‣ Current axis</span></p>
+<blockquote>
+<div><img alt="../_images/currentaxis.png" class="align-center" src="../_images/currentaxis.png" />
+</div></blockquote>
+<p>Make it show the IClamp’s i</p>
+<ul class="simple">
+<li><p>Click on the graph’s menu button (left upper corner of its canvas) and select “Plot what?”</p></li>
+<li><p><span class="menuselection">Plot what? ‣ Show ‣ Objects</span></p></li>
+<li><p>Select IClamp (left panel)</p></li>
+<li><p>Select 0 (middle panel)</p></li>
+<li><p>Select i (middle panel)</p></li>
+<li><p>Plot what?’s edit field should now contain IClamp[0].i</p></li>
+<li><p>Click on Accept</p></li>
+</ul>
+<p>Run a simulation.</p>
+<p>Too big? Divide IClamp.amp by 10 and try again.</p>
+<blockquote>
+<div><img alt="../_images/iclampamptryagain.png" class="align-center" src="../_images/iclampamptryagain.png" />
+</div></blockquote>
+</section>
+</section>
+<section id="exercises">
+<h3>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Run a simulation.</strong></p></li>
+</ol>
+<p>Double the duration and halve the amplitude of the injected current (injected charge is constant).</p>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Select <span class="menuselection">Show ‣ Parameters</span> in the PointProcessManager window to view the field editors.</p></li>
+<li><p>Multiplying a field editor value by 2 can be done by typing <code class="docutils literal notranslate"><span class="pre">*2</span></code> &lt;return&gt; at the end of the value. Divide by typing <code class="docutils literal notranslate"><span class="pre">/2</span></code> &lt;return&gt;.</p></li>
+<li><p>The mouse cursor must be in the panel that contains the field editor.</p></li>
+</ul>
+<p>Return the duration and amplitude to their default values (click in the checkmark box with left mouse button).</p>
+<p>Halve the duration and double the amplitude.</p>
+<ol class="arabic" start="2">
+<li><p><strong>Insert passive conductance channels, then see ow this affects the model.</strong></p>
+<p>In the CellBuilder, click on the Biophysics radio button.</p>
+<p>Make sure there is a check mark in the “Specify Strategy” box.</p>
+<p>Click on the “pas” button so that it shows a check mark.</p>
+<img alt="../_images/passiveconductancechannel.png" class="align-center" src="../_images/passiveconductancechannel.png" />
+<p>Now repeat exercise 1.</p>
+<p>Notice that v tends toward -70 mV, which is the default reversal for the passive channel. This is because the initial condition v = -65 is not the steady state for this model.</p>
+<p>In the “RunControl” set the Init field editor to -70 and repeat the run.</p>
+<p>To rescale a Graph automatically, click on its menu box (square in upper left corner of its canvas) and select “View=Plot”</p>
+</li>
+<li><p><strong>Change the stimulus amplitude to 1A (1e9 nA) and run. Rescale the graphs to see the result.</strong></p>
+<p>This is an example of a model that is a poor representation of the physical system.</p>
+</li>
+<li><p><strong>Change the stimulus duration to 0.01 ms.</strong></p>
+<p>This is an example of a simulation that is a poor representation of the model.</p>
+<p>Change the number of Points plotted/ms to 100 and dt to 0.01 ms and run again.</p>
+</li>
+<li><p><strong>Increase the amplitude to 1e4 nA, cut the duration to 1e-5 ms, increase Points plotted/ms to 1e5, and start a simulation…</strong></p>
+<p>After a few seconds of eternity, stop the simulation by clicking on RunControl / stop</p>
+<p>Bring up a Variable Time Step tool.</p>
+<p><span class="menuselection">NMM ‣ Tools ‣ VariableStepControl</span></p>
+<img alt="../_images/variablestepcontrol.png" class="align-center" src="../_images/variablestepcontrol.png" />
+<p>Select “Use variable dt” and try again.</p>
+<p>When you’re done, use <span class="menuselection">NMM ‣ File ‣ Quit</span> to exit NEURON</p>
+<p><a class="reference download internal" download="" href="../_downloads/e17c4e8e027e03eed76eccf16ff98f9c/bilayer.hoc"><code class="xref download docutils literal notranslate"><span class="pre">bilayer.hoc</span></code></a> contains a properly configured CellBuilder, plus a custom interface for running simulations. The one item it doesn’t have is a VariableStepControl.</p>
+<p><a class="reference download internal" download="" href="../_downloads/e17c4e8e027e03eed76eccf16ff98f9c/bilayer.hoc"><code class="xref download docutils literal notranslate"><span class="pre">bilayer.hoc</span></code></a> is actually a session file that was given the “hoc” extension so that MSWin users could launch it by double clicking on the file name. For didactic reasons we prefer that you load it from Python instead.</p>
+<ol class="arabic simple">
+<li><p>Save <a class="reference download internal" download="" href="../_downloads/e17c4e8e027e03eed76eccf16ff98f9c/bilayer.hoc"><code class="xref download docutils literal notranslate"><span class="pre">bilayer.hoc</span></code></a> to your machine, open up in a terminal, then cd to the directory that contains bilayer.hoc</p></li>
+<li><p>Launch Python from the command line.</p></li>
+<li><p>At the &gt;&gt;&gt; prompt enter the commands</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;bilayer.hoc&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="exercises2018.html" class="btn btn-neutral float-left" title="NEURON Course Exercises" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="interactive_modeling.html" class="btn btn-neutral float-right" title="Interactive Modeling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

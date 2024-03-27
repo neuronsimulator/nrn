@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON Source and Release Management Guide &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="NEURON Software Policies" href="../policies/policies.html" />
+    <link rel="prev" title="NEURON Versioning and Release Guidelines" href="../guidelines/SCMGuidelines.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON SCM and Release</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../guidelines/SCMGuidelines.html">NEURON Versioning and Release Guidelines</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">NEURON Source and Release Management Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">INTRODUCTION</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#definitions">Definitions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#git-and-github">GIT and GITHUB</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#git-branches-and-tags">Git Branches and Tags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#github">GitHub</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#git-operations">GIT OPERATIONS</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#checkout-stage-commit">Checkout, Stage, Commit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#checkout-reset">Checkout &amp; Reset</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#merging-branches">Merging Branches</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#best-practices">BEST PRACTICES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#creating-changes-pull-requests">Creating Changes/Pull Requests</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#bring-up-to-date-merge-vs-rebase">Bring up to date: Merge vs Rebase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reviewing">Reviewing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-releases">CREATING RELEASES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#neuron-s-release-requirements">NEURON’s Release Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#versioning-schemes">VERSIONING SCHEMES</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#existing-conventions">Existing Conventions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#release-life-cycle-alpha-beta-release-candidate">Release Life Cycle: Alpha, Beta, Release Candidate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#a-versioning-scheme-for-neuron">A Versioning Scheme for NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#release-management-with-git">RELEASE MANAGEMENT WITH GIT</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#git-branching-models">Git Branching Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neuron-release-management-guidelines">NEURON Release Management Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#references">REFERENCES</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#document-history">DOCUMENT HISTORY</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#footnotes">Footnotes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../policies/policies.html">NEURON Software Policies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON SCM and Release</a></li>
+      <li class="breadcrumb-item active">NEURON Source and Release Management Guide</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/scm/guide/SCMGuide.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-source-and-release-management-guide">
+<h1>NEURON Source and Release Management Guide<a class="headerlink" href="#neuron-source-and-release-management-guide" title="Link to this heading"></a></h1>
+<p><strong>A version scheme and release management workflow with Git &amp; GitHub</strong></p>
+<p>&#64;May 2020 - The NEURON core developers team</p>
+<section id="introduction">
+<h2>INTRODUCTION<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>NEURON [1] is a simulator for detailed neuronal activity whose implementation started in the 70s as part of the research works of its author, Michael Hines. It has, since then, grown to become an established, perhaps the reference, simulator of its kind. During this period it has undergone major code changes and contributions from various additional authors, as well as been subject to development with diverse technologies and conventions for code management and deployment.</p>
+<p>Similarly, over the last years, we have witnessed a profound change in the software development process. Especially thanks to the success of open-source software, a number of professional-grade development technologies have become available to any software project. NEURON, opportunely, adopted some of these technologies, namely <em>Git</em> which became the reference source code version control in open-source software.</p>
+<p>Despite the move to git and the continuous adoption of more recent technologies, e.g. for Continuous Integration, there hasn’t been guidelines for a streamlined and integrated development process. Namely, we have not revisited the definition of versions and how they are handled in Git (as tags, branches,…) or GitHub (as Milestones), etc.</p>
+<p>Following discussions within the recently formed Neuron Core Developers group, this document aims to compile best-practices and agreed workflows into a set of guidelines. It is split into two main parts: first, it provides a solid technical background on SCM technologies, namely git and its operations; second, it presents specific guidelines for effective release management in NEURON.</p>
+<section id="definitions">
+<h3>Definitions<a class="headerlink" href="#definitions" title="Link to this heading"></a></h3>
+<p>With the intent of simplifying the language in this document, bringing the readers to a common understanding and disambiguating terms that might not have a clear definition, we start with a set of definitions (to hold in the scope of Neuron).</p>
+<ul class="simple">
+<li><p><strong>CI [Continuous Integration]</strong>: The practice of adding (continuously) changes to a software repository, typically on the main development line. To avoid the frequent changes from introducing hard-to-track bugs, before the change is accepted, a test-suite should run. Such “test-before-merge” practice is so common for CI that the term became associated with technologies for test automation (e.g: Jenkins and GitHub Actions).</p></li>
+<li><p><strong>Issue Tracker</strong> - A system to report defects or requests for software changes.</p></li>
+<li><p><strong>SCM, VCS</strong> [Source Code Management, or Version Control System] - A kind of software that tracks all the changes to applications source code and associated metadata e.g.: time and author of the change. Git, and previously SVN, are very popular open source SCMs.</p></li>
+<li><p><strong>Semantic Versioning</strong> - A versioning scheme in which a version identifier, e.g. “1.2.0a”, provides insights about the application compatibility, functionality and stability.</p></li>
+</ul>
+</section>
+</section>
+<section id="git-and-github">
+<h2>GIT and GITHUB<a class="headerlink" href="#git-and-github" title="Link to this heading"></a></h2>
+<p>Git <a class="reference internal" href="../../guide/data/units.dat.html#id184"><span class="std std-ref">2</span></a> is the Source Code Management system used in NEURON. Originally created by Linus Torvalds for the Linux Kernel and released in 2005, it became extremely popular for open-source projects during the 2010s (2018 quota estimate: 87.2%), in part thanks to GitHub.</p>
+<p>Having such a demanding use-case at its origin, Git design and feature-set provide excellent support for large projects and large teams working in parallel. Some of the design principles are:</p>
+<ul class="simple">
+<li><p><strong>Distributed architecture</strong> : Git, unlike e.g. SVN, doesn’t have a centralized remote repository on a server. Instead each “clone” is a fully autonomous repository from which users can query the history or even further clone from.</p></li>
+<li><p><strong>Branching [/merge] model</strong>: Git supports the so-called “branches” representing new development paths. This model enables developers to work in parallel on new features or bug-fixes without compromising other developers’ work. Given the traceability to the most common ancestor, two branches may be merged again when the changes are complete, very often without user intervention.</p></li>
+<li><p><strong>Performance:</strong> On large projects, tracking changes and deltas of thousands of files may become computationally heavy. Git was designed with performance as a main goal. It builds on a local fs-like database and state-of-the-art DAG algorithms. Besides it’s C.</p></li>
+<li><p><strong>Flexibility:</strong> Git started off as a set of low-level commands that are still available nowadays: the “Plumbing”. They were mostly meant to be used by high-level applications but can be directly used to make deep (and breaking!) changes in the repository. Later “Porcelain” commands were added for the high-level operations we mostly know git for.</p></li>
+<li><p><strong>History Rewriting</strong> : Git encourages keeping a clean history, even if it requires changing the repository history, and so it provides great (sometimes extreme) tools to do so: <code class="docutils literal notranslate"><span class="pre">commit</span> <span class="pre">--amend,</span> <span class="pre">rebase,</span> <span class="pre">merge</span> <span class="pre">--squash</span></code>. However it must be done only in situations it won’t affect other collaborators or create inconsistencies. For instance, long standing branches should never ever have its history rewritten. More on this later.</p></li>
+</ul>
+<section id="git-branches-and-tags">
+<h3>Git Branches and Tags<a class="headerlink" href="#git-branches-and-tags" title="Link to this heading"></a></h3>
+<p>Besides <em>Branches</em> Git also implements <em>Tags</em>, i.e. labels to important revisions, otherwise only identifiable by their inherent hash. Although Branches and Tags serve different purposes, they are basically the same thing: they point to a certain revision so that, e.g., the code can be easily checked-out. However, while <em>Branches</em> are supposed to be updated whenever there’s a new commit, <em>Tags</em> are immutable. Once a Tag is created and made public it shall never be deleted or overwritten. As mentioned, rewriting public history can lead to disastrous consequences.</p>
+<p>In many projects Tags are used to mark certain revisions as special, maybe because they are ready for public release, or it’s a milestone in the development of some functionality, etc. Despite the flexibility, it is crucial to adhere to a standard scheme for effective collaboration.</p>
+</section>
+<section id="github">
+<h3>GitHub<a class="headerlink" href="#github" title="Link to this heading"></a></h3>
+<p>GitHub is a development platform and, in some sense, a software collaboration portal based on Git, with a number of features very useful for software development [3] [4], among them :</p>
+<ul class="simple">
+<li><p><strong>Issues</strong> - An Issue Tracker where users and developers can report and discuss enhancements, bugs and tasks of the project.</p></li>
+<li><p><strong>Milestones</strong> - A Release Planner in which project managers can define which Issues (features + bug fixes) are to be included in each release/milestone.</p></li>
+<li><p><strong>Pull Requests</strong> - A patch integration model adapted to large teams or open-source projects, where any developer may propose a change to be reviewed and eventually merged by a project lead.</p></li>
+<li><p><strong>Forks</strong> - Clones of other GitHub projects so that developers without any permission in the original repository can still create Pull Requests. One of the issues with forks is the risk of branches to become out of sync with the original repo. Therefore for small/core teams it may be preferable to grant main developers the possibility of creating branches.</p></li>
+<li><p><strong>Support for CI</strong> (and third party tools): GitHub integrates with a number of online services for testing, deployment, etc (they have a public API) so that Continuous Integration or other methodologies can be employed.</p></li>
+</ul>
+<p>GitHub provides these great tools on top of a plain Git repository, and therefore it can be thought of as a “GUI-on-steroids” for Git. Clicking to merge a Pull-Request will effectively trigger a “git merge” from the branch associated with that Pull-Request into the target branch, e.g. <em>master</em>.</p>
+</section>
+</section>
+<section id="git-operations">
+<h2>GIT OPERATIONS<a class="headerlink" href="#git-operations" title="Link to this heading"></a></h2>
+<section id="checkout-stage-commit">
+<h3>Checkout, Stage, Commit<a class="headerlink" href="#checkout-stage-commit" title="Link to this heading"></a></h3>
+<p>Once a repository exists locally (via git clone, or git init) one can start tracking files. However, unlike many SCMs, between the local file system and the repository itself git provides a Staging Area (a.k.a. Index). This area is a basically a temporary place for changes to “commit”.</p>
+<p><img alt="" src="../../_images/image6.png" /></p>
+<p>It is pre-filled with the same contents of the commit being checked-out. The user can then add local files here (git add) and commit them or, eventually bring them back to the local filesystem (also git checkout).</p>
+<p>The Staging area is thus a central block for the fundamental git operations. Nevertheless it can be a source of confusion for certain usages with git checkout or reset, discussed next.</p>
+</section>
+<section id="checkout-reset">
+<h3>Checkout &amp; Reset<a class="headerlink" href="#checkout-reset" title="Link to this heading"></a></h3>
+<p>When checking out a revision, git checkout has a straightforward behavior: it brings in a certain revision (fully!) to <strong>both</strong> Working and Staging areas. However sometimes we may want to check-out just a few files. Git allows that as well: the user can provide file names after a double-dash, e.g.: git checkout &lt;rev&gt; – &lt;file1&gt; &lt;file2&gt;… (be sure to provide <strong>&lt;rev&gt;</strong> ).</p>
+<p>Git reset can similarly bring the files from a certain revision to the Staging and Working areas and thus is often a source of confusion. However it does it with a fundamental difference: it’s purpose is to <strong>overwrite</strong> the current revision, while checkout “closes” it and opens a new one to work on. These differences can be very subtle though, especially when providing file names.</p>
+<p><img alt="" src="../../_images/image5.png" /></p>
+<p>In the diagram one can see the several usages of reset and checkout, that together are able to move data downstream among all areas (for upstream are the well known <em>add</em> and <em>commit</em>). One can see some warning signs that alert for the danger of irrecoverably overwriting files. Namely we see that “git reset –hard” is obviously very dangerous, it will overwrite all files, <strong>discarding changes</strong> , to both areas, <strong>similar to what checkout does</strong> when “checkout &lt;ref&gt; – &lt;files&gt;”.</p>
+<p>Notice also the behavior of checkout when no &lt;ref&gt; is provided: it gets files from the Staging Area which, for the most times, is not the intended behavior.</p>
+<p>Lastly notice that “reset – &lt;files&gt;” has some special meaning: it will overwrite the Staging Area with contents from the Repo. Although it may sound worthless at first, it is the standard way of undoing changes eventually introduced by an unwanted “git add”, e.g.:</p>
+<blockquote>
+<div><p>$ git add src# add all files under src.</p>
+</div></blockquote>
+<p>Oh no! There was src/secret_file</p>
+<blockquote>
+<div><p>$ git reset – src/secret_file</p>
+</div></blockquote>
+</section>
+<section id="merging-branches">
+<h3>Merging Branches<a class="headerlink" href="#merging-branches" title="Link to this heading"></a></h3>
+<p>When a feature or a fix is ready, or for some reason a developer wants to integrate changes from a branch into another, he must do a “merge”. There are different variants of merges, namely “merge –squash” that became very popular in some workflows, namely in GitHub, and ‘–fast-forward’. But let’s start off with normal merges, their virtues and shortcomings. Consider the following Figure.</p>
+<p><img alt="" src="../../_images/image4.png" /></p>
+<p>“iss53” branch started off form master at revision C2. For the purposes of the feature, C3 and C5 commits were made, while in the meantime master received one external commit (C4). At this point the feature was considered complete, hopefully tested, and the developers accepted the change, so they did, from master, a “git merge iss53”. (In GitHub: Merge Pull Request).</p>
+<p>Despite the apparent simplicity, merges can be very delicate, especially if several branches make merges among them. A merge commit (e.g.: C6 in the figure) is almost a normal commit except that it has more two or more parents (here C4 and C5). As so, it can keep track of all the commits contributing to the future state and handle them correctly. It knows that C2 is the most recent common ancestor and so C4 changes must not clash with those introduced by C3+C5. If they don’t, the merge is successful and the merged changes are stored in commit C6. Otherwise, if changes clash, there is a conflict and the user must disambiguate them.</p>
+<section id="merge-squash">
+<h4>Merge –squash<a class="headerlink" href="#merge-squash" title="Link to this heading"></a></h4>
+<p>On any software change, it is a very good practice to split the work in small units so that each of them can be independently reviewed and tested. Especially for large features, standard merges are great to retain all the history (eventually simplified), enabling bugs to be more easily traceable. Nevertheless in many situations that might not be worth it. Many changes and bug fixes can (and should) be kept very small. Even if the branch received a lot of commits, they often represent solely the evolution of a solution and don’t make sense standalone.</p>
+<p>In these situations, if the final change is small, it makes sense to discard all intermediate commits.</p>
+<p><img alt="" src="../../_images/image7.png" /></p>
+<p>git merge –squash will create and commit a single change (C6) representing the whole feature branch, without parent-child relationship, making target branch history linear and concise. The feature branch and commits can safely be deleted. For this reason it has become the default merge strategy in many open source projects.</p>
+</section>
+<section id="fast-forward-merge">
+<h4>Fast-Forward merge<a class="headerlink" href="#fast-forward-merge" title="Link to this heading"></a></h4>
+<p>Another way of keeping history linear (without merge commits) is via fast-forwarding. Consider, in the previous figure, that the branch starts from commit C4 instead of C2. Then there’s effectively nothing in master adding to the merge. Instead of doing a “normal” merge, we could instead simply consider C5 to be the result of the merge. This trivial operation is a fast-forward. However, it can only be applied if the feature branch started off the same commit where we are merging to.</p>
+<p>Fast-forwarding, despite being a quick operation and making history linear, might quickly lose interest. First, for many use cases, as mentioned previously, merge –squash is a better option. Second, traditional merges have advantages regarding:</p>
+<ol class="arabic simple">
+<li><p>Keeping explicit that a group of commits belong together, which is a very good practice. Nobody, going through history, wants to read every commit message and figure out whether they are related or not. Further, when looking for the commit which introduced a bug, a developer may want to skip, at once, all the commits of unrelated functionalities.</p></li>
+<li><p>Handling merges among multiple branches. If a change is to be applied to several branches (e.g. fix/X onto master and release 1.1), it will be more logical and save potential problems later if both merges are done similarly linking to the same branch.
+A particularly important case is with Long-Running branches. They may update each other regularly and in order to preserve a correct state - and avoid merge hell - each update must be a true merge commit so that Git can later track what has already been brought.</p></li>
+</ol>
+</section>
+<section id="merge-and-rebase">
+<h4>Merge and Rebase<a class="headerlink" href="#merge-and-rebase" title="Link to this heading"></a></h4>
+<p>In online platforms, like GitHub, merges into the destination branch must never create a conflict. It is the feature developer’s responsibility to ensure a clean merge. The best way to guarantee there are no conflicts is to bring the branch up-to-date with the destination branch, i.e. incorporate all the changes from the destination (that could potentially clash with ours) into our branch, dealing with conflicts right away. There are two ways of doing so:</p>
+<ol class="arabic simple">
+<li><p><strong>Merging</strong> : Merge can work in any direction and is the traditional way to ensure the current branch is up-to-date w.r.t. another branch we might want to merge into.
+Advantages: It doesn’t modify the branch history. Branch commits are still valid as before
+Disadvantages: It creates extra merge commits. Doesn’t permit fast-forward.</p></li>
+<li><p><strong>Rebasing</strong> : Rebuild the branch by starting from the target branch current state.
+Advantages: Linear feature branch, therefore, in case we are not merge squashing later, that translates to a cleaner history. Enables for subsequent Fast-Forward merges.
+Disadvantages: Commits are effectively changed, potentially buggy or, worse, untestable.
+→ For non-squash merges all commits should be retested and eventually fixed.</p></li>
+</ol>
+<p>Considering the example of the feature branch in its original form. Rebasing would result in:</p>
+<p><img alt="" src="../../_images/image8.png" /></p>
+<p>We see that two new commits are created C3’ and C4’. For instance C3’ is the result of applying the diff between C2-C3 to C4 (2). The branch is then reset to point to the new commits.</p>
+</section>
+</section>
+</section>
+<section id="best-practices">
+<h2>BEST PRACTICES<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<section id="creating-changes-pull-requests">
+<h3>Creating Changes/Pull Requests<a class="headerlink" href="#creating-changes-pull-requests" title="Link to this heading"></a></h3>
+<p>The more isolated each feature and respective commits are, the less likely conflicts are to happen. Moreover, the need of bringing the branch up to date obviously increases with the time the feature is being worked on. From this perspective a few best practices can be drawn:</p>
+<ol class="arabic simple">
+<li><p><strong>Small changes</strong> : Split features and bug fixes into self-contained absolutely minimalistic patches. The smaller the better. One-line patches are great: easier to understand and test.</p></li>
+<li><p><strong>Address a single problem</strong> : Even if small, don’t group changes together. In a perfect world every Pull-Request should fix one Issue (or several suffering from the same root cause). This will also help reviewers to understand a solution. If two things are implemented at the same time how should they know both changes don’t interact?</p></li>
+<li><p><strong>Avoid long-time open branches</strong>. The longer a branch is open the higher the risk of getting out of date, unmergeable, possibly irrelevant. If a PR still makes sense, finalize it quickly, otherwise close it.</p></li>
+<li><p><strong>Use traditional merges for large features (only!)</strong>: Large changes may change many files. Doing a massive “merge squash” will hide all small steps done towards the solution. If the code has to be checked later, e.g. looking up the source of a bug, having several commits with a meaningful message and tests would grant the developer serious kudos!
+In turn, small changes should be squashed for a clean and linear history.</p></li>
+</ol>
+<p>Besides, some attention should be given to the code style, commit messages, and in general documentation. Besides helping the reviewers and users, given its importance, some projects do automatic code style checks:</p>
+<ol class="arabic">
+<li><p><strong>Code style and comments:</strong> Projects, specially C++, typically provide code style conventions which should/must be respected.</p></li>
+<li><p><strong>Commit messages and PR descriptions</strong> : Respect git commit message header format (max 72 chars + empty line) and explain what it does. There are (serious) commit guidelines here: <a class="reference external" href="https://wiki.openstack.org/wiki/GitCommitMessages">https://wiki.openstack.org/wiki/GitCommitMessages</a>.</p>
+<blockquote>
+<div><p>On a Pull Request, consider having sections for explaining the problem then what the PR does and how, possibly named “<em>The Problem</em>” and “<em>This PR</em>”. Mention GitHub Issues with the trigger text “<em>Fixes #issue_nr</em>”, which will automatically close associated issues when the PR is merged.</p>
+</div></blockquote>
+</li>
+<li><p><strong>Update the Change Log and maybe User Documentation</strong> : It is nice to have the change-log and user documentation updated within the change itself. This avoids the release manager from crawling commits looking for changes or updating the docs.</p></li>
+</ol>
+</section>
+<section id="bring-up-to-date-merge-vs-rebase">
+<h3>Bring up to date: Merge vs Rebase<a class="headerlink" href="#bring-up-to-date-merge-vs-rebase" title="Link to this heading"></a></h3>
+<p>When working on a feature branch, especially if development spans over some days, we may want/need (e.g. for integration) to update it to the latest changes, typically from master. Whether to update by doing a merge or a rebase depends very much on the situation and the respective advantages and disadvantages (see <a class="reference internal" href="#merge-and-rebase"><span class="std std-ref">Merge and Rebase</span></a>). Further, when there’s no obvious choice, the developer may try both hoping that one strategy will lead to less conflicts or easier to solve ones. In either case, consider the following guidelines:</p>
+<ol class="arabic simple">
+<li><p>The branch is public: <strong>Merge</strong>!
+Especially critical with long-running, public branches must not have their histories rewritten. Really want a rebase? Then use a new branch for that: checkout the target branch with a new name and merge the source branch.</p></li>
+<li><p>Feature branch to be “<em>merge squashed</em>”. Without conflicts consider <strong>merging</strong>. Decisive factors could be keeping reviews valid, or easier conflict resolution:</p>
+<ol class="arabic simple">
+<li><p><strong>Merge</strong> (GitHub model): With original commits we ensure no behavior changes and GitHub Reviews are kept valid. Extra merge commits squashed anyway at the end.</p></li>
+<li><p><strong>Rebase</strong> (Gerrit model). Simplifies the branch. Re-testing the last commit is required.</p></li>
+</ol>
+</li>
+<li><p>Feature branch to be “<em>traditionally merged</em>”: <strong>depends</strong> :</p>
+<ol class="arabic simple">
+<li><p>Consider <strong>merging,</strong> mainly if everything is tidy. It’s no-op, keeps reviews valid, etc.
+If you need cleanup/prefer rebase <strong>→</strong>  <strong>do rebase</strong> and <strong>retest all commits</strong></p></li>
+<li><p>If fast-forwarded is required, you must <strong>rebase</strong> (and <strong>retest all commits</strong> )</p></li>
+</ol>
+</li>
+</ol>
+</section>
+<section id="reviewing">
+<h3>Reviewing<a class="headerlink" href="#reviewing" title="Link to this heading"></a></h3>
+<p>Reviewers share responsibility on the merged code and thus should dedicate some effort to ensure it meets good standards. Some generic guidelines based on internal BBP processes:</p>
+<ol class="arabic simple">
+<li><p><strong>Make sure the requirements are fulfilled</strong>.
+Patches should do what they advertise. They don’t need to solve a full issue - contributions are even encouraged to be split in several independent patches. However there should be a clear description matching the implementation.</p></li>
+<li><p><strong>Ensure the patch works as expected</strong></p>
+<ol class="arabic simple">
+<li><p>Quick review on Web UI may be sufficient if the patch is simple (e.g. single line or documentation) and risk of breaking things is reduced</p></li>
+<li><p>Otherwise checkout locally the code to have the full picture.</p></li>
+</ol>
+</li>
+<li><p><strong>Ensure high code quality standards</strong></p>
+<ol class="arabic simple">
+<li><p>Minimalistic, self-contained changes</p></li>
+<li><p>Simple implementations, avoiding globals, long functions, side-effects</p></li>
+<li><p>Compliance with code style conventions, self-explanatory code/comments</p></li>
+</ol>
+</li>
+<li><p><strong>Use comments and suggestions.</strong> Give the author the possibility of argumenting for/against a request. In case you, as a reviewer, want to suggest a specific and significant change you may open a sub-Pull-Request.</p></li>
+<li><p><strong>Quick changes &amp; fixes</strong>. Such non-functional modifications (e.g. typos, code style, …) may be pushed directly to save review cycles and thus time.</p></li>
+</ol>
+<p>PART II - RELEASE MANAGEMENT</p>
+</section>
+</section>
+<section id="creating-releases">
+<h2>CREATING RELEASES<a class="headerlink" href="#creating-releases" title="Link to this heading"></a></h2>
+<p>Once a certain set of features have been implemented a core developer may consider it’s time to release it to the users. In its basic form, a release could simply be an installer made available online for download.</p>
+<p>Although ad-hoc models may work well for small projects, a number of challenges arise in larger ones, especially if a number of versions have to be simultaneously maintained. Consider the case when a critical bug is found and affects several releases. It should be clear that we need to develop a patch, and using the SCM, apply it to each revision corresponding to the latest release of each affected version.</p>
+<p>Due to the fact that releases directly impact the user, such a process requires careful planning and execution (possibly highly automated), to avoid inconsistencies and mistakes. It is therefore important to clearly define such rules and conventions adapted to the specifics of the project.</p>
+<p>This section starts off by introducing the release requirements of NEURON and the applicability of semantic versioning scheme. Then one introduces several Git branching workflows relevant for the case and closes with the discussion of an appropriate workflow and guidelines.</p>
+<section id="neuron-s-release-requirements">
+<h3>NEURON’s Release Requirements<a class="headerlink" href="#neuron-s-release-requirements" title="Link to this heading"></a></h3>
+<p>NEURON has done releases with the version scheme “MAJOR.MINOR[.PATCH]”, where MAJOR.MINOR defines the main release with all new functionalities. It would possibly be followed by a set of bug-fixing “.PATCH” releases until a next main release becomes available. Besides, NEURON would also publish installers for <em>alpha</em> pre-releases. Additionally, in case the user wanted to try out the very latest dev version, he would have to checkout and compile the source. With the availability of automated testing, nightly builds may be created with automatic versioning based on the closest repository tag.</p>
+<p>Building on these initial practices, with the future in mind, one can formulate the NEURON releases requirements as:</p>
+<ul class="simple">
+<li><p>Release versions defined by MAJOR.MINOR.PATCH</p>
+<ul>
+<li><p>MAJOR.MINOR defines the release series, with a defined functionality set.</p></li>
+<li><p>.PATCH (&gt; 0) represents a Patch Release, having received bug-fixes only.</p></li>
+<li><p>MAJOR is only incremented when significant new features are added/modified or backwards compatibility cannot be guaranteed.</p></li>
+</ul>
+</li>
+<li><p>Provide Pre-Release versions</p>
+<ul>
+<li><p>Version id distinct from final. Use suffixes like “a” for alpha and “b” for beta [NEW]</p></li>
+<li><p>Provide binary installers (including Python wheels [NEW])</p></li>
+</ul>
+</li>
+<li><p>Maintain Previous Final Releases</p>
+<ul>
+<li><p>All active release series should receive non-functional bug-fixes</p></li>
+<li><p>At least two release series should be active: <strong>Latest</strong> and Previous- <strong>Stable</strong>.</p></li>
+</ul>
+</li>
+</ul>
+<p>Having two active release series (Latest and Previous-Stable) ensures that, upon a new release, “Latest (then renamed to “Stable”) keeps receiving updates, granting the user time to migrate, while “Stable” gets deprecated by default.</p>
+</section>
+</section>
+<section id="versioning-schemes">
+<h2>VERSIONING SCHEMES<a class="headerlink" href="#versioning-schemes" title="Link to this heading"></a></h2>
+<p>In software releasing, it is extremely important to adhere to standard conventions for two reasons:</p>
+<ol class="arabic simple">
+<li><p>Ensure users are able to understand the meaning of the release and compare it to another release. E.g. “This version has more/less/same functionality than X, or is more/less stable”</p></li>
+<li><p>Ensure existing deployment tools keep working with our software.</p></li>
+</ol>
+<p>For this purpose this document focuses on two main sources: Semantic Versioning 2.0, and Python’s PEP 440.</p>
+<section id="existing-conventions">
+<h3>Existing Conventions<a class="headerlink" href="#existing-conventions" title="Link to this heading"></a></h3>
+<section id="semantic-versioning">
+<h4>Semantic Versioning<a class="headerlink" href="#semantic-versioning" title="Link to this heading"></a></h4>
+<p>Semantic Versioning 2.0.0 [5] is a precise specification on how to define version numbering in generic software, respecting most conventions and enabling for correct dependency handling. Its principles apply very well to the case of NEURON. For brevity we mention only the most relevant entries:</p>
+<hr class="docutils" />
+<ul class="simple">
+<li><p>Given a version number MAJOR.MINOR.PATCH, of non-negative integers, increment the:</p>
+<ul>
+<li><p>MAJOR version when you make incompatible API changes,</p></li>
+<li><p>MINOR version when you add functionality in a backwards compatible manner, and</p></li>
+<li><p>PATCH version when you make backwards compatible bug fixes.</p></li>
+</ul>
+</li>
+<li><p>Major version zero (0.y.z) is for initial development. […] Public API should not be considered stable.</p></li>
+<li><p>Major version X (X.y.z | X &gt; 0) MUST be incremented if any backwards incompatible changes are introduced[…]. Patch and minor version MUST be reset to 0 when major version is incremented.</p></li>
+<li><p>A pre-release version MAY be denoted by appending a hyphen and a series of dot separated identifiers immediately following the patch version. […] Pre-release versions have a lower precedence than the associated normal version. Examples: 1.0.0-alpha, 1.0.0-alpha.1</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="pep-440">
+<h4>PEP 440<a class="headerlink" href="#pep-440" title="Link to this heading"></a></h4>
+<p>Python has its own specification of versioning: PEP 440 [6]. More than simple guidelines, these conventions are actually implemented in Python’s packaging and distribution tools. Given we are building Python packages it is important to respect them as well for compatibility.</p>
+<hr class="docutils" />
+<p>The canonical public version identifiers MUST comply with the following scheme:**[N!]N(.N)*[{a|b|rc}N][.postN][.devN]**Public version identifiers are separated into up to five segments:</p>
+<ul class="simple">
+<li><p>Epoch segment: N!</p></li>
+<li><p>Release segment: N(.N)*</p></li>
+<li><p>Pre-release segment: {a|b|rc}N</p></li>
+<li><p>Post-release segment: .postN</p></li>
+<li><p>Development release segment: .devN</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="release-life-cycle-alpha-beta-release-candidate">
+<h3>Release Life Cycle: Alpha, Beta, Release Candidate<a class="headerlink" href="#release-life-cycle-alpha-beta-release-candidate" title="Link to this heading"></a></h3>
+<p>“Alpha” and “beta” terminology originated at IBM in the 1950s. A product would go through three test phases: “A” testing was the early verification before public announcement. “B” test was the verification of the feature-complete product before releasing it to be manufactured. “C” was the final testing before general availability of the product.</p>
+<p>With the wide adoption of these terms by the software industry, they evolved to become more specific to the Software Release Life Cycle [7] [8]:</p>
+<p><strong>Pre-alpha</strong> is the main development phase comprising all design and implementation activities prior to dedicated testing. A.k.a. _ <strong>Development</strong> _versions, pre-alpha’s may be made available for internal validation or early feature testing. Some projects have “<em>Milestone</em>” versions which include a specific set of functionalities and are released as soon as the functionality is complete.</p>
+<p><strong>Alpha</strong> is a software development phase marked by the beginning of acceptance testing. It aims at identifying all possible issues/bugs before releasing the product to everyday users. While external availability of alpha software is uncommon in proprietary software, open source software often has publicly available alpha versions. Alpha software may have serious errors and may not contain all of the features that are planned for the final version. The alpha phase usually ends with a <em>feature freeze</em>.</p>
+<p><strong>Beta</strong> is the development phase following alpha, typically when the software is feature-complete. Beta releases are supposed to be tested by prospective “real users” in a “real environment” to obtain their feedback in order to improve the quality and reduce the risk of failure in final releases. Generally public, Beta versions, a.k.a. As <em>Preview</em> or <em>Prototype</em>, may be useful for demonstrations and previews, but are considered unstable and not yet prepared for launch.</p>
+<p><strong>Release Candidate’s</strong> are versions created when the latest beta passes all the quality assurance tests. The software is said to have entered its Product Stabilization phase in which only small code changes may be applied, like bug fixes and documentation.</p>
+</section>
+<section id="a-versioning-scheme-for-neuron">
+<h3>A Versioning Scheme for NEURON<a class="headerlink" href="#a-versioning-scheme-for-neuron" title="Link to this heading"></a></h3>
+<p>According to NEURON requirements, and building on the aforementioned conventions, a relatively simple release versioning scheme may be used:</p>
+<ul class="simple">
+<li><p><strong>Final releases</strong> should follow the scheme MAJOR.MINOR.PATCH as specified in Semantic Versioning. It matches quite well the existing NEURON practices, and therefore it should be used as the reference, namely PATCH increments must reflect bug fixes only.</p></li>
+<li><p><strong>Pre-Releases</strong> should follow the Release Life Cycle definitions and, respecting PEP 440, these should be named:</p>
+<ul>
+<li><p>Development builds: NEURON pre-alphas should use the “.dev”N suffix as <strong>MAJOR.MINOR.”dev”N</strong>. E.g.: 8.0.dev1</p></li>
+<li><p>Alpha releases: <strong>MAJOR.MINOR”a”[N]</strong>, where N is mandatory for N &gt; 1
+E.g.: 7.8a, 8.0a or 8.0a2</p></li>
+<li><p>Beta releases: <strong>MAJOR.MINOR”b”[N]</strong>. Eg.: 8.0b or 8.0b2</p></li>
+<li><p>Release Candidates: <strong>MAJOR.MINOR”rc”[N]</strong>. E.g.: 8.0rc.Note that RCs haven’t been used so far in NEURON. They are mentioned here for future reference.</p></li>
+</ul>
+</li>
+</ul>
+<p>Notice the fact that development builds have a dot “.” between MINOR and dev, as per PEP 440. Also, pre-release index N, when omitted, is equivalent to 1.</p>
+<p>Given it is desirable to track, in the SCM, which revision is the exact source of a release, we advocate the use of Git tags for every release (excluding <em>development builds</em> which are not true releases and create an automatic version number via git describe). Guidelines on how to use the SCM effectively to maintain several versions are discussed in the next sections.</p>
+<p>Since around version 8.2
+(<a class="reference external" href="https://github.com/neuronsimulator/nrn/pull/1762">#1762</a>), the CMake
+configuration of NEURON has included checks that the parent Git tag found by
+<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">describe</span></code> is consistent with the MAJOR.MINOR.PATCH version that is
+hardcoded in the top-level CMakeLists.txt file.
+This hardcoded version should be updated in between releases according to the
+semantic rules given above, as it is the basis for the <code class="docutils literal notranslate"><span class="pre">NRN_VERSION*</span></code>
+preprocessor macros that are used to introduce NEURON-version-specific changes
+in MOD files.</p>
+</section>
+</section>
+<section id="release-management-with-git">
+<h2>RELEASE MANAGEMENT WITH GIT<a class="headerlink" href="#release-management-with-git" title="Link to this heading"></a></h2>
+<p>Git and GitHub have enabled the best development practices on any software project. However, once a project starts to grow and multiple versions are to be maintained, the simpler linear development strategies no longer apply and more elaborate schemes must be used.</p>
+<p>In this section we introduce some of the most popular Git Branching models and, finally, discuss a Branching model and associated guidelines tuned for the development and deployment of NEURON.</p>
+<section id="git-branching-models">
+<h3>Git Branching Models<a class="headerlink" href="#git-branching-models" title="Link to this heading"></a></h3>
+<p>Branching models (or workflows) in Git may be invisible to many developers simply because they basically translate to conventions an organization follows. Moreover, most Open-Source projects in GitHub follow the default “GitHub Flow” model, which is very simple yet very appropriate to most cases. From this basic model we go on to more advanced workflows better suited for large projects and multiple development heads [9].</p>
+<section id="github-flow">
+<h4>GitHub Flow<a class="headerlink" href="#github-flow" title="Link to this heading"></a></h4>
+<p>The gitHub Flow [10] branching model is one of the simplest and most widespread. It uses few branches and encourages Continuous Integration.</p>
+<p>Branch types:</p>
+<ul class="simple">
+<li><p>Master: main branch, continuously tested and ready for deployment</p></li>
+<li><p>Feature Branches: Each feature / fix is to be developed in an independent branch</p></li>
+</ul>
+<p>Merge strategy</p>
+<ul class="simple">
+<li><p>Features are merged to master when ready (typically reviewed + tested)</p></li>
+<li><p>“Merge –squash” is encouraged, though not required</p></li>
+</ul>
+<p>GitHub conveniently provides Pull Requests so anyone can contribute but only maintainers can merge, to whom is given the choice or “squashing” or not. Even though, in this model, one targets master, Pull Requests may be opened targeting any branch, enabling other branching models.</p>
+</section>
+<section id="git-flow">
+<h4>Git Flow<a class="headerlink" href="#git-flow" title="Link to this heading"></a></h4>
+<p>Git Flow [11] is a well established workflow, with focus on professional projects with several releases. It features two main branches, master and develop, which are long-running.</p>
+<p>Branch types:</p>
+<ul class="simple">
+<li><p>Master: the stable branch. Every commit represents a new production-ready version</p></li>
+<li><p>Develop: the development branch. New features/fixes are merged here</p></li>
+<li><p>Feature branches: Branches implementing features or fixes. Must branch off from <em>Develop</em></p></li>
+<li><p>Release branches: stabilization branches preparing for production releases, branching off from <em>Develop</em>. First commit is version bump followed by bug fixes only.</p></li>
+</ul>
+<p>Merge strategy</p>
+<ul class="simple">
+<li><p>Features are merged back to develop when ready</p></li>
+<li><p>When <em>develop</em> implements all the features for a given release, a release branch is created. After stabilization, the branch is merged to <em>master</em> and a release is created.</p></li>
+<li><p>After release, <em>master</em> is merged into <em>develop</em>, so it receives all release fixes</p></li>
+</ul>
+</section>
+<section id="gitlab-flow">
+<h4>GitLab Flow<a class="headerlink" href="#gitlab-flow" title="Link to this heading"></a></h4>
+<p>GitLab Flow [12] is a recent (2014) branch model which attempts to be a simpler alternative to Git Flow. Born from within another online code platform, it also encourages Pull Requests and Continuous Integration, featuring a single main branch: master.</p>
+<p><img alt="" src="../../_images/image3.png" /></p>
+<p>Branch types:</p>
+<ul class="simple">
+<li><p>Master: main branch, where features are merged to, continuously tested</p></li>
+<li><p>Feature Branches: Feature/Fixes, then merged to master. Just like GitHub Flow</p></li>
+<li><p>Release Branches: stabilization branches which receive bug fixes, backported from the master branch.</p></li>
+</ul>
+<p>Merge strategy</p>
+<ul class="simple">
+<li><p>Features are merged back to master when ready / tested, preferably squashed</p></li>
+<li><p>New commits in master, if fixes, shall be backported to any affected release branch via cherry-picking</p></li>
+<li><p>Release branches are created from master the latest possible, to avoid cherry-picking</p></li>
+<li><p>Upon new commits, release branches shall increase the patch version and set a new tag</p></li>
+</ul>
+<p>As noticable, GitLabFlow is more specific on certain aspects, including when to create tags.</p>
+</section>
+<section id="other-alternatives">
+<h4>Other Alternatives<a class="headerlink" href="#other-alternatives" title="Link to this heading"></a></h4>
+<p>Some other branching models are found around the internet, most of them attempting at being simpler alternatives to Git Flow by dropping the need for the long-running “development” branch. Examples of these are One Flow [13] and Stable Mainline [14]. Nevertheless it is hard to evaluate the real popularity and success of these models. Furthermore they don’t seem favourable to merge-squash, a technique highly appreciated in the context of NEURON.</p>
+<p>In a recent interesting article from Microsoft blogs “Adopt a Git branching strategy” [15] a simple branching model supporting releases is presented. In this scheme, alternatively, preference is given to implement bug-fixes directly in a release branch, followed by porting them to master via cherry-picking. They also provide more specific guidelines, some of them valuable, like prefixing feature branches according to type. E.g. <strong>bugfix</strong> /description, <strong>feature</strong> /xyz, <strong>hotfix</strong> /A.</p>
+</section>
+</section>
+<section id="neuron-release-management-guidelines">
+<h3>NEURON Release Management Guidelines<a class="headerlink" href="#neuron-release-management-guidelines" title="Link to this heading"></a></h3>
+<p>Building on the introduced topics on Git technology, Versioning and Branching models, we devise guidelines for Release Management in NEURON.</p>
+<p>We aim at three main objectives:</p>
+<ul class="simple">
+<li><p>Use a simple branching scheme, enabling for multiple maintenance releases, compatible with the current repository, which any core developer is able to understand and execute.</p></li>
+<li><p>High compatibility with current versioning schemes and deployment tools, including rpm/deb/Python packaging</p></li>
+<li><p>Automate to a large extent, but not more than reasonably acceptable. E.g. Releases should still be triggered after a manual Git tag. Nightly builds may obtain a version number automatically.</p></li>
+</ul>
+<p>Among the branching models, GitLab Flow fulfills basically all NEURON’s requirements. Besides being well understood, it’s a powerful model, made for online dev platforms like GitHub/GitLab.</p>
+<p>BBP guidelines make use of tags for releases, including pre-releases. Pre-releases should receive common lightweight tags, while Final releases and a special development-beginning tag should be annotated for reasons of automated version generation using “git describe”.</p>
+<p>GitLab Flow branch types should be used and follow the following naming:</p>
+<ul class="simple">
+<li><p><strong>Master: master</strong></p></li>
+<li><p><strong>Feature</strong> branches: preferably prefixed by the type of contribution. E.g.: <strong>feature/</strong> name, [<strong>bug]fix</strong>/name, <strong>hotfix</strong> /[release/]name, etc. “<em>Hotfix</em>” suggests one is addressing a critical bug in production and it’s therefore allowed to be merged directly into a release branch. The target release may then be provided as part of the name as well.</p></li>
+<li><p><strong>Release</strong> Branches: <strong>release/MAJOR.MINOR</strong></p></li>
+</ul>
+<section id="contributing">
+<h4>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h4>
+<p>Normal Feature / Bug-fix contributors should follow the standard GitHub Flow approach with the following details in mind:</p>
+<ul class="simple">
+<li><p>Ensure an Issue is open and nobody created yet a Pull Request addressing it</p></li>
+<li><p>Create a feature branch, named accordingly</p></li>
+<li><p>Do (small!) commits. Create a Pull-Request early on, against <strong>master</strong> - typically not later than one day of work. Follow conventions as in Creating Changes/Pull Requests. In case of bug fixes, please mention which versions are affected and should receive the patch.</p></li>
+</ul>
+<p>NOTE: In the event a release requires a hotfix which does not (easily) apply to master, the Pull Request can exceptionally be open against the release. Please mention in the PR message: “RELEASE PATCH. PLEASE PORT TO MASTER” in case the bug exists in master or “RELEASE EXCLUSIVE PATCH. DONT PORT” in case it’s a bug exclusive to this version</p>
+</section>
+<section id="managing-releases">
+<h4>Managing Releases<a class="headerlink" href="#managing-releases" title="Link to this heading"></a></h4>
+<p>At the beginning of the development towards a new release, a special <strong>annotated tag</strong> should be created in master named MAJOR.MINOR.dev.Development then proceeds naturally in master. This ensures that git describe works well to obtain a valid development version id.</p>
+<section id="from-alpha-to-final-release">
+<h5>From Alpha to Final Release<a class="headerlink" href="#from-alpha-to-final-release" title="Link to this heading"></a></h5>
+<p><img alt="" src="../../_images/image2.png" /></p>
+<p>When a considerable set of features have been implemented, cycles of pre-release -&gt; test -&gt; fixes -&gt; release happen until a final release.</p>
+<ul class="simple">
+<li><p><strong>Alpha:</strong> Alpha marks the beginning of integration tests.</p>
+<ul>
+<li><p>A lightweight tag should be created in master directly in the commit which corresponds to such release. Tag name: <strong>MAJOR.MINOR”a”</strong>. E.g.: 8.0a</p></li>
+<li><p>Features targeting a future version may start to be developed. However, they can’t be merged to master until we reach beta and the stabilization branch exists</p></li>
+</ul>
+</li>
+<li><p><strong>Beta</strong> : The software must be feature complete. At this point branching must occur so that merging features for future versions (here &gt;=v8.1) can happen in parallel to stabilization</p>
+<ul>
+<li><p>A lightweight tag should be created, named <strong>MAJOR.MINOR”b”</strong>. E.g.:8.0b</p></li>
+<li><p>A branch named <strong>release/MAJOR.MINOR</strong> should be created, E.g. release/8.0</p></li>
+<li><p>Bug-fixes should directly <strong>target the release</strong> branch for faster iteration.</p>
+<ul>
+<li><p>With some frequency, and on every new beta, RC or final, the release branch <strong>should be merged to master</strong> [16].</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Release Candidate</strong> [optional]: The Beta phase is over and everything looks ok. If further testing is to be conducted then an RC is released with a tag named <strong>MAJOR.MINOR”rc”</strong>. Development continues like in beta. If RC is not applicable we jump to the final release.</p></li>
+<li><p><strong>Final release</strong>. When all integration testing is finished a final release is due. An annotated tag should be created, named <strong>MAJOR.MINOR.”0”</strong> , E.g. 8.0.0</p></li>
+</ul>
+</section>
+<section id="patch-releases">
+<h5>Patch Releases<a class="headerlink" href="#patch-releases" title="Link to this heading"></a></h5>
+<p><img alt="" src="../../_images/image1.png" /></p>
+<p>After a version is released, and until it’s declared deprecated, it shall receive fixes and improvements. As mentioned in <a class="reference internal" href="../guidelines/SCMGuidelines.html#contributing"><span class="std std-ref">Contributing</span></a>, at this stage, patches should target master. It is therefore required to port these changes individually to the active releases they apply (e.g. patch 11 in the figure). For that, the release maintainer must cherry-pick the patch and, if necessary, make the required adjustments. However, in the case of hotfixes - critical release fixes - the process can be reversed, i.e. developed directly from the release and merged into it, allowing the release to get the fix more rapidly (figure: patch “hot-12”).</p>
+<p>After some fixes were applied to the release branch, a PATCH release may be made available. Even though some branching models make patch releases on every commit, NEURON has followed a more traditional release cycle. As guidelines, it seems reasonable to::</p>
+<ul class="simple">
+<li><p>Space releases by around two weeks if there are hotfixes</p></li>
+<li><p>Otherwise adjust the period depending on the amount of fixes, not shorter than 1 month</p></li>
+</ul>
+<p>Release Process:</p>
+<ul class="simple">
+<li><p>Ensure all fixes have been ported/backported accordingly (cherry-pick)</p></li>
+<li><p>Create an annotated tag for the release: <strong>MAJOR.MINOR.PATCH</strong> (PATCH&gt;=1), E.g. 8.0.1</p></li>
+</ul>
+</section>
+<section id="release-deprecation">
+<h5>Release Deprecation<a class="headerlink" href="#release-deprecation" title="Link to this heading"></a></h5>
+<p>Previous releases, which will stop receiving updates, should be deprecated. This process should be explicit and announced publicly. The deprecation process shall be accompanied by a migration guide that users can use to quickly adapt their codebase to the next supported release.</p>
+<p>NEURON, by default, should maintain the latest two releases. However, some exceptions might arise and should be considered on a case-by-case basis. Examples would be, for instance, to keep supporting the previous major version due to a large user base. Core developers may agree to deprecate the previous minor, or maintain all three.</p>
+<p>Suggestions for this process are:</p>
+<ul class="simple">
+<li><p>Announce in the website the deprecation of the given version, with a clear statement that it won’t receive further updates. Provide migration guidelines.</p></li>
+<li><p>Add a commit to the release branch which introduces such info in the banner, like “This version has been deprecated”. The commit message should also mention “DEPRECATED”</p></li>
+<li><p>Create a patch release</p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+<section id="references">
+<h2>REFERENCES<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>M L Hines and N T Carnevale. 1997. The NEURON Simulation Environment. Neural computation (1997).</p></li>
+<li><p>About Git - <a class="reference external" href="https://git-scm.com/about/distributed">https://git-scm.com/about/distributed</a></p></li>
+<li><p>A Quick Introduction to Version Control with Git and GitHub <a class="reference external" href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004668">https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004668</a></p></li>
+<li><p>Fast Intro to Git Internals <a class="reference external" href="https://docs.google.com/document/d/1X5SnleaX4qpLCc4QMAMWdvrA5QRsUO-YxXKjhSZRPpY/edit">https://docs.google.com/document/d/1X5SnleaX4qpLCc4QMAMWdvrA5QRsUO-YxXKjhSZRPpY/edit</a></p></li>
+<li><p>Semantic Versioning 2.0.0 <a class="reference external" href="https://semver.org/">https://semver.org/</a></p></li>
+<li><p>PEP 440 <a class="reference external" href="https://www.python.org/dev/peps/pep-0440/">https://www.python.org/dev/peps/pep-0440/</a></p></li>
+<li><p>Software Release Life Cycle: <a class="reference external" href="https://enacademic.com/dic.nsf/enwiki/141478">https://enacademic.com/dic.nsf/enwiki/141478</a></p></li>
+<li><p>Alpha Testing vs Beta Testing: <a class="reference external" href="https://www.guru99.com/alpha-beta-testing-demystified.html">https://www.guru99.com/alpha-beta-testing-demystified.html</a></p></li>
+<li><p>4 branching workflows for git - <a class="reference external" href="https://medium.com/&#64;patrickporto/4-branching-workflows-for-git-30d0aaee7bf">https://medium.com/&#64;patrickporto/4-branching-workflows-for-git-30d0aaee7bf</a></p></li>
+<li><p>The GitHub Flow - <a class="reference external" href="https://guides.github.com/introduction/flow/">https://guides.github.com/introduction/flow/</a></p></li>
+<li><p>Git Flow: A successful Git Branching model - <a class="reference external" href="https://nvie.com/posts/a-successful-git-branching-model/">https://nvie.com/posts/a-successful-git-branching-model/</a></p></li>
+<li><p>Introduction to GitLab Flow <a class="reference external" href="https://docs.gitlab.com/ee/topics/gitlab_flow.html">https://docs.gitlab.com/ee/topics/gitlab_flow.html</a></p></li>
+<li><p>OneFlow - A Git branching model and workflow - <a class="reference external" href="https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow">https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow</a></p></li>
+<li><p>A stable mainline branching model for Git - <a class="reference external" href="https://www.bitsnbites.eu/a-stable-mainline-branching-model-for-git/">https://www.bitsnbites.eu/a-stable-mainline-branching-model-for-git/</a></p></li>
+<li><p>Adopt a Git branching strategy - <a class="reference external" href="https://docs.microsoft.com/en-us/azure/devops/repos/git/git-branching-guidance?view=azure-devops&amp;amp;viewFallbackFrom=vsts">https://docs.microsoft.com/en-us/azure/devops/repos/git/git-branching-guidance?view=azure-devops&amp;viewFallbackFrom=vsts</a></p></li>
+<li><p>Stop cherry-picking, start merging, Part 1: The merge conflict <a class="reference external" href="https://devblogs.microsoft.com/oldnewthing/20180312-00/?p=98215">https://devblogs.microsoft.com/oldnewthing/20180312-00/?p=98215</a></p></li>
+</ol>
+</section>
+<section id="document-history">
+<h2>DOCUMENT HISTORY<a class="headerlink" href="#document-history" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>1.0. Initial Version / May 14th, 2020 [Fernando Pereira, BlueBrain Project - EPFL]</p></li>
+</ul>
+</section>
+<section id="footnotes">
+<h2>Footnotes<a class="headerlink" href="#footnotes" title="Link to this heading"></a></h2>
+<p>1It might be confusing the fact that GitHub seems to be the server-side of a local git clone. GitHub in reality manages Git repositories and, even though people interact very often with it as the main server, from Git perspective it is simply “one” peer. Nothing prevents people from deleting the repository from GitHub and creating clones in any other server or even another folder in their disk and do PUSH/PULL’s to any of those.</p>
+<p>2 Technical note: Git does not store deltas. It indeed has to compute the diff and apply on another commit.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../guidelines/SCMGuidelines.html" class="btn btn-neutral float-left" title="NEURON Versioning and Release Guidelines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../policies/policies.html" class="btn btn-neutral float-right" title="NEURON Software Policies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

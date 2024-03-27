@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Common Math Functions (HOC) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Matrix" href="matrix.html" />
+    <link rel="prev" title="Constants" href="constants.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../mathematics.html">Mathematics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="constants.html">Constants</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="matrix.html">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vector.html">Vector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="random.html">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../mathematics.html">Mathematics</a></li>
+      <li class="breadcrumb-item active">Common Math Functions (HOC)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/math/functions.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/math/functions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#abs" title="Link to this definition">abs</a> &middot; <a href="#atan" title="Link to this definition">atan</a> &middot; <a href="#atan2" title="Link to this definition">atan2</a> &middot; <a href="#cos" title="Link to this definition">cos</a> &middot; <a href="#erf" title="Link to this definition">erf</a> &middot; <a href="#erfc" title="Link to this definition">erfc</a> &middot; <a href="#exp" title="Link to this definition">exp</a> &middot; <a href="#int" title="Link to this definition">int</a> &middot; <a href="#log" title="Link to this definition">log</a> &middot; <a href="#log10" title="Link to this definition">log10</a> &middot; <a href="#sin" title="Link to this definition">sin</a> &middot; <a href="#sqrt" title="Link to this definition">sqrt</a> &middot; <a href="#tanh" title="Link to this definition">tanh</a></p><section id="common-math-functions-hoc">
+<span id="math"></span><h1>Common Math Functions (HOC)<a class="headerlink" href="#common-math-functions-hoc" title="Link to this heading"></a></h1>
+<p>These math functions return a double precision value and take a double
+precision argument. The exception is <a class="reference internal" href="#atan2" title="atan2"><code class="xref py py-func docutils literal notranslate"><span class="pre">atan2()</span></code></a> which has two double precision arguments.</p>
+<dl>
+<dt>Diagnostics:</dt><dd><p>Arguments that are out of range give an argument domain diagnostic.</p>
+<p>These functions call the library routines supplied by the compiler.</p>
+</dd>
+</dl>
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="abs">
+<span class="sig-name descname"><span class="pre">abs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abs" title="Link to this definition"></a></dt>
+<dd><p>absolute value</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; h.abs(-42.2)
+42.2
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="vector.html#Vector.abs" title="Vector.abs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.abs()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Python code, use Python’s <code class="docutils literal notranslate"><span class="pre">abs</span></code> function, which works on both numbers and numpy arrays, as well as Vectors (Vectors do not print their contents) :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="o">-</span><span class="mf">42.2</span><span class="p">)</span>
+<span class="go">42.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span><span class="n">j</span><span class="p">)</span>
+<span class="go">5.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">65</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>
+<span class="go">1       6       2       65</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="int">
+<span class="sig-name descname"><span class="pre">int</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#int" title="Link to this definition"></a></dt>
+<dd><p>returns the integer part of its argument (truncates toward 0).</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; h.int(3.14)
+3.0
+&gt;&gt;&gt; h.int(-3.14)
+-3.0
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Python code, use Python’s <code class="docutils literal notranslate"><span class="pre">int</span></code> function instead. The behavior is slightly different in that the Python function returns an int type instead of a double:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mf">3.14</span><span class="p">)</span>
+<span class="go">-3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="sqrt">
+<span class="sig-name descname"><span class="pre">sqrt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sqrt" title="Link to this definition"></a></dt>
+<dd><p>square root</p>
+<p>see <a class="reference internal" href="vector.html#Vector.sqrt" title="Vector.sqrt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.sqrt()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.sqrt</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="exp">
+<span class="sig-name descname"><span class="pre">exp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#exp" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Description:</dt><dd><p>returns the exponential function to the base e</p>
+<p>When exp is used in model descriptions, it is often the
+case that the cvode variable step integrator extrapolates
+voltages to values which return out of range values for the exp (often used
+in rate functions). There were so many of these false warnings that it was
+deemed better to turn off the warning message when Cvode is active.
+In any case the return value is exp(700). This message is not turned off
+at the interpreter level or when cvode is not active.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">12</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.exp</span></code> instead.</p>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#log" title="Link to this definition"></a></dt>
+<dd><p>logarithm to the base e
+see <a class="reference internal" href="vector.html#Vector.log" title="Vector.log"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.log()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.log</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="log10">
+<span class="sig-name descname"><span class="pre">log10</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#log10" title="Link to this definition"></a></dt>
+<dd><p>logarithm to the base 10</p>
+<p>see <a class="reference internal" href="vector.html#Vector.log10" title="Vector.log10"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.log10()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.log10</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="cos">
+<span class="sig-name descname"><span class="pre">cos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cos" title="Link to this definition"></a></dt>
+<dd><p>trigonometric function of radian argument.</p>
+<p>see <a class="reference internal" href="vector.html#Vector.sin" title="Vector.sin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.sin()</span></code></a></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.cos</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="sin">
+<span class="sig-name descname"><span class="pre">sin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sin" title="Link to this definition"></a></dt>
+<dd><p>trigonometric function of radian argument.</p>
+<p>see <a class="reference internal" href="vector.html#Vector.sin" title="Vector.sin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.sin()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.sin</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="tanh">
+<span class="sig-name descname"><span class="pre">tanh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tanh" title="Link to this definition"></a></dt>
+<dd><p>hyperbolic tangent.
+see <a class="reference internal" href="vector.html#Vector.tanh" title="Vector.tanh"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.tanh()</span></code></a> for the <a class="reference internal" href="vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.tanh</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="atan">
+<span class="sig-name descname"><span class="pre">atan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#atan" title="Link to this definition"></a></dt>
+<dd><p>returns the arc-tangent of y/x in the range <span class="math notranslate nohighlight">\(-\pi/2\)</span> to <span class="math notranslate nohighlight">\(\pi/2\)</span>. (x &gt; 0)</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.atan</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="atan2">
+<span class="sig-name descname"><span class="pre">atan2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#atan2" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">radians</span> <span class="pre">=</span> <span class="pre">atan2(y,</span> <span class="pre">x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the arc-tangent of y/x in the range <span class="math notranslate nohighlight">\(-\pi\)</span> &lt; radians &lt;= <span class="math notranslate nohighlight">\(\pi\)</span>. y and x
+can be any double precision value, including 0. If both are 0 the value
+returned is 0.
+Imagine a right triangle with base x and height y. The result
+is the angle in radians between the base and hypotenuse.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mf">1e-6</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">i</span><span class="o">*</span><span class="mf">1e-6</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="n">i</span><span class="o">*</span><span class="mf">1e-6</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Consider using Python’s built in <code class="docutils literal notranslate"><span class="pre">math.atan2</span></code> instead.</p>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="erf">
+<span class="sig-name descname"><span class="pre">erf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#erf" title="Link to this definition"></a></dt>
+<dd><p>normalized error function</p>
+<div class="math notranslate nohighlight">
+\[{\rm erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Python 3.2+, use <code class="docutils literal notranslate"><span class="pre">math.erf</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="erfc">
+<span class="sig-name descname"><span class="pre">erfc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#erfc" title="Link to this definition"></a></dt>
+<dd><p>returns <code class="docutils literal notranslate"><span class="pre">1.0</span> <span class="pre">-</span> <span class="pre">erf(z)</span></code> but on sun machines computed by other methods
+that avoid cancellation for large z.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Python 3.2+, use <code class="docutils literal notranslate"><span class="pre">math.erfc</span></code> instead.</p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="constants.html" class="btn btn-neutral float-left" title="Constants" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="matrix.html" class="btn btn-neutral float-right" title="Matrix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

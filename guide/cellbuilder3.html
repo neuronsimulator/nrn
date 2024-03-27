@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specifying parameterized variation of biophysical properties &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 1. Set up a SubsetDomainIterator" href="set_up_a_subsetdomainiterator.html" />
+    <link rel="prev" title="Managing a model cell with complex anatomy" href="cellbuilder2.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder1.html">Creating a stylized (“stick-figure”) model cell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder2.html">Managing a model cell with complex anatomy</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Specifying parameterized variation of biophysical properties</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="set_up_a_subsetdomainiterator.html">Step 1. Set up a SubsetDomainIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="specify_the_model_parameters_varied.html">Step 2. Specify the model parameter(s) to be varied</a></li>
+<li class="toctree-l4"><a class="reference internal" href="specify_and_verify_the_functions.html">Step 3. Specify and verify the functions that govern the parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="use_the_model_specification.html">Step 4. Use the model specification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+      <li class="breadcrumb-item active">Specifying parameterized variation of biophysical properties</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/cellbuilder3.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="specifying-parameterized-variation-of-biophysical-properties">
+<span id="id1"></span><h1>Specifying parameterized variation of biophysical properties<a class="headerlink" href="#specifying-parameterized-variation-of-biophysical-properties" title="Link to this heading"></a></h1>
+<p>A large body of experimental data indicates that neuronal membrane properties can be nonuniform. For example, in some cell classes there is evidence that channel densities vary with location in a systematic manner. With the CellBuilder it is possible to specify that channel densities and other biophysical properties are functions of position.</p>
+<p>For this tutorial, we return to our stylized model</p>
+<img alt="../_images/cellp.gif" class="align-center" src="../_images/cellp.gif" />
+<p>but now we want <code class="docutils literal notranslate"><span class="pre">gnabar_hh</span></code>, <code class="docutils literal notranslate"><span class="pre">gkbar_hh</span></code>, and <code class="docutils literal notranslate"><span class="pre">gl_hh</span></code> in the apical dendrites to decrease linearly with distance from the origin of the apical tree.</p>
+<p><strong>Geometry</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Section</strong></p></th>
+<th class="head"><p><strong>L (um)</strong></p></th>
+<th class="head"><p><strong>diam (um)</strong></p></th>
+<th class="head"><p><strong>Biophysics</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>soma</p></td>
+<td><p>20</p></td>
+<td><p>20</p></td>
+<td><p>hh</p></td>
+</tr>
+<tr class="row-odd"><td><p>ap[0]</p></td>
+<td><p>400</p></td>
+<td><p>2</p></td>
+<td><p>hh*</p></td>
+</tr>
+<tr class="row-even"><td><p>ap[1]</p></td>
+<td><p>300</p></td>
+<td><p>1</p></td>
+<td><p>hh*</p></td>
+</tr>
+<tr class="row-odd"><td><p>ap[2]</p></td>
+<td><p>500</p></td>
+<td><p>1</p></td>
+<td><p>hh*</p></td>
+</tr>
+<tr class="row-even"><td><p>bas</p></td>
+<td><p>200</p></td>
+<td><p>3</p></td>
+<td><p>pas</p></td>
+</tr>
+<tr class="row-odd"><td><p>axon</p></td>
+<td><p>800</p></td>
+<td><p>1</p></td>
+<td><p>hh</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">gnabar_hh</span></code>, <code class="docutils literal notranslate"><span class="pre">gkbar_hh</span></code>, and <code class="docutils literal notranslate"><span class="pre">gl_hh</span></code> vary with distance from the origin of the apical tree</p></li>
+</ul>
+<ol class="arabic simple">
+<li><p>All have “full” density at origin of apical tree.</p></li>
+<li><p>Density falls to 0% at the most distant termination.</p></li>
+</ol>
+<p>To ensure that resting potential is -5 mV throughout the cell, e_pas in the basilar dendrite is -65 mV.</p>
+<p>Other parameters: cm = 1 uf/cm^2, Ra = 160 ohm cm.</p>
+<p>Before we start, let’s restate the problem in mathematical terms.</p>
+<p>Consider sodium conductance. For every point in the apical tree, we want the sodium conductance density at that point to depend on the fractional, or normalized, distance from the origin of the apical tree to that point. So we want gnabar_hh to vary with p, the normalized distance into the apical tree, according to this formula</p>
+<p>gnabar_hh = 0.12 * (1-p) where p = L0x / Lmax</p>
+<img alt="../_images/paths1.gif" class="align-center" src="../_images/paths1.gif" />
+<p>We also want gkbar_hh and gl_hh to be governed by similar formulas.</p>
+<p>This is a special case of a more general task: the problem of how to specify that a parameter <em>param</em> is some function f of p</p>
+<p>param = f(p)</p>
+<p>where <em>p</em> is one of the following distance metrics:</p>
+<ul class="simple">
+<li><p>path length (along the centroid of sections) from a reference point</p></li>
+<li><p>radial distance in space from a reference point</p></li>
+<li><p>distance from a plane, e.g. depth from the cortical surface, or distance above or below a cortical layer</p></li>
+</ul>
+<p>If we were trying to do this by writing our own hoc code, we might come up with something like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">forsec</span><span class="w"> </span><span class="n">subset</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">rangevar_suffix</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>where p is a function that returns one of the three distance metrics mentioned above</p>
+<p>The CellBuilder’s uses something called the SubsetDomainIterator class. to help us achieve the same effect very easily, and usually without having to write any code.</p>
+<p>Let’s see how this works.</p>
+<p><a class="reference internal" href="set_up_a_subsetdomainiterator.html#set-up-a-subsetdomainiterator"><span class="std std-ref">Step 1. Set up a SubsetDomainIterator</span></a></p>
+<p>by specifying the subset over which it will iterate, and the distance metric it will use</p>
+<p><a class="reference internal" href="specify_the_model_parameters_varied.html#specify-the-model-parameters-to-be-varied"><span class="std std-ref">Step 2. Specify the model parameter(s) to be varied</span></a></p>
+<p><a class="reference internal" href="specify_and_verify_the_functions.html#specify-and-verify-the-functions-that-govern-the-parameters"><span class="std std-ref">Step 3. Specify and verify the functions that govern the parameters</span></a></p>
+<p><a class="reference internal" href="use_the_model_specification.html#use-the-model-specification"><span class="std std-ref">Step 4. Use the model specification</span></a></p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cellbuilder2.html" class="btn btn-neutral float-left" title="Managing a model cell with complex anatomy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="set_up_a_subsetdomainiterator.html" class="btn btn-neutral float-right" title="Step 1. Set up a SubsetDomainIterator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

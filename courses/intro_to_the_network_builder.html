@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction to the Network Builder &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Artificial Cells in NEURON" href="artificial_cells_neuron.html" />
+    <link rel="prev" title="Multithreaded parallelization" href="multithread_parallelization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Introduction to the Network Builder</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulation">Simulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#define-artificial-cell-types">Define artificial cell types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cell-creation">Cell creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connections">Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#other-simulation-exercises">Other Simulation Exercises</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-automatically-generated-hoc-code">The automatically generated hoc code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Introduction to the Network Builder</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/intro_to_the_network_builder.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction-to-the-network-builder">
+<span id="intro-to-the-network-builder"></span><h1>Introduction to the Network Builder<a class="headerlink" href="#introduction-to-the-network-builder" title="Link to this heading"></a></h1>
+<p>The Network Builder tools are principally of didactic value, in that the graphical creation of simple networks can generate “readable” hoc code which in turn embodies our notion of a fairly flexible programming style for construction of more complicated networks.</p>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading"></a></h2>
+<img alt="../_images/net1.gif" class="align-center" src="../_images/net1.gif" />
+<p>Artificial Integrate and Fire cell stimulated by a burst of action potentials. This is a “hello world” level exercise that shows how to use the Network Builder and supporting tools to create artificial cell types, use those types to create cell objects, and connect the cell objects together. A subsequent exercise discusses how to create network ready cell types from more complicated cells specified by the cell builder.</p>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<p>The strategy is to</p>
+<ol class="arabic simple">
+<li><p>Define the types of cells (and stimulators)</p></li>
+<li><p>Create each cell in the network</p></li>
+<li><p>Connect the cells together</p></li>
+<li><p>Specify parameters such as delays and connection weights</p></li>
+<li><p>Run a simulation and plot the input and output spike trains</p></li>
+</ol>
+<p>If you have trouble with the following instructions, <a class="reference download internal" download="" href="../_downloads/cf074e22a01504aaa45fd3164d3711fd/net1run.hoc.txt"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">executes</span> <span class="pre">a</span> <span class="pre">working</span> <span class="pre">exercise</span></code></a>.</p>
+<section id="define-artificial-cell-types">
+<h3>Define artificial cell types<a class="headerlink" href="#define-artificial-cell-types" title="Link to this heading"></a></h3>
+<p><a class="reference internal" href="artificial_cells_neuron.html#artificial-cells-neuron"><span class="std std-ref">What is an artificial cell in NEURON?</span></a></p>
+<p>Start an ArtCellGUI tool by selecting the menu item: <span class="menuselection">NEURONMainMenu ‣ Build ‣ NetworkCell ‣ ArtificialCell</span></p>
+<p>Create a “C” type via a <span class="menuselection">New ‣ IntFire1</span> followed by a Rename. This type will be used to create our model cell.</p>
+<p>Create an “S” type via a <span class="menuselection">New ‣ NetStim</span> followed by a Rename. We will use this type later on to create a stimulator. The interval and number parameters should be set to 10 and 10 respectively.</p>
+<p>The interface should now look something like this</p>
+<img alt="../_images/net1type.gif" class="align-center" src="../_images/net1type.gif" />
+</section>
+<section id="cell-creation">
+<h3>Cell creation<a class="headerlink" href="#cell-creation" title="Link to this heading"></a></h3>
+<p>Start a NetGUI tool by selecting the menu item: <span class="menuselection">NEURONMainMenu ‣ Build ‣ NetworkBuilder</span></p>
+<p>The NetGUI instance should have its “Locate” radiobutton selected.</p>
+<p>Drag an “S” into the middle of the canvas. This creates an “S0”. The text in the canvas explains what is happening during dragging.</p>
+<p>Drag a “C” into the canvas. This creates a “C1”.</p>
+<p>The NetGUI window should now look something like this</p>
+<img alt="../_images/net1cre.gif" class="align-center" src="../_images/net1cre.gif" />
+<p>but won’t have the explanatory text in the canvas unless you just selected the “Locate” radio button.</p>
+<p>Note that cells are indexed according to the order of creation starting at 0. Dragging a created cell off the canvas destroys it (and reduces the indices of cells greater than that index by 1. That is, the largest index is total number of cells - 1. Dragging a new cell onto an existing cell replaces the existing cell and its index is unchanged. Currently, replacing a cell destroys all the connections to that cell – possibly the wrong gui behavior when cells have only one possible input connection point.</p>
+<p>At this point, what you see in the NetworkBuilder is just a specification and the cells don’t yet exist. The pointprocesses aren’t created (and therefore the network can’t be simulated) until the “Create” button is pressed. After “Create” is pressed, no new cell type can be added to the NetGUI. Within the confines of the existing types, any number of cells can be created or destroyed along with their connections and the “real (simulatable)” network will be constantly updated to reflect the NetGUI specification.</p>
+<p>It is a good idea to save the NetGUI tool often (or at least if substantial effort has gone into changing it since it was last saved).</p>
+</section>
+<section id="connections">
+<h3>Connections<a class="headerlink" href="#connections" title="Link to this heading"></a></h3>
+<p>In the NetGUI window, select the “<span class="menuselection">Src ‣ Tar</span>” radiobutton and drag a line from S0 to C1.</p>
+<p>Use the “Weights” button to pop up a NetEdgeGUI panel. With this panel, selecting an item on the left list places the number in the field editor. Selecting an item in the right list assigns the field editor value to its connection weight. This makes it convenient to assign the same weight to a subset of connections.</p>
+<p>Enter “2” into the field editor.</p>
+<p>Click on the right list item labeled “S0-&gt;C1 0”. The label should change to “S0-&gt;C1 2”. This weight is large enough so that every input event (from S0) should elicit an output event from C1</p>
+<p>The NetGUI and NetEdgeGUI windows should now look something like this</p>
+<img alt="../_images/net1edge.gif" class="align-center" src="../_images/net1edge.gif" />
+</section>
+<section id="id1">
+<h3>Simulation<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>In the NetGUI window, press the “Create” button.</p>
+<p>Press the “SpikePlot” button to pop up a plot window.</p>
+<p>Start a <span class="menuselection">NEURONMainMenu ‣ Tools ‣ RunControl</span> and VariableStepControl. Set TStop to 1000 and invoke “Use variable dt”</p>
+<p>Do an Init&amp;Run. You should see spikes in the SpikePlot graph.</p>
+<p>The relevant windows should now look something like this</p>
+<img alt="../_images/net1run.gif" class="align-center" src="../_images/net1run.gif" />
+<p>Compare the discrete event simulation run time with the fixed step method (“Use variable dt” turned off).</p>
+</section>
+<section id="other-simulation-exercises">
+<h3>Other Simulation Exercises<a class="headerlink" href="#other-simulation-exercises" title="Link to this heading"></a></h3>
+<p>Reduce the fast interspike interval of the stimulus to 2 ms. Why are spikes missing from the C1 output?</p>
+<p>For the remaining exercises, set the fast interspike interval back to 10.</p>
+<p>For the C cell type, set the integration time constant to 100 ms and set the input connection weight to 0.2 . Observe the output spike train and its relation to the input train.</p>
+<p>Plot the value of the state variable <code class="docutils literal notranslate"><span class="pre">m</span></code> in the <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IntFire1" title="IntFire1"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntFire1</span></code></a> pointprocess that implements the C1 cell. Why does <code class="docutils literal notranslate"><span class="pre">m</span></code> remain constant between events instead of decaying exponentially (even with the fixed time step)?</p>
+<p>Note: The “ShowCellMap” button in the NetGUI panel helps identify the actual <code class="docutils literal notranslate"><span class="pre">C_IntFire1</span></code> object instance that contains the “pp” public object reference to the actual <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IntFire1" title="IntFire1"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntFire1</span></code></a> point process object instance (which is located in the dummy section, <code class="docutils literal notranslate"><span class="pre">acell_home_</span></code>) .</p>
+</section>
+<section id="the-automatically-generated-hoc-code">
+<h3>The automatically generated hoc code<a class="headerlink" href="#the-automatically-generated-hoc-code" title="Link to this heading"></a></h3>
+<p>It’s one thing to manage a few cells and connections, quite another to manage thousands. Some help in this task is provided by functions that return various kinds of <a class="reference internal" href="../python/modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> lists, e. g. all the <code class="docutils literal notranslate"><span class="pre">NetCons</span></code> that connect to the same postcell, post synaptic point process, precell, etc. However, at this time there are no generic gui tools to view or manage large networks and it is necessary to craft viewing, control, and management routines based on the details of the particular network being investigated.</p>
+<p>Specifying large networks practically requires interpreter programming and this in turn requires familiarity with a programming style suitable for conceptual control of such networks. The hoc code generated by the NetGUI tool for small networks can be used as a basic pattern and a large part of it re-used for the construction of larger networks involving procedural specification of network architecture with random connections, weights, etc. Certainly the cell types are re-usable as is and without change. Those of you with an interest in networks that are beyond the scope of the current NetGUI tool should save the above NetGUI specification as a hoc file and look at it with an editor. Hoc files are constructed using the “Hoc File” button in the NetGUI window. The ideas involving cell templates, the cell creation procedure (cell_append), and the connection procedure (nc_append) have wide applicability.</p>
+<p>Cell templates are probably essential programming practice with regard to simulation of large numbers of non-artificial cells. Each template has a position procedure to set the 3-d location of the cell and public position coordinates x, y, z. The connect2target function creates a NetCon with “this” as the source, and the first objref argument as the target.</p>
+<p>The hoc file for the above spec looks like <a class="reference download internal" download="" href="../_downloads/dc2493d0c6ec7f89fdd90c6c0efcb9af/net1spec.ho.txt"><code class="xref download docutils literal notranslate"><span class="pre">this</span></code></a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="multithread_parallelization.html" class="btn btn-neutral float-left" title="Multithreaded parallelization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="artificial_cells_neuron.html" class="btn btn-neutral float-right" title="Artificial Cells in NEURON" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

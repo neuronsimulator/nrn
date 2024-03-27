@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON Extension to NMODL &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Basic Reaction-Diffusion" href="../rxd.html" />
+    <link rel="prev" title="NMODL" href="nmodl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ste.html">StateTransitionEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+          <li class="breadcrumb-item"><a href="nmodl.html">NMODL</a></li>
+      <li class="breadcrumb-item active">NEURON Extension to NMODL</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../hoc/modelspec/programmatic/mechanisms/nmodl2.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/python/modelspec/programmatic/mechanisms/nmodl2.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-extension-to-nmodl">
+<span id="nmodltoneuron"></span><span id="nmodl2"></span><h1>NEURON Extension to NMODL<a class="headerlink" href="#neuron-extension-to-nmodl" title="Link to this heading"></a></h1>
+<p>This section describes the special <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block that has been added to
+the standard model description language in order to allow translation of
+a model into a form suitable for linking with <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>.</p>
+<p>The keyword <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> introduces a special block which contains statements
+that tell NMODL how to organize the variables for access at the <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>
+user level. It declares:</p>
+<ul class="simple">
+<li><p>Which names are to be treated as range variables.</p></li>
+<li><p>Which names are to be treated as global variables.</p></li>
+<li><p>The names of all the ions used in the model and how the corresponding
+concentrations, current, and reversal potential are to be treated.</p></li>
+<li><p>The suffix to be used for all variables in the model so that they
+do not conflict with variables in other models.</p></li>
+<li><p>Whether the model is for a point process such as a synapse or
+a distributed process with density along an entire section such as a channel
+density.</p></li>
+<li><p>Which names will be connected to external variables. (See “Importing
+variables from other mechanisms”.)</p></li>
+</ul>
+<p>The syntax is (each statement can occur none or more times) :</p>
+<section id="neuron">
+<h2>NEURON<a class="headerlink" href="#neuron" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span><span class="p">{</span>
+   <span class="n">SUFFIX</span> <span class="n">name</span>
+   <span class="n">RANGE</span> <span class="n">range1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">GLOBAL</span> <span class="n">global1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">NONSPECIFIC_CURRENT</span> <span class="n">nonspec1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">ELECTRODE_CURRENT</span> <span class="n">elec1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">USEION</span> <span class="n">name</span> <span class="p">[</span><span class="n">READ</span> <span class="n">read1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="n">WRITE</span> <span class="n">write1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="n">VALENCE</span> <span class="n">real</span><span class="p">]</span> <span class="p">[</span><span class="n">REPRESENTS</span> <span class="n">ontology_id</span><span class="p">]</span>
+   <span class="n">POINT_PROCESS</span> <span class="o">...</span>
+   <span class="n">POINTER</span> <span class="n">pointer1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">BBCOREPOINTER</span> <span class="n">bbcore1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">RANDOM</span> <span class="n">ranvar1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">EXTERNAL</span> <span class="n">external1</span><span class="p">,</span> <span class="o">...</span>
+   <span class="n">THREADSAFE</span>
+   <span class="n">REPRESENTS</span> <span class="n">ontology_id</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<section id="suffix">
+<h3>SUFFIX<a class="headerlink" href="#suffix" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">SUFFIX</span> <span class="n">_name</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The suffix, “<code class="docutils literal notranslate"><span class="pre">_name</span></code>” is appended to all variables, functions, and
+procedures that are accessible from the user level of <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>. If the <code class="docutils literal notranslate"><span class="pre">SUFFIX</span></code>
+statement is absent, the file name is used as the suffix (with the addition
+of an underscore character).  If there is a <a class="reference internal" href="mech.html#mech"><span class="std std-ref">Point Processes and Artificial Cells</span></a> statement,
+that name
+is used as the suffix.  Suffixes prevent overloading of names at the user
+level of <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>.  At some point in the future I may add something similar
+to the access statement which will allow the omission of the suffix for a
+specified mechanism.
+Note that suffixes are not used within the model
+description file itself. If the SUFFIX <em>name</em> is the word, “<code class="docutils literal notranslate"><span class="pre">nothing</span></code>”,
+then no suffix is used for
+variables, functions, and procedures explicitly declared in the <code class="file docutils literal notranslate"><span class="pre">.mod</span></code> file.
+However, the mechanism name will be the base file name.
+This is useful if you know that no conflict of names
+will exist or if the <code class="file docutils literal notranslate"><span class="pre">.mod</span></code> file is primarily used to create functions callable
+from <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> by the user and you want to specify those function names exactly.</p>
+</dd>
+</dl>
+</section>
+<section id="range">
+<h3>RANGE<a class="headerlink" href="#range" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">RANGE</span> <span class="n">range1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These names will be become range variables. Do not add suffixes here.
+The names should also be declared in the normal <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code> or <code class="docutils literal notranslate"><span class="pre">ASSIGNED</span></code>
+statement outside
+of the <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block.  Parameters that do not appear in a <code class="docutils literal notranslate"><span class="pre">RANGE</span></code>
+statement will become global variables.
+Assigned variables that do not appear in this statement or in the
+<code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> statement will be hidden from the user.
+When a mechanism is inserted in
+a section, the values of these range variables are set to the values
+specified in the normal <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code> statement outside the
+<code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block.</p>
+</dd>
+</dl>
+</section>
+<section id="global">
+<h3>GLOBAL<a class="headerlink" href="#global" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">GLOBAL</span> <span class="n">global1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These names, which should be declared elsewhere as <code class="docutils literal notranslate"><span class="pre">ASSIGNED</span></code> or <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code>
+variables,
+become global variables instead of range variables.  Notice here that
+the default for a <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code> variable is to become a global variable whereas
+the default for an <code class="docutils literal notranslate"><span class="pre">ASSIGNED</span></code> variable is to become hidden at the user level.</p>
+</dd>
+</dl>
+</section>
+<section id="nonspecific-current">
+<h3>NONSPECIFIC_CURRENT<a class="headerlink" href="#nonspecific-current" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">NONSPECIFIC_CURRENT</span> <span class="n">nonspec1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This signifies that we are calculating local currents which get added
+to the total membrane current but will not contribute to any particular
+ionic concentration.  This current should be assigned a value
+after any <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code> statement but before the end of the <code class="docutils literal notranslate"><span class="pre">BREAKPOINT</span></code> block.
+This name will be hidden at the user level unless it appears in a
+<code class="docutils literal notranslate"><span class="pre">RANGE</span></code> statement.</p>
+</dd>
+</dl>
+</section>
+<section id="electrode-current">
+<h3>ELECTRODE_CURRENT<a class="headerlink" href="#electrode-current" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">ELECTRODE_CURRENT</span> <span class="n">elec1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The ELECTRODE_CURRENT statement has two important consequences: positive values of the current
+will depolarize the cell (in contrast to the hyperpolarizing effect of positive transmembrane
+currents), and when the extracellular mechanism is present there will be a change in the
+extracellular potential <code class="docutils literal notranslate"><span class="pre">vext</span></code>.
+<code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add existing example mod file (iclamp1.mod)</p>
+</dd>
+</dl>
+</section>
+<section id="useion">
+<h3>USEION<a class="headerlink" href="#useion" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">USEION</span> <span class="n">name</span> <span class="p">[</span><span class="n">READ</span> <span class="n">read1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="n">WRITE</span> <span class="n">write1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="n">VALENCE</span> <span class="n">real</span><span class="p">]</span> <span class="p">[</span><span class="n">REPRESENTS</span> <span class="n">ontology_id</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This statement declares that a  specific ionic species will be used within
+this model. The built-in
+HH channel uses the ions <code class="docutils literal notranslate"><span class="pre">na</span></code> and <code class="docutils literal notranslate"><span class="pre">k</span></code>. Different models which deal with
+the same ionic species should use the same names so that total concentrations
+and currents can be computed consistently. The ion, <code class="docutils literal notranslate"><span class="pre">Na</span></code>, is different from
+<code class="docutils literal notranslate"><span class="pre">na</span></code>.  The example models using calcium call it, <code class="docutils literal notranslate"><span class="pre">ca</span></code>. If an ion is
+declared, suppose it is called,
+<code class="docutils literal notranslate"><span class="pre">ion</span></code>, then a separate mechanism is internally created
+within <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>, denoted by <code class="docutils literal notranslate"><span class="pre">ion</span></code>, and automatically inserted whenever
+the “using” mechanism is inserted.  The variables of the mechanism
+called <code class="docutils literal notranslate"><span class="pre">ion</span></code> are
+outward total current carried by this ion, <code class="docutils literal notranslate"><span class="pre">iion</span></code>; internal and
+external concentrations of this ion, <code class="docutils literal notranslate"><span class="pre">ioni</span></code> and <code class="docutils literal notranslate"><span class="pre">iono</span></code>; and
+reversal potential of this ion, <code class="docutils literal notranslate"><span class="pre">eion</span></code>.  These ion range variables do
+NOT have suffixes.
+Prior to 9/94 the reversal potential was not automatically calculated
+from the Nernst equation but, if it was <em>used</em> it had to be set by
+the user or by an assignment in some mechanism (normally the Nernst equation).
+The usage of ionic concentrations and reversal potential has been changed
+to more naturally reflect their physiological meaning while remaining
+reasonably efficient computationally.</p>
+<p>The new method governs the behaviour of the reversal potential and
+concentrations with respect to their treatment by the GUI (whether
+they appear in PARAMETER, ASSIGNED, or STATE panels; indeed, whether they
+appear at all in these panels) and when the reversal potential
+is automatically computed from the concentrations using the Nernst
+equation. The decision about what style to use happens on a per section
+basis and is determined by the set of mechanisms inserted within the
+section. The rules are defined in the reference to the function
+ion_style(). Three cases are noteworthy.</p>
+</dd>
+</dl>
+<section id="read">
+<h4>READ<a class="headerlink" href="#read" title="Link to this heading"></a></h4>
+<blockquote>
+<div><p>Assume only one model is inserted in a section.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">USEION</span> <span class="n">ca</span> <span class="n">READ</span> <span class="n">eca</span>
+</pre></div>
+</div>
+<p>Then eca will be treated as a PARAMETER and cai/cao will not
+appear in the parameter panels created by the gui.</p>
+<p>Now insert another model at the same section that has</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">USEION</span> <span class="n">ca</span> <span class="n">READ</span> <span class="n">cai</span><span class="p">,</span> <span class="n">cao</span>
+</pre></div>
+</div>
+<p>Then 1) eca will be “promoted” to an ASSIGNED variable, 2) cai/cao
+will be treated as constant PARAMETER’s, and 3) eca will be computed
+from the Nernst equation when finitialize() is called.</p>
+</div></blockquote>
+</section>
+<section id="write">
+<h4>WRITE<a class="headerlink" href="#write" title="Link to this heading"></a></h4>
+<blockquote>
+<div><p>Lastly, insert a final model at the same location in addition to the
+first two.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">USEION</span> <span class="n">ca</span> <span class="n">WRITE</span> <span class="n">cai</span><span class="p">,</span> <span class="n">cao</span>
+</pre></div>
+</div>
+<p>Then  eca will still be treated as an ASSIGNED variable but will be
+computed not only by finitialize but on every call to fadvance().
+Also cai/cao will be initialized to the global variables
+cai0_ca_ion and cao0_ca_ion respectively and treated as STATE’s by the
+graphical interface.</p>
+<p>The idea is for the system to automatically choose a style which is
+sensible in terms of dependence of reversal potential on concentration
+and remains efficient.</p>
+<p>Since the nernst equation is now automatically used as needed it is
+necessary to supply the valence (charge carried by the ion) except for
+the privileged ions: na, k, ca which have the VALENCE 1, 1, 2 respectively.</p>
+<p>Only the ion names <code class="docutils literal notranslate"><span class="pre">na</span></code>, <code class="docutils literal notranslate"><span class="pre">k</span></code>, and <code class="docutils literal notranslate"><span class="pre">ca</span></code> are initialized to a
+physiologically meaningful value — and those may not be right for
+your purposes.  Concentrations and reversal potentials should be considered
+parameters unless explicitly calculated by some mechanism.</p>
+</div></blockquote>
+</section>
+<section id="valence">
+<h4>VALENCE<a class="headerlink" href="#valence" title="Link to this heading"></a></h4>
+<blockquote>
+<div><p>The <code class="docutils literal notranslate"><span class="pre">READ</span></code> list of a <code class="docutils literal notranslate"><span class="pre">USEION</span></code> specifies those ionic variables which
+will be used to calculate other values but is not calculated itself.
+The <code class="docutils literal notranslate"><span class="pre">WRITE</span></code> list of a <code class="docutils literal notranslate"><span class="pre">USEION</span></code> specifies those ionic variables which
+will be calculated within this mechanism. Normally, a channel will read
+the concentration or reversal potential variables and write a current.
+A mechanism that calculates concentrations will normally read a current
+and write the intracellular and/or extracellular; it is no longer necessary
+to ever write the reversal potential as that will be automatically computed
+via the nernst equation.
+It usually does not make sense to both read and
+write the same ionic concentrations.
+It is possible to READ and WRITE currents.
+One can imagine,  a large calcium
+model which would <code class="docutils literal notranslate"><span class="pre">WRITE</span></code> all the ion variables (including current)
+and READ the ion current.
+And one can imagine
+models which <code class="docutils literal notranslate"><span class="pre">READ</span></code> some ion variables and do not <code class="docutils literal notranslate"><span class="pre">WRITE</span></code> any.
+It would be an error if more than one mechanism at the same location tried
+to WRITE the same concentration.</p>
+<p>A bit of implementation specific discussion may be in order here.
+All the statements after the <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code> statement in the
+<code class="docutils literal notranslate"><span class="pre">BREAKPOINT</span></code> block are
+collected to form a function which is called during the construction of
+the charge conservation matrix equation.  This function is called
+several times in order to compute the current and conductance  to be added
+into the matrix equation.  This function is never called if you are not
+writing any current.  The <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code> statement is executed after the new voltages
+have been computed in order to integrate the states over the time step, <code class="docutils literal notranslate"><span class="pre">dt</span></code>.
+Local static variables get appropriate copies of the proper ion variables
+for use in the mechanism. Ion variables get updated on exit from these
+functions such that WRITE currents are added to ion currents.</p>
+</div></blockquote>
+</section>
+<section id="represents">
+<h4>REPRESENTS<a class="headerlink" href="#represents" title="Link to this heading"></a></h4>
+<blockquote>
+<div><p>See <code class="docutils literal notranslate"><span class="pre">REPRESENTS</span></code> statement.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="point-process">
+<h3>POINT_PROCESS<a class="headerlink" href="#point-process" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">POINT_PROCESS</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Point models are used for synapses, electrode stimuli, etc.
+They are distinguished from standard mechanisms in that instead of inserting
+the mechanism into a section and accessing parameters via range variables,
+point mechanisms are created as interpreter objects, eg.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    objref stim
+    stim = new IClamp(x)
+</pre></div>
+</div>
+<p>Values are accessed via the standard object syntax, eg. <code class="docutils literal notranslate"><span class="pre">stim.amp</span> <span class="pre">=</span> <span class="pre">2</span></code>.
+Since standard mechanisms are considered in terms of density,
+the appropriate current units for standard mechanisms are mA/cm2 and conductance units are mho/cm2.
+However, point process current units are nA and conductance units are umho.
+These conventions ensure that the simulation is independent of the number of segments in a section
+(assuming the number of segments is large enough so spatial discretization error is small).</p>
+<p>At the NEURON user level, all variables and functions associated with a POINT_PROCESS
+are accessed via the normal object syntax. A point process, call it <code class="docutils literal notranslate"><span class="pre">pnt</span></code> is inserted into (or moved to)
+the currently specified section at location, <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;</span> <span class="pre">x</span> <span class="pre">&lt;</span> <span class="pre">1</span></code>, with the function, <code class="docutils literal notranslate"><span class="pre">pnt.loc(x)</span></code>. See <a class="reference internal" href="mech.html#pnt.get_loc" title="pnt.get_loc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pnt.get_loc()</span></code></a></p>
+<p>If a point process is created with no argument then it is not located anywhere.
+If an argument is present and there is a currently accessed section then the point process is placed there.
+At this time, point processes are placed at the center of the nearest segment.</p>
+<p><code class="docutils literal notranslate"><span class="pre">pnt.has_loc()</span></code> returns 1 if the point process is located in a section and returns 0 if not located.
+If a point process has no location then attempts to access its variables or get its location will
+produce an error message. See <a class="reference internal" href="mech.html#pnt.has_loc" title="pnt.has_loc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pnt.has_loc()</span></code></a></p>
+<p>One finds the location of a point process via the function,  <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">pnt.get_loc()</span></code>. See <a class="reference internal" href="mech.html#pnt.get_loc" title="pnt.get_loc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pnt.get_loc()</span></code></a></p>
+<p>The function returns the x location at the center of the segment where the process was placed and pushes the section name onto the stack so that it becomes the currently accessed section. The stack must be popped with pop_section() at a subsequent time. BE SURE TO POP THE SECTION STACK! This can be a dangerous function in the sense that if the stack is not popped, then section access is completely screwed up.</p>
+<p>The POINT_PROCESS mechanism can be used to implement classes written in c/c++ for use by the interpreter.
+To aid in this the special block CONSTRUCTOR is called when a point process is created with the <code class="docutils literal notranslate"><span class="pre">new</span></code>  command in the interpreter.
+Just before the memory associated with a point process instance is freed the users DESTRUCTOR block (if any) is called.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="mech.html#mech"><span class="std std-ref">Point Processes and Artificial Cells</span></a></p>
+</div>
+</dd>
+</dl>
+</section>
+<section id="pointer">
+<h3>POINTER<a class="headerlink" href="#pointer" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">POINTER</span> <span class="n">pointer1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These names are pointer references to variables outside the model.
+They should be declared in the body of the description as normal variables
+with units and are used exactly like normal variables. The user is responsible
+for setting these pointer variables to actual variables at the
+hoc interpreter level. Actual variables are normal variables in other
+mechanisms, membrane potential, or any hoc variable. See below for how this
+connection is made. If a POINTER variable is ever used without being
+set to the address of an actual variable, <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> may crash with a memory
+reference error, or worse, produce wrong results. Unfortunately the errors
+that arise can be quite subtle. For example, if you set a POINTER correctly
+to a mechanism variable in section a. And then change the number of segments in
+section a, the POINTER will be invalid because the memory used by
+section a is freed and might be used for a totally different purpose. It
+is up to the user to reconnect the POINTER to a valid actual variable.</p>
+</dd>
+</dl>
+</section>
+<section id="bbcorepointer">
+<h3>BBCOREPOINTER<a class="headerlink" href="#bbcorepointer" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">BBCOREPOINTER</span> <span class="n">bbcore1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>See: <a class="reference internal" href="../../../../coreneuron/compatibility.html#memory-management-for-pointer-variables"><span class="std std-ref">Memory Management for POINTER Variables</span></a></p>
+<p><code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add description (?) and existing example mod file (provided by link)</p>
+</dd>
+</dl>
+</section>
+<section id="random">
+<span id="nmodlrandom"></span><h3>RANDOM<a class="headerlink" href="#random" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">RANDOM</span> <span class="n">ranvar1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These names refer to random variable streams that are automatically
+associated with nrnran123 generators. Such nrnran123 generators are also used, for example to implement
+<a class="reference internal" href="../../../programming/math/random.html#Random.Random123" title="Random.Random123"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a>
+These names are analogous to range variables in that the streams are distinct for every mechanism instance
+of a POINT_PROCESS, ARTIFICIAL_CELL, or instance of a density mechanism in a segment of a cable section.
+Each stream exists for the lifetime of the mechanism instance. While a stream exists, its properties can
+be changed from the interpreter.</p>
+<p>Prior to the introduction of this keyword, random streams required a POINTER variable and
+fairly elaborate VERBATIM blocks
+to setup the streams and manage  the stream properties from HOC or Python so that each stream was
+statistically independent of all other streams.</p>
+<p>From the interpreter, the ranvar1 stream properties are assigned and evaluated using standard
+range variable syntax where mention of ranvar1 returns a <a class="reference internal" href="../../../programming/math/random.html#NMODLRandom" title="NMODLRandom"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMODLRandom</span></code></a> object that wraps the stream
+and provides method calls to get and set the three stream ids and the starting sequence number.</p>
+<p>When a stream is instantiated, its identifier triplet is default initialized to
+(1, <a class="reference internal" href="../network/parcon.html#ParallelContext.id_world" title="ParallelContext.id_world"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mpiworldrank</span></code></a>, ++internal_id3)
+so all streams are statistically independent (at launch time, internal_id3 = 0).
+However since the identifier triplet depends on the order of
+construction, it is recommended for parallel simulation reproducibility that triplets be algorithmically specified
+at the interpreter level. And see <a class="reference internal" href="../../../programming/math/random.html#Random.Random123_globalindex" title="Random.Random123_globalindex"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123_globalindex()</span></code></a>.</p>
+<p>At present, the list of <a class="reference internal" href="#random">random</a>… methods available for use within mod files (outside of VERBATIM blocks) are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>random_setseq(ranvar1, uint34_value)</p></li>
+<li><p>random_setids(ranvar1, id1_uint32, id2_uint32, id3_uint32)</p></li>
+<li><p>x = random_uniform(ranvar1) : uniform 0 to 1 – minimum value is 2.3283064e-10 and max value is 1-min</p></li>
+<li><p>x = random_uniform(ranvar1, min, max)</p></li>
+<li><p>x = random_negexp(ranvar1) : mean 1.0 – min value is 2.3283064e-10, max is 22.18071</p></li>
+<li><p>x = random_negexp(ranvar1, mean)</p></li>
+<li><p>x = random_normal(ranvar1) : mean 1.0, std 1.0</p></li>
+<li><p>x = random_normal(ranvar1, mean, std)</p></li>
+<li><p>x = random_ipick(ranvar1) : range 0 to 2^32-1</p></li>
+<li><p>x = random_dpick(ranvar1)</p></li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</section>
+<section id="external">
+<h3>EXTERNAL<a class="headerlink" href="#external" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">EXTERNAL</span> <span class="n">external1</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These names, which should be declared elsewhere as <code class="docutils literal notranslate"><span class="pre">ASSIGNED</span></code>
+or <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code>
+variables allow global variables in other models or <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> c files to be
+used in this model. That is, the definition of this variable must appear
+in some other file. Note that if the definition appeared in another mod file
+this name should explicitly contain the proper suffix of that model.
+You may also call functions from other models (but do not ignore the warning;
+make sure you declare them as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">extern</span> <span class="n">double</span> <span class="n">fname_othermodelsuffix</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>in a <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> block and use them with the proper suffix.</p>
+</dd>
+</dl>
+</section>
+<section id="threadsafe">
+<h3>THREADSAFE<a class="headerlink" href="#threadsafe" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">THREADSAFE</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>See: <span class="xref std std-ref">Multithreaded paralellization</span> and <a class="reference internal" href="../../../../coreneuron/compatibility.html#thread-safe-mod-files"><span class="std std-ref">Thread Safe MOD Files</span></a></p>
+<p><code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add description and existing example mod file</p>
+</dd>
+</dl>
+</section>
+<section id="id1">
+<h3>REPRESENTS<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">REPRESENTS</span> <span class="n">ontology_id</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Optionally provide CURIE (Compact URI) to annotate what the species represents
+e.g. <code class="docutils literal notranslate"><span class="pre">CHEBI:29101</span></code> for sodium(1+).</p>
+<p><code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add existing example mod file (src/nrnoc/hh.mod)</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="before-after">
+<h2>BEFORE / AFTER<a class="headerlink" href="#before-after" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BEFORE</span> <span class="o">&lt;</span><span class="n">INITIAL</span><span class="o">/</span><span class="n">BREAKPOINT</span><span class="o">/</span><span class="n">STEP</span><span class="o">&gt;</span> <span class="p">{</span>
+   <span class="o">...</span>
+<span class="p">}</span>
+
+<span class="n">AFTER</span> <span class="o">&lt;</span><span class="n">INTIAL</span><span class="o">/</span><span class="n">SOLVE</span><span class="o">&gt;</span> <span class="p">{</span>
+   <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BEFORE</span> <span class="pre">INITIAL</span></code> executes just before any <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#initial"><span class="std std-ref">INITIAL</span></a> blocks of any mod file execute (but after all the type <code class="docutils literal notranslate"><span class="pre">0</span></code> of <a class="reference internal" href="../../../simctrl/programmatic.html#finitializehandler"><span class="std std-ref">FInitializeHandler</span></a> are called).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AFTER</span> <span class="pre">INITIAL</span></code> executes just after the <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#initial"><span class="std std-ref">INITIAL</span></a> blocks of all mod files execute (but before all the type <code class="docutils literal notranslate"><span class="pre">1</span></code> of <a class="reference internal" href="../../../simctrl/programmatic.html#finitializehandler"><span class="std std-ref">FInitializeHandler</span></a> are called).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BEFORE</span> <span class="pre">BREAKPOINT</span></code> executes whenever the tree matrix is setup before any <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#breakpoint"><span class="std std-ref">BREAKPOINT</span></a> blocks execute</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AFTER</span> <span class="pre">SOLVE</span></code> executes afer all the <a class="reference internal" href="../../../../nmodl/NMODL_language.html#SOLVE"><span class="std std-ref">SOLVE</span></a> blocks (have updated the states for the fixed step method). For the fixed step method that is more or less the end of <span class="xref std std-ref">fadvance()</span>. But for variable step methods that refers to the completion of a cvode step which is not quite what is desired in practice because event arrival can cause cvode to retreat to an earlier time. Hence the use of <code class="docutils literal notranslate"><span class="pre">BEFORE</span> <span class="pre">STEP</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BEFORE</span> <span class="pre">STEP</span></code> executes just before vector record takes place. I.e. <code class="docutils literal notranslate"><span class="pre">BEFORE</span> <span class="pre">STEP</span></code> takes place when the entire system of equations and events are consistent at time <cite>t</cite>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">INITIAL</span></code> blocks are ordered so that mechanisms that write
+concentrations are after the initialization of ions and before mechanisms that read
+concentrations.
+But that is also the case for the order of the list of mechanisms that do <code class="docutils literal notranslate"><span class="pre">INITIAL</span></code>, <code class="docutils literal notranslate"><span class="pre">BREAKPOINT</span></code>, <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code>, etc.</p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add existing example mod file</p>
+</dd>
+</dl>
+</section>
+<section id="for-netcons">
+<h2>FOR_NETCONS<a class="headerlink" href="#for-netcons" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><p>FOR_NETCONS (args) means to loop over all NetCon connecting to this
+target instance and args are the names of the items of each NetCon’s
+weight vector (same as the enclosing NET_RECEIVE but possible different
+local names).</p>
+<p><code class="docutils literal notranslate"><span class="pre">TODO</span></code>: Add existing example mod file (test/coreneuron/mod/fornetcon.mod)</p>
+</dd>
+</dl>
+</section>
+<section id="protect">
+<h2>PROTECT<a class="headerlink" href="#protect" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+    <span class="n">GLOBAL</span> <span class="n">var</span>
+<span class="p">}</span>
+
+<span class="n">BREAKPOINT</span> <span class="p">{</span>
+    <span class="n">PROTECT</span> <span class="n">var</span> <span class="o">=</span> <span class="n">var</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Mod files that update values to <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl2.html#global"><span class="std std-ref">GLOBAL</span></a> variables are not considered
+thread safe. In case of multi-threaded/SIMD/GPU execution, such updates can result
+in a race condition. To avoid this, one needs to use <code class="docutils literal notranslate"><span class="pre">PROTECT</span></code> keyword. Note that
+<code class="docutils literal notranslate"><span class="pre">PROTECT</span></code> internally uses atomic operations on CPU or GPU execution and hence
+the statement needs to be of a simple form such as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">var1</span> <span class="o">=</span> <span class="n">var1</span> <span class="n">binary_operator</span> <span class="n">expression</span>
+<span class="n">var1</span> <span class="o">=</span> <span class="n">expression</span> <span class="n">binary_operator</span> <span class="n">var1</span>
+</pre></div>
+</div>
+<p>If the mod file is using the <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> essentially as a file scope <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#local"><span class="std std-ref">LOCAL</span></a>
+along with the possibility of passing values back to hoc in response to calling a
+<a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#procedure"><span class="std std-ref">PROCEDURE</span></a>, make sure to use the <a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl2.html#threadsafe"><span class="std std-ref">THREADSAFE</span></a> keyword in the
+<a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"><span class="std std-ref">NEURON</span></a> block to automatically treat those <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variables as thread
+specific variables. NEURON assigns and evaluates only the thread 0 version and if
+<a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#function"><span class="std std-ref">FUNCTION</span></a> and :<a class="reference internal" href="../../../../hoc/modelspec/programmatic/mechanisms/nmodl.html#procedure"><span class="std std-ref">PROCEDURE</span></a> are called from Python, the thread 0 version
+of these globals are used.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For the performance reason, we recommend to reduce or remove the use of
+<code class="docutils literal notranslate"><span class="pre">PROTECT</span></code> construct.</p>
+</div>
+</dd>
+</dl>
+</section>
+<section id="mutexlock-mutexunlock">
+<h2>MUTEXLOCK / MUTEXUNLOCK<a class="headerlink" href="#mutexlock-mutexunlock" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOCAL</span> <span class="n">factors_done</span>
+
+<span class="n">INITIAL</span> <span class="p">{</span>
+    <span class="n">MUTEXLOCK</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">factors_done</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+          <span class="n">factors_done</span> <span class="o">=</span> <span class="mi">1</span>
+          <span class="n">factors</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="n">MUTEXUNLOCK</span>
+<span class="p">}</span>
+
+<span class="n">PROCEDURE</span> <span class="n">factors</span><span class="p">()</span> <span class="p">{</span>
+    <span class="p">:</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">PROTECT</span></code>, <code class="docutils literal notranslate"><span class="pre">MUTEXLOCK</span></code> and <code class="docutils literal notranslate"><span class="pre">MUTEXUNLOCK</span></code> are two constructs to
+handle thread-safety in case update of updates to <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variables in
+multi-threaded execution. Internally it uses mutex mechanism to avoid race condition.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This construct is not supported in the case of GPU execution via CoreNEURON.
+For the performance reason and compatibility with GPU execution, either avoid
+the usage of this construct or check alternatives using <code class="docutils literal notranslate"><span class="pre">PROTECT</span></code> construct.</p>
+</div>
+</dd>
+</dl>
+</section>
+<section id="connecting-mechanisms-together">
+<span id="connectingmechanismstogether"></span><h2>Connecting Mechanisms Together<a class="headerlink" href="#connecting-mechanisms-together" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>Occasionally mechanisms need information from other mechanisms which may
+be located elsewhere in the neuron. Connecting pre and post synaptic
+point mechanisms is an obvious example. In the same vein, it may be useful
+to call a function from hoc which modifies some mechanism variables
+at a specific
+location. (Normally, mechanism functions callable from HOC should not
+modify range variables since the function does not know where the mechanism
+data for a segment is located. Normally, the pointers are set when <code class="docutils literal notranslate"><span class="pre">NEURON</span></code>
+calls the <code class="docutils literal notranslate"><span class="pre">BREAKPOINT</span></code> block and the associated <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code> blocks.)</p>
+<p>One kind of connection between mechanisms at the same point is through
+ionic mechanisms invoked with the USEION statement. In fact this is
+entirely adequate for local communication although treating an arbitrary
+variable as an ionic concentration may be conceptually strained.
+However, it does not solve the problem of communication between mechanisms
+at different points.</p>
+</div></blockquote>
+<dl>
+<dt>Description:</dt><dd><p>Basically what is needed is a way to implement the Python statement</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">section1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">mech1</span><span class="o">.</span><span class="n">var1</span> <span class="o">=</span>  <span class="n">section2</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span><span class="o">.</span><span class="n">mech2</span><span class="o">.</span><span class="n">var2</span>
+</pre></div>
+</div>
+<p>efficiently from within a mechanism without having to explicitly connect them
+through assignment at the Python level everytime the <code class="samp docutils literal notranslate"><em><span class="pre">var2</span></em></code> might change.</p>
+<p>First of all, the variables which point to the values in some other mechanism
+are declared within the NEURON block via</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span>
+   <span class="n">POINTER</span> <span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">,</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These variables are used exactly like normal variables in the sense that
+they can be used on the left or right hand side of assignment statements
+and used as arguments in function calls. They can also be accessed from Python
+just like normal variables.
+It is essential that the user set up the pointers to point to the correct
+variables. This is done by first making sure that the proper mechanisms
+are inserted into the sections and the proper point processes are actually
+“located” in a section. Then, at the hoc level each POINTER variable
+that exists should be set up via the command:</p>
+<p>The Python h.setpointer function is called with a syntax for POINT_PROCESS and SUFFIX (density) mechanisms respectively of</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">nrn</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">_ref_hocvar</span><span class="p">,</span> <span class="s1">&#39;POINTER_name&#39;</span><span class="p">,</span> <span class="n">point_proces_object</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">_ref_hocvar</span><span class="p">,</span> <span class="s1">&#39;POINTER_name&#39;</span><span class="p">,</span> <span class="n">nrn</span><span class="o">.</span><span class="n">Mechanism_object</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note: For a density mechanism, the ‘POINTER_name’ cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">sec</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where pointer and variable have enough implicit/explicit information to
+determine their exact segment and mechanism location. For a continuous
+mechanism, this means the section and location information. For a point
+process it means the object. The variable may also be any NEURON variable
+or voltage, e.g. <code class="docutils literal notranslate"><span class="pre">soma(0.5)._ref_v</span></code>.</p>
+<p>For example, consider a synapse which requires a presynaptic potential
+in order to calculate the amount of transmitter release. Assume the
+declaration in the presynaptic model</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span> <span class="p">{</span> <span class="n">POINTPROCESS</span> <span class="n">Syn</span>   <span class="n">POINTER</span> <span class="n">vpre</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Then</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">syn</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Syn</span><span class="p">(</span><span class="n">section</span><span class="p">(</span><span class="mf">0.8</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">axon</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">,</span> <span class="s1">&#39;vpre&#39;</span><span class="p">,</span> <span class="n">syn</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will allow the <code class="docutils literal notranslate"><span class="pre">syn</span></code> object located at <code class="docutils literal notranslate"><span class="pre">section(0.8)</span></code> to know the voltage at the distal end of the axon
+section. As a variation on that example, if one supposed that the synapse
+needed the presynaptic transmitter concentration (call it <code class="samp docutils literal notranslate"><em><span class="pre">tpre</span></em></code>) calculated
+from a point process model called “release” (with object reference
+<code class="samp docutils literal notranslate"><em><span class="pre">rel</span></em></code>, say) then the
+statement would be</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">rel</span><span class="o">.</span><span class="n">_ref_ACH_release</span><span class="p">,</span> <span class="s1">&#39;trpe&#39;</span><span class="p">,</span> <span class="n">syn</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The caveat is that tight coupling between states in different models
+may cause numerical instability. When this happens,
+merging models into one larger
+model may eliminate the instability.</p>
+</dd>
+</dl>
+</section>
+<section id="verbatim">
+<span id="python-verbatim"></span><h2>VERBATIM<a class="headerlink" href="#verbatim" title="Link to this heading"></a></h2>
+<dl>
+<dt>Description:</dt><dd><p>Sections of code surrounded by <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> and <code class="docutils literal notranslate"><span class="pre">ENDVERBATIM</span></code> blocks are
+interpreted as literal C/C++ code.
+This feature is typically used to interface with external C/C++ libraries,
+or to use NEURON features (such as random number generation) that are not
+explicitly supported in the NMODL language.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PROCEDURE</span> <span class="n">set_foo</span><span class="p">()</span> <span class="p">{</span>
+<span class="n">VERBATIM</span>
+<span class="o">/*</span> <span class="n">literal</span> <span class="n">C</span><span class="o">/</span><span class="n">C</span><span class="o">++</span> <span class="o">*/</span>
+<span class="n">ENDVERBATIM</span>
+  <span class="n">foo</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This is, by its nature, more fragile than exclusively using NMODL language
+constructs, but it can be necessary.
+NEURON versions newer than 8.1
+(<a class="reference external" href="https://github.com/neuronsimulator/nrn/pull/1762">#1762</a>) provide some
+C/C++ preprocessor macros that make it easier to follow incompatible changes
+in external libraries or the internal workings of NEURON.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#if NRN_VERSION_EQ(9, 0, 0)</span>
+<span class="cm">/* NEURON version is exactly 9.0.0 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#if NRN_VERSION_NE(8, 2, 3)</span>
+<span class="cm">/* NEURON version is not 8.2.3 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#if NRN_VERSION_GT(9, 1, 0)</span>
+<span class="cm">/* NEURON version is &gt;9.1.0 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#if NRN_VERSION_LT(10, 2, 0)</span>
+<span class="cm">/* NEURON version is &lt;10.2.0 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#if NRN_VERSION_GTEQ(8, 2, 1)</span>
+<span class="cm">/* NEURON version is &gt;=8.2.1 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#if NRN_VERSION_LTEQ(8, 2, 2)</span>
+<span class="cm">/* NEURON version is &lt;=8.2.2 */</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifndef NRN_VERSION_GTEQ_8_2_0</span>
+<span class="cm">/* NEURON version is &lt;8.2.0 */</span>
+<span class="cp">#else</span>
+<span class="cm">/* NEURON version is &gt;=8.2.0 so NRN_VERSION_{EQ,NE,GT,LT,GTEQ,LTEQ}(...)</span>
+<span class="cm"> * are defined. */</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> should be used with caution and restraint, as it is very easy
+to introduce dependencies on the implementation details of NEURON and the
+NMODL language compilers and end up with MOD files that are only compatible
+with a limited range of NEURON versions.</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="nmodl.html" class="btn btn-neutral float-left" title="NMODL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../rxd.html" class="btn btn-neutral float-right" title="Basic Reaction-Diffusion" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

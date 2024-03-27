@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adapting MOD files for C++ with NEURON 9.0[.dev] &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Frequently asked questions (FAQ)" href="faq.html" />
+    <link rel="prev" title="Randomness in NEURON models" href="randomness.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Adapting MOD files for C++ with NEURON 9.0[.dev]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#legacy-patterns-that-are-invalid-c">Legacy patterns that are invalid C++</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#implicit-pointer-type-conversions">Implicit pointer type conversions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#local-non-prototype-function-declarations">Local non-prototype function declarations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#function-declarations-with-incorrect-types">Function declarations with incorrect types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#k-r-function-definitions">K&amp;R function definitions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#legacy-patterns-that-are-considered-deprecated">Legacy patterns that are considered deprecated</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deprecated-overloads-taking-void">Deprecated overloads taking <code class="docutils literal notranslate"><span class="pre">void*</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#legacy-random-number-generators-and-api">Legacy random number generators and API</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Adapting MOD files for C++ with NEURON 9.0[.dev]</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/porting_mechanisms_to_cpp.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="adapting-mod-files-for-c-with-neuron-with-cpp-mechanisms">
+<span id="porting-mechanisms-to-cpp"></span><h1>Adapting MOD files for C++ with NEURON 9.0[.dev]<a class="headerlink" href="#adapting-mod-files-for-c-with-neuron-with-cpp-mechanisms" title="Link to this heading"></a></h1>
+<p>In older versions of NEURON, MOD files containing NMODL code were translated
+into C code before being compiled and executed by NEURON.
+Starting with NEURON 9.0[.dev], NMODL code is translated into C++
+code instead.</p>
+<p>In most cases, this does not present any issues, as simple C code is typically
+valid C++, and no changes are required.
+However, C and C++ are not the same language, and there are cases in which MOD
+files containing <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks need to be modified in order to build with
+NEURON 9.0[.dev].</p>
+<p>Before you start, you should decide if you need your MOD files to be
+compatible simultaneously with NEURON 9.0[.dev] <strong>and</strong> older
+versions, or if you can safely stop supporting older versions.
+Supporting both is generally possible, but it may be more cumbersome than
+committing to using C++ features.
+Considering NEURON has maintained strong backward compatibility and its
+internal numerical methods haven’t changed with migration to C++, it is likely
+to be sufficient to adapt MOD files to C++ only and use
+NEURON 9.0[.dev].
+If you do decide to preserve compatibility across versions, the preprocessor
+macros described in <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/nmodl2.html#python-verbatim"><span class="std std-ref">VERBATIM</span></a> may prove useful.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have a model that stopped compiling when you upgraded to or beyond
+NEURON 9.0[.dev], the first thing that you should check is
+whether the relevant MOD files have already been updated in ModelDB or in the
+GitHub repository of that model. You can check the repository name with the
+model accession number under <a class="reference external" href="https://github.com/ModelDBRepository">https://github.com/ModelDBRepository</a>.
+An updated version may already be available!</p>
+<p>The following models were updated in ModelDB in preparation for
+NEURON 9.0[.dev] and may serve as useful references:
+<a class="reference external" href="https://github.com/ModelDBRepository/2487/pull/1">2487</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/2730/pull/1">2730</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/2733/pull/1">2733</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/3658/pull/1">3658</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/7399/pull/1">7399</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/7400/pull/1">7400</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/8284/pull/1">8284</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/9889/pull/1">9889</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/12631/pull/2">12631</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/26997/pull/1">26997</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/35358/pull/2">35358</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/37819/pull/1">37819</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/51781/pull/1">51781</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/52034/pull/1">52034</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/64229/pull/1">64229</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/64296/pull/1">64296</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/87585/pull/1">87585</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/93321/pull/1">93321</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/97868/pull/2">97868</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/97874/pull/2">97874</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/97917/pull/2">97917</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/105507/pull/2">105507</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/106891/pull/3">106891</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/113732/pull/1">113732</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/116094/pull/1">116094</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/116830/pull/1">116830</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/116838/pull/1">116838</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/116862/pull/1">116862</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/123815/pull/1">123815</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/136095/pull/1">136095</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/136310/pull/1">136310</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/137845/pull/1">137845</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/138379/pull/1">138379</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/139421/pull/1">139421</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/140881/pull/1">140881</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/141505/pull/1">141505</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/144538/pull/1">144538</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/144549/pull/1">144549</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/144586/pull/1">144586</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/146949/pull/1">146949</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/149000/pull/1">149000</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/149739/pull/1">149739</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150240/pull/1">150240</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150245/pull/1">150245</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150551/pull/1">150551</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150556/pull/1">150556</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150691/pull/1">150691</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/151126/pull/1">151126</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/151282/pull/1">151282</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/153280/pull/1">153280</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/154732/pull/1">154732</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/155568/pull/1">155568</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/155601/pull/1">155601</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/155602/pull/1">155602</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/156780/pull/1">156780</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/157157/pull/1">157157</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/168874/pull/4">168874</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/181967/pull/1">181967</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/182129/pull/1">182129</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/183300/pull/1">183300</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/185355/pull/2">185355</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/185858/pull/1">185858</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/186768/pull/1">186768</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/187604/pull/2">187604</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/189154/pull/1">189154</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/194897/pull/2">194897</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/195615/pull/1">195615</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/223031/pull/1">223031</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/225080/pull/1">225080</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/231427/pull/2">231427</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/232097/pull/1">232097</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/239177/pull/1">239177</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/241165/pull/1">241165</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/241240/pull/1">241240</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/244262/pull/1">244262</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/244848/pull/2">244848</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/247968/pull/1">247968</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/249463/pull/1">249463</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/256388/pull/1">256388</a> and
+<a class="reference external" href="https://github.com/ModelDBRepository/259366/pull/1">259366</a>.</p>
+</div>
+<section id="legacy-patterns-that-are-invalid-c">
+<h2>Legacy patterns that are invalid C++<a class="headerlink" href="#legacy-patterns-that-are-invalid-c" title="Link to this heading"></a></h2>
+<p>This section aims to list some patterns that the NEURON developers have found
+in pre-NEURON 9.0[.dev] models that need to be modified to be valid
+C++.</p>
+<section id="implicit-pointer-type-conversions">
+<h3>Implicit pointer type conversions<a class="headerlink" href="#implicit-pointer-type-conversions" title="Link to this heading"></a></h3>
+<p>C++ has stricter rules governing pointer type conversions than C. For example</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w">   </span><span class="c1">// valid C, invalid C++</span>
+<span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w">    </span><span class="c1">// valid C++, invalid C</span>
+<span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="c1">// valid C and C++ (C-style casts discouraged in C++)</span>
+</pre></div>
+</div>
+<p>Similarly, in C one can pass a <code class="docutils literal notranslate"><span class="pre">void*</span></code> argument to a function that expects a
+<code class="docutils literal notranslate"><span class="pre">double*</span></code>. In C++ this is forbidden.</p>
+<p>The same issue may manifest itself in code such as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">malloc</span><span class="p">(</span><span class="mi">7</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span><span class="w">          </span><span class="c1">// valid C, invalid C++</span>
+<span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="kt">double</span><span class="p">[</span><span class="mi">7</span><span class="p">];</span><span class="w">                       </span><span class="c1">// valid C++, invalid C</span>
+<span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mi">7</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span><span class="w"> </span><span class="c1">// valid C and C++ (C-style casts discouraged in C++)</span>
+</pre></div>
+</div>
+<p>If you choose to move from using C <code class="docutils literal notranslate"><span class="pre">malloc</span></code> and <code class="docutils literal notranslate"><span class="pre">free</span></code> to using C++ <code class="docutils literal notranslate"><span class="pre">new</span></code>
+and <code class="docutils literal notranslate"><span class="pre">delete</span></code> then remember that you cannot mix and match <code class="docutils literal notranslate"><span class="pre">new</span></code> with <code class="docutils literal notranslate"><span class="pre">free</span></code>
+and so on.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Explicit memory management with <code class="docutils literal notranslate"><span class="pre">new</span></code> and <code class="docutils literal notranslate"><span class="pre">delete</span></code> is discouraged in C++
+(<a class="reference external" href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rr-newdelete">R.11: Avoid calling new and delete explicitly</a>).
+If you do not need to support older versions of NEURON, you may be able to
+use standard library containers such as <code class="docutils literal notranslate"><span class="pre">std::vector&lt;T&gt;</span></code>.</p>
+</div>
+</section>
+<section id="local-non-prototype-function-declarations">
+<span id="local-non-prototype-function-declaration"></span><h3>Local non-prototype function declarations<a class="headerlink" href="#local-non-prototype-function-declarations" title="Link to this heading"></a></h3>
+<p>In C, the function declaration</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">some_function</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>is a <a class="reference external" href="https://en.cppreference.com/w/c/language/function_declaration">non-prototype function declaration</a>: it declares
+that <code class="docutils literal notranslate"><span class="pre">some_function</span></code> exists, but it does not specify the number of arguments
+that it takes, or their types.
+In C++, the same code declares that <code class="docutils literal notranslate"><span class="pre">some_function</span></code> takes zero arguments (the
+C equivalent of this is <code class="docutils literal notranslate"><span class="pre">void</span> <span class="pre">some_function(void)</span></code>).</p>
+<p>If such a declaration occurs in a top-level <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> block then it is
+likely to be harmless: it will add a zero-parameter overload of the function,
+which will never be called.
+It <strong>will</strong>, however, cause a problem if the declaration is included <strong>inside</strong>
+an NMODL construct</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">PROCEDURE</span><span class="w"> </span><span class="nf">procedure</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="n">VERBATIM</span>
+<span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">some_method_taking_an_int</span><span class="p">();</span><span class="w"> </span><span class="c1">// problematic in C++</span>
+<span class="w">  </span><span class="n">some_method_taking_an_int</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+<span class="n">ENDVERBATIM</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>because in this case the local declaration hides the real declaration, which is
+something like</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">some_method_taking_an_int</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>in a NEURON header that is included when the translated MOD file is compiled.
+In this case, the problematic local declaration can simply be removed.</p>
+</section>
+<section id="function-declarations-with-incorrect-types">
+<span id="function-decls-with-incorrect-types"></span><h3>Function declarations with incorrect types<a class="headerlink" href="#function-declarations-with-incorrect-types" title="Link to this heading"></a></h3>
+<p>In older MOD files and versions of NEURON, API methods were often accessed by
+declaring them in the MOD file and not by including a correct declaration from
+NEURON itself.
+In NEURON 8.2+, more declarations are implicitly included when MOD files are
+compiled.
+This can lead to problems if the declaration in the MOD file did not specify
+the correct argument and return types.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Rand</span><span class="o">*</span><span class="w"> </span><span class="nf">nrn_random_arg</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span><span class="w"> </span><span class="c1">// correct declaration from NEURON header, only in new NEURON</span>
+<span class="cm">/* ... */</span>
+<span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="nf">nrn_random_arg</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span><span class="w"> </span><span class="c1">// incorrect declaration in MOD file, clashes with previous line</span>
+</pre></div>
+</div>
+<p>The fix here is simply to remove the incorrect declaration from the MOD file.</p>
+<p>If the argument types are incorrect, the situation is slightly more nuanced.
+This is because C++ supports overloading functions by argument type, but not by
+return type.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">sink</span><span class="p">(</span><span class="n">Thing</span><span class="o">*</span><span class="p">);</span><span class="w"> </span><span class="c1">// correct declaration from NEURON header, only in new NEURON</span>
+<span class="cm">/* ... */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">sink</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span><span class="w"> </span><span class="c1">// incorrect declaration in MOD file, adds an overload, not a compilation error</span>
+<span class="cm">/* ... */</span>
+<span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">void_ptr</span><span class="p">;</span>
+<span class="n">sink</span><span class="p">(</span><span class="n">void_ptr</span><span class="p">);</span><span class="w">  </span><span class="c1">// probably used to work, now causes a linker error</span>
+<span class="n">Thing</span><span class="o">*</span><span class="w"> </span><span class="n">thing_ptr</span><span class="p">;</span>
+<span class="n">sink</span><span class="p">(</span><span class="n">thing_ptr</span><span class="p">);</span><span class="w"> </span><span class="c1">// works with both old and new NEURON</span>
+</pre></div>
+</div>
+<p>Here the incorrect declaration <code class="docutils literal notranslate"><span class="pre">sink(void*)</span></code> declares a second overload of
+the <code class="docutils literal notranslate"><span class="pre">sink</span></code> function, which is not defined anywhere.
+With NEURON 9.0[.dev] the <code class="docutils literal notranslate"><span class="pre">sink(void_ptr)</span></code> line will select the
+<code class="docutils literal notranslate"><span class="pre">void*</span></code> second overload, based on the argument type, and this will fail during
+linking because this overload is not defined (only <code class="docutils literal notranslate"><span class="pre">sink(Thing*)</span></code> has a
+definition).</p>
+<p>In contrast, <code class="docutils literal notranslate"><span class="pre">sink(thing_ptr)</span></code> will select the correct overload in
+NEURON 9.0[.dev], and it also works in older NEURON versions
+because <code class="docutils literal notranslate"><span class="pre">Thing*</span></code> can be implicitly converted to <code class="docutils literal notranslate"><span class="pre">void*</span></code>.</p>
+<p>The fix here is, again, to remove the incorrect declaration from the MOD file.</p>
+<p>See also the section below, <a class="reference internal" href="#deprecated-overloads-taking-void"><span class="std std-ref">Deprecated overloads taking void*</span></a>, for cases
+where NEURON <strong>does</strong> provide a (deprecated) definition of the <code class="docutils literal notranslate"><span class="pre">void*</span></code>
+overload.</p>
+</section>
+<section id="k-r-function-definitions">
+<h3>K&amp;R function definitions<a class="headerlink" href="#k-r-function-definitions" title="Link to this heading"></a></h3>
+<p>C supports (<a class="reference external" href="https://en.cppreference.com/w/c/language/function_definition">until C23</a>) a legacy
+(“K&amp;R”) syntax for function declarations.
+This is not valid C++.</p>
+<p>There is no advantage to the legacy syntax. If you have legacy definitions such
+as</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>then simply replace them with</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is valid in both C and C++.</p>
+</section>
+</section>
+<section id="legacy-patterns-that-are-considered-deprecated">
+<h2>Legacy patterns that are considered deprecated<a class="headerlink" href="#legacy-patterns-that-are-considered-deprecated" title="Link to this heading"></a></h2>
+<p>As noted above (<a class="reference internal" href="#local-non-prototype-function-declaration"><span class="std std-ref">Local non-prototype function declarations</span></a>), declarations
+such as</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">VERBATIM</span>
+<span class="k">extern</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">vector_resize</span><span class="p">();</span>
+<span class="n">ENDVERBATIM</span>
+</pre></div>
+</div>
+<p>at the global scope in MOD files declare C++ function overloads that take no
+parameters.
+If such declarations appear at the global scope then they do not hide the
+correct declarations, so this can be harmless, but it is not necessary.
+In NEURON 9.0[.dev] the full declarations of the NEURON API methods
+that can be used in MOD files are implicitly included via the <code class="docutils literal notranslate"><span class="pre">mech_api.h</span></code>
+header, so this explicit declaration of a zero-parameter overload is not needed
+and can safely be removed.</p>
+<section id="deprecated-overloads-taking-void">
+<span id="id81"></span><h3>Deprecated overloads taking <code class="docutils literal notranslate"><span class="pre">void*</span></code><a class="headerlink" href="#deprecated-overloads-taking-void" title="Link to this heading"></a></h3>
+<p>As noted above (<a class="reference internal" href="#function-decls-with-incorrect-types"><span class="std std-ref">Function declarations with incorrect types</span></a>),
+NEURON 9.0[.dev] provides extra overloads for some API methods that
+aim to smooth the transition from C to C++.
+These overloads are provided for widely used methods, and where overloading on
+return type would not be required.</p>
+<p>An example is the <code class="docutils literal notranslate"><span class="pre">vector_capacity</span></code> function, which in
+NEURON 9.0[.dev] has two overloads</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">vector_capacity</span><span class="p">(</span><span class="n">IvocVect</span><span class="o">*</span><span class="p">);</span>
+<span class="p">[[</span><span class="n">deprecated</span><span class="p">(</span><span class="s">&quot;non-void* overloads are preferred&quot;</span><span class="p">)]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">vector_capacity</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The second one simply casts its argument to <code class="docutils literal notranslate"><span class="pre">IvocVect*</span></code> and calls the first
+one.
+The <code class="docutils literal notranslate"><span class="pre">[[deprecated]]</span></code> attribute means that MOD files that use the second
+overload emit compilation warnings when they are compiled using <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span></code>.</p>
+<p>If your MOD files produce these deprecation warnings, make sure that the
+relevant method (<code class="docutils literal notranslate"><span class="pre">vector_capacity</span></code> in this example) is being called with an
+argument of the correct type (<code class="docutils literal notranslate"><span class="pre">IvocVect*</span></code>), and not a type that is implicitly
+converted to <code class="docutils literal notranslate"><span class="pre">void*</span></code>.</p>
+</section>
+</section>
+<section id="legacy-random-number-generators-and-api">
+<h2>Legacy random number generators and API<a class="headerlink" href="#legacy-random-number-generators-and-api" title="Link to this heading"></a></h2>
+<p>Various changes have also been done in the API of NEURON functions related to random
+number generators.</p>
+<p>First, in NEURON 9.0[.dev] parameters passed to the functions need to be
+of the correct type as it was already mentioned in <a class="reference internal" href="#function-decls-with-incorrect-types"><span class="std std-ref">Function declarations with incorrect types</span></a>.
+The most usual consequence of that is that NEURON random API functions that were taking as
+an argument a <code class="docutils literal notranslate"><span class="pre">void*</span></code> now need to called with a <code class="docutils literal notranslate"><span class="pre">Rand*</span></code>. An example of the changes needed
+to fix this issue is given in <a class="reference external" href="https://github.com/ModelDBRepository/182129/pull/1">182129</a>.</p>
+<p>Another related change is with <code class="docutils literal notranslate"><span class="pre">scop_rand()</span></code> function that is usually used for defining a
+<code class="docutils literal notranslate"><span class="pre">URAND</span></code> <code class="docutils literal notranslate"><span class="pre">FUNCTION</span></code> in mod files to return a number based on a uniform distribution from 0 to 1.
+This function now takes no argument anymore. An example of this change can also be found in
+<a class="reference external" href="https://github.com/ModelDBRepository/182129/pull/1">182129</a>.</p>
+<p>Finally, the preferred random number generator is <code class="docutils literal notranslate"><span class="pre">Random123</span></code>. You can find more information
+about that in <a class="reference internal" href="../python/programming/math/random.html#Random.Random123" title="Random.Random123"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> and <a class="reference internal" href="randomness.html#randomness-in-neuron-models"><span class="std std-ref">Randomness in NEURON models</span></a>. An example of the
+usage of <code class="docutils literal notranslate"><span class="pre">Random123</span></code> can be seen in <a class="reference external" href="https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod">netstim.mod</a>
+and its <a class="reference external" href="https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_psolve.py#L60">corresponding test</a>.`
+Another important aspect of <code class="docutils literal notranslate"><span class="pre">Random123</span></code> is that it’s supported in CoreNEURON as well. For more
+information about this see <a class="reference internal" href="../coreneuron/compatibility.html#random-number-generators-random123-vs-mcellran4"><span class="std std-ref">Random Number Generators: Random123 vs MCellRan4</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="randomness.html" class="btn btn-neutral float-left" title="Randomness in NEURON models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral float-right" title="Frequently asked questions (FAQ)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

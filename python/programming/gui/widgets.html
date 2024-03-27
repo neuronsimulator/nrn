@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI Widgets &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="SymChooser" href="symchooser.html" />
+    <link rel="prev" title="List" href="list.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="layout.html">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="list.html">List</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">GUI Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">GUI Widgets</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/gui/widgets.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/gui/widgets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#units" title="Link to this definition">units</a> &middot; <a href="#xbutton" title="Link to this definition">xbutton</a> &middot; <a href="#xcheckbox" title="Link to this definition">xcheckbox</a> &middot; <a href="#xfixedvalue" title="Link to this definition">xfixedvalue</a> &middot; <a href="#xlabel" title="Link to this definition">xlabel</a> &middot; <a href="#xmenu" title="Link to this definition">xmenu</a> &middot; <a href="#xpanel" title="Link to this definition">xpanel</a> &middot; <a href="#xpvalue" title="Link to this definition">xpvalue</a> &middot; <a href="#xradiobutton" title="Link to this definition">xradiobutton</a> &middot; <a href="#xslider" title="Link to this definition">xslider</a> &middot; <a href="#xstatebutton" title="Link to this definition">xstatebutton</a> &middot; <a href="#xvalue" title="Link to this definition">xvalue</a> &middot; <a href="#xvarlabel" title="Link to this definition">xvarlabel</a></p><section id="gui-widgets">
+<span id="panel"></span><h1>GUI Widgets<a class="headerlink" href="#gui-widgets" title="Link to this heading"></a></h1>
+<p>The functions below are used to create
+panels of buttons, menus, and field editors.</p>
+<p>It is often convenient to encapsulate GUI elements and their state variables in
+a class. This allows multiple independent instances to be created. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">class</span> <span class="nc">MyWindow</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mystate</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myval</span> <span class="o">=</span> <span class="mf">3.14</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkbox</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s1">&#39;Click me&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s1">&#39;or me&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clicked</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xstatebutton</span><span class="p">(</span><span class="s1">&#39;press me&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;mystate&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">statepressed</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xcheckbox</span><span class="p">(</span><span class="s1">&#39;I am a checkbox&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;checkbox&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkboxpressed</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s1">&#39;Type a number&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;myval&#39;</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numberset</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">choice</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;you switched the radio button! choice = </span><span class="si">{</span><span class="n">choice</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">statepressed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;you pressed the state button. Value = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mystate</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">checkboxpressed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;you clicked the checkbox. state = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkbox</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">numberset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;you set the number to: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">myval</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">window</span> <span class="o">=</span> <span class="n">MyWindow</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/guiwidgets-example.png" class="align-center" src="../../../_images/guiwidgets-example.png" />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Top-level variables can be accessed through <code class="docutils literal notranslate"><span class="pre">this_module</span></code> where that is defined via <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">sys;</span> <span class="pre">this_module</span> <span class="pre">=</span> <span class="pre">sys.modules[__name__]</span></code>; see examples below.</p>
+</div>
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xpanel">
+<span class="sig-name descname"><span class="pre">xpanel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xpanel" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="n">scroll</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="n">scroll</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.xpanel(&quot;name&quot;)</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.xpanel(&quot;name&quot;,</span> <span class="pre">[0-1])</span></code></dt><dd><p>Title of a new panel. Every
+button, menu, and value between this and a closing <code class="docutils literal notranslate"><span class="pre">xpanel()</span></code> command
+with no arguments (or placement args) belongs to this panel.
+If the form is used with a second argument equal to 1, then
+the panel is laid out horizontally. Otherwise the default is vertically.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">h.xpanel()</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.xpanel(x,</span> <span class="pre">y)</span></code></dt><dd><p>done constructing the panel. so map it to the screen with position
+optionally specified.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">h.xpanel(scroll)</span></code></p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.xpanel(scroll,</span> <span class="pre">x,</span> <span class="pre">y)</span></code></dt><dd><p>as above but if the first arg is a number, then the value determines
+whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox
+will NOT be used. Scroll = 1 means the panel will be inside a scrollbox.
+Scroll = -1 is the default value and whether or not a scrollbox is used
+is determined by the number of panel items in comparison with the
+value of the panel_scroll property in the nrn.defaults file.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xbutton">
+<span class="sig-name descname"><span class="pre">xbutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xbutton" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">h.xbutton('prompt',</span> <span class="pre">py_callable)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.xbutton('prompt',</span> <span class="pre">(py_callable,</span> <span class="pre">arg))</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.xbutton('prompt',</span> <span class="pre">(py_callable,</span> <span class="pre">(arg1,</span> <span class="pre">arg2,</span> <span class="pre">...))</span></code></p>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><p>Adds a button to the currently open <a class="reference internal" href="#xpanel" title="xpanel"><code class="xref py py-func docutils literal notranslate"><span class="pre">xpanel()</span></code></a>. The label on the
+button is <em>prompt</em>, and when the button is clicked, it calls the
+<em>py_callable</em>. If instead of just <code class="docutils literal notranslate"><span class="pre">py_callable</span></code> a tuple containing
+<code class="docutils literal notranslate"><span class="pre">py_callable</span></code> and either an arg or tuple of args is passed, then
+those are passed to the function when the button is clicked; this can
+be used to allow one function to handle mutliple buttons, or buttons
+created in unknown situations.</p>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">on_press</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;You pressed the button.&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;Button demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;Press me&#39;</span><span class="p">,</span> <span class="n">on_press</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xbutton.png" class="align-center" src="../../../_images/xbutton.png" />
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">on_press</span><span class="p">(</span><span class="n">button_id</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;You clicked button: </span><span class="si">{</span><span class="n">button_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">on_press3</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Button args: </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;Button demo 2&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;Button 1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">on_press</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;Button 2&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">on_press</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;Button 3&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">on_press3</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;arg1&#39;</span><span class="p">,</span> <span class="s1">&#39;arg2&#39;</span><span class="p">)))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xbutton2.png" class="align-center" src="../../../_images/xbutton2.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xstatebutton">
+<span class="sig-name descname"><span class="pre">xstatebutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xstatebutton" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xstatebutton</span><span class="p">(</span><span class="s1">&#39;prompt&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">obj_or_module</span><span class="p">,</span> <span class="s1">&#39;varname&#39;</span><span class="p">)</span> <span class="p">[,</span> <span class="n">action_fn</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xbutton" title="xbutton"><code class="xref py py-func docutils literal notranslate"><span class="pre">xbutton()</span></code></a>, but when pressed var is set to 0 or 1 so that it matches the
+telltale state of the button. If the var is set by another way the
+telltale state is updated to reflect the correct value.</p>
+</dd>
+<dt>Example:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="p">;</span> <span class="n">this_module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span>
+
+<span class="n">button_state</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">on_press</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;You pressed the button. The state is now: </span><span class="si">{</span><span class="n">button_state</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;StateButton demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xstatebutton</span><span class="p">(</span><span class="s1">&#39;Press me&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">this_module</span><span class="p">,</span> <span class="s1">&#39;button_state&#39;</span><span class="p">),</span> <span class="n">on_press</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xstatebutton.png" class="align-center" src="../../../_images/xstatebutton.png" />
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xcheckbox">
+<span class="sig-name descname"><span class="pre">xcheckbox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xcheckbox" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xcheckbox</span><span class="p">(</span><span class="s1">&#39;prompt&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">obj_or_module</span><span class="p">,</span> <span class="s1">&#39;varname&#39;</span><span class="p">)</span> <span class="p">[,</span> <span class="n">action_fn</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xstatebutton" title="xstatebutton"><code class="xref py py-func docutils literal notranslate"><span class="pre">xstatebutton()</span></code></a>, but checkbox appearance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xradiobutton">
+<span class="sig-name descname"><span class="pre">xradiobutton</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xradiobutton" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">action_fn</span> <span class="p">[,</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>Like an <a class="reference internal" href="#xbutton" title="xbutton"><code class="xref py py-func docutils literal notranslate"><span class="pre">xbutton()</span></code></a> but highlights the most recently selected
+button of a contiguous group (like a car radio, mutually exclusive
+selection).
+If the third argument is 1, then the button will be selected when the
+panel is mapped onto the screen. However, in
+this case the action should also be explicitly executed by the programmer.
+That is not done automatically since it is often the case that the action
+is invalid when the radio button is created. As with <code class="docutils literal notranslate"><span class="pre">h.xbutton</span></code>, <code class="docutils literal notranslate"><span class="pre">action_fn</span></code> may
+be a Python function handle, a tuple containing a function handle and an argument, or
+a tuple containing a function handle and a tuple of arguments.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">a</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;function to be called when a radio button is toggled&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;panel&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s1">&#39;menu&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;item </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xradiobutton.png" class="align-center" src="../../../_images/xradiobutton.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xmenu">
+<span class="sig-name descname"><span class="pre">xmenu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xmenu" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">py_callable</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">py_callable</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">h.xmenu(&quot;title&quot;)</span></code></dt><dd><p>create a button in the panel with label “title” which, when
+pressed, pops up a menu containing buttons and other menus. Every
+<a class="reference internal" href="#xbutton" title="xbutton"><code class="xref py py-func docutils literal notranslate"><span class="pre">xbutton()</span></code></a> and <a class="reference internal" href="#xmenu" title="xmenu"><code class="xref py py-func docutils literal notranslate"><span class="pre">xmenu()</span></code></a> command between this and the closing <code class="docutils literal notranslate"><span class="pre">xmenu()</span></code>
+command with no arguments becomes the menu.
+Don’t put values into menus.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.xmenu()</span></code></dt><dd><p>done defining the menu. Menus can be nested as in</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">selected1</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;you selected option 1&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">selected2</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;you selected option 2&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;xmenu demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s1">&#39;one&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s1">&#39;two&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;option 1&#39;</span><span class="p">,</span> <span class="n">selected1</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;option 2&#39;</span><span class="p">,</span> <span class="n">selected2</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xmenu1.png" class="align-center" src="../../../_images/xmenu1.png" />
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.xmenu(&quot;title&quot;,</span> <span class="pre">1)</span></code></dt><dd><p>adds the menu to the menubar. Note that a top level menu with no
+second argument starts a new menubar. Normally these menubars have only
+one top level item.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">def</span> <span class="nf">item_selected</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;selected value </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;menubar&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;first&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;one&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;two&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Exit&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;second&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;three&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;four&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;submenu&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;PI&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">PI</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;third&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;five&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;six&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;nextline&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;seven&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;eight&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">item_selected</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xmenu2.png" class="align-center" src="../../../_images/xmenu2.png" />
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.xmenu(&quot;title&quot;,</span> <span class="pre">py_callable)</span></code> and <code class="docutils literal notranslate"><span class="pre">h.xmenu(&quot;title&quot;,</span> <span class="pre">py_callable,</span> <span class="pre">1)</span></code></dt><dd><p>Dynamic menu added as item in panel or menu or (when third argument
+is 1) to a menubar. An example of the first type is the
+NEURONMainMenu/File/RecentDir and an example of the last type is the
+NEURONMainMenu/Window</p>
+<p>When the menu title button is selected, the stmt is executed in a context
+like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+<span class="n">py_callable</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>which should normally build a menu list and then this list is mapped to
+the screen as a normal walking menu.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;you selected </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">make</span><span class="p">():</span>
+    <span class="n">make</span><span class="o">.</span><span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">make</span><span class="o">.</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;label </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">select</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+
+<span class="n">make</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span> <span class="n">make</span><span class="p">)</span>
+<span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The dynamic menu syntax is currently unsupported in Python, but
+the equivalent (passing a HOC command string) works in HOC.</p>
+</div>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xlabel">
+<span class="sig-name descname"><span class="pre">xlabel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xlabel" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>Show the string as a fixed label.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xvarlabel">
+<span class="sig-name descname"><span class="pre">xvarlabel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xvarlabel" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xvarlabel</span><span class="p">(</span><span class="n">strref</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>Show the string as its current value.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">mystr</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;xvarlabel demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Dynamic text will appear below:&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvarlabel</span><span class="p">(</span><span class="n">mystr</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+
+<span class="c1"># change the text displayed by changing mystr</span>
+<span class="n">mystr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xvarlabel.png" class="align-center" src="../../../_images/xvarlabel.png" />
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Python strings are immutable. Thus the text displayed will only automatically
+change if a strref is used, as in the example.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xvalue">
+<span class="sig-name descname"><span class="pre">xvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xvalue" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">obj_or_module</span><span class="p">,</span> <span class="s2">&quot;varname&quot;</span><span class="p">)</span> <span class="p">[,</span> <span class="n">boolean_deflt</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span> <span class="p">[,</span> <span class="n">boolean_canrun</span><span class="p">]])</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="n">ref_var</span><span class="p">,</span> <span class="p">[,</span> <span class="n">boolean_deflt</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span> <span class="p">[,</span> <span class="n">boolean_canrun</span><span class="p">]])</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;variable&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">h.xvalue(&quot;prompt&quot;,</span> <span class="pre">(obj_or_module,</span> <span class="pre">&quot;varname&quot;)</span> <span class="pre">[,</span> <span class="pre">boolean_deflt,</span> <span class="pre">&quot;action&quot;</span> <span class="pre">[,</span> <span class="pre">boolean_canrun]])</span></code></dt><dd><p>create field editor for variable with the button labeled with “<em>prompt</em>”.
+If <em>boolean_deflt</em> == True (or 1) then add a checkbox which is checked when the
+value of the field editor is different that when the editor was
+created. Execute “action” when user enters a new value. If
+<em>boolean_canrun</em> == True (or 1) then use a default_button widget kit appearance
+instead     of a push_button widget kit appearance.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">h.xvalue(&quot;prompt&quot;,</span> <span class="pre">(obj_or_module,</span> <span class="pre">&quot;varname&quot;),</span> <span class="pre">2)</span></code></dt><dd><p>a field editor that keeps getting updated every 10th <a class="reference internal" href="../../visualization/notify.html#doNotify" title="doNotify"><code class="xref py py-func docutils literal notranslate"><span class="pre">doNotify()</span></code></a>.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="p">;</span> <span class="n">this_module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="mi">42</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s1">&#39;enter value&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">this_module</span><span class="p">,</span> <span class="s1">&#39;val&#39;</span><span class="p">))</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+
+<span class="c1"># changing val in the dialog will change val as seen by the program</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xvalue.png" class="align-center" src="../../../_images/xvalue.png" />
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>The example at the top of the file, which uses <code class="docutils literal notranslate"><span class="pre">xvalue</span></code> in an object.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xpvalue">
+<span class="sig-name descname"><span class="pre">xpvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xpvalue" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xpvalue</span><span class="p">(</span><span class="s1">&#39;prompt&#39;</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xvalue" title="xvalue"><code class="xref py py-func docutils literal notranslate"><span class="pre">xvalue()</span></code></a> but uses a reference to the variable.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">show_val</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;value is: </span><span class="si">{</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpvalue</span><span class="p">(</span><span class="s1">&#39;enter value&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s1">&#39;show value&#39;</span><span class="p">,</span> <span class="n">show_val</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xpvalue.png" class="align-center" src="../../../_images/xpvalue.png" />
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#units" title="units"><code class="xref py py-func docutils literal notranslate"><span class="pre">units()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xfixedvalue">
+<span class="sig-name descname"><span class="pre">xfixedvalue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xfixedvalue" title="Link to this definition"></a></dt>
+<dd><p>Syntax:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xfixedvalue</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">obj_or_module</span><span class="p">,</span> <span class="s2">&quot;varname&quot;</span><span class="p">),</span> <span class="n">boolean_deflt</span><span class="p">,</span> <span class="n">boolean_usepointer</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl class="simple">
+<dt>Description:</dt><dd><p>like <a class="reference internal" href="#xvalue" title="xvalue"><code class="xref py py-func docutils literal notranslate"><span class="pre">xvalue()</span></code></a> but cannot be changed by the user except under
+program control and there can be no action associated with it.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is not implemented. For now, try to do the same thing
+with <a class="reference internal" href="#xvarlabel" title="xvarlabel"><code class="xref py py-func docutils literal notranslate"><span class="pre">xvarlabel()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="xslider">
+<span class="sig-name descname"><span class="pre">xslider</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xslider" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">((</span><span class="n">obj_or_module</span><span class="p">,</span> <span class="s2">&quot;varname&quot;</span><span class="p">),</span> <span class="p">[</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">],</span> <span class="p">[</span><span class="n">on_slide</span><span class="p">],</span> <span class="p">[</span><span class="n">vert</span><span class="p">],</span> <span class="p">[</span><span class="n">slow</span><span class="p">])</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">(</span><span class="n">ref_var</span><span class="p">,</span> <span class="p">[</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">],</span> <span class="p">[</span><span class="n">on_slide</span><span class="p">],</span> <span class="p">[</span><span class="n">vert</span><span class="p">],</span> <span class="p">[</span><span class="n">slow</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>Slider which is attached to the variable var. Whenever the slider
+is moved, the optional <em>on_slide</em> is executed. The default range is
+0 to 100. Steppers increase or decrease the value by 1/10 of the range.
+Resolution is .01 of the range. vert=True (or 1) makes a vertical slider and
+if there is no <em>on_slide</em> may be the 4th arg. slow=True (or 1) removes the “repeat
+key” functionality from the slider(and arrow steppers) and also
+prevents recursive calls to the <em>on_slide</em>. This is necessary if
+a slider action is longer than the timeout delay. Otherwise the
+slider can get in a state that appears to be an infinite loop.
+The downside of slow=1 is that the var may not get the last value
+of the slider if one releases the button during an action.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="p">;</span> <span class="n">this_module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="n">val_str</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;Slider value:         &#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">show_val</span><span class="p">():</span>
+    <span class="n">val_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Slider value: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvarlabel</span><span class="p">(</span><span class="n">val_str</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">((</span><span class="n">this_module</span><span class="p">,</span> <span class="s1">&#39;val&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">show_val</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+<span class="n">show_val</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/xslider.png" class="align-center" src="../../../_images/xslider.png" />
+<p>It is slightly more efficient to use an <code class="docutils literal notranslate"><span class="pre">h.ref</span></code> instead of a tuple.
+The above example is functionally equivalent to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">val_str</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;Slider value:         &#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">show_val</span><span class="p">():</span>
+    <span class="n">val_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Slider value: </span><span class="si">{</span><span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvarlabel</span><span class="p">(</span><span class="n">val_str</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">show_val</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+<span class="n">show_val</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can also combine xslider with xvalue to report and modify its value (below example):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">class</span> <span class="nc">ValuePanel</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_val</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">lower_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">upper_limit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_val</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">init_val</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;demo&#39;</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s1">&#39;enter value&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds_check</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__lower_limit</span> <span class="o">=</span> <span class="n">lower_limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__upper_limit</span> <span class="o">=</span> <span class="n">upper_limit</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lower_limit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__upper_limit</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_bounds_check</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">val</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@val</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_val</span><span class="p">):</span>
+        <span class="n">new_val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__lower_limit</span><span class="p">,</span> <span class="n">new_val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">new_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__upper_limit</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">hbox</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">HBox</span><span class="p">()</span>  <span class="c1"># Horizontal box</span>
+    <span class="n">hbox</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">length</span><span class="o">=</span><span class="n">ValuePanel</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;length.val&#39;</span><span class="p">)</span>
+    <span class="n">diam</span><span class="o">=</span><span class="n">ValuePanel</span><span class="p">(</span><span class="n">init_val</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;diam.val&#39;</span><span class="p">,</span><span class="n">lower_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper_limit</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">hbox</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">hbox</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;can read/change length.val, diam.val&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../../../_images/value_panel.png" class="align-center" src="../../../_images/value_panel.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="units">
+<span class="sig-name descname"><span class="pre">units</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#units" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">on</span> <span class="ow">or</span> <span class="n">off</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="mi">1</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">current_units</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s2">&quot;varname&quot;</span> <span class="p">[,</span> <span class="s2">&quot;units string&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd>
+<dt>Description:</dt><dd><p>When units are on (default on) value editor buttons display the units
+string (if it exists) along with the normal prompt string. Units for
+L, diam, Ra, t, etc are built-in and units for membrane mechanism variables
+are declared in the model description file. See modlunit .
+Note that units are NOT saved in a session. Therefore, any user defined
+variables must be given units before retrieving a session that shows them
+in a panel.</p>
+<p>The units display may be turned off with <code class="docutils literal notranslate"><span class="pre">h.units(0)</span></code> or by setting the
+<code class="docutils literal notranslate"><span class="pre">*units_on_flag:</span> <span class="pre">off</span></code> in the nrn/lib/nrn.defaults file.</p>
+<p>If the first arg is a string, it is treated as the name of the variable.
+This is restricted to hoc variable names of the style, “name”, or “classname.name”.
+Apart from the circumstance that the string arg style must be used when
+executed from Python, a benefit is that it can be used when an instance
+does not exist (no pointer to a variable of that type).
+If there are no units specified for the variable name, or the variable
+name is not defined, the return value is the empty string.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s1">&#39;dt&#39;</span><span class="p">))</span>        <span class="c1"># ms</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s1">&#39;gna_hh&#39;</span><span class="p">))</span>    <span class="c1"># S/cm2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s1">&#39;Ra&#39;</span><span class="p">))</span>        <span class="c1"># ohm-cm</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">))</span>         <span class="c1"># um</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s1">&#39;ExpSyn.g&#39;</span><span class="p">))</span>  <span class="c1"># uS</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When passing a string to <code class="docutils literal notranslate"><span class="pre">h.units</span></code>, note that the string must be the
+name of a HOC variable. Unfortunately, there is currently no way to declare
+the units of a Python variable.</p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="list.html" class="btn btn-neutral float-left" title="List" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="symchooser.html" class="btn btn-neutral float-right" title="SymChooser" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

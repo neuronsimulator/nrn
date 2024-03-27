@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randomness in NEURON models &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Adapting MOD files for C++ with NEURON 9.0[.dev]" href="porting_mechanisms_to_cpp.html" />
+    <link rel="prev" title="ModelView: Compact display of parameters for NEURON models" href="modelview_compact_display.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Randomness in NEURON models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-generate-independent-random-spike-streams">How to generate independent random spike streams</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-problem">The problem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-solution">The solution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Randomness in NEURON models</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/randomness.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="randomness-in-neuron-models">
+<h1>Randomness in NEURON models<a class="headerlink" href="#randomness-in-neuron-models" title="Link to this heading"></a></h1>
+<p>There are many potential applications of randomness in modeling. These fall into two broad categories:</p>
+<dl class="simple">
+<dt>Randomization of the model specification</dt><dd><p>Purpose: to emulate natural biological variation of parameters such as number of cells, connectivity between cells, anatomical and/or biophysical properties of cells and their connections.</p>
+</dd>
+<dt>Randomization of simulation execution</dt><dd><p>Purpose: to emulate stochastic phenomena such as single channel gating, transmitter release, afferent spike trains, variation of natural stimuli, extrinsic noise sources.</p>
+</dd>
+</dl>
+<p>Recurring issues in the specification of models of cells and networks that involve randomness include the following:</p>
+<ul class="simple">
+<li><p>How to create model specification code that employs randomization in a way that (1) avoids undesired correlations between parameters, and (2) produces a model cell or network that has the same architecture and biophysical properties, and generates the same simulation results regardless of whether it is run on serial or parallel hardware, the number of processors that it uses, and how the elements of the model are distributed over the processors.</p></li>
+<li><p>How to generate spike streams or other signals that fluctuate in ways that are statistically independent of each other.</p></li>
+</ul>
+<p>These papers present models implemented with NEURON that provide some examples of randomization in model specification code:</p>
+<ul>
+<li><p>The network with random connectivity in</p>
+<blockquote>
+<div><p>Carnevale NT, Hines ML. (2008). Translating network models to parallel hardware in NEURON. <em>Journal of neuroscience methods</em>, 169(2), 425. <a class="reference external" href="https://doi.org/10.1016/j.jneumeth.2007.09.010">doi:10.1016/j.jneumeth.2007.09.010</a></p>
+<p>Preprint available from <a class="reference external" href="http://www.neuron.yale.edu/neuron/nrnpubs/">http://www.neuron.yale.edu/neuron/nrnpubs/</a>, source code available via accession number 96444 from ModelDB <a class="reference external" href="http://modeldb.yale.edu/96444">http://modeldb.yale.edu/96444</a></p>
+</div></blockquote>
+</li>
+<li><p>The network models in</p>
+<blockquote>
+<div><p>Brette, R., Rudolph, M., Carnevale, T., Hines, M., Beeman, D., Bower, J. M., …  Destexhe, A. (2007). Simulation of networks of spiking neurons: a review of tools and strategies. <em>Journal of computational neuroscience</em>, 23(3), 349-398. <a class="reference external" href="https://doi.org/10.1007/s10827-007-0038-6">doi:10.1007/s10827-007-0038-6</a></p>
+<p>Preprint available from <a class="reference external" href="http://www.neuron.yale.edu/neuron/nrnpubs/">http://www.neuron.yale.edu/neuron/nrnpubs/</a>, source code available via accession number 83319 from ModelDB <a class="reference external" href="http://modeldb.yale.edu/83319">http://modeldb.yale.edu/83319</a></p>
+</div></blockquote>
+</li>
+</ul>
+<p>Interested users are encouraged to read these papers, and download and analyze the related source code, in order to better understand how to apply randomization in the construction and simulation of models.</p>
+<section id="how-to-generate-independent-random-spike-streams">
+<h2>How to generate independent random spike streams<a class="headerlink" href="#how-to-generate-independent-random-spike-streams" title="Link to this heading"></a></h2>
+<p>There are several ways to generate random spike streams. One is to use a <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#NetStim" title="NetStim"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetStim</span></code></a> with its random parameter set to a value in the range 0 &lt; random &lt;= 1 (be sure to read the programmer’s reference documentation of the <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#NetStim" title="NetStim"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetStim</span></code></a> class to find out what this does).</p>
+<p>But what if you need more than one spike stream? Can you just add another NetStim and grind out spike times?</p>
+<p>Not if you want your NetStims’ streams to be independent of each other. Read on to find out why, and what to do about it.</p>
+<section id="the-problem">
+<h3>The problem<a class="headerlink" href="#the-problem" title="Link to this heading"></a></h3>
+<p>Consider this example: a 20 ms simulation of two NetStims, each of which has the following parameters</p>
+<blockquote>
+<div><table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>interval</p></td>
+<td><p>10 ms</p></td>
+</tr>
+<tr class="row-even"><td><p>number</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>start</p></td>
+<td><p>1 ms</p></td>
+</tr>
+<tr class="row-even"><td><p>noise</p></td>
+<td><p>1</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>produces events at these times</p>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>time</p></th>
+<th class="head"><p>cell</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1.347</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>6.015</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>10.123</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>12.628</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>13.663</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>14.913</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>But if cell 1’s start time is 6 ms, the results are</p>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>time</p></th>
+<th class="head"><p>cell</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>6.015</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>6.347</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>10.456</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>15.245</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>16.281</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>17.295</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>which demonstrates that the two event streams are not independent of each other.</p>
+<p>This is because the two NetStims are drawing values from the same random number generator. Change any parameter that affects one–interval, start time, number, or noise–and you’ll also affect the other, whether you want to or not.</p>
+<p>And usually you don’t want to, because at the very least such side effects introduce confounds that can interfere with interpretation of experimental manipulations. Suppose you have a model cell that receives multiple afferent input streams, and you want to see what happens if you delay the onset of one of the afferent spike trains, or if the mean firing frequency of an inhibitory afferent changes. Well, you’re out of luck, because any perturbation to one afferent train is going to perturb all afferent trains.</p>
+<p>But if you don’t change the NetStims’ parameters, everything will be OK, right?</p>
+<p>Right, until you decide to parallelize your model by using MPI to distribute it over multiple processors. At that point you’re going to discover that randomization of model setup and randomization of simulation execution will make model parameters and/or simulation results depend on the number of processors and how your model’s cells are distributed over the processors. This is most undesirable, because <strong>an essential test of the parallel implementation of a model is the demonstration that it produces the same results as the serial implementation</strong>. If the parallel and serial implementations produce different results, then something is broken, and the parallel implementation cannot be a reliable surrogate for the serial implementation.</p>
+<p>Fortunately, a particular strength of NEURON is that it enables you to parallelize models in such a way that the parallel code produces the same results as the serial code does, regardless of whether the parallel code is being executed on serial or parallel hardware, or the number of processors that are available on the parallel machine, or how the model is distributed over the parallel machine’s processors.</p>
+<p>So what’s the solution to our current problem? How can we keep our NetStims from using a shared random number generator? Read on to discover the answer.</p>
+<section id="source-code-that-demonstrates-the-problem">
+<h4>Source code that demonstrates the problem<a class="headerlink" href="#source-code-that-demonstrates-the-problem" title="Link to this heading"></a></h4>
+<p>Save the following to a file called <code class="file docutils literal notranslate"><span class="pre">initn.py</span></code>, then use python to execute it. Note the organization of the program, in particular the extensive use of procedures, and how it performs the following tasks in sequence:</p>
+<ul class="simple">
+<li><p>load NEURON library objects we need</p></li>
+<li><p>declares important constants (model parameters and simulation parameters)</p></li>
+<li><p>creates the model itself (just a collection of cells that spike at random times)</p></li>
+<li><p>specifies instrumentation (in this case, recording of spike times)</p></li>
+<li><p>specifies simulation control</p></li>
+<li><p>executes one or more simulations with various model parameters</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">initn.py</span>
+<span class="sd">demonstrates that multiple NetStims draw from a shared distribution</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1">#</span>
+<span class="c1"># load libraries</span>
+<span class="c1">#</span>
+
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1"># constants/simulation parameters</span>
+<span class="c1">#</span>
+
+<span class="n">NSNUM</span> <span class="o">=</span> <span class="mi">2</span>        <span class="c1"># how many NetStims to create</span>
+
+<span class="n">ISI</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">ms</span>    <span class="c1"># default NetStim parameters</span>
+<span class="n">NUM</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">START</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">NOISE</span> <span class="o">=</span> <span class="kc">True</span>     <span class="c1"># equivalent to passing 1; fractional values</span>
+                 <span class="c1"># are also supported</span>
+
+<span class="n">TSTOP</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">ms</span>  <span class="c1"># length of simulation</span>
+
+<span class="c1">#</span>
+<span class="c1"># model setup</span>
+<span class="c1">#</span>
+
+<span class="c1"># create netstims</span>
+<span class="n">ns_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">NetStim</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NSNUM</span><span class="p">)]</span>
+
+<span class="c1"># set netstim parameters</span>
+<span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">ns_list</span><span class="p">:</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">ISI</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">number</span> <span class="o">=</span> <span class="n">NUM</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">START</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">NOISE</span>
+
+<span class="c1">#</span>
+<span class="c1"># instrumentation (record NetStim behavior)</span>
+<span class="c1">#</span>
+
+<span class="n">stim_t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+<span class="n">stim_id</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">ns_list</span><span class="p">:</span>
+    <span class="n">nc</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">nc</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">stim_t</span><span class="p">,</span> <span class="n">stim_id</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1"># simulation control</span>
+<span class="c1">#</span>
+
+<span class="k">def</span> <span class="nf">my_run</span><span class="p">():</span>
+    <span class="c1"># set random seed</span>
+    <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">ns_list</span><span class="p">:</span>
+        <span class="n">ns</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="n">TSTOP</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; time         cell&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">id_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">stim_t</span><span class="p">,</span> <span class="n">stim_id</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">7.3f</span><span class="si">}</span><span class="s2"> </span><span class="se">\t</span><span class="si">{</span><span class="n">id_</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Control:  both have interval 10, number 10, start 1, noise True</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">my_run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Control part 2: Showing we get the same results each time</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">my_run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Test:  NetStim 1 starts at 6 ms</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">ns_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">my_run</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="the-solution">
+<h3>The solution<a class="headerlink" href="#the-solution" title="Link to this heading"></a></h3>
+<p>The solution to these problems is to give each NetStim its own random number stream.</p>
+<p>“How?” you might very well ask.</p>
+<p>By using <code class="xref py py-meth docutils literal notranslate"><span class="pre">NetStim.noiseFromRandom123()</span></code> to specify a unique random stream for each NetStim; each stream is independent and selected as a combination of three integer values.</p>
+<p>Here’s a quick example.</p>
+<section id="outline-of-the-solution">
+<h4>Outline of the solution:<a class="headerlink" href="#outline-of-the-solution" title="Link to this heading"></a></h4>
+<p>In essence the solution is this simple:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Repeat
+    create a new NetStim instance
+    set the NetStim to use a unique random stream
+Until enough NetStims have been created
+Run a simulation and show results
+</pre></div>
+</div>
+<p>But of course the actual implementation is somewhat more complex, because there are many details to attend to. These include</p>
+<ul class="simple">
+<li><p>Specifying the basic properties of the <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#NetStim" title="NetStim"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetStim</span></code></a> (interval, number, start, noise).</p></li>
+<li><p>Specifying a distinct random stream for each NetStim via <code class="xref py py-meth docutils literal notranslate"><span class="pre">NetStim.noiseFromRandom123()</span></code>. (For analogous reasons, you will likely want to use <a class="reference internal" href="../python/programming/math/random.html#Random.Random123" title="Random.Random123"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> with distinct streams for each cell – independent of any NetStim or other streams – when choosing cell properties randomly.)</p></li>
+<li><p>Instrumentation and simulation control. As in the previous example, instrumentation will consist of using the NetCon class’s <code class="docutils literal notranslate"><span class="pre">record()</span></code> method to capture spike times and cell ids to a pair of Vectors. Also as before, simulation control will use a custom <code class="docutils literal notranslate"><span class="pre">my_run()</span></code> function that pulls together the standard run system’s <code class="xref py py-func docutils literal notranslate"><span class="pre">continuerun()</span></code> with a bit more code that prints out the spike times and cell ids, but this time there will also be a graph that shows a raster plot of the spikes generated by the NetStims.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">Random123</span></code> generator is an implementation of a (pseudo)random number generator described in:</p>
+<blockquote>
+<div><p>Salmon JK, Moraes MA, Dror RO, Shaw DE (2011). Parallel random numbers: as easy as 1, 2, 3. In <em>Proceedings of 2011 international conference for high performance computing, networking, storage and analysis</em> (pp. 1-12). <a class="reference external" href="https://doi.org/10.1145/2063384.2063405">doi:10.1145/2063384.2063405</a></p>
+</div></blockquote>
+</section>
+<section id="source-code-that-demonstrates-the-solution">
+<h4>Source code that demonstrates the solution:<a class="headerlink" href="#source-code-that-demonstrates-the-solution" title="Link to this heading"></a></h4>
+<p>This file shows how to take advantage of <code class="xref py py-meth docutils literal notranslate"><span class="pre">NetStim.noiseFromRandom123()</span></code> in your own programs, so that your <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#NetStim" title="NetStim"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetStim</span></code></a> objects can generate independent random streams produced by the <code class="docutils literal notranslate"><span class="pre">Random123</span></code> generator. For the most part, this file is quite similar to <code class="file docutils literal notranslate"><span class="pre">initn.py</span></code>, which demonstrated one of the problems that may occur when NetStims share a common random number generator.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">independent_netstims.py</span>
+<span class="sd">demonstrates writing NetStims to use independent random streams</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1">#</span>
+<span class="c1"># load libraries</span>
+<span class="c1">#</span>
+
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1"># constants/simulation parameters</span>
+<span class="c1">#</span>
+
+<span class="n">NSNUM</span> <span class="o">=</span> <span class="mi">2</span>        <span class="c1"># how many NetStims to create</span>
+
+<span class="n">ISI</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">ms</span>    <span class="c1"># default NetStim parameters</span>
+<span class="n">NUM</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">START</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">NOISE</span> <span class="o">=</span> <span class="kc">True</span>     <span class="c1"># equivalent to passing 1; fractional values</span>
+                 <span class="c1"># are also supported</span>
+
+<span class="n">TSTOP</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">ms</span>  <span class="c1"># length of simulation</span>
+
+<span class="c1">#</span>
+<span class="c1"># model setup</span>
+<span class="c1">#</span>
+
+<span class="c1"># create netstims</span>
+<span class="n">ns_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">NetStim</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NSNUM</span><span class="p">)]</span>
+
+<span class="n">all_random_streams</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># set netstim parameters</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ns</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ns_list</span><span class="p">):</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">ISI</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">number</span> <span class="o">=</span> <span class="n">NUM</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">START</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">NOISE</span>
+    <span class="c1"># specify the (i, 0, 0)th random stream</span>
+    <span class="n">ns</span><span class="o">.</span><span class="n">noiseFromRandom123</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># instrumentation (record NetStim behavior)</span>
+<span class="c1">#</span>
+
+<span class="n">stim_t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+<span class="n">stim_id</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">ns_list</span><span class="p">:</span>
+    <span class="n">nc</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">nc</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">stim_t</span><span class="p">,</span> <span class="n">stim_id</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1"># simulation control</span>
+<span class="c1">#</span>
+
+<span class="k">def</span> <span class="nf">my_run</span><span class="p">():</span>
+    <span class="c1"># set random seed</span>
+    <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">ns_list</span><span class="p">:</span>
+        <span class="n">ns</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="n">TSTOP</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; time       cell&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">id_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">stim_t</span><span class="p">,</span> <span class="n">stim_id</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">7.3f</span><span class="si">}</span><span class="s2"> </span><span class="se">\t</span><span class="si">{</span><span class="n">id_</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># show raster</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ns_list</span><span class="p">)):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">([</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">id_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">stim_t</span><span class="p">,</span> <span class="n">stim_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">id_</span> <span class="o">==</span> <span class="n">i</span><span class="p">],</span>
+                <span class="n">i</span> <span class="o">-</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ns_list</span><span class="p">)))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">TSTOP</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Control:  both have interval 10, number 10, start 1, noise True</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">my_run</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Control 1&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Control part 2: Showing we get the same results each time</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">my_run</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Control 2&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">===============================================================</span>
+<span class="s2">Test:  NetStim 1 starts at 6 ms</span>
+<span class="s2">===============================================================</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">ns_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">my_run</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Running the above code displays:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>===============================================================
+Control:  both have interval 10, number 10, start 1, noise True
+===============================================================
+
+time       cell
+7.603       1.0
+8.226       1.0
+10.187      0.0
+11.459      0.0
+14.528      0.0
+19.546      0.0
+19.827      0.0
+
+===============================================================
+Control part 2: Showing we get the same results each time
+===============================================================
+
+time       cell
+7.603       1.0
+8.226       1.0
+10.187      0.0
+11.459      0.0
+14.528      0.0
+19.546      0.0
+19.827      0.0
+
+===============================================================
+Test:  NetStim 1 starts at 6 ms
+===============================================================
+
+time       cell
+10.187      0.0
+11.459      0.0
+12.603      1.0
+13.226      1.0
+14.528      0.0
+19.546      0.0
+19.827      0.0
+</pre></div>
+</div>
+<img alt="../_images/netstim_independence.png" src="../_images/netstim_independence.png" />
+<p>In  particular, we note that cell 0 fires at exactly the same times in all cases, and cell 1s spike times are shifted forward in the test case.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modelview_compact_display.html" class="btn btn-neutral float-left" title="ModelView: Compact display of parameters for NEURON models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="porting_mechanisms_to_cpp.html" class="btn btn-neutral float-right" title="Adapting MOD files for C++ with NEURON 9.0[.dev]" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

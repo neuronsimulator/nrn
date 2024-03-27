@@ -1,0 +1,27 @@
+// $Id: cell.hoc,v 1.1 2010/08/31 04:51:18 ted Exp $
+
+create soma, dend
+access soma
+connect dend(0), soma(1)
+
+soma {
+  nseg = 1
+  L = 10
+  diam = 100/L/PI // surface area = 100 um2 
+  insert hh
+}
+
+dend {
+  nseg = 25
+  L = 1000
+  diam = 2
+  insert hh
+  gnabar_hh /= 2
+  gkbar_hh /= 2
+  gl_hh /= 2
+}
+
+forall {
+  Ra = 100
+  cm = 1
+}

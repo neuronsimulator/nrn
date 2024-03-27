@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biology Modeling FAQ &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Units used in NEURON" href="units.html" />
+    <link rel="prev" title="How to get started with NEURON" href="how_to_get_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Biology Modeling FAQ</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-work-with-neuron-morphologies">How do I work with neuron morphologies?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-simulate-a-current-clamp-pulse-experiment">How do I simulate a current clamp pulse experiment?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-simulate-a-current-clamp-with-non-pulse-behavior">How do I simulate a current clamp with non-pulse behavior?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-make-cytosolic-concentrations-change-in-response-to-ion-channel-activity">How do I make cytosolic concentrations change in response to ion channel activity?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-make-cytosolic-concentrations-diffuse-and-respond-to-ion-channel-activity">How do I make cytosolic concentrations diffuse and respond to ion channel activity?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Biology Modeling FAQ</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/bio_faq.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="biology-modeling-faq">
+<span id="bio-faq"></span><h1>Biology Modeling FAQ<a class="headerlink" href="#biology-modeling-faq" title="Link to this heading"></a></h1>
+<section id="how-do-i-work-with-neuron-morphologies">
+<h2>How do I work with neuron morphologies?<a class="headerlink" href="#how-do-i-work-with-neuron-morphologies" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="http://neuromorpho.org">NeuroMorpho.Org</a> hosts over 170k reconstructed neurons,
+all of which are available in SWC format as well as their original format.</p>
+<p>NEURON’s Import3D tool can read SWC files as well as several other neuron morphology
+types.</p>
+<p>The Import3D tool can be used both through the GUI and programmatically, however
+it is generally best to start with the GUI to explore the morphologies and make
+sure they are suitable for use with simulation. See the
+<a class="reference internal" href="import3d.html#import3d-tutorial"><span class="std std-ref">Import3D GUI tutorial</span></a> for more on GUI usage.</p>
+<p>Example:</p>
+<blockquote>
+<div><p>To create <code class="docutils literal notranslate"><span class="pre">pyr</span></code>, a Pyramidal cell object with morphology from a file called
+<code class="docutils literal notranslate"><span class="pre">c91662.swc</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdlib.hoc&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;import3d.hoc&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Pyramidal</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_morphology</span><span class="p">()</span>
+        <span class="c1"># do discretization, ion channels, etc</span>
+    <span class="k">def</span> <span class="nf">load_morphology</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Import3d_SWC_read</span><span class="p">()</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s2">&quot;c91662.swc&quot;</span><span class="p">)</span>
+        <span class="n">i3d</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Import3d_GUI</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">i3d</span><span class="o">.</span><span class="n">instantiate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<span class="n">pyr</span> <span class="o">=</span> <span class="n">Pyramidal</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Here <code class="docutils literal notranslate"><span class="pre">pyr</span></code> has lists of <a class="reference internal" href="../python/modelspec/programmatic/topology.html#Section" title="Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">Section</span></code></a> objects:
+<code class="docutils literal notranslate"><span class="pre">pyr.apic</span></code>, <code class="docutils literal notranslate"><span class="pre">pyr.axon</span></code>, <code class="docutils literal notranslate"><span class="pre">pyr.soma</span></code>, <code class="docutils literal notranslate"><span class="pre">pyr.all</span></code>.
+Each section has the appropriate <code class="docutils literal notranslate"><span class="pre">.name()</span></code> and <code class="docutils literal notranslate"><span class="pre">.cell()</span></code>.</p>
+<p>Note: this example is for an SWC file specifically; other readers are supported
+for different formats including <code class="docutils literal notranslate"><span class="pre">h.Import3d_Neurolucida3()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">h.Import3d_MorphML()</span></code>, and <code class="docutils literal notranslate"><span class="pre">h.Import3d_Eutectic_read()</span></code>.</p>
+<p>Note: if multiple cells are instantiated from the same reconstruction, they
+will occupy the same spatial locations unless they are explicitly translated.</p>
+</section>
+<section id="how-do-i-simulate-a-current-clamp-pulse-experiment">
+<h2>How do I simulate a current clamp pulse experiment?<a class="headerlink" href="#how-do-i-simulate-a-current-clamp-pulse-experiment" title="Link to this heading"></a></h2>
+<p>Use an <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IClamp" title="IClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">IClamp</span></code></a> at a segment of your choice. You can specify the <code class="docutils literal notranslate"><span class="pre">delay</span></code> (in ms) (when the clamp starts),
+the <code class="docutils literal notranslate"><span class="pre">amp</span></code> (amplitude in nA) of the current pulse and the <code class="docutils literal notranslate"><span class="pre">dur</span></code> (duration in ms). The injected current may
+be monitored through the IClamp’s <code class="docutils literal notranslate"><span class="pre">i</span></code> state, or recorded using its <code class="docutils literal notranslate"><span class="pre">_ref_i</span></code>.</p>
+<p>For example, the following code specifies that a current of 10 nA will be injected directly into the
+center of the soma from t = 1 ms to t = 1.1 ms:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span>
+
+<span class="c1"># setup the model here</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">ms</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must keep the <code class="docutils literal notranslate"><span class="pre">ic</span></code> object accessible in some way (either by assigning it to a variable
+or storing it in a list); if it becomes inaccessible, then Python will “garbage collect” it and it
+will be removed from the simulation.</p>
+</div>
+<p>For a runnable example, see
+<a class="reference external" href="https://colab.research.google.com/drive/1W1szHYfl8jjOlmZ270Jmk-qOrp9UMDr6?usp=sharing">these tutorial exercises</a>.</p>
+</section>
+<section id="how-do-i-simulate-a-current-clamp-with-non-pulse-behavior">
+<h2>How do I simulate a current clamp with non-pulse behavior?<a class="headerlink" href="#how-do-i-simulate-a-current-clamp-with-non-pulse-behavior" title="Link to this heading"></a></h2>
+<p>In this scenario, you likely have or can construct two pairs of <a class="reference internal" href="../python/programming/math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a> objects:
+<code class="docutils literal notranslate"><span class="pre">i_stim</span></code> with the injected current (in nA) measured at various time points and <code class="docutils literal notranslate"><span class="pre">t_stim</span></code> the corresponding
+time points (in ms).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If instead of Vectors, you have Python lists, numpy arrays, or other iterables,
+you can get an equivalent Vector via</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">t_stim_vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">t_stim</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Use an h. <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IClamp" title="IClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">IClamp</span></code></a> at a segment of your choice as described above, set the <code class="docutils literal notranslate"><span class="pre">delay</span></code> (start time) to 0,
+the <code class="docutils literal notranslate"><span class="pre">dur</span></code> ation to a large number (e.g. 1e9) and use <a class="reference internal" href="../python/programming/math/vector.html#Vector.play" title="Vector.play"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.play()</span></code></a> to play into the <code class="docutils literal notranslate"><span class="pre">_ref_amp</span></code> field
+using interpolation (the <code class="docutils literal notranslate"><span class="pre">True</span></code> in the following); e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ic</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ic</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mf">1e9</span>
+<span class="n">i_stim</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">ic</span><span class="o">.</span><span class="n">_ref_amp</span><span class="p">,</span> <span class="n">t_stim</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For a runnable example, see
+<a class="reference external" href="https://colab.research.google.com/drive/1Jj7Ke1kZSGja1FNNj66XGCdOruKY_oqS?usp=sharing">this example</a>.</p>
+</section>
+<section id="how-do-i-make-cytosolic-concentrations-change-in-response-to-ion-channel-activity">
+<span id="ion-channel-accumulation-bio-faq"></span><h2>How do I make cytosolic concentrations change in response to ion channel activity?<a class="headerlink" href="#how-do-i-make-cytosolic-concentrations-change-in-response-to-ion-channel-activity" title="Link to this heading"></a></h2>
+<p>NEURON defaults to assuming homeostatic mechanisms maintain intracellular concentration as that
+is often the assumption made by modelers, however this can easily be changed when the circumstances
+warrant.</p>
+<p>For certain ions (e.g. calcium) the changes due to channel activity are significant.
+Likewise, in pathological conditions (e.g. ischemic stroke), even ions like sodium and potassium
+may show significant change.</p>
+<p>To specify that intracellular sodium concentration on all sections (<code class="xref py py-func docutils literal notranslate"><span class="pre">allsec()</span></code>)
+is to be affected by ion channel activity:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">rxd</span>
+<span class="n">cyt</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cyt&quot;</span><span class="p">,</span> <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">)</span>
+<span class="n">na</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;na&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here the <code class="docutils literal notranslate"><span class="pre">nrn_region=&quot;i&quot;</span></code> indicates that we are talking about the intracellular concentration.
+The <code class="docutils literal notranslate"><span class="pre">name</span></code> argument to <a class="reference internal" href="../python/modelspec/programmatic/rxd.html#rxd.Species" title="rxd.Species"><code class="xref py py-class docutils literal notranslate"><span class="pre">rxd.Species</span></code></a> specifies the name of the ion.
+By default <a class="reference internal" href="../python/modelspec/programmatic/rxd.html#rxd.Region" title="rxd.Region"><code class="xref py py-class docutils literal notranslate"><span class="pre">rxd.Region</span></code></a> assumes that we’re describing a Region filling the entire Section;
+but this can be altered with additional arguments. The <code class="docutils literal notranslate"><span class="pre">charge=1</span></code> corresponds to the fact that sodium
+ions have a charge of +1. By contrast calcium ions have a charge of +2, and thus to tell NEURON to consider
+how calcium changes due to ion channel activity we write:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">atolscale</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here we have also added the optional parameter <code class="docutils literal notranslate"><span class="pre">atolscale</span></code>. It has no effect in fixed-step
+simulations, but for variable step simulations (see <a class="reference internal" href="../python/simctrl/cvode.html#CVode" title="CVode"><code class="xref py py-class docutils literal notranslate"><span class="pre">CVode</span></code></a>) it is a hint that concentrations
+for calcium are often much smaller than those for sodium and that it should seek much smaller
+errors in calcium in terms of absolute numbers.</p>
+<p>(As an aside, it is generally good practice <em>not</em> to use <code class="xref py py-func docutils literal notranslate"><span class="pre">allsec()</span></code> but to instead explicitly
+identify the sections to be used. NEURON provides the <a class="reference internal" href="../python/modelspec/programmatic/topology.html#Section.wholetree" title="Section.wholetree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Section.wholetree()</span></code></a> method for getting
+a Python list of all sections that belong to a cell containing a specified section. It would be natural
+to include specification that concentration is to change on a per-cell basis within a cell class; this
+compartmentalization allows combining cells from different models where we may want to make different
+assumptions.)</p>
+</section>
+<section id="how-do-i-make-cytosolic-concentrations-diffuse-and-respond-to-ion-channel-activity">
+<span id="ion-diffusion-bio-faq"></span><h2>How do I make cytosolic concentrations diffuse and respond to ion channel activity?<a class="headerlink" href="#how-do-i-make-cytosolic-concentrations-diffuse-and-respond-to-ion-channel-activity" title="Link to this heading"></a></h2>
+<p>We modify the above example by specifying a diffusion constant <code class="docutils literal notranslate"><span class="pre">d</span></code> e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">um</span><span class="p">,</span> <span class="n">ms</span>
+<span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mf">1.3</span> <span class="o">*</span> <span class="n">um</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">ms</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The units used here – µm <sup>2</sup> / ms – are the default and would be assumed if not
+specified, but it is generally good practice to include units. We note that the <code class="docutils literal notranslate"><span class="pre">neuron.units</span></code>
+module provides both <code class="docutils literal notranslate"><span class="pre">µm</span></code> and <code class="docutils literal notranslate"><span class="pre">um</span></code>; these are synonyms with the latter made available to
+facilitate typing.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_get_started.html" class="btn btn-neutral float-left" title="How to get started with NEURON" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="units.html" class="btn btn-neutral float-right" title="Units used in NEURON" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

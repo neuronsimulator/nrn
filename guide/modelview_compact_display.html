@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ModelView: Compact display of parameters for NEURON models &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Randomness in NEURON models" href="randomness.html" />
+    <link rel="prev" title="Tutorial 2 : Fitting a model to data" href="optimization2.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ModelView: Compact display of parameters for NEURON models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#modelview-in-action">ModelView in action</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-ca1-pyramidal-neuron-as-a-2-layer-nn-and-subthreshold-synaptic-summation-by-poirazi-et-al-2003">Example: CA1 pyramidal neuron: as a 2-layer NN and subthreshold synaptic summation by Poirazi et al. 2003</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#modelview-and-modeldb">ModelView and ModelDB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#modelview-and-interoperability-future-goals">ModelView and Interoperability Future Goals</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#acknowledgement">Acknowledgement</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">ModelView: Compact display of parameters for NEURON models</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/modelview_compact_display.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="modelview-compact-display-of-parameters-for-neuron-models">
+<span id="modelview-compact-display"></span><h1>ModelView: Compact display of parameters for NEURON models<a class="headerlink" href="#modelview-compact-display-of-parameters-for-neuron-models" title="Link to this heading"></a></h1>
+<p><strong>Michael Hines, Sushil Kambampati, Thomas M. Morse</strong></p>
+<p><strong>Yale University School of Medicine, Neurobiology Department and Computer Science Department, New Haven, Connecticut.</strong></p>
+<p><strong>(www version of a poster presented at the Human Brain Project Annual Conference April 26-27, 2004)</strong></p>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The availability of a large number of models in <a class="reference external" href="https://senselab.med.yale.edu/ModelDB/">ModelDB</a> (Migliore et al 2003), helps investigators test their intuition of model behavior and provides building blocks for future modeling applications to the interpretation of experimental findings. However the NEURON (Hines and Carnevale 2001) model legacy code entered by publication authors was generally not developed with presentation as a high priority. The original code can be difficult to analyze and it sometimes happens that variables are reset so that the values at run time are different than the first values indicated in the top of the code. ModelView overcomes these problems by providing a (run-time state) preview of the properties of a model (anatomy and biophysical attributes). Having this information available for viewing in ModelDB lets investigators quickly develop a conceptual picture of the model structure and compare parameter differences between runs. It makes it possible to ask detailed questions about the model that would have been time-consuming to answer without ModelView.</p>
+</section>
+<section id="modelview-in-action">
+<h2>ModelView in action<a class="headerlink" href="#modelview-in-action" title="Link to this heading"></a></h2>
+<section id="example-ca1-pyramidal-neuron-as-a-2-layer-nn-and-subthreshold-synaptic-summation-by-poirazi-et-al-2003">
+<h3>Example: CA1 pyramidal neuron: as a 2-layer NN and subthreshold synaptic summation by Poirazi et al. 2003<a class="headerlink" href="#example-ca1-pyramidal-neuron-as-a-2-layer-nn-and-subthreshold-synaptic-summation-by-poirazi-et-al-2003" title="Link to this heading"></a></h3>
+<p>This example demonstrates how ModelView can explore a NEURON model. We look at the report generated after starting the tool.</p>
+<img alt="../_images/fig1.gif" class="align-center" src="../_images/fig1.gif" />
+<p>ModelView opens its hierarchical browser with a top-level summary of the model. In NEURON a cell is divided into sections which are further divided into computational nodes called segments. The first item in the summary is the total number of sections and the total number of segments, for all the cells in the model. The second and final summaries report the numbers of real and artificial cells and density mechanisms and point processes, the later two include ion-channels, receptors, and electrodes. The Poirazi example contains 1 real cell and density mechanisms and a point process. We explore the model by clicking on the asterisk lines to expand the text tree (or contract if already expanded). Clicking on “* 1 real cells”, and then clicking on the newly appeared “* root soma[0]” displays an analysis of the occurrence of the duplicate and the unique sets of parameters distributed throughout the cell (figure below).</p>
+<img alt="../_images/fig2L.gif" class="align-center" src="../_images/fig2L.gif" />
+<img alt="../_images/fig2R.gif" class="align-center" src="../_images/fig2R.gif" />
+<p>After the total number of sections and segments in this particular cell and the related nseg parameter distribution, the number of inserted mechanisms is reported. Expanding the number of inserted mechanisms (23 here) lets the investigator know which ion-channels are used in the model (figure above). Expanding the “* pas” line (figure below) shows how ModelView truncates text display when there are too many values to display with a message “… or more distinct values”.</p>
+<img alt="../_images/fig3.gif" class="align-center" src="../_images/fig3.gif" />
+<p>If one of these too-lengthy-to-display items is clicked upon, a graph of the values of the parameters along an axis indicating distance from the soma and a 3D shape image with values expressed as color intensities are displayed (figures below). The first image on the shows the range graph when <code class="docutils literal notranslate"><span class="pre">g_pas</span></code> selected (second when <code class="docutils literal notranslate"><span class="pre">e_pas</span></code> selected).</p>
+<img alt="../_images/fig4L.gif" class="align-center" src="../_images/fig4L.gif" />
+<img alt="../_images/fig4R.gif" class="align-center" src="../_images/fig4R.gif" />
+<p>ModelView analyzes the sections to find the sets of sections that share a parameter (or a set of parameters) set to the same value(s). There are 64 sets of subsets of constant parameters in this model. The number of sections that have unique values of a parameter are also calculated and displayed (109 here). These large numbers of sets are indicative that there are heterogeneous values for some parameters. For a simpler model, these numbers help identify the combinations of values that are used, and also their spatial distribution, while for a more complex model, such as this one, the line items are links to graphs as described above. When a parameter from these lists is selected (first figure below), for example eca = 140, the part of the tree that contains that value of that parameter is highlighted in a shape plot (second figure below).</p>
+<img alt="../_images/fig5L.gif" class="align-center" src="../_images/fig5L.gif" />
+<img alt="../_images/fig5R.gif" class="align-center" src="../_images/fig5R.gif" />
+<p>The final group of top-level items, density mechanisms and point processes will expand into text trees that summarize and create graphs that display the distribution of these items. The Homogeneous Parameters item lists the parameters that occur with just a single value, unlike Heterogenous Parameters, which contain lists of parameters which take multiple values. When a homogeneous parameter is selected, e.g. <code class="docutils literal notranslate"><span class="pre">el_hha2</span></code>, then a graph of the distribution of that parameter is displayed (figures below).</p>
+<img alt="../_images/fig6L.gif" class="align-center" src="../_images/fig6L.gif" />
+<img alt="../_images/fig6R.gif" class="align-center" src="../_images/fig6R.gif" />
+<p>If a heterogeneous parameter is selected, e.g. <code class="docutils literal notranslate"><span class="pre">ar2_hha_old</span></code>, a term used in a Na channel activation function, the range plot shows the overall complexity, while the text provides a place to explore the details of the distribution (figures below).</p>
+<img alt="../_images/fig7L.gif" class="align-center" src="../_images/fig7L.gif" />
+<img alt="guide/gif/fig7R.gif" class="align-center" src="guide/gif/fig7R.gif" />
+<p>Finally, in this example model, there is one point process, a current clamp, which when selected in the ModelView browser, will graph that it is positioned at the soma (standard IClamp show shape graph not shown).</p>
+</section>
+</section>
+<section id="modelview-and-modeldb">
+<h2>ModelView and ModelDB<a class="headerlink" href="#modelview-and-modeldb" title="Link to this heading"></a></h2>
+<p>We plan on incorporating a ModelView window as an alternative window to the model file browsing window in ModelDB. Investigators will be able to browse the morphology and biophysical specification for the NEURON models stored in ModelDB. This browser is under development, but preliminary views (figures below) illustrates its similarity to the NEURON version.</p>
+<img alt="../_images/fig9L.gif" class="align-center" src="../_images/fig9L.gif" />
+<img alt="../_images/fig9M.gif" class="align-center" src="../_images/fig9M.gif" />
+<img alt="../_images/fig9R.gif" class="align-center" src="../_images/fig9R.gif" />
+</section>
+<section id="modelview-and-interoperability-future-goals">
+<h2>ModelView and Interoperability Future Goals<a class="headerlink" href="#modelview-and-interoperability-future-goals" title="Link to this heading"></a></h2>
+<p>ModelView can output an XML description of the model’s morphology and biophysical specification. ModelView uses MorphML to describe the morphology of the cell. We are collaborating with the MorphML group (see reference) to evolve the MorphML specification for interoperability. The biophysical XML specification is under development and we have plans to provide translation tools to previous and developing standards. We will continue to refine the XML output to make it suitable for communication with neuroinformatics tools as well as other modeling software such as Catacomb and GENESIS. We will adopt, develop through informal collaboration and communication, and promote NeuroML (see reference) (whose goal is to establish standard descriptions of computational models that are simulator independent), BrainML (see reference) (whose goal is to develop standards in the general description of neuroscience data). We will also attempt to implement the tools required to import and export models with a third specification, CellML (see reference) (whose purpose is to store and exchange computer-based biological models.)</p>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>ModelView is a powerful model exploration tool that summarizes and displays information about NEURON models that can be hard to find if one has only the model code to search through. The provided summary information and analysis can lead an investigator to ask questions about the model that would have been time-consuming to answer without ModelView. In addition XML interoperability tools are under development that will aid investigators in understanding models and in translating models to simulator platforms different than the one in which they were originally written.</p>
+</section>
+</section>
+<section id="acknowledgement">
+<h2>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Link to this heading"></a></h2>
+<p>We are grateful for the support of NIH’s Human Brain Project Grant number 5P01DC004732-04.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>BrainML: <a class="reference external" href="http://neurobot.bio.auth.gr/2006/brainml-a-standard-xml-metaformat-for-exchanging-neuroscience-data/">http://neurobot.bio.auth.gr/2006/brainml-a-standard-xml-metaformat-for-exchanging-neuroscience-data/</a></p>
+<p>CellML: <a class="reference external" href="http://www.cellml.org/">http://www.cellml.org/</a></p>
+<p>Hines, M.L. and Carnevale, N.T. NEURON: a tool for neuroscientists. The Neuroscientist 7:123-135, 2001. Migliore M, Morse TM, Davison, AP, Marenco L, Shepherd GM, Hines ML. ModelDB Making models publicly accessible to support computational neuroscience. Neuroinformatics 2003 1:131-134</p>
+<p>MorphML: <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6130779/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6130779/</a></p>
+<p>NeuroML: <a class="reference external" href="http://www.neuroml.org/">http://www.neuroml.org/</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="optimization2.html" class="btn btn-neutral float-left" title="Tutorial 2 : Fitting a model to data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="randomness.html" class="btn btn-neutral float-right" title="Randomness in NEURON models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

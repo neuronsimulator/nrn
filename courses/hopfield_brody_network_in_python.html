@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hopfield Brody synchronization (sync) model &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parallel Computing with MPI" href="mpi_parallelization.html" />
+    <link rel="prev" title="Network ready cells from the CellBuilder" href="network_ready_cells_from_the_cellb.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hopfield Brody synchronization (sync) model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standard-intfire-implementation-eg-intfire1-from-intfire1-mod">Standard intfire implementation (eg <code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">IntFire1</span></code> from <code class="docutils literal notranslate"><span class="pre">intfire1.mod</span></code>))</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#intibfire-in-sync-model">IntIbFire in sync model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cell-template">Cell template</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network">Network</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exercises-to-gain-familiarity-with-the-model">Exercises to gain familiarity with the model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#increase-to-100-neurons-and-run">Increase to 100 neurons and run.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#narrow-the-difference-between-fast-and-slow-cells-so-as-to-make-more-of-them-fire">Narrow the difference between fast and slow cells so as to make more of them fire.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reduce-the-inhibition-and-demonstrate-that-synchrony-worsens">Reduce the inhibition and demonstrate that synchrony worsens.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#increase-cell-time-constant">Increase cell time constant.</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#graph-spike-times-should-look-like-spikeplot1-graph">Graph spike times – should look like SpikePlot1 graph</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rewiring-the-network">Rewiring the network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exercises">Exercises</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Hopfield Brody synchronization (sync) model</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/hopfield_brody_network_in_python.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hopfield-brody-synchronization-sync-model">
+<span id="hopfield-brody-network-in-python"></span><h1>Hopfield Brody synchronization (sync) model<a class="headerlink" href="#hopfield-brody-synchronization-sync-model" title="Link to this heading"></a></h1>
+<p>The exercises below are intended primarily to familiarize the student with techniques and tools useful for the implementation of networks in NEURON. We have chosen a relatively simple network in order to minimize distractions due to the complexities of channel kinetics, dendritic trees, detailed network architecture, etc. The following network uses an artificial integrate-and-fire cell without channels or compartments. There is only one kind of cell, so no issues of organizing interactions between cell populations. There is only one kind of synapse. Additionally, suggested algorithms were chosen for ease of implementation rather than quality of results.</p>
+<p>Although this is a minimal model, learning the ropes is still difficult. Therefore, we suggest that you go through the entire lesson relatively quickly before returning to delve more deeply into the exercises. Some of the exercises are really more homework projects (eg design a new synchronization measure). These are marked with asterisks.</p>
+<p>As you know, NEURON is optimized to handle the complex channel and compartment simulations that have been omitted from this exercise. The interested student might wish to convert this network into a network of spiking cells with realistic inhibitory interactions or a hybrid network with both realistic and artificial cells. Such an extended exercise would more clearly demonstrate NEURON’s advantages for performing network simulations.</p>
+<section id="standard-intfire-implementation-eg-intfire1-from-intfire1-mod">
+<h2>Standard intfire implementation (eg <a class="reference internal" href="../hoc/modelspec/programmatic/mechanisms/mech.html#IntFire1" title="IntFire1"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">IntFire1</span></code></a> from <code class="docutils literal notranslate"><span class="pre">intfire1.mod</span></code>))<a class="headerlink" href="#standard-intfire-implementation-eg-intfire1-from-intfire1-mod" title="Link to this heading"></a></h2>
+<p>Individual units are integrate-and-fire neurons.</p>
+<p>The basic intfire implementation in neuron utilizes a decaying state variable (<code class="docutils literal notranslate"><span class="pre">m</span></code> as a stand-in for voltage) which is pushed up by the arrival of an excitatory input or down by the arrival of an inhibitory input (<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">=</span> <span class="pre">m</span> <span class="pre">+</span> <span class="pre">w</span></code>). When m exceeds threshold the cell “fires,” sending events to other connected cells.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="p">(</span><span class="n">m</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>  <span class="o">...</span>
+
+
+    <span class="n">net_event</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>    <span class="p">:</span> <span class="n">trigger</span> <span class="n">synapses</span>
+</pre></div>
+</div>
+</section>
+<section id="intibfire-in-sync-model">
+<h2>IntIbFire in sync model<a class="headerlink" href="#intibfire-in-sync-model" title="Link to this heading"></a></h2>
+<p>The integrate-and-fire neuron in the current model must fire spontaneously with no input, as well as firing when a threshold is reached. This is implemented by utilizing a <code class="docutils literal notranslate"><span class="pre">firetime()</span></code> routine to calculate when the state variable m will reach threshold <strong>assuming no other inputs during that time</strong>. This firing time is calculated based on the natural firing interval of the cell (<code class="docutils literal notranslate"><span class="pre">invl</span></code>) and the time constant for state variable decay (<code class="docutils literal notranslate"><span class="pre">tau</span></code>). When an input comes in, a new firetime is calculated after taking into account the synaptic input (<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">=</span> <span class="pre">m</span> <span class="pre">+</span> <span class="pre">w</span></code>) which perturbs the state variable’s trajectory towards threshold.</p>
+</section>
+<section id="cell-template">
+<h2>Cell template<a class="headerlink" href="#cell-template" title="Link to this heading"></a></h2>
+<p>IntIBFire is enclosed in a template named “Cell.” An instantiation of this template provides access to the underlying mechanism through object pointer pp. Execute the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mycell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">mycell</span><span class="o">.</span><span class="n">pp</span><span class="p">,</span> <span class="n">mycell</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="n">mycell</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">invl</span>
+</pre></div>
+</div>
+<p>The Cell template also provides 3 procedures. <code class="docutils literal notranslate"><span class="pre">connect2target()</span></code> is optionally used to hook this cell to a postsynaptic cell.</p>
+</section>
+<section id="network">
+<h2>Network<a class="headerlink" href="#network" title="Link to this heading"></a></h2>
+<p>The network has all-to-all inhibitory connectivity with all connections set to equal negative values. The network is initially set up with fast firing cells at the bottom of the graph (<code class="docutils literal notranslate"><span class="pre">Cell[0]</span></code>, highest natural interval) and slower cells at the top (<code class="docutils literal notranslate"><span class="pre">Cell[ncell-1]</span></code>, lowest natural interval). Cells in between have sequential evenly-spaced periods.</p>
+</section>
+</section>
+<section id="how-it-works">
+<h1>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h1>
+<p>The synchronization mechanism requires that all of the cells fire spontaneously at similar frequencies. It is obvious that if all cells are started at the same time, they will still be roughly synchronous after one cycle (since they have similar intrinsic cycle periods). After two cycles, they will have drifted further apart. After many cycles, differences in period will be magnified, leading to no temporal relationship of firing.</p>
+<p>The key observation utilized here is that firing is fairly synchronized one cycle after onset. The trick is to reset the cells after each cycle so that they start together again. They then fire with temporal differences equal to the differences in their intrinsic periods. This resetting can be provided by an inhibitory input which pushes state variable <em>m</em> down far from threshold (hyperpolarized, as it were). This could be accomplished through an external pacemaker that reset all the cells, thereby imposing an external frequency onto the network. The interesting observation in this network is that pacemaking can also be imposed from within, though an intrinsic connectivity that enslaves all members to the will of the masses.</p>
+<section id="exercises-to-gain-familiarity-with-the-model">
+<h2>Exercises to gain familiarity with the model<a class="headerlink" href="#exercises-to-gain-familiarity-with-the-model" title="Link to this heading"></a></h2>
+<section id="increase-to-100-neurons-and-run">
+<h3>Increase to 100 neurons and run.<a class="headerlink" href="#increase-to-100-neurons-and-run" title="Link to this heading"></a></h3>
+<p>Many neurons do not fire. These have periods that are too long – before they can fire, the population has fired again and reset them. Notice that the period of network firing is longer than the natural periods of the individual cells. This is because the threshold is calculated to provide this period when m starts at 0. However, with the inhibition, m starts negative.</p>
+</section>
+<section id="narrow-the-difference-between-fast-and-slow-cells-so-as-to-make-more-of-them-fire">
+<h3>Narrow the difference between fast and slow cells so as to make more of them fire.<a class="headerlink" href="#narrow-the-difference-between-fast-and-slow-cells-so-as-to-make-more-of-them-fire" title="Link to this heading"></a></h3>
+<p>Alternatively, increase the delay.</p>
+</section>
+<section id="reduce-the-inhibition-and-demonstrate-that-synchrony-worsens">
+<h3>Reduce the inhibition and demonstrate that synchrony worsens.<a class="headerlink" href="#reduce-the-inhibition-and-demonstrate-that-synchrony-worsens" title="Link to this heading"></a></h3>
+<p>With inhibition set to zero, there is no synchrony and each cell fires at its natural period.</p>
+</section>
+<section id="increase-cell-time-constant">
+<h3>Increase cell time constant.<a class="headerlink" href="#increase-cell-time-constant" title="Link to this heading"></a></h3>
+<p>This will destroy synchrony. Increase inhibitory weight; synchrony recovers. This is a consequence of the exponential rise of the state variable. If the interval is short but the time constant long, then the cell will amplify small variations in the amount of inhibition received.</p>
+</section>
+</section>
+</section>
+<section id="beyond-the-gui-saving-and-displaying-spikes">
+<h1>Beyond the GUI – Saving and displaying spikes<a class="headerlink" href="#beyond-the-gui-saving-and-displaying-spikes" title="Link to this heading"></a></h1>
+<p>Count the total number of spikes using a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop and <code class="docutils literal notranslate"><span class="pre">total+=len(sp.vecs[ii])</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">savspks</span><span class="p">()</span> <span class="c1"># record spike times to tvec; indices to ind</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="c1"># or hit run button on GUI</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">ind</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">tvec</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Wise precaution – check step by step to make sure that nothing’s screwed up</p>
+<p>Can use for … : <code class="docutils literal notranslate"><span class="pre">vec.append(sp.vecs[ii]);</span> <span class="pre">vec.sort();</span> <span class="pre">tvec.sort();</span> <span class="pre">vec.eq(tvec)</span></code> to make sure have all the same spike times (still doesn’t tell you they correspond to the same cells)</p>
+<section id="graph-spike-times-should-look-like-spikeplot1-graph">
+<h2>Graph spike times – should look like SpikePlot1 graph<a class="headerlink" href="#graph-spike-times-should-look-like-spikeplot1-graph" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ind</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">tvec</span><span class="p">)</span> <span class="c1"># throw them up there</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">showspks</span><span class="p">()</span> <span class="c1"># fancier marking with sync lines</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="synchronization-measures">
+<h1>Synchronization measures<a class="headerlink" href="#synchronization-measures" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">syncer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mf">5e-2</span><span class="p">,</span><span class="o">-</span><span class="mf">5e-3</span><span class="p">):</span> <span class="n">weight</span><span class="p">(</span><span class="n">w</span><span class="p">);</span> <span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">();</span> <span class="nb">print</span> <span class="n">w</span><span class="p">,</span><span class="n">syncer</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="p">[</span><span class="n">vec</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">vec</span> <span class="ow">in</span> <span class="n">veclist</span><span class="p">]</span>        <span class="c1"># clear</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5e-2</span><span class="p">,</span> <span class="o">-</span><span class="mf">5e-3</span><span class="p">):</span>
+<span class="go">        weight(w)</span>
+<span class="go">        h.run()</span>
+<span class="go">        vec[1].append(w)</span>
+<span class="go">        vec[2].append(syncer())</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="nb">print</span> <span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span> <span class="n">vec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>         <span class="c1"># make sure nothing went wrong</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">g</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>                     <span class="c1"># assuming it&#39;s still there, else put up a new one</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">vec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>         <span class="c1"># use &quot;View = plot&quot; on pull down to see it</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">vec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">vec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>         <span class="c1"># big (8) red (2) circles (&quot;O&quot;)</span>
+</pre></div>
+</div>
+<p><strong>Make sure that the values graphed are the same as the values printed out before</strong></p>
+<ul class="simple">
+<li><p>enclose the weight exploration above in a procedure</p></li>
+<li><p>write a similar routine to explore cell time constant (<code class="docutils literal notranslate"><span class="pre">param</span></code> is called <code class="docutils literal notranslate"><span class="pre">ta</span></code>; set with <code class="docutils literal notranslate"><span class="pre">tau(ta)</span></code>); run it</p></li>
+<li><p>write a similar routine to explore synaptic delay (<code class="docutils literal notranslate"><span class="pre">param</span></code> is called <code class="docutils literal notranslate"><span class="pre">del</span></code>; set with <code class="docutils literal notranslate"><span class="pre">delay(del)</span></code>); run it</p></li>
+<li><p>write a general proc that takes 3 args: <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>, <code class="docutils literal notranslate"><span class="pre">iter</span></code> that can be used to explore any of the params</p></li>
+</ul>
+<p>(hint: call a general <code class="docutils literal notranslate"><span class="pre">setpar()</span></code> procedure that can be redefined eg def <code class="docutils literal notranslate"><span class="pre">setpar(x):</span> <span class="pre">weight(x)</span></code> depending on which param you are changing</p>
+</section>
+<section id="procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">
+<h1>Procedure interval2() in ocomm.hoc sets cell periods randomly<a class="headerlink" href="#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly" title="Link to this heading"></a></h1>
+<ul>
+<li><p>can be used instead of <code class="docutils literal notranslate"><span class="pre">interval()</span></code> in <code class="xref download docutils literal notranslate"><span class="pre">synchronize.hoc</span></code></p></li>
+<li><p>randomizing cell identities is easier than randomizing connections</p></li>
+<li><p>with randomized identities can attach cell 0 to cells 1-50 and not have interval uniformity</p></li>
+<li><p>To replace <code class="docutils literal notranslate"><span class="pre">interval()</span></code> with <code class="docutils literal notranslate"><span class="pre">interval2()</span></code>, overwrite <code class="docutils literal notranslate"><span class="pre">interval()</span></code>:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">interval</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">):</span> <span class="n">interval2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">interval()</span></code> from command line or by changing low and high in GUI panel</p></li>
+<li><p>Check results</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncell</span><span class="p">):</span> <span class="n">h</span><span class="o">.</span><span class="n">printf</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%g</span><span class="s2"> &quot;</span><span class="p">,</span><span class="n">cells</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">invl</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Exercise: check results graphically by setting wt to 0, running sim, and graphing results</p></li>
+</ul>
+</section>
+<section id="rewiring-the-network">
+<h1>Rewiring the network<a class="headerlink" href="#rewiring-the-network" title="Link to this heading"></a></h1>
+<p>All of the programs discussed in the lecture are available in ocomm.hoc. The student may wish to use or rewrite any of these procedures. Below we suggest a different approach to wiring the network.</p>
+<p>procedure wire() in <code class="file docutils literal notranslate"><span class="pre">ocomm.hoc</span></code> is slightly simplified from that in <code class="file docutils literal notranslate"><span class="pre">synchronize.hoc</span></code> but does the same thing</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">wire</span> <span class="p">():</span>
+    <span class="n">nclist</span><span class="o">.</span><span class="n">remove_all</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">pre</span> <span class="ow">in</span> <span class="n">cells</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">cells</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pre</span><span class="o">!=</span><span class="n">post</span><span class="p">:</span>
+                <span class="n">nclist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">pre</span><span class="o">.</span><span class="n">pp</span><span class="p">,</span><span class="n">post</span><span class="o">.</span><span class="n">pp</span><span class="p">))</span>
+</pre></div>
+</div>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<p>rewrite <code class="docutils literal notranslate"><span class="pre">wire()</span></code> to connect each neuron to half of the neurons</p>
+<p>suggestion: for each neuron, pick an initial projection randomly</p>
+<p>eg</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rdm</span><span class="o">.</span><span class="n">discunif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">ncell</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">proj</span><span class="o">=</span><span class="n">rdm</span><span class="o">.</span><span class="n">repick</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">proj</span> <span class="o">&lt;</span> <span class="n">ncell</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+    <span class="c1"># project to 0-&gt;proj</span>
+<span class="k">else</span><span class="p">:</span> <span class="c1"># project to proj-&gt;ncell-1</span>
+</pre></div>
+</div>
+<p>This algorithm is not very good since cells in center get more convergence</p>
+<ul class="simple">
+<li><p>rewrite wire to get even convergence</p></li>
+</ul>
+<p>suggestions: counting upwards from <code class="docutils literal notranslate"><span class="pre">proj</span></code>, use modulus (%) to wrap-around and get values between 0 and ncell-1</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">run()</span></code>, graph and check synchrony</p></li>
+<li><p>generalize your procedure to take argument <code class="docutils literal notranslate"><span class="pre">pij</span></code> that defines connection density</p></li>
+<li><p>assess synchrony at different connection densities</p></li>
+</ul>
+</section>
+</section>
+<section id="assessing-connectivity">
+<h1>Assessing connectivity<a class="headerlink" href="#assessing-connectivity" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cvode.netconlist(cells.object(0).pp,&quot;&quot;,&quot;&quot;)</span></code> gives a divergence list for cell#0</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cvode.netconlist(&quot;&quot;,&quot;&quot;,cells.object(0).pp)</span></code> gives a convergence list for cell#0</p></li>
+<li><p>Exercise: use these lists to calculate average, min, max for conv and div</p></li>
+</ul>
+</section>
+<section id="graphing-connectivity">
+<h1>Graphing connectivity<a class="headerlink" href="#graphing-connectivity" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p>use <code class="docutils literal notranslate"><span class="pre">fconn(prevec,postvec)</span></code> to get parallel vecs of pre and postsyn cell numbers</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">postvec.mark(g,prevec)</span></code> to demonstrate that central cells get most of the convergence (if using original suggestion for <code class="docutils literal notranslate"><span class="pre">wire()</span></code> rewrite)</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">showdiv1(cell#)</span></code> and <code class="docutils literal notranslate"><span class="pre">showconv1(cell#)</span></code> to graph connections for selected cells</p></li>
+<li><p>Exercise: write a procedure to count, print out and graph all cells with reciprocal connectivity, eg A-&gt;B and B-&gt;A</p></li>
+<li><p>Exercise: modify your <code class="docutils literal notranslate"><span class="pre">wire()</span></code> to eliminate reciprocal connectivity</p></li>
+</ul>
+</section>
+<section id="animate">
+<h1>Animate<a class="headerlink" href="#animate" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">animplot()</span></code> to put up squares for animating simulation</p></li>
+<li><p>Resize and shift around as needed but afterwards make sure that “Shape Plot” is set on pulldown menu</p></li>
+<li><p>After running a simulation to set tvec and ind, run anim() to look at the activity</p></li>
+</ul>
+<p>Difficult or extended exercises</p>
+<p><em>Last updated: Jun 16, 2015 (9:34)</em></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="network_ready_cells_from_the_cellb.html" class="btn btn-neutral float-left" title="Network ready cells from the CellBuilder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mpi_parallelization.html" class="btn btn-neutral float-right" title="Parallel Computing with MPI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

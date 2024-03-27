@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with PostScript and idraw figures &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Fixing funny axes" href="fixing_funny_axes.html" />
+    <link rel="prev" title="Using “Plot what?” to Specify a Variable to be plotted" href="using_plotwhat_to_specify_a_variable.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="faq.html#now-that-i-ve-installed-neuron-how-do-i-run-it">Now that I’ve installed NEURON, how do I run it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-the-best-way-to-learn-how-to-use-neuron">What’s the best way to learn how to use NEURON?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-create-a-neuron-model">How do I create a NEURON model?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#help-i-m-having-a-hard-time-implementing-models">Help! I’m having a hard time implementing models!</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created">Why can’t NEURON read the text file (or <code class="docutils literal notranslate"><span class="pre">hoc</span></code> file) that I created?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-print-a-hard-copy-of-a-neuron-window">How do I print a hard copy of a NEURON window?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-plot-something-other-than-membrane-potential">How do I plot something other than membrane potential?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-save-and-edit-figures">How do I save and edit figures?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done">I’ve used the NEURON Main Menu to construct and manage models. How can I save what I have done?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-a-ses-session-file-can-i-edit-it">What is a ses (session) file? Can I edit it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-use-neuron-s-tools-for-electrotonic-analysis">How do I use NEURON’s tools for electrotonic analysis?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-should-i-use-an-odd-value-for-nseg">Why should I use an odd value for nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-a-good-stretegy-for-specifying-nseg">What’s a good stretegy for specifying nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs">How do I change the background color used in NEURON’s shape plots and other graphs?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-color-scale-used-in-shape-plots">How do I change the color scale used in shape plots?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc">I see an error message that says … procedure too big in ./foo.hoc …</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#where-can-i-find-examples-of-mod-files">Where can I find examples of mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-compile-mod-files">How do I compile mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-can-t-get-mod-files-to-compile">I can’t get mod files to compile.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version">I installed a new version of NEURON, and now I see error messages like this: ‘mecanisms fooba needs to be re-translated. its version 5.2 “c” code is incompatible with this neuron version’.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-nmodl">Is there a list of functions that are built into NMODL?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-hoc">Is there a list of functions that are built into hoc?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-units-does-neuron-use-for-current-concentration-etc">What units does NEURON use for current, concentration, etc.?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect">When I type a new value into a numeric field, it doesn’t seem to have any effect.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use">What is the difference between SEClamp and VClamp, and which should I use?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell">SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this">I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times">I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism">I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-can-i-read-data-from-a-binary-pclamp-file">How can I read data from a binary PClamp file?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything">How do I exit NEURON? I’m not using the GUI, and when I enter ^D at the oc&gt; prompt it doesn’t do anything?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-neuron">Is there a list of functions that are built into NEURON?</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="using_plotwhat_to_specify_a_variable.html">Using “Plot what?” to Specify a Variable to be plotted</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Working with PostScript and idraw figures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_session_files_for_saving.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_the_d_lambda_rule.html">Using the d_lambda Rule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html">How to change the background color used in shape plots and other graphs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html#how-create-a-custom-colormap">How create a custom colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="how_to_get_started_with_neuron.html">How to get started with NEURON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nmodls_built_in_functions.html">NMODL’s built-in functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html">UNITS Tutorial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#definition-of-new-units">Definition of new units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#function-and-argument-units">Function and Argument units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-for-kinetic-blocks">Units for KINETIC blocks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-in-neuron-models">Units in NEURON models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="finitialize_handler.html">FIinitializeHandler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_neuron_on_the_mac.html">Using NEURON on the Mac</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="faq.html">Frequently asked questions (FAQ)</a></li>
+      <li class="breadcrumb-item active">Working with PostScript and idraw figures</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/working_with_postscript_and_idraw.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="working-with-postscript-and-idraw-figures">
+<span id="id1"></span><h1>Working with PostScript and idraw figures<a class="headerlink" href="#working-with-postscript-and-idraw-figures" title="Link to this heading"></a></h1>
+<section id="exercise">
+<h2>Exercise<a class="headerlink" href="#exercise" title="Link to this heading"></a></h2>
+<p>The chief aim of this exercise is to give you practice using graph windows and files created by NEURON.</p>
+<section id="the-system">
+<h3>The system<a class="headerlink" href="#the-system" title="Link to this heading"></a></h3>
+<p>A patch of squid axon membrane with surface area 100 µm^2, to which a current pulse is applied to trigger an action potential.</p>
+</section>
+<section id="the-modeling-experiment">
+<h3>The modeling experiment<a class="headerlink" href="#the-modeling-experiment" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Start NEURON with its standard GUI with /course/grafex as the working directory, and invoke <span class="menuselection">NEURON Main Menu ‣ Build ‣ single compartment</span> to create a single section with a total surface area of 100 µm^2 and nseg = 1. Then insert the hh mechanism using the Distributed Mechanism Inserter (the small window with checkboxes), and attach a current clamp that delivers a 0.2 nA current step starting at t = 0.5 ms and lasting 0.1 ms (use the PointProcessManager).</p>
+<p>Plot Vm vs. t in one graph, and INa, IK, and Ileak vs. t in another. Make the colors of the current traces red, blue, and black respectively. Check that Tstop = 5 ms and run a simulation.</p>
+<p>Note the notch in INa(t). If this is real, how can it be explained?</p>
+</li>
+</ol>
+<img alt="../_images/currents.gif" class="align-center" src="../_images/currents.gif" />
+<ol class="arabic" start="2">
+<li><p>Bring up a third graph with a State axis for plotting gNa(t) and gK(t), and repeat the simulation. Are the conductance time courses what you expected?</p>
+<p>Operational hint: use View = plot to automatically rescale the axes of this graph. Don’t like the computer’s choice of X and Y ranges &amp; tick marks? <a class="reference internal" href="fixing_funny_axes.html#fixing-funny-axes"><span class="std std-ref">Try this</span></a></p>
+</li>
+<li><p>Given the outcome of part 2, what accounts for the appearance of INa(t)? Confirm your hypothesis, or get another clue, by bringing up a fourth graph window to plot the time course of something else.</p>
+<p>Hint: Consider entering an algebraic expression into the editing field of the Plot what? tool. <a class="reference internal" href="plot_what.html#plot-what"><span class="std std-ref">What to plot?</span></a></p>
+<p>Another hint: If you get tired of trying to set up all these plots, just use NEURON to execute <a class="reference download internal" download="" href="../_downloads/21642b4f58f0989f338f88fb106ccff9/solution.ses.txt"><code class="xref download docutils literal notranslate"><span class="pre">solution.ses</span></code></a> (i.e. nrngui <code class="docutils literal notranslate"><span class="pre">solution.ses</span></code>, or click on the nrngui icon, then <span class="menuselection">File ‣ load session</span>, and choose <code class="docutils literal notranslate"><span class="pre">solution.ses</span></code>).</p>
+</li>
+</ol>
+</section>
+<section id="dressing-up-these-figures-for-publication">
+<h3>Dressing up these figures for publication<a class="headerlink" href="#dressing-up-these-figures-for-publication" title="Link to this heading"></a></h3>
+<section id="using-features-of-neuron-s-graph-windows">
+<h4>Using features of NEURON’s graph windows<a class="headerlink" href="#using-features-of-neuron-s-graph-windows" title="Link to this heading"></a></h4>
+<p>Use the Color/Brush tool to distinguish traces clearly from each other within a graph window, and to be consistent across graph windows.</p>
+<p>Use Change text to create labels as necessary</p>
+<p>Use Set View to make sure the x and y axes have reasonable ranges &amp; tick marks, e.g. 0 - 1 by 0.2 instead of 0.1 - 1.05 by 0.19.</p>
+<ol class="arabic">
+<li><p>Save a session file that contains the graphical user interface you created to explore this problem. Hint: <span class="menuselection">NEURON Main Menu ‣ File ‣ save session</span>.</p>
+<p>ex.</p>
+</li>
+</ol>
+<img alt="../_images/mygui.gif" class="align-center" src="../_images/mygui.gif" />
+<ol class="arabic simple" start="2">
+<li><p>Use the Print &amp; File Window Manager (PFWM) to make a montage of the graphs that tell the story.</p></li>
+</ol>
+<img alt="../_images/pfwm.gif" class="align-center" src="../_images/pfwm.gif" />
+<p>Then:</p>
+<ol class="loweralpha simple">
+<li><p>create a hard copy printout of them (<span class="menuselection">PFWM ‣ Print ‣ To Printer</span>).</p></li>
+<li><p>save these results to an ASCII file (<span class="menuselection">PFWM ‣ Print ‣ Ascii</span>). Examine the contents of this file to see the format in which the trace data from the different graphs were saved. Also note the values for t in the voltage, current, and conductance data arrays. Why does t start at 0 for voltage, -0.0125 ms for current, and 0.0125 ms for conductance?</p></li>
+<li><p>save the montage as an image file (<span class="menuselection">PFWM ‣ Print ‣ Idraw</span>). This produces an encapsulated PostScript file that you can edit with idraw (included with the UNIX/Linux version of NEURON) or import into a “draw” program such as CorelDraw for editing.</p></li>
+</ol>
+</section>
+<section id="editing-the-image-file">
+<h4>Editing the image file<a class="headerlink" href="#editing-the-image-file" title="Link to this heading"></a></h4>
+<p>Edit and annotate a copy of the image file you created in the previous step to bring it to publishable (?) quality, and make a hardcopy printout.</p>
+<ul class="simple">
+<li><p>mark and label features of interest</p></li>
+<li><p>eliminate distracting elements</p></li>
+<li><p>be sure plot lines use colors and styles that are distinctive within a graph yet consistent between graphs</p></li>
+<li><p>make sure that lines are thick enough (including axes and tick marks), and that labels are large enough; avoid serif typefaces in figures that will be turned into slides</p></li>
+<li><p>align and arrange graphs vertically and horizontally for convenient side-by-side comparisons</p></li>
+</ul>
+<p>ex.</p>
+<img alt="../_images/finfig3.gif" class="align-center" src="../_images/finfig3.gif" />
+<p><em>Using idraw</em></p>
+<p>See <a class="reference download internal" download="" href="../_downloads/3719de3893cc3b5ab6a10348382c3047/idraw-readme.txt"><code class="xref download docutils literal notranslate"><span class="pre">man</span> <span class="pre">pages</span></code></a> (idraw-README.txt) from Vectaport. Other documentation (not needed for this exercise, but maybe nice to have): using.idraw.ps.Z user’s guide from MIT, and a PDF version of <a class="reference download internal" download="" href="../_downloads/6607bf5d4f98f27d4f99a775b824da43/idraw-more.pdf"><code class="xref download docutils literal notranslate"><span class="pre">more</span> <span class="pre">man</span> <span class="pre">pages</span></code></a> (which used to be available from CERN (<a class="reference external" href="http://www.cern.ch/PTTOOL/Grif/Paper.html">http://www.cern.ch/PTTOOL/Grif/Paper.html</a>) as idraw.ps.Z).</p>
+<p>When NEURON saves a window to an idraw file, all the elements in the window are grouped together. To change any one of these elements, they must first be ungrouped (<span class="menuselection">Structure ‣ Ungroup</span>).</p>
+<p>When NEURON saves more than one window to an idraw file, the relative locations of the windows are not preserved–they’re piled up on top of each other like a stack of cards. Select and move them apart one by one.</p>
+</section>
+</section>
+<section id="further-comments">
+<h3>Further comments<a class="headerlink" href="#further-comments" title="Link to this heading"></a></h3>
+<section id="idraw-and-latex">
+<h4>idraw and LaTeX<a class="headerlink" href="#idraw-and-latex" title="Link to this heading"></a></h4>
+<p>Since an idraw file is an encapsulated postscript (EPS) file, it contains a BoundingBox statement. This has useful information for placing these figures in a LaTeX file, e.g. an image file named temp1.id with</p>
+<p><code class="docutils literal notranslate"><span class="pre">%%BoundingBox:</span> <span class="pre">-6</span> <span class="pre">2</span> <span class="pre">255</span> <span class="pre">163</span></code></p>
+<p>would be placed by</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="err">\</span><span class="n">begin</span><span class="p">{</span><span class="n">figure</span><span class="p">}[</span><span class="n">htb</span><span class="p">]</span>
+<span class="err">\</span><span class="n">begin</span><span class="p">{</span><span class="n">center</span><span class="p">}</span><span class="w"> </span><span class="err">\</span><span class="n">begin</span><span class="p">{</span><span class="n">picture</span><span class="p">}(</span><span class="mi">261</span><span class="p">,</span><span class="mi">161</span><span class="p">)</span>
+<span class="err">\</span><span class="n">special</span><span class="p">{</span><span class="n">psfile</span><span class="o">=</span><span class="n">temp1</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="n">hoffset</span><span class="o">=</span><span class="mi">6</span><span class="w"> </span><span class="n">voffset</span><span class="o">=</span><span class="mi">-2</span><span class="p">}</span>
+<span class="err">\</span><span class="n">end</span><span class="p">{</span><span class="n">picture</span><span class="p">}</span><span class="w"> </span><span class="err">\</span><span class="n">end</span><span class="p">{</span><span class="n">center</span><span class="p">}</span>
+<span class="err">\</span><span class="n">caption</span><span class="p">{</span><span class="n">HH</span><span class="w"> </span><span class="n">action</span><span class="w"> </span><span class="n">potential</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="mf">0.25</span><span class="w"> </span><span class="n">nA</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="n">ms</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="n">pulse</span><span class="w"> </span><span class="n">stimulus</span><span class="p">.}</span>
+<span class="err">\</span><span class="n">end</span><span class="p">{</span><span class="n">figure</span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="tips-and-tools-for-mswindows">
+<h4>Tips and tools for MSWindows<a class="headerlink" href="#tips-and-tools-for-mswindows" title="Link to this heading"></a></h4>
+<p>idraw doesn’t exist for MSWindows. However, CorelDraw and many other vector graphics editors can import and export PostScript and EPS files, including idraw files. You may have to tell the Registry what to do about files that end in .id, or it might be easiest to save your idraw files with the extension .eps in the first place.</p>
+<p>The basic functions of vector graphics editing programs are all pretty much the same as those of idraw, although some operational details will be different. Here are some <a class="reference internal" href="differences_between_idraw_and_core.html#differences-between-idraw-and-coreidraw"><span class="std std-ref">specific differences between idraw and CorelDraw</span></a>; most other MSWin “draw” programs are likely to be closer to CorelDraw in these regards.</p>
+<p>Whatever draw program you use, you may also want to pick up GSVIEW and ghostscript (available free on the WWW). These are very good for previewing PS &amp; EPS files, converting PS to EPS, inserting &amp; extracting TIFF preview images (bitmaps). Note that GNU ghostview (for UNIX/Linux) is NOT the same as GSVIEW, and lacks many features of the latter! Sorry, there does not seem to be a UNIX/Linux implementation of GSVIEW.</p>
+<p>A word about preview bitmaps appended to PostScript or EPS files. They’re a good way to bring out cross-platform incompatibilities. TIFF and other preview images, while helpful for MSWin word processing programs, are not particularly useful under UNIX/Linux and can substantially increase file size. And the TIFF image “standard” is all too flexible, with the result that Mac TIFFs assume a different screen resolution than PC TIFFs. This can have very interesting side-effects that will amaze your friends and puzzle your collaborators.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using_plotwhat_to_specify_a_variable.html" class="btn btn-neutral float-left" title="Using “Plot what?” to Specify a Variable to be plotted" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fixing_funny_axes.html" class="btn btn-neutral float-right" title="Fixing funny axes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

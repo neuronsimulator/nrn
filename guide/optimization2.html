@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 2 : Fitting a model to data &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ModelView: Compact display of parameters for NEURON models" href="modelview_compact_display.html" />
+    <link rel="prev" title="Implementational Details of the Synaptic Mechanism" href="optimization1a.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="optimization.html#why-is-it-called-multiple-run-fitter-and-what-does-it-really-do">Why is it called “Multiple Run Fitter,” and what does it really do?</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="optimization1.html">Tutorial 1 : Fitting a function to data</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Tutorial 2 : Fitting a model to data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="optimization.html#other-optimization-tools-that-work-with-neuron">Other optimization tools that work with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+      <li class="breadcrumb-item active">Tutorial 2 : Fitting a model to data</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/optimization2.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-2-fitting-a-model-to-data">
+<span id="optimization2"></span><h1>Tutorial 2 : Fitting a model to data<a class="headerlink" href="#tutorial-2-fitting-a-model-to-data" title="Link to this heading"></a></h1>
+<p>Note : this tutorial assumes that you have already worked through the <a class="reference internal" href="optimization1.html#optimization1"><span class="std std-ref">first tutorial on the Multiple Run Fitter</span></a>.</p>
+<section id="the-problem">
+<h2>The problem<a class="headerlink" href="#the-problem" title="Link to this heading"></a></h2>
+<p>Given:</p>
+<ul class="simple">
+<li><p>input resistance RN and a charging transient recorded with a patch electrode attached to the soma of a neuron (appropriate channel blockers were employed, and tests verified a linear I-V relationship)</p></li>
+<li><p>detailed morphometric data obtained from the same cell</p></li>
+</ul>
+<p>The challenge : use these data to create an anatomically detailed, passive model with uniform biophysical properties that matches the experimentally observed charging transients.</p>
+<p>This example employs current clamp data, with no loss of generality. Using voltage clamp data would, for the most part, involve similar steps and raise analogous considerations; the few exceptions will be noted as they arise.</p>
+</section>
+<section id="the-cell-and-the-electrical-measurements">
+<h2>The cell and the electrical measurements<a class="headerlink" href="#the-cell-and-the-electrical-measurements" title="Link to this heading"></a></h2>
+<p>This is a side view of the cell from which the anatomical and biophysical data were obtained. You may recognize it as the pyramidal cell that is included with NEURON’s demonstration program.</p>
+<img alt="neuron morphology" src="../_images/optimizationcell.gif" />
+<p>The input resistance RN of this cell was ~153 megohms. The charging transient was elicited by applying a 1 nA current pulse that started at 1 ms and lasted 0.5 ms (below left); the entire recording was 200 ms long (below right). The (t,v) data are contained in <a class="reference download internal" download="" href="../_downloads/41e918529d1b5672b0baf36f35af4f27/iclamp.dat"><code class="xref download docutils literal notranslate"><span class="pre">iclamp.dat</span></code></a></p>
+<p>Note that the recording of somatic Vm shows absolutely no electrode artifact–compensation for electrode capacitance and series resistance was perfect.</p>
+<img alt="recording data for v, iclamp" src="../_images/optimization_charging.png" />
+<ul class="simple">
+<li><p>Using a brief current pulse emphasizes high frequency terms in the voltage response, which are necessary in order to estimate cytoplasmic resistivity. High frequency terms are also present in the current response to a step command under voltage clamp.</p></li>
+<li><p>In reality RN and the charging transient were generated with a model. I saved the charging transient from a simulation manually by Pick Vector followed by <span class="menuselection">Vector ‣ Save to File</span>.</p></li>
+<li><p>An important note about methods : The following simulations were performed with fixed time step integration (dt = 0.025 ms), and the spatial grid of the model was specified using d_lambda = 0.1. Using adaptive integration with an absolute tolerance of 0.0001 and reducing d_lambda to 0.01 caused no significant change in the voltage trajectory under current clamp.</p></li>
+</ul>
+</section>
+<section id="step-1-create-an-unoptimized-model">
+<h2>Step 1. Create an “unoptimized” model<a class="headerlink" href="#step-1-create-an-unoptimized-model" title="Link to this heading"></a></h2>
+<p>If this were a “real” problem, we’d have to convert our morphometric data to a form that NEURON can use (e.g. using NEURON’s Import3D tool to import it into a CellBuilder). Then we’d use the CellBuilder to specify the discretization strategy and insert Ra, cm, and the pas mechanism (see the CellBuilder tutorial).</p>
+<p>For your convenience, I have already</p>
+<ul class="simple">
+<li><p>imported the data into a CellBuilder</p></li>
+<li><p>specified the d_lambda strategy for the “all” subset (with d_lambda = 0.1 lambda <sub>100</sub>)</p></li>
+<li><p>inserted Ra, cm, and pas into the “all” subset, leaving their default parameter values unchanged (80 ohm cm, 1 uf/cm2, g_pas = 0.001 siemens/cm2). e_pas was set to -70 mV, the “experimentally observed” resting potential.</p></li>
+<li><p>turned Continuous Create ON</p></li>
+</ul>
+<p>and saved the results to <a class="reference download internal" download="" href="../_downloads/3bc7c471004b07c2671eb80968c7031d/rawmodel.ses"><code class="xref download docutils literal notranslate"><span class="pre">rawmodel.ses</span></code></a></p>
+<p><a class="reference external" href="https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip">This link will get you neuron-optimization-tutorial2-*.zip, which contains rawmodel.ses plus other files that are used in this exercise.</a></p>
+</section>
+<section id="step-2-set-up-a-current-clamp-experiment-on-this-model">
+<h2>Step 2. Set up a current clamp experiment on this model<a class="headerlink" href="#step-2-set-up-a-current-clamp-experiment-on-this-model" title="Link to this heading"></a></h2>
+<p>Remember that the charging transient was elicited by applying a 1 nA current pulse that started at 1 ms and lasted 0.5 ms, and the entire recording was 200 ms long. We need to construct a “virtual experimental rig” that applies the same current to the soma of our model.</p>
+<p>So we start NEURON with a graphical interface in any of the usual ways, and use the NEURON Main Menu toolbar to load <code class="file docutils literal notranslate"><span class="pre">rawmodel.ses</span></code></p>
+<p>Then we create</p>
+<ul class="simple">
+<li><p>a RunControl panel. Change Tstop to 200 ms and set v_init to -70 mV (numeric field next to the Init button).</p></li>
+<li><p>a PointProcessManager. Configure this to be an IClamp. Leave it attached to soma(0.5), but set del = 1 ms, dur = 0.5 ms, and amp = 1 nA.</p></li>
+<li><p>a Voltage axis graph</p></li>
+<li><p>a Current axis graph. Use this graph’s “Plot what?” to add <code class="docutils literal notranslate"><span class="pre">IClamp[0].i</span></code> to its plotlist.</p></li>
+</ul>
+<p>Now we run a simulation and find that somatic Vm is a far cry from the original experimental data.</p>
+<img alt="initial bad fit" src="../_images/rawmodelcharging.gif" />
+<section id="project-management-time">
+<h3>Project management time!<a class="headerlink" href="#project-management-time" title="Link to this heading"></a></h3>
+<p>Before going any further, we should use the Print &amp; File Window Manager to save a session file that contains the “virtual experimental rig” (the RunControl panel, PointProcessManager, and graphs, but <em>not</em> the CellBuilder). This can be called anything we like (I called it <code class="file docutils literal notranslate"><span class="pre">iclamp_rig.ses</span></code>).</p>
+<p>To make it easy for us to recreate our current clamp experiment, we next create a file called <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code> that contains these statements :</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>load_file(&quot;nrngui.hoc&quot;)
+load_file(&quot;rawmodel.ses&quot;)
+load_file(&quot;iclamp_rig.ses&quot;)
+</pre></div>
+</div>
+<p>Using NEURON to execute <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code> loads our unoptimized model, and brings up our current clamp rig, ready to go.</p>
+</section>
+<section id="what-about-input-resistance">
+<h3>What about input resistance?<a class="headerlink" href="#what-about-input-resistance" title="Link to this heading"></a></h3>
+<p>Oops. Almost forgot this. We have to verify that RN of our model cell matches the experimentally measured value.
+Let’s take advantage of NEURON’s Impedance class, which has an input() method that computes the input impedance at a specified location. Here’s a bit of code that does the job :</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>objref zz
+zz = new Impedance()
+
+func rn() { local rn
+  init()  // make sure all changes to g, c, ri etc. have taken effect
+  soma zz.loc(0.5)  // sets origin for impedance calculations to middle of soma
+  zz.compute(0)  // DC input R
+  soma { rn = zz.input(0.5) }  // rn is input R at middle of the soma
+  return rn
+}
+</pre></div>
+</div>
+<p>Just cut and paste this into a file called <code class="file docutils literal notranslate"><span class="pre">rn.hoc</span></code></p>
+<p>Finally, let’s add these lines to the end of <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code>:</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>load_file(&quot;rn.hoc&quot;)
+
+print &quot;DC input resistance of cell is &quot;, rn(), &quot;megohms&quot;
+run()
+</pre></div>
+</div>
+<p>Now when we use NEURON to execute <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code>, it automatically uses <code class="docutils literal notranslate"><span class="pre">rn()</span></code> to report RN of our model and then runs a simulation that shows the transient response.</p>
+<p>Here’s what the revised init_iclamprawmodel.hoc tells us:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>DC input resistance of cell is 5.6534218 megohms
+</pre></div>
+</div>
+<p>Nowhere near the experimentally measured 153 megohms.</p>
+<p>Notes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip">neuron-optimization-tutorial2-*.zip</a> contains our <code class="file docutils literal notranslate"><span class="pre">iclamp_rig.ses</span></code> and <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code></p></li>
+<li><p>The principal difference between <code class="file docutils literal notranslate"><span class="pre">init_makedata.hoc</span></code> and <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code> is which model’s <code class="docutils literal notranslate"><span class="pre">ses</span></code> file is loaded. The former loads the model that has the “actual” biophysical properties of the cell (which we’re supposed to use the optimizer to discover). The latter loads the model that has our wildly inaccurate initial guess at these properties. Modular programming!!</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="step-3-configure-a-multiplerunfitter-to-do-a-run-fitness-optimization">
+<h2>Step 3. Configure a MultipleRunFitter to do a “run fitness” optimization<a class="headerlink" href="#step-3-configure-a-multiplerunfitter-to-do-a-run-fitness-optimization" title="Link to this heading"></a></h2>
+<p>Here we create a new Multiple Run Fitter, and use it to create a Run Fitness Generator. This is very similar to what we did in the tutorial on optimizing a function.</p>
+<p>Might as well start fresh–quit NEURON, then use NEURON to execute <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code></p>
+<section id="create-a-multiple-run-fitter">
+<h3>Create a Multiple Run Fitter.<a class="headerlink" href="#create-a-multiple-run-fitter" title="Link to this heading"></a></h3>
+<p>We saw how to do this in the first tutorial. In the NEURON Main Menu toolbar, click on
+<span class="menuselection">Tools ‣ Fitting ‣ Multiple Run Fitter</span></p>
+<p>Release the mouse button and a Multiple Run Fitter appears.
+We’ll call it “MRF”.</p>
+</section>
+<section id="we-need-a-tool-to-perform-a-run-fitness-optimization">
+<h3>We need a tool to perform a “run fitness” optimization.<a class="headerlink" href="#we-need-a-tool-to-perform-a-run-fitness-optimization" title="Link to this heading"></a></h3>
+<p>Create a Run Fitness Generator by clicking on the MRF’s
+<span class="menuselection">Generators ‣ Add Fitness Generator ‣ Add Run Fitness</span></p>
+<p>Release the mouse button, and the right panel of the MRF shows an item called “Unnamed single run protocol”.</p>
+<img alt="../_images/unnamedsrp.gif" src="../_images/unnamedsrp.gif" />
+</section>
+<section id="give-the-run-fitness-generator-a-descriptive-name">
+<h3>Give the Run Fitness Generator a descriptive name.<a class="headerlink" href="#give-the-run-fitness-generator-a-descriptive-name" title="Link to this heading"></a></h3>
+<p>We’re going to use this Run Fitness Generator to calculate the difference between our experimental data and simulated current clamp experiments that use the model we created. To remind ourselves of its purpose, we change its name from “Unnamed single run protocol” to “iclamp”.</p>
+<p>We saw how to do this in the first tutorial.</p>
+<ol class="arabic simple">
+<li><p>Switch the MRF to “change name” mode by clicking on <span class="menuselection">Generators ‣ Change Name</span>. “Change” should appear to right of the Generators button.</p></li>
+<li><p>In the MRF’s right panel, double click on “Unnamed single run protocol”</p></li>
+<li><p>Enter the string “iclamp” into the dialog box’s edit field, then click its Accept button.</p></li>
+</ol>
+<p>The right panel of the MRF shows the new name.</p>
+<img alt="../_images/renamed_iclamp.gif" src="../_images/renamed_iclamp.gif" />
+</section>
+<section id="we-need-to-see-this-run-fitness-generator">
+<h3>We need to see this Run Fitness Generator.<a class="headerlink" href="#we-need-to-see-this-run-fitness-generator" title="Link to this heading"></a></h3>
+<p>We need to get our experimental data into our “iclamp” Run Fitness Generator. To do that, we have to see the Generator.</p>
+<ol class="arabic">
+<li><p>Click on the MRF’s Generators / Display to put it in “display” mode. Now “Display” appears to the right of the Generators button.</p></li>
+<li><p>Double click on “iclamp”, and up pops up a tiny window titled “MulRunFitter[0] Generators”.</p>
+<img alt="../_images/tinyiclamp.gif" src="../_images/tinyiclamp.gif" />
+<p>From now on we’ll call this the iclamp Run Fitness Generator.</p>
+</li>
+<li><p>We have to tell our iclamp Run Fitness Generator which variable in our model it needs to test. Click on this thing’s Fitness button, and select the item “Variable to fit” from the popup menu.</p>
+<img alt="../_images/vartofit.gif" src="../_images/vartofit.gif" />
+<p>This brings up a “variable name browser”</p>
+<img alt="../_images/variablenamebrowser.gif" src="../_images/variablenamebrowser.gif" />
+<p>An aside: this looks and works just like the tool we have used elsewhere to add variables to a Graph’s plot list (remember “Plot what?”).</p>
+</li>
+<li><p>Click inside the edit field of the variable name browser tool and type</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>soma.v(0.5)
+</pre></div>
+</div>
+<p>as shown here</p>
+<img alt="../_images/variablenamesomavx.gif" src="../_images/variablenamesomavx.gif" />
+<p>Then click on its Accept button.</p>
+</li>
+</ol>
+<p>The variable name browser will go away, but our iclamp Run Fitness Generator looks unchanged. We need to make the MRF redraw it.</p>
+<p>But first, save the MRF to a session file! Call it <code class="file docutils literal notranslate"><span class="pre">iclampfit.ses</span></code></p>
+<section id="redrawing-the-iclamp-run-fitness-generator">
+<h4>Redrawing the iclamp Run Fitness Generator<a class="headerlink" href="#redrawing-the-iclamp-run-fitness-generator" title="Link to this heading"></a></h4>
+<p>Click on the iclamp Run Fitness Generator’s “Close” button. We get it back by making sure the MRF is in “Display” mode, and then clicking on “iclamp” in its right panel.</p>
+<blockquote>
+<div><p><em>If you made a mistake and clicked on the MRF’s Close button, both the MRF and the iclamp Run Fitness Generator went away. But since you saved the MRF to a session file, it’s easy to restore.</em></p>
+</div></blockquote>
+<p>Here’s what the redrawn Run Fitness Generator looks like.</p>
+<img alt="../_images/iclampgen1.gif" src="../_images/iclampgen1.gif" />
+</section>
+</section>
+</section>
+<section id="step-4-load-the-experimental-data-into-the-iclamp-run-fitness-generator">
+<h2>Step 4. Load the Experimental Data into the iclamp Run Fitness Generator<a class="headerlink" href="#step-4-load-the-experimental-data-into-the-iclamp-run-fitness-generator" title="Link to this heading"></a></h2>
+<p>This actually involves two steps : loading data into the iclamp Run Fitness Generator, and testing the generator.</p>
+<section id="loading-data-into-the-run-fitness-generator">
+<h3>Loading data into the Run Fitness Generator<a class="headerlink" href="#loading-data-into-the-run-fitness-generator" title="Link to this heading"></a></h3>
+<p>We’ll do the same as in the first tutorial : read the data into NEURON’s clipboard, and then paste it into the Generator.</p>
+<ol class="arabic simple">
+<li><p><span class="menuselection">NEURON Main Menu ‣ Vector ‣ Retrieve from File</span></p></li>
+<li><p>Navigate the directory tree and choose iclamp.dat, which contains the data.</p></li>
+<li><p>In the iclamp Run Fitness Generator, click on <span class="menuselection">Regions ‣ Data from Clipboard</span></p></li>
+</ol>
+<p>We recall from the first tutorial that the red trace is our data, and the vertical blue lines are the cursors for setting the “optimization regions.”</p>
+<img alt="../_images/datafromclip.gif" src="../_images/datafromclip.gif" />
+</section>
+<section id="testing-the-run-fitness-generator">
+<h3>Testing the Run Fitness Generator<a class="headerlink" href="#testing-the-run-fitness-generator" title="Link to this heading"></a></h3>
+<p>Now we should be able to do a little test of our iclamp Run Fitness Generator :</p>
+<p>clicking on its Error Value button should launch a simulation, producing a trace that shows the trajectory of <code class="docutils literal notranslate"><span class="pre">soma.v(0.5)</span></code> and reporting an error value as shown here.</p>
+<img alt="../_images/testdatafromclip.gif" src="../_images/testdatafromclip.gif" />
+<section id="project-management-time-again">
+<h4>Project management time again!<a class="headerlink" href="#project-management-time-again" title="Link to this heading"></a></h4>
+<p>After doing all that work on the MRF, let’s save it to a session file. The same file name as before will be fine, i.e. <code class="file docutils literal notranslate"><span class="pre">iclampfit.ses</span></code></p>
+<p>Make sure you save the MRF itself, not the iclamp Run Fitness Generator.</p>
+<p>Also, we should probably make a new init…hoc file that we can use to automatically load the model and the MRF (instead of having to start <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code>, wait for it to complete a simulation, and then manually use the Main Menu’s <span class="menuselection">File ‣ load session</span> to retrieve <code class="file docutils literal notranslate"><span class="pre">iclampfit.ses</span></code>).</p>
+<p>So let’s copy <code class="file docutils literal notranslate"><span class="pre">init_iclamprawmodel.hoc</span></code> to <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code>,
+and then change <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code> so that it reads like this :</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>load_file(&quot;nrngui.hoc&quot;)
+load_file(&quot;rawmodel.ses&quot;)
+load_file(&quot;iclamp_rig.ses&quot;)
+load_file(&quot;rn.hoc&quot;)
+load_file(&quot;iclampfit.ses&quot;)
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="step-5-specify-the-parameters-that-will-be-adjusted">
+<h2>Step 5. Specify the parameters that will be adjusted<a class="headerlink" href="#step-5-specify-the-parameters-that-will-be-adjusted" title="Link to this heading"></a></h2>
+<p>This involves two steps : specifying the model parameters that are to be adjusted, and constraining them.</p>
+<section id="parameter-specification">
+<h3>Parameter specification<a class="headerlink" href="#parameter-specification" title="Link to this heading"></a></h3>
+<section id="proxy-parameters">
+<h4>Proxy parameters<a class="headerlink" href="#proxy-parameters" title="Link to this heading"></a></h4>
+<p>When we set up the MRF to optimize a function, we simply used its <span class="menuselection">Parameters ‣ Add Parameter</span> button to add the function’s parameters, one by one, to the list of parameters that it was to adjust. But now we’re dealing with a model that has many sections, each with its own Ra, cm, and g_pas, and the MRF has to adjust them all. It also has to keep them equal over all sections.</p>
+<p>One strategy for dealing with this problem is to create “proxies” for Ra, cm, and g_pas. We’d add these proxies to the MRF’s parameter list. Then we would take advantage of the fact that NEURON’s standard run system can be customized–we’d use a custom initialization that applies the same values to all sections.</p>
+<p>Here’s how :</p>
+<p>First, we declare</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>// proxies for NEURON&#39;s Ra, cm, g_pas
+Ri = 80    // ohm cm
+Cm = 1     // uf/cm2
+Rm = 1000  // ohm cm2
+</pre></div>
+</div>
+<p>Then we write our own custom <code class="docutils literal notranslate"><span class="pre">init()</span></code> procedure that uses a forall loop to give all sections the same values of Ra, cm, and g_pas.</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>proc init() {
+  // optimizer adjusts Ri, Cm, Rm, but NEURON uses Ra, cm, g_pas
+  forall {
+    Ra = Ri
+    cm = Cm
+    g_pas = 1/Rm
+  }
+  finitialize(v_init)
+  if (cvode.active()) {
+    cvode.re_init()
+  } else {
+    fcurrent()
+  }
+  frecord_init()
+}
+</pre></div>
+</div>
+<p>To simplify future code maintenance, we probably should put both of these code fragments into a single file called <code class="file docutils literal notranslate"><span class="pre">params.hoc</span></code>.</p>
+<p>To make use of <code class="file docutils literal notranslate"><span class="pre">params.hoc</span></code>, we have to add a new <a class="reference internal" href="../hoc/programming/dynamiccode.html#load_file" title="load_file"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">load_file()</span></code></a> statement to <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code>. The proxy variables have to exist before the MRF can use them, so <code class="file docutils literal notranslate"><span class="pre">params.hoc</span></code> must be loaded before <code class="file docutils literal notranslate"><span class="pre">iclampfit.ses</span></code>. Here’s the new <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code> :</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>load_file(&quot;nrngui.hoc&quot;)
+load_file(&quot;rawmodel.ses&quot;)
+load_file(&quot;iclamp_rig.ses&quot;)
+load_file(&quot;rn.hoc&quot;)
+load_file(&quot;params.hoc&quot;)
+load_file(&quot;iclampfit.ses&quot;)
+</pre></div>
+</div>
+<p>Before we can use the proxy variables with our MRF, we have to exit NEURON and restart with our new <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code></p>
+</section>
+<section id="testing-the-proxy-parameters">
+<h4>Testing the proxy parameters<a class="headerlink" href="#testing-the-proxy-parameters" title="Link to this heading"></a></h4>
+<p>Let’s make sure the proxy parameters are doing what we think they should do. At the oc&gt; prompt type</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>rn()
+</pre></div>
+</div>
+<p>This should return a numeric value of <code class="docutils literal notranslate"><span class="pre">5.6534218</span></code>, i.e. the input resistance of our unoptimized model.
+Now type</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>forall print secname(), &quot; &quot;, g_pas
+</pre></div>
+</div>
+<p>In each section, <code class="docutils literal notranslate"><span class="pre">g_pas</span></code> should be 0.001.
+Next type</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>Rm *= 2
+</pre></div>
+</div>
+<p>Initializing the model will reduce <code class="docutils literal notranslate"><span class="pre">g_pas</span></code> in each section by a factor of 2, and increase the RN of the cell. Recalling that our <code class="docutils literal notranslate"><span class="pre">rn()</span></code> function does in fact initialize the model, we now type</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>rn()
+</pre></div>
+</div>
+<p>and get a returned value of 9.9076814 (the fact that RN didn’t double tells us that the cell has significant electrotonic extent). And typing</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>forall print secname(), &quot; &quot;, g_pas
+</pre></div>
+</div>
+<p>confirms that <code class="docutils literal notranslate"><span class="pre">g_pas</span></code> is now 0.0005 everywhere.</p>
+</section>
+<section id="using-the-proxy-parameters">
+<h4>Using the proxy parameters<a class="headerlink" href="#using-the-proxy-parameters" title="Link to this heading"></a></h4>
+<p>Now we’re ready to add <code class="docutils literal notranslate"><span class="pre">Ri</span></code>, <code class="docutils literal notranslate"><span class="pre">Cm</span></code>, and <code class="docutils literal notranslate"><span class="pre">Rm</span></code> to the MRF’s parameter list. This is exactly the same as in the first tutorial.</p>
+<ol class="arabic simple">
+<li><p>Click on the MRF’s <span class="menuselection">Parameters ‣ Add Parameter</span>. This brings up a variable name browser (where have we seen that before?).</p></li>
+<li><p>Click in the edit field of the variable name browser, type <code class="docutils literal notranslate"><span class="pre">Ri</span></code>, and then click on the Accept button.</p></li>
+<li><p>Do the same for <code class="docutils literal notranslate"><span class="pre">Cm</span></code> and <code class="docutils literal notranslate"><span class="pre">Rm</span></code></p></li>
+</ol>
+<p>The MRF now looks like this, with <code class="docutils literal notranslate"><span class="pre">Ri</span></code>, <code class="docutils literal notranslate"><span class="pre">Cm</span></code>, and <code class="docutils literal notranslate"><span class="pre">Rm</span></code> in its left panel.</p>
+<img alt="../_images/optimization-addparams.gif" src="../_images/optimization-addparams.gif" />
+<p>Save the MRF to a session file!</p>
+</section>
+</section>
+<section id="viewing-and-changing-parameter-values">
+<h3>Viewing (and changing) parameter values<a class="headerlink" href="#viewing-and-changing-parameter-values" title="Link to this heading"></a></h3>
+<p>This too is the same as in the first tutorial : click on the MRF’s <span class="menuselection">Parameters ‣ Parameter Panel</span></p>
+<img alt="../_images/parampanel0-1.gif" src="../_images/parampanel0-1.gif" />
+<p>Let’s change <code class="docutils literal notranslate"><span class="pre">Rm</span></code> and see what happens.</p>
+<p>In the Parameter panel, we increase Rm to 10000</p>
+<img alt="../_images/parampanel1-1.gif" src="../_images/parampanel1-1.gif" />
+<p>and then go back to the iclamp Run Fitness Generator and click on Error Value. This launches a new simulation</p>
+<img alt="../_images/parampanel2-1.gif" src="../_images/parampanel2-1.gif" />
+<p>and we see that the new voltage trajectory (black trace) is closer to the experimental data (red trace), and the Error Value is smaller.</p>
+<p><strong>Before going any further, return Rm to 1000 to ensure that you’re “in sync” with the remainder of this tutorial.</strong></p>
+</section>
+<section id="constraining-parameters">
+<h3>Constraining parameters<a class="headerlink" href="#constraining-parameters" title="Link to this heading"></a></h3>
+<p>In the first tutorial, you will find a general discussion on the topic of constraining parameters. For this particular problem, we will take advantage of the fact that all three model parameters (Ri, Cm, and Rm) are positive definite and can be log scaled. We do this in exactly the same way as in the first tutoral.</p>
+<ol class="arabic simple">
+<li><p>Bring up the MRF’s Domain panel by clicking on its <span class="menuselection">Parameters ‣ Domain Panel</span></p></li>
+<li><p>In the MulRunFitter Domain panel click on <span class="menuselection">group attributes ‣ positive definite limits</span></p></li>
+<li><p>In the MulRunFitter Domain panel click on <span class="menuselection">group attributes ‣ use log scale</span></p></li>
+</ol>
+<p>Close the MulRunFitter Domain panel if you like; we can always bring it up again if we need it.</p>
+<p>Save the MRF to a session file before proceeding any further!</p>
+</section>
+</section>
+<section id="step-6-perform-the-optimization">
+<h2>Step 6. Perform the optimization<a class="headerlink" href="#step-6-perform-the-optimization" title="Link to this heading"></a></h2>
+<p>We’re in the home stretch.</p>
+<section id="test-the-mrf">
+<h3>Test the MRF<a class="headerlink" href="#test-the-mrf" title="Link to this heading"></a></h3>
+<p>We click on the MRF’s Error Value button and … nothing happens.</p>
+<p>The value displayed in the adjacent field is still 0. But we remember from the first tutorial that we need to tell the MRF to use our generator–
+and the iclamp Run Fitness Generator still has a little - (minus) sign in front of its name.</p>
+<p>Once again, the steps are the same as in the first tutorial.</p>
+<ol class="arabic simple">
+<li><p>In the MRF, we click on <span class="menuselection">Generators ‣ Use Generator</span>
+and note the appearance of “Toggle” next to the Generators button.</p></li>
+<li><p>Now we can turn on the iclamp Run Fitness Generator by double clicking on “iclamp” in the right panel of the MRF</p></li>
+</ol>
+<p>Now a + (plus sign) appears next to “iclamp” in the MRF’s right panel. This tells us that the iclamp Run Fitness generator is on, so when we click on the MRF’s Error Value button, the iclamp Run Fitness Generator will contribute to the total error value that appears in MRF’s error value field.</p>
+<p>So we click on the MRF’s Error Value button, and a nonzero value does appear in the Error Value field. This confirms that we’re using the iclamp generator.</p>
+<img alt="../_images/optimization2-usegen.gif" src="../_images/optimization2-usegen.gif" />
+<p>This is another good time to save the MRF to a session file.</p>
+<blockquote>
+<div><p>In <cite>optimization2-code-*.zip &lt;https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip&gt;</cite> you will find <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code> and all of the hoc and ses files that it needs to recreate the unoptimized model, current clamp “virtual experimental rig,” and Multiple Run Fitter, exactly as they should be at this point of the tutorial. Just use NEURON to execute <code class="file docutils literal notranslate"><span class="pre">init_iclampopt.hoc</span></code></p>
+</div></blockquote>
+</section>
+<section id="choose-and-use-an-optimization-algorithm">
+<h3>Choose and use an optimization algorithm<a class="headerlink" href="#choose-and-use-an-optimization-algorithm" title="Link to this heading"></a></h3>
+<p>This is very similar to the first tutorial.</p>
+<ol class="arabic simple">
+<li><p>In the MRF click on <span class="menuselection">Parameters ‣ Select Optimizers ‣ Praxis</span>. This brings up a MulRunFitter Optimize panel, which we’ll call the “Optimize panel”.</p></li>
+<li><p>Change the “# quad forms before return” (numeric field near the bottom of the Optimize panel) from 0 to 1.</p></li>
+</ol>
+<img alt="../_images/optimize1-1.gif" src="../_images/optimize1-1.gif" />
+<p>Now we’re ready to click on the Optimize button in the Optimize panel.</p>
+</section>
+<section id="problems-and-pitfalls">
+<h3>Problems and pitfalls<a class="headerlink" href="#problems-and-pitfalls" title="Link to this heading"></a></h3>
+<p>Before the first optimization, we click on the MRF’s Error Value button and note that the initial parameter values (Ri = 80, Cm = 1, Rm = 1000) give an error of 0.39958. Then we click on the Optimize button, and several iterations flash by in the Generator. For a while there doesn’t seem to be much improvement, but eventually the optimizer stops. Although the error value has decreased somewhat, there still seems to be quite a way to go.</p>
+<p>Dauntless, we press ahead, clicking again on Optimize. Another series runs flash by, leaving the voltage trace looking much better. One more click on Optimize and it seems we’re stuck in a local minimum, with the black trace in the iclamp Run Fitness Generator hardly changing from run to run.</p>
+<p>But what of our results? Rm looks acceptable (if a bit low) at 14481 ohm cm2, and when we type <code class="docutils literal notranslate"><span class="pre">rn()</span></code> at the oc&gt; prompt, we get 157.9155, which is close to the experimentally measured 153 megohms. Also, the overall time course of the model’s Vm trajectory looks like a close match to the experimental data.</p>
+<img alt="../_images/badfit.gif" src="../_images/badfit.gif" />
+<p>However, Ri and Cm are unbelievable–13613 ohm cm and 3.9156 uf/cm2 ! What went wrong?</p>
+<p>Examining the first 5 ms of the model’s <code class="docutils literal notranslate"><span class="pre">soma.vm(0.5)</span></code> trajectory, we see that it doesn’t really capture the early time course of the experimental data.</p>
+<img alt="../_images/badfitearly.gif" src="../_images/badfitearly.gif" />
+<p>This really shouldn’t be much of a surprise. Basically we performed a blind curve fitting operation on data that stretches over 200 ms. When you think about it that way, the black trace is really a pretty good fit to the original data. We may know that the first few milliseconds of the charging curve contains most of the information that is useful for determining Ri and Cm, but the optimizer algorithm is ignorant of that fact, and gives the error at each data point equal consideration. Therefore the early part of the charging transient is treated like an inconsequential blip, and the fit is dominated by the long, slow decay phase.</p>
+<p>So much for blind reliance on an algorithm. Time to use what we know, or can reasonably surmise.</p>
+<section id="a-minimal-principled-strategy">
+<h4>A minimal principled strategy<a class="headerlink" href="#a-minimal-principled-strategy" title="Link to this heading"></a></h4>
+<p>Let’s try something very simple. For example, the initial values of Ri (80 ohm cm) and Cm (1 uf/cm2) are in the right ballpark, but Rm (1000 ohm cm2) is probably far too small. So why don’t we follow the minimal strategy described by this pseudocode?</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>REPEAT
+  optimize Rm only
+  optimize Ri and Cm only
+UNTIL done
+</pre></div>
+</div>
+<p>With a little effort we could be a lot more clever–e.g. we might apply a greater weight to errors computed during the early part of the charging curve, as described in the Hints at the bottom of this page–but first let’s see how far this minimal strategy takes us.</p>
+<p>To keep track of how well we’re doing, we’ll monitor the MRF’s error value and the values of Rm, Ri, Cm, and rn(), making sure that they converge.</p>
+<p>The checkboxes to the left of the parameter buttons in the Parameter Panel allow us to specify which parameters will be adjusted by the optimizer, and which will remain constant. When the Parameter panel is first brought up, all of these checkboxes are checked, which means that adjustment of all parameters is enabled.</p>
+<img alt="../_images/parampanel0-2.gif" src="../_images/parampanel0-2.gif" />
+<p>Clicking on one of these checkboxes toggles adjustment of the corresponding parameter between ON (check present) and OFF (no check). Here’s how the Parameter Panel should look before we start the first optimization on Rm :</p>
+<img alt="../_images/enablerm.gif" src="../_images/enablerm.gif" />
+<p>After the 9th quad form with Ri and Cm constant, the error seems to have settled at 0.013147, with Rm = 44123 ohm cm2, RN = 150.07105, and the MRF looks like this</p>
+<img alt="../_images/firstrnopt.gif" src="../_images/firstrnopt.gif" />
+<p>This seems a propitious moment to disable adjustment of Rm and enable adjustment of Ri and Cm</p>
+<img alt="../_images/enablericm.gif" src="../_images/enablericm.gif" />
+<p>and try optimizing the latter parameters.</p>
+<p>Over the next two quad forms the error plummets rapidly, and by the 12th quad form it seems to come to rest at 7.1536e-5, with Ri = 137.96, Cm = 0.83841, Rm = 44123, and RN = 153.35106. The simulated transient is also visibly much closer to the experimental data (see for yourself).</p>
+<p>At this point, what say we bet the farm–enable adjustment of all parameters–Ri, Cm, and Rm–and see if we can squeeze out a bit more error reduction? No triskaidekaphobia here!</p>
+<p>The 13th quad form returns with the simulated transient visually indistinguishable from the experimental data (the red trace is hidden behind the black trace).</p>
+<img alt="../_images/lucky13.gif" src="../_images/lucky13.gif" />
+<p>even when we zoom in on the first few milliseconds.</p>
+<img alt="../_images/lucky13first5.gif" src="../_images/lucky13first5.gif" />
+<p>The error fell to 3.0322e-7–by more than two orders of magnitude–and the model’s parameters are now Ri = 155.76 ohm cm, Cm = 0.85852 uf/cm2, and Rm = 43060 ohm cm2, and the model’s input resistance is 153.38781.</p>
+<p>Now clicking on the Optimize button causes the error, parameters, and RN to merely bounce around in their last few decimal places. This might matter if it made sense to aim at three place accuracy or better, but we know that two place accuracy is about as good as you can get from charging curves. We are compelled by our natural modesty and discretion to conclude that Ri ~ 156 ohm cm, Cm ~ 0.86 uf/cm2, and Rm ~ 43000 ohm cm2.</p>
+</section>
+<section id="what-about-dirty-data">
+<h4>What about dirty data?<a class="headerlink" href="#what-about-dirty-data" title="Link to this heading"></a></h4>
+<p>Charging curves are subject to several kinds of problems, the most serious being contamination of the early time course by electrode and amplifier artifacts (under- and overcompensation of electrode capacitance and series resistance). This can interfere with the accuracy of Ri estimates. Disappearance of the late decay phase into baseline noise may also happen.</p>
+<p>Want to try dealing with these problems?</p>
+<section id="contamination-of-the-early-response">
+<h5>Contamination of the early response<a class="headerlink" href="#contamination-of-the-early-response" title="Link to this heading"></a></h5>
+<p>This forces us to abandon the data collected during current injection and for a (hopefully) brief time afterwards.</p>
+<p>For example, suppose we know that electrode artifact persists for 0.5 ms after the end of current injection. Then we want to restrict the range of time over which the optimizer computes its error, in order to avoid the contaminated data.</p>
+<p>We can use the Weight panel to do this.</p>
+<ol class="arabic">
+<li><p>In the iclamp Run Fitness Generator, click on <span class="menuselection">Regions ‣ Weight panel</span></p></li>
+<li><p>In the data weights panel, change the “interval 1 startpoint” from 0 to 2. The field will automatically change to 2.0125, which is OK. For the particular data we’re using, this means that we’re going to ignore everything from 0 to 2 ms, which includes all data collected during current injection and for the first 0.5 ms thereafter.</p>
+<img alt="../_images/startafter2.gif" src="../_images/startafter2.gif" />
+</li>
+</ol>
+<p>The MRF’s graph provides visual confirmation that the left edge of interval 1 now starts at 2 ms (vertical blue line). Clicking on the Error Value button makes the error calculation, and plot of simulation results, begin at the new starting point (black trace).</p>
+<p>Here’s the challenge :</p>
+<p>Restore the original values of Ri, Cm, and Rm (80, 1, 1000), and try to optimize the model while ignoring the contaminated data. It’s a safe bet that, the later the “interval 1 startpoint” becomes, the poorer the fit will be, especially the value of Ri–but how late does the startpoint have to be, before fitting becomes a guessing game?</p>
+</section>
+<section id="contamination-of-the-late-response">
+<h5>Contamination of the late response<a class="headerlink" href="#contamination-of-the-late-response" title="Link to this heading"></a></h5>
+<p>Try reducing “interval 1 endpoint” and see how this affects the fit. Intuition suggests that, for this model, the fit should be fairly good unless the endpoint is &lt; 100 ms.</p>
+</section>
+</section>
+</section>
+<section id="hints">
+<h3>Hints<a class="headerlink" href="#hints" title="Link to this heading"></a></h3>
+<dl>
+<dt>Randomizing parameters</dt><dd><p>Remember to try “Randomize with factor” as a way to see whether the optimizer is falling into a local minimum of the objective function.</p>
+</dd>
+<dt>Adjusting regions</dt><dd><p>Use the MRF generator’s “adjust regions” feature to reposition region boundaries (the vertical blue lines on the MRF Generator’s canvas, create new regions, or merge adjacent regions.</p>
+<ul>
+<li><p><strong>Activating the “adjust regions feature”</strong></p>
+<p>Merely click on the “Adjust” radio button.</p>
+<img alt="../_images/optimization-adj1.gif" src="../_images/optimization-adj1.gif" />
+</li>
+<li><p><strong>Repositioning region boundaries</strong></p>
+<p>Click on one of the region boundaries and drag it to a new location. This is equivalent to specifying the interval startpoints and endpoints in the Weight panel.</p>
+<img alt="../_images/optimization-adj2.gif" src="../_images/optimization-adj2.gif" />
+</li>
+<li><p><strong>Creating new regions</strong></p>
+<p>Click on the canvas, and a new region boundary will appear at that location.</p>
+<img alt="../_images/optimization-addregion1.gif" src="../_images/optimization-addregion1.gif" />
+<p>Reposition it as you like by dragging, or by using the Weight panel.</p>
+<img alt="../_images/optimization-addregion2.gif" src="../_images/optimization-addregion2.gif" />
+</li>
+<li><p><strong>Merging adjacent regions</strong></p>
+<p>To merge adjacent regions, click on the region boundary that separates them, and drag it to the right or left until it collides with one of the other region boundaries. That’s all there is to it.</p>
+</li>
+</ul>
+</dd>
+</dl>
+<section id="notes">
+<h4>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>When there is more than one region, the Weight panel can be used to emphazise or de-emphasize contributions from different regions to the total error computed by the MRF Generator. You might want to see how well it works as a way to prevent our example’s fit from being dominated by the slow decay phase of the charging curve.</p></li>
+<li><p>After creating or merging regions, you’ll want to close and reopen the Weight panel so that it shows the current number of regions, along with their startpoints and endpoints.</p></li>
+</ol>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="optimization1a.html" class="btn btn-neutral float-left" title="Implementational Details of the Synaptic Mechanism" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modelview_compact_display.html" class="btn btn-neutral float-right" title="ModelView: Compact display of parameters for NEURON models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

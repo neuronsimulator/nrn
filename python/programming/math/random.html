@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pseudo-Random Number Generation &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="mcell_ran4" href="mcran4.html" />
+    <link rel="prev" title="Vector" href="vector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../mathematics.html">Mathematics</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="constants.html">Constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="functions.html">Common Math Functions (HOC)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="matrix.html">Matrix</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vector.html">Vector</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Pseudo-Random Number Generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guimath.html">GUIMath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="eqnsolve.html">Solving Nonlinear Systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../mathematics.html">Mathematics</a></li>
+      <li class="breadcrumb-item active">Pseudo-Random Number Generation</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/math/random.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/math/random.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#NMODLRandom" title="Link to this definition">NMODLRandom</a></dt><dd><a href="#NMODLRandom.get_ids" title="Link to this definition">get_ids</a> &middot; <a href="#NMODLRandom.get_seq" title="Link to this definition">get_seq</a> &middot; <a href="#NMODLRandom.set_ids" title="Link to this definition">set_ids</a> &middot; <a href="#NMODLRandom.set_seq" title="Link to this definition">set_seq</a> &middot; <a href="#NMODLRandom.uniform" title="Link to this definition">uniform</a></dd></dl></p><p><dl class="docutils"><dt><a href="#Random" title="Link to this definition">Random</a></dt><dd><a href="#Random.ACG" title="Link to this definition">ACG</a> &middot; <a href="#Random.binomial" title="Link to this definition">binomial</a> &middot; <a href="#Random.discunif" title="Link to this definition">discunif</a> &middot; <a href="#Random.erlang" title="Link to this definition">erlang</a> &middot; <a href="#Random.geometric" title="Link to this definition">geometric</a> &middot; <a href="#Random.hypergeo" title="Link to this definition">hypergeo</a> &middot; <a href="#Random.lognormal" title="Link to this definition">lognormal</a> &middot; <a href="#Random.MCellRan4" title="Link to this definition">MCellRan4</a> &middot; <a href="#Random.MLCG" title="Link to this definition">MLCG</a> &middot; <a href="#Random.negexp" title="Link to this definition">negexp</a> &middot; <a href="#Random.normal" title="Link to this definition">normal</a> &middot; <a href="#Random.play" title="Link to this definition">play</a> &middot; <a href="#Random.poisson" title="Link to this definition">poisson</a> &middot; <a href="#Random.Random123" title="Link to this definition">Random123</a> &middot; <a href="#Random.Random123_globalindex" title="Link to this definition">Random123_globalindex</a> &middot; <a href="#Random.repick" title="Link to this definition">repick</a> &middot; <a href="#Random.seq" title="Link to this definition">seq</a> &middot; <a href="#Random.uniform" title="Link to this definition">uniform</a> &middot; <a href="#Random.weibull" title="Link to this definition">weibull</a></dd></dl></p><section id="pseudo-random-number-generation">
+<span id="random"></span><h1>Pseudo-Random Number Generation<a class="headerlink" href="#pseudo-random-number-generation" title="Link to this heading"></a></h1>
+<p>Pseudo-random numbers from a variety of distributions may be generated with the <a class="reference internal" href="#Random" title="Random"><code class="xref py py-class docutils literal notranslate"><span class="pre">Random</span></code></a> class. Multiple random number generators are provided; low level access to the mcell_ran4 generator is described in:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcran4.html">mcell_ran4</a></li>
+</ul>
+</div>
+<section id="random-class">
+<h2>Random Class<a class="headerlink" href="#random-class" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="Random">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Random</span></span><a class="headerlink" href="#Random" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.Random()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.Random(seed)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.Random(seed,</span> <span class="pre">size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The Random class provides commonly used random distributions which are
+useful for stochastic
+simulations. The default distribution is normal with mean = 0 and standard
+deviation = 1.</p>
+<p>This class is an interface to the RNG class
+from the gnu c++ class library. As of version 5.2, a cryptographic quality
+RNG class wrapper for <a class="reference internal" href="mcran4.html#mcell_ran4" title="mcell_ran4"><code class="xref py py-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a> was added and is available
+with the <a class="reference internal" href="#Random.MCellRan4" title="Random.MCellRan4"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> method. The current default random generator
+is <a class="reference internal" href="#Random.ACG" title="Random.ACG"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.ACG()</span></code></a>.</p>
+<p>As of version 7.3, a more versatile cryptographic quality generator,
+Random123, is available with the <a class="reference internal" href="#Random.Random123" title="Random.Random123"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a> method. This generator
+uses a 34bit counter, up to 3 32 bit identifiers, and a 32 bit global index and
+is most suitable for managing separate independent, reproducible, restartable
+streams that are unique to individual cell and synapses in large parallel
+network models.
+See: <a class="reference external" href="http://www.thesalmons.org/john/random123/papers/random123sc11.pdf">http://www.thesalmons.org/john/random123/papers/random123sc11.pdf</a></p>
+<p>Note that multiple instances of the Random class will produce different
+streams of random numbers only if their seeds are different.</p>
+<p>One can switch distributions at any time but if the distribution is
+stationary then it is more efficient to use <a class="reference internal" href="#Random.repick" title="Random.repick"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.repick()</span></code></a> to avoid
+constructor/destructor overhead.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span> <span class="c1"># not as efficient as</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>        <span class="c1"># this</span>
+</pre></div>
+</div>
+<p>prints 20 random numbers ranging in value between 30 and 50.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.ACG">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">ACG</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.ACG" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.ACG()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.ACG(seed)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.ACG(seed,</span> <span class="pre">size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use a variant of the Linear Congruential Generator (algorithm M)
+described in Knuth, Art of Computer Programming, Vol. III in
+combination with a Fibonacci Additive Congruential Generator.  This is
+a “very high quality” random number generator, Default size is 55,
+giving a size of 1244 bytes to the structure. Minimum size is 7 (total
+100 bytes), maximum size is 98 (total 2440 bytes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.MLCG">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">MLCG</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.MLCG" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.MLCG()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.MLCG(seed1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.MLCG(seed1,</span> <span class="pre">seed2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use a Multiplicative Linear Congruential Generator.  Not as high
+quality as the ACG.  It uses only 8 bytes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.MCellRan4">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">MCellRan4</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.MCellRan4" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4(highindex)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">highindex</span> <span class="pre">=</span> <span class="pre">r.MCellRan4(highindex,</span> <span class="pre">lowindex)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use the MCell variant of the Ran4 generator. See <a class="reference internal" href="mcran4.html#mcell_ran4" title="mcell_ran4"><code class="xref py py-func docutils literal notranslate"><span class="pre">mcell_ran4()</span></code></a>.
+In the no argument case or if the highindex is 0, then the system selects
+an index which is the random 32 bit integer resulting from
+an mcell_ran4 call with an index equal to the
+the number of instances of the Random generator that had been created.
+Thus, each stream should be statistically independent as long as the
+highindex values differ by more than the eventual length of the stream.
+In any case, the
+initial highindex is returned and can be used to restart an instance
+of the generator. Use <a class="reference internal" href="mcran4.html#mcell_ran4_init" title="mcell_ran4_init"><code class="xref py py-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a> to set the (global)
+low 32 bit index of the generator. The <a class="reference internal" href="#Random.seq" title="Random.seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.seq()</span></code></a> method is useful
+for getting the current sequence number and restarting at that sequence
+number (highindex).
+If the lowindex arg is present and nonzero, then that lowindex is used
+instead of the global one specified by <a class="reference internal" href="mcran4.html#mcell_ran4_init" title="mcell_ran4_init"><code class="xref py py-func docutils literal notranslate"><span class="pre">mcell_ran4_init()</span></code></a>.
+This allows 2^32-1 independent streams that do not overlap.</p>
+<p>Note that for reproducibility,
+the distribution should be defined AFTER setting the seed since some
+distributions, such as <a class="reference internal" href="#Random.normal" title="Random.normal"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.normal()</span></code></a>, hold state information from
+a previous pick from the uniform distribution.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#Random.Random123" title="Random.Random123"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123()</span></code></a></p>
+</div>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">MCellRan4</span><span class="p">())</span>
+<span class="n">r</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">g1</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g1</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">g2</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">doit</span><span class="p">():</span>
+    <span class="n">g1</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+    <span class="n">g2</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+    <span class="n">vec</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">vec</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+    <span class="n">hist</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">g2</span><span class="p">,</span> <span class="mf">.2</span><span class="p">)</span>
+    <span class="n">g1</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">g2</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">set_index_then_doit</span><span class="p">():</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">MCellRan4</span><span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">doit</span><span class="p">()</span>
+
+<span class="n">doit</span><span class="p">()</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;MCellRan4 test&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Sample&quot;</span><span class="p">,</span> <span class="n">doit</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;Original index&quot;</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">set_index_then_doit</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-mcellran4.png" class="align-center" src="../../../_images/random-mcellran4.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.Random123">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">Random123</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.Random123" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">=</span> <span class="pre">r.Random123(id1,</span> <span class="pre">id2,</span> <span class="pre">id3)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Use the Random123 generator (currently philox4x32 is the crypotgraphic hash
+used) with the stream identified by the identifiers 0 &lt;= id1,2,3 &lt; 2^32
+and the global index (see <a class="reference internal" href="#Random.Random123_globalindex" title="Random.Random123_globalindex"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.Random123_globalindex()</span></code></a>). The counter,
+which increments from 0 to 2^34-1, is initialized to 0 (see <a class="reference internal" href="#Random.seq" title="Random.seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.seq()</span></code></a>).
+If any of the up to 3 arguments are missing, it is assumed 0.</p>
+<p>The generators should be usable in the context of threads as long as
+no instance is used in more than one thread.</p>
+<p>This generator
+uses a 34bit counter, 3 32 bit identifiers, and a 32 bit global index and
+is most suitable for managing separate independent, reproducible, restartable
+streams that are unique to individual cell and synapses in large parallel
+network models.
+See: <a class="reference external" href="http://www.thesalmons.org/john/random123/papers/random123sc11.pdf">http://www.thesalmons.org/john/random123/papers/random123sc11.pdf</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.Random123_globalindex">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">Random123_globalindex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.Random123_globalindex" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">uint32</span> <span class="pre">=</span> <span class="pre">r.Random123_globalindex([uint32])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets and sets the global index used by all instances of the Random123
+instances of Random.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.seq">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">seq</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.seq" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">currenthighindex</span> <span class="pre">=</span> <span class="pre">r.seq()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r.seq(sethighindex)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>For MCellRan4,
+Gets and sets the current highindex value when the <a class="reference internal" href="#Random.MCellRan4" title="Random.MCellRan4"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> is
+in use. This allows restarting the generator at any specified point.
+Note that the currenthighindex value is incremented every <a class="reference internal" href="#Random.repick" title="Random.repick"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.repick()</span></code></a>.
+Usually the increment is 1 but some distributions, e.g. <a class="reference internal" href="#Random.poisson" title="Random.poisson"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.poisson()</span></code></a>
+can increment by more. Also, some distributions, e.g. <a class="reference internal" href="#Random.normal" title="Random.normal"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.normal()</span></code></a>,
+pick twice on the first repick but once thereafter.</p>
+<p>For Random123,
+Gets and sets the counter value which ranges from 0 to 2^34-1.
+The reason the the greater range is that the internal Random123 generators
+return 4 uint32 values on each call. So that is done only every 4 picks from
+the generator.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+
+<span class="n">r</span><span class="o">.</span><span class="n">negexp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">mcell_ran4_init</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">MCellRan4</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>
+
+<span class="n">r</span><span class="o">.</span><span class="n">MCellRan4</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>
+
+<span class="n">idum</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">seq</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;idum = </span><span class="si">{</span><span class="n">idum</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;restarting&quot;</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">seq</span><span class="p">(</span><span class="n">idum</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;restarting&quot;</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">seq</span><span class="p">(</span><span class="n">idum</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Output:</p>
+<blockquote>
+<div><div class="highlight-None notranslate"><div class="highlight"><pre><span></span>0 1.51709661466
+1 0.485175784418
+2 0.212032709823
+3 0.503178330905
+4 0.114339664628
+5 1.28075206782
+6 0.0578608361212
+7 0.26376087479
+8 0.291156947261
+9 3.21937205675
+10 0.409557452659
+0 1.51709661466
+1 0.485175784418
+2 0.212032709823
+3 0.503178330905
+4 0.114339664628
+5 1.28075206782
+idum = 7.0
+6 0.0578608361212
+7 0.26376087479
+8 0.291156947261
+9 3.21937205675
+10 0.409557452659
+restarting
+6 0.0578608361212
+7 0.26376087479
+8 0.291156947261
+9 3.21937205675
+10 0.409557452659
+restarting
+6 0.0578608361212
+7 0.26376087479
+8 0.291156947261
+9 3.21937205675
+10 0.409557452659
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.repick">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">repick</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.repick" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.repick()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Pick again from the distribution last used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.play">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">play</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.play" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.play(_ref_var)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>At the beginning of every call to <a class="reference internal" href="../../simctrl/programmatic.html#fadvance" title="fadvance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> and <a class="reference internal" href="../../simctrl/programmatic.html#finitialize" title="finitialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> var is set
+to a new value equivalent to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>var = r.repick()
+</pre></div>
+</div>
+<p>(but with no interpreter overhead). This is similar in concept to <a class="reference internal" href="vector.html#Vector.play" title="Vector.play"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.play()</span></code></a>.
+Play may be called several times for different variables and each variable
+will get an independent random value but with the same distribution.
+To disconnect the Random object from its list of variables, either the variables
+or the Random object must be destroyed.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="c1"># set the distribution</span>
+<span class="n">r</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># create a reference, and have the uniform random variable update it at each time step</span>
+<span class="n">rv</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">rv</span><span class="p">)</span>
+
+<span class="c1"># print some random numbers</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">fadvance</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">rv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>More practically, this might be used with a fixed time step to set, say, <code class="docutils literal notranslate"><span class="pre">h.IClamp[0]._ref_amp</span></code> for a random current injection.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.uniform">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.uniform" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.uniform(low,</span> <span class="pre">high)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a uniform random variable over the open interval (<em>low</em>…<em>high</em>).</p>
+</dd>
+</dl>
+<p>See examples of this in <a class="reference internal" href="#Random.MCellRan4" title="Random.MCellRan4"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.MCellRan4()</span></code></a> and <a class="reference internal" href="#Random.play" title="Random.play"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Random.play()</span></code></a>.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.discunif">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">discunif</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.discunif" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.discunif(low,</span> <span class="pre">high)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a uniform random variable over the discrete integers from
+low to high.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.normal">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">normal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.normal" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.normal(mean,</span> <span class="pre">variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gaussian distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">.5</span><span class="p">)</span>
+
+<span class="n">vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+<span class="n">vec</span><span class="o">.</span><span class="n">indgen</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">.1</span><span class="p">)</span>       <span class="c1"># x-axis for plot</span>
+<span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">vec</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">x</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># -3 to 2 -&gt; 0 to 50</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-normal.png" class="align-center" src="../../../_images/random-normal.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.lognormal">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">lognormal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.lognormal" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.lognormal(mean,</span> <span class="pre">variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a logarithmic normal distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">n</span><span class="o">=</span><span class="mi">20</span>
+<span class="n">xvec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>        <span class="c1"># bins look like discrete spikes</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="mf">0.1</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">.1</span>
+
+<span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">xvec</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+<span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">xvec</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">hist</span><span class="o">.</span><span class="n">size</span><span class="p">():</span>  <span class="c1"># don&#39;t let any off the edge</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-lognormal.png" class="align-center" src="../../../_images/random-lognormal.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.poisson">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">poisson</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.poisson" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.poisson(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a poisson distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">n</span><span class="o">=</span><span class="mi">20</span>
+<span class="n">xvec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="mf">.1</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">xvec</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mf">.1</span>
+
+<span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">xvec</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+<span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">xvec</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">hist</span><span class="o">.</span><span class="n">size</span><span class="p">():</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-poisson.png" class="align-center" src="../../../_images/random-poisson.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.binomial">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">binomial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.binomial" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.binomial(N,p)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a binomial distribution. Returns the number of “successes” after
+<em>N</em> trials when the probability of a success after one trial is <em>p</em>.
+(n&gt;0, 0&lt;=p&lt;=1).</p>
+<p><code class="docutils literal notranslate"><span class="pre">P(n,</span> <span class="pre">N,</span> <span class="pre">p)</span> <span class="pre">=</span> <span class="pre">p</span> <span class="pre">*</span> <span class="pre">P(n-1,</span> <span class="pre">N-1,</span> <span class="pre">p)</span> <span class="pre">+</span> <span class="pre">(1</span> <span class="pre">-</span> <span class="pre">p)</span> <span class="pre">*</span> <span class="pre">P(n,</span> <span class="pre">N-1,</span> <span class="pre">p)</span></code></p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">.5</span><span class="p">)</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">repick</span><span class="p">())</span> <span class="c1"># r.repick() always returns a float even though the binomial always is an integer</span>
+    <span class="n">hist</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">doNotify</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-binomial.png" class="align-center" src="../../../_images/random-binomial.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.geometric">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">geometric</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.geometric" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.geometric(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a discrete geometric distribution.
+Given 0&lt;=*mean*&lt;=1, return the number of uniform random samples
+that were drawn before the sample was larger than the <em>mean</em> (always
+greater than 0).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">geometric</span><span class="p">(</span><span class="mf">.8</span><span class="p">)</span>
+<span class="n">hist</span> <span class="o">=</span> <span class="n">new</span> <span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">sample</span><span class="p">():</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">hist</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">sample</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;Resample&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Resample&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-geometric.png" class="align-center" src="../../../_images/random-geometric.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.hypergeo">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">hypergeo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.hypergeo" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.hypergeo(mean,variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a hypergeometric distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.negexp">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">negexp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.negexp" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.negexp(mean)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a negative exponential distribution. Distributed as the intervals
+between events in a poisson distribution.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<span class="n">r</span><span class="o">.</span><span class="n">negexp</span><span class="p">(</span><span class="mf">2.5</span><span class="p">)</span>
+<span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">sample</span><span class="p">():</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="n">hist</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mf">.1</span><span class="p">)</span>
+        <span class="n">hist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mf">.1</span><span class="p">)</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">sample</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;Resample&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Resample&quot;</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../../_images/random-negexp.png" class="align-center" src="../../../_images/random-negexp.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.erlang">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">erlang</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.erlang" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.erlang(mean,variance)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create an Erlang distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.weibull">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">weibull</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.weibull" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r.weibull(alpha,beta)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Create a Weibull distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="nmodlrandom-class">
+<h2>NMODLRandom Class<a class="headerlink" href="#nmodlrandom-class" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="NMODLRandom">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NMODLRandom</span></span><a class="headerlink" href="#NMODLRandom" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">point_process.ranvar</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">section(x).mech.ranvar</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">section(x).ranvar_mech</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns an NMODLRandom wrapper for the nrnran123_State associated with the mechanism
+<a class="reference internal" href="../../modelspec/programmatic/mechanisms/nmodl2.html#nmodlrandom"><span class="std std-ref">RANDOM ranvar</span></a> variable.
+Note that an attempt to assign a value to ranvar will raise an error.
+At present, all mentions of ranvar in the context of a specific mechanism instance return a wrapper for
+the same nrnran123_State (though the NMODLRandom instances are different).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="NMODLRandom.get_ids">
+<span class="sig-prename descclassname"><span class="pre">NMODLRandom.</span></span><span class="sig-name descname"><span class="pre">get_ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NMODLRandom.get_ids" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vector</span> <span class="pre">=</span> <span class="pre">r.get_ids()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a HOC Vector of size 3 containing the 32 bit id1, id2, id3 of the nrnran123_State</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="NMODLRandom.set_ids">
+<span class="sig-prename descclassname"><span class="pre">NMODLRandom.</span></span><span class="sig-name descname"><span class="pre">set_ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NMODLRandom.set_ids" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">r.set_ids(id1,</span> <span class="pre">id2,</span> <span class="pre">id3)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets the 32 bit id1, id2, id3 of the nrnran123_State and returns the same NModlRandom instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="NMODLRandom.get_seq">
+<span class="sig-prename descclassname"><span class="pre">NMODLRandom.</span></span><span class="sig-name descname"><span class="pre">get_seq</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NMODLRandom.get_seq" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">r.get_seq()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns as a float, the 34 bit sequence position of the nrnran123_State</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="NMODLRandom.set_seq">
+<span class="sig-prename descclassname"><span class="pre">NMODLRandom.</span></span><span class="sig-name descname"><span class="pre">set_seq</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NMODLRandom.set_seq" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">r.set_seq(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Sets the 34 bit sequence position of the nrnran123_State. Returns the same NMODLRandom instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="NMODLRandom.uniform">
+<span class="sig-prename descclassname"><span class="pre">NMODLRandom.</span></span><span class="sig-name descname"><span class="pre">uniform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NMODLRandom.uniform" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">r.uniform()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns as a float, the uniform random value in the open interval 0 to 1 at the current sequence
+position of the nrnran123_State (the current sequence position is then incremented by 1)
+This is, for testing purposes, the only distribution exposed to
+the interpreter. We don’t forsee any practical use of
+NMODLRandom within the interpreter in regard to sampling. The purpose
+of NMODLRandom is to allow setting of stream properties for a
+mod file RANDOM variable. Indeed, if one explicitly constructs an NMODLRandom
+from the interpreter, then</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NMODLRandom</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span>
+
+<span class="n">NEURON</span><span class="p">:</span> <span class="n">NMODLRandom</span> <span class="n">wrapped</span> <span class="n">handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">valid</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="vector.html" class="btn btn-neutral float-left" title="Vector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mcran4.html" class="btn btn-neutral float-right" title="mcell_ran4" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

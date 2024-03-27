@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electrode &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="MechanismType" href="mechtype.html" />
+    <link rel="prev" title="NetCon" href="network/netcon.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="network.html">Networks</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Model Specification</a></li>
+      <li class="breadcrumb-item active">Electrode</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/modelspec/programmatic/electrod.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/modelspec/programmatic/electrod.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Electrode" title="Link to this definition">Electrode</a></dt><dd><a href="#Electrode.amp" title="Link to this definition">amp</a> &middot; <a href="#Electrode.amp0" title="Link to this definition">amp0</a> &middot; <a href="#Electrode.del" title="Link to this definition">del</a> &middot; <a href="#Electrode.dur" title="Link to this definition">dur</a> &middot; <a href="#Electrode.dur0" title="Link to this definition">dur0</a> &middot; <a href="#Electrode.Holding" title="Link to this definition">Holding</a> &middot; <a href="#Electrode.IClamp" title="Link to this definition">IClamp</a> &middot; <a href="#Electrode.Location" title="Link to this definition">Location</a> &middot; <a href="#Electrode.Returnlevel" title="Link to this definition">Returnlevel</a> &middot; <a href="#Electrode.Testlevel" title="Link to this definition">Testlevel</a> &middot; <a href="#Electrode.VClamp" title="Link to this definition">VClamp</a> &middot; <a href="#Electrode.VClampFamily" title="Link to this definition">VClampFamily</a> &middot; <a href="#Electrode.VClampigraph" title="Link to this definition">VClampigraph</a></dd></dl></p><section id="electrode">
+<span id="hoc-electrod"></span><h1>Electrode<a class="headerlink" href="#electrode" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="Electrode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Electrode</span></span><a class="headerlink" href="#Electrode" title="Link to this definition"></a></dt>
+<dd><p>A current injection electrode inserted in the middle of the
+current section which can be switched between current and voltage
+clamp modes and can do simple voltage clamp families.</p>
+<p>usage: <code class="samp docutils literal notranslate"><em><span class="pre">section</span></em> <em><span class="pre">e</span></em> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">Electrode([</span><em><span class="pre">xplacement</span></em><span class="pre">,</span> <em><span class="pre">yplacement</span></em><span class="pre">])</span></code>
+e.stim and e.vc can used to set parameters programmatically.</p>
+<p>Electrode can be saved in a .session file and is best used
+anonymously so that it is dismissed and point processes deleted
+when the graphic is dismissed.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.IClamp">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">IClamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.IClamp" title="Link to this definition"></a></dt>
+<dd><p>Switches the Electrode to single pulse current injection. Uses IClamp
+point process.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.del">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">del</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.del" title="Link to this definition"></a></dt>
+<dd><p>Time (ms) of the onset of the current stimulus relative to t = 0.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.dur">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">dur</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.dur" title="Link to this definition"></a></dt>
+<dd><p>Duration (ms) of the current stimulus</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.amp">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">amp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.amp" title="Link to this definition"></a></dt>
+<dd><p>Amplitude (nA) of the current stimulus</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.VClamp">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">VClamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.VClamp" title="Link to this definition"></a></dt>
+<dd><p>Switches the Electrode to two electrode voltage clamp. Uses <a class="reference internal" href="mechanisms/mech.html#VClamp" title="VClamp"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">VClamp</span></code></a> point
+process that allows up to three level changes. The clamp is set to be ideal.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.dur0">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">dur0</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.dur0" title="Link to this definition"></a></dt>
+<dd><p>Duration in milliseconds of each level change starting at t=0. Each level
+is concatenated. At t = dur0+dur1+dur2 the clamp is switched off and
+no longer injects current.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.amp0">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">amp0</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.amp0" title="Link to this definition"></a></dt>
+<dd><p>Amplitude in millivolts of each level.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.VClampigraph">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">VClampigraph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.VClampigraph" title="Link to this definition"></a></dt>
+<dd><p>Creates a currentgraph displaying the voltage clamp current. This button
+exists because, with the present implementation, it is generally not
+possible to reference the Electrode object from hoc because the only reference
+is held by a vbox which in turn is only referenced by this Electrode. In
+this way, when the Electrode window is dismissed, the Electrode is
+destroyed and the point processes are removed from the neuron.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.VClampFamily">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">VClampFamily</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.VClampFamily" title="Link to this definition"></a></dt>
+<dd><p>Several common families for voltage clamp experiments. One should bring
+up a current graph (VClampigraph button in VClamp card) and select KeepLines
+in the graph popup menu. Only one clamp parameter is changed and the other
+duration and amplitude levels are given by the values set in the VClamp panel
+See User HocCode Electrode varyamp for the how the levels are varied.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.Testlevel">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">Testlevel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.Testlevel" title="Link to this definition"></a></dt>
+<dd><p>varies amp1 in 10 steps</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.Holding">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">Holding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.Holding" title="Link to this definition"></a></dt>
+<dd><p>varies amp0 in 10 steps. Initialization is carried out at the value of amp0
+so it is equivalent to the holding potential.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.Returnlevel">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">Returnlevel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.Returnlevel" title="Link to this definition"></a></dt>
+<dd><p>varies amp2 in 10 steps.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="Electrode.Location">
+<span class="sig-prename descclassname"><span class="pre">Electrode.</span></span><span class="sig-name descname"><span class="pre">Location</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Electrode.Location" title="Link to this definition"></a></dt>
+<dd><p>Shows a Shape scene of the neuron with the Electrode location marked as
+a blue dot. The electrode location can be changed by making sure the
+Section item in the selection menu is selected (right mouse button) and
+pressing the left mouse button at any point on the picture of the neuron.
+The position of the electrode is also reflected in the varlabel in the panel
+just above the Shape.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="network/netcon.html" class="btn btn-neutral float-left" title="NetCon" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mechtype.html" class="btn btn-neutral float-right" title="MechanismType" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

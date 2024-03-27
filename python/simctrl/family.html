@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Family &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Rarely Used Compilation Options" href="../compilationoptions.html" />
+    <link rel="prev" title="RunControl" href="runctrl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="programmatic.html">Programmatic Simulation Control</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="stdrun.html">Standard Run Tools</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="runctrl.html">RunControl</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Family</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#execcommand">ExecCommand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gathervec">GatherVec</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vectorplay">VectorPlay</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vecwrap">VecWrap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="stdrun.html#neuron-main-menu">NEURON Main Menu</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../compilationoptions.html">Rarely Used Compilation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../envvariables.html">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interpretermanagement.html">Interpreter Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="stdrun.html">Standard Run Tools</a></li>
+      <li class="breadcrumb-item active">Family</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/simctrl/family.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/simctrl/family.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="family">
+<span id="index-0"></span><span id="id1"></span><h1>Family<a class="headerlink" href="#family" title="Link to this heading"></a></h1>
+<p>For several values of a variable, execute an action.
+Basically just a form for specifying a for loop.</p>
+<p>Usage: <code class="docutils literal notranslate"><span class="pre">h.makeFamily()</span></code> constructs a Family and maps it to the screen. The Family
+instance is destroyed when its window is dismissed.</p>
+<img alt="../../_images/makeFamily.png" class="align-center" src="../../_images/makeFamily.png" />
+<p>The slider value ranges from start to end. Due to the length of time it
+generally takes to complete an action it is best to use the middle button
+to select a value with the slider. Dragging the slider button or using
+it too rapidly will cause many action requests to be ignored since a
+slider event taking place while handling the previous event is prevented
+from executing the action recursively. The occasionally has the unintended
+effect of missing the last action when one releases the mouse button.</p>
+<p>Menu items:</p>
+<dl class="simple">
+<dt>start end numbersteps:</dt><dd><p>Beginning and final values of the loop variable. The number of steps
+includes these limiting values so should be at least 2 but if it is 1 then
+the loop reduces to only the start value.</p>
+</dd>
+<dt>Variable:</dt><dd><p>Pops up a SymChooser for selection of a variable name.
+The Family object cannot work without a variable since there is no default.</p>
+</dd>
+<dt>Action:</dt><dd><p>Pops up a stringchooser for selection of the body of the loop. The default
+run() action is typically what is desired.</p>
+</dd>
+<dt>Run:</dt><dd><p>Starts the loop</p>
+</dd>
+<dt>Stop – Now:</dt><dd><p>Stops the loop even in the middle of the action. (The <code class="docutils literal notranslate"><span class="pre">stdrun.hoc</span></code> <code class="docutils literal notranslate"><span class="pre">run()</span></code>
+action regularly checks the <code class="docutils literal notranslate"><span class="pre">stop_run</span></code> variable.)</p>
+</dd>
+<dt>Stop – Atendofaction:</dt><dd><p>Waits for the current action to finish before stopping.</p>
+</dd>
+<dt>Cont:</dt><dd><p>Starts the action with the next value of the variable.
+(If the previous action was stopped in the middle,
+that action is not restarted where it left off.)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is function is defined as part of <code class="docutils literal notranslate"><span class="pre">stdrun.hoc</span></code> which is loaded automatically as part of
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">neuron</span> <span class="pre">import</span> <span class="pre">gui</span></code>, which is required to ensure the GUI is interactive across different
+ways of running NEURON.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This dialog may also be opened from the GUI via
+<span class="menuselection">Tools ‣ Miscellaneous ‣ Family ‣ Family</span></p>
+</div>
+</section>
+<section id="execcommand">
+<span id="id2"></span><h1>ExecCommand<a class="headerlink" href="#execcommand" title="Link to this heading"></a></h1>
+<img alt="../../_images/ExecCommand.png" class="align-center" src="../../_images/ExecCommand.png" />
+<p>Usage: <code class="docutils literal notranslate"><span class="pre">h.ExecCommand()</span></code> or <span class="menuselection">Tools ‣ Miscellaneous ‣ Family ‣ Command</span></p>
+<p>Specify a command and execute it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is function is defined as part of <code class="docutils literal notranslate"><span class="pre">stdrun.hoc</span></code> which is loaded automatically as part of
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">neuron</span> <span class="pre">import</span> <span class="pre">gui</span></code>, which is required to ensure the GUI is interactive across different
+ways of running NEURON.</p>
+</div>
+</section>
+<section id="gathervec">
+<span id="id3"></span><h1>GatherVec<a class="headerlink" href="#gathervec" title="Link to this heading"></a></h1>
+<p>Open with <span class="menuselection">Vector ‣ Gather Values</span> or to open programmatically import GUI support, load the library, and then call the function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;gatherv.hoc&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">makeGatherVec</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/GatherVec.png" class="align-center" src="../../_images/GatherVec.png" />
+<p>Press “Record” button and plot a new point consisting
+of the values for specified <cite>x</cite> and <cite>y</cite> variables. (<cite>x</cite> or <cite>y</cite> crosshair values
+are good candidates for the <cite>y</cite> variable and a run parameter is a good
+candidate for the <cite>x</cite> variable. Then one does a run, selects a point with
+crosshairs, and presses the record button on the GatherValues tool)</p>
+</section>
+<section id="vectorplay">
+<span id="id4"></span><h1>VectorPlay<a class="headerlink" href="#vectorplay" title="Link to this heading"></a></h1>
+<p>Open with <span class="menuselection">Vector ‣ Play</span> or to open programmatically import GUI support, load the library, and then call the function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;vplay.hoc&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">makeVectorPlay</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/VectorPlay.png" class="align-center" src="../../_images/VectorPlay.png" />
+<p>Copy a vector from the clipboard and play it into some
+chosen (from a Symchooser) variable name. There is button to connect
+and disconnect (return the default value to the variable) the vector.</p>
+</section>
+<section id="vecwrap">
+<span id="id5"></span><h1>VecWrap<a class="headerlink" href="#vecwrap" title="Link to this heading"></a></h1>
+<p>Open with <span class="menuselection">Vector ‣ Display</span> or to open programmatically import GUI support, load the library, and then call the function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;vecwrap.hoc&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">makeVecWrap</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../../_images/VecWrap.png" class="align-center" src="../../_images/VecWrap.png" />
+<p>Copy vector(s) from the clipboard and do various
+manipulations: Discard left of crosshair, discard right of crosshair,
+crosshair point becomes origin. Obviously rudimentary but this egg
+may hatch into something.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="runctrl.html" class="btn btn-neutral float-left" title="RunControl" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../compilationoptions.html" class="btn btn-neutral float-right" title="Rarely Used Compilation Options" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

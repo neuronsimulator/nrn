@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagnosis and Debugging &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Training videos" href="../videos/index.html" />
+    <link rel="prev" title="Code Coverage" href="code_coverage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="developer.html">Developer Builds</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mac_pkg.html">Mac Binary Package (Apple M1 and Mac x86_64)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python_wheels.html">Building Python Wheels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="windows.html">Windows build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formatting.html">Code Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_coverage.html">Code Coverage</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnosis and Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#segfault-and-crash">Segfault and crash.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nan-or-inf-values">NaN or Inf values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#different-results-with-different-nhost-or-nthread">Different results with different nhost or nthread.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdb">GDB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdb-and-mpi">GDB and MPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#valgrind">Valgrind</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#valgrind-gdb">Valgrind + gdb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sanitizers">Sanitizers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#profiling-and-performance-benchmarking">Profiling and performance benchmarking</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#instrumentation">Instrumentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-benchmarks">Running benchmarks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-gpu-benchmarks">Running GPU benchmarks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="developer.html">Developer Builds</a></li>
+      <li class="breadcrumb-item active">Diagnosis and Debugging</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/install/debug.md.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="diagnosis-and-debugging">
+<h1>Diagnosis and Debugging<a class="headerlink" href="#diagnosis-and-debugging" title="Link to this heading"></a></h1>
+<p>Disorganized and incomplete but here is a place to put some sometimes
+hard-won hints for Diagnosis</p>
+<p>Debugging is as close as I get to application of the scientific method.
+From reality not corresponding to expectation, a hypothesis,
+or wild guess based on what is already known about the lack of correspondence,
+is used to generate a computational experiment such that result vs
+prediction inspires generation of a more detailed hypothesis with a now
+more obvious experiment that focuses attention more on the underlying problem.</p>
+<section id="segfault-and-crash">
+<h2>Segfault and crash.<a class="headerlink" href="#segfault-and-crash" title="Link to this heading"></a></h2>
+<p>Begin with <a class="reference internal" href="#gdb"><span class="std std-ref">GDB</span></a> to quickly find where the segfault or crash occurred.
+If the underlying cause is resistent to variable inspection, e.g. corrupted
+memory by unknown other program statements having nothing to do with
+what is going on the location of the crash, <a class="reference internal" href="#valgrind"><span class="std std-ref">Valgrind</span></a> is an
+extremely powerful tool, but at the cost of one or two orders of
+magnitude slowdown in running the program.
+If valgrind is too slow and you cannot reduce the size or simulation time
+while continuing to experience the error, it may be worthwhile to look into
+<a class="reference external" href="https://github.com/neuronsimulator/nrn/issues/1213">LLVM address sanitizer</a>.</p>
+</section>
+<section id="nan-or-inf-values">
+<h2>NaN or Inf values<a class="headerlink" href="#nan-or-inf-values" title="Link to this heading"></a></h2>
+<p>Use <a class="reference internal" href="../python/programming/errors.html#nrn_feenableexcept"><span class="std std-ref">h.nrn_feenableexcept(1)</span></a>
+to generate floating point exception for
+DIVBYZERO, INVALID, OVERFLOW, exp(700). <a class="reference internal" href="#gdb"><span class="std std-ref">GDB</span></a> can then be used to show
+where the SIGFPE occurred.</p>
+</section>
+<section id="different-results-with-different-nhost-or-nthread">
+<h2>Different results with different nhost or nthread.<a class="headerlink" href="#different-results-with-different-nhost-or-nthread" title="Link to this heading"></a></h2>
+<p>What is the gid and spiketime of the earliest difference?
+Use <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext.prcellstate"><span class="std std-ref">ParallelContext.prcellstate</span></a>
+for that gid at various times
+before spiketime to see why and when the prcellstate files become different.
+Time 0 after initialization is often a good place to start.</p>
+</section>
+<section id="gdb">
+<h2>GDB<a class="headerlink" href="#gdb" title="Link to this heading"></a></h2>
+<p>If you normally run with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">args</span></code> and get a segfault…
+Build NEURON with <code class="docutils literal notranslate"><span class="pre">-DCMAKE_BUILD_TYPE=Debug</span></code>. This avoids
+optimization so that all local variables are available for inspection.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>gdb `pyenv which python`
+run args
+bt # backtrace
+</pre></div>
+</div>
+<p>There are many gdb tutorials and reference materials. For mac, lldb is
+available. See <a class="reference external" href="https://lldb.llvm.org/use/map.html">https://lldb.llvm.org/use/map.html</a></p>
+<p>Particularly useful commands are bt (backtrace), p (print), b (break), watch,
+c (continue), run, n (next)
+E.g <code class="docutils literal notranslate"><span class="pre">watch</span> <span class="pre">-l</span> <span class="pre">ps-&gt;osrc_</span></code> to watch a variable outside the local scope where
+the PreSyn is locally declared.</p>
+</section>
+<section id="gdb-and-mpi">
+<h2>GDB and MPI<a class="headerlink" href="#gdb-and-mpi" title="Link to this heading"></a></h2>
+<p>If working on a personal computer (not a cluster) and a small number of ranks,
+using mpirun to launch a small number of terminals that run serial gdb
+has proven effective.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mpirun -np 4 xterm -e gdb `pyenv which python`
+</pre></div>
+</div>
+</section>
+<section id="valgrind">
+<h2>Valgrind<a class="headerlink" href="#valgrind" title="Link to this heading"></a></h2>
+<p>Extremely useful in debugging memory errors and memory leaks.</p>
+<p>With recent versions of Valgrind (e.g. 3.17) and Python (e.g. 3.9) the
+large number of <code class="docutils literal notranslate"><span class="pre">Invalid</span> <span class="pre">read...</span></code> errors which obscure the substantive errors,
+can be eliminated with <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONMALLOC=malloc</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PYTHONMALLOC=malloc
+valgrind `pyenv which python` -c &#39;from neuron import h&#39;
+    ==47683== Memcheck, a memory error detector
+    ==47683== Copyright (C) 2002-2017, and GNU GPL&#39;d, by Julian Seward et al.
+    ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
+    ==47683== Command: /home/hines/.pyenv/versions/3.9.0/bin/python -c from\ neuron\ import\ h
+    ==47683== 
+    ==47683== 
+    ==47683== HEAP SUMMARY:
+    ==47683==     in use at exit: 4,988,809 bytes in 25,971 blocks
+    ==47683==   total heap usage: 344,512 allocs, 318,541 frees, 52,095,055 bytes allocated
+    ==47683== 
+    ==47683== LEAK SUMMARY:
+    ==47683==    definitely lost: 1,991 bytes in 20 blocks
+    ==47683==    indirectly lost: 520 bytes in 8 blocks
+    ==47683==      possibly lost: 2,971,659 bytes in 19,446 blocks
+    ==47683==    still reachable: 2,014,639 bytes in 6,497 blocks
+    ==47683==                       of which reachable via heuristic:
+    ==47683==                         newarray           : 96,320 bytes in 4 blocks
+    ==47683==         suppressed: 0 bytes in 0 blocks
+    ==47683== Rerun with --leak-check=full to see details of leaked memory
+    ==47683== 
+    ==47683== For lists of detected and suppressed errors, rerun with: -s
+    ==47683== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+</pre></div>
+</div>
+<p>With respect to memory leaks, we are most interested in keeping the
+<code class="docutils literal notranslate"><span class="pre">definitely</span> <span class="pre">lost:</span> <span class="pre">1,991</span> <span class="pre">bytes</span> <span class="pre">in</span> <span class="pre">20</span> <span class="pre">blocks</span></code> to as low a value as possible
+and especially fix memory leaks that increase when code is executed
+multiple times. To this end, the useful valgrind args are
+<code class="docutils literal notranslate"><span class="pre">--leak-check=full</span> <span class="pre">--show-leak-kinds=definite</span></code></p>
+</section>
+<section id="valgrind-gdb">
+<h2>Valgrind + gdb<a class="headerlink" href="#valgrind-gdb" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>valgrind --vgdb=yes --vgdb-error=0 `pyenv which python` test.py
+</pre></div>
+</div>
+<p>Valgrind will stop with a message like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">==</span><span class="mi">31925</span><span class="o">==</span> <span class="n">TO</span> <span class="n">DEBUG</span> <span class="n">THIS</span> <span class="n">PROCESS</span> <span class="n">USING</span> <span class="n">GDB</span><span class="p">:</span> <span class="n">start</span> <span class="n">GDB</span> <span class="n">like</span> <span class="n">this</span>
+<span class="o">==</span><span class="mi">31925</span><span class="o">==</span>   <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">gdb</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hines</span><span class="o">/.</span><span class="n">pyenv</span><span class="o">/</span><span class="n">versions</span><span class="o">/</span><span class="mf">3.7.6</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python</span>
+<span class="o">==</span><span class="mi">31925</span><span class="o">==</span> <span class="ow">and</span> <span class="n">then</span> <span class="n">give</span> <span class="n">GDB</span> <span class="n">the</span> <span class="n">following</span> <span class="n">command</span>
+<span class="o">==</span><span class="mi">31925</span><span class="o">==</span>   <span class="n">target</span> <span class="n">remote</span> <span class="o">|</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">valgrind</span><span class="o">/../../</span><span class="nb">bin</span><span class="o">/</span><span class="n">vgdb</span> <span class="o">--</span><span class="n">pid</span><span class="o">=</span><span class="mi">31925</span>
+<span class="o">==</span><span class="mi">31925</span><span class="o">==</span> <span class="o">--</span><span class="n">pid</span> <span class="ow">is</span> <span class="n">optional</span> <span class="k">if</span> <span class="n">only</span> <span class="n">one</span> <span class="n">valgrind</span> <span class="n">process</span> <span class="ow">is</span> <span class="n">running</span>
+</pre></div>
+</div>
+<p>In another shell, start GDB:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>gdb `pyenv which python`
+</pre></div>
+</div>
+<p>Then copy/paste the above ‘target remote’ command to gdb:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">target</span> <span class="n">remote</span> <span class="o">|</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">valgrind</span><span class="o">/../../</span><span class="nb">bin</span><span class="o">/</span><span class="n">vgdb</span> <span class="o">--</span><span class="n">pid</span><span class="o">=</span><span class="mi">31925</span>
+</pre></div>
+</div>
+<p>Every press of the ‘c’ key in the gdb shell will move to the location of
+the next valgrind error.</p>
+</section>
+<section id="sanitizers">
+<h2>Sanitizers<a class="headerlink" href="#sanitizers" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">AddressSanitizer</span></code> (ASan), <code class="docutils literal notranslate"><span class="pre">LeakSanitizer</span></code> (LSan), <code class="docutils literal notranslate"><span class="pre">ThreadSanitizer</span></code> (TSan)
+and <code class="docutils literal notranslate"><span class="pre">UndefinedBehaviorSanitizer</span></code> (UBSan) are a collection of tools
+that rely on compiler instrumentation to catch dangerous behaviour at runtime.
+Compiler support is widespread but not ubiquitous, but both Clang and GCC
+provide support.</p>
+<p>They are all enabled by passing extra compiler options (typically
+<code class="docutils literal notranslate"><span class="pre">-fsanitize=XXX</span></code>), and can be steered at runtime using environment variables
+(typically <code class="docutils literal notranslate"><span class="pre">{...}SAN_OPTIONS=...</span></code>).
+ASan in particular requires that its runtime library is loaded very early during
+execution – this is typically not a problem if you are directly launching an
+executable that has been built with ASan enabled, but more care is required if
+the launched executable was not built with ASan.
+The typical example of this case is loading NEURON from Python, where the
+<code class="docutils literal notranslate"><span class="pre">python</span></code> executable is not built with ASan.</p>
+<p>As of <a class="reference external" href="https://github.com/neuronsimulator/nrn/pull/1842">#1842</a>, the NEURON
+build system is aware of ASan, LSan and UBSan, and it tries to configure the
+sanitizers correctly based on the <code class="docutils literal notranslate"><span class="pre">NRN_SANITIZERS</span></code> CMake variable.
+In <a class="reference external" href="https://github.com/neuronsimulator/nrn/pull/2034">#2034</a> this was extended
+to TSan via <code class="docutils literal notranslate"><span class="pre">-DNRN_SANITIZERS=thread</span></code>, and support for GCC was added.
+For example, <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DNRN_SANITIZERS=address,leak</span> <span class="pre">...</span></code> will enable ASan and
+LSan, while <code class="docutils literal notranslate"><span class="pre">-DNRN_SANITIZERS=undefined</span></code> will enable UBSan.
+Not all combinations of sanitizers are possible, so far ASan, ASan+LSan, TSan
+and UBSan have been tested with Clang.
+Support for standalone LSan should be possible without major difficulties, but
+is not yet implemented.</p>
+<p>Depending on your system, you may also need to set the <code class="docutils literal notranslate"><span class="pre">LLVM_SYMBOLIZER_PATH</span></code>
+variable to point to the <code class="docutils literal notranslate"><span class="pre">llvm-symbolizer</span></code> executable matching your Clang.
+On systems where multiple LLVM versions are installed, such as Ubuntu, this may
+need to be the path to the actual executable named <code class="docutils literal notranslate"><span class="pre">llvm-symbolizer</span></code> and not the
+path to a versioned symlink such as <code class="docutils literal notranslate"><span class="pre">llvm-symbolizer-14</span></code>.</p>
+<p>NEURON should automatically add the relevant compiler flags and configure the
+CTest suite with the extra environment variables that are needed; <code class="docutils literal notranslate"><span class="pre">ctest</span></code> should
+work as expected.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">NRN_SANITIZERS</span></code> is set then an additional helper script will be written to
+<code class="docutils literal notranslate"><span class="pre">bin/nrn-enable-sanitizer</span></code> under the build and installation directories.
+This contains the relevant environment variable settings, and if <code class="docutils literal notranslate"><span class="pre">--preload</span></code> is
+passed as the first argument then it also sets <code class="docutils literal notranslate"><span class="pre">LD_PRELOAD</span></code> to point to the
+relevant sanitizer runtime library.
+For example if you have a NEURON installation with sanitizers enabled, you might
+use <code class="docutils literal notranslate"><span class="pre">nrn-enable-sanitizer</span> <span class="pre">special</span> <span class="pre">-python</span> <span class="pre">path/to/script.py</span></code> or
+<code class="docutils literal notranslate"><span class="pre">nrn-enable-sanitizer</span> <span class="pre">--preload</span> <span class="pre">python</span> <span class="pre">path/to/script.py</span></code> (<code class="docutils literal notranslate"><span class="pre">--preload</span></code> required
+because the <code class="docutils literal notranslate"><span class="pre">python</span></code> binary is (presumably) not linked against the sanitizer
+runtime library.</p>
+<p>LSan, TSan and UBSan support suppression files, which can be used to prevent
+tests failing due to known issues.
+NEURON includes a suppression file for TSan under <code class="docutils literal notranslate"><span class="pre">.sanitizers/thread.supp</span></code> and
+one for UBSan under <code class="docutils literal notranslate"><span class="pre">.sanitizers/undefined.supp</span></code> in the GitHub repository, no
+LSan equivalent exists for the moment.</p>
+<p>Note that LSan and MPI implementations typically do not play nicely together, so
+if you want to use LSan with NEURON, you may need to disable MPI or add a
+suppression file that is tuned to your MPI implementation.</p>
+<p>Similarly, TSan does not work very well with MPI and (especially) OpenMP
+implementations that were not compiled with TSan instrumentation (which they
+are typically not).</p>
+<p>The GitHub Actions CI for NEURON at the time of writing includes three jobs
+using Ubuntu 22.04: ASan (but not LSan) using Clang 14, UBSan using Clang 14,
+and TSan using GCC 12.
+In addition, there is a macOS-based ASan build using AppleClang, which has the
+advantage that it uses <code class="docutils literal notranslate"><span class="pre">libc++</span></code> instead of <code class="docutils literal notranslate"><span class="pre">libstdc++</span></code>.</p>
+<p>NMODL supports the sanitizers in a similar way, but this has to be enabled
+explicitly: <code class="docutils literal notranslate"><span class="pre">-DNRN_SANITIZERS=undefined</span></code> will not compile NMODL code with UBSan
+enabled, you must additionally pass <code class="docutils literal notranslate"><span class="pre">-DNMODL_SANITIZERS=undefined</span></code> to enable
+instrumentation of NMODL code.</p>
+</section>
+</section>
+<section id="profiling-and-performance-benchmarking">
+<h1>Profiling and performance benchmarking<a class="headerlink" href="#profiling-and-performance-benchmarking" title="Link to this heading"></a></h1>
+<p>NEURON has recently gained built-in support for performance profilers. Many modern profilers provide APIs for instrumenting code. This allows the profiler to enable timers or performance counters and store results into appropriate data structures. For implementation details of the generic profiler interface check <code class="docutils literal notranslate"><span class="pre">src/utils/profile/profiler_interface.h</span></code> NEURON now supports following profilers:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://software.llnl.gov/Caliper/">Caliper</a></p></li>
+<li><p><a class="reference external" href="https://github.com/RRZE-HPC/likwid">likwid</a></p></li>
+<li><p><a class="reference external" href="https://www.paratools.com/tau">tau</a>*</p></li>
+<li><p><a class="reference external" href="https://docs.nersc.gov/tools/performance/craypat/">craypat</a>*</p></li>
+</ul>
+<p>*to use this profiler some additional changes to the CMake files might be needed.</p>
+<section id="instrumentation">
+<h2>Instrumentation<a class="headerlink" href="#instrumentation" title="Link to this heading"></a></h2>
+<p>Many performance-critical regions of the NEURON codebase have been instrumented
+for profiling.
+The existing regions have been given the same names as in CoreNEURON to allow
+side-by-side comparision when running simulations with and without CoreNEURON
+enabled.
+More regions can easily be added into the code in one of two ways:</p>
+<ol class="arabic simple">
+<li><p>using calls to <code class="docutils literal notranslate"><span class="pre">phase_begin()</span></code>, <code class="docutils literal notranslate"><span class="pre">phase_end()</span></code></p></li>
+</ol>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">some_function</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">nrn</span><span class="o">::</span><span class="n">Instrumentor</span><span class="o">::</span><span class="n">phase_begin</span><span class="p">(</span><span class="s">&quot;some_function&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// code to be benchmarked</span>
+<span class="w">    </span><span class="n">nrn</span><span class="o">::</span><span class="n">Instrumentor</span><span class="o">::</span><span class="n">phase_end</span><span class="p">(</span><span class="s">&quot;some_function&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>using scoped automatic variables</p></li>
+</ol>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">some_function</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// unrelated code</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">nrn</span><span class="o">::</span><span class="n">Instrumentor</span><span class="o">::</span><span class="n">phase</span><span class="w"> </span><span class="n">p</span><span class="p">(</span><span class="s">&quot;critical_region&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// code to be benchmarked</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// more unrelated code</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Note: Don’t forget to include the profiler header in the respective source files.</p>
+</section>
+<section id="running-benchmarks">
+<h2>Running benchmarks<a class="headerlink" href="#running-benchmarks" title="Link to this heading"></a></h2>
+<p>To enable a profiler, one needs to rebuild NEURON with the appropriate flags set. Here is how one would build NEURON with Caliper enabled:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..<span class="w"> </span>-DNRN_ENABLE_PROFILING<span class="o">=</span>ON<span class="w"> </span>-DNRN_PROFILER<span class="o">=</span>caliper<span class="w"> </span>-DCMAKE_PREFIX_PATH<span class="o">=</span>/path/to/caliper/share/cmake/caliper<span class="w"> </span>-DNRN_ENABLE_TESTS<span class="o">=</span>ON
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--parallel
+</pre></div>
+</div>
+<p>or if you are building CoreNEURON standalone:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..<span class="w"> </span>-DCORENRN_ENABLE_CALIPER_PROFILING<span class="o">=</span>ON<span class="w"> </span>-DCORENRN_ENABLE_UNIT_TESTS<span class="o">=</span>ON
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--parallel
+</pre></div>
+</div>
+<p>in both cases you might need to add something like <code class="docutils literal notranslate"><span class="pre">/path/to/caliper/share/cmake/caliper</span></code> to the <code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code> variable to help CMake find your installed version of Caliper.</p>
+<p>Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described <a class="reference external" href="https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling">here</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nv">CALI_CONFIG</span><span class="o">=</span>runtime-report,calc.inclusive<span class="w"> </span>nrniv<span class="w"> </span>ring.hoc
+NEURON<span class="w"> </span>--<span class="w"> </span>VERSION<span class="w"> </span><span class="m">8</span>.0a-693-gabe0abaac+<span class="w"> </span>magkanar/instrumentation<span class="w"> </span><span class="o">(</span>abe0abaac+<span class="o">)</span><span class="w"> </span><span class="m">2021</span>-10-12
+Duke,<span class="w"> </span>Yale,<span class="w"> </span>and<span class="w"> </span>the<span class="w"> </span>BlueBrain<span class="w"> </span>Project<span class="w"> </span>--<span class="w"> </span>Copyright<span class="w"> </span><span class="m">1984</span>-2021
+See<span class="w"> </span>http://neuron.yale.edu/neuron/credits
+
+Path<span class="w">                     </span>Min<span class="w"> </span>time/rank<span class="w"> </span>Max<span class="w"> </span>time/rank<span class="w"> </span>Avg<span class="w"> </span>time/rank<span class="w"> </span>Time<span class="w"> </span>%<span class="w">    </span>
+psolve<span class="w">                        </span><span class="m">0</span>.145432<span class="w">      </span><span class="m">0</span>.145432<span class="w">      </span><span class="m">0</span>.145432<span class="w"> </span><span class="m">99</span>.648498<span class="w"> </span>
+<span class="w">  </span>spike-exchange<span class="w">              </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">  </span><span class="m">0</span>.001370<span class="w"> </span>
+<span class="w">  </span>timestep<span class="w">                    </span><span class="m">0</span>.142800<span class="w">      </span><span class="m">0</span>.142800<span class="w">      </span><span class="m">0</span>.142800<span class="w"> </span><span class="m">97</span>.845079<span class="w"> </span>
+<span class="w">    </span>state-update<span class="w">              </span><span class="m">0</span>.030670<span class="w">      </span><span class="m">0</span>.030670<span class="w">      </span><span class="m">0</span>.030670<span class="w"> </span><span class="m">21</span>.014766<span class="w"> </span>
+<span class="w">      </span>state-IClamp<span class="w">            </span><span class="m">0</span>.001479<span class="w">      </span><span class="m">0</span>.001479<span class="w">      </span><span class="m">0</span>.001479<span class="w">  </span><span class="m">1</span>.013395<span class="w"> </span>
+<span class="w">      </span>state-hh<span class="w">                </span><span class="m">0</span>.002913<span class="w">      </span><span class="m">0</span>.002913<span class="w">      </span><span class="m">0</span>.002913<span class="w">  </span><span class="m">1</span>.995957<span class="w"> </span>
+<span class="w">      </span>state-ExpSyn<span class="w">            </span><span class="m">0</span>.002908<span class="w">      </span><span class="m">0</span>.002908<span class="w">      </span><span class="m">0</span>.002908<span class="w">  </span><span class="m">1</span>.992531<span class="w"> </span>
+<span class="w">      </span>state-pas<span class="w">               </span><span class="m">0</span>.003067<span class="w">      </span><span class="m">0</span>.003067<span class="w">      </span><span class="m">0</span>.003067<span class="w">  </span><span class="m">2</span>.101477<span class="w"> </span>
+<span class="w">    </span>update<span class="w">                    </span><span class="m">0</span>.003941<span class="w">      </span><span class="m">0</span>.003941<span class="w">      </span><span class="m">0</span>.003941<span class="w">  </span><span class="m">2</span>.700332<span class="w"> </span>
+<span class="w">    </span>second-order-cur<span class="w">          </span><span class="m">0</span>.002994<span class="w">      </span><span class="m">0</span>.002994<span class="w">      </span><span class="m">0</span>.002994<span class="w">  </span><span class="m">2</span>.051458<span class="w"> </span>
+<span class="w">    </span>matrix-solver<span class="w">             </span><span class="m">0</span>.006994<span class="w">      </span><span class="m">0</span>.006994<span class="w">      </span><span class="m">0</span>.006994<span class="w">  </span><span class="m">4</span>.792216<span class="w"> </span>
+<span class="w">    </span>setup-tree-matrix<span class="w">         </span><span class="m">0</span>.062940<span class="w">      </span><span class="m">0</span>.062940<span class="w">      </span><span class="m">0</span>.062940<span class="w"> </span><span class="m">43</span>.125835<span class="w"> </span>
+<span class="w">      </span>cur-IClamp<span class="w">              </span><span class="m">0</span>.003172<span class="w">      </span><span class="m">0</span>.003172<span class="w">      </span><span class="m">0</span>.003172<span class="w">  </span><span class="m">2</span>.173421<span class="w"> </span>
+<span class="w">      </span>cur-hh<span class="w">                  </span><span class="m">0</span>.007137<span class="w">      </span><span class="m">0</span>.007137<span class="w">      </span><span class="m">0</span>.007137<span class="w">  </span><span class="m">4</span>.890198<span class="w"> </span>
+<span class="w">      </span>cur-ExpSyn<span class="w">              </span><span class="m">0</span>.007100<span class="w">      </span><span class="m">0</span>.007100<span class="w">      </span><span class="m">0</span>.007100<span class="w">  </span><span class="m">4</span>.864846<span class="w"> </span>
+<span class="w">      </span>cur-k_ion<span class="w">               </span><span class="m">0</span>.003138<span class="w">      </span><span class="m">0</span>.003138<span class="w">      </span><span class="m">0</span>.003138<span class="w">  </span><span class="m">2</span>.150125<span class="w"> </span>
+<span class="w">      </span>cur-na_ion<span class="w">              </span><span class="m">0</span>.003269<span class="w">      </span><span class="m">0</span>.003269<span class="w">      </span><span class="m">0</span>.003269<span class="w">  </span><span class="m">2</span>.239885<span class="w"> </span>
+<span class="w">      </span>cur-pas<span class="w">                 </span><span class="m">0</span>.007921<span class="w">      </span><span class="m">0</span>.007921<span class="w">      </span><span class="m">0</span>.007921<span class="w">  </span><span class="m">5</span>.427387<span class="w"> </span>
+<span class="w">    </span>deliver-events<span class="w">            </span><span class="m">0</span>.013076<span class="w">      </span><span class="m">0</span>.013076<span class="w">      </span><span class="m">0</span>.013076<span class="w">  </span><span class="m">8</span>.959540<span class="w"> </span>
+<span class="w">      </span>net-receive-ExpSyn<span class="w">      </span><span class="m">0</span>.000021<span class="w">      </span><span class="m">0</span>.000021<span class="w">      </span><span class="m">0</span>.000021<span class="w">  </span><span class="m">0</span>.014389<span class="w"> </span>
+<span class="w">      </span>spike-exchange<span class="w">          </span><span class="m">0</span>.000037<span class="w">      </span><span class="m">0</span>.000037<span class="w">      </span><span class="m">0</span>.000037<span class="w">  </span><span class="m">0</span>.025352<span class="w"> </span>
+<span class="w">      </span>check-threshold<span class="w">         </span><span class="m">0</span>.003804<span class="w">      </span><span class="m">0</span>.003804<span class="w">      </span><span class="m">0</span>.003804<span class="w">  </span><span class="m">2</span>.606461<span class="w"> </span>
+finitialize<span class="w">                   </span><span class="m">0</span>.000235<span class="w">      </span><span class="m">0</span>.000235<span class="w">      </span><span class="m">0</span>.000235<span class="w">  </span><span class="m">0</span>.161020<span class="w"> </span>
+<span class="w">  </span>spike-exchange<span class="w">              </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">  </span><span class="m">0</span>.001370<span class="w"> </span>
+<span class="w">  </span>setup-tree-matrix<span class="w">           </span><span class="m">0</span>.000022<span class="w">      </span><span class="m">0</span>.000022<span class="w">      </span><span class="m">0</span>.000022<span class="w">  </span><span class="m">0</span>.015074<span class="w"> </span>
+<span class="w">    </span>cur-hh<span class="w">                    </span><span class="m">0</span>.000003<span class="w">      </span><span class="m">0</span>.000003<span class="w">      </span><span class="m">0</span>.000003<span class="w">  </span><span class="m">0</span>.002056<span class="w"> </span>
+<span class="w">    </span>cur-ExpSyn<span class="w">                </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">  </span><span class="m">0</span>.000685<span class="w"> </span>
+<span class="w">    </span>cur-IClamp<span class="w">                </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">  </span><span class="m">0</span>.000685<span class="w"> </span>
+<span class="w">    </span>cur-k_ion<span class="w">                 </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">      </span><span class="m">0</span>.000001<span class="w">  </span><span class="m">0</span>.000685<span class="w"> </span>
+<span class="w">    </span>cur-na_ion<span class="w">                </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">  </span><span class="m">0</span>.001370<span class="w"> </span>
+<span class="w">    </span>cur-pas<span class="w">                   </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">      </span><span class="m">0</span>.000002<span class="w">  </span><span class="m">0</span>.001370<span class="w"> </span>
+<span class="w">  </span>gap-v-transfer<span class="w">              </span><span class="m">0</span>.000003<span class="w">      </span><span class="m">0</span>.000003<span class="w">      </span><span class="m">0</span>.000003<span class="w">  </span><span class="m">0</span>.002056
+</pre></div>
+</div>
+</section>
+<section id="running-gpu-benchmarks">
+<h2>Running GPU benchmarks<a class="headerlink" href="#running-gpu-benchmarks" title="Link to this heading"></a></h2>
+<p>Caliper can also be configured to generate <a class="reference external" href="https://nvtx.readthedocs.io/en/latest/">NVTX</a> annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA’s tools.
+In a GPU build with Caliper support (<code class="docutils literal notranslate"><span class="pre">-DCORENRN_ENABLE_GPU=ON</span> <span class="pre">-DNRN_ENABLE_PROFILING=ON</span> <span class="pre">-DNRN_PROFILER=caliper</span></code>), you can enable NVTX annotations at runtime by adding <code class="docutils literal notranslate"><span class="pre">nvtx</span></code> to the <code class="docutils literal notranslate"><span class="pre">CALI_CONFIG</span></code> environment variable.</p>
+<p>A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span>nsys<span class="w"> </span>profile<span class="w"> </span>--env-var<span class="w"> </span><span class="nv">NSYS_NVTX_PROFILER_REGISTER_ONLY</span><span class="o">=</span><span class="m">0</span>,CALI_CONFIG<span class="o">=</span>nvtx,OMP_NUM_THREADS<span class="o">=</span><span class="m">1</span><span class="w"> </span>--stats<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--cuda-um-gpu-page-faults<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--cuda-um-cpu-page-faults<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--trace<span class="o">=</span>cuda,nvtx,openacc,openmp,osrt<span class="w"> </span>--capture-range<span class="o">=</span>nvtx<span class="w"> </span>--nvtx-capture<span class="o">=</span>simulation<span class="w"> </span>&lt;exe&gt;
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">NSYS_NVTX_PROFILER_REGISTER_ONLY=0</span></code> is required because Caliper does not use NVTX registered string APIs. The <code class="docutils literal notranslate"><span class="pre">&lt;exe&gt;</span></code> command is likely to be something similar to</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># with python</span>
+path/to/x86_64/special<span class="w"> </span>-python<span class="w"> </span>your_sim.py
+<span class="c1"># or, with hoc</span>
+path/to/x86_64/special<span class="w"> </span>your_sim.hoc
+<span class="c1"># or, if you are executing coreneuron directly</span>
+path/to/x86_64/special-core<span class="w"> </span>--datpath<span class="w"> </span>path/to/input/data<span class="w"> </span>--gpu<span class="w"> </span>--tstop<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>You may like to experiment with setting <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> to a value larger than
+1, but the profiling tools can struggle if there are too many CPU threads
+launching GPU kernels in parallel.</p>
+<p>For a more detailed analysis of a certain kernel you can use <a class="reference external" href="https://developer.nvidia.com/nsight-compute">NVIDIA Nsight
+Compute</a>. This is a kernel profiler
+for applications executed on NVIDIA GPUs and supports the OpenACC and OpenMP
+backends of CoreNEURON.
+This tool provides more detailed information in a nice graphical environment
+about the kernel execution on the GPU including metrics like SM throughput, memory
+bandwidth utilization, automatic roofline model generation, etc.
+To provide all this information the tool needs to rerun the kernel you’re interested in
+multiple times, which makes execution ~20-30 times slower.
+For this reason we recommend running first Caliper with Nsight Systems to find
+the name of the kernel you’re interested in and then select on this kernel for
+analysis with Nsight Compute.
+In case you’re interested in multiple kernels you can relaunch Nsight Compute with the other
+kernels separately.</p>
+<p>To launch Nsight Compute you can use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ncu<span class="w"> </span>-k<span class="w"> </span>&lt;kernel_name&gt;<span class="w"> </span>--profile-from-start<span class="o">=</span>off<span class="w"> </span>--target-processes<span class="w"> </span>all<span class="w"> </span>--set<span class="w"> </span>&lt;section_set&gt;<span class="w"> </span>&lt;exe&gt;
+</pre></div>
+</div>
+<p>where</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">kernel_name</span></code>: The name of the kernel you want to profile. You may also provide a regex with <code class="docutils literal notranslate"><span class="pre">regex:&lt;name&gt;</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">section_set</span></code>: Provides set of sections of the kernel you want to be analyzed. To get the list of sections you can run <code class="docutils literal notranslate"><span class="pre">ncu</span> <span class="pre">--list-sets</span></code>.</p></li>
+</ul>
+<p>The most commonly used is <code class="docutils literal notranslate"><span class="pre">detailed</span></code> which provides most information about the kernel execution and <code class="docutils literal notranslate"><span class="pre">full</span></code> which provides all the details
+about the kernel execution and memory utilization in the GPU but takes more time to run.
+For more information about Nsight Compute options you can consult the <a class="reference external" href="https://docs.nvidia.com/nsight-compute/2021.3/NsightComputeCli/index.html">Nsight Compute Documentation</a>.</p>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>CoreNEURON allocates a large number of small objects separately in CUDA
+managed memory to record the state of the Random123 pseudorandom number
+generator. This makes the Nsight Compute profiler very slow, and makes it
+impractical to use Nsight Systems during the initialization phase. If the
+Boost library is available then CoreNEURON will use a memory pool for these
+small objects to dramatically reduce the number of calls to the CUDA runtime
+API to allocate managed memory. It is, therefore, highly recommended to make
+Boost available when using GPU profiling tools.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="code_coverage.html" class="btn btn-neutral float-left" title="Code Coverage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../videos/index.html" class="btn btn-neutral float-right" title="Training videos" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

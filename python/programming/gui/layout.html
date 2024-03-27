@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Layout &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="List" href="list.html" />
+    <link rel="prev" title="GUI Design" href="../guidesign.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="list.html">List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="widgets.html">GUI Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">Layout</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/gui/layout.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/gui/layout.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Deck" title="Link to this definition">Deck</a></dt><dd><a href="#Deck.flip_to" title="Link to this definition">flip_to</a> &middot; <a href="#Deck.intercept" title="Link to this definition">intercept</a> &middot; <a href="#Deck.map" title="Link to this definition">map</a> &middot; <a href="#Deck.move_last" title="Link to this definition">move_last</a> &middot; <a href="#Deck.remove" title="Link to this definition">remove</a> &middot; <a href="#Deck.remove_last" title="Link to this definition">remove_last</a> &middot; <a href="#Deck.save" title="Link to this definition">save</a> &middot; <a href="#Deck.unmap" title="Link to this definition">unmap</a></dd></dl></p><p><dl class="docutils"><dt><a href="#HBox" title="Link to this definition">HBox</a></dt><dd></dd></dl></p><p><dl class="docutils"><dt><a href="#VBox" title="Link to this definition">VBox</a></dt><dd><a href="#VBox.adjust" title="Link to this definition">adjust</a> &middot; <a href="#VBox.adjuster" title="Link to this definition">adjuster</a> &middot; <a href="#VBox.dialog" title="Link to this definition">dialog</a> &middot; <a href="#VBox.dismiss_action" title="Link to this definition">dismiss_action</a> &middot; <a href="#VBox.full_request" title="Link to this definition">full_request</a> &middot; <a href="#VBox.intercept" title="Link to this definition">intercept</a> &middot; <a href="#VBox.ismapped" title="Link to this definition">ismapped</a> &middot; <a href="#VBox.map" title="Link to this definition">map</a> &middot; <a href="#VBox.priority" title="Link to this definition">priority</a> &middot; <a href="#VBox.ref" title="Link to this definition">ref</a> &middot; <a href="#VBox.save" title="Link to this definition">save</a> &middot; <a href="#VBox.size" title="Link to this definition">size</a> &middot; <a href="#VBox.unmap" title="Link to this definition">unmap</a></dd></dl></p><section id="layout">
+<span id="vbox"></span><h1>Layout<a class="headerlink" href="#layout" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="Deck">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Deck</span></span><a class="headerlink" href="#Deck" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.Deck()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A special kind of box which is like a card deck in which only one card
+is shown at a time. Cards are indexed according to the order of the
+intercepted windows (0 is the first card).</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span>
+
+<span class="n">deck</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Deck</span><span class="p">()</span>
+<span class="n">deck</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>      <span class="c1"># all following windows will be placed in the deck</span>
+<span class="n">ncard</span> <span class="o">=</span> <span class="mi">10</span>                <span class="c1"># there will be 10 cards in the deck</span>
+
+<span class="k">def</span> <span class="nf">mkgraph</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;make a new graph&quot;&quot;&quot;</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>          <span class="c1"># the new graph is declared</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>   <span class="c1"># and given a size</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">629</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">i</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>              <span class="c1"># draw the plot</span>
+
+<span class="k">def</span> <span class="nf">flip_function</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;return a function that flips to the ith card&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">deck</span><span class="o">.</span><span class="n">flip_to</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="n">mkgraph</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>                 <span class="c1"># make the first graph, so it will appear while the other</span>
+<span class="n">deck</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>      <span class="c1"># 9 graphs are being made</span>
+<span class="n">deck</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>                 <span class="c1"># put the deck on the screen</span>
+<span class="n">deck</span><span class="o">.</span><span class="n">flip_to</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>            <span class="c1"># show the first plot of the deck</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s1">&#39;flip to&#39;</span><span class="p">)</span>        <span class="c1"># create a panel titled &quot;flip to&quot;</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncard</span><span class="p">):</span>     <span class="c1"># create radio buttons which will bring each card to the front</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;card </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">flip_function</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>                 <span class="c1"># close off the set of panel commands</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncard</span><span class="p">):</span>  <span class="c1"># now that the first card appears on the screen, make the rest</span>
+    <span class="n">deck</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># reopen the deck</span>
+    <span class="n">mkgraph</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>         <span class="c1"># make a plot for each other card</span>
+    <span class="n">deck</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>      <span class="c1"># close the deck</span>
+</pre></div>
+</div>
+<img alt="../../../_images/deck-constructor.png" class="align-center" src="../../../_images/deck-constructor.png" />
+<p>makes a deck of windows showing the plots <span class="math notranslate nohighlight">\(\{(3\cos(t), 3\sin(i\,t)): 0 \le t \le 2\pi \}\)</span>, where <span class="math notranslate nohighlight">\(i=1 \ldots 10\)</span>.
+You can see in this example how the
+panel of radio buttons enhances your ability
+to access a particular plot.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.intercept">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">intercept</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.intercept" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.intercept(True</span> <span class="pre">or</span> <span class="pre">False)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When the argument is True (or 1), all window creation is intercepted and the window
+contents are placed in a deck rather than independently on the screen.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.map">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.map" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.map(&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.map(&quot;label&quot;,</span> <span class="pre">left,</span> <span class="pre">top,</span> <span class="pre">width,</span> <span class="pre">height)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Make a window out of the deck. <em>Left</em> and <em>top</em> specify placement with
+respect to screen pixel coordinates where 0,0 is the top left.
+<em>Width</em> and <em>height</em> are ignored (the size of the window is the sum
+of the components)</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">d</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Deck</span><span class="p">()</span>
+<span class="n">d</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>             <span class="c1"># actually draws the deck window on the screen</span>
+</pre></div>
+</div>
+<p>creates an empty deck window on the screen.</p>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The labeling argument does not produce a title for a deck under Microsoft Windows.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.unmap">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">unmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.unmap" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.unmap()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Dismiss the last mapped window depicting this deck. This
+is called automatically when the last hoc object variable
+reference
+to the deck is destroyed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.save">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.save" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.save(&quot;procedure_name&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute the procedure when the deck is saved.
+By default
+a deck is saved by recursively saving its items which is almost
+always the wrong thing to do since the semantic connections between
+the items are lost.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.flip_to">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">flip_to</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.flip_to" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.flip_to(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Flip to the i’th card (window) in the deck. (-1 means no card is shown)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.remove_last">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">remove_last</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.remove_last" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.remove_last()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Delete the last card in the deck.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.move_last">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">move_last</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.move_last" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.move_last(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Moves the last card in the deck so that it is the i’th card
+in the deck.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Deck.remove">
+<span class="sig-prename descclassname"><span class="pre">Deck.</span></span><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Deck.remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.remove(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Delete the i’th card in the deck.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="HBox">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HBox</span></span><a class="headerlink" href="#HBox" title="Link to this definition"></a></dt>
+<dd><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#VBox" title="VBox"><code class="xref py py-class docutils literal notranslate"><span class="pre">VBox</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="VBox">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VBox</span></span><a class="headerlink" href="#VBox" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.HBox()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.HBox(frame)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.VBox()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.VBox(frame)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.VBox(frame,</span> <span class="pre">0or1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A box usually organizes a collection of graphs and command panels, which
+would normally take up several windows, into
+a single window.  Anything which can have its own window can be contained
+in a box.</p>
+<p>As with all classes, a box must have an object reference pointer, and
+can be manipulated through this pointer.  You must use the <code class="docutils literal notranslate"><span class="pre">.map</span></code>
+command to make a box appear on the screen.</p>
+<p>A VBox with a second arg of 1 makes a vertical scrollbox.</p>
+<p><code class="docutils literal notranslate"><span class="pre">HBox()</span></code> tiles windows horizontally.</p>
+<p><code class="docutils literal notranslate"><span class="pre">VBox()</span></code> tiles windows vertically.</p>
+<p>The default frame is an inset frame. The available frames are:</p>
+<dl class="simple">
+<dt>0</dt><dd><p>inset (gray)</p>
+</dd>
+<dt>1</dt><dd><p>outset (gray)</p>
+</dd>
+<dt>2</dt><dd><p>bright inset (light gray)</p>
+</dd>
+<dt>3</dt><dd><p>none (sea green)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">VBox</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>creates an empty box on the screen with a light gray inset frame.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.intercept">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">intercept</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.intercept" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">box.intercept(True)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">box.intercept(False)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When the argument is True (or 1), all window creation is intercepted and the window
+contents are placed in a box rather than independently on the screen.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">vbox</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">VBox</span><span class="p">()</span>
+<span class="n">vbox</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>        <span class="c1"># all following creations go into the &quot;vbox&quot; box</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpvalue</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">on_button_press</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;you pressed the button&#39;</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;press me&quot;</span><span class="p">,</span> <span class="n">on_button_press</span><span class="p">)</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+<span class="n">vbox</span><span class="o">.</span><span class="n">intercept</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># ends intercept mode</span>
+<span class="n">vbox</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>                  <span class="c1"># draw the box and its contents</span>
+</pre></div>
+</div>
+<img alt="../../../_images/vbox-intercept.png" class="align-center" src="../../../_images/vbox-intercept.png" />
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.map">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.map" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.map(&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.map(&quot;label&quot;,</span> <span class="pre">left,</span> <span class="pre">top,</span> <span class="pre">width,</span> <span class="pre">height)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Make a window out of the box. <em>Left</em> and <em>top</em> specify placement with
+respect to screen pixel coordinates where 0,0 is the top left.
+If you wish to specify the location but use the natural size of
+the box then use
+a width of -1.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">VBox</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>          <span class="c1"># actually draws the box on the screen</span>
+</pre></div>
+</div>
+<p>creates an empty box on the screen with a light gray inset frame.</p>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.unmap">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">unmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.unmap" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">b.unmap()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">b.unmap(accept)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Dismiss the last mapped window depicting this box. This
+is called automatically when the last hoc object variable
+reference
+to the box is destroyed.</p>
+<p>If the box is in a <a class="reference internal" href="#VBox.dialog" title="VBox.dialog"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.dialog()</span></code></a> the argument refers to the
+desired return value of the dialog, 1 means accept, 0 means cancel.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.ismapped">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">ismapped</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.ismapped" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">bool</span> <span class="pre">=</span> <span class="pre">box.ismapped()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return True if box has a window (mapped and not enclosed in another box).
+Otherwise return False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.size">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.size" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">box.size(neuron_array_ref)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>If box is mapped and not enclosed in another box, i.e has a window,
+return left, top, width, height of the window in the first four elements
+of the array pointed to by the arg.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">import</span> <span class="nn">neuron</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">ismapped</span><span class="p">():</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;d&#39;</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">neuron</span><span class="o">.</span><span class="n">numpy_element_ref</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">hname</span><span class="p">(),</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="c1"># create two vboxes, but only map 1</span>
+<span class="n">vb1</span><span class="p">,</span> <span class="n">vb2</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">VBox</span><span class="p">(),</span> <span class="n">h</span><span class="o">.</span><span class="n">VBox</span><span class="p">()</span>
+<span class="n">vb1</span><span class="o">.</span><span class="n">map</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">show_all_sizes</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">vbox</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">List</span><span class="p">(</span><span class="s1">&#39;VBox&#39;</span><span class="p">):</span>
+        <span class="n">size</span><span class="p">(</span><span class="n">vbox</span><span class="p">)</span>
+
+<span class="n">show_all_sizes</span><span class="p">()</span>
+
+<span class="c1"># can now manually resize the mapped VBox and call show_all_sizes again,</span>
+<span class="c1"># if desired</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.save">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.save" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">box.save(&quot;proc_name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">box.save(&quot;string&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">box.save(str,</span> <span class="pre">1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">box.save(str,</span> <span class="pre">obj)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute the procedure when the box is saved.</p>
+<p>The default save procedure is to recursively save all the items
+in the box. This is almost always the wrong thing to do since
+all the semantic connections between the items are lost.</p>
+<p>Generally a box is under the control of some high level object
+which implements the save procedure.</p>
+<p>box.save(“string”) writes stringn to the open session file.</p>
+<p>box.save(str, 1) returns the open session file name in str.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.ref">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">ref</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.ref" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.ref(objectvar)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The object is referenced by the box. When the box is dismissed
+then the object is unreferenced by the box.
+This provides a way for
+objects that control a box to be automatically destroyed when
+the box is dismissed (assuming no other <code class="docutils literal notranslate"><span class="pre">objectvar</span></code> references
+the object). When <code class="docutils literal notranslate"><span class="pre">.ref</span></code> is used, the string in <code class="docutils literal notranslate"><span class="pre">.save</span></code> is executed
+in the context of the object.</p>
+<p>Note: When objects are inaccessible to hoc from a normal objref
+they can still be manipulated from the interpreter through use of
+their instance name, ie the class name followed by some integer in
+brackets. As an  alternative one may also
+use the <a class="reference internal" href="#VBox.dismiss_action" title="VBox.dismiss_action"><code class="xref py py-func docutils literal notranslate"><span class="pre">dismiss_action()</span></code></a> to properly set the state of an
+object when a box it manages is dismissed from the screen.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.dismiss_action">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">dismiss_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.dismiss_action" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.dismiss_action(&quot;command&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute the action when the user dismisses the window. Not executed
+if the box is not the owner of the window (ie is a part of another
+deck or box, <a class="reference internal" href="#VBox.intercept" title="VBox.intercept"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.intercept()</span></code></a>). Not executed if
+the window is dismissed with an <a class="reference internal" href="#VBox.unmap" title="VBox.unmap"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.unmap()</span></code></a> command.
+For the window to actually close, the command should call unmap
+on the box.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.dialog">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">dialog</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.dialog" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span>&#160; <span class="pre">box.dialog(&quot;label&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span>&#160; <span class="pre">box.dialog(&quot;label&quot;,</span> <span class="pre">&quot;Accept</span> <span class="pre">label&quot;,</span> <span class="pre">&quot;Cancel</span> <span class="pre">label&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Put the box in a dialog and grabs mouse input until the user
+clicks on <span class="guilabel">Accept</span> (return 1) or <span class="guilabel">Cancel</span> (return 0).</p>
+<p>The box may be dismissed under program control by calling
+b.unmap(boolean) where the argument to <a class="reference internal" href="#VBox.unmap" title="VBox.unmap"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.unmap()</span></code></a>
+is the desired value of the return from the dialog.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.adjuster">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">adjuster</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.adjuster" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">b.adjuster(start_size)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When the next item is mapped (see <a class="reference internal" href="#VBox.intercept" title="VBox.intercept"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.intercept()</span></code></a>), its size is fixed at
+start_size in the sense that resizing the box will preserve the vertical
+size of the item. Also an adjuster item in the form of a narrow
+horizontal space is placed just below this item
+and the “fixed” size can be changed by dragging this space.
+(also see <a class="reference internal" href="#VBox.adjust" title="VBox.adjust"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.adjust()</span></code></a>).  When adjusters
+are used, then the <a class="reference internal" href="#VBox.full_request" title="VBox.full_request"><code class="xref py py-func docutils literal notranslate"><span class="pre">full_request()</span></code></a> method should be called on the top level
+box which is actually mapped to the screen before that top level box is
+mapped. If full_request is not called then the box will get confused about
+the proper size of items during window resizing or box adjusting.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.adjust">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">adjust</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.adjust" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">b.adjust(size)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">b.adjust(size,</span> <span class="pre">index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Change the vertical size of the item mapped just before the first
+<a class="reference internal" href="#VBox.adjuster" title="VBox.adjuster"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.adjuster()</span></code></a> was invoked. If multiple adjusters are at the same box level,
+the index can be used to specify which one is to be adjusted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.full_request">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">full_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.full_request" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">b.full_request(True)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This works around an error in box management during resize for complicated
+boxes involving panels with sliders, graphs, and/or <a class="reference internal" href="#VBox.adjuster" title="VBox.adjuster"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VBox.adjuster()</span></code></a> .
+If the drawing of boxes does not work properly, this method can be called
+on the top level box (the one that owns the window) before mapping in
+order to force a recalculation of internal component request sizes during resize
+and adjuster changes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="VBox.priority">
+<span class="sig-prename descclassname"><span class="pre">VBox.</span></span><span class="sig-name descname"><span class="pre">priority</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#VBox.priority" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">box.priority(integer)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>When a session file is created, the windows with higher priority (larger
+integer) precede windows with lower priority in the file.
+This allows windows
+that define things required by other windows to be saved first.
+For example, a CellBuild window has a larger priority than a
+PointProcessManager which needs a section declared by the cell builder.
+A MulRunFitter has even lower priority since it may refer to the
+point process managed by the manager. Default priority is 1.</p>
+<p>The priority scheme, of course, does not guarantee that a session file
+is consistent in isolation since it may depend on windows not saved.</p>
+<p>Priority range is -1000 to 10000</p>
+<p>Some existing priorities are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>SingleCompartment 1000
+CellBuild 1000
+PointProcessManager 990
+Electrode 990
+PointGroupManager 980
+NetworkReadyCell 900
+ArtificialCell 900
+NetGUI 700
+SpikePlot 600
+Inserter 900
+RunFitter 100
+FunctionFitter 100
+MulRunFitter 100
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../guidesign.html" class="btn btn-neutral float-left" title="GUI Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="list.html" class="btn btn-neutral float-right" title="List" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

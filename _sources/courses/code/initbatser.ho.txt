@@ -1,0 +1,120 @@
+// $Id: initbatser.hoc,v 1.9 2011/06/15 05:10:48 ted Exp ted $
+
+// Serial batch implementation
+// for stimulus current i iterating over a range of values
+//   run a simulation and report spike frequency
+// save i & corresponding f to a file
+// optionally plot fi curve
+
+load_file("stdgui.hoc") // load standard library but don't open NMM toolbar
+
+///// Simulation parameters
+
+PLOTRESULTS = 1 // if 1, generates a graph that shows f-i curve
+TSTOP = 500 // ms, more than long enough for 15 spikes at ISI = 25 ms
+AMP0 = 0.1 // nA--minimum stimulus
+D_AMP = 0.02 // nA--stim increment between runs
+NRUNS = 30
+
+///// Model specification
+
+load_file("cell.hoc")
+
+///// Instrumentation
+
+// experimental manipulations
+
+objref stim
+soma stim = new IClamp(0.5)
+stim.del = 1 // ms
+stim.dur = 1e9
+stim.amp = 0.1 // nA
+
+// $1 is run #
+// returns corresponding stimulus amplitude
+
+func fstimamp() {
+  return AMP0 + $1*D_AMP
+}
+
+// sets stimulus amplitude to appropriate value for this run
+
+proc setparams() {
+  stim.amp = fstimamp($1)
+}
+
+// data recording and analysis
+
+objref nc, spvec, nil // to record spike times
+// count only those spikes that get to distal end of dend
+dend nc = new NetCon(&v(1), nil)
+nc.threshold = -10 // mV
+spvec = new Vector()
+nc.record(spvec)
+
+NSETTLE = 5 // ignore the first NSETTLE ISI (allow freq to stablize)
+NINVL = 10 // # ISI from which frequency will be calculated
+NMIN = NSETTLE + NINVL // ignore recordings with fewer than this # of ISIs
+
+freq = 0
+
+proc postproc() { local nspikes, t1, t2
+  freq = 0
+  nspikes = spvec.size()
+  if (nspikes > NMIN) {
+    t2 = spvec.x(nspikes-1) // last spike
+    t1 = spvec.x(nspikes-1-NINVL) // NINVL prior to last spike
+    freq = NINVL*1e3/(t2-t1) // t1 and t2 are separated by NINVL ISIs
+  }
+}
+
+///// Simulation control
+
+tstop = TSTOP
+
+// batch control
+
+trun = startsw() // keep track of execution time past this point
+
+objref svec, fvec
+
+proc batchrun() { local ii
+  svec = new Vector()
+  fvec = new Vector()
+  for ii=0,$1-1 {
+    setparams(ii) // set parameters for this run
+    run()
+    postproc() // analyze the data
+    svec.append(stim.amp)
+    fvec.append(freq)
+    printf(".") // indicate progress
+  }
+}
+
+batchrun(NRUNS)
+
+///// Reporting of results
+
+proc saveresults() { local ii  localobj file
+  file = new File($s1)
+  file.wopen()
+  file.printf("label:%s\n%d\n", "f", fvec.size)
+  for ii=0, fvec.size-1 {
+    file.printf("%g\t%g\n", svec.x[ii], fvec.x[ii])
+  }
+  file.close()
+}
+
+saveresults("fi.dat")
+
+print " "
+print startsw() - trun, "seconds" // report run time
+
+objref fig
+load_file("plotfi.hoc")
+
+if (PLOTRESULTS==1) {
+  fig = plotfi(fvec, svec)
+} else {
+  quit()
+}

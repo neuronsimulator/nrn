@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How-Do-I Guide &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Data structures" href="../data-structures.html" />
+    <link rel="prev" title="HOC Interpreter" href="../HOCInterpreter/HOCInterpreter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Development topics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../HOCInterpreter/HOCInterpreter.html">HOC Interpreter</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">How-Do-I Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#working-with-object-and-pyobject">Working with Object and PyObject</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#to-check-if-a-neuron-object-is-wrapping-a-pyobject">To check if a NEURON object is wrapping a PyObject</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-check-if-a-pyobject-is-wrapping-a-neuron-object">To check if a PyObject is wrapping a NEURON object</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-encapsulate-a-neuron-object-in-a-pyobject">To encapsulate a NEURON Object in a PyObject</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-encapsule-a-pyobject-in-a-neuron-object">To encapsule a PyObject in a NEURON Object</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-check-if-a-pyobject-is-a-number">To check if a PyObject is a number</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-reference-a-neuron-object">To reference a NEURON Object</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#to-dereference-a-neuron-object">To dereference a NEURON Object</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#arguments">Arguments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#check-for-the-existence-of-an-argument">Check for the existence of an argument</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#check-the-type-of-an-argument">Check the type of an argument</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#get-the-value-of-an-argument">Get the value of an argument</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#classes">Classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#declaring-classes">Declaring classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#object-types">Object types</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#hoccommand-objects">HocCommand objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#miscellaneous-tips">Miscellaneous tips</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#raising-a-neuron-error">Raising a NEURON error</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#checking-if-the-name-of-an-internal-symbol">Checking if the name of an internal symbol</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../data-structures.html">Data structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gpu-testing.html">Testing GPU functionality</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../workflow-code-paths.html">Workflow Code Paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../setuptools/setuptools.html">setuptools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../morphology/morphology.html">Morphology loading in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hocdomain-sphinx.html">HOC Sphinx Domain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Development topics</a></li>
+      <li class="breadcrumb-item active">How-Do-I Guide</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/dev/how-do-i/how-do-i.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-do-i-guide">
+<h1>How-Do-I Guide<a class="headerlink" href="#how-do-i-guide" title="Link to this heading"></a></h1>
+<section id="working-with-object-and-pyobject">
+<h2>Working with Object and PyObject<a class="headerlink" href="#working-with-object-and-pyobject" title="Link to this heading"></a></h2>
+<p>The CPython API is only to be invoked directly from within <code class="file docutils literal notranslate"><span class="pre">src/nrnpython</span></code>.</p>
+<p>The way to support using Python from outside this folder without introducing a dependency on Python is to declare a function
+pointer outside the folder, then have that function pointer be set by something inside e.g. <code class="file docutils literal notranslate"><span class="pre">src/nrnpython/nrnpy_hoc.cpp</span></code>.
+All uses outside the folder must first check to see if the funciton pointer is not NULL; if it is NULL then Python is not
+available. This is done for a number of functions in the <code class="docutils literal notranslate"><span class="pre">nrnpy_hoc()</span></code> function in <code class="file docutils literal notranslate"><span class="pre">src/nrnpython/nrnpy_hoc.cpp</span></code>.</p>
+<section id="to-check-if-a-neuron-object-is-wrapping-a-pyobject">
+<h3>To check if a NEURON object is wrapping a PyObject<a class="headerlink" href="#to-check-if-a-neuron-object-is-wrapping-a-pyobject" title="Link to this heading"></a></h3>
+<p>To see if an Object* obj is wrapping a PyObject, check if</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">ctemplate</span><span class="o">-&gt;</span><span class="n">sym</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">nrnpy_pyobj_sym_</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The variable <code class="docutils literal notranslate"><span class="pre">nrnpy_pyobj_sym_</span></code> here is a <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code> and it is shared and available at least within <code class="docutils literal notranslate"><span class="pre">nrnpython</span></code>.
+(See object types below for more about detecting the type of an <code class="docutils literal notranslate"><span class="pre">Object*</span></code>.)</p>
+</section>
+<section id="to-check-if-a-pyobject-is-wrapping-a-neuron-object">
+<h3>To check if a PyObject is wrapping a NEURON object<a class="headerlink" href="#to-check-if-a-pyobject-is-wrapping-a-neuron-object" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">PyObject_TypeCheck(po,</span> <span class="pre">hocobject_type)</span></code> where <code class="docutils literal notranslate"><span class="pre">po</span></code> is the <code class="docutils literal notranslate"><span class="pre">PyObject</span></code>.</p>
+</section>
+<section id="to-encapsulate-a-neuron-object-in-a-pyobject">
+<h3>To encapsulate a NEURON Object in a PyObject<a class="headerlink" href="#to-encapsulate-a-neuron-object-in-a-pyobject" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">nrnpy_ho2po</span></code>. If the NEURON object is wrapping a <code class="docutils literal notranslate"><span class="pre">PyObject</span></code> it returns the original <code class="docutils literal notranslate"><span class="pre">PyObject</span></code> with the reference count increased by one.
+Otherwise it returns a <code class="docutils literal notranslate"><span class="pre">PyHocObject</span></code>. Note: this function does not convert NEURON strings or floats to <code class="docutils literal notranslate"><span class="pre">PyObject</span></code> instances as those are
+not internally stored with <code class="docutils literal notranslate"><span class="pre">Object</span></code> instances. Those can be converted directly using the CPython API e.g. <code class="docutils literal notranslate"><span class="pre">PyFloat_FromDouble</span></code>, <code class="docutils literal notranslate"><span class="pre">PyLong_FromLong</span></code>.</p>
+</section>
+<section id="to-encapsule-a-pyobject-in-a-neuron-object">
+<h3>To encapsule a PyObject in a NEURON Object<a class="headerlink" href="#to-encapsule-a-pyobject-in-a-neuron-object" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">nrnpy_po2ho</span></code>. If the object is wrapping a NEURON Object, it increments the NEURON object’s reference count by 1 and returns the original
+NEURON object. Otherwise it returns a new NEURON Object* wrapping the <code class="docutils literal notranslate"><span class="pre">PyObject</span></code> and increments the <code class="docutils literal notranslate"><span class="pre">PyObject</span></code> reference count (remember, this
+can be checked using the macro <code class="docutils literal notranslate"><span class="pre">Py_REFCNT</span></code>). In particular, this function <em>always</em> returns a NEURON object, even for
+strings and floats that would be more naturally represented in NEURON as their respective datatypes.</p>
+</section>
+<section id="to-check-if-a-pyobject-is-a-number">
+<h3>To check if a PyObject is a number<a class="headerlink" href="#to-check-if-a-pyobject-is-a-number" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">nrnpy_numbercheck(po)</span></code> where <code class="docutils literal notranslate"><span class="pre">po</span></code> is the <code class="docutils literal notranslate"><span class="pre">PyObject*</span></code> to check.</p>
+<p>This is built-on but has modified semantics from the CPython API <code class="docutils literal notranslate"><span class="pre">PyNumber_Check</span></code> to detect things that NEURON cannot treat directly as numbers,
+like complex numbers.</p>
+</section>
+<section id="to-reference-a-neuron-object">
+<h3>To reference a NEURON Object<a class="headerlink" href="#to-reference-a-neuron-object" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">hoc_obj_ref(obj)</span></code> where <code class="docutils literal notranslate"><span class="pre">obj</span></code> is an <code class="docutils literal notranslate"><span class="pre">Object*</span></code>. This is defined in <code class="file docutils literal notranslate"><span class="pre">src/oc/hoc_oop.c</span></code>. Include <code class="file docutils literal notranslate"><span class="pre">src/oc/oc_ansi.h</span></code> to define the function prototype.</p>
+</section>
+<section id="to-dereference-a-neuron-object">
+<h3>To dereference a NEURON Object<a class="headerlink" href="#to-dereference-a-neuron-object" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">hoc_obj_unref(obj)</span></code> where <code class="docutils literal notranslate"><span class="pre">obj</span></code> is an <code class="docutils literal notranslate"><span class="pre">Object*</span></code>. This is defined in <code class="file docutils literal notranslate"><span class="pre">src/oc/hoc_oop.c</span></code>. Include <code class="file docutils literal notranslate"><span class="pre">src/oc/oc_ansi.h</span></code> to define the function prototype.</p>
+</section>
+</section>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h2>
+<p>Only positional arguments (and sec=) are allowed in NEURON <em>except</em> for functions with no HOC
+equivalent that are handled separately.</p>
+<p>Note: NEURON argument indices are always numbered from 1.</p>
+<section id="check-for-the-existence-of-an-argument">
+<h3>Check for the existence of an argument<a class="headerlink" href="#check-for-the-existence-of-an-argument" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">ifarg(n)</span></code> to check to see if there is an <a href="#id1"><span class="problematic" id="id2">``</span></a>n``th argument (the arguments are numbered from 1).</p>
+<p>Many existing functions and methods currently do not check for too many arguments, however doing
+so is recommended as it indicates a probable user error.</p>
+</section>
+<section id="check-the-type-of-an-argument">
+<h3>Check the type of an argument<a class="headerlink" href="#check-the-type-of-an-argument" title="Link to this heading"></a></h3>
+<p>Relevant functions include:
+- <code class="docutils literal notranslate"><span class="pre">hoc_is_object_arg(n)</span></code>
+- <code class="docutils literal notranslate"><span class="pre">hoc_is_pdouble_arg(n)</span></code>
+- <code class="docutils literal notranslate"><span class="pre">hoc_is_str_arg(n)</span></code>
+- <code class="docutils literal notranslate"><span class="pre">hoc_is_double_arg(n)</span></code></p>
+</section>
+<section id="get-the-value-of-an-argument">
+<h3>Get the value of an argument<a class="headerlink" href="#get-the-value-of-an-argument" title="Link to this heading"></a></h3>
+<p>Relevant functions include:
+- <code class="docutils literal notranslate"><span class="pre">hoc_obj_getarg(n)</span></code></p>
+<blockquote>
+<div><p>May want to combine this with <code class="docutils literal notranslate"><span class="pre">nrnpy_ho2po</span></code> if you know the argument is a <code class="docutils literal notranslate"><span class="pre">PyObject</span></code>; e.g.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">PyObject</span><span class="o">*</span><span class="w"> </span><span class="n">obj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nrnpy_ho2po</span><span class="p">(</span><span class="o">*</span><span class="n">hoc_objgetarg</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">vector_arg(n)</span></code> – returns a <code class="docutils literal notranslate"><span class="pre">Vect*</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hoc_pgetarg(n)</span></code> – returns a <code class="docutils literal notranslate"><span class="pre">double**</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gargstr(n)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">getarg(n)</span></code> – returns a <code class="docutils literal notranslate"><span class="pre">double*</span></code>. Python bools, ints, and floats are all valid inputs.</p></li>
+</ul>
+<p>Note: attempting to get the wrong type of an argument displays a “bad stack access” message and
+a Python <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> exception gets raised. If multiple types of arguments are possible,
+you must check the type of the argument first.</p>
+</section>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<section id="declaring-classes">
+<h3>Declaring classes<a class="headerlink" href="#declaring-classes" title="Link to this heading"></a></h3>
+<p>Classes are declared using the <code class="docutils literal notranslate"><span class="pre">class2oc</span></code> function, e.g.</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">class2oc</span><span class="p">(</span><span class="s">&quot;ClassName&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cons</span><span class="p">,</span><span class="w"> </span><span class="n">destruct</span><span class="p">,</span><span class="w"> </span><span class="n">members</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">retobj_members</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Here <code class="docutils literal notranslate"><span class="pre">cons</span></code> is the constructor, which must take an <code class="docutils literal notranslate"><span class="pre">Object*</span></code> and return a <code class="docutils literal notranslate"><span class="pre">void*</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">destruct</span></code> is the destructor, which takes a <code class="docutils literal notranslate"><span class="pre">void*</span></code> and has no return.</p>
+<p><code class="docutils literal notranslate"><span class="pre">members</span></code> is a null-terminated array of <code class="docutils literal notranslate"><span class="pre">Member_func</span></code> of methods that in Python could return float,
+integer, or bool. In HOC, these all return doubles.
+- To specify the return type as seen by Python, set <code class="docutils literal notranslate"><span class="pre">hoc_return_type_code</span></code>. A value of 0 indicates</p>
+<blockquote>
+<div><p>the function is returning a float; 1 indicates an integer; a value of 2 indicates a bool.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Each of these methods must take a <code class="docutils literal notranslate"><span class="pre">void*</span></code> and return a double.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">retobj_methods</span></code> is a null-terminated array of <code class="docutils literal notranslate"><span class="pre">Member_ret_obj_func</span></code> of methods that return objects.
+(The actual functions implementing them take a <code class="docutils literal notranslate"><span class="pre">void*</span></code> and return an <code class="docutils literal notranslate"><span class="pre">Object**</span></code>.)</p>
+</section>
+<section id="object-types">
+<h3>Object types<a class="headerlink" href="#object-types" title="Link to this heading"></a></h3>
+<p>The type of every NEURON <code class="docutils literal notranslate"><span class="pre">Object*</span> <span class="pre">obj</span></code> is determined by it’s <code class="docutils literal notranslate"><span class="pre">ctemplate-&gt;sym</span></code>. This is a <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code>.
+The pointers can be directly compared to see if two objects are of the same type. In particular,
+a <code class="docutils literal notranslate"><span class="pre">Symbol</span></code> has a <code class="docutils literal notranslate"><span class="pre">char*</span></code> field <code class="docutils literal notranslate"><span class="pre">name</span></code>. That is, to print the name of the type
+that <code class="docutils literal notranslate"><span class="pre">obj</span></code> is an instance of, one can use:</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;The type of obj is: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">ctemplate</span><span class="o">-&gt;</span><span class="n">sym</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The <code class="docutils literal notranslate"><span class="pre">hoc_lookup</span></code> function takes a NEURON class name and returns the associated <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code>.
+For example:</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">Symbol</span><span class="o">*</span><span class="w"> </span><span class="n">vector_sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hoc_lookup</span><span class="p">(</span><span class="s">&quot;Vector&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>NEURON provides internal convenience functions <code class="docutils literal notranslate"><span class="pre">is_obj_type(Object*</span> <span class="pre">obj,</span> <span class="pre">const</span> <span class="pre">char*</span> <span class="pre">type_name)</span></code>
+and <code class="docutils literal notranslate"><span class="pre">check_obj_type(Object*</span> <span class="pre">obj,</span> <span class="pre">const</span> <span class="pre">char*</span> <span class="pre">type_name)</span></code> that check to see if <code class="docutils literal notranslate"><span class="pre">obj</span></code> is of the
+type specified by <code class="docutils literal notranslate"><span class="pre">type_name</span></code>. The former returns a 1 (true) or 0 (false); the latter has no
+return and raises an error if the type is wrong. These work by doing a <code class="docutils literal notranslate"><span class="pre">strcmp</span></code>. If the
+<code class="docutils literal notranslate"><span class="pre">Symbol*</span></code> is known, it is more efficient to directly compare the <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code>.</p>
+<p>For example, to see if <code class="docutils literal notranslate"><span class="pre">obj</span></code> is an instance of <code class="docutils literal notranslate"><span class="pre">Vector</span></code> and the <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code> is not already
+known, use <code class="docutils literal notranslate"><span class="pre">is_obj_type(obj,</span> <span class="pre">&quot;Vector&quot;)</span></code>.</p>
+<p>These convenience functions are defined in <code class="docutils literal notranslate"><span class="pre">src/oc/hoc_oop.cpp</span></code>.</p>
+</section>
+</section>
+<section id="hoccommand-objects">
+<h2>HocCommand objects<a class="headerlink" href="#hoccommand-objects" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">HocCommand</span></code> class, defined in <code class="docutils literal notranslate"><span class="pre">src/ivoc/objcmd.cpp</span></code>, provides a consistent interface
+for calling Python or HOC code. The constructor accepts a <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">char*</span></code> for HOC, or a
+<code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">char*</span></code> and an <code class="docutils literal notranslate"><span class="pre">Object*</span></code> also for HOC (in this case the HOC string is executed in
+the context of the object), or an <code class="docutils literal notranslate"><span class="pre">Object*</span></code> that wraps a Python callable.</p>
+<p>Each <code class="docutils literal notranslate"><span class="pre">HocCommand</span></code> object has a <code class="docutils literal notranslate"><span class="pre">pyobject()</span></code> method that returns the underlying Python
+object if any, else NULL. This can be used to distinguish between HOC and Python calls.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">execute()</span></code> method runs the underlying HOC or Python code. No value is returned in
+this case.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">func_call(int</span> <span class="pre">narg,</span> <span class="pre">int*</span> <span class="pre">perr)</span></code> method returns a double from invoking the HOC or Python.
+The value pointed to by <code class="docutils literal notranslate"><span class="pre">perr</span></code> is set to 1 if the <code class="docutils literal notranslate"><span class="pre">HocCommand</span></code> is to run Python but running
+Python failed. Otherwise <code class="docutils literal notranslate"><span class="pre">perr</span></code> is unchanged. In particular, note that if <code class="docutils literal notranslate"><span class="pre">perr</span></code> originally
+points to a 1, then it will still point to a 1 even upon success. The number of arguments is
+indicated with <code class="docutils literal notranslate"><span class="pre">narg</span></code>. The arguments themselves must have already been pushed onto NEURON’s
+stack, e.g. with <code class="docutils literal notranslate"><span class="pre">pushx</span></code> for doubles, <code class="docutils literal notranslate"><span class="pre">hoc_push_object</span></code> for <code class="docutils literal notranslate"><span class="pre">Object*</span></code>, <code class="docutils literal notranslate"><span class="pre">hoc_push_str</span></code>
+for <code class="docutils literal notranslate"><span class="pre">char**</span></code>, or <code class="docutils literal notranslate"><span class="pre">hoc_pushpx</span></code> for pointers to doubles (stack manipulation functions are
+defined in <code class="docutils literal notranslate"><span class="pre">src/oc/code.cpp</span></code>).</p>
+</section>
+<section id="miscellaneous-tips">
+<h2>Miscellaneous tips<a class="headerlink" href="#miscellaneous-tips" title="Link to this heading"></a></h2>
+<section id="raising-a-neuron-error">
+<h3>Raising a NEURON error<a class="headerlink" href="#raising-a-neuron-error" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">hoc_execerror</span></code> which takes two <code class="docutils literal notranslate"><span class="pre">char*</span></code> arguments (which can be NULL). e.g.</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">hoc_execerror</span><span class="p">(</span><span class="s">&quot;Message part 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Message part 2&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Note: all NEURON errors currently are received by Python as a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> exception, and all errors
+print their error messages before returning to Python, meaning that they will always print out, even
+inside a try/except block.</p>
+</section>
+<section id="checking-if-the-name-of-an-internal-symbol">
+<h3>Checking if the name of an internal symbol<a class="headerlink" href="#checking-if-the-name-of-an-internal-symbol" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">hoc_table_lookup(name,</span> <span class="pre">hoc_built_in_symlist)</span></code> returns NULL if <code class="docutils literal notranslate"><span class="pre">name</span></code> not in the symlist; otherwise
+it returns the <code class="docutils literal notranslate"><span class="pre">Symbol*</span></code></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../HOCInterpreter/HOCInterpreter.html" class="btn btn-neutral float-left" title="HOC Interpreter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../data-structures.html" class="btn btn-neutral float-right" title="Data structures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

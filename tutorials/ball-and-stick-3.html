@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ball and stick 3: Extensible network of cells &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ball and stick 4: Parallel vs serial mode" href="ball-and-stick-4.html" />
+    <link rel="prev" title="Ball and stick 2: Build a ring network of ball-and-stick cells" href="ball-and-stick-2.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pythontutorial.html">Introduction to Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting-neuron-basics.html">Scripting NEURON basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html">Ball and stick 1: Basic cell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html">Ball and stick 2: Build a ring network of ball-and-stick cells</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ball and stick 3: Extensible network of cells</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Loading-libraries">Loading libraries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Generic-Cell-class">Generic Cell class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Make-a-Ring-class">Make a Ring class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Test-the-network">Test the network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Explore-effects-of-parameters">Explore effects of parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html">Ball and stick 4: Parallel vs serial mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python tutorials</a></li>
+      <li class="breadcrumb-item active">Ball and stick 3: Extensible network of cells</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/ball-and-stick-3.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Ball-and-stick-3:-Extensible-network-of-cells">
+<h1>Ball and stick 3: Extensible network of cells<a class="headerlink" href="#Ball-and-stick-3:-Extensible-network-of-cells" title="Link to this heading"></a></h1>
+<p>This is the third part of a tutorial series where we build a multicompartment cell and evolve it into a network of cells running on a parallel machine. In this part, we take the functionality of the ring network we constructed in the previous page and encapsulate it into various classes so that the network is more extensible. We also begin parameterizing the model so that particular values are not hard-coded, but remain variable so that the model is flexible.</p>
+<section id="Loading-libraries">
+<h2>Loading libraries<a class="headerlink" href="#Loading-libraries" title="Link to this heading"></a></h2>
+<p>As before, we will begin by loading relevant NEURON libraries:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+</section>
+<section id="Generic-Cell-class">
+<h2>Generic Cell class<a class="headerlink" href="#Generic-Cell-class" title="Link to this heading"></a></h2>
+<p>In the last tutorial, we created a generic <code class="docutils literal notranslate"><span class="pre">Cell</span></code> class (actually, two versions) but we can expand this to make it more powerful. For example, let’s make each Cell record its spike times, some membrane potential timeseries, and keep track of NetCons.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Cell</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gid</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gid</span> <span class="o">=</span> <span class="n">gid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_morphology</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="o">.</span><span class="n">wholetree</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_biophysics</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">define_shape</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rotate_z</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_position</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+
+        <span class="c1"># everything below here in this method is NEW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spike_detector</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spike_times</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spike_detector</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spike_times</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ncs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">soma_v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">[</span><span class="si">{}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gid</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">n3d</span><span class="p">()):</span>
+                <span class="n">sec</span><span class="o">.</span><span class="n">pt3dchange</span><span class="p">(</span>
+                    <span class="n">i</span><span class="p">,</span>
+                    <span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">sec</span><span class="o">.</span><span class="n">x3d</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                    <span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">sec</span><span class="o">.</span><span class="n">y3d</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                    <span class="n">z</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">sec</span><span class="o">.</span><span class="n">z3d</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                    <span class="n">sec</span><span class="o">.</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>
+
+    <span class="k">def</span> <span class="nf">_rotate_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rotate the cell about the Z axis.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">n3d</span><span class="p">()):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">x3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">y3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                <span class="n">xprime</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">s</span>
+                <span class="n">yprime</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">s</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">c</span>
+                <span class="n">sec</span><span class="o">.</span><span class="n">pt3dchange</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">xprime</span><span class="p">,</span> <span class="n">yprime</span><span class="p">,</span> <span class="n">sec</span><span class="o">.</span><span class="n">z3d</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">sec</span><span class="o">.</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Since the <code class="docutils literal notranslate"><span class="pre">BallAndStick</span></code> has a simple geometry, we could modify it to assume that all inputs go into a single location; we will call it the <code class="docutils literal notranslate"><span class="pre">.syn</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BallAndStick</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;BallAndStick&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_setup_morphology</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;soma&quot;</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dend</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dend&quot;</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mf">12.6157</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_setup_biophysics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="p">:</span>
+            <span class="n">sec</span><span class="o">.</span><span class="n">Ra</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Axial resistance in Ohm * cm</span>
+            <span class="n">sec</span><span class="o">.</span><span class="n">cm</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Membrane capacitance in micro Farads / cm^2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">soma</span><span class="p">:</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">hh</span><span class="o">.</span><span class="n">gnabar</span> <span class="o">=</span> <span class="mf">0.12</span>  <span class="c1"># Sodium conductance in S/cm2</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">hh</span><span class="o">.</span><span class="n">gkbar</span> <span class="o">=</span> <span class="mf">0.036</span>  <span class="c1"># Potassium conductance in S/cm2</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">hh</span><span class="o">.</span><span class="n">gl</span> <span class="o">=</span> <span class="mf">0.0003</span>  <span class="c1"># Leak conductance in S/cm2</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">hh</span><span class="o">.</span><span class="n">el</span> <span class="o">=</span> <span class="o">-</span><span class="mf">54.3</span>  <span class="c1"># Reversal potential in mV</span>
+        <span class="c1"># Insert passive current in the dendrite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;pas&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="p">:</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">pas</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="mf">0.001</span>  <span class="c1"># Passive conductance in S/cm2</span>
+            <span class="n">seg</span><span class="o">.</span><span class="n">pas</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="o">-</span><span class="mi">65</span>  <span class="c1"># Leak reversal potential mV</span>
+
+        <span class="c1"># NEW: the synapse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">syn</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ExpSyn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dend</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">syn</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ms</span>
+</pre></div>
+</div>
+</div>
+<p>Due to the nature of <code class="docutils literal notranslate"><span class="pre">h.ExpSyn</span></code> decay, there is mathematically no difference between having two ExpSyn objects at the same point or one synapse where multiple inputs add linearly, so it suffices to have just the one as long as we’re happy with all inputs going into <code class="docutils literal notranslate"><span class="pre">dend(0.5)</span></code>.</p>
+</section>
+<section id="Make-a-Ring-class">
+<h2>Make a Ring class<a class="headerlink" href="#Make-a-Ring-class" title="Link to this heading"></a></h2>
+<p>Encapsulating code into discrete objects is not only conceptually useful for code management, but as we know with cell objects, it lets us make several instances of the object for use in a network. Thinking ahead, we may very well need several networks – each network configured differently. This allows scripting of several simulations en masse, either in a for loop that sequentially processes the networks, or it can be used with NEURON’s subworlds architecture in a parallel context.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Ring</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A network of *N* ball-and-stick cells where cell n makes an</span>
+<span class="sd">    excitatory synapse onto cell n + 1 and the last, Nth cell in the</span>
+<span class="sd">    network projects to the first cell.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">stim_w</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">stim_t</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">stim_delay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">syn_w</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">syn_delay</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">50</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param N: Number of cells.</span>
+<span class="sd">        :param stim_w: Weight of the stimulus</span>
+<span class="sd">        :param stim_t: time of the stimulus (in ms)</span>
+<span class="sd">        :param stim_delay: delay of the stimulus (in ms)</span>
+<span class="sd">        :param syn_w: Synaptic weight</span>
+<span class="sd">        :param syn_delay: Delay of the synapse</span>
+<span class="sd">        :param r: radius of the network</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syn_w</span> <span class="o">=</span> <span class="n">syn_w</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syn_delay</span> <span class="o">=</span> <span class="n">syn_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_cells</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_cells</span><span class="p">()</span>
+        <span class="c1"># add stimulus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_netstim</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetStim</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_netstim</span><span class="o">.</span><span class="n">number</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_netstim</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">stim_t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nc</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_netstim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">syn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nc</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">stim_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nc</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim_w</span>
+
+    <span class="k">def</span> <span class="nf">_create_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">PI</span> <span class="o">/</span> <span class="n">N</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">BallAndStick</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_connect_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]]):</span>
+            <span class="n">nc</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">syn</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">soma</span><span class="p">)</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_syn_w</span>
+            <span class="n">nc</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_syn_delay</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">_ncs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nc</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">_create_cells</span></code> method is basically the same as the <code class="docutils literal notranslate"><span class="pre">create_n_BallAndStick</span></code> function in the previous part of the tutorial; the only difference is that the cells are stored in <code class="docutils literal notranslate"><span class="pre">self._cells</span></code> instead of being returned. <code class="docutils literal notranslate"><span class="pre">_connect_cells</span></code> is shorter than the previous version because it can take advantage of the existing synapses and lists.</p>
+</section>
+<section id="Test-the-network">
+<h2>Test the network<a class="headerlink" href="#Test-the-network" title="Link to this heading"></a></h2>
+<p>Let’s make a <code class="docutils literal notranslate"><span class="pre">Ring</span></code> object with 5 cells, render it using NEURON’s built-in graphics, and run a simulation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ring</span> <span class="o">=</span> <span class="n">Ring</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now to check that it is constructed correctly:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">shape_window</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">shape_window</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>Looks good so far; let’s run the simulation and record time:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+</pre></div></div>
+</div>
+<p>Remember that if we are running in Jupyter to make a plot appear inline we must:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<p>Now plot the trace of cell 0’s soma:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">soma_v</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_ball-and-stick-3_25_0.png" src="../_images/tutorials_ball-and-stick-3_25_0.png" />
+</div>
+</div>
+<p>Cell 0 looks good. Let’s look at the raster diagram:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">cells</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">spike_times</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">1.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_ball-and-stick-3_27_0.png" src="../_images/tutorials_ball-and-stick-3_27_0.png" />
+</div>
+</div>
+</section>
+<section id="Explore-effects-of-parameters">
+<h2>Explore effects of parameters<a class="headerlink" href="#Explore-effects-of-parameters" title="Link to this heading"></a></h2>
+<p>Let’s compare two simulations: one with the same parameters as above, which we’ll plot in black, and one with half the synaptic weight, which we’ll plot in red:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">syn_w</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">0.01</span><span class="p">,</span> <span class="s2">&quot;black&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.005</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">)]:</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="n">Ring</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">syn_w</span><span class="o">=</span><span class="n">syn_w</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">cells</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">spike_times</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_ball-and-stick-3_30_0.png" src="../_images/tutorials_ball-and-stick-3_30_0.png" />
+</div>
+</div>
+<p>In both simulations, the first spike occurs at 10.925 ms. After that, the red spikes lag the black ones by steadily increasing amounts.</p>
+<p>The next part of the tutorial will translate this serial model into a parallel model. That part will not work in Jupyter and must be run from a terminal.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ball-and-stick-2.html" class="btn btn-neutral float-left" title="Ball and stick 2: Build a ring network of ball-and-stick cells" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ball-and-stick-4.html" class="btn btn-neutral float-right" title="Ball and stick 4: Parallel vs serial mode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

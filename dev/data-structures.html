@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data structures &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Testing GPU functionality" href="gpu-testing.html" />
+    <link rel="prev" title="How-Do-I Guide" href="how-do-i/how-do-i.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">NEURON Development topics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="HOCInterpreter/HOCInterpreter.html">HOC Interpreter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-do-i/how-do-i.html">How-Do-I Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data structures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-field-features">Advanced field features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#runtime-variable-field-counts">Runtime-variable field counts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#optional-fields">Optional fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#explicit-default-values">Explicit default values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#array-variables">Array variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pretty-printing">Pretty printing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-container-features">Advanced container features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compatibility-with-older-mod-files">Compatibility with older MOD files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#storing-addresses-of-range-variables">Storing addresses of RANGE variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#assuming-neuron-data-types-have-visible-definitions">Assuming NEURON data types have visible definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#assuming-array-of-structs-data-layout">Assuming array-of-structs data layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#out-of-bounds-access">Out-of-bounds access</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#assuming-you-know-how-the-code-generation-works">Assuming you know how the code generation works</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-in-neuron">Integration in NEURON</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#summary-of-migrated-data-structures">Summary of migrated data structures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#integration-of-data-handles">Integration of data handles</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sorting-algorithms">Sorting algorithms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#transient-cache">Transient cache</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#future-work">Future work</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#elimination-of-legacy-indices">Elimination of “legacy indices”</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#completing-migration-of-node-and-prop">Completing migration of <code class="docutils literal notranslate"><span class="pre">Node</span></code> and <code class="docutils literal notranslate"><span class="pre">Prop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eliminate-the-need-for-cvmemblist-ml-to-be-a-vector">Eliminate the need for <code class="docutils literal notranslate"><span class="pre">CvMembList::ml</span></code> to be a vector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eliminate-the-need-for-literal-value">Eliminate the need for <code class="docutils literal notranslate"><span class="pre">literal_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eliminating-pdata-in-a-less-invasive-way">Eliminating <code class="docutils literal notranslate"><span class="pre">pdata</span></code> in a less invasive way</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gpu-testing.html">Testing GPU functionality</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow-code-paths.html">Workflow Code Paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setuptools/setuptools.html">setuptools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morphology/morphology.html">Morphology loading in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hocdomain-sphinx.html">HOC Sphinx Domain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">NEURON Development topics</a></li>
+      <li class="breadcrumb-item active">Data structures</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dev/data-structures.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-structures">
+<h1>Data structures<a class="headerlink" href="#data-structures" title="Link to this heading"></a></h1>
+<p>This section provides higher-level documentation of the data structures used in NEURON,
+complementing the lower-level Doxygen documentation of the
+<a class="reference external" href="../doxygen/namespaceneuron_1_1container.html">neuron::container::</a> namespace.</p>
+<p>NEURON 9.0[.dev] contains substantial changes to the organisation of model data, of which the
+most notable is a transposition from an array-of-structs (AoS) layout to a struct-of-arrays (SoA)
+layout, following the model of CoreNEURON.
+These changes were introduced in GitHub pull request
+<a class="reference external" href="https://github.com/neuronsimulator/nrn/pull/2027">#2027</a>.</p>
+<p>As well as adopting an SoA layout, this work also introduces new “<strong>data handle</strong>” types that
+enable persistent references to elements in the data structures, which automatically remain valid
+even when the underlying storage arrays are re-allocated, or their elements are reordered
+(permuted).</p>
+<p>The basic idea is to allow us to refer to logical elements of a NEURON model (<em>e.g.</em> “the Node at
+the centre of this Section”) via struct-like “handle” objects that abstract away both the size of
+the underlying arrays containing the Node data, and the current index of a given (logical) Node in
+those arrays.</p>
+<p>Performance-sensitive code code, such as the Node matrix solver algorithm and “current” and “state”
+functions that are generated from MOD files, can operate directly on the underlying array storage,
+taking advantage of improved cache efficiency and (in some cases) vectorisation, without paying for
+the relatively slow indirection inherent to the “<strong>data handle</strong>” and “<strong>Node handle</strong>” types
+introduced above.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>NEURON 9.0[.dev]’s SoA data structures are based on the
+<a class="reference external" href="../doxygen/structneuron_1_1container_1_1soa.html">neuron::container::soa</a>  variadic template
+class.
+Here is an example of its use:</p>
+<img alt="../_images/soa-architecture.svg" src="../_images/soa-architecture.svg" /><p>This defines an SoA data structure (<code class="docutils literal notranslate"><span class="pre">ab_store</span></code>) with two <strong>data</strong> arrays for variables
+imaginatively named <code class="docutils literal notranslate"><span class="pre">A</span></code> (red) and <code class="docutils literal notranslate"><span class="pre">B</span></code> (blue).
+There is an implicit extra “index” array (purple) that is needed for the implementation of the
+“handle” types introduced above; no matter how many variables are added to the structure, there is
+still just one index array.</p>
+<p>Let’s unpick this example a little more, starting with the definition of our <code class="docutils literal notranslate"><span class="pre">ab_store</span></code> type:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">ab_store</span><span class="o">:</span><span class="w"> </span><span class="n">soa</span><span class="o">&lt;</span><span class="n">ab_store</span><span class="p">,</span><span class="w"> </span><span class="n">field</span><span class="o">::</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">field</span><span class="o">::</span><span class="n">B</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">neuron::container::soa&lt;...&gt;</span></code> template uses
+<a class="reference external" href="https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern">CRTP</a>, which is why the
+first template argument to <code class="docutils literal notranslate"><span class="pre">soa&lt;...&gt;</span></code> is the derived class name <code class="docutils literal notranslate"><span class="pre">ab_store</span></code>; the reasons for
+this are not important for a high-level overview and it can be ignored for the moment.</p>
+<p>All the remaining template arguments, <code class="docutils literal notranslate"><span class="pre">field::A,</span> <span class="pre">field::B</span></code> in this case, are <strong>tag types</strong> that
+define the <strong>fields</strong> of our data structure.
+A minimal definition of these would be something like:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">field</span><span class="w"> </span><span class="p">{</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">A</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">B</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="p">}</span><span class="w">  </span><span class="c1">// namespace field</span>
+</pre></div>
+</div>
+<p>Which would specify that the <code class="docutils literal notranslate"><span class="pre">A</span></code> values shown above (red <code class="docutils literal notranslate"><span class="pre">a0</span></code>, <code class="docutils literal notranslate"><span class="pre">a1</span></code>, <em>etc.</em>) are of type
+<code class="docutils literal notranslate"><span class="pre">double</span></code>, while the <code class="docutils literal notranslate"><span class="pre">B</span></code> values (blue <code class="docutils literal notranslate"><span class="pre">b0</span></code>, <code class="docutils literal notranslate"><span class="pre">b1</span></code>, <em>etc.</em>) are of type <code class="docutils literal notranslate"><span class="pre">int</span></code>.
+Certain additional functions and variables can be added to the tag types to control, for example,
+pretty-printing of data handles, non-zero default values, and non-scalar fields.</p>
+<p>In essence, our struct <code class="docutils literal notranslate"><span class="pre">ab_store</span></code>, if we wrote it out manually, would look something like:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">ab_store_manual</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a_values</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">b_values</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="cm">/* unspecified */</span><span class="o">&gt;</span><span class="w"> </span><span class="n">indices</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>As with any other <code class="docutils literal notranslate"><span class="pre">std::vector</span></code>-based type, the currently allocated capacity and the current size
+are different to one another; in the illustration above there are five elements (the size), but
+there are two unused elements (<code class="docutils literal notranslate"><span class="pre">...</span></code>) in each array, so the capacity is seven.</p>
+<p>The index column has so far been glossed over, but you may have noticed that, for example,
+0<sup>th</sup> entry is shown as “→ 0” in the figure above.
+In essence, the index column type is “pointer to integer”, and the pointed-to integers are kept up
+to date so they always hold the <strong>current</strong> index into the storage array of a given logical entry.
+Expressed as code, this means that:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">indices</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">*</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>should never trigger an error.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While a large part of the motivation for allowing the underlying arrays to be reordered is that
+it allows explicit permutation of the data for performance reasons, it also permits other
+optimisations. For example, deletion from NEURON’s data structures is <span class="math notranslate nohighlight">\(\mathcal{O}(1)\)</span>,
+whereas erasing from a regular <code class="docutils literal notranslate"><span class="pre">std::vector</span></code> is <span class="math notranslate nohighlight">\(\mathcal{O}(N)\)</span>. This is because the
+index mechanism allows deletion to be implemented by swapping the last element of the array
+into the deleted position and reducing the size by one.</p>
+</div>
+<p>The data handle type described above essentially hold a pair of pointers: one that can be
+dereferenced to get the address of the 0<sup>th</sup> entry in the data array, and one
+pointer-to-integer taken from the index column:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">data_handle_double_manual</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="o">*</span><span class="w"> </span><span class="n">ptr_to_array_base</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="o">*</span><span class="w"> </span><span class="n">ptr_to_current_row</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">double</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">get_value</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ptr_to_array_base</span><span class="p">)[</span><span class="o">*</span><span class="n">ptr_to_current_row</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>This is enough indirection that neither re-ordering nor re-allocating the actual data storage
+invalidates any instances of <code class="docutils literal notranslate"><span class="pre">data_handle_double_manual</span></code>.
+The real type used in the NEURON code-base is the
+<a class="reference external" href="../doxygen/structneuron_1_1container_1_1data__handle.html">neuron::container::data_handle</a>
+template, <em>i.e.</em> we use <code class="docutils literal notranslate"><span class="pre">data_handle&lt;double&gt;</span></code> in place of <code class="docutils literal notranslate"><span class="pre">data_handle_double_manual</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You may wonder what happens when an entry is deleted from the data structures. In this case the
+storage for the <strong>data</strong> of the deleted element (<em>i.e.</em> its <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> values) is released
+and made available for re-use, but its entry in the index vector is not freed and the
+pointed-to integer is updated with a sentinel value. This means that data handles that referred
+to now-deleted entries (<code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> values) can detect that they are no longer valid and
+will not return invalid values.</p>
+</div>
+<p>Of course, this indirection also means that these data handles are not especially performant, but
+in general they are intended to solve otherwise-tedious bookkeeping problems, and
+performance-critical code is expected to operate directly on the underlying vectors.
+In other cases, such as <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables in MOD files, data handles are used while the model
+is being built in memory, but they are “flattened” into plain <code class="docutils literal notranslate"><span class="pre">double*</span></code> for use during the actual
+simulation, where performance <strong>is</strong> important <strong>and</strong> it is known that no re-allocation or
+re-ordering will occur that could invalidate those raw pointers.</p>
+<p>The “data handle” type just discussed is the right tool for the job if we want to refer to a single
+value of a type that is known at compile time, but there are a few other types of “handle” that are
+also supported:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="../doxygen/structneuron_1_1container_1_1generic__data__handle.html">neuron::container::generic_data_handle</a>
+is a type-erased version of <code class="docutils literal notranslate"><span class="pre">neuron::container::data_handle</span></code>, similar to
+<a class="reference external" href="https://en.cppreference.com/w/cpp/utility/any">std::any</a>.</p></li>
+<li><p>Handles to higher-level objects. For example, if the entity that has an “a” [side] and a “b”
+[side] is a vinyl, we can also have “vinyl handles”, which provide accessors <code class="docutils literal notranslate"><span class="pre">a()</span></code> and <code class="docutils literal notranslate"><span class="pre">b()</span></code>.
+These handles come in two flavours:</p>
+<ul>
+<li><p>non-owning: like the “data handle” types above, these refer to an entry in the <code class="docutils literal notranslate"><span class="pre">ab_store</span></code>
+container and provide access to both “a” and “b” [these are currently not used outside tests]</p></li>
+<li><p>owning: like non-owning handles, these refer to an entry in the <code class="docutils literal notranslate"><span class="pre">ab_store</span></code> container and
+provide access to both “a” and “b” values. The key difference is that owning handles have
+owning semantics: creating an owning handle appends a new entry to the underlying data arrays
+and destroying an owning handle deletes that (owned) entry from the arrays.</p></li>
+</ul>
+</li>
+</ul>
+<p>The following code snippet illustrates the use of owning handles:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">ab_store</span><span class="w"> </span><span class="n">my_data</span><span class="p">{};</span>
+<span class="n">data_handle</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dh</span><span class="p">{};</span>
+<span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="n">dh</span><span class="p">);</span><span class="w"> </span><span class="c1">// not pointing to a valid value</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// my_data.size() == 0</span>
+<span class="w">  </span><span class="n">owning_vinyl_handle</span><span class="w"> </span><span class="n">heroes</span><span class="p">{</span><span class="n">my_data</span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// now my_data.size() == 1</span>
+<span class="w">  </span><span class="n">heroes</span><span class="p">.</span><span class="n">a</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">19.817</span><span class="p">;</span><span class="w"> </span><span class="c1">// runtime in minutes</span>
+<span class="w">  </span><span class="n">heroes</span><span class="p">.</span><span class="n">b</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w">      </span><span class="c1">// track count</span>
+<span class="w">  </span><span class="c1">// higher-level handles-to-entities can produce lower-level handles-to-values</span>
+<span class="w">  </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">heroes</span><span class="p">.</span><span class="n">b_handle</span><span class="p">();</span>
+<span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="n">dh</span><span class="p">);</span><span class="w"> </span><span class="c1">// now pointing to a valid value</span>
+<span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="o">*</span><span class="n">dh</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">5</span><span class="p">);</span>
+<span class="w">  </span><span class="o">*</span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w"> </span><span class="c1">// bonus track</span>
+<span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="n">heroes</span><span class="p">.</span><span class="n">b</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">6</span><span class="p">);</span><span class="w"> </span><span class="c1">// `dh` and `heroes.b()` refer to the same value</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// `heroes` is destroyed when it goes out of scope at this closing brace</span>
+<span class="c1">// my_data.size() == 0 again</span>
+<span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="n">dh</span><span class="p">);</span><span class="w"> </span><span class="c1">// pointed-to value is no longer valid</span>
+</pre></div>
+</div>
+<p>&lt;/laboured_vinyl_analogies&gt;</p>
+</section>
+<section id="advanced-field-features">
+<h2>Advanced field features<a class="headerlink" href="#advanced-field-features" title="Link to this heading"></a></h2>
+<p>You should now be familiar with the key components of the new NEURON data structures, however there
+are – of course – some additional features that were not included in the overview above.</p>
+<p>In the example above, we used a simple tag type:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">A</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>to define a scalar field.
+There are several additional features in <code class="docutils literal notranslate"><span class="pre">neuron::container::soa&lt;...&gt;</span></code> that are not enabled in
+the example above.
+Additional features are generally enabled by using tag types that have
+additional member functions and variables. There are three advanced tag types:
+optional fields; array-valued fields, i.e. fields for which each row has
+multiple values; and tags which contain multiple, possibly array-valued,
+fields. All three are shown schematically in the figure below; and described in
+detail in the following subsections. In the figure fields with the same color
+must have the same scalar type. The zigzag line represents the memory layout
+for array-valued fields.</p>
+<img alt="../_images/soa-advanced-tag-types.svg" src="../_images/soa-advanced-tag-types.svg" /><section id="runtime-variable-field-counts">
+<h3>Runtime-variable field counts<a class="headerlink" href="#runtime-variable-field-counts" title="Link to this heading"></a></h3>
+<p>In the introductory example, the <code class="docutils literal notranslate"><span class="pre">ab_store</span></code> example has precisely two data fields: <code class="docutils literal notranslate"><span class="pre">A</span></code> and
+<code class="docutils literal notranslate"><span class="pre">B</span></code>.
+This can only be changed at compile time, by adding or removing tag types from the definition of
+<code class="docutils literal notranslate"><span class="pre">ab_store</span></code>.
+Sometimes, more flexibility is required: in this case, a member function named <code class="docutils literal notranslate"><span class="pre">num_variables()</span></code>
+can be added to the relevant tag type, for example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">field</span><span class="w"> </span><span class="p">{</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">C</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">m_count</span><span class="p">{</span><span class="n">count</span><span class="p">}</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">;</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_variables</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">m_count</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">m_count</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="p">}</span><span class="w">  </span><span class="c1">// namespace field</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">some_cs</span><span class="o">:</span><span class="w"> </span><span class="n">soa</span><span class="o">&lt;</span><span class="n">some_cs</span><span class="p">,</span><span class="w"> </span><span class="n">field</span><span class="o">::</span><span class="n">C</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">base_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">soa</span><span class="o">&lt;</span><span class="n">some_cs</span><span class="p">,</span><span class="w"> </span><span class="n">field</span><span class="o">::</span><span class="n">C</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">  </span><span class="n">some_cs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">base_type</span><span class="p">{</span><span class="n">field</span><span class="o">::</span><span class="n">C</span><span class="p">{</span><span class="n">count</span><span class="p">}}</span><span class="w"> </span><span class="p">{}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">some_cs</span></code> struct will be similar to:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">some_cs_manual</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">some_cs_manual</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">c_data</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">c_data</span><span class="p">;</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="cm">/* unspecified */</span><span class="o">&gt;</span><span class="w"> </span><span class="n">indices</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>and the “inner” vectors will all be the same size as each other, <em>i.e.</em>
+<code class="docutils literal notranslate"><span class="pre">c_data[i].size()</span> <span class="pre">==</span> <span class="pre">indices.size()</span></code> for <code class="docutils literal notranslate"><span class="pre">i</span></code> in <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">..</span> <span class="pre">count-1</span></code>.</p>
+<p>This involves slightly more indirection and runtime checking than the original example with
+everything fixed at compile time.</p>
+<p>The canonical example of usage of this is the storage for <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables in MOD files, where a
+single tag type (<code class="docutils literal notranslate"><span class="pre">neuron::container::Mechanism::field::FloatingPoint</span></code>) with a <code class="docutils literal notranslate"><span class="pre">num_variables()</span></code>
+method is used to generate one <code class="docutils literal notranslate"><span class="pre">std::vector&lt;double&gt;</span></code> per <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable.</p>
+<p>Note that this also demonstrates how non-empty tag types can be used to hold extra information, the
+<code class="docutils literal notranslate"><span class="pre">neuron::container::soa&lt;derived,</span> <span class="pre">Tags...&gt;</span></code> template has a constructor taking <code class="docutils literal notranslate"><span class="pre">Tags...</span></code>, and it
+stores an instance of each tag type internally that can be accessed via the <code class="docutils literal notranslate"><span class="pre">get_tag&lt;Tag&gt;()</span></code>
+member function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you use this mechanism, note that you must provide the <code class="docutils literal notranslate"><span class="pre">soa&lt;...&gt;</span></code> constructor with
+instances of tag types in the same order as they appear in the declaration. Also, repeated tag
+types are not allowed.</p>
+</div>
+</section>
+<section id="optional-fields">
+<h3>Optional fields<a class="headerlink" href="#optional-fields" title="Link to this heading"></a></h3>
+<p>If it is known that the number of fields will be zero or one, <em>i.e.</em> the field is optional, then a
+simplified tag type can be used:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">OptionalA</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>This defines a simple field like <code class="docutils literal notranslate"><span class="pre">A</span></code> above, with <code class="docutils literal notranslate"><span class="pre">std::vector&lt;double&gt;</span></code> backing storage, but it
+can be toggled on and off at runtime using the <code class="docutils literal notranslate"><span class="pre">set_field_status</span></code> method, and its status can be
+queried using the <code class="docutils literal notranslate"><span class="pre">field_active</span></code> method.</p>
+<p>The real-world use of this is the data for the fast membrane current calculation, which is only
+filled if it has been enabled at runtime using <a class="reference internal" href="../python/simctrl/cvode.html#CVode.use_fast_imem" title="CVode.use_fast_imem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CVode.use_fast_imem()</span></code></a>.</p>
+</section>
+<section id="explicit-default-values">
+<h3>Explicit default values<a class="headerlink" href="#explicit-default-values" title="Link to this heading"></a></h3>
+<p>If you do not explicitly specify otherwise, new values in the storage arrays – produced by, as
+shown above, creating owning handles – will be zero-initialised.
+If the relevant tag type has a member function called <code class="docutils literal notranslate"><span class="pre">default_value()</span></code>, new values will be
+initialised with the value returned by that function.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">D</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">default_value</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mf">4.2</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Real-world examples of this include Node voltages (which default to -65) and Node areas (which
+default to 100).</p>
+</section>
+<section id="array-variables">
+<h3>Array variables<a class="headerlink" href="#array-variables" title="Link to this heading"></a></h3>
+<p>In the examples shown so far, the fields have all had scalar types such as <code class="docutils literal notranslate"><span class="pre">double</span></code> and <code class="docutils literal notranslate"><span class="pre">int</span></code>.
+Sometimes, it is necessary to use represent vector data with multiple contiguous values for each
+instance of an entity.
+If the vector size was known at compile time, this could in principle be done with a tag type along
+the lines of:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;array&gt;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">E</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">float</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>However, if the vector size is only known at runtime this would not work; a workaround along the
+lines of:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">F</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>would be ill-advised, as it would force a number of independent allocations that scales linearly in
+the container size.</p>
+<p>Instead, we can signal to the <code class="docutils literal notranslate"><span class="pre">neuron::container::soa</span></code> helper that each time we add an instance
+to the container we would like multiple values to be allocated:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">G</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">;</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">array_dimension</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">42</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>gives essentially the same memory layout as the example usin <code class="docutils literal notranslate"><span class="pre">std::array&lt;float,</span> <span class="pre">42&gt;</span></code>, but it has
+the major advantage that <code class="docutils literal notranslate"><span class="pre">42</span></code> can be replaced with a value that is only known at runtime.</p>
+<p>The memory layout when <code class="docutils literal notranslate"><span class="pre">array_dimension()</span></code> returns two is shown below.
+In the figure, the container <code class="docutils literal notranslate"><span class="pre">size()</span></code> is three.</p>
+<img alt="../_images/soa-array-var-layout.svg" src="../_images/soa-array-var-layout.svg" /><p>To use <code class="docutils literal notranslate"><span class="pre">array_dimension()</span></code> in conjunction with <code class="docutils literal notranslate"><span class="pre">num_variables()</span></code>, the signature has to be
+modified slightly:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">H</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">;</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_variables</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="cm">/* unspecified */</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">array_dimension</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>where the integer argument <code class="docutils literal notranslate"><span class="pre">i</span></code> lies in <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">..</span> <span class="pre">num_variables()-1</span></code> and the function should, as you
+might expect, return the desired array dimension for the <code class="docutils literal notranslate"><span class="pre">i</span></code><sup>th</sup> copy of the field
+represented by this tag type.</p>
+<p>Real-world usage of this feature is, again, <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables in MOD files, as each individual
+<code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable can have an array dimension.
+The array dimension must be global to all instances of the mechanism (entity); there is no support
+for arrays of per-instance-variable size.</p>
+</section>
+<section id="pretty-printing">
+<h3>Pretty printing<a class="headerlink" href="#pretty-printing" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">data_handle&lt;T&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> handle-to-value types support pretty-printing to
+<code class="docutils literal notranslate"><span class="pre">std::ostream&amp;</span></code> via <code class="docutils literal notranslate"><span class="pre">operator&lt;&lt;</span></code> overloading, yielding results like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">data_handle</span><span class="o">&lt;</span><span class="n">double</span><span class="o">&gt;</span><span class="p">{</span><span class="n">Node</span><span class="p">::</span><span class="n">field</span><span class="p">::</span><span class="n">Voltage</span> <span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span> <span class="n">val</span><span class="o">=</span><span class="mi">42</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>By default, the printed names are derived from the names of the tag types, however when
+<code class="docutils literal notranslate"><span class="pre">num_variables()</span></code> is used then the best that this method can yield are names like
+<code class="docutils literal notranslate"><span class="pre">Entity::field::FloatingPoint#7</span></code>.
+Once again, an extra method defined in the tag type allows more human-friendly names to be given:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">I</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">short</span><span class="p">;</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_variables</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="cm">/* unspecified */</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">name</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">assert</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_variables</span><span class="p">());</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">name_table</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// ... name_table definition ...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Once again, the real-world usage of this comes from <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables in MOD files; the NMODL
+variable names are passed in to the relevant tag type and returned from the <code class="docutils literal notranslate"><span class="pre">name</span></code> method.</p>
+</section>
+</section>
+<section id="advanced-container-features">
+<span id="advanced-soa-container-features"></span><h2>Advanced container features<a class="headerlink" href="#advanced-container-features" title="Link to this heading"></a></h2>
+<p>You should now have a reasonable idea of what kinds of data can be represented, and how to express
+the desired fields using tag types.
+In this section we will explore some more advanced runtime features of containers implemented using
+<code class="docutils literal notranslate"><span class="pre">neuron::container::soa&lt;...&gt;</span></code>.</p>
+<p>Let’s take a simplified three-stage view of how NEURON is used:</p>
+<ol class="arabic simple">
+<li><p>We construct our model, this basically means creating Node and Mechanism instances, although it
+may also involve deleting them. It is driven by the user and consists of a very large number of
+independent calls from Python (or HOC) user code into the NEURON library.</p></li>
+<li><p>We prepare the model data for simulation. This is done by NEURON internally and implicitly, the
+user just asks for the simulation to run.</p></li>
+<li><p>We run the simulation.</p></li>
+</ol>
+<p>During step 1, the ordering of the underlying data arrays is essentially unknown; the data are
+“unsorted”.
+Step 3 is generally where the majority of the computational time is spent, so we want the relevant
+algorithms there to operate directly on the underlying data arrays, and to be able to make
+assumptions about the ordering of thoese data.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In general terms, this is important because some of these algorithms reduce to loops with data
+dependencies that inhibit more <strong>generic</strong> optimisations such as autovectorisation.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In principle then most dynamic memory [re-]allocation in step 1 can be avoided if an <strong>good</strong>
+estimate of the final model size is available.
+There is currently no way of providing this estimate, but it would be a relatively simple
+change to NEURON to expose a <a class="reference external" href="https://en.cppreference.com/w/cpp/container/vector/reserve">std::vector::reserve</a>-like method (pay attention to
+the “Notes” section of that page).
+Note that calling this <em>repeatedly</em> is likely to be a bad idea, as it can inhibit the standard
+exponential growth of the allocated storage size, but a single call to <code class="docutils literal notranslate"><span class="pre">reserve</span></code> before
+constructing the model with an estimate of the complete model size may be worthwhile.</p>
+</div>
+<p>Step 2 is thus responsible for sorting the unordered data of step 1 into sorted data suitable for
+step 3.
+How the ordering scheme is defined will be described in <a class="reference internal" href="#soa-data-integration-in-neuron"><span class="std std-ref">Integration in NEURON</span></a>
+below, for now let’s just note that <code class="docutils literal notranslate"><span class="pre">neuron::container::soa</span></code> provides a method named
+<code class="docutils literal notranslate"><span class="pre">apply_reverse_permutation</span></code> that takes a [reverse] permutation vector, that is a range of
+integers such that <code class="docutils literal notranslate"><span class="pre">perm_vector[old_position]</span></code> is the destination index for the value that
+initially sits at index <code class="docutils literal notranslate"><span class="pre">old_position</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The algorithm used to apply the permutation uses the given vector as temporary storage, so
+<strong>this method modifies its argument</strong>. NB: the “reverse” terminology is consistent with Boost;
+a “forward” permutation would move <code class="docutils literal notranslate"><span class="pre">perm_vector[new_position]</span></code> to <code class="docutils literal notranslate"><span class="pre">new_position</span></code>.</p>
+</div>
+<p>It should be apparent from the discussion so far that immediately after step 2, the data are
+“sorted”, but that this is a fragile state: creating or destroying a single Node or Mechanism
+instance would leave the data “unsorted” once more.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">soa&lt;...&gt;</span></code> utility provides some additional functionality to manage this fragility in an
+efficient and straightforward to reason about way, which is the topic of this section.</p>
+<p>First, the containers maintain a “sorted” flag: if you flag a container as “sorted” then it will
+remain flagged “sorted” until one of the following happens:</p>
+<ul class="simple">
+<li><p>You explicitly flag it as “unsorted”.</p></li>
+<li><p>You add or erase an element from it.</p></li>
+<li><p>You apply a permutation to it.</p></li>
+</ul>
+<p>This allows step 2 to be short-circuited.</p>
+<p>Second, it is possible to forbid (at runtime) operations that would cause the container to become
+“unsorted” by marking it “frozen”.
+This is done using a token type:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">whatever</span><span class="p">(</span><span class="n">my_soa_container</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// assume `data` was not already &quot;frozen&quot;</span>
+<span class="w">    </span><span class="n">owning_handle</span><span class="w"> </span><span class="n">foo</span><span class="p">{</span><span class="n">data</span><span class="p">};</span><span class="w"> </span><span class="c1">// adding an element is OK</span>
+<span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">issue_frozen_token</span><span class="p">();</span><span class="w"> </span><span class="c1">// mark container &quot;frozen&quot;</span>
+<span class="w">    </span><span class="n">owning_handle</span><span class="w"> </span><span class="n">disappointing_foo</span><span class="p">{</span><span class="n">data</span><span class="p">};</span><span class="w">  </span><span class="c1">// this will throw</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// `token`` is destroyed here; `data` ceases to be &quot;frozen&quot;</span>
+</pre></div>
+</div>
+<p>The container maintains a count of how many tokens are controlling it and is “frozen” whenever that
+count is nonzero.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>An unfortunate edge case of the current implementation is that trying to delete an owning
+handle that refers to a “frozen” container will cause the program to terminate.
+This is because trying to erase from a “frozen” container is forbidden, and will throw an
+exception, leaving the destructor of the owning handle no better option than to immediately
+terminate. See also: <a class="reference external" href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Re-never-fail">E.16: Destructors, deallocation, swap, and exception type copy/move
+construction must never fail</a> from the C++
+Core Guidelines.</p>
+<p>So far this does not appear to be a problem.
+One, so far theoretical, issue is that any code which takes a callback from the user that is
+executed during the simulation cannot realistically prevent that user callback from attempting
+to delete part of the model data.
+It is also imaginable that the current or future GUI implementation could fall foul of this,
+but it has not been seen in practice.</p>
+</div>
+<p>Finally, it is possible to register a callback using the <code class="docutils literal notranslate"><span class="pre">set_unsorted_callback</span></code> method, which
+is executed whenever the container transitions from “sorted” to “unsorted”.
+This is used in NEURON to invalidate temporary data that is derived from, and whose validity is
+linked to, the “sorted” data generated in step 2 above.</p>
+</section>
+<section id="compatibility-with-older-mod-files">
+<span id="porting-mechanisms-to-new-data-structures"></span><h2>Compatibility with older MOD files<a class="headerlink" href="#compatibility-with-older-mod-files" title="Link to this heading"></a></h2>
+<p>Given the substantial changes behind the scenes, migrating to using the data structures described
+on this page is not 100% backwards compatible.
+In the vast majority of cases, issues stem from the use of <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks in MOD files,
+although it can also occur that references to model data based on the new data handles are
+“stickier” than the old explicit-pointer-update based techniques and manage to continue, for
+example, recording data to a vector where older versions failed to.
+This latter case is unlikely to cause a major problem, so <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks are most likely all
+that you need to worry about.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have a model that stopped compiling when you upgraded to or beyond
+NEURON 9.0[.dev], the first thing that you should check is
+whether the relevant MOD files have already been updated in ModelDB or in the
+GitHub repository of that model. You can check the repository name with the
+model accession number under <a class="reference external" href="https://github.com/ModelDBRepository">https://github.com/ModelDBRepository</a>.
+An updated version may already be available!</p>
+<p>The following section also contains links to the models that were updated in preparation for the
+new data structures, which may serve as useful references.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Moving from NEURON 8 or earlier to NEURON 9.0[.dev] also switches MOD files from being
+translated into C to being translated into C++ code, which is also not 100% backwards
+compatible.
+If you are migrating between these versions and encounter issues, you should also check:
+<a class="reference internal" href="../guide/porting_mechanisms_to_cpp.html#porting-mechanisms-to-cpp"><span class="std std-ref">Adapting MOD files for C++ with NEURON 9.0[.dev]</span></a>.</p>
+</div>
+<p>This section aims to summarise a few of the anti-patterns that cropped up repeatedly in the ModelDB
+models listed above.</p>
+<section id="storing-addresses-of-range-variables">
+<h3>Storing addresses of RANGE variables<a class="headerlink" href="#storing-addresses-of-range-variables" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> code along the lines of</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">some_double_pointer_saved_for_later</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">some_range_variable</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">some_double_pointer_saved_for_later</span></code> has a lifetime longer than one
+method in your MOD file is not a good idea.
+If the model data is re-allocated (<em>e.g.</em> because a new instance of the mechanism is created) or
+re-ordered (<em>e.g.</em> because you request processing with a different number of threads) then the
+saved pointer will either become invalid, or point to unrelated data.</p>
+<p>It is best to completely avoid logic like this.
+Mechanisms that refer to data in other parts of the model can use constructs such as <code class="docutils literal notranslate"><span class="pre">POINTER</span></code>.</p>
+<p>Examples in ModelDB: <a class="reference external" href="https://github.com/ModelDBRepository/7399/pull/3">7399</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/12631/pull/4">12631</a> and
+<a class="reference external" href="https://github.com/ModelDBRepository/52034/pull/2">52034</a>.</p>
+</section>
+<section id="assuming-neuron-data-types-have-visible-definitions">
+<span id="assuming-neuron-data-types-are-visible-in-generated-cpp-code"></span><h3>Assuming NEURON data types have visible definitions<a class="headerlink" href="#assuming-neuron-data-types-have-visible-definitions" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> code along the lines of</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Section</span><span class="o">*</span><span class="w"> </span><span class="n">sec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">chk_access</span><span class="p">();</span><span class="w"> </span><span class="c1">// OK-ish, declared in nrn_ansi.h</span>
+<span class="n">Section</span><span class="o">*</span><span class="w"> </span><span class="n">child</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sec</span><span class="o">-&gt;</span><span class="n">child</span><span class="p">;</span><span class="w"> </span><span class="c1">// now an error, Section is a forward-declaration</span>
+</pre></div>
+</div>
+<p>will no longer compile, because the <code class="docutils literal notranslate"><span class="pre">Section</span></code> struct is only visible to the C++ code generated
+from MOD files as a forward declaration (<code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">Section;</span></code>), so member access (<code class="docutils literal notranslate"><span class="pre">sec-&gt;child</span></code>)
+will fail.</p>
+<p>The example used here is <code class="docutils literal notranslate"><span class="pre">Section</span></code>, but the same applies to <code class="docutils literal notranslate"><span class="pre">Prop</span></code> and <code class="docutils literal notranslate"><span class="pre">Node</span></code>.</p>
+<p>Insofar as these patterns are really necessary, free-standing accessor functions should be used.</p>
+<p>Examples in ModelDB: <a class="reference external" href="https://github.com/ModelDBRepository/83344/pull/2">83344</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/97917/pull/4">97917</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/106891/pull/4">106891</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/116838/pull/2">116838</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/136095/pull/3">136095</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/138379/pull/2">138379</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/140881/pull/2">140881</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/141505/pull/2">141505</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/144538/pull/2">144538</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/146949/pull/2">146949</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/150245/pull/2">150245</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/244262/pull/2">244262</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/267067/pull/4">267067</a> and
+<a class="reference external" href="https://github.com/ModelDBRepository/267384/pull/2">267384</a>.</p>
+</section>
+<section id="assuming-array-of-structs-data-layout">
+<span id="assuming-aos-layout-in-generated-cpp-code"></span><h3>Assuming array-of-structs data layout<a class="headerlink" href="#assuming-array-of-structs-data-layout" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> code along the lines of</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Prop</span><span class="o">*</span><span class="w"> </span><span class="n">prop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* unspecified */</span><span class="p">;</span>
+<span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">mech_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prop</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">;</span><span class="w"> </span><span class="c1">// member access doesn&#39;t compile anymore, and...</span>
+<span class="kt">double</span><span class="w"> </span><span class="n">third_range_var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mech_data</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="c1">// assumes struct-of-arrays layout</span>
+</pre></div>
+</div>
+<p>is guilty both of <a class="reference internal" href="#assuming-neuron-data-types-are-visible-in-generated-cpp-code"><span class="std std-ref">Assuming NEURON data types have visible definitions</span></a> <strong>and</strong>
+of assuming array-of-structs layout.</p>
+<p>In AoS layout, the value of the 2<sup>nd</sup> <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable for a particular mechanism instance
+is immediately after the value of the 1<sup>st</sup> <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable for that instance.
+In SoA layout, those two values are in general nowhere near each other, and the offset is certainly
+not a compile time constant that one can write down.</p>
+<p>Insofar as this pattern is really necessary, accessor functions provided by NEURON should be used
+so that the NEURON library code can correctly find the n<sup>th</sup> <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable for a
+particular mechanism instance.</p>
+<p>Example in ModelDB: <a class="reference external" href="https://github.com/ModelDBRepository/106891/pull/4">106891</a>,</p>
+</section>
+<section id="out-of-bounds-access">
+<h3>Out-of-bounds access<a class="headerlink" href="#out-of-bounds-access" title="Link to this heading"></a></h3>
+<p>If you declare <code class="docutils literal notranslate"><span class="pre">RANGE</span> <span class="pre">x[3],</span> <span class="pre">y</span></code> then do not access <code class="docutils literal notranslate"><span class="pre">x[3]</span></code>, <code class="docutils literal notranslate"><span class="pre">x[4]</span></code> and so on.
+This was always a bad idea and always generally led to incorrect results, but the transposition to
+SoA layout will in general lead to differently-wrong results.
+In AoS layout, <code class="docutils literal notranslate"><span class="pre">x[3]</span></code> was probably the same as <code class="docutils literal notranslate"><span class="pre">y</span></code>, with SoA it is probably <code class="docutils literal notranslate"><span class="pre">x[0]</span></code> of a
+different instance of the mechanism.</p>
+<p>Do not do this.</p>
+<p>Example in ModelDB: <a class="reference external" href="https://github.com/ModelDBRepository/113446/pull/1">113446</a>,</p>
+</section>
+<section id="assuming-you-know-how-the-code-generation-works">
+<h3>Assuming you know how the code generation works<a class="headerlink" href="#assuming-you-know-how-the-code-generation-works" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> code along the lines of</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// restore pointers each time</span>
+<span class="n">Prop</span><span class="o">*</span><span class="w"> </span><span class="n">prop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* unspecified */</span><span class="p">;</span>
+<span class="n">_p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prop</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">;</span>
+<span class="n">_ppvar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prop</span><span class="o">-&gt;</span><span class="n">dparam</span><span class="p">;</span>
+<span class="n">some_function</span><span class="p">(</span><span class="n">range_var</span><span class="w"> </span><span class="cm">/* a RANGE variable name */</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>is guilty both of <a class="reference internal" href="#assuming-neuron-data-types-are-visible-in-generated-cpp-code"><span class="std std-ref">Assuming NEURON data types have visible definitions</span></a> <strong>and</strong>
+of assuming things about how the C++ code generation from MOD files works.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">nocmodl</span></code> translator, <code class="docutils literal notranslate"><span class="pre">range_var</span></code> is a preprocessor macro whose definition used to use
+a variable <code class="docutils literal notranslate"><span class="pre">double*</span> <span class="pre">_p</span></code>.
+We have already seen in <a class="reference internal" href="#assuming-aos-layout-in-generated-cpp-code"><span class="std std-ref">Assuming array-of-structs data layout</span></a> that this no longer makes
+sense.</p>
+<p>Do not assume that you know how the code generation works and how to “reset” which mechanism
+instance <code class="docutils literal notranslate"><span class="pre">range_var</span></code> refers to.</p>
+<p>Examples in ModelDB: <a class="reference external" href="https://github.com/ModelDBRepository/116838/pull/2">116838</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/136095/pull/3">136095</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/138379/pull/2">138379</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/140881/pull/2">140881</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/141505/pull/2">141505</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/144538/pull/2">144538</a>,
+<a class="reference external" href="https://github.com/ModelDBRepository/146949/pull/2">146949</a> and
+<a class="reference external" href="https://github.com/ModelDBRepository/150245/pull/2">150245</a>.</p>
+</section>
+</section>
+<section id="integration-in-neuron">
+<span id="soa-data-integration-in-neuron"></span><h2>Integration in NEURON<a class="headerlink" href="#integration-in-neuron" title="Link to this heading"></a></h2>
+<p>This section aims to give some more high-level details about how the data structures described
+above are actually integrated into NEURON.</p>
+<section id="summary-of-migrated-data-structures">
+<h3>Summary of migrated data structures<a class="headerlink" href="#summary-of-migrated-data-structures" title="Link to this heading"></a></h3>
+<p>In brief, Node data – excluding that for the fast membrane current calculation (<code class="docutils literal notranslate"><span class="pre">fast_imem</span></code>) –
+uses the data structures described above.
+Mechanisms, whether defined via MOD files or at runtime using components like KSChan, manage their
+floating-point (<code class="docutils literal notranslate"><span class="pre">double</span></code>) data using the new data structures: essentially data for <code class="docutils literal notranslate"><span class="pre">RANGE</span></code>
+variables.
+Other mechanism data, such as that stored in <code class="docutils literal notranslate"><span class="pre">pdata</span></code> for <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables, has not been
+modified.
+However, the data type for <code class="docutils literal notranslate"><span class="pre">pdata</span></code>, which used to be a union type named <code class="docutils literal notranslate"><span class="pre">Datum</span></code>, is now the
+<code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> type introduced above.</p>
+<p>In both cases, the struct that represented a Node (<code class="docutils literal notranslate"><span class="pre">Node</span></code>) or Mechanism instances (<code class="docutils literal notranslate"><span class="pre">Prop</span></code>) in
+older versions of NEURON has been augmented to have a member variable that is an owning handle to
+a row of the relevant new-style data structure.</p>
+</section>
+<section id="integration-of-data-handles">
+<h3>Integration of data handles<a class="headerlink" href="#integration-of-data-handles" title="Link to this heading"></a></h3>
+<p>There have been far-reaching efforts to replace raw pointers (<code class="docutils literal notranslate"><span class="pre">double*</span></code>) that may refer to model
+data with data handles (<code class="docutils literal notranslate"><span class="pre">data_handle&lt;double&gt;</span></code>) that are stable with respect to permutations of
+the underlying data structures.
+The data handle type is aware of the global Node and Mechanism data structures and is able to scan
+them to promote a raw pointer that <strong>does</strong> point into the model data into a data handle that will
+stably refer to that value.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This scan is not especially fast and is mainly intended to allow incremental migration towards
+using data handles directly everywhere.</p>
+</div>
+<p>The data handle type also supports a fall-back mode where it simply wraps a raw pointer that does
+not point into the model data structures described on this page.
+Thanks to this fall-back mode, <code class="docutils literal notranslate"><span class="pre">double*</span></code> can safely be replaced with <code class="docutils literal notranslate"><span class="pre">data_handle&lt;double&gt;</span></code>
+without loss of generality, and this substitution has been made in the HOC stack machine.</p>
+</section>
+<section id="sorting-algorithms">
+<span id="soa-data-integration-in-neuron-sorting-algorithms"></span><h3>Sorting algorithms<a class="headerlink" href="#sorting-algorithms" title="Link to this heading"></a></h3>
+<p>To date no novel sort orders for the model data have been introduced and when the data are prepared
+for simulation they simply follow the old ordering scheme.
+One difference is that previously some data arrays were allocated separately for each <code class="docutils literal notranslate"><span class="pre">NrnThread</span></code>
+object, while now there is a single array shared by all <code class="docutils literal notranslate"><span class="pre">NrnThread</span></code> objects, each of which is
+assigned a (disjoint) contiguous range to process.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This means that changing the number of <code class="docutils literal notranslate"><span class="pre">NrnThread</span></code> objects in use, via
+<a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext.nthread" title="ParallelContext.nthread"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.nthread()</span></code></a>, does not trigger significant re-allocation and simply modifies
+the sort order.</p>
+</div>
+<p>For Node data, this is handled by the <code class="docutils literal notranslate"><span class="pre">nrn_sort_node_data</span></code> internal function which simply takes
+the order saved to <code class="docutils literal notranslate"><span class="pre">NrnThread::_v_node</span></code> by the old implementation.</p>
+<p>For Mechanism data, this is handled by the <code class="docutils literal notranslate"><span class="pre">nrn_sort_mech_data</span></code> internal function, which follows
+a similar order to <code class="docutils literal notranslate"><span class="pre">nrn_sort_node_data</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When using CVODE in some configurations the current implementation is not sophisticated enough
+to ensure that the Mechanism instances that CVODE will want to execute in one batch are
+contiguous in memory.
+To keep the implementation reasonably simple, in this case the Mechanism instances will be
+executed in N batches of 1 instead of, as we would prefer for performance reasons, 1 batch of
+N instances.
+This can, presumably, be addressed with a more sophisticated sort order in this case.
+The relevant code can be identified by searching for cases where the <code class="docutils literal notranslate"><span class="pre">CvMembList::ml</span></code> vector
+has a size greater than one.
+ModelDB entries 156120 and 267666 are some fairly arbitrary examples that follow this codepath.</p>
+</div>
+</section>
+<section id="transient-cache">
+<h3>Transient cache<a class="headerlink" href="#transient-cache" title="Link to this heading"></a></h3>
+<p>It can be useful, when preparing the model data for simulation, to save some extra outputs from the
+sort algorithm that are made available to the algorithms that execute the simulation.
+For example:</p>
+<ul class="simple">
+<li><p>For each <code class="docutils literal notranslate"><span class="pre">NrnThread</span></code>, what is the offset in the global Node data at which its Nodes start?</p></li>
+<li><p>For a Mechanism with <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variable, what is the raw pointer value into the [frozen] data?</p></li>
+</ul>
+<p>These are data that can be computed when calculating how to sort the data, and which only remain
+valid for as long as the data remain sorted.</p>
+<p>The cache structures that hold these data are defined in the
+<a class="reference external" href="../doxygen/namespaceneuron_1_1cache.html">neuron::cache::</a> namespace.
+Normally the entry point to the cache and data sorting algorithms from within the NEURON codebase
+is a single function: <code class="docutils literal notranslate"><span class="pre">nrn_ensure_model_data_are_sorted()</span></code>.
+This coordinates sorting and populating the caches for both Node and Mechanism data, returning a
+token of type <code class="docutils literal notranslate"><span class="pre">neuron::model_sorted_token</span></code> that uses the tokens described in
+<a class="reference internal" href="#advanced-soa-container-features"><span class="std std-ref">Advanced container features</span></a> to guarantee that the model data remain sorted, and also
+provides access to the cache.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// triggers model data sorting if it&#39;s not already sorted</span>
+<span class="k">auto</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nrn_ensure_model_data_are_sorted</span><span class="p">();</span>
+<span class="c1">// creating a new Node would now fail; data structures are frozen</span>
+<span class="n">NrnThread</span><span class="o">&amp;</span><span class="w"> </span><span class="n">nt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* ... */</span><span class="p">;</span>
+<span class="k">auto</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">token</span><span class="p">.</span><span class="n">thread_cache</span><span class="p">(</span><span class="n">nt</span><span class="p">.</span><span class="n">id</span><span class="p">).</span><span class="n">node_data_offset</span><span class="p">;</span>
+<span class="c1">// nt&#39;s nodes start at `offset` in the global Node data structure</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">set_unsorted_callback</span></code> feature described above ensures that the cache does not outlive its
+validity.</p>
+</section>
+</section>
+<section id="future-work">
+<h2>Future work<a class="headerlink" href="#future-work" title="Link to this heading"></a></h2>
+<p>This section contains a brief summary of future work that would be beneficial on these topics.</p>
+<section id="elimination-of-legacy-indices">
+<h3>Elimination of “legacy indices”<a class="headerlink" href="#elimination-of-legacy-indices" title="Link to this heading"></a></h3>
+<p>As explained above, in the presence of array <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables, <em>e.g.</em> <code class="docutils literal notranslate"><span class="pre">RANGE</span> <span class="pre">x[2]</span></code>, a
+“struct of arrays of structs” (SoAoS) layout is used, with <code class="docutils literal notranslate"><span class="pre">x[0]</span></code> and <code class="docutils literal notranslate"><span class="pre">x[1]</span></code> contiguous in
+memory for a given mechanism instance.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this isn’t what you want for a particular mechanism, you can replace <code class="docutils literal notranslate"><span class="pre">RANGE</span> <span class="pre">x[2]</span></code> with
+<code class="docutils literal notranslate"><span class="pre">RANGE</span> <span class="pre">x0,</span> <span class="pre">x1</span></code>…</p>
+</div>
+<p>A consequence of this is that indices into the <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables of a mechanism and indices into
+array <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables are in different directions/dimensions.
+Consider a MOD file with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RANGE</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">z</span>
+</pre></div>
+</div>
+<p>Then we have the following indices. <em>e.g.</em> <code class="docutils literal notranslate"><span class="pre">y[1]</span></code> has <span class="math notranslate nohighlight">\(i=1\)</span> because <cite>y</cite> is the second
+<code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable and <span class="math notranslate nohighlight">\(j=1\)</span> because of the subscript <code class="docutils literal notranslate"><span class="pre">[1]</span></code>; it has legacy index
+<span class="math notranslate nohighlight">\(k=2\)</span> because there are two values “before” it (<code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y[0]</span></code>).</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Data</p></th>
+<th class="head"><p>Variable index <span class="math notranslate nohighlight">\(i\)</span></p></th>
+<th class="head"><p>Array index <span class="math notranslate nohighlight">\(j\)</span></p></th>
+<th class="head"><p>Legacy index <span class="math notranslate nohighlight">\(k\)</span></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">x</span></code></p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">y[0]</span></code></p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">y[1]</span></code></p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">z</span></code></p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+</tr>
+</tbody>
+</table>
+<p>The legacy index is the position in the old <code class="docutils literal notranslate"><span class="pre">Prop::param</span></code> vector.
+When using the new SoAoS layout, one needs <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> separately.
+Note that, in general, <span class="math notranslate nohighlight">\(i + j \ne k\)</span>.</p>
+<p>This task is to eliminate usage of the legacy index.
+Searching for <code class="docutils literal notranslate"><span class="pre">legacy_index</span></code> in the codebase is an excellent starting point.</p>
+</section>
+<section id="completing-migration-of-node-and-prop">
+<h3>Completing migration of <code class="docutils literal notranslate"><span class="pre">Node</span></code> and <code class="docutils literal notranslate"><span class="pre">Prop</span></code><a class="headerlink" href="#completing-migration-of-node-and-prop" title="Link to this heading"></a></h3>
+<p>As explained above in <a class="reference internal" href="#soa-data-integration-in-neuron"><span class="std std-ref">Integration in NEURON</span></a>, the <code class="docutils literal notranslate"><span class="pre">Node</span></code> and <code class="docutils literal notranslate"><span class="pre">Prop</span></code> structs are
+still explicit structs that old owning handles to Node / Mechanism data as member variables.</p>
+<p>This should be viewed as a transition measure, which is quite verbose because it requires accessor
+functions like <code class="docutils literal notranslate"><span class="pre">rhs()</span></code> to be implemented twice: once in
+<code class="docutils literal notranslate"><span class="pre">neuron::container::Node::handle_interface</span></code> and a forwarding version in <code class="docutils literal notranslate"><span class="pre">Node</span></code> itself.</p>
+<p>The intent is that once the migration is complete, the <code class="docutils literal notranslate"><span class="pre">Node</span></code> and <code class="docutils literal notranslate"><span class="pre">Prop</span></code> structs will no longer
+be needed, and they can simply become aliases for, respectively, <code class="docutils literal notranslate"><span class="pre">Node::owning_handle</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Mechanism::owning_handle</span></code>.</p>
+</section>
+<section id="eliminate-the-need-for-cvmemblist-ml-to-be-a-vector">
+<h3>Eliminate the need for <code class="docutils literal notranslate"><span class="pre">CvMembList::ml</span></code> to be a vector<a class="headerlink" href="#eliminate-the-need-for-cvmemblist-ml-to-be-a-vector" title="Link to this heading"></a></h3>
+<p>See the description above under <a class="reference internal" href="#soa-data-integration-in-neuron-sorting-algorithms"><span class="std std-ref">Sorting algorithms</span></a>.</p>
+</section>
+<section id="eliminate-the-need-for-literal-value">
+<h3>Eliminate the need for <code class="docutils literal notranslate"><span class="pre">literal_value</span></code><a class="headerlink" href="#eliminate-the-need-for-literal-value" title="Link to this heading"></a></h3>
+<p>As introduced above in <a class="reference internal" href="#soa-data-integration-in-neuron"><span class="std std-ref">Integration in NEURON</span></a>, the old <code class="docutils literal notranslate"><span class="pre">Datum</span></code> union has been
+replaced by the new type-erased data handle <code class="docutils literal notranslate"><span class="pre">neuron::container::generic_data_handle</span></code>.</p>
+<p>To match the flexibility of the old <code class="docutils literal notranslate"><span class="pre">Datum</span></code>, this had to be augmented to allow small literal
+values (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">double</span></code>, <code class="docutils literal notranslate"><span class="pre">void*</span></code>, …) to be stored inside it and accessed via either
+<code class="docutils literal notranslate"><span class="pre">get&lt;T&gt;()</span></code> (if only the value is required) or <code class="docutils literal notranslate"><span class="pre">literal_value&lt;T&gt;()</span></code> if, even worse, the address
+of the wrapped value needs to be taken.</p>
+<p>This should be viewed as a hacky transition measure that can be removed, and which should provide
+a performance benefit: storing an <code class="docutils literal notranslate"><span class="pre">int</span></code> as a literal value inside a <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> is
+less space efficient, and involves more indirection, than simply storing an array of <code class="docutils literal notranslate"><span class="pre">int</span></code> values
+via a tag type with <code class="docutils literal notranslate"><span class="pre">using</span> <span class="pre">type</span> <span class="pre">=</span> <span class="pre">int</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While detailed benchmarks have not been performed…it has been noted that storing the <code class="docutils literal notranslate"><span class="pre">int</span></code>
+<code class="docutils literal notranslate"><span class="pre">iontype</span></code> variable as a literal value inside <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> is visible in profiles.</p>
+</div>
+<p>In principle all usage of the old <code class="docutils literal notranslate"><span class="pre">pdata</span></code>, and of <code class="docutils literal notranslate"><span class="pre">Datum</span></code> AKA <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> should be
+removed using the same prescription, i.e. new fields with the relevant tag types.
+The current implementation allows an unnecessary amount of freedom, namely that the n<sup>th</sup>
+<code class="docutils literal notranslate"><span class="pre">pdata</span></code> field could refer to a different-typed value for each instance of the mechanism.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If, for example, <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables were managed using a new field with a tag type</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">PointerVariables</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_handle</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>that ultimately generates <code class="docutils literal notranslate"><span class="pre">std::vector&lt;data_handle&lt;double&gt;&gt;</span></code> then note that this structure
+could be benchmarked + optimised using the knowledge that all the data handles will(?) be
+pointing into the same container.</p>
+</div>
+<p>See also: <a class="reference external" href="https://github.com/neuronsimulator/nrn/issues/2312">#2312</a>.</p>
+</section>
+<section id="eliminating-pdata-in-a-less-invasive-way">
+<h3>Eliminating <code class="docutils literal notranslate"><span class="pre">pdata</span></code> in a less invasive way<a class="headerlink" href="#eliminating-pdata-in-a-less-invasive-way" title="Link to this heading"></a></h3>
+<p>The previous sub-section is the “ideal” way of removing the old <code class="docutils literal notranslate"><span class="pre">pdata</span></code> structure, which is
+desirable because at present it takes some care to ensure that it is permuted in the same way as
+the other Mechanism data.</p>
+<p>An alternative stepping stone would be to retain <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> for the moment, but to
+transpose <code class="docutils literal notranslate"><span class="pre">pdata</span></code> from AoS to SoA.</p>
+<section id="reduce-indirection-when-mod-files-use-diam">
+<h4>Reduce indirection when MOD files use <code class="docutils literal notranslate"><span class="pre">diam</span></code><a class="headerlink" href="#reduce-indirection-when-mod-files-use-diam" title="Link to this heading"></a></h4>
+<p>MOD files can access the section diameter using the special <code class="docutils literal notranslate"><span class="pre">diam</span></code> variable name.
+Examples of this include <code class="docutils literal notranslate"><span class="pre">share/examples/nrniv/nmodl/nadifl.mod</span></code> and ModelDB entry 184054.
+This is handled explicitly in the codebase, and the underlying storage for <code class="docutils literal notranslate"><span class="pre">diam</span></code> values is
+managed via a special pseudomechanism called <code class="docutils literal notranslate"><span class="pre">MORPHOLOGY</span></code>.
+When <code class="docutils literal notranslate"><span class="pre">diam</span></code> is used in the generated code, the values are indirectly looked up using
+<code class="docutils literal notranslate"><span class="pre">data_handle&lt;double&gt;</span></code> during the simulation, which is rather slow and indirect.
+There are (at least?) two possibilities for how the situation can be improved:</p>
+<ul class="simple">
+<li><p>Adopt the same caching technique that is used for ion variables, <em>i.e.</em> don’t change the data
+layout but do reduce the indirection down to loading a pointer and dereferencing it.
+To pursue this, look at <code class="docutils literal notranslate"><span class="pre">neuron::cache::indices_to_cache</span></code> and modify the code generation to use
+the cached pointer.</p></li>
+<li><p>Revisit whether the <code class="docutils literal notranslate"><span class="pre">MORPHOLOGY</span></code> pseudomechanism is still needed, or whether the diameter could
+be stored directly as a <code class="docutils literal notranslate"><span class="pre">Node</span></code> data field? See <a class="reference external" href="https://github.com/neuronsimulator/nrn/issues/2312">#2312</a> for more information.</p></li>
+</ul>
+<p>Similarly, usage of <code class="docutils literal notranslate"><span class="pre">area</span></code> in generated code may be able to be simplified.
+Most likely, the best approach is to uniformly handle <code class="docutils literal notranslate"><span class="pre">area</span></code> and <code class="docutils literal notranslate"><span class="pre">diam</span></code> in the same way as Node
+voltages, both in terms of the underlying data structure and how they are accessed in the generated
+code.</p>
+</section>
+<section id="analyze-the-bookkeeping-overhead">
+<h4>Analyze the bookkeeping overhead<a class="headerlink" href="#analyze-the-bookkeeping-overhead" title="Link to this heading"></a></h4>
+<p>There a crude printf-based tool to access memory usage of the datastructures
+<code class="docutils literal notranslate"><span class="pre">print_local_memory_usage</span></code> and <code class="docutils literal notranslate"><span class="pre">print_memory_stats</span></code>.
+This provides some kind of breakdown between the actual data, the “active” bookkeeping costs
+(the currently-used index columns, as explained above), and also the “wasted” overhead of values
+that have their deletion deferred in order to avoid leaving any data handles “in the wild” from
+accidentally dereferencing freed pointers.</p>
+<p>The need to “leak” the stable identifiers could be avoided by replacing the
+“raw pointer to integer” idea with a reference counted integer, with bitpacking
+and all.</p>
+<p>Alternatively, this “wasted” storage could, be recovered after a full traversal of all data
+structures that hold <code class="docutils literal notranslate"><span class="pre">data_handle&lt;T&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">generic_data_handle</span></code> that collapses handles that are
+in previously-valid-but-not-any-more (once valid?) state into “null” (never valid?) state.</p>
+<p>Reporting and monitoring the scale of this “waste” is much easier than recovering it, which should
+only be done <strong>if</strong> this is <strong>shown</strong> to be a real problem.</p>
+<p>Measurements at BBP have shown that under certain conditions the amount of
+“leaked” stable identifiers adds up.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how-do-i/how-do-i.html" class="btn btn-neutral float-left" title="How-Do-I Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gpu-testing.html" class="btn btn-neutral float-right" title="Testing GPU functionality" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

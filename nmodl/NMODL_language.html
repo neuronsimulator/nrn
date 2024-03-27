@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neuron MODelling Language &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NEURON SCM and Release" href="../scm/index.html" />
+    <link rel="prev" title="NMODLanguage" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">NMODLanguage</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Neuron MODelling Language</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Compiling-example-mod-files">Compiling example mod files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#NMODL-Code-Blocks">NMODL Code Blocks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#DEFINE">DEFINE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#INCLUDE">INCLUDE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#NEURON">NEURON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#UNITS">UNITS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#PARAMETER">PARAMETER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ASSIGNED">ASSIGNED</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#CONSTANT">CONSTANT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#NET_RECEIVE">NET_RECEIVE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Functionality-Example">Functionality Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#CONSTRUCTOR">CONSTRUCTOR</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DESTRUCTOR">DESTRUCTOR</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#INITIAL">INITIAL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#STATE">STATE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#BREAKPOINT">BREAKPOINT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DERIVATIVE">DERIVATIVE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#KINETIC">KINETIC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#FUNCTION">FUNCTION</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#PROCEDURE">PROCEDURE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#LINEAR">LINEAR</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#NONLINEAR">NONLINEAR</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#LOCAL">LOCAL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DISCRETE">DISCRETE</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Other-NMODL-constructs">Other NMODL constructs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#TABLE">TABLE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#FUNCTION_TABLE">FUNCTION_TABLE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#BEFORE">BEFORE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#AFTER">AFTER</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#FOR_NETCONS">FOR_NETCONS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#PROTECT">PROTECT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#MUTEXLOCK-/-MUTEXUNLOCK">MUTEXLOCK / MUTEXUNLOCK</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#VERBATIM">VERBATIM</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">NMODLanguage</a></li>
+      <li class="breadcrumb-item active">Neuron MODelling Language</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/nmodl/NMODL_language.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Neuron-MODelling-Language">
+<h1>Neuron MODelling Language<a class="headerlink" href="#Neuron-MODelling-Language" title="Link to this heading"></a></h1>
+<p>Intro about NMODLanguage similar to <a class="reference external" href="https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl.html">https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl.html</a>, <a class="reference external" href="https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html">https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html</a></p>
+<p>Organization: - Top level code blocks (NEURON, BREAKPOINT, etc) - Code block specific keywords/operators/variable types - Other functionality</p>
+<section id="Compiling-example-mod-files">
+<h2>Compiling example mod files<a class="headerlink" href="#Compiling-example-mod-files" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%capture</span> --no-display
+<span class="err">!</span><span class="n">nrnivmodl</span> <span class="n">mod</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="NMODL-Code-Blocks">
+<h2>NMODL Code Blocks<a class="headerlink" href="#NMODL-Code-Blocks" title="Link to this heading"></a></h2>
+<section id="DEFINE">
+<h3>DEFINE<a class="headerlink" href="#DEFINE" title="Link to this heading"></a></h3>
+</section>
+<section id="INCLUDE">
+<h3>INCLUDE<a class="headerlink" href="#INCLUDE" title="Link to this heading"></a></h3>
+</section>
+<section id="NEURON">
+<h3>NEURON<a class="headerlink" href="#NEURON" title="Link to this heading"></a></h3>
+<section id="SUFFIX">
+<h4>SUFFIX<a class="headerlink" href="#SUFFIX" title="Link to this heading"></a></h4>
+</section>
+<section id="POINT_PROCESS">
+<h4>POINT_PROCESS<a class="headerlink" href="#POINT_PROCESS" title="Link to this heading"></a></h4>
+</section>
+<section id="THREADSAFE">
+<h4>THREADSAFE<a class="headerlink" href="#THREADSAFE" title="Link to this heading"></a></h4>
+</section>
+<section id="ELECTRODE_CURRENT">
+<h4>ELECTRODE_CURRENT<a class="headerlink" href="#ELECTRODE_CURRENT" title="Link to this heading"></a></h4>
+</section>
+<section id="Example-mod-file">
+<h4>Example mod file<a class="headerlink" href="#Example-mod-file" title="Link to this heading"></a></h4>
+<p>Following example showcases the IClamp mechanism. It makes use of the <code class="docutils literal notranslate"><span class="pre">ELECTRODE_CURRENT</span></code> and <code class="docutils literal notranslate"><span class="pre">IF-ELSE</span></code> statement.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>../../src/nrnoc/stim.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+COMMENT
+Since this is an electrode current, positive values of i depolarize the cell
+and in the presence of the extracellular mechanism there will be a change
+in vext since i is not a transmembrane current but a current injected
+directly to the inside of the cell.
+ENDCOMMENT
+
+NEURON {
+        POINT_PROCESS IClamp
+        RANGE del, dur, amp, i
+        ELECTRODE_CURRENT i
+}
+UNITS {
+        (nA) = (nanoamp)
+}
+
+PARAMETER {
+        del (ms)
+        dur (ms)        &lt;0,1e9&gt;
+        amp (nA)
+}
+ASSIGNED { i (nA) }
+
+INITIAL {
+        i = 0
+}
+
+BREAKPOINT {
+        at_time(del)
+        at_time(del+dur)
+
+        if (t &lt; del + dur &amp;&amp; t &gt;= del) {
+                i = amp
+        }else{
+                i = 0
+        }
+}
+</pre></div></div>
+</div>
+</section>
+<section id="Functionality-example">
+<h4>Functionality example<a class="headerlink" href="#Functionality-example" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>python_scripts/iclamp.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+from neuron import h
+
+from utils.cell import Cell
+
+
+class hhCellIClamp(Cell):
+    def _create_cell(self):
+        h(&#34;&#34;&#34;create soma&#34;&#34;&#34;)
+        h.load_file(&#34;stdrun.hoc&#34;)
+        h.soma.L = 5.6419
+        h.soma.diam = 5.6419
+        h.soma.insert(&#34;hh&#34;)
+        ic = h.IClamp(h.soma(0.5))
+        ic.delay = 0.5
+        ic.dur = 0.1
+        ic.amp = 0.3
+
+    def record(self):
+        v = h.Vector()
+        v.record(h.soma(0.5)._ref_v, sec=h.soma)
+        tv = h.Vector()
+        tv.record(h._ref_t, sec=h.soma)
+        nc = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
+        spikestime = h.Vector()
+        nc.record(spikestime)
+        self.record_vectors[&#34;spikes&#34;] = spikestime.to_python()
+
+
+if __name__ == &#34;__main__&#34;:
+    hh_IClamp_cell = hhCellIClamp()
+    hh_IClamp_cell.record()
+    hh_IClamp_cell.simulate(1, 0.1)
+    hh_IClamp_cell.output()
+    h.delete_section(sec=h.soma)
+    del hh_IClamp_cell
+</pre></div></div>
+</div>
+</section>
+<section id="NONSPECIFIC_CURRENT">
+<h4>NONSPECIFIC_CURRENT<a class="headerlink" href="#NONSPECIFIC_CURRENT" title="Link to this heading"></a></h4>
+</section>
+<section id="USEION">
+<h4>USEION<a class="headerlink" href="#USEION" title="Link to this heading"></a></h4>
+<section id="READ">
+<h5>READ<a class="headerlink" href="#READ" title="Link to this heading"></a></h5>
+</section>
+<section id="WRITE">
+<h5>WRITE<a class="headerlink" href="#WRITE" title="Link to this heading"></a></h5>
+</section>
+<section id="VALENCE">
+<h5>VALENCE<a class="headerlink" href="#VALENCE" title="Link to this heading"></a></h5>
+</section>
+<section id="REPRESENTS">
+<h5>REPRESENTS<a class="headerlink" href="#REPRESENTS" title="Link to this heading"></a></h5>
+</section>
+</section>
+<section id="Example-snippet">
+<h4>Example snippet<a class="headerlink" href="#Example-snippet" title="Link to this heading"></a></h4>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>NEURON {
+    SUFFIX hh
+    REPRESENTS NCIT:C17145   : sodium channel
+    REPRESENTS NCIT:C17008   : potassium channel
+...
+}
+</pre></div>
+</div>
+</section>
+<section id="NMODL-Variable-Types">
+<h4>NMODL Variable Types<a class="headerlink" href="#NMODL-Variable-Types" title="Link to this heading"></a></h4>
+</section>
+<section id="id1">
+<h4>Example mod file<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<p>Following example showcases all the various NMODL variable types (<code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code>, <code class="docutils literal notranslate"><span class="pre">RANGE</span></code>, <code class="docutils literal notranslate"><span class="pre">POINTER</span></code>, <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code>, <code class="docutils literal notranslate"><span class="pre">EXTERNAL</span></code>, <code class="docutils literal notranslate"><span class="pre">PARAMETER</span></code>, <code class="docutils literal notranslate"><span class="pre">ASSIGNED</span></code>)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/variabletypes.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+: a test of the various Variable Types
+: (RANGE, GLOBAL, POINTER, BBCOREPOINTER, EXTERNAL, PARAMETER, ASSIGNED)
+
+NEURON {
+        SUFFIX testvars
+        THREADSAFE
+        GLOBAL global_var
+        RANGE range_var, parameter_var
+        POINTER p1
+        BBCOREPOINTER my_data : changed from POINTER
+        EXTERNAL clamp_resist :
+}
+
+PARAMETER {
+        parameter_var
+        global_var
+}
+
+ASSIGNED {
+        range_var
+        p1
+        my_data
+        clamp_resist
+}
+
+INITIAL {
+        range_var = 42
+}
+
+FUNCTION cr() (megohm) {
+        cr = clamp_resist
+}
+
+FUNCTION f1() {
+        if (nrn_pointing(p1)) {
+                f1 = p1
+        }else{
+                f1 = 0
+                printf(&#34;p1 does not point anywhere\n&#34;)
+        }
+}
+
+: Do something interesting with my_data ...
+VERBATIM
+static void bbcore_write(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  if (x) {
+    double* x_i = x + *x_offset;
+    x_i[0] = ((double*)_p_my_data)[0];
+    x_i[1] = ((double*)_p_my_data)[1];
+  }
+  *x_offset += 2; // reserve 2 doubles on serialization buffer x
+}
+
+static void bbcore_read(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  assert(!_p_my_data);
+  double* x_i = x + *x_offset;
+  // my_data needs to be allocated somehow
+  _p_my_data = (double*)malloc(sizeof(double)*2);
+  ((double*)_p_my_data)[0] = x_i[0];
+  ((double*)_p_my_data)[1] = x_i[1];
+  *x_offset += 2;
+}
+ENDVERBATIM
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="UNITS">
+<h3>UNITS<a class="headerlink" href="#UNITS" title="Link to this heading"></a></h3>
+</section>
+<section id="PARAMETER">
+<h3>PARAMETER<a class="headerlink" href="#PARAMETER" title="Link to this heading"></a></h3>
+</section>
+<section id="ASSIGNED">
+<h3>ASSIGNED<a class="headerlink" href="#ASSIGNED" title="Link to this heading"></a></h3>
+</section>
+<section id="CONSTANT">
+<h3>CONSTANT<a class="headerlink" href="#CONSTANT" title="Link to this heading"></a></h3>
+</section>
+<section id="NET_RECEIVE">
+<h3>NET_RECEIVE<a class="headerlink" href="#NET_RECEIVE" title="Link to this heading"></a></h3>
+<section id="Example-mod-files">
+<h4>Example mod files<a class="headerlink" href="#Example-mod-files" title="Link to this heading"></a></h4>
+<p>Following example showcases the ExpSyn mechanism. It makes use of the <code class="docutils literal notranslate"><span class="pre">NET_RECEIVE</span></code> block and <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> and <code class="docutils literal notranslate"><span class="pre">DEFINE</span></code> statements.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/hhwatch.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+NEURON {
+  POINT_PROCESS hhwatch
+  NONSPECIFIC_CURRENT i
+  GLOBAL ena, ek, erev, gna, gk, gpas
+  RANGE e, g
+}
+
+UNITS {
+  (mV) = (millivolt)
+  (nA) = (nanoamp)
+  (umho) = (micromho)
+}
+
+PARAMETER {
+  ena = 50 (mV)
+  ek = -80 (mV)
+  erev = -65 (mV)
+  gna = 0.1 (umho)
+  gk = 0.03 (umho)
+  gpas = 0.0001 (umho)
+}
+
+ASSIGNED {
+  v (mV)
+  i (nA)
+  e (mV)
+  g (umho)
+}
+
+DEFINE init 1
+DEFINE rise 2
+DEFINE fall 3
+DEFINE off 4
+
+INITIAL {
+  g = gpas
+  e = erev
+  net_send(0, init)
+}
+
+BREAKPOINT {
+  i = g*(v - e)
+}
+
+NET_RECEIVE(w) {
+  if (flag == init) {
+    WATCH (v &gt; -55) rise
+  }else if (flag == rise) {
+    g = gna
+    e = ena
+    WATCH (v &gt; 10) fall
+  }else if (flag == fall) {
+    g = gk
+    e = ek
+    WATCH (v &lt; -70) off
+  }else if (flag == off) {
+    g = gpas
+    e = erev
+    WATCH (v &gt; -55) rise
+  }
+}
+</pre></div></div>
+</div>
+</section>
+<section id="id2">
+<h4>Functionality example<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<p>A functionality example for the above mod file can be found <a class="reference external" href="https://github.com/neuronsimulator/testcorenrn/blob/master/testwatch.hoc">here</a>.</p>
+<p>Following example showcases the usage of <code class="docutils literal notranslate"><span class="pre">NET_RECEIVE</span></code> with <code class="docutils literal notranslate"><span class="pre">FOR_NETCONS</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/fornetcon.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+: Each NetCon maintains a count of external events.
+: And time of last external event
+: On each internal event all connecting NetCon get the internal event count.
+: And time of last external event
+
+NEURON {
+  POINT_PROCESS ForNetConTest
+  RANGE tbegin
+}
+
+UNITS {
+}
+
+PARAMETER {
+  tbegin = 0 (ms)
+}
+
+INITIAL {
+  net_send(tbegin, 1)
+}
+
+NET_RECEIVE(w, npre, tpre (ms), npost, tpost (ms)) {
+  INITIAL {
+    npre=0  tpre=-1  npost=0  tpost=-1
+  }
+
+  if (flag == 0) { : external (pre) event
+    npre = npre + 1
+    tpre = t
+  }
+
+  if (flag == 1) { : internal (post) event
+    FOR_NETCONS(w, fnpre, ftpre (ms), fnpost, ftpost (ms)) {
+      fnpost = fnpost + 1
+      ftpost = t
+    }
+    net_send(3, 1) : in 3 ms another 1 event
+    net_event(t)
+  }
+}
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Functionality-Example">
+<h3>Functionality Example<a class="headerlink" href="#Functionality-Example" title="Link to this heading"></a></h3>
+<p>A functionality example for the above mod file can be found <a class="reference external" href="https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_fornetcon.py">here</a>.</p>
+</section>
+<section id="CONSTRUCTOR">
+<h3>CONSTRUCTOR<a class="headerlink" href="#CONSTRUCTOR" title="Link to this heading"></a></h3>
+</section>
+<section id="DESTRUCTOR">
+<h3>DESTRUCTOR<a class="headerlink" href="#DESTRUCTOR" title="Link to this heading"></a></h3>
+</section>
+<section id="INITIAL">
+<h3>INITIAL<a class="headerlink" href="#INITIAL" title="Link to this heading"></a></h3>
+</section>
+<section id="STATE">
+<h3>STATE<a class="headerlink" href="#STATE" title="Link to this heading"></a></h3>
+</section>
+<section id="BREAKPOINT">
+<h3>BREAKPOINT<a class="headerlink" href="#BREAKPOINT" title="Link to this heading"></a></h3>
+<section id="SOLVE">
+<h4>SOLVE<a class="headerlink" href="#SOLVE" title="Link to this heading"></a></h4>
+</section>
+<section id="METHOD">
+<h4>METHOD<a class="headerlink" href="#METHOD" title="Link to this heading"></a></h4>
+</section>
+</section>
+<section id="DERIVATIVE">
+<h3>DERIVATIVE<a class="headerlink" href="#DERIVATIVE" title="Link to this heading"></a></h3>
+</section>
+<section id="KINETIC">
+<h3>KINETIC<a class="headerlink" href="#KINETIC" title="Link to this heading"></a></h3>
+<p>See description in <a class="reference external" href="https://neuronsimulator.github.io/nrn/hoc/modelspec/programmatic/mechanisms/nmodl.html#kinetic">NMODL documentation</a></p>
+<section id="id4">
+<h4>Example mod file<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<p>Following example showcases calcium ion accumulation with longitudinal and radial diffusion. Speicifically showcases the use of <code class="docutils literal notranslate"><span class="pre">KINETIC</span></code>, <code class="docutils literal notranslate"><span class="pre">COMPARTMENT</span></code> and <code class="docutils literal notranslate"><span class="pre">LONGITUDINAL_DIFFUSION</span></code> keywords.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/cadif.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+TITLE Calcium ion accumulation with longitudinal and radial diffusion
+
+COMMENT
+PROCEDURE factors_cadifus() sets up the scale factors
+needed to model radial diffusion.
+These scale factors do not have to be recomputed
+when diam or DFree is changed.
+The amount of calcium in an annulus is ca[i]*diam^2*vol[i]
+with ca[0] being the 2nd order correct concentration at the exact edge
+and ca[NANN-1] being the concentration at the exact center.
+Buffer concentration and rates are based on Yamada et al. 1989
+model of bullfrog sympathetic ganglion cell.
+ENDCOMMENT
+
+NEURON {
+        SUFFIX cadifus
+        USEION ca READ cai, ica WRITE cai
+        GLOBAL vol, TotalBuffer
+        RANGE cai0
+        THREADSAFE
+}
+
+DEFINE NANN  4
+
+UNITS {
+        (molar) =       (1/liter)
+        (mM) =  (millimolar)
+        (um) =  (micron)
+        (mA) =  (milliamp)
+        FARADAY =       (faraday)       (10000 coulomb)
+        PI = (pi)       (1)
+}
+
+PARAMETER {
+        DCa = 0.6                       (um2/ms)
+        : to change rate of buffering without disturbing equilibrium
+        : multiply the following two by the same factor
+        k1buf   = 100                   (/mM-ms)
+        k2buf   = 0.1                   (/ms)
+        TotalBuffer = 0.003     (mM)
+        cai0 = 50e-6 (mM)       : Requires explicit use in INITIAL block
+}
+
+ASSIGNED {
+        diam            (um)
+        ica             (mA/cm2)
+        cai             (mM)
+        vol[NANN]       (1)     : gets extra um2 when multiplied by diam^2
+        Kd              (/mM)
+        B0              (mM)
+}
+
+STATE {
+        ca[NANN]                (mM) &lt;1e-6&gt;       : ca[0] is equivalent to cai
+        CaBuffer[NANN]  (mM)
+        Buffer[NANN]    (mM)
+}
+
+BREAKPOINT {
+        SOLVE state METHOD sparse
+}
+
+LOCAL factors_done
+
+INITIAL {
+        MUTEXLOCK
+        if (factors_done == 0) {
+                factors_done = 1
+                factors()
+        }
+        MUTEXUNLOCK
+
+        cai = cai0
+        Kd = k1buf/k2buf
+        B0 = TotalBuffer/(1 + Kd*cai)
+
+        FROM i=0 TO NANN-1 {
+                ca[i] = cai
+                Buffer[i] = B0
+                CaBuffer[i] = TotalBuffer - B0
+        }
+}
+
+COMMENT
+factors() sets up factors needed for radial diffusion
+modeled by NANN concentric compartments.
+The outermost shell is half as thick as the other shells
+so the concentration is spatially second order correct
+at the surface of the cell.
+The radius of the cylindrical core
+equals the thickness of the outermost shell.
+The intervening NANN-2 shells each have thickness = r/(NANN-1)
+(NANN must be &gt;= 2).
+
+ca[0] is at the edge of the cell,
+ca[NANN-1] is at the center of the cell,
+and ca[i] for 0 &lt; i &lt; NANN-1 is
+midway through the thickness of each annulus.
+ENDCOMMENT
+
+LOCAL frat[NANN]
+
+PROCEDURE factors() {
+        LOCAL r, dr2
+        r = 1/2                 :starts at edge (half diam)
+        dr2 = r/(NANN-1)/2      :half thickness of annulus
+        vol[0] = 0
+        frat[0] = 2*r
+        FROM i=0 TO NANN-2 {
+                vol[i] = vol[i] + PI*(r-dr2/2)*2*dr2    :interior half
+                r = r - dr2
+                frat[i+1] = 2*PI*r/(2*dr2)      :exterior edge of annulus
+                                        : divided by distance between centers
+                r = r - dr2
+                vol[i+1] = PI*(r+dr2/2)*2*dr2   :outer half of annulus
+        }
+}
+
+LOCAL dsq, dsqvol       : can&#39;t define local variable in KINETIC block
+                        : or use in COMPARTMENT
+
+KINETIC state {
+        COMPARTMENT i, diam*diam*vol[i] {ca CaBuffer Buffer}
+        LONGITUDINAL_DIFFUSION i, DCa*diam*diam*vol[i] {ca}
+        ~ ca[0] &lt;&lt; (-ica*PI*diam/(2*FARADAY))
+        FROM i=0 TO NANN-2 {
+                ~ ca[i] &lt;-&gt; ca[i+1] (DCa*frat[i+1], DCa*frat[i+1])
+        }
+        dsq = diam*diam
+        FROM i=0 TO NANN-1 {
+                dsqvol = dsq*vol[i]
+                ~ ca[i] + Buffer[i] &lt;-&gt; CaBuffer[i] (k1buf*dsqvol, k2buf*dsqvol)
+        }
+        cai = ca[0]
+}
+
+</pre></div></div>
+</div>
+</section>
+<section id="id5">
+<h4>Functionality example<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>python_scripts/kinetic.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+from neuron import h
+
+from utils.cell import Cell
+
+
+class cadifusCell(Cell):
+    def _create_cell(self):
+        self.section = h.Section()
+        self.section.insert(&#34;cadifus&#34;)
+        self.section(0.001).ca_cadifus[0] = 1e-2
+
+    def record(self):
+        tvec = h.Vector()
+        tvec.record(h._ref_t, sec=self.section)
+        cai_vec = h.Vector()
+        cai_vec.record(self.section(0.5).cadifus._ref_ca[0], sec=self.section)
+        self.record_vectors[&#34;ca_ion[0]&#34;] = cai_vec
+
+
+if __name__ == &#34;__main__&#34;:
+    cadifus_cell = cadifusCell()
+    cadifus_cell.record()
+    cadifus_cell.simulate(1, 0.1)
+    cadifus_cell.output()
+    del cadifus_cell
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">run</span> python_scripts/kinetic.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Values of variable ca_ion[0]:
+0 5e-05
+1 5e-05
+2 5e-05
+3 5e-05
+4 5e-05
+5 5e-05
+6 5e-05
+7 5e-05
+8 5e-05
+9 5e-05
+10 5e-05
+</pre></div></div>
+</div>
+</section>
+<section id="CONSERVE">
+<h4>CONSERVE<a class="headerlink" href="#CONSERVE" title="Link to this heading"></a></h4>
+<p>TODO: add example</p>
+</section>
+</section>
+<section id="FUNCTION">
+<h3>FUNCTION<a class="headerlink" href="#FUNCTION" title="Link to this heading"></a></h3>
+</section>
+<section id="PROCEDURE">
+<h3>PROCEDURE<a class="headerlink" href="#PROCEDURE" title="Link to this heading"></a></h3>
+</section>
+<section id="LINEAR">
+<h3>LINEAR<a class="headerlink" href="#LINEAR" title="Link to this heading"></a></h3>
+</section>
+<section id="NONLINEAR">
+<h3>NONLINEAR<a class="headerlink" href="#NONLINEAR" title="Link to this heading"></a></h3>
+</section>
+<section id="LOCAL">
+<h3>LOCAL<a class="headerlink" href="#LOCAL" title="Link to this heading"></a></h3>
+</section>
+<section id="DISCRETE">
+<h3>DISCRETE<a class="headerlink" href="#DISCRETE" title="Link to this heading"></a></h3>
+<p>Short description</p>
+<section id="id6">
+<h4>Example mod file<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/disc.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+NEURON {
+  SUFFIX disc
+  GLOBAL k, a0
+}
+
+PARAMETER {
+  k = 1
+}
+
+STATE {
+  a
+}
+
+INITIAL {
+  a = a0
+}
+
+BREAKPOINT {
+  SOLVE dis
+}
+
+DISCRETE dis {
+  a = a - k*a@1
+}
+</pre></div></div>
+</div>
+</section>
+<section id="id7">
+<h4>Functionality example<a class="headerlink" href="#id7" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>python_scripts/disc.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+from neuron import h
+
+from utils.cell import Cell
+
+
+class DiscCell(Cell):
+    def _create_cell(self):
+        self.section = h.Section()
+        self.section.insert(&#34;disc&#34;)
+        h.k_disc = 0.1
+        h.a0_disc = 10
+
+    def record(self):
+        tvec = h.Vector()
+        tvec.record(h._ref_t, sec=self.section)
+        avec = h.Vector()
+        avec.record(self.section(0.5)._ref_a_disc, sec=self.section)
+        self.record_vectors[&#34;a&#34;] = avec
+
+
+if __name__ == &#34;__main__&#34;:
+    disc_cell = DiscCell()
+    disc_cell.record()
+    disc_cell.simulate(1, 0.1)
+    disc_cell.output()
+    del disc_cell
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">run</span> python_scripts/disc.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Changed dt
+Values of variable a:
+0 10.0
+1 9.0
+2 8.1
+3 7.289999999999999
+4 6.560999999999999
+5 5.9049
+6 5.31441
+7 4.782969
+8 4.3046720999999994
+9 3.8742048899999997
+10 3.4867844009999995
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+<section id="Other-NMODL-constructs">
+<h2>Other NMODL constructs<a class="headerlink" href="#Other-NMODL-constructs" title="Link to this heading"></a></h2>
+<section id="TABLE">
+<h3>TABLE<a class="headerlink" href="#TABLE" title="Link to this heading"></a></h3>
+<p>Short description for TABLE keyword</p>
+<section id="FROM">
+<h4>FROM<a class="headerlink" href="#FROM" title="Link to this heading"></a></h4>
+</section>
+<section id="TO">
+<h4>TO<a class="headerlink" href="#TO" title="Link to this heading"></a></h4>
+</section>
+<section id="WITH">
+<h4>WITH<a class="headerlink" href="#WITH" title="Link to this heading"></a></h4>
+</section>
+<section id="DEPEND">
+<h4>DEPEND<a class="headerlink" href="#DEPEND" title="Link to this heading"></a></h4>
+</section>
+<section id="id8">
+<h4>Example mod file<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/table.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+: simple first-order model of calcium dynamics
+
+DEFINE FOO 1
+
+NEURON {
+        SUFFIX table
+        USEION ca READ cai,ica WRITE cai
+        RANGE ca
+        GLOBAL depth,cainf,taur
+        RANGE var
+        RANGE ainf
+        THREADSAFE
+}
+
+UNITS {
+        (molar) = (1/liter)
+        (mM) = (milli/liter)
+        (um)    = (micron)
+        (mA) = (milliamp)
+        (msM)   = (ms mM)
+        FARADAY    = (faraday) (coul)
+}
+
+PARAMETER {
+       depth    = .1    (um)
+        taur =  200 (ms)        : rate of calcium removal for stress conditions
+        cainf   = 50e-6(mM)     :changed oct2
+        cai             (mM)
+}
+
+ASSIGNED {
+        ica             (mA/cm2)
+        drive_channel   (mM/ms)
+    var     (mV)
+    ainf
+}
+
+STATE {
+        ca              (mM)
+}
+
+
+BREAKPOINT {
+        SOLVE state METHOD euler
+}
+
+DERIVATIVE state {
+        drive_channel =  - (10000) * ica / (2 * FARADAY * depth)
+        if (drive_channel &lt;= 0.) { drive_channel = 0.  }   : cannot pump inward
+        ca&#39; = drive_channel/18 + (cainf -ca)/taur*11
+        cai = ca
+    if (FOO == 0) { }
+}
+FUNCTION test_table_f(br) {
+    TABLE FROM 0 TO FOO WITH 1
+    test_table_f = 1
+}
+PROCEDURE test_table_p(br) {
+    TABLE ainf FROM 0 TO FOO WITH 1
+    ainf = 1
+}
+INITIAL {
+    ca = cainf
+}
+</pre></div></div>
+</div>
+</section>
+<section id="id9">
+<h4>Functionality example<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>python_scripts/table.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+from neuron import h
+
+from utils.cell import Cell
+
+
+class TableCell(Cell):
+    def _create_cell(self):
+        self.section = h.Section()
+        self.section.insert(&#34;table&#34;)
+
+    def record(self):
+        tvec = h.Vector()
+        tvec.record(h._ref_t, sec=self.section)
+        avec = h.Vector()
+        avec.record(self.section(0.5)._ref_ainf_table, sec=self.section)
+        self.record_vectors[&#34;ainf&#34;] = avec
+
+
+if __name__ == &#34;__main__&#34;:
+    table_cell = TableCell()
+    table_cell.record()
+    table_cell.simulate(1, 0.1)
+    table_cell.output()
+    del table_cell
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">run</span> python_scripts/table.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Changed dt
+Values of variable ainf:
+0 1.0
+1 1.0
+2 1.0
+3 1.0
+4 1.0
+5 1.0
+6 1.0
+7 1.0
+8 1.0
+9 1.0
+10 1.0
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="FUNCTION_TABLE">
+<h3>FUNCTION_TABLE<a class="headerlink" href="#FUNCTION_TABLE" title="Link to this heading"></a></h3>
+<p>See description in <a class="reference external" href="https://neuronsimulator.github.io/nrn/hoc/modelspec/programmatic/mechanisms/nmodl.html#function-table">NMODL documentation</a></p>
+<section id="id10">
+<h4>Example mod file<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>mod/k3st.mod
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+: Three state kinetic scheme for HH-like potassium channel
+: Steady-state v-dependent state transitions have been fit
+: Needs v-dependent time constants from tables created under hoc
+NEURON {
+    SUFFIX k3st
+    USEION k READ ek WRITE ik
+    RANGE g, gbar
+    RANGE tau1_rec, tau2_rec
+}
+UNITS { (mV) = (millivolt) }
+PARAMETER {
+    gbar = 33 (millimho/cm2)
+    d1 = -38 (mV)
+    k1 = 0.151 (/mV)
+    d2 = -25 (mV)
+    k2 = 0.044 (/mV)
+}
+
+ASSIGNED {
+    v     (mV)
+    ek    (mV)
+    g     (millimho/cm2)
+    ik    (milliamp/cm2)
+    kf1 (/ms)
+    kb1 (/ms)
+    kf2 (/ms)
+    kb2 (/ms)
+    tau1_rec
+    tau2_rec
+}
+
+STATE { c1 c2 o }
+
+BREAKPOINT {
+    SOLVE kin METHOD sparse
+    g = gbar*o
+    ik = g*(v - ek)*(1e-3)
+}
+
+INITIAL { SOLVE kin STEADYSTATE sparse }
+
+KINETIC kin {
+    rates(v)
+    ~ c1 &lt;-&gt; c2 (kf1, kb1)
+    ~ c2 &lt;-&gt; o (kf2, kb2)
+    CONSERVE c1 + c2 + o = 1
+}
+
+FUNCTION_TABLE tau1(v(mV)) (ms)
+FUNCTION_TABLE tau2(v(mV)) (ms)
+
+PROCEDURE rates(v(millivolt)) {
+    LOCAL K1, K2
+    K1 = exp(k2*(d2 - v) - k1*(d1 - v))
+    kf1 = K1/(tau1(v)*(1+K1))
+    kb1 = 1/(tau1(v)*(1+K1))
+    K2 = exp(-k2*(d2 - v))
+    kf2 = K2/(tau2(v)*(1+K2))
+    kb2 = 1/(tau2(v)*(1+K2))
+    tau1_rec = tau1(v)
+    tau2_rec = tau2(v)
+}
+</pre></div></div>
+</div>
+</section>
+<section id="id11">
+<h4>Functionality example<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>cat<span class="w"> </span>python_scripts/function_table.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+from neuron import h
+
+from utils.cell import Cell
+
+
+class k3stCell(Cell):
+    def _create_cell(self):
+        self.section = h.Section()
+        self.section.insert(&#34;k3st&#34;)
+        tau1_values = []
+        voltage_values = []
+        for i in range(10):
+            tau1_values.append(i * 0.25)
+            voltage_values.append(-70 + 10 * i)
+        tau1_vector = h.Vector(tau1_values)
+        voltage_vector = h.Vector(voltage_values)
+        h.table_tau1_k3st(tau1_vector, voltage_vector)
+        h.table_tau2_k3st(100)
+
+    def record(self):
+        tvec = h.Vector()
+        tvec.record(h._ref_t, sec=self.section)
+        tau1_vec = h.Vector()
+        tau2_vec = h.Vector()
+        tau1_vec.record(self.section(0.5).k3st._ref_tau1_rec, sec=self.section)
+        tau2_vec.record(self.section(0.5).k3st._ref_tau2_rec, sec=self.section)
+        self.record_vectors[&#34;tau1_rec&#34;] = tau1_vec
+        self.record_vectors[&#34;tau2_rec&#34;] = tau2_vec
+
+
+if __name__ == &#34;__main__&#34;:
+    k3st_cell = k3stCell()
+    k3st_cell.record()
+    k3st_cell.simulate(1, 0.1)
+    k3st_cell.output()
+    del k3st_cell
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">run</span> python_scripts/function_table.py
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Changed dt
+Values of variable tau1_rec:
+0 0.125
+1 0.11066884059267537
+2 0.09702284544211288
+3 0.0840298714363211
+4 0.07165924609736188
+5 0.059881657072173765
+6 0.04866907889206899
+7 0.037994719804658315
+8 0.027832978105936233
+9 0.018159402051359665
+10 0.008950650468550592
+Values of variable tau2_rec:
+0 100.0
+1 100.0
+2 100.0
+3 100.0
+4 100.0
+5 100.0
+6 100.0
+7 100.0
+8 100.0
+9 100.0
+10 100.0
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="BEFORE">
+<h3>BEFORE<a class="headerlink" href="#BEFORE" title="Link to this heading"></a></h3>
+</section>
+<section id="AFTER">
+<h3>AFTER<a class="headerlink" href="#AFTER" title="Link to this heading"></a></h3>
+</section>
+<section id="FOR_NETCONS">
+<h3>FOR_NETCONS<a class="headerlink" href="#FOR_NETCONS" title="Link to this heading"></a></h3>
+</section>
+<section id="PROTECT">
+<h3>PROTECT<a class="headerlink" href="#PROTECT" title="Link to this heading"></a></h3>
+</section>
+<section id="MUTEXLOCK-/-MUTEXUNLOCK">
+<h3>MUTEXLOCK / MUTEXUNLOCK<a class="headerlink" href="#MUTEXLOCK-/-MUTEXUNLOCK" title="Link to this heading"></a></h3>
+</section>
+<section id="VERBATIM">
+<h3>VERBATIM<a class="headerlink" href="#VERBATIM" title="Link to this heading"></a></h3>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="NMODLanguage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../scm/index.html" class="btn btn-neutral float-right" title="NEURON SCM and Release" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

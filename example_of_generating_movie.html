@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example of Generating a Movie &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Example of Generating a Movie</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/example_of_generating_movie.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="example-of-generating-a-movie">
+<span id="example-of-generating-movie"></span><h1>Example of Generating a Movie<a class="headerlink" href="#example-of-generating-a-movie" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/drive/1YuDWJt2osDaAqVlMKZ2AZBhqrabWDmjz?usp=sharing#scrollTo=Gn45M0sd_GlD">ipynb from google colab</a> to google colab</p>
+<section id="install-neuron-update-matplotlib">
+<h2>Install NEURON, update matplotlib<a class="headerlink" href="#install-neuron-update-matplotlib" title="Link to this heading"></a></h2>
+<p>The matplotlib update lets us specify <code class="docutils literal notranslate"><span class="pre">vertical_axis</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">neuron</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">matplotlib</span>
+</pre></div>
+</div>
+</section>
+<section id="load-the-morphology-definition">
+<h2>Load the morphology definition<a class="headerlink" href="#load-the-morphology-definition" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="err">!</span><span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">ramcdougal</span><span class="o">/</span><span class="n">dentategranulevideo</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">n275</span><span class="o">.</span><span class="n">hoc</span>
+</pre></div>
+</div>
+</section>
+<section id="setup-the-model">
+<h2>Setup the model<a class="headerlink" href="#setup-the-model" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;n275.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">STOP_TIME</span> <span class="o">=</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ms</span>
+<span class="n">SAVE_EVERY</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">ms</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+  <span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">21</span>
+  <span class="k">if</span> <span class="s1">&#39;dend&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">():</span>
+    <span class="n">sec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup current pulses to trigger APs</span>
+<span class="n">fire_times</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="o">*</span> <span class="n">ms</span><span class="p">,</span> <span class="mi">15</span> <span class="o">*</span> <span class="n">ms</span><span class="p">,</span> <span class="mi">23</span> <span class="o">*</span> <span class="n">ms</span><span class="p">,</span> <span class="mi">31</span> <span class="o">*</span> <span class="n">ms</span><span class="p">]</span>
+<span class="n">iclamps</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">fire_times</span><span class="p">:</span>
+    <span class="n">iclamp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">soma</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="n">iclamp</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">time</span>
+    <span class="n">iclamp</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">iclamp</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ms</span>
+    <span class="n">iclamps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iclamp</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="simulation-control-and-image-saving">
+<h2>Simulation control and image saving<a class="headerlink" href="#simulation-control-and-image-saving" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">neuron_images</span><span class="p">():</span>
+<span class="c1"># rotation</span>
+<span class="n">ps</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">PlotShape</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plt</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">360</span><span class="p">,</span> <span class="mi">9</span><span class="p">):</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">view_init</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">vertical_axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+  <span class="k">yield</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)</span>
+<span class="n">ps</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">80</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="c1"># now let&#39;s run the sim, plt on a new figure every SAVE_EVERY, then yield</span>
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">200</span><span class="p">):</span>
+  <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">SAVE_EVERY</span><span class="p">)</span>
+  <span class="n">ps</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plt</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">40</span><span class="p">:</span>
+     <span class="n">theta</span> <span class="o">=</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">i</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">view_init</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">vertical_axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+  <span class="k">yield</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">save_all_images</span><span class="p">():</span>
+  <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">neuron_images</span><span class="p">())):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This counts to 40 + 200 = 240. Runs in about twelve minutes. The first 40 is relatively fast because it’s only rotating an existing plot, not simulating or making a new plot.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">save_all_images</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="put-it-all-together-into-an-mp4">
+<h2>Put it all together into an MP4<a class="headerlink" href="#put-it-all-together-into-an-mp4" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="err">!</span><span class="n">ffmpeg</span> <span class="o">-</span><span class="n">r</span> <span class="mi">20</span> <span class="o">-</span><span class="n">i</span> <span class="o">%</span><span class="mi">04</span><span class="n">d</span><span class="o">.</span><span class="n">png</span> <span class="o">-</span><span class="n">vcodec</span> <span class="n">libx264</span> <span class="o">-</span><span class="n">crf</span> <span class="mi">25</span> <span class="o">-</span><span class="n">pix_fmt</span> <span class="n">yuv420p</span> <span class="n">neuron_movie</span><span class="o">.</span><span class="n">mp4</span>
+</pre></div>
+</div>
+</section>
+<section id="let-s-look-at-the-mp4">
+<h2>Let’s look at the MP4<a class="headerlink" href="#let-s-look-at-the-mp4" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># adapted from https://stackoverflow.com/questions/57377185/how-play-mp4-video-in-google-colab</span>
+<span class="k">def</span> <span class="nf">show_video</span><span class="p">(</span><span class="n">video_path</span><span class="p">):</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;r+b&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">video_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;data:video/mp4;base64,</span><span class="si">{</span><span class="n">b64encode</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+  <span class="k">return</span> <span class="n">HTML</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;video width=640 controls&gt;&lt;source src=&#39;</span><span class="si">{</span><span class="n">video_url</span><span class="si">}</span><span class="s2">&#39;&gt;&lt;/video&gt;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">show_video</span><span class="p">(</span><span class="s2">&quot;neuron_movie.mp4&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

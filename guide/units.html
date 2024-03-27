@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Units used in NEURON &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using Session Files for Saving and Retrieving Windows" href="saveses.html" />
+    <link rel="prev" title="Biology Modeling FAQ" href="bio_faq.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Units used in NEURON</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scripting-the-gui-and-the-interpreter">Scripting, the GUI, and the interpreter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#units-within-nmodl-files">Units within NMODL files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#definition-of-new-units">Definition of new units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#function-and-argument-units">Function and Argument units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#units-for-kinetic-blocks">Units for KINETIC blocks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#units-in-neuron-models">Units in NEURON models</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Units used in NEURON</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/units.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="units-used-in-neuron">
+<span id="id1"></span><h1>Units used in NEURON<a class="headerlink" href="#units-used-in-neuron" title="Link to this heading"></a></h1>
+<section id="scripting-the-gui-and-the-interpreter">
+<h2>Scripting, the GUI, and the interpreter<a class="headerlink" href="#scripting-the-gui-and-the-interpreter" title="Link to this heading"></a></h2>
+<p>Note: When programming, it is often convenient to use the units defined in <code class="file docutils literal notranslate"><span class="pre">neuron.units</span></code>. Even when you use NEURON’s default units, explicitly specifying the units can make it clearer to others; e.g.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The following table lists the units that NEURON uses by default. Point processes and distributed mechanisms may use other units, e.g. for certain concentrations and physical dimensions. The default behavior of GUI tools that manage parameters and monitor variables is to display the units next to the variable name, e.g. t (ms), L (µm), Ra (ohm-cm), gkbar_hh (S/cm2). Users can also determine what units have been assigned to mechanism-specific variables by examining the .mod file that defines the mechanism.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Time</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">t</span></code>, <code class="docutils literal notranslate"><span class="pre">dt</span></code></p></td>
+<td><p>[ms]</p></td>
+</tr>
+<tr class="row-odd"><td><p>Voltage</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">v</span></code></p></td>
+<td><p>[mV]</p></td>
+</tr>
+<tr class="row-even"><td><p>Current</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ina</span></code>, <code class="docutils literal notranslate"><span class="pre">ik</span></code>, …</p></td>
+<td><p>[mA/cm2] (distributed)</p>
+<p>[nA] (point process)</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>Concentration</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ko</span></code>, <code class="docutils literal notranslate"><span class="pre">ki</span></code>, …</p></td>
+<td><p>[mM]</p></td>
+</tr>
+<tr class="row-even"><td><p>Specific capacitance</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cm</span></code></p></td>
+<td><p>[uf/cm2]</p></td>
+</tr>
+<tr class="row-odd"><td><p>Length</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">diam</span></code>, <code class="docutils literal notranslate"><span class="pre">L</span></code></p></td>
+<td><p>[µm]</p></td>
+</tr>
+<tr class="row-even"><td><p>Conductance</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">g</span></code></p></td>
+<td><p>[S/cm2] (distributed)</p>
+<p>[uS] (point process)</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>Cytoplasmic resistivity</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ra</span></code></p></td>
+<td><p>[ohm cm]</p></td>
+</tr>
+<tr class="row-even"><td><p>Resistance</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ri(</span> <span class="pre">)</span></code></p></td>
+<td><p>[10 <sup>6</sup> ohm]</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="units-within-nmodl-files">
+<span id="units-within-nmodl"></span><h2>Units within NMODL files<a class="headerlink" href="#units-within-nmodl-files" title="Link to this heading"></a></h2>
+<p>Units in models are checked for consistency with</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">modlunit</span> <span class="n">file</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>where <code class="docutils literal notranslate"><span class="pre">file</span></code> is the prefix to a model description file (having a .mod suffix).</p>
+<p>Units are understood at the level of the unix units command. The syntax for units is any string understood by the unix units command and enclosed in parentheses. In particular, scientific notation is expressed as 1.111-5 or 1.111+5 instead of the more usual 1.111e-4, etc. Also an integer following a name is the power of that dimension, e.g. cm4 is centimeter to the fourth power. Lastly, all units in the numerator must come first followed by a slash character followed by all the units in the denominator. e.g a volt can be expressed either as (volt), (m2-kg/sec2-coul), or as (m m kg/sec sec coul). ie. one cannot have two slashes in a units expression.</p>
+<p>Consider the model description language fragment:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ASSIGNED</span> <span class="p">{</span>
+<span class="n">i</span>   <span class="p">(</span><span class="n">milliamp</span><span class="p">)</span>
+<span class="n">v</span>   <span class="p">(</span><span class="n">volt</span><span class="p">)</span>
+<span class="n">r</span>   <span class="p">(</span><span class="n">ohm</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="n">EQUATION</span> <span class="p">{</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">i</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>will produce the error message</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span>
+<span class="n">units</span><span class="p">:</span>  <span class="mf">0.001</span> <span class="n">coul</span><span class="o">/</span><span class="n">sec</span>
+<span class="n">v</span>
+<span class="n">units</span><span class="p">:</span>  <span class="mi">1</span> <span class="n">m2</span><span class="o">-</span><span class="n">kg</span><span class="o">/</span><span class="n">sec2</span><span class="o">-</span><span class="n">coul</span>
+<span class="n">The</span> <span class="n">units</span> <span class="n">of</span> <span class="n">the</span> <span class="n">previous</span> <span class="n">two</span> <span class="n">expressions</span> <span class="n">are</span> <span class="ow">not</span> <span class="n">conformable</span>
+<span class="n">at</span> <span class="n">line</span> <span class="mi">8</span> <span class="ow">in</span> <span class="n">file</span> <span class="n">utest1</span><span class="o">.</span><span class="n">mod</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">i</span><span class="o">&lt;&lt;</span><span class="n">ERROR</span><span class="o">&gt;&gt;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>It is an error to equate milliamps and volts. The last two lines of the error message show where the error was found and the first two lines show what is inconsistent about the expressions in terms of fundamental units. In this case, the statement has a serious error due to a missing term.</p>
+<p>Replacing the offending statement with <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">i*r</span></code> and retranslating the model gives</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">previous</span> <span class="n">primary</span> <span class="n">expression</span> <span class="k">with</span> <span class="n">units</span><span class="p">:</span> <span class="mf">0.001</span> <span class="n">m2</span><span class="o">-</span><span class="n">kg</span><span class="o">/</span><span class="n">sec2</span><span class="o">-</span><span class="n">coul</span>
+<span class="ow">is</span> <span class="n">missing</span> <span class="n">a</span> <span class="n">conversion</span> <span class="n">factor</span> <span class="ow">and</span> <span class="n">should</span> <span class="n">read</span><span class="p">:</span>
+<span class="p">(</span><span class="mf">0.001</span><span class="p">)</span><span class="o">*</span><span class="p">(</span> <span class="n">i</span><span class="o">*</span><span class="n">r</span><span class="p">)</span>
+<span class="n">at</span> <span class="n">line</span> <span class="mi">8</span> <span class="ow">in</span> <span class="n">file</span> <span class="n">utest1</span><span class="o">.</span><span class="n">mod</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">r</span><span class="o">&lt;&lt;</span><span class="n">ERROR</span><span class="o">&gt;&gt;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Now, the units are conformable but the statement is still in error since we are trying to equate volts and millivolts. One way to correct the error is to choose at the outset a completely consistent set of units, e.g. replace the ASSIGNED statement for v with “v (millivolt)”. A second way is indicated in the error message.</p>
+<p>A third obvious method, replacing the offending statement by</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="mf">.001</span><span class="o">*</span><span class="n">i</span><span class="o">*</span><span class="n">r</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>WILL NOT WORK. Although an error message for such a natural and obviously correct statement is very annoying (after all, the numbers come out right), we do not allow you to do unit conversion in this way for one overpowering reason. It is error prone for you, and impossible for the computer, to determine whether a number refers to a conversion factor or whether a number refers to “how many” units we are talking about.</p>
+<p>The syntactic feature that we use to distinguish conversion factors from quantity is to enclose conversion factors within parentheses. The benefits of this convention are: 1) it is unlikely and certainly unnecessary for single numbers with the semantic meaning of quantity to be enclosed within parentheses. 2) Single numbers enclosed in parentheses still produce well formed expressions that are arithmetically meaningful and correct in the absence of unit consistency checks. 3) If parentheses are ommitted, an error message will result since the unit factors will be inconsistent. 4) If parentheses surround a number which the user intended to be a quantity, an error message will result since the unit factors will be inconsistent. Note that the requirement that a conversion factor be a single number is important and that “(1 + 1)” is NOT a conversion factor but the quantity 2.</p>
+<p>To see the necessity of disambiguating “quantity” and “conversion” Suppose we have variables x and y where x has the units of feet and a value of 2 (i.e. x is 2 feet) and y has the units of inches. Now consider the statement: <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">5*x</span></code>. The most likely intended meaning is that y is 5 times longer than x, i.e. y has the value 120 (inches). But to silently assign a value of 120 to y would take a lot of nerve since that kind of computation is very different from the way computers normally do things. Instead, the computer would print an error message suggesting the form <code class="docutils literal notranslate"><span class="pre">(12)*5*x</span></code>. Now, imagine that the user wrote <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">(5)*x</span></code>. Then the computer would print an error message suggesting another conversion factor of the form <code class="docutils literal notranslate"><span class="pre">(2.4)*(5)*x</span></code>. At this, the user should see his mistake – although the computer misinterpreted the exact nature of the mistake which was writing a quantity in the conversion format.</p>
+<p>There is one case in which a strict formal conformability is not required. This happens in primary expressions that contain no variables within any of its sub-expressions. (A primary expression is a product of terms in which each term is a general expression enclosed in parentheses, a variable, or a number.) Consider:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">10</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="mf">.001</span><span class="p">)</span><span class="o">*</span><span class="n">i</span><span class="o">*</span><span class="n">r</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span>
+<span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="mf">.001</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="n">r</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>in which the primary expression certainly means 10 volts, 10 feet, 10 inches, 1 volt, and 1 millivolt respectively. Thus primary expressions containing only numbers take units consistent with their position in the general expression. Numbers within an expression can also be given explicit units as in</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">exp</span><span class="p">(</span><span class="n">v</span><span class="o">/</span><span class="mi">18</span><span class="p">(</span><span class="n">mV</span><span class="p">))</span>
+<span class="n">exp</span><span class="p">(</span><span class="n">v</span><span class="o">/</span><span class="mi">18</span><span class="p">(</span><span class="mf">.001</span> <span class="n">volt</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The units follow the number. Note that the two expressions above evaluate to the same number — the <code class="docutils literal notranslate"><span class="pre">(.001</span> <span class="pre">volt)</span></code> is not a conversion factor in the second expression but the units for the number 18.
+Local variables inherit units through the assignment statement. Thus, consider,</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BREAKPOINT</span> <span class="p">{</span>
+    <span class="n">LOCAL</span> <span class="n">temp</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">r</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">temp</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">*</span><span class="mi">5</span><span class="o">*</span><span class="n">x</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">temp</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">temp</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>“Millivolts’ is assigned to temp in its first assignment (v = temp will produce an error message), “feet” is assigned to temp in its second assignment (the units are correct in y = temp), and temp is dimensionless in its third assignment (v = temp will produce an error message).</p>
+<section id="definition-of-new-units">
+<h3>Definition of new units<a class="headerlink" href="#definition-of-new-units" title="Link to this heading"></a></h3>
+<p>New units can be defined in terms of default units and previously defined units by placing definitions in the UNITS block. eg.</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNITS</span> <span class="p">{</span>
+    <span class="p">(</span><span class="n">uF</span><span class="p">)</span>    <span class="o">=</span>  <span class="p">(</span><span class="n">microfarad</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">Mohms</span><span class="p">)</span> <span class="o">=</span>  <span class="p">(</span><span class="n">megohms</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">V</span><span class="p">)</span>     <span class="o">=</span>  <span class="p">(</span><span class="n">volt</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">molar</span><span class="p">)</span> <span class="o">=</span>  <span class="p">(</span><span class="o">/</span><span class="n">liter</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mM</span><span class="p">)</span>    <span class="o">=</span>  <span class="p">(</span><span class="n">millimolar</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>A UNITS block can appear anywhere within a file but units used in definitions must be previously defined. Notice that molar is not moles/liter since mole has the default definition of 6.022169e+23. Default definitions can not be redefined within a model description file since that may invalidate other unit definitions appearing in the units database. There is no reason why the user cannot change the database although it is not recommended.
+The units database knows about a lot of physical constants in addition to mole, e.g.</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">faraday</span> \<span class="o">=</span> <span class="mf">9.652</span><span class="o">+</span><span class="mi">4</span> <span class="n">coul</span>\\
+<span class="n">e</span> \<span class="o">&gt;</span> <span class="mf">1.602192</span><span class="o">-</span><span class="mi">19</span> <span class="n">coul</span>\\
+<span class="n">rydberg</span> \<span class="o">&gt;</span> <span class="mf">2.179846</span><span class="o">-</span><span class="mi">18</span> <span class="n">m2</span><span class="o">-</span><span class="n">kg</span><span class="o">/</span><span class="n">sec2</span>\\
+<span class="n">pi</span> \<span class="o">&gt;</span> <span class="mf">3.141593</span>\\
+<span class="n">lambert</span> \<span class="o">&gt;</span> <span class="mf">3.183099</span><span class="o">+</span><span class="mi">3</span> <span class="n">candela</span><span class="o">/</span><span class="n">m2</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>and it is more convenient to define constant constants in the UNITS block rather than in the CONSTANTS block — there is less chance of a typo, and they do not appear in SCoP where they can be inadvertently changed. For example:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNITS</span> <span class="p">{</span>
+    <span class="n">F</span>      <span class="o">=</span> <span class="p">(</span><span class="n">faraday</span><span class="p">)</span> <span class="p">(</span><span class="n">coulomb</span><span class="p">)</span>
+    <span class="n">PI</span>     <span class="o">=</span> <span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">e</span>      <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="p">(</span><span class="n">coulomb</span><span class="p">)</span>
+    <span class="n">R</span>      <span class="o">=</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="n">mole</span><span class="p">)</span> <span class="p">(</span><span class="n">joule</span><span class="o">/</span><span class="n">degC</span><span class="p">)</span>
+    <span class="n">C</span>      <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="p">(</span><span class="n">cm</span><span class="o">/</span><span class="n">sec</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Here, c is the speed of light in cm/sec and R is the Gas constant.</p>
+<p>Constant factors are defined in the UNITS block in the following manner.</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNITS</span> <span class="p">{</span>
+    <span class="n">F</span>   <span class="o">=</span> <span class="mi">96520</span>    <span class="p">(</span><span class="n">coul</span><span class="p">)</span>
+    <span class="n">PI</span>  <span class="o">=</span> <span class="mf">3.14159</span>  <span class="p">()</span>
+    <span class="n">foot2inch</span> <span class="o">=</span> <span class="mi">12</span> <span class="p">(</span><span class="n">inch</span><span class="o">/</span><span class="n">foot</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Note that one could also write the last example as</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">foot2inch</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">inch</span><span class="o">/</span><span class="n">foot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>This shows that it can sometimes take too much clear thinking to specify dimensionless conversion factors. To avoid misunderstanding, conversion factors ( dimensionless factors used to convert between conformable units) can most clearly be written</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNITS</span> <span class="p">{</span>
+    <span class="n">foot2inch</span> <span class="o">=</span> <span class="p">(</span><span class="n">foot</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">inch</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>With the above, a statement such as</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span> <span class="o">=</span> <span class="mi">5</span><span class="o">*</span><span class="n">foot2inch</span><span class="o">*</span><span class="n">f</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>makes sense. ie. if f=2 then i should end up as 120 and there is no complaint by the units checker.</p>
+</section>
+<section id="function-and-argument-units">
+<h3>Function and Argument units<a class="headerlink" href="#function-and-argument-units" title="Link to this heading"></a></h3>
+<p>Standard mathematical functions are dimensionless and take dimensionless arguments. In those special circumstances (such as printf()) where dimensions don’t matter or where there is some overreaching reason why units should not be checked, one can turn off all unit checking with the statement, <code class="docutils literal notranslate"><span class="pre">UNITSOFF</span></code>. Unit checking is turned back on with <code class="docutils literal notranslate"><span class="pre">UNITSON</span></code>. An example of this last case are Hodgkin-Huxley rates which involve terms like exp(-v/18). In the model description the argument has the dimensions of mV and it may seem like too much trouble to give all the numbers explicit units as in exp(-v/18(mV)).</p>
+<p>User declared functions and arguments can be given units with the syntax</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION</span> <span class="n">f</span><span class="p">(</span><span class="n">a1</span> <span class="p">(</span><span class="n">u1</span><span class="p">),</span> <span class="n">a2</span> <span class="p">(</span><span class="n">u2</span><span class="p">),</span> <span class="o">...</span><span class="p">)</span> <span class="p">(</span><span class="n">uf</span><span class="p">)</span> <span class="p">{</span> <span class="n">statements</span> <span class="p">}</span>
+<span class="n">PROCEDURE</span> <span class="n">p</span><span class="p">(</span><span class="n">a1</span> <span class="p">(</span><span class="n">u1</span><span class="p">),</span> <span class="n">a2</span> <span class="p">(</span><span class="n">u2</span><span class="p">),</span> <span class="o">...</span><span class="p">)</span> <span class="p">{</span> <span class="n">statements</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>In every instance, the absence of units implies that the argument or function is dimensionless.</p>
+</section>
+<section id="units-for-kinetic-blocks">
+<h3>Units for KINETIC blocks<a class="headerlink" href="#units-for-kinetic-blocks" title="Link to this heading"></a></h3>
+<p>First, it is ascertained that the quantity units are the same for each reactant. Quantity units are the reactant units times that reactant’s COMPARTMENT size. Then the flux units are determined (quantity units / independent units) and it is ascertained that the rate units are consistent.</p>
+</section>
+<section id="units-in-neuron-models">
+<h3>Units in NEURON models<a class="headerlink" href="#units-in-neuron-models" title="Link to this heading"></a></h3>
+<p>If a NEURON block exists in the model description the following variables are checked for compatible units</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>v</p></td>
+<td><p>millivolt</p></td>
+</tr>
+<tr class="row-odd"><td><p>t</p></td>
+<td><p>ms</p></td>
+</tr>
+<tr class="row-even"><td><p>dt</p></td>
+<td><p>ms</p></td>
+</tr>
+<tr class="row-odd"><td><p>celsius</p></td>
+<td><p>degC</p></td>
+</tr>
+<tr class="row-even"><td><p>diam</p></td>
+<td><p>micron</p></td>
+</tr>
+<tr class="row-odd"><td><p>(concentration)</p></td>
+<td><p>milli/liter</p></td>
+</tr>
+<tr class="row-even"><td><p>(potential)</p></td>
+<td><p>millivolt</p></td>
+</tr>
+<tr class="row-odd"><td><p>(current density)</p></td>
+<td><p>milliamp/cm <sup>2</sup></p></td>
+</tr>
+<tr class="row-even"><td><p>(point current)</p></td>
+<td><p>nanoamp</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bio_faq.html" class="btn btn-neutral float-left" title="Biology Modeling FAQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="saveses.html" class="btn btn-neutral float-right" title="Using Session Files for Saving and Retrieving Windows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

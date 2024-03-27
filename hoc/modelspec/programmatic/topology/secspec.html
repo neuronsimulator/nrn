@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Section and Segment Selection &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="SectionList" href="seclist.html" />
+    <link rel="prev" title="Conceptual Overview of Sections" href="geometry.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../ions.html">Ions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechanisms.html">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../programmatic.html">Programmatic Model Specification</a></li>
+          <li class="breadcrumb-item"><a href="../topology.html">Topology</a></li>
+      <li class="breadcrumb-item active">Section and Segment Selection</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../../..html/../python/modelspec/programmatic/topology/secspec.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/hoc/modelspec/programmatic/topology/secspec.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#pop_section" title="Link to this definition">pop_section</a> &middot; <a href="#push_section" title="Link to this definition">push_section</a></p><section id="section-and-segment-selection">
+<span id="hoc-currentlyaccessedsection"></span><span id="hoc-secspec"></span><h1>Section and Segment Selection<a class="headerlink" href="#section-and-segment-selection" title="Link to this heading"></a></h1>
+<p>Since sections share property names eg. a length called <a class="reference internal" href="geometry.html#L" title="L"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">L</span></code></a>
+it is always necessary to specify
+<em>which</em> section is being discussed.</p>
+<p>There are three methods
+of specifying which section a property refers to (with each being
+compact in some contexts and cumbersome in others). They are given
+below in order of precedence (highest first).</p>
+<section id="dot-notation">
+<h2>Dot notation<a class="headerlink" href="#dot-notation" title="Link to this heading"></a></h2>
+<p>This takes precedence over the other methods and
+is described by the syntax <code class="samp docutils literal notranslate"><em><span class="pre">sectionname</span></em><span class="pre">.varname</span></code>. Examples
+are</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dendrite[2].L = dendrite[1].L + dendrite[0].L
+axon.v = soma.v
+print soma.gnabar
+axon.nseg = 3*axon.nseg
+</pre></div>
+</div>
+<p>This notation is necessary when one needs to refer to more than
+one section within a single statement.</p>
+</section>
+<section id="stack-of-sections">
+<h2>Stack of sections<a class="headerlink" href="#stack-of-sections" title="Link to this heading"></a></h2>
+<p>The syntax is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>sectionname {stmt}
+</pre></div>
+</div>
+<p>and means that the currently selected section during the
+execution of <em>stmt</em>
+is <em>sectionname</em>. This method is the most useful for
+programming since the user has explicit control over
+the scope of the section and can set several range variables.
+Notice that after the <em>stmt</em> is executed the currently selected
+section reverts
+to the name (if any) it had before <em>sectionname</em> was seen. The
+programmer is allowed to
+nest these statements to any level.
+Avoid the error:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        soma L=10 diam=10
+</pre></div>
+</div>
+<p>which sets <code class="docutils literal notranslate"><span class="pre">soma.L</span></code>, then pops the section stack and sets <a class="reference internal" href="geometry.html#diam" title="diam"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">diam</span></code></a>
+for whatever section is then on the stack.</p>
+<p>It is important that control flow reach the end of <em>stmt</em> in order to
+automatically pop the section stack. Therefore, one cannot use
+the <a class="reference internal" href="../../../programming/ockeywor.html#hoc-keyword-continue"><span class="std std-ref">continue</span></a>, <a class="reference internal" href="../../../programming/ockeywor.html#hoc-keyword-break"><span class="std std-ref">break</span></a>, or <a class="reference internal" href="../../../programming/ockeywor.html#hoc-keyword-return"><span class="std std-ref">return</span></a> statements in <em>stmt</em>.</p>
+<p>There is no explicit notion of a section variable in NEURON but the same
+effect can be obtained with the <a class="reference internal" href="secref.html#SectionRef" title="SectionRef"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionRef</span></code></a> class. The use of <a class="reference internal" href="#push_section" title="push_section"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">push_section()</span></code></a>
+for this purpose is not recommended except as a last resort.</p>
+<p>Looping over sets of sections is done most often with the <a class="reference internal" href="#hoc-keyword-forall"><span class="std std-ref">forall</span></a> and <a class="reference internal" href="#hoc-keyword-forsec"><span class="std std-ref">forsec</span></a>
+commands.</p>
+</section>
+<section id="default-section">
+<h2>Default section<a class="headerlink" href="#default-section" title="Link to this heading"></a></h2>
+<p>The syntax</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>access sectionname
+</pre></div>
+</div>
+<p>defines a default section name to be the currently selected section when the
+first two methods are not in effect. There is often a conceptually
+privileged section which gets most of the use and it is useful to
+declare that as the default section. e.g.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>access soma
+</pre></div>
+</div>
+<p>With this, one can, with a minimum of typing, get values of voltage, etc
+at
+the command line level.</p>
+<p>In general, this statement should only be used once to give default access
+to a privileged section. It’s bad programming practice to change the
+default access within anything other than an initialization procedure.
+The “<code class="docutils literal notranslate"><span class="pre">sec</span> <span class="pre">{</span> <span class="pre">stmt</span> <span class="pre">}</span></code>” form is almost always the right way to
+use the section stack.</p>
+<hr class="docutils" />
+<p id="hoc-keyword-access"><span id="index-0"></span><strong>access</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">access</span> <span class="pre">section</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Makes <em>section</em> the default currently accessed section.
+More precisely, it replaces the top of the section stack with the
+indicated section and so will be the permanent default section only if
+the section stack is empty or has only one section in it.
+This is lesser
+precedence than
+<code class="docutils literal notranslate"><span class="pre">section</span> <span class="pre">stmt</span></code>
+which is lesser precedence than
+<code class="docutils literal notranslate"><span class="pre">section.var</span></code></p>
+<p>Note:</p>
+<p>The access statement should not be used within a procedure or function. In
+fact the best style is to execute it only once in a program to refer to
+a priviledged section such as “soma”. It can be very confusing when a
+procedure has the side effect of permanently changing the default section.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create a, b, c, d
+access a
+print secname()
+b {
+        print secname()
+        access c        // not recommended. The &quot;go_to&quot; of sections.
+        print secname()
+        d {print secname()}
+        print secname()
+} // because the stack has more than one section, c is popped off
+print secname()     // and the second &quot;access&quot; was not permanent!
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-forall"><span id="index-1"></span><strong>forall</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Loops over all sections, successively making each section the currently
+accessed section.</p>
+<p>Within an object, <code class="docutils literal notranslate"><span class="pre">forall</span></code> refers to all the sections
+declared in the object. This is generally the right thing to do when a template
+creates sections but is inconvenient when a template is constructed which
+needs to compute using sections external to it. In this case, one can pass a collection
+of sections into a template function as a <a class="reference internal" href="seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> object argument.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">forall</span></code> is relatively slow,
+especially when used in conjunction with <a class="reference internal" href="../topology.html#issection" title="issection"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">issection()</span></code></a>
+and <a class="reference internal" href="../topology.html#ismembrane" title="ismembrane"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">ismembrane()</span></code></a> selectors. If you are often iterating over the same
+sets it is much faster to keep the sets in <a class="reference internal" href="seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> objects and use
+the much faster <a class="reference internal" href="#hoc-keyword-forsec"><span class="std std-ref">forsec</span></a> command.</p>
+<p>The iteration sequence order is undefined but will remain the same for
+a given sequence of <a class="reference internal" href="../topology.html#hoc-keyword-create"><span class="std std-ref">create</span></a> statements.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma, axon, dend[3]
+forall {
+    print secname()
+}
+</pre></div>
+</div>
+<p>prints the names of all the sections which have been created.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>soma
+axon
+dend[0]
+dend[1]
+dend[2]
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-keyword-forsec"><span class="std std-ref">forsec</span></a>, <a class="reference internal" href="#hoc-keyword-ifsec"><span class="std std-ref">ifsec</span></a>, <a class="reference internal" href="../topology.html#issection" title="issection"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">issection()</span></code></a>, <a class="reference internal" href="seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">SectionList()</span></code></a>, <a class="reference internal" href="../topology.html#ismembrane" title="ismembrane"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">ismembrane()</span></code></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<p id="hoc-keyword-ifsec"><span id="index-2"></span><strong>ifsec</strong></p>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">ifsec</span> <span class="pre">string</span> <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">ifsec</span> <span class="pre">sectionlist</span> <span class="pre">stmt</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>ifsec string stmt</dt><dd><p>Executes stmt if string is contained in the name of the currently
+accessed section.  equivalent to <code class="samp docutils literal notranslate"><span class="pre">if(issection(</span><em><span class="pre">string</span></em><span class="pre">))</span></code> stmt
+Note that the regular expression semantics is not the same as that
+used by issection. To get an exact match use
+ifsec ^string$</p>
+</dd>
+<dt>ifsec sectionlist stmt</dt><dd><p>Executes stmt if the currently accessed section is in the sectionlist.</p>
+</dd>
+</dl>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#hoc-keyword-forsec"><span class="std std-ref">forsec</span></a>, <a class="reference internal" href="seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionList</span></code></a>, <a class="reference internal" href="../topology.html#issection" title="issection"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">issection()</span></code></a></p>
+</div>
+</div></blockquote>
+<hr class="docutils" />
+<span id="index-3"></span><dl id="hoc-keyword-forsec">
+<dt><strong>forsec</strong></dt><dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">forsec</span> <span class="pre">string</span> <span class="pre">stmt</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">forsec</span> <span class="pre">sectionlist</span> <span class="pre">stmt</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>forsec string stmt</dt><dd><p>equivalent to <code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">ifsec</span> <span class="pre">string</span> <span class="pre">stmt</span></code> but faster.
+Note that forsec string is equivalent to
+<code class="samp docutils literal notranslate"><span class="pre">forall</span> <span class="pre">if</span> <span class="pre">(issection(</span><em><span class="pre">string</span></em><span class="pre">))</span> <span class="pre">stmt</span></code></p>
+</dd>
+<dt>forsec sectionlist</dt><dd><p>equivalent to <code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">ifsec</span> <span class="pre">sectionlist</span> <span class="pre">stmt</span></code> but very fast.</p>
+</dd>
+</dl>
+<p>These provide a very efficient iteration over the list of sections.</p>
+</div></blockquote>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma, dend[3], axon
+forsec &quot;a&quot; print secname()
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma, dend[3], axon
+objref sl
+sl = new SectionList()
+for (i = 2; i &gt;= 0; i = i - 1) dend[i] sl.append()
+forsec sl print secname()
+</pre></div>
+</div>
+</div></blockquote>
+</dd>
+</dl>
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="pop_section">
+<span class="sig-name descname"><span class="pre">pop_section</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pop_section" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">pop_section()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Take the currently accessed section off the section stack. This can only be used after
+a function which pushes a section on the section stack such as
+<code class="docutils literal notranslate"><span class="pre">point_process.getloc()</span></code>.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma[5]
+objref stim[5]
+for i=0,4 soma[i] stim[i] = new IClamp(i/4)
+for i=0,4 {
+    x = stim[i].get_loc()
+    printf(&quot;location of %s is %s(%g)\n&quot;, stim[i], secname(), x)
+    pop_section()
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="push_section">
+<span class="sig-name descname"><span class="pre">push_section</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#push_section" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">push_section(number)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">push_section(section_name)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This function, along with <code class="docutils literal notranslate"><span class="pre">pop_section()</span></code> should only be used as a last resort.
+It will place a specified section on the top of the section stack,
+becoming the current section to which all operations apply. It is
+probably always better to use <a class="reference internal" href="secref.html#SectionRef" title="SectionRef"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionRef</span></code></a>
+or <a class="reference internal" href="seclist.html#SectionList" title="SectionList"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionList</span></code></a> .</p>
+<dl class="simple">
+<dt><code class="samp docutils literal notranslate"><span class="pre">push_section(</span><em><span class="pre">number</span></em><span class="pre">)</span></code></dt><dd><p>Push the section identified by the number returned by
+this_section, etc. which you desire to be the currently accessed
+section. Any section pushed must have a corresponding pop_section()
+later or else the section stack will be corrupted. The number is
+not guaranteed to be the same across separate invocations of NEURON.</p>
+</dd>
+<dt><code class="samp docutils literal notranslate"><span class="pre">push_section(</span><em><span class="pre">section_name</span></em><span class="pre">)</span></code></dt><dd><p>Push the section identified by the name obtained
+from sectionname(<em>strdef</em>). Note: at this time the implementation
+iterates over all sections to find the proper one; so do not use
+in loops.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="secref.html#SectionRef" title="SectionRef"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SectionRef</span></code></a></p>
+</div>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="geometry.html" class="btn btn-neutral float-left" title="Conceptual Overview of Sections" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="seclist.html" class="btn btn-neutral float-right" title="SectionList" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

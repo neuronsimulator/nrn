@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RunControl &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Family" href="family.html" />
+    <link rel="prev" title="Standard Run Tools" href="stdrun.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="programmatic.html">Programmatic Simulation Control</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="stdrun.html">Standard Run Tools</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">RunControl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="family.html">Family</a></li>
+<li class="toctree-l4"><a class="reference internal" href="family.html#execcommand">ExecCommand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="family.html#gathervec">GatherVec</a></li>
+<li class="toctree-l4"><a class="reference internal" href="family.html#vectorplay">VectorPlay</a></li>
+<li class="toctree-l4"><a class="reference internal" href="family.html#vecwrap">VecWrap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="stdrun.html#neuron-main-menu">NEURON Main Menu</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../compilationoptions.html">Rarely Used Compilation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../envvariables.html">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interpretermanagement.html">Interpreter Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="stdrun.html">Standard Run Tools</a></li>
+      <li class="breadcrumb-item active">RunControl</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/simctrl/runctrl.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/simctrl/runctrl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="runcontrol">
+<span id="runctrl"></span><h1>RunControl<a class="headerlink" href="#runcontrol" title="Link to this heading"></a></h1>
+<p>A minimal control system for managing a single “Oscilloscope sweep” level
+simulation run.</p>
+<section id="t">
+<h2>t<a class="headerlink" href="#t" title="Link to this heading"></a></h2>
+<p>Neuron time (ms). The field editor is updated regularly to display the
+value of the global variable <a class="reference internal" href="programmatic.html#t" title="t"><code class="xref py py-data docutils literal notranslate"><span class="pre">t</span></code></a>.</p>
+</section>
+<section id="dt">
+<h2>dt<a class="headerlink" href="#dt" title="Link to this heading"></a></h2>
+<p>Value of the fundamental integration time step, <a class="reference internal" href="programmatic.html#dt" title="dt"><code class="xref py py-data docutils literal notranslate"><span class="pre">dt</span></code></a>,
+used by <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>.
+When a value is entered into the field editor it is rounded down
+so that an integral multiple of fadvance’s make up a SingleStep</p>
+</section>
+<section id="initrun">
+<span id="runcontrol-initrun"></span><h2>InitRun<a class="headerlink" href="#initrun" title="Link to this heading"></a></h2>
+<p>Initialize states, set t=0, and run the simulation until t == Tstop
+Plotting to graphs constructed from the <a class="reference internal" href="stdrun.html#neuronmainmenu"><span class="std std-ref">NEURON Main Menu</span></a> occurs at
+a rate given by the variable set by the <a class="reference internal" href="#plotsms"><span class="std std-ref">Plotsms</span></a> value editor.
+It is often convenient to substitute problem specific procedures
+for the default procedures <code class="xref py py-func docutils literal notranslate"><span class="pre">init()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">advance()</span></code>.
+The run call chain is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    h.run --&gt; h.continuerun --&gt; h.step --&gt; h.advance --&gt; h.fadvance
+</pre></div>
+</div>
+<p>The default advance is merely a HOC function that calls <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>. It may be overriden via, e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;proc advance() {nrnpython(&quot;myadvance()&quot;)}&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">myadvance</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;h.t = </span><span class="si">{</span><span class="n">h</span><span class="o">.</span><span class="n">t</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">fadvance</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Multiple presses of the this button without waiting
+for the previous simulation to finish (or pressing Stop) will
+execute the run() procedure recursively (probably not what is
+desired) Press the Stop button to unwrap these recursions.</p>
+</div>
+</section>
+<section id="init">
+<span id="runcontrol-init"></span><h2>Init<a class="headerlink" href="#init" title="Link to this heading"></a></h2>
+<p>The default initialize procedure initializes states using
+<a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> (v_init) where v_init is displayed in the value editor.
+The init call chain is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    h.stdinit --&gt; h.init --&gt; (h.finitialize, h.fcurrent)
+</pre></div>
+</div>
+<p>When more complicated initialization is required, use
+<a class="reference internal" href="programmatic.html#FInitializeHandler" title="FInitializeHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">FInitializeHandler</span></code></a> objects or substitute a
+new procedure for the default init procedure; e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;proc init() {finitialize(v_init) nrnpython(&quot;myinit()&quot;)}&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">myinit</span><span class="p">():</span>
+    <span class="c1"># new code to happen after initialization here</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;initializing...&#39;</span><span class="p">)</span>
+    <span class="c1"># only need the following if states have been changed</span>
+    <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">active</span><span class="p">():</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">cvode</span><span class="o">.</span><span class="n">re_init</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fcurrent</span><span class="p">()</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">frecord_init</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="programmatic.html#finitialize" title="finitialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>, <a class="reference internal" href="cvode.html#CVode.re_init" title="CVode.re_init"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a>, <a class="reference internal" href="programmatic.html#fcurrent" title="fcurrent"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a>, <a class="reference internal" href="programmatic.html#frecord_init" title="frecord_init"><code class="xref py py-func docutils literal notranslate"><span class="pre">frecord_init()</span></code></a>, <a class="reference internal" href="programmatic.html#FInitializeHandler" title="FInitializeHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">FInitializeHandler</span></code></a></p>
+</div>
+</section>
+<section id="stop">
+<span id="runctrl-stop"></span><h2>Stop<a class="headerlink" href="#stop" title="Link to this heading"></a></h2>
+<p>Stops the simulation at the end of a step.</p>
+</section>
+<section id="continuetil">
+<h2>Continuetil<a class="headerlink" href="#continuetil" title="Link to this heading"></a></h2>
+<p>Continues integrating until t &gt;= value displayed in value editor.
+Plots occur each step.</p>
+</section>
+<section id="continuefor">
+<h2>Continuefor<a class="headerlink" href="#continuefor" title="Link to this heading"></a></h2>
+<p>Continues integrating for amount of time displayed in value editor.
+Plots occur each step.</p>
+</section>
+<section id="singlestep">
+<h2>SingleStep<a class="headerlink" href="#singlestep" title="Link to this heading"></a></h2>
+<p>Integrates one step and plots.
+A step is 1/(Plots/ms) milliseconds and consists of 1/dt/(Plots/ms)
+calls to <a class="reference internal" href="programmatic.html#fadvance" title="fadvance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>.</p>
+</section>
+<section id="tstop">
+<h2>Tstop<a class="headerlink" href="#tstop" title="Link to this heading"></a></h2>
+<p>Stop time for InitRun</p>
+</section>
+<section id="plotsms">
+<span id="id1"></span><h2>Plotsms<a class="headerlink" href="#plotsms" title="Link to this heading"></a></h2>
+<p>Number of integration steps per millisecond at which plots occur.
+Notice that reducing dt does not by itself increase the number
+of points plotted. If the the step is not an integral multiple of
+dt then dt is rounded down to the nearest integral multiple.</p>
+</section>
+<section id="quiet">
+<h2>Quiet<a class="headerlink" href="#quiet" title="Link to this heading"></a></h2>
+<p>When checked, turns off movies and graph flushing during
+an <a class="reference internal" href="#runcontrol-initrun"><span class="std std-ref">InitRun</span></a>. Under some circumstances this can speed
+things up very considerably such as when using the <a class="reference internal" href="stdrun.html#runfitter"><span class="std std-ref">Run Fitter</span></a>
+in the presence of a Shape Movie plot under MSWINDOWS.</p>
+</section>
+<section id="realtime">
+<h2>RealTime<a class="headerlink" href="#realtime" title="Link to this heading"></a></h2>
+<p>Running display of computation time. Resolution is 1 second.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="stdrun.html" class="btn btn-neutral float-left" title="Standard Run Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="family.html" class="btn btn-neutral float-right" title="Family" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

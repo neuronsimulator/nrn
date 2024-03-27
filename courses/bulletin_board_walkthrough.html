@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulletin board code walkthroughs &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bulletin board code walkthroughs</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/bulletin_board_walkthrough.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bulletin-board-code-walkthroughs">
+<span id="bulletin-board-walkthrough"></span><h1>Bulletin board code walkthroughs<a class="headerlink" href="#bulletin-board-code-walkthroughs" title="Link to this heading"></a></h1>
+<section id="initonerun-py">
+<span id="initonerun-walkthrough"></span><h2>initonerun.py<a class="headerlink" href="#initonerun-py" title="Link to this heading"></a></h2>
+<section id="description">
+<h3>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h3>
+<p>Executes one simulation with a specified stimulus.</p>
+<p>Displays response and reports spike frequency.</p>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">i</span> <span class="n">initonerun</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>A new simulation can be launched by entering the command</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">onerun</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>at the <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt, where x is a number that specifies the stimulus current amplitude in nA.</p>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">onerun</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="source">
+<h3>Source<a class="headerlink" href="#source" title="Link to this heading"></a></h3>
+<p><a class="reference download internal" download="" href="../_downloads/ed16e3c8c1470ee19a1e62c9e753e9ab/initonerun.py"><code class="xref download docutils literal notranslate"><span class="pre">initonerun.py</span></code></a></p>
+</section>
+<section id="code-walkthrough">
+<h3>Code walkthrough<a class="headerlink" href="#code-walkthrough" title="Link to this heading"></a></h3>
+<p><a class="reference download internal" download="" href="../_downloads/ed16e3c8c1470ee19a1e62c9e753e9ab/initonerun.py"><code class="xref download docutils literal notranslate"><span class="pre">initonerun.py</span></code></a> is organized in a modular fashion. Only highlights are mentioned.</p>
+<section id="simulation-parameters">
+<h4>Simulation parameters<a class="headerlink" href="#simulation-parameters" title="Link to this heading"></a></h4>
+<p>Firing frequency should be determined after the model has settled into a stable firing pattern. Tests show that the first few interspike intervals vary slightly, so the first NSETTLE=5 ISIs are ignored and frequency is computed from the last 10 ISIs in a simulation. The slowest sustained repetitive firing is &gt; 40 Hz (longest ISI &lt; 25 ms), so TSTOP = 375 ms would allow at least 15 ISIs. TSTOP has been set to 500 ms so that repetitive firing produces &gt; 15 ISIs, and runs with &lt; 15 are ignored.</p>
+</section>
+<section id="model-specification">
+<h4>Model specification<a class="headerlink" href="#model-specification" title="Link to this heading"></a></h4>
+<p>loads the cell’s source code</p>
+</section>
+<section id="instrumentation">
+<h4>Instrumentation<a class="headerlink" href="#instrumentation" title="Link to this heading"></a></h4>
+<p>stimulus–attaches an <a class="reference internal" href="../hoc/modelspec/programmatic/mechanisms/mech.html#IClamp" title="IClamp"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">IClamp</span></code></a> to <code class="docutils literal notranslate"><span class="pre">soma(0.5)</span></code></p>
+<p>data recording and analysis–uses a <a class="reference internal" href="../hoc/modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">NetCon</span></code></a> to record the times at which spikes reach <code class="docutils literal notranslate"><span class="pre">dend(1)</span></code></p>
+<p>get_frequency(spvec) verifies that enough spikes have occurred, then calculates freq from the last NINVL=10 recorded ISIs.</p>
+</section>
+<section id="simulation-control-and-reporting-of-results">
+<h4>Simulation control and reporting of results<a class="headerlink" href="#simulation-control-and-reporting-of-results" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">onerun()</span></code> expects a single numerical argument that specifies the stimulus amplitude. It creates a graph that will show <code class="docutils literal notranslate"><span class="pre">dend(1).v</span></code> vs. time, runs a simulation, analyzes the results, and prints out the stimulus amplitude and firing frequency.</p>
+</section>
+</section>
+</section>
+<section id="initbatser-py">
+<span id="initbatser-walkthrough"></span><h2>initbatser.py<a class="headerlink" href="#initbatser-py" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>Description<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>Executes a batch of simulations, one at a time, in which stimulus amplitude increases from run to run.</p>
+<p>Then saves results, reports performance, and optionally plots an f-i graph.</p>
+</section>
+<section id="id2">
+<h3>Usage<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>Either</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">initbatser</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>or (to see the graph):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">i</span> <span class="n">initbatser</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3>Source<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference download internal" download="" href="../_downloads/cf2c5830c5ad41484304f7789fa497c7/initbatser.py"><code class="xref download docutils literal notranslate"><span class="pre">initbatser.py</span></code></a></p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Code walkthrough<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p><a class="reference download internal" download="" href="../_downloads/cf2c5830c5ad41484304f7789fa497c7/initbatser.py"><code class="xref download docutils literal notranslate"><span class="pre">initbatser.py</span></code></a> is based on <code class="file docutils literal notranslate"><span class="pre">initonerun.py</span></code>. Only significant differences are mentioned.</p>
+<section id="id5">
+<h4>Simulation parameters<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<p>If PLOTRESULTS is True, an f-i curve will be generated at the end of program execution; if not, the program simply exits when done.
+AMP0, D_AMP, and NRUNS specify the stimulus current in the first run, the increment from one run to the next, and the number of simulations that are executed, respectively.</p>
+</section>
+<section id="id6">
+<h4>Instrumentation<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">setparams(run_id)</span></code> assigns values to the parameters that differ from run to run. In this example, it sets stimulus amplitude to a value that depends on its argument. Its argument is the “run index”, a whole number that ranges from 0 to NRUNS-1 (see batchrun(n) in the following discussion of “Simulation control”).</p>
+</section>
+<section id="simulation-control">
+<h4>Simulation control<a class="headerlink" href="#simulation-control" title="Link to this heading"></a></h4>
+<p>This has been separated from reporting of results.</p>
+<p><code class="docutils literal notranslate"><span class="pre">trun</span> <span class="pre">=</span> <span class="pre">time.time()</span></code> records system time at the beginning of the code whose run time will be evaluated.</p>
+<p><code class="docutils literal notranslate"><span class="pre">batchrun()</span></code> contains a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop that iterates the run counter <code class="docutils literal notranslate"><span class="pre">run_id</span></code> from 0 to NRUNS - 1. Each pass through this loop results in a new simulation with a new stimulus amplitude, finds the spike frequency, and saves the stimulus amplitude and frequency to a pair of lists. It also prints a message to the terminal to indicate progress.</p>
+</section>
+<section id="reporting-of-results">
+<h4>Reporting of results<a class="headerlink" href="#reporting-of-results" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">saveresults()</span></code> writes the stimulus and frequency vectors to a text file in the format used by <span class="menuselection">NEURON Main Menu ‣ Vector ‣ Save to File</span> and <span class="menuselection">Retrieve from File</span>.</p>
+<p>After this is done, the program reports run time.</p>
+<p>Then it plots an f-i curve or quits, depending on PLOTRESULTS.</p>
+</section>
+</section>
+</section>
+<section id="initbatpar-py">
+<span id="initbatpar-walkthrough"></span><h2>initbatpar.py<a class="headerlink" href="#initbatpar-py" title="Link to this heading"></a></h2>
+<section id="id7">
+<h3>Description<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<p>Performs the same task as <code class="file docutils literal notranslate"><span class="pre">initbatser.py</span></code>, i.e. executes a batch of simulations, but does it serially or in parallel, depending on how the program is launched.</p>
+<p>Parallel execution uses NEURON’s bulletin board.</p>
+</section>
+<section id="id8">
+<h3>Usage<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<p>Serial execution: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">initbatpar.py</span></code>
+runs simulations one after another on a single processor, i.e. serially. Parallel execution: <code class="docutils literal notranslate"><span class="pre">mpiexec</span> <span class="pre">-n</span> <span class="pre">N</span> <span class="pre">python</span> <span class="pre">initbatpar.py</span></code>
+launches N processes that carry out the simulations. On a multicore PC or Mac, parallel execution with N equal to the number of cores can reduce total run time to about 1/N of the run time required by initbatser.py, serial execution of initbatpar.py, or parallel execution of initbatpar.py with N = 1.</p>
+</section>
+<section id="id9">
+<h3>Source<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference download internal" download="" href="../_downloads/0a19e20757f5692c28fd4e5400036a3d/initbatpar.py"><code class="xref download docutils literal notranslate"><span class="pre">initbatpar.py</span></code></a></p></li>
+</ul>
+</section>
+<section id="id10">
+<h3>Code walkthrough<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<p><a class="reference download internal" download="" href="../_downloads/0a19e20757f5692c28fd4e5400036a3d/initbatpar.py"><code class="xref download docutils literal notranslate"><span class="pre">initbatpar.py</span></code></a> is based on <code class="file docutils literal notranslate"><span class="pre">initbatser.py</span></code>. Only key differences are mentioned below.</p>
+<section id="parallelcontext">
+<h4>ParallelContext<a class="headerlink" href="#parallelcontext" title="Link to this heading"></a></h4>
+<p>An instance of the <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext" title="ParallelContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a> class is created near the start of the program. Print statements inserted after this point to monitor program execution can report not only what code is being executed in the course of which simulation, but also the identity (<code class="docutils literal notranslate"><span class="pre">pc.id</span></code>) of the host that is executing the code.</p>
+</section>
+<section id="id11">
+<h4>Simulation control<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
+<p>This is where most of the changes have been made.</p>
+<p>The speedup of bulletin board style parallelization depends on keeping the workers as busy as possible, while minimizing communication (data exchange via the bulletin board) as much as possible. To this end, the master should post as little data as necessary to the bulletin board. The workers should do as much work as possible, and then return as little data as necessary to the bulletin board.</p>
+<p>The serial program <code class="file docutils literal notranslate"><span class="pre">initbatser.py</span></code> has a batchrun(n) that uses this for loop to execute a series of simulations, one at a time, on a single processor:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">run_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">set_params</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="n">stims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stim</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span>
+    <span class="n">freqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_frequency</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished </span><span class="si">%d</span><span class="s1"> of </span><span class="si">%d</span><span class="s1">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">run_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>In <code class="file docutils literal notranslate"><span class="pre">initbatpar.py</span></code>, everything that can be offloaded to the workers has been taken out of batchrun() and inserted into a new function <code class="docutils literal notranslate"><span class="pre">fi(run_id)</span></code> that is defined prior to batchrun.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fi</span><span class="p">(</span><span class="n">run_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;set params, execute a simulation, analyze and return results&quot;&quot;&quot;</span>
+    <span class="n">set_params</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">stim</span><span class="o">.</span><span class="n">amp</span><span class="p">,</span> <span class="n">get_frequency</span><span class="p">(</span><span class="n">spvec</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Notice that <code class="docutils literal notranslate"><span class="pre">fi</span></code> contains the procedures that involve the most computational overhead. Also notice that <code class="docutils literal notranslate"><span class="pre">fi</span></code> expects a single numerical argument – the run_id – and returns a tuple with the run_id, the value of the stimulus, and the frequency obtained from the simulation. An alternative implementation could have reduced communication by returning only the frequency, unpacking the job index (equal to the run_id), and recomputing the stimulus amplitude. It is important to balance convenience, the aim of keeping the workers busy, and minimizing communication overhead.</p>
+<p>Here is <code class="file docutils literal notranslate"><span class="pre">initbatpar.py</span></code>’s batchrun procedure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">batchrun</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="c1"># preallocate lists of length n for storing parameters and results</span>
+    <span class="n">stims</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="k">for</span> <span class="n">run_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">pc</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">fi</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">pc</span><span class="o">.</span><span class="n">working</span><span class="p">():</span>
+        <span class="n">run_id</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">freq</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">pyret</span><span class="p">()</span>
+        <span class="n">stims</span><span class="p">[</span><span class="n">run_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">amp</span>
+        <span class="n">freqs</span><span class="p">[</span><span class="n">run_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished </span><span class="si">%d</span><span class="s1"> of </span><span class="si">%d</span><span class="s1">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">stims</span><span class="p">,</span> <span class="n">freqs</span>
+</pre></div>
+</div>
+<p>There still is a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop, but it uses <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext.submit" title="ParallelContext.submit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pc.submit()</span></code></a> to post jobs to the bulletin board. Communication is minimized by passing only the function handle (<code class="docutils literal notranslate"><span class="pre">fi</span></code>) and the simulation index <code class="docutils literal notranslate"><span class="pre">run_id</span></code> for each run that is to be carried out.</p>
+<p>Next comes a <code class="docutils literal notranslate"><span class="pre">while</span></code> loop in which the master checks the bulletin board for returned results. If nothing is found, the master picks a task from the bulletin board and executes it. If a result is present, the master retrieves it from the bulletin board: <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext.pyret" title="ParallelContext.pyret"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pc.pyret()</span></code></a> gets the value returned by <code class="docutils literal notranslate"><span class="pre">fi</span></code>, which is unpacked into its three components.</p>
+<p><code class="docutils literal notranslate"><span class="pre">run_id</span></code> is used to place the results in the appropriate locations in the stims and freqs lists, as there is no guarantee that simulation results will be returned in any specific sequence.</p>
+<p>After the last job has been completed, the master exits the while loop, and batchrun is finished. Then <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext.done" title="ParallelContext.done"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pc.done()</span></code></a> releases the workers.</p>
+<p>But the master still has to save the results.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

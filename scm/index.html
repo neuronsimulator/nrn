@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON SCM and Release &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NEURON Versioning and Release Guidelines" href="guidelines/SCMGuidelines.html" />
+    <link rel="prev" title="Neuron MODelling Language" href="../nmodl/NMODL_language.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NEURON SCM and Release</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guidelines/SCMGuidelines.html">NEURON Versioning and Release Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html">NEURON Source and Release Management Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="policies/policies.html">NEURON Software Policies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">NEURON SCM and Release</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/scm/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-scm-and-release">
+<h1>NEURON SCM and Release<a class="headerlink" href="#neuron-scm-and-release" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guidelines/SCMGuidelines.html">NEURON Versioning and Release Guidelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guidelines/SCMGuidelines.html#release-versioning">Release Versioning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guidelines/SCMGuidelines.html#versioning-scheme">Versioning Scheme</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guidelines/SCMGuidelines.html#neuron-release-management-guidelines">NEURON Release Management Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guidelines/SCMGuidelines.html#contributing">Contributing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidelines/SCMGuidelines.html#managing-releases">Managing Releases</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="guidelines/SCMGuidelines.html#from-alpha-to-final-release">From Alpha to Final Release</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guidelines/SCMGuidelines.html#patch-releases">Patch Releases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guidelines/SCMGuidelines.html#release-deprecation">Release Deprecation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guidelines/SCMGuidelines.html#reference">Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="guide/SCMGuide.html">NEURON Source and Release Management Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#introduction">INTRODUCTION</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#definitions">Definitions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#git-and-github">GIT and GITHUB</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#git-branches-and-tags">Git Branches and Tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#github">GitHub</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#git-operations">GIT OPERATIONS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#checkout-stage-commit">Checkout, Stage, Commit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#checkout-reset">Checkout &amp; Reset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#merging-branches">Merging Branches</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#merge-squash">Merge –squash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#fast-forward-merge">Fast-Forward merge</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#merge-and-rebase">Merge and Rebase</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#best-practices">BEST PRACTICES</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#creating-changes-pull-requests">Creating Changes/Pull Requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#bring-up-to-date-merge-vs-rebase">Bring up to date: Merge vs Rebase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#reviewing">Reviewing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#creating-releases">CREATING RELEASES</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#neuron-s-release-requirements">NEURON’s Release Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#versioning-schemes">VERSIONING SCHEMES</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#existing-conventions">Existing Conventions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#semantic-versioning">Semantic Versioning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#pep-440">PEP 440</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#release-life-cycle-alpha-beta-release-candidate">Release Life Cycle: Alpha, Beta, Release Candidate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#a-versioning-scheme-for-neuron">A Versioning Scheme for NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#release-management-with-git">RELEASE MANAGEMENT WITH GIT</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#git-branching-models">Git Branching Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#github-flow">GitHub Flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#git-flow">Git Flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#gitlab-flow">GitLab Flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#other-alternatives">Other Alternatives</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="guide/SCMGuide.html#neuron-release-management-guidelines">NEURON Release Management Guidelines</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#contributing">Contributing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="guide/SCMGuide.html#managing-releases">Managing Releases</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#references">REFERENCES</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#document-history">DOCUMENT HISTORY</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/SCMGuide.html#footnotes">Footnotes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="policies/policies.html">NEURON Software Policies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="policies/policies.html#python-support-policy">Python Support Policy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="policies/policies.html#eol-end-of-life">EOL (end of life)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="policies/policies.html#note-on-existing-releases">Note on Existing releases</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="policies/policies.html#deprecation">Deprecation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="policies/policies.html#new-python-versions">New Python versions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../nmodl/NMODL_language.html" class="btn btn-neutral float-left" title="Neuron MODelling Language" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="guidelines/SCMGuidelines.html" class="btn btn-neutral float-right" title="NEURON Versioning and Release Guidelines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

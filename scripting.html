@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Running Python and HOC scripts &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="NEURON Python documentation" href="python/index.html" />
+    <link rel="prev" title="Publications using NEURON" href="publications-using-neuron.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Running Python and HOC scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Running Python and HOC scripts</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/scripting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="running-python-and-hoc-scripts">
+<span id="launching-hoc-and-python-scripts"></span><h1>Running Python and HOC scripts<a class="headerlink" href="#running-python-and-hoc-scripts" title="Link to this heading"></a></h1>
+<p>This section describes the various ways that you can <strong>run</strong> Python and HOC
+scripts.
+You may also want to refer to the <a class="reference internal" href="python/index.html#python-prog-ref"><span class="std std-ref">Python</span></a> and
+<a class="reference internal" href="hoc/index.html#hoc-prog-ref"><span class="std std-ref">HOC</span></a> reference sections for documentation of how to write
+scripts using the two languages.</p>
+<p>HOC scripts are always run using one of the NEURON executables, such as
+<code class="docutils literal notranslate"><span class="pre">nrniv</span></code>, <code class="docutils literal notranslate"><span class="pre">special</span></code>, <code class="docutils literal notranslate"><span class="pre">neurondemo</span></code> or <code class="docutils literal notranslate"><span class="pre">neurongui</span></code>.
+Python scripts can also be run using these executables, but may additionally be
+run using the standard <code class="docutils literal notranslate"><span class="pre">python</span></code> and <code class="docutils literal notranslate"><span class="pre">ipython</span></code> commands.</p>
+<p>Files passed to the NEURON executables are identified based on their file
+extensions, so:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nrniv<span class="w"> </span>script.hoc
+nrniv<span class="w"> </span>script.py
+nrniv<span class="w"> </span>-python<span class="w"> </span>script.hoc
+nrniv<span class="w"> </span>-python<span class="w"> </span>script.py
+python<span class="w"> </span>script.py
+</pre></div>
+</div>
+<p>Will all work as expected.
+It is also possible to execute code from the commandline, for example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nrniv<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;hoc_statement&quot;</span>
+nrniv<span class="w"> </span>-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;python_statement&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;python_statement&quot;</span>
+</pre></div>
+</div>
+<p>In this case, it is necessary to tell NEURON whether or not the code being
+passed to <code class="docutils literal notranslate"><span class="pre">-c</span></code> is HOC or Python code, using the <code class="docutils literal notranslate"><span class="pre">-python</span></code> option.</p>
+<p>When using Python, it is recommended that you organise your scripts so that
+there is no need to pass more than one <code class="docutils literal notranslate"><span class="pre">.py</span></code> file or <code class="docutils literal notranslate"><span class="pre">-c</span></code> argument to
+NEURON.
+This is consistent with the <code class="docutils literal notranslate"><span class="pre">python</span></code> command, which only accepts a single
+script file or <code class="docutils literal notranslate"><span class="pre">-c</span></code> option, and respecting this rule minimises the number of
+possible differences between <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">script.py</span></code> and <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">script.py</span></code>.</p>
+<p>In addition, Python scripts can execute HOC code internally using
+<a class="reference internal" href="python/programming/hoc-from-python.html#python-hocobject-class"><span class="std std-ref">h</span></a>, and HOC scripts can execute Python code
+internally using <a class="reference internal" href="hoc/programming/python-from-hoc.html#hoc-function-nrnpython"><span class="std std-ref">nrnpython</span></a>.</p>
+<section id="advanced-usage">
+<h2>Advanced usage<a class="headerlink" href="#advanced-usage" title="Link to this heading"></a></h2>
+<p>This section describes some of the caveats and differences between different
+ways of running HOC and Python scripts.
+In most cases, these details will not be important.</p>
+<dl>
+<dt>Use of custom MOD files:</dt><dd><p>If you <a class="reference internal" href="guide/how_to_get_started.html#extending-neuron-with-nmodl"><span class="std std-ref">use custom MOD files</span></a> to extend
+NEURON, then some additional details may apply.</p>
+<p>In this case, you will have run the <a class="reference internal" href="guide/faq.html#faq-how-do-i-compile-mod-files"><span class="std std-ref">nrnivmodl</span></a> command, which will have produced a new
+executable called <code class="docutils literal notranslate"><span class="pre">special</span></code> in a subdirectory named according to your
+computer architecture (<em>e.g.</em> <code class="docutils literal notranslate"><span class="pre">x86_64/special</span></code>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">special</span></code> accepts the same commandline arguments as <code class="docutils literal notranslate"><span class="pre">nrniv</span></code>, and it can
+be convenient or necessary (<em>e.g.</em> <a class="reference internal" href="coreneuron/running-a-simulation.html#enabling-coreneuron"><span class="std std-ref">when using GPU support</span></a>) to launch scripts using it.</p>
+</dd>
+<dt>Multiple script files and commands:</dt><dd><p>In Python mode (<code class="docutils literal notranslate"><span class="pre">-python</span></code>) the NEURON executables will only process one
+input file or <code class="docutils literal notranslate"><span class="pre">-c</span></code> command, whereas in HOC mode it will execute several.</p>
+<p>This means that <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">a.py</span> <span class="pre">b.py</span></code> will execute both scripts, but
+<code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span> <span class="pre">a.py</span> <span class="pre">b.py</span></code> will only execute <code class="docutils literal notranslate"><span class="pre">a.py</span></code> and pass <code class="docutils literal notranslate"><span class="pre">b.py</span></code> as
+an argument in <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code>.</p>
+<p>Similarly, <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-c</span> <span class="pre">&quot;hoc_code_1&quot;</span> <span class="pre">-c</span> <span class="pre">&quot;hoc_code_2&quot;</span></code> will execute both
+fragments of HOC code, but <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span> <span class="pre">-c</span> <span class="pre">&quot;pycode1&quot;</span> <span class="pre">-c</span> <span class="pre">&quot;pycode2&quot;</span></code> will
+only execute the first expression, <code class="docutils literal notranslate"><span class="pre">pycode1</span></code>.</p>
+<p>It is best to organise your Python scripts to have a single entry point and
+to not rely on executing multiple files.
+This is consistent with the regular <code class="docutils literal notranslate"><span class="pre">python</span></code> command.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sys.path</span></code>:</dt><dd><p>NEURON aims to provide the same Python environment with <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span></code>
+as you would obtain with <code class="docutils literal notranslate"><span class="pre">python</span></code> directly.
+This includes the behaviour for the first entry in <code class="docutils literal notranslate"><span class="pre">sys.path</span></code>, which is
+an empty string when <code class="docutils literal notranslate"><span class="pre">-c</span></code> as used, and the script directory after
+resolving symlinks if a script is passed.
+See also: <a class="reference external" href="https://docs.python.org/3/library/sys.html#sys.path">the corresponding section of the Python documentation</a>.
+If you try and execute multiple Python scripts, the <code class="docutils literal notranslate"><span class="pre">sys.path</span></code> behaviour
+may be surprising.</p>
+<p>One intentional difference is that if the path to the <code class="docutils literal notranslate"><span class="pre">neuron</span></code> module
+does not exist in <code class="docutils literal notranslate"><span class="pre">sys.path</span></code> then <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span></code> will automatically
+append it, while if you were to run <code class="docutils literal notranslate"><span class="pre">python</span></code> then an attempt to <code class="docutils literal notranslate"><span class="pre">import</span>
+<span class="pre">neuron</span></code> would simply fail.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-pyexe</span></code> and <code class="docutils literal notranslate"><span class="pre">NRN_PYTHONEXE</span></code>:</dt><dd><p>The NEURON executables also accept a <code class="docutils literal notranslate"><span class="pre">-pyexe</span></code> argument, which governs
+which Python interpreter NEURON will try and launch.
+The <code class="docutils literal notranslate"><span class="pre">NRN_PYTHONEXE</span></code> environment variable has the same effect, but if both
+are used then <code class="docutils literal notranslate"><span class="pre">-pyexe</span></code> takes precedence.</p>
+<p>This is typically only relevant in a build of NEURON that uses dynamic
+Python support (<a class="reference internal" href="cmake_doc/options.html#cmake-nrn-enable-python-dynamic"><span class="std std-ref">NRN_ENABLE_PYTHON_DYNAMIC</span></a>), which typically means the macOS and
+Windows binary installers.</p>
+<p>In this situation, <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span></code> searches for a Python installation in
+the following order:</p>
+<ul class="simple">
+<li><p>The argument to <code class="docutils literal notranslate"><span class="pre">-pyexe</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">NRN_PYTHONEXE</span></code> environment variable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span></code>, <code class="docutils literal notranslate"><span class="pre">python3</span></code>, <code class="docutils literal notranslate"><span class="pre">pythonA.B</span></code> … <code class="docutils literal notranslate"><span class="pre">pythonX.Y</span></code> in <code class="docutils literal notranslate"><span class="pre">$PATH</span></code>,
+where the set of <code class="docutils literal notranslate"><span class="pre">pythonX.Y</span></code> names corresponds to all the Python
+versions supported by the NEURON installation.
+The search order matches the <a class="reference internal" href="cmake_doc/options.html#cmake-nrn-python-dynamic"><span class="std std-ref">NRN_PYTHON_DYNAMIC</span></a> setting that was used at build time.</p></li>
+<li><p>On Windows, some other heuristics are applied as a last resort.</p></li>
+</ul>
+<p>NEURON will exit with an error if you try to force it to use an unsupported
+Python version using <code class="docutils literal notranslate"><span class="pre">-pyexe</span></code> or <code class="docutils literal notranslate"><span class="pre">NRN_PYTHONEXE</span></code>.
+If these are not passed, it will accept the first Python that is supported
+by the installation.</p>
+<p>On a system with multiple Python versions, this can lead to differences
+between <code class="docutils literal notranslate"><span class="pre">python</span></code> and <code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-python</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import neuron&quot;</span><span class="w">        </span><span class="c1"># fails, NEURON not installed</span>
+python3.10<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import neuron&quot;</span><span class="w">    </span><span class="c1"># succeeds, NEURON installed for 3.10</span>
+nrniv<span class="w"> </span>-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import neuron&quot;</span><span class="w"> </span><span class="c1"># succeeds, search ignores `python`</span>
+<span class="w">                                 </span><span class="c1"># and continues to find `python3.10`</span>
+</pre></div>
+</div>
+<p>Installations using Python wheels (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">neuron</span></code>) explicitly set
+the <code class="docutils literal notranslate"><span class="pre">NRN_PYTHONEXE</span></code> variable, so this section is unlikely to be relevant
+for those installations.</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="publications-using-neuron.html" class="btn btn-neutral float-left" title="Publications using NEURON" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python/index.html" class="btn btn-neutral float-right" title="NEURON Python documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

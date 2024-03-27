@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Style Settings &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Pointers" href="../references.html" />
+    <link rel="prev" title="Dialog Boxes" href="dialog.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="layout.html">Layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="list.html">List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="widgets.html">GUI Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hoc-from-python.html">Accessing HOC from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">Style Settings</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/programming/gui/misc.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/programming/gui/misc.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#ivoc_style" title="Link to this definition">ivoc_style</a> &middot; <a href="#pwman_place" title="Link to this definition">pwman_place</a> &middot; <a href="#variable_domain" title="Link to this definition">variable_domain</a></p><section id="style-settings">
+<h1>Style Settings<a class="headerlink" href="#style-settings" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="ivoc_style">
+<span class="sig-name descname"><span class="pre">ivoc_style</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ivoc_style" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.ivoc_style(&quot;name&quot;,</span> <span class="pre">&quot;attribute&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gives the style attribute to name. Any property listed in the file
+<code class="file docutils literal notranslate"><span class="pre">$(NEURONHOME)/lib/nrn.defaults</span></code> or <code class="file docutils literal notranslate"><span class="pre">$(NEURONHOME)/src/ivoc/ivocmain.c</span></code>
+can be changed although it may be that a few of them have already been
+used by the time the interpreter is invoked.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 7 decimal places in value field editors. Must be done prior to any panel.</span>
+<span class="n">h</span><span class="o">.</span><span class="n">ivoc_style</span><span class="p">(</span><span class="s2">&quot;*xvalue_format&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.7g</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># large fonts in unix. Takes effect on next panel.</span>
+<span class="n">h</span><span class="o">.</span><span class="n">ivoc_style</span><span class="p">(</span><span class="s2">&quot;*font&quot;</span><span class="p">,</span> <span class="s2">&quot;*helvetica-medium-r-normal*--24*&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">ivoc_style</span><span class="p">(</span><span class="s2">&quot;*MenuBar*font&quot;</span><span class="p">,</span> <span class="s2">&quot;*helvetica-medium-r-normal*--24*&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">ivoc_style</span><span class="p">(</span><span class="s2">&quot;*MenuItem*font&quot;</span><span class="p">,</span> <span class="s2">&quot;*helvetica-medium-r-normal*--24*&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="domain-restrictions-for-fields">
+<h1>Domain Restrictions for Fields<a class="headerlink" href="#domain-restrictions-for-fields" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="variable_domain">
+<span class="sig-name descname"><span class="pre">variable_domain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#variable_domain" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.variable_domain(&quot;varname&quot;,</span> <span class="pre">lower_limit,</span> <span class="pre">upper_limit)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Define the domain limits for NEURON variables. Important NEURON
+variables such as dt, L, diam, and Ra have reasonable default domains.
+Many parameters defined in model description files also have reasonable domains.</p>
+<p>This function is most useful when a variable makes sense only as a
+non-negative or positive number.</p>
+<p>One can specify different domains only on a per name basis. Thus there
+is only one domain specification for L and one for all the instances of
+IClamp.amp but one can have a different specification
+for IClamp.amp and VClamp.amp.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The HOC version also supports a pointer-based specification, but that form does
+not work from Python.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">varname</span></code> here would be things like <code class="docutils literal notranslate"><span class="pre">t</span></code> or <code class="docutils literal notranslate"><span class="pre">diam</span></code> not <code class="docutils literal notranslate"><span class="pre">h.t</span></code> or <code class="docutils literal notranslate"><span class="pre">h.diam</span></code>; i.e.
+omit the <code class="docutils literal notranslate"><span class="pre">h.</span></code> prefix.</p>
+</div>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="printwindowmanager-placement">
+<h1>PrintWindowManager Placement<a class="headerlink" href="#printwindowmanager-placement" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pwman_place">
+<span class="sig-name descname"><span class="pre">pwman_place</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pwman_place" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">h.pwman_place(left,</span> <span class="pre">top)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h.pwman_place(left,</span> <span class="pre">top,</span> <span class="pre">0)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>moves the PrintWindowManager to the indicated location in pixel
+coordinates where 0,0 is the top left corner of the screen.
+It is intended that if you build an interface by placing windows
+near the top and build right then the session you save will
+be portable to other window managers and other systems with
+different screen sizes.</p>
+<p>If the third argument is 0, then the window is placed but hidden.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="pwman.html#PWManager" title="PWManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">PWManager</span></code></a></p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dialog.html" class="btn btn-neutral float-left" title="Dialog Boxes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../references.html" class="btn btn-neutral float-right" title="Pointers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

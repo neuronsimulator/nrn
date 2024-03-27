@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with Morphometric Data &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quality Issues with Morphometric Data" href="quality_issues_with_morphometric.html" />
+    <link rel="prev" title="NEURON scripting exercises" href="neuron_scripting_exercises.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Working with Morphometric Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exercises">Exercises</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#a-get-an-import3d-tool">A. Get an Import3D tool.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#b-choose-a-file-to-read">B. Choose a file to read.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#c-let-s-see-what-it-looks-like">C. Let’s see what it looks like.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#d-exporting-the-model">D. Exporting the model.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#e-take-a-new-look-at-the-shape-in-the-import3d-tool">E. Take a new look at the shape in the Import3D tool.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#f-zooming-in">F. Zooming in</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#a-litmus-test-for-models-with-complex-architecture">A “litmus test” for models with complex architecture</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#quantitative-tests-of-anatomy">Quantitative tests of anatomy</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#detailed-morphometric-data-sources-caveats-and-importing-into-neuron">Detailed morphometric data: sources, caveats, and importing into NEURON</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="quality_issues_with_morphometric.html">Quality Issues with Morphometric Data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+      <li class="breadcrumb-item active">Working with Morphometric Data</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/using_morphometric_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="working-with-morphometric-data">
+<span id="using-morphometric-data"></span><h1>Working with Morphometric Data<a class="headerlink" href="#working-with-morphometric-data" title="Link to this heading"></a></h1>
+<p>If you have detailed morphometric data, why not use it? This may be easier said than done, since quantitative morphometry typically produces hundreds or thousands of measurements for a single cell – you wouldn’t want to translate this into a model by hand. Several programs have been written to generate NEURON code from morphometric data files, but NEURON’s own <span class="xref std std-ref">Import3D tool</span> is probably the most powerful and up-to-date. Currently Import3D can read Eutectic, Neurolucida (v1 and v3 text files), swc, and MorphML files. It can also detect and localize errors in these files, and repair many of the more common errors automatically or with user guidance.</p>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link to this heading"></a></h2>
+<p>To import morphometric data into NEURON, bring up an Import3D tool, and specify the file that is to be read. Look at what you get, then export the data as a NEURON model.</p>
+<section id="a-get-an-import3d-tool">
+<h3>A. Get an Import3D tool.<a class="headerlink" href="#a-get-an-import3d-tool" title="Link to this heading"></a></h3>
+<p>Start NEURON and go to <span class="menuselection">exercises ‣ using_morphometric_data</span>, if you’re not alredy there.</p>
+<p>Open an Import3D tool by clicking on <span class="menuselection">Tools ‣ Miscellaneous ‣ Import3D</span> in the NEURON Main Menu.</p>
+</section>
+<section id="b-choose-a-file-to-read">
+<h3>B. Choose a file to read.<a class="headerlink" href="#b-choose-a-file-to-read" title="Link to this heading"></a></h3>
+<p>In the Import3D window, click on the “choose a file” checkbox.</p>
+<img alt="../_images/choose_file.gif" class="align-center" src="../_images/choose_file.gif" />
+<p>This brings up a file browser. Navigate to the directory containing your data, and then click the file browser’s Read button. For this exercise, we’ll use <a class="reference download internal" download="" href="../_downloads/689dfbca6e2ff3167bcabfc2b46873fe/111200A.asc"><code class="xref download docutils literal notranslate"><span class="pre">111200A.asc</span></code></a> (so save that on your machine somewhere, navigate there in Import3D, then read the file).</p>
+<p>NEURON’s terminal window prints a running tally of how many lines have been read from the data file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>  <span class="o">&gt;&gt;&gt;</span>
+    <span class="mi">21549</span> <span class="n">lines</span> <span class="n">read</span>
+</pre></div>
+</div>
+<p>After a delay that depends on the size of the file and the speed of the computer, a figure will appear on the Import3D tool’s canvas. Each point at which a measurement was made is marked by a blue square.</p>
+<img alt="../_images/showing_points_and_diam.gif" class="align-center" src="../_images/showing_points_and_diam.gif" />
+<p>If the Import3D tool finds errors in the data file, a message may be printed in the xterm, and/or a message box may appear on the screen. For this particular example there were no errors–that’s always a good sign!</p>
+<p>The top of the right panel of the Import3D tool will show the name and data format of the file that was read. The other widgets in this panel, which are described elsewhere, can be used to examine and edit the morphometric data, and export them to the CellBuilder or the hoc interpreter.</p>
+</section>
+<section id="c-let-s-see-what-it-looks-like">
+<h3>C. Let’s see what it looks like.<a class="headerlink" href="#c-let-s-see-what-it-looks-like" title="Link to this heading"></a></h3>
+<p>It’s always a good idea to look at the results of any anatomical data conversion–but those blue squares are in the way!</p>
+<p>To get rid of the blue squares that are hiding the branched architecture, click on the Show Points button in the right panel of the Import3D tool. The check mark disappears, and so do the blue squares.</p>
+<img alt="../_images/showpoints_off.gif" class="align-center" src="../_images/showpoints_off.gif" />
+<p>That’s a very dense and complex branching pattern.</p>
+</section>
+<section id="d-exporting-the-model">
+<h3>D. Exporting the model.<a class="headerlink" href="#d-exporting-the-model" title="Link to this heading"></a></h3>
+<p>The Import3D tool allows us to export the topology (branched architecture) and geometry (anatomical dimensions) of these data to a CellBuilder, or straight to the hoc interpreter. It’s generally best to send the data to <span class="xref std std-ref">the CellBuilder</span>, which we can then save to a session file for future re-use. The CellBuilder, which has its own tutorial, is a very convenient tool for managing the biophysical properties and spatial discretization of anatomically complex cell models.</p>
+<p>So click on the Export button and select the CellBuilder option.</p>
+<img alt="../_images/export_cellbuilder.gif" class="align-center" src="../_images/export_cellbuilder.gif" />
+<p>But this example contains a surprise: instead of one CellBuilder, there are two! Under MSWin, they are offset diagonally as shown here, but under UNIX/Linux they may lie right on top of each other so you’ll have to drag the top one aside.</p>
+<img alt="../_images/two_cellbuilders.gif" class="align-center" src="../_images/two_cellbuilders.gif" />
+<p>Does getting two CellBuilders mean that the morphometric data file contained measurements from two cells? Maybe that’s why the branching pattern was so dense and complex.</p>
+<p>But there is an unpleasant alternative: maybe all this data really is from one cell. If there was a mistake in data entry, so that the proximal end of one branch wasn’t connected to its parent. one CellBuilder would contain the orphan branch and its children, and the other CellBuilder would contain the rest of the cell.</p>
+<p>How can you decide which of these two possibilities is correct?</p>
+<p>Examining the Topology pages of these CellBuilders shows that CellBuild[0] got most of the branches in the bottom half of the Import3D’s canvas, and CellBuild[1] got most of the branches in the top half. The morphologies are ugly enough to be two individual cells; at least, neither of them is obviously an orphan dendritic or axonal tree.</p>
+<img alt="../_images/cb_stickfigs.gif" class="align-center" src="../_images/cb_stickfigs.gif" />
+<p>Until you know for sure, it is safest to use the Print &amp; File Window Manager (PFWM) to save each CellBuilder to its own session file. I optimistically called them bottomcell.ses and topcell.ses, respectively.</p>
+<p>At this point, you should really use the Import3D tool to closely examine these data, and try to decide how many cells are present.</p>
+</section>
+<section id="e-take-a-new-look-at-the-shape-in-the-import3d-tool">
+<h3>E. Take a new look at the shape in the Import3D tool.<a class="headerlink" href="#e-take-a-new-look-at-the-shape-in-the-import3d-tool" title="Link to this heading"></a></h3>
+<img alt="../_images/zoomo.gif" class="align-center" src="../_images/zoomo.gif" />
+<p>Those two little green lines in the dense clusters are new. They appeared <em>after</em> exporting to the CellBuilder. And is there a little orange blob at one end of each green line?</p>
+<p>To find out what this is all about, it is necessary to discover what lies at the center of these dense clusters.</p>
+</section>
+<section id="f-zooming-in">
+<h3>F. Zooming in<a class="headerlink" href="#f-zooming-in" title="Link to this heading"></a></h3>
+<p>To zoom in for a closer look, first make sure that the Import3D tool’s Zoom button is on (if it isn’t, just click on it).
+Then click on the canvas, just to the right of the area of interest, and hold the mouse button down while dragging the cursor to the right. If it becomes necessary to re-center the image, click on the Translate button, then click on the canvas and drag the image into postion. To start zooming again, click on the Zoom button.</p>
+<p>Repeat as needed until you get what you want.</p>
+<img alt="../_images/zoomp.gif" class="align-center" src="../_images/zoomp.gif" />
+<p>The irregular shape at the center, with the transverse orange lines, is the soma of a neuron. The green line is its principal axis, as identified by the Import3D tool. At least 9 neurites converge on it, and a fine red line connects the proximal end of each branch to the center of the soma.</p>
+<p>If you zoom in on the other green line and orange blob, you’ll find another soma there.</p>
+<p>So by zooming in, it is possible to discover that this particular morphometric data file contained measurements from at least two different cells.</p>
+<p>To zoom out, make sure the Zoom button is on,
+then click near the right edge of the canvas and drag toward the left. To fit the image to the window, just use the graph’s “View = plot” menu item</p>
+</section>
+</section>
+<section id="a-litmus-test-for-models-with-complex-architecture">
+<h2>A “litmus test” for models with complex architecture<a class="headerlink" href="#a-litmus-test-for-models-with-complex-architecture" title="Link to this heading"></a></h2>
+<p>Some morphometric reconstructions contain orphan branches, or measurement points with diameters that are (incorrectly) excessively small or even zero. Here’s a test that can quickly detect such problems:</p>
+<ol class="arabic">
+<li><p>Use the data to create a model cell.</p></li>
+<li><p>Insert the <code class="docutils literal notranslate"><span class="pre">pas</span></code> mechanism into all sections.</p>
+<p>If you’re dealing with a very extensive cell (especially if the axon is included), you might want to cut Ra to 10 ohm cm and reduce g_pas to 1e-5 mho/cm^2.</p>
+</li>
+<li><p>Turn on Continuous Export (if you haven’t already).</p></li>
+<li><p>Bring up a Shape Plot.</p></li>
+<li><p>Turn this into a Shape Plot of Vm (R click in the Shape Plot and scroll down the menu to “Shape Plot”. Release the mouse button and a color scale calibrated in mV should appear).</p></li>
+<li><p>Examine the response of the cell to a 3 nA current step lasting 5 ms applied at the soma.</p>
+<p>For very extensive cells, especially if you have reduced g_pas, you may want to increase both Tstop and the duration of the injected current to 1000 ms and use variable dt.</p>
+</li>
+</ol>
+<p>Here’s an example that used a toy cell:</p>
+<p><img alt="left" src="../_images/v0.gif" /> <img alt="right" src="../_images/v5.gif" /></p>
+<p>Left: Vm at t = 0 ms. Right: Vm at 5 ms.</p>
+<section id="quantitative-tests-of-anatomy">
+<h3>Quantitative tests of anatomy<a class="headerlink" href="#quantitative-tests-of-anatomy" title="Link to this heading"></a></h3>
+<p>This Python code checks for pt3d diameters smaller than 0.1 μm, and reports where they are found:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">n3d</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">sec</span><span class="o">.</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sec</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">sec</span><span class="o">.</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you’re reusing someone’s HOC files, you could use the equivalent HOC statement</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">forall</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">n3d</span><span class="p">()</span><span class="mi">-1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.1</span><span class="p">)</span><span class="w"> </span><span class="n">print</span><span class="w"> </span><span class="n">secname</span><span class="p">(),</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are many other potential strategies for checking anatomical data, such as</p>
+<ul class="simple">
+<li><p>creating a space plot of diam. Bring up a Shape Plot and use its Plot what? menu item to select diam. Then select its Space plot menu item, click and drag over the path of interest, and voila!</p></li>
+<li><p>making a histogram of diameter measurements, which can reveal outliers and systematic errors such as “favorite values” and quantization artifacts (what is the smallest diameter that was measured? how fine is the smallest increment of diameter?). This requires some coding, which is left as an exercise to the reader.</p></li>
+</ul>
+</section>
+</section>
+<section id="detailed-morphometric-data-sources-caveats-and-importing-into-neuron">
+<h2>Detailed morphometric data: sources, caveats, and importing into NEURON<a class="headerlink" href="#detailed-morphometric-data-sources-caveats-and-importing-into-neuron" title="Link to this heading"></a></h2>
+<p>Currently the largest collection of detailed morphometric data we know of is <a class="reference external" href="https://neuromorpho.org/">NeuroMorpho.org</a>. There are many potential pitfalls in the collection and use of such data. Before using any data you find at NeuroMorpho.org or anywhere else, be sure to carefully read any papers that were written about those data by the anatomists who obtained them.</p>
+<p>Some of the artifacts that can afflict morphometric data are discussed in these two papers, which are well worth reading:</p>
+<p>Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morphology data bases: morphological noise and assesment of data quality. Network: Computation in Neural Systems 13:357-380. <a class="reference external" href="https://www.tandfonline.com/doi/abs/10.1088/0954-898X_13_3_307">doi:10.1088/0954-898X_13_3_307</a></p>
+<p>Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. <a class="reference external" href="https://onlinelibrary.wiley.com/doi/10.1002/cne.20067">doi:10.1002/cne.20067</a></p>
+<p><a class="reference internal" href="quality_issues_with_morphometric.html#quality-issues-with-morphometric-data"><span class="std std-ref">Quality issues with Morphometric Data</span></a></p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="neuron_scripting_exercises.html" class="btn btn-neutral float-left" title="NEURON scripting exercises" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quality_issues_with_morphometric.html" class="btn btn-neutral float-right" title="Quality Issues with Morphometric Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>List &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Widgets" href="widgets.html" />
+    <link rel="prev" title="Layout" href="layout.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../strings.html">Strings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guidesign.html">GUI Design</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="layout.html">Layout</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="widgets.html">Widgets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="symchooser.html">SymChooser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="secbrows.html">SectionBrowser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="texteditor.html">TextEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vfe.html">ValueFieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pwman.html">PWManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nfunc.html">Miscellaneous Menus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dialog.html">Dialog Boxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Style Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#domain-restrictions-for-fields">Domain Restrictions for Fields</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html#printwindowmanager-placement">PrintWindowManager Placement</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guidesign.html">GUI Design</a></li>
+      <li class="breadcrumb-item active">List</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../python/programming/gui/list.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/hoc/programming/gui/list.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#List" title="Link to this definition">List</a></dt><dd><a href="#List.accept_action" title="Link to this definition">accept_action</a> &middot; <a href="#List.append" title="Link to this definition">append</a> &middot; <a href="#List.browser" title="Link to this definition">browser</a> &middot; <a href="#List.count" title="Link to this definition">count</a> &middot; <a href="#List.index" title="Link to this definition">index</a> &middot; <a href="#List.insrt" title="Link to this definition">insrt</a> &middot; <a href="#List.o" title="Link to this definition">o</a> &middot; <a href="#List.object" title="Link to this definition">object</a> &middot; <a href="#List.prepend" title="Link to this definition">prepend</a> &middot; <a href="#List.remove" title="Link to this definition">remove</a> &middot; <a href="#List.remove_all" title="Link to this definition">remove_all</a> &middot; <a href="#List.scroll_pos" title="Link to this definition">scroll_pos</a> &middot; <a href="#List.select" title="Link to this definition">select</a> &middot; <a href="#List.select_action" title="Link to this definition">select_action</a> &middot; <a href="#List.selected" title="Link to this definition">selected</a></dd></dl></p><section id="list">
+<span id="hoc-list"></span><h1>List<a class="headerlink" href="#list" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="List">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">List</span></span><a class="headerlink" href="#List" title="Link to this definition"></a></dt>
+<dd><p>List of objects</p>
+<dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">List()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">List(&quot;templatename&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The List class provides useful tools for creating and manipulating lists of objects.
+For example, if you have
+a network of cells connected at synapses and each synapse is a separate object, you may want to use
+lists to help organize the network.  You could create one list of all pre-synaptic connections and
+another of post-synaptic connections, as well as a list of all the connecting cells.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">List()</span></code></dt><dd><p>Create an empty list. Objects added to the list are referenced.
+Objects removed from the list are unreferenced.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">List(&quot;templatename&quot;)</span></code></dt><dd><p>Create a list of all the object instances of the template.
+These object instances are NOT referenced and therefore the list
+dynamically changes as objects of template instances are
+created and destroyed. Adding and  removing objects
+from this kind of list is not allowed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.append">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.append" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.append(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Append an object to a list, and return the number of items in list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.prepend">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">prepend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.prepend" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.prepend(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Add an object to the beginning of a list, and return the number of objects in the list.
+The inserted object has index=0.  Following objects have an incremented
+index.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.insrt">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">insrt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.insrt" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.insrt(i,</span> <span class="pre">object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Insert an object before item <em>i</em>, and return the number of items in the list.
+The inserted object has index <em>i</em>, following items have an incremented
+index.</p>
+<p>Not called <a class="reference internal" href="../ockeywor.html#hoc-keyword-insert"><span class="std std-ref">insert</span></a> because that name is a keyword</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.remove">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.remove" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.remove(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Remove the object at index <em>i</em>. Following items have a decremented
+index. ie it’s often most convenient to remove items from back
+to  front. Return the number of objects remaining in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.remove_all">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">remove_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.remove_all" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.remove_all()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Remove all the objects from the list. Return 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.index">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.index" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.index(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the index of the object in the list. Return a -1 if the
+object is not in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.count">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.count" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.count()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the number of objects in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.browser">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">browser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.browser" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.browser()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.browser(&quot;title&quot;,</span> <span class="pre">&quot;strname&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.browser(&quot;title&quot;,</span> <span class="pre">strdef,</span> <span class="pre">&quot;command&quot;)</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">.browser([&quot;title&quot;],</span> <span class="pre">[&quot;strname&quot;])</span></code></dt><dd><p>Make the list visible on the screen.
+The items are normally the object names but if the second arg is
+present and is the name of a string symbol that is defined
+in the object’s     template, then that string is displayed in the list.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">.browser(&quot;title&quot;,</span> <span class="pre">strdef,</span> <span class="pre">&quot;command&quot;)</span></code></dt><dd><p>Browser labels are computed. For each item, command is executed
+with <a class="reference internal" href="../predec.html#hoc_ac_" title="hoc_ac_"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code></a> set to the index of the item. On return, the
+contents of <em>strdef</em> are used as the label. Some objects
+notify the List when they change, ie point processes when they change
+their location notify the list.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.selected">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">selected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.selected" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.selected()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the index of the highlighted object or -1 if no object is highlighted.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#List.browser" title="List.browser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">List.browser()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.select">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.select" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.select(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Highlight the object at index <em>i</em>.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#List.browser" title="List.browser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">List.browser()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.scroll_pos">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">scroll_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.scroll_pos" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">index</span> <span class="pre">=</span> <span class="pre">list.scroll_pos()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">list.scroll_pos(index)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the index of the top of the browser window. Sets the scroll so that
+index is the top of the browser window. A large number will cause a scroll
+to the bottom.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#List.browser" title="List.browser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">List.browser()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.select_action">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">select_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.select_action" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">list.select_action(&quot;command&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">list.select_action(&quot;command&quot;,</span> <span class="pre">0or1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute a command when an item in the
+list <a class="reference internal" href="#List.browser" title="List.browser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">List.browser()</span></code></a> is selected by single clicking the mouse.
+<a class="reference internal" href="../predec.html#hoc_ac_" title="hoc_ac_"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code></a> contains the index when the command is executed. Thus
+<code class="docutils literal notranslate"><span class="pre">l.select_action(&quot;action(hoc_ac_)&quot;)</span></code> is convenient usage.
+action will be invoked within the object context that existed when
+<code class="docutils literal notranslate"><span class="pre">select_action</span></code> was called.</p>
+<p>If the second arg exists and is 1 then the action is only called on
+the mouse button release. If nothing is selected at that time then
+<a class="reference internal" href="../predec.html#hoc_ac_" title="hoc_ac_"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code></a> = -1</p>
+</dd>
+<dt>Example:</dt><dd><p>This example shows that the object context is saved when an action is
+registered.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>begintemplate A
+objref this, list, obj
+proc init() {
+    list = new List()
+    list.append(this)
+    for i=0,4 {
+            obj = new Random()
+            list.append(obj)
+    }
+    list.browser()
+    list.select_action(&quot;act(hoc_ac_)&quot;)
+}
+proc act() {
+    printf(&quot;item %d selected in list of object %s\n&quot;, $1, this)
+}
+endtemplate A
+
+objref a[2]
+for i=0,1 a[i] = new A()
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.accept_action">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">accept_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.accept_action" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">list.accept_action(&quot;command&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute a command when double clicking
+on an item displayed in the list <a class="reference internal" href="#List.browser" title="List.browser"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">List.browser()</span></code></a> by the mouse.
+<a class="reference internal" href="../predec.html#hoc_ac_" title="hoc_ac_"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code></a> contains the index when the command is executed. Command is
+executed within the object context that existed when <code class="docutils literal notranslate"><span class="pre">accept_action</span></code>
+was called.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref list, obj
+list = new List()
+for i=0,4 {
+        obj = new Random()
+        list.append(obj)
+    obj = new List()
+    list.append(obj)
+}
+list.browser()
+list.accept_action(&quot;act()&quot;)
+proc act() {
+        printf(&quot;item %d accepted\n&quot;, hoc_ac_)
+}
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.object">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">object</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.object" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.object(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.o(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the object at index <em>i</em>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="List.o">
+<span class="sig-prename descclassname"><span class="pre">List.</span></span><span class="sig-name descname"><span class="pre">o</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#List.o" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.object(i)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.o(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the object at index <em>i</em>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="layout.html" class="btn btn-neutral float-left" title="Layout" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="widgets.html" class="btn btn-neutral float-right" title="Widgets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

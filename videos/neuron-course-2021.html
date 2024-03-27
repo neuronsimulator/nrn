@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURON 2021 Online Course &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NetPyNE 2021 Online Course" href="netpyne-course-2021.html" />
+    <link rel="prev" title="Training videos" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Training videos</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">NEURON 2021 Online Course</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-concepts-and-gui">Basic Concepts and GUI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lecture-2021-06-03">Lecture 2021-06-03</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#q-a-2021-06-08">Q &amp; A 2021-06-08</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#branched-cells">Branched cells</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lecture-2021-06-10">Lecture 2021-06-10</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#q-a-part-1-2021-06-15">Q &amp; A part 1 2021-06-15</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#q-a-part-2-2021-06-15">Q &amp; A part 2 2021-06-15</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-ion-channels">Adding ion channels</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lecture-2021-06-17">Lecture 2021-06-17</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#q-a-2021-06-22">Q &amp; A 2021-06-22</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#python-scripting">Python scripting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">2021-06-24</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">2021-06-29</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">2021-07-01</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scripting-and-morphologies-2021-07-06">Scripting and Morphologies 2021-07-06</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#networks-and-numerical-methods">Networks and numerical methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id4">2021-07-08</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parallel-neuron-simulations-2021-07-13">Parallel NEURON simulations 2021-07-13</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#network-exercise-solutions-and-discussion-2021-07-15">Network exercise solutions and discussion 2021-07-15</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parallel-simulation-conclusion-reproducible-randomness-more-numerical-methods-2021-07-20">Parallel simulation conclusion, reproducible randomness, more numerical methods 2021-07-20</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#modeldb-exercises-2021-07-27">ModelDB exercises 2021-07-27</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaling-spines-and-reading-hoc-2021-07-29">Scaling, spines, and reading HOC 2021-07-29</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-gui-interfaces-initialization-and-circuits-2021-08-03">Building GUI interfaces, Initialization, and Circuits 2021-08-03</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="netpyne-course-2021.html">NetPyNE 2021 Online Course</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cns-tutorial-2021.html">CNS 2021 Online Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="incfcns-tutorial-2022.html">INCF/CNS 2022 Online Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Training videos</a></li>
+      <li class="breadcrumb-item active">NEURON 2021 Online Course</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/videos/neuron-course-2021.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="neuron-2021-online-course">
+<h1>NEURON 2021 Online Course<a class="headerlink" href="#neuron-2021-online-course" title="Link to this heading"></a></h1>
+<p>A free online webinar series was offered in twice-weekly meetings from 2021-06-03 to 2021-08-03.</p>
+<p>The first half of the course was presented primarily through the use of the NEURON GUI; the second
+half was more centered around using NEURON through Python. These two approaches are complementary
+and both are used in most lectures.</p>
+<p>Many lectures end with associated exercises that are then discussed in the following Q&amp;A sessions.</p>
+<p>For those who prefer, this video series may also be accessed as a
+<a class="reference external" href="https://www.youtube.com/watch?v=31ioJKfPw_g&amp;list=PLydMjAmHmOmjIMkJkTnP0CzcdRSFwRLOU">YouTube playlist</a>.</p>
+<section id="basic-concepts-and-gui">
+<h2>Basic Concepts and GUI<a class="headerlink" href="#basic-concepts-and-gui" title="Link to this heading"></a></h2>
+<section id="lecture-2021-06-03">
+<h3>Lecture 2021-06-03<a class="headerlink" href="#lecture-2021-06-03" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/31ioJKfPw_g?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="q-a-2021-06-08">
+<h3>Q &amp; A 2021-06-08<a class="headerlink" href="#q-a-2021-06-08" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/aryIh07hJ_k?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+<section id="branched-cells">
+<h2>Branched cells<a class="headerlink" href="#branched-cells" title="Link to this heading"></a></h2>
+<section id="lecture-2021-06-10">
+<h3>Lecture 2021-06-10<a class="headerlink" href="#lecture-2021-06-10" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/k-CyQp3ZrLI?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="q-a-part-1-2021-06-15">
+<h3>Q &amp; A part 1 2021-06-15<a class="headerlink" href="#q-a-part-1-2021-06-15" title="Link to this heading"></a></h3>
+<p>Due to technical difficulties, the Q&amp;A was split into two videos.</p>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/Gt8J5V1JAFo?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="q-a-part-2-2021-06-15">
+<h3>Q &amp; A part 2 2021-06-15<a class="headerlink" href="#q-a-part-2-2021-06-15" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/ZCwVaccDjTE?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+<section id="adding-ion-channels">
+<h2>Adding ion channels<a class="headerlink" href="#adding-ion-channels" title="Link to this heading"></a></h2>
+<section id="lecture-2021-06-17">
+<h3>Lecture 2021-06-17<a class="headerlink" href="#lecture-2021-06-17" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/eV5dKD_bZ6E?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="q-a-2021-06-22">
+<h3>Q &amp; A 2021-06-22<a class="headerlink" href="#q-a-2021-06-22" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/alr7yqj88Kg?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+<section id="python-scripting">
+<h2>Python scripting<a class="headerlink" href="#python-scripting" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>2021-06-24<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>Starts out with a GUI demo due to a fire alarm; the main Python lecture
+begins around 17:25.</p>
+<p>Topics:</p>
+<ul class="simple">
+<li><p>Programmer’s reference.</p></li>
+<li><p>How to run Python scripts (text editors, terminals, Jupyter notebooks)</p></li>
+<li><p>Python overview (displaying results, variables, loops, lists and dictionaries, functions, libraries, string formatting, and getting help)</p></li>
+<li><p>loading NEURON as a Python library and loading NEURON libraries</p></li>
+<li><p>defining sections and their properties (including connections)</p></li>
+<li><p>caution: defaults are generally for squid</p></li>
+<li><p>using classes for cell types</p></li>
+<li><p>visualizing data (morphology, concentrations, voltage, etc)</p></li>
+<li><p>inserting ion channels and other mechanisms and setting their parameters</p></li>
+<li><p>recording results</p></li>
+<li><p>simulating a model</p></li>
+<li><p>synapses and networks</p></li>
+<li><p>saving and loading data with pandas</p></li>
+</ul>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/ObSHSQCpkoo?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="id2">
+<h3>2021-06-29<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/9BqJcKiYePM?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="id3">
+<h3>2021-07-01<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<p>Topics:</p>
+<ul class="simple">
+<li><p>neuron.rxd (intra- and extracellular ion/protein/etc dynamics)</p></li>
+<li><p>pandas (file storage and databases… e.g. CSV, excel, sqlite3)</p></li>
+<li><p>eFEL (electrophys feature extraction library from the BlueBrain project)</p></li>
+</ul>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/sQ0fa1YRBR0?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="scripting-and-morphologies-2021-07-06">
+<span id="scripting-and-morphologies-20210706"></span><h3>Scripting and Morphologies 2021-07-06<a class="headerlink" href="#scripting-and-morphologies-2021-07-06" title="Link to this heading"></a></h3>
+<p>Today we solve the exercises from last class, roughly: (1) examine the role of temperature with the Hodgkin-Huxley kinetics and use a database as part of the parameter sweeps; (2) test morphologies to determine suitability for use in simulation; and (3) simulate a morphologically detailed cell.</p>
+<p>(Note: unlike the other videos in this series, this one was prerecorded due to the CNS conference so there is no student interaction.)</p>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/yte708tOiVI?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+<section id="networks-and-numerical-methods">
+<h2>Networks and numerical methods<a class="headerlink" href="#networks-and-numerical-methods" title="Link to this heading"></a></h2>
+<section id="id4">
+<h3>2021-07-08<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>Topics:</p>
+<ul class="simple">
+<li><p>synapses, spike-triggered transmission, <a class="reference internal" href="../python/modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetCon</span></code></a></p></li>
+<li><p>artificial spiking cells (<a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IntFire1" title="IntFire1"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntFire1</span></code></a>, <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IntFire2" title="IntFire2"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntFire2</span></code></a>, <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#IntFire4" title="IntFire4"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntFire4</span></code></a>)</p></li>
+<li><p>Forward Euler vs Backward Euler vs Crank-Nicholson; fixed step vs variable step</p></li>
+</ul>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/r9dxBS_e_RI?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="parallel-neuron-simulations-2021-07-13">
+<span id="parallel-neuron-sims-2021-07-13"></span><h3>Parallel NEURON simulations 2021-07-13<a class="headerlink" href="#parallel-neuron-simulations-2021-07-13" title="Link to this heading"></a></h3>
+<p>Using NEURON’s <a class="reference internal" href="../python/modelspec/programmatic/network/parcon.html#ParallelContext" title="ParallelContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a> object. Run parallel simulations using e.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mpiexec</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span> <span class="n">python</span> <span class="n">mymodel</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Starting about halfway through the next video, we apply these techniques to solving the homework exercises, building a network.</p>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/aw_e5WyT1AQ?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="network-exercise-solutions-and-discussion-2021-07-15">
+<h3>Network exercise solutions and discussion 2021-07-15<a class="headerlink" href="#network-exercise-solutions-and-discussion-2021-07-15" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/pRir3mTVtAw?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="parallel-simulation-conclusion-reproducible-randomness-more-numerical-methods-2021-07-20">
+<h3>Parallel simulation conclusion, reproducible randomness, more numerical methods 2021-07-20<a class="headerlink" href="#parallel-simulation-conclusion-reproducible-randomness-more-numerical-methods-2021-07-20" title="Link to this heading"></a></h3>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/n0ZbUnIbpRE?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+<section id="modeldb-exercises-2021-07-27">
+<h2>ModelDB exercises 2021-07-27<a class="headerlink" href="#modeldb-exercises-2021-07-27" title="Link to this heading"></a></h2>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/PBrWJ-S_YnM?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="scaling-spines-and-reading-hoc-2021-07-29">
+<h2>Scaling, spines, and reading HOC 2021-07-29<a class="headerlink" href="#scaling-spines-and-reading-hoc-2021-07-29" title="Link to this heading"></a></h2>
+<p>We start with a discussion of the implementation of Mainen &amp; Sejnowski 1996 <a class="reference external" href="https://modeldb.yale.edu/2488">https://modeldb.yale.edu/2488</a> and implications for reuse. There was a brief discussion about Python based ion channels and working with density mechanisms. About an hour into the video, we turn to how to read HOC, how to use existing HOC libraries from Python (and vice-versa) , and how to gain insight from HOC code to design your own Python libraries.</p>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/4a-E5aICaVU?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+<section id="building-gui-interfaces-initialization-and-circuits-2021-08-03">
+<h2>Building GUI interfaces, Initialization, and Circuits 2021-08-03<a class="headerlink" href="#building-gui-interfaces-initialization-and-circuits-2021-08-03" title="Link to this heading"></a></h2>
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/E1K5ytVh08I?rel=0" frameborder="0" allowfullscreen></iframe></center></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Training videos" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="netpyne-course-2021.html" class="btn btn-neutral float-right" title="NetPyNE 2021 Online Course" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

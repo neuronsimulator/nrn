@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessing HOC from Python &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="File Access (objected-oriented via NEURON)" href="io/file.html" />
+    <link rel="prev" title="NEURON Python Classes and Objects" href="neuron_classes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neuron_classes.html">NEURON Python Classes and Objects</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Accessing HOC from Python</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#neuron.hoc.HocObject"><code class="docutils literal notranslate"><span class="pre">neuron.hoc.HocObject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neuron.hoc.hoc_ac"><code class="docutils literal notranslate"><span class="pre">neuron.hoc.hoc_ac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neuron.h.cas"><code class="docutils literal notranslate"><span class="pre">neuron.h.cas()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neuron.h.Section"><code class="docutils literal notranslate"><span class="pre">neuron.h.Section</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#segment">Segment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mechanism">Mechanism</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">Accessing HOC from Python</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/programming/hoc-from-python.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/programming/hoc-from-python.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#neuron.h" title="Link to this definition">neuron.h</a></dt><dd><a href="#neuron.h.cas" title="Link to this definition">cas</a></dd></dl></p><p><dl class="docutils"><dt><a href="#neuron.h.Section" title="Link to this definition">neuron.h.Section</a></dt><dd></dd></dl></p><p><dl class="docutils"><dt><a href="#neuron.hoc" title="Link to this definition">neuron.hoc</a></dt><dd><a href="#neuron.hoc.execute" title="Link to this definition">execute</a> &middot; <a href="#neuron.hoc.hoc_ac" title="Link to this definition">hoc_ac</a></dd></dl></p><section id="accessing-hoc-from-python">
+<span id="python-accessing-hoc"></span><h1>Accessing HOC from Python<a class="headerlink" href="#accessing-hoc-from-python" title="Link to this heading"></a></h1>
+<p>This section describes how one can interact with HOC features and the HOC
+interpreter from Python code.</p>
+<p>In many cases, HOC provides features that are natively supported in Python.
+In these cases, it is usually preferable to use the Python version, which will
+be familiar to a wider range of people.
+Nonetheless, in isolated situations the following section may be useful:
+<a class="reference internal" href="#hoc-features-you-should-not-use-from-python"><span class="std std-ref">Python-specific documentation of discouraged HOC features</span></a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Some of the idioms on this page are out of date, but they still work.
+See the NEURON Python tutorial for modern idioms.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Most of the following is from the perspective of someone familiar
+with HOC; for a Python-based introduction to NEURON, see
+<a class="reference external" href="../../tutorials/scripting-neuron-basics.html">Scripting NEURON Basics</a></p>
+</div>
+<dl class="py class" id="python-hocobject-class">
+<dt class="sig sig-object py" id="neuron.hoc.HocObject">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">neuron.hoc.</span></span><span class="sig-name descname"><span class="pre">HocObject</span></span><a class="headerlink" href="#neuron.hoc.HocObject" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">neuron</span> <span class="pre">import</span> <span class="pre">h</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">h</span> <span class="pre">=</span> <span class="pre">neuron.hoc.HocObject()</span></code></p>
+</dd>
+</dl>
+<p>Description:</p>
+<blockquote>
+<div><p>Allow access to anything in the Hoc interpreter.
+<code class="docutils literal notranslate"><span class="pre">h</span></code> is an instance of a <code class="docutils literal notranslate"><span class="pre">neuron.hoc.HocObject</span></code> object. Note that
+there is only one Hoc interpreter, no matter how many interface
+objects are created, so there is no advantage to creating another.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s2">&quot;any hoc statement&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Any hoc variable or string in the Hoc world can be accessed
+in the Python world:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;strdef s&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;{x = 3  s = &quot;hello&quot;}&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>          <span class="c1"># prints 3.0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>          <span class="c1"># prints hello</span>
+</pre></div>
+</div>
+<p>And if it is assigned a value in the python world it will be that value
+in the Hoc world. (Note that any numeric python type becomes a double
+in Hoc.)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">h</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;goodbye&#39;</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;print x, s&#39;</span><span class="p">)</span>    <span class="c1">#prints 25 goodbye</span>
+</pre></div>
+</div>
+<p>Note, however, that new Hoc variables cannot be defined from Python except via, e.g.
+<code class="docutils literal notranslate"><span class="pre">h('strdef</span> <span class="pre">s')</span></code>.</p>
+<p>Any hoc object can be handled in Python, and can use Python idioms for that type of
+object despite being created in hoc. e.g. in hoc, you would have to use vec.size() to
+get the Vector’s size. This still works in Python, but you can also use the Pythonic
+len(h.vec):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;objref vec&#39;</span><span class="p">)</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;vec = new Vector(5)&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="p">)</span>        <span class="c1"># prints Vector[0]</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="p">))</span>   <span class="c1"># prints 5.0</span>
+</pre></div>
+</div>
+<p>There is, however, in pure Python models never a need to create a hoc object;
+e.g. if no HOC code needed to access the <a class="reference internal" href="math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a>, the above is equivalent to</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vec</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Note that any hoc object method or field may be called, or evaluated/assigned
+using the normal dot notation which is consistent between hoc and python.
+However, hoc object methods MUST have the parentheses or else the Python
+object is not the return value of the method but a method object. ie.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">size</span>     <span class="c1"># not 5 but a python callable object</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>            <span class="c1"># prints: Vector[0].size()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">())</span>          <span class="c1"># prints 5</span>
+</pre></div>
+</div>
+<p>This is also true for indices</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">indgen</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># fills elements with 10, 11, ..., 14</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>    <span class="c1"># prints 12.0</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">x</span>        <span class="c1"># a python indexable object</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>           <span class="c1"># prints Vector[0].x[?]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>        <span class="c1"># prints 12.0</span>
+</pre></div>
+</div>
+<p>Note that the .x notation is not needed in Python for reading or (as of NEURON 7.7) writing to vectors.</p>
+<p>The hoc object can be created directly in Python. E.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Iteration over hoc Vector, List, and arrays is supported. e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">List</span><span class="p">();</span> <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;objref o[2][3]&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">o</span><span class="p">:</span>
+  <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Any hoc Section can be handled in Python. E.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;create soma, axon&#39;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">axon</span>
+</pre></div>
+</div>
+<p>makes ax a Python <a class="reference internal" href="#neuron.h.Section" title="neuron.h.Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">Section</span></code></a> which references the hoc
+axon section. Many hoc functions use the currently accessed section;
+most of these are now available as section methods, however for user
+written hoc and in legacy code, a “sec” keyword parameter temporarily
+makes the Section value the currently accessed section during
+the scope of the function call. e.g</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">secname</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">ax</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Python, one can simply:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or use <code class="docutils literal notranslate"><span class="pre">str(ax)</span></code> to get the name of the section ax.</p>
+</div>
+<p>Most such functions now have an alternative form that avoids the need for
+sec=; often they are available as section methods. This is usually listed
+in the function definition.</p>
+<p>Point processes are handled by direct object creation as in</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">stim</span> <span class="o">=</span> <span class="n">IClamp</span><span class="p">(</span><span class="n">ax</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Many hoc functions use call by reference and return information by
+changing the value of an argument. These are called from the Python
+world by passing a HocObject.ref() object. Here is an example that
+changes a string.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;proc chgstr() { $s1 = &quot;goodbye&quot; }&#39;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># notice the index to dereference. prints hello</span>
+<span class="n">h</span><span class="o">.</span><span class="n">chgstr</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints goodbye</span>
+<span class="n">h</span><span class="o">.</span><span class="n">sprint</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s1">&#39;value is </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints value is 4</span>
+</pre></div>
+</div>
+<p>and here is an example that changes a pointer to a double</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;proc chgval() { $&amp;1 = $2 }&#39;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints 5.0</span>
+<span class="n">h</span><span class="o">.</span><span class="n">chgval</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints 2.0</span>
+</pre></div>
+</div>
+<p>Finally, here is an example that changes a objref arg.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;proc chgobj() { $o1 = new List() }&#39;</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>  <span class="c1"># references a Python object</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints [1, 2, 3]</span>
+<span class="n">h</span><span class="o">.</span><span class="n">chgobj</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>          <span class="c1"># prints List[0]</span>
+</pre></div>
+</div>
+<p>Unfortunately, the HocObject.ref() is not often useful since it is not really
+a pointer to a variable. For example consider</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;x = 1&#39;</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>                     <span class="c1"># prints hoc ref value 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>             <span class="c1"># prints 1.0 1.0</span>
+<span class="n">h</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>             <span class="c1"># prints 2.0 1.0</span>
+</pre></div>
+</div>
+<p>and thus in not what is needed in the most common
+case of a hoc function holding a pointer to a variable such as
+<a class="reference internal" href="math/vector.html#Vector.record" title="Vector.record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a> or <a class="reference internal" href="math/vector.html#Vector.play" title="Vector.play"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.play()</span></code></a>. For this one needs the <code class="samp docutils literal notranslate"><span class="pre">_ref_</span><em><span class="pre">varname</span></em></code> idiom
+which works for any hoc variable and acts exactly like a c pointer. eg:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;x = 1&#39;</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">_ref_x</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>                     <span class="c1"># prints pointer to hoc value 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>             <span class="c1"># prints 1.0 1.0</span>
+<span class="n">h</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>             <span class="c1"># prints 2.0 2.0</span>
+<span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>             <span class="c1"># prints 3.0 3.0</span>
+</pre></div>
+</div>
+<p>Of course, this works only for hoc variables, not python variables.  For
+arrays, use all the index arguments and prefix the name with _ref_.  The
+pointer will be to the location indexed and one may access any element
+beyond the location by giving one more non-negative index.  No checking
+is done with regard to array bounds errors.  e.g</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">_ref_x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>    <span class="c1"># holds pointer to second element of v</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># prints 12.0 12.0</span>
+<span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">v</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>         <span class="c1"># prints 10 11 50 13</span>
+</pre></div>
+</div>
+<p>The idiom is used to record from (or play into) voltage and mechanism variables. eg</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;soma&#39;</span><span class="p">)</span>
+<span class="n">soma</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">pas</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">pas</span><span class="o">.</span><span class="n">_ref_i</span><span class="p">)</span>
+<span class="n">ip</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_i_pas</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The factory idiom is one way to create Hoc objects and use them
+in Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;obfunc newvec() { return new Vector($1) }&#39;</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">newvec</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">indgen</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">printf</span><span class="p">()</span>          <span class="c1"># prints 10 11 ... 19 (not 10.0 ... since printf is a hoc function)</span>
+</pre></div>
+</div>
+<p>but that idiom is more or less obsolete as the same thing can be accomplished
+directly as shown a few fragments back. Also consider the minimalist</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vt</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">vt</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">indgen</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or equivalently,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span> <span class="o">+</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>Any Python object can be stored in a Hoc List. It is more efficient
+when navigating the List to use a python callable that avoids repeated
+lookup of a Hoc method symbol. Note that in the Hoc world a python object
+is of type PythonObject but python strings and scalars are translated back
+and forth as strdef and scalar doubles respectively.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="p">(</span><span class="s1">&#39;obfunc newlist() { return new List() }&#39;</span><span class="p">)</span>
+<span class="n">my_list</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">newlist</span><span class="p">()</span>
+<span class="n">apnd</span> <span class="o">=</span> <span class="n">my_list</span><span class="o">.</span><span class="n">append</span>
+<span class="n">apnd</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>      <span class="c1"># Python list in hoc List</span>
+<span class="n">apnd</span><span class="p">((</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">))</span> <span class="c1"># Python tuple in hoc List</span>
+<span class="n">apnd</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">})</span> <span class="c1"># Python dictionary in hoc List</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">my_list</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;for i=0, List[0].count-1 print List[0].object(i)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To see all the methods available for a hoc object, use, for example,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">dir</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>h.anyclass can be subclassed with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyVector</span><span class="p">(</span><span class="n">neuron</span><span class="o">.</span><span class="n">hclass</span><span class="p">(</span><span class="n">neuron</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">))</span> <span class="p">:</span>
+  <span class="k">pass</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">MyVector</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">zzz</span> <span class="o">=</span> <span class="s1">&#39;hello&#39;</span> <span class="c1"># a new attribute</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">())</span> <span class="c1"># call any base method</span>
+</pre></div>
+</div>
+<p>If you override a base method such as ‘size’ use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">v</span><span class="o">.</span><span class="n">baseattr</span><span class="p">(</span><span class="s1">&#39;size&#39;</span><span class="p">)()</span>
+</pre></div>
+</div>
+<p>to access the base method. Multiple inheritance involving hoc classes
+probably does not make sense.
+If you override the __init__ procedure when subclassing a Section,
+be sure to explicitly
+initialize the Section part of the instance with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nrn</span><span class="o">.</span><span class="n">Section</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Since nrn.Section is a standard Python class one can
+subclass it normally with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MySection</span><span class="p">(</span><span class="n">neuron</span><span class="o">.</span><span class="n">nrn</span><span class="o">.</span><span class="n">Section</span><span class="p">):</span>
+  <span class="k">pass</span>
+</pre></div>
+</div>
+<p>The hoc setpointer statement is effected in Python as a function call
+with a syntax for POINT_PROCESS and SUFFIX (density)mechanisms respectively
+of</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">_ref_hocvar</span><span class="p">,</span> <span class="s1">&#39;POINTER_name&#39;</span><span class="p">,</span> <span class="n">point_proces_object</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">_ref_hocvar</span><span class="p">,</span> <span class="s1">&#39;POINTER_name&#39;</span><span class="p">,</span> <span class="n">nrn</span><span class="o">.</span><span class="n">Mechanism_object</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <code class="file docutils literal notranslate"><span class="pre">nrn/share/examples/nrniv/nmodl/</span></code>(<code class="file docutils literal notranslate"><span class="pre">tstpnt1.py</span></code> and <code class="file docutils literal notranslate"><span class="pre">tstpnt2.py</span></code>) for
+examples of usage. For a density mechanism, the ‘POINTER_name’ cannot
+have the SUFFIX appended. For example if a mechanism with suffix foo has
+a POINTER bar and you want it to point to t use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">_ref_t</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">sec</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="math/vector.html#Vector.to_python" title="Vector.to_python"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.to_python()</span></code></a>, <a class="reference internal" href="math/vector.html#Vector.from_python" title="Vector.from_python"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Vector.from_python()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="neuron.hoc.hoc_ac">
+<span class="sig-prename descclassname"><span class="pre">neuron.hoc.</span></span><span class="sig-name descname"><span class="pre">hoc_ac</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neuron.hoc.hoc_ac" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">hoc</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">double_value</span> <span class="pre">=</span> <span class="pre">hoc.hoc_ac()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">hoc.hoc_ac(double_value)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Get and set the hoc global scalar, <code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_ac_</span></code>-variables.
+This is obsolete since HocObject
+is far more general.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">hoc</span>
+<span class="n">hoc</span><span class="o">.</span><span class="n">hoc_ac</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">hoc</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;print hoc_ac_&#39;</span><span class="p">)</span> <span class="c1"># prints 25</span>
+<span class="n">hoc</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;hoc_ac_ = 17&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">hoc</span><span class="o">.</span><span class="n">hoc_ac</span><span class="p">())</span>  <span class="c1"># prints 17</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="neuron.h.cas">
+<span class="sig-prename descclassname"><span class="pre">neuron.h.</span></span><span class="sig-name descname"><span class="pre">cas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neuron.h.cas" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sec</span> <span class="pre">=</span> <span class="pre">h.cas()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#currentlyaccessedsection"><span class="std std-ref">currently accessed section</span></a> as a Python
+<a class="reference internal" href="#neuron.h.Section" title="neuron.h.Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">Section</span></code></a> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">  create soma, dend[3], axon</span>
+<span class="s1">  access dend[1]</span>
+<span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
+
+<span class="n">sec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">cas</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is generally best to avoid writing code that manipulatesd the section stack. Use Python
+section objects, sec=, and section methods instead.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py class">
+<dt class="sig sig-object py" id="neuron.h.Section">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">neuron.h.</span></span><span class="sig-name descname"><span class="pre">Section</span></span><a class="headerlink" href="#neuron.h.Section" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sec</span> <span class="pre">=</span> <span class="pre">h.Section()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">sec</span> <span class="pre">=</span> <span class="pre">h.Section([name='string',</span> <span class="pre">[cell=self])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The Python Section object allows modification and evaluation of the
+information associated with a NEURON <a class="reference internal" href="../modelspec/programmatic/topology/geometry.html#geometry-section"><span class="std std-ref">Conceptual Overview of Sections</span></a>. The typical way to get
+a reference to a Section in Python is with <a class="reference internal" href="#neuron.h.cas" title="neuron.h.cas"><code class="xref py py-meth docutils literal notranslate"><span class="pre">neuron.h.cas()</span></code></a>  or
+by using the hoc section name as in <code class="docutils literal notranslate"><span class="pre">asec</span> <span class="pre">=</span> <span class="pre">h.dend[4]</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">sec</span> <span class="pre">=</span> <span class="pre">Section()</span></code> will create an anonymous Section with a hoc name
+constructed from “Section” and the Python reference address.
+Access to Section variables is through standard dot notation.
+The “anonymous” python section can be given a name with the named
+parameter and/or associated with a cell object using the named cell parameter.
+Note that a cell association is required if one anticipates using the
+<a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext.gid2cell" title="ParallelContext.gid2cell"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gid2cell()</span></code></a> method of <a class="reference internal" href="../modelspec/programmatic/network/parcon.html#ParallelContext" title="ParallelContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">sec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sec</span><span class="p">)</span>         <span class="c1"># prints __nrnsec_0x7fa44eb70000</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">3</span>       <span class="c1"># section has 3 segments (compartments)</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hh</span><span class="p">)</span>   <span class="c1"># all compartments have the hh mechanism</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">20</span>         <span class="c1"># Length of the entire section is 20 um.</span>
+<span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">sec</span><span class="p">:</span>    <span class="c1"># iterates over the section compartments</span>
+  <span class="k">for</span> <span class="n">mech</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span> <span class="c1"># iterates over the segment mechanisms</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">seg</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">mech</span><span class="o">.</span><span class="n">name</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>A Python Section can be made the currently accessed
+section by using its push method. Be sure to use <a class="reference internal" href="../modelspec/programmatic/topology/secspec.html#pop_section" title="pop_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">pop_section()</span></code></a>
+when done with it to restore the previous currently accessed section.
+I.e, given the above fragment,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+<span class="n">h</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">objref p</span>
+<span class="s1">p = new PythonObject()</span>
+<span class="s1">{p.sec.push() psection() pop_section()}</span>
+<span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
+<span class="c1">#or</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sec</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">psection</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When calling a hoc function it is generally preferred to named sec arg style
+to automatically push and pop the section stack during the scope of the
+hoc function. ie</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">psection</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">psection</span></code> section method is different, in that it returns a Python dictionary rather
+than printing to the screen. It also provides more information, such as reaction-diffusion
+mechanisms that are present. One could, for example, do</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">psection</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>The section <code class="docutils literal notranslate"><span class="pre">psection</span></code> method was added in NEURON 7.6.</p>
+<p>With a <a class="reference internal" href="../modelspec/programmatic/topology/secref.html#SectionRef" title="SectionRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionRef</span></code></a> one can, for example,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sr</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionRef</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">dend</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">sr</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">push</span><span class="p">();</span> <span class="nb">print</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">secname</span><span class="p">());</span> <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or, more compactly and avoiding the modification of the section stack,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sr</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionRef</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">h</span><span class="o">.</span><span class="n">dend</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sr</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span> <span class="n">h</span><span class="o">.</span><span class="n">secname</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">sr</span><span class="o">.</span><span class="n">root</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Iteration over sections is accomplished with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+<span class="n">sl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">SectionList</span><span class="p">();</span> <span class="n">sl</span><span class="o">.</span><span class="n">wholetree</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sl</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In lieu of using a SectionList, one can get the whole tree containing a given section
+as a Python list via:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tree_secs</span> <span class="o">=</span> <span class="n">my_sec</span><span class="o">.</span><span class="n">wholetree</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(The wholetree section method was added in NEURON 7.7.)</p>
+<p>Connecting a child section to a parent section uses the connect method
+using either</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">childsec</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">parentsec</span><span class="p">,</span> <span class="n">parentx</span><span class="p">,</span> <span class="n">childx</span><span class="p">)</span>
+<span class="n">childsec</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">parentsegment</span><span class="p">,</span> <span class="n">childx</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the first form parentx and childx are optional with default values of
+1 and 0 respectively. <code class="docutils literal notranslate"><span class="pre">childx</span></code> must be 0 or 1 (orientation of the child). Parentx is in the
+range [0 - 1] but will actually be connected to the center of the parent segment
+that contains parentx (or exactly at 0 or 1).</p>
+<p>sec.cell() returns the cell object that ‘owns’ the section. The return
+value is None if no object owns the section (a top level section), the
+instance of the hoc template that created the section, or the python
+object specified by the named cell parameter
+when the python section was created.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<section id="segment">
+<h2>Segment<a class="headerlink" href="#segment" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">seg</span> <span class="pre">=</span> <span class="pre">section(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A Segment object is obtained from a Section with the function notation where
+the argument is 0 &lt;= x &lt;= 1 an the segment is the compartment that contains
+the location x. The x value of the segment is seg.x and the section is
+seg.sec . From a Segment one can obtain a Mechanism.</p>
+<p>To iterate over segments, use e.g. <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">seg</span> <span class="pre">in</span> <span class="pre">sec:</span> <span class="pre">print(seg)</span></code>
+This does not include 0 area segments at 0 and 1. For those use <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">seg</span> <span class="pre">in</span> <span class="pre">sec.allseg():...</span></code></p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="mechanism">
+<h2>Mechanism<a class="headerlink" href="#mechanism" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">mech</span> <span class="pre">=</span> <span class="pre">segment.mechname</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A Mechanism object is obtained from a Segment. From a Mechanism one can
+obtain a range variable. The range variable can also be obtained from the
+segment by using the hoc range variable name that has the mechanism suffix.</p>
+<p>To iterate over density mechanisms, use: <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">mech</span> <span class="pre">in</span> <span class="pre">seg:</span> <span class="pre">print</span> <span class="pre">(mech)</span></code>
+To get a python list of point processes in a segment: <code class="docutils literal notranslate"><span class="pre">pplist</span> <span class="pre">=</span> <span class="pre">seg.point_processes()</span></code></p>
+</dd>
+</dl>
+</div></blockquote>
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="neuron.hoc.execute">
+<span class="sig-prename descclassname"><span class="pre">neuron.hoc.</span></span><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neuron.hoc.execute" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">neuron</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">neuron.hoc.execute('any</span> <span class="pre">hoc</span> <span class="pre">statement')</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Execute any statement or expression using the Hoc interpreter. This is
+obsolete since the same thing can be accomplished with HocObject with
+less typing.
+Note that triple quotes can be used for multiple line statements.
+A ‘n’ should be escaped as ‘\n’.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hoc</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;load_file(&quot;nrngui.hoc&quot;)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-func docutils literal notranslate"><span class="pre">nrnpython()</span></code></p>
+</div>
+</dd></dl>
+
+<section id="python-specific-documentation-of-discouraged-hoc-features">
+<span id="hoc-features-you-should-not-use-from-python"></span><h3>Python-specific documentation of discouraged HOC features<a class="headerlink" href="#python-specific-documentation-of-discouraged-hoc-features" title="Link to this heading"></a></h3>
+<p>This section contains versions of the HOC documentation for certain features
+that have been updated to be somewhat Python-specific.
+You may find them useful, but in general Python-native versions are to be
+preferred.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="io/file.html">File Access (objected-oriented via NEURON)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io/printf.html">Printf (Formatted Output)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io/printf.html#redirect-standard-out">Redirect Standard Out</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io/read.html">Read from Terminal and Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io/ropen.html">Open and Write to Files (Obsolete)</a></li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="neuron_classes.html" class="btn btn-neutral float-left" title="NEURON Python Classes and Objects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="io/file.html" class="btn btn-neutral float-right" title="File Access (objected-oriented via NEURON)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

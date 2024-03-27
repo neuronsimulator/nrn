@@ -1,0 +1,151 @@
+begintemplate VectorPlay
+public b, g, vx, vy, sname, set_vec, oldval, con1, contin, scale
+objref b, g, this, vx, vy, sc
+strdef sname, tstr
+
+i=0
+oldval=0
+
+proc init() {
+	have_name = 0
+	is_con = 0
+	state = 0
+	contin = 0
+	sc = new SymChooser("Variable Name to Play into")
+	build()
+	if (numarg() == 0) {
+		sprint(tstr, "%s", this)
+		b.map(tstr)
+	}
+}
+
+proc build() {
+	sname = "Choose Variable Name in Graph menu"
+	b = new VBox()
+	b.ref(this)
+	b.save("save()")
+	b.intercept(1)
+	xpanel("", 1)
+	xmenu("Specify")
+	xbutton("Variable Name", "varname()")
+	xbutton("Vector from Clipboard", "clipboard()")
+	xcheckbox("Piecewise continuous", &contin, "con()")
+	xbutton("*10", "scale(10)")
+	xbutton("/10", "scale(.1)")
+	xbutton("*2", "scale(2)")
+	xbutton("/2", "scale(.5)")
+	xmenu()
+	xstatebutton("Connected", &state, "con()")
+	xvarlabel(sname)
+	xpanel()
+	g = new Graph()
+	b.intercept(0)
+}
+
+proc varname() {
+	if (sc.run()) {
+		have_name = 1
+		sc.text(sname)
+	}
+	con1(is_con)
+}
+
+proc clipboard() {
+	sprint(tstr, "%s.set_vec(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr) == 0) {
+continue_dialog("No data in the Vector clipboard.")
+        }else{
+		con1(is_con)
+	}
+}
+
+proc set_vec() {
+	vx = $o1.c
+	vy = $o2.c
+	vy.plot(g, vx)
+}
+
+proc scale() {
+	if (object_id(vy)) {
+		vy.mul($1)
+		g.erase
+		vy.plot(g, vx)
+	}
+}
+
+proc con() {
+	if (!have_name) {
+		continue_dialog("Choose Variable name (see Graph Menu)")
+		state = 0
+	}else if (!object_id(vy)) {
+		continue_dialog("Choose Vector from Clipboard (see Graph Menu)")
+		state = 0
+	}else{
+		con1(state)
+	}		
+}
+
+proc con1() {
+	if (object_id(vy)) {
+		if (is_con) {
+			vy.play_remove()
+			sprint(tstr, "%s = %g", sname, oldval)
+			execute(tstr)
+			is_con = 0
+			state = 0
+		}
+		if ($1) {
+			if (contin) {
+				sprint(tstr, "{%s.vy.play(&%s, %s.vx, 1)}", this, sname, this)
+			}else{
+				sprint(tstr, "{%s.vy.play(&%s, %s.vx)}", this, sname, this)
+			}
+			if (execute1(tstr)) {
+				sprint(tstr, "%s.oldval = %s", this, sname)
+				execute(tstr)
+				is_con = 1
+				state = 1
+			}else{
+				continue_dialog("Invalid Variable name")
+			}
+		}
+	}
+}
+
+proc save() {local i
+	b.save("load_file(\"vplay.hoc\")\n}\n{")
+	b.save("ocbox_=new VectorPlay(1)")
+	b.save("}\n{object_push(ocbox_)}")
+
+	if (object_id(vy)) {
+		sprint(tstr, "vy = new Vector(%d)", vy.size)
+		b.save(tstr)
+		sprint(tstr, "vx = new Vector(%d)", vx.size)
+		b.save(tstr)
+		sprint(tstr, "for i=0,%d { vx.x[i]=fscan() vy.x[i]=fscan()}",\
+			vx.size-1)
+		b.save(tstr)
+		for i=0, vx.size-1 {   
+			sprint(tstr, "%g %g", vx.x[i], vy.x[i])
+			b.save(tstr)
+		}
+		b.save("{vy.plot(g, vx)}")
+	}
+
+	sprint(tstr, "{sname = \"%s\"  have_name = %d  contin = %d con1(%d)}",\
+		 sname, have_name, contin, is_con)
+	b.save(tstr)
+
+	b.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+	b.save("ocbox_ = ocbox_.b")
+}
+
+endtemplate VectorPlay
+
+objref tobj
+
+proc makeVectorPlay() {
+	tobj = new VectorPlay()
+	objref tobj
+}

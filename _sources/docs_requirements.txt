@@ -1,0 +1,18 @@
+sphinx
+# do not check import of next line
+sphinx_rtd_theme
+jupyter
+nbconvert
+myst_parser
+matplotlib
+# bokeh 3 seems to break docs notebooks
+bokeh<3
+# do not check import of next line
+ipython
+plotnine
+numpy
+plotly
+nbsphinx
+jinja2
+sphinx-design
+packaging==21.3

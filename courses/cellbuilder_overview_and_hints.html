@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CellBuilder Overview and Hints &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Saving Windows" href="saving_windows.html" />
+    <link rel="prev" title="Using the CellBuilder" href="the_cellbuilder.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#physical-system">Physical System</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#conceptual-model">Conceptual Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#exercises">Exercises</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#saving-and-retrieving-the-experimental-rig">Saving and Retrieving the Experimental Rig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the_cellbuilder.html#more-exercises">More Exercises</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="the_cellbuilder.html#footnotes-and-asides">Footnotes and Asides</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">CellBuilder Overview and Hints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="managing_models_on_the_fly.html">Managing Models on the Fly</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+          <li class="breadcrumb-item"><a href="the_cellbuilder.html">Using the CellBuilder</a></li>
+      <li class="breadcrumb-item active">CellBuilder Overview and Hints</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/cellbuilder_overview_and_hints.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cellbuilder-overview-and-hints">
+<span id="id1"></span><h1>CellBuilder Overview and Hints<a class="headerlink" href="#cellbuilder-overview-and-hints" title="Link to this heading"></a></h1>
+<p>The CellBuilder is a graphical tool for creating, editing, and managing models of nerve cells. It is probably most useful in two different settings.</p>
+<ol class="arabic simple">
+<li><p>Building a model from scratch that will have only a few sections. If you need more than 5 - 10 sections, it may be more convenient to write an algorithm that creates the model under program control.</p></li>
+<li><p>Managing the biophysical properties of a model that is based on complex morphometric data, without having to write any code.</p></li>
+</ol>
+<p>The CellBuilder breaks the process of creating and managing a model of a cell into tasks that are analogous to what you would do if you were writing a program in hoc or Python. They are</p>
+<ol class="arabic simple">
+<li><p>setting up the model’s topology (branching pattern)</p></li>
+<li><p>grouping sections into subsets. For example, it might make sense to group dendritic branches into subsets according to shared anatomical criteria (e.g. basilar, apical, oblique, spiny, aspiny), or biophysical criteria (passive, active).</p></li>
+<li><p>assigning anatomical or biophysical properties to individual sections or subsets of sections</p></li>
+</ol>
+<p>The CellBuilder can import a model that already exists during a NEURON session. It can also be used in conjunction with NEURON’s Import3D tool to create new model cells based on detailed morphometric reconstructions.</p>
+<section id="starting-the-cellbuilder">
+<span id="id2"></span><h2>Starting the CellBuilder<a class="headerlink" href="#starting-the-cellbuilder" title="Link to this heading"></a></h2>
+<p>Got to the working directory of your choice, start python, and enter the command</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+</pre></div>
+</div>
+<p>The get a CellBuilder by selecting <span class="menuselection">NEURONMainMenu ‣ Build ‣ Cell Builder</span></p>
+<blockquote>
+<div><p><strong>Aside:</strong> Everything that can be done through the GUI can also be done from the command line. For example, we could have also opened a CellBuilder by:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;celbild.hoc&#39;</span><span class="p">)</span> <span class="c1"># load the library</span>
+<span class="n">h</span><span class="o">.</span><span class="n">makecellbuilder</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Either way, a new CellBuilder will appear:</p>
+<img alt="../_images/cellbuilderpic.gif" class="align-center" src="../_images/cellbuilderpic.gif" />
+</section>
+<section id="using-the-cellbuilder">
+<h2>Using the CellBuilder<a class="headerlink" href="#using-the-cellbuilder" title="Link to this heading"></a></h2>
+<p>Across the top of the CellBuilder there is a row of radio buttons, plus a checkbox labeled “Continuous Create”. For now you should leave the checkbox empty.</p>
+<p>Use the radio buttons to select the following pages.</p>
+<p><strong>About</strong></p>
+<p>Scan this information, but don’t worry if everything isn’t immediately obvious. You can reread it any time you want.</p>
+<p><strong>Topology</strong></p>
+<p>This is where you change the branching architecture of the cell.</p>
+<p>Select “Make Section” from the list of actions, and then L click in the graph panel on a blank space to the right of the soma. Use the other actions as necessary to make your model look like the figure in this exercise.</p>
+<p><strong>Subsets</strong></p>
+<p>Subsets can simplify management of models that have many sections. The CellBuilder automatically creates the “all” subset, which contains every section in the model. There is no need to define subsets for the ball and stick model, so just skip this page.</p>
+<p><strong>Geometry</strong></p>
+<p>This is for setting the dimensions and spatial grid (nseg) of the soma and dendrite.</p>
+<ol class="arabic">
+<li><p>Make sure the Specify Strategy button is checked.</p>
+<p>Choose soma from the list of subsets and section names, and then select L, diam, and nseg.</p>
+<p>Repeat for dend.</p>
+</li>
+<li><p>Clear the Specify Strategy button.</p>
+<p>Use the list of section names to select the soma and dendrite individually, and enter the desired dimensions in the numeric fields for L and diam.</p>
+<p>For now leave nseg = 1.</p>
+</li>
+</ol>
+<p><strong>Biophysics</strong></p>
+<p>Use this to endow the sections with biophysical properties (ionic currents, pumps, buffers etc.).</p>
+<ol class="arabic simple">
+<li><p>Specify Strategy. This is for inserting biophysical mechanisms into the sections of your model (Ra and cm for “all,” hh for the soma, and pas for the dend section).</p></li>
+<li><p>To examine and adjust the parameters of the mechanisms that you inserted, clear the Specify Strategy button.</p></li>
+</ol>
+<p><strong>Management</strong></p>
+<p>This panel is not used in the ball and stick exercise.</p>
+<p>When you are done, the CellBuilder will contain a complete specification of your model cell. However, no sections will actually exist until you click on the CellBuilder’s Continuous Create button.</p>
+<p><strong>At this point you should turn Continuous Create ON</strong> because many of NEURON’s GUI tools require sections to exist before they can be used (e.g. the PointProcessManager).</p>
+</section>
+<section id="saving-your-work">
+<h2>Saving your work<a class="headerlink" href="#saving-your-work" title="Link to this heading"></a></h2>
+<p>This took a lot of effort and you don’t want to have to do it again. So save the completed CellBuilder to a session file called ballstk.ses in the working directory <span class="menuselection">exercises ‣ cellbuilder</span>. To do this, click on</p>
+<blockquote>
+<div><p><span class="menuselection">NEURONMainMenu ‣ File ‣ save session</span></p>
+</div></blockquote>
+<p>This brings up a file browser/selector panel. Click in the top field of this tool and type</p>
+<p>ballstk.ses</p>
+<p>as shown here</p>
+<img alt="../_images/save_ballstkses.gif" class="align-center" src="../_images/save_ballstkses.gif" />
+<p>Then click on the Save button.</p>
+<section id="checking-what-you-saved">
+<h3>Checking what you saved<a class="headerlink" href="#checking-what-you-saved" title="Link to this heading"></a></h3>
+<p>Retrieve ballstk.ses by clicking on</p>
+<blockquote>
+<div><p><span class="menuselection">NEURONMainMenu ‣ File ‣ load session</span></p>
+</div></blockquote>
+<p>and then clicking on ballstk.ses.</p>
+<p>A new CellBuilder window called CellBuild[1] will appear. Since Continuous Create is ON, this new CellBuilder forces the creation of new sections that will replace any pre-existing sections that have the same names.</p>
+<p>The terminal will display a message warning you that this happened:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Previously</span> <span class="n">existing</span> <span class="n">soma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="n">points</span> <span class="n">to</span> <span class="n">a</span> <span class="n">section</span> <span class="n">which</span> <span class="ow">is</span> <span class="n">being</span> <span class="n">deleted</span>
+<span class="n">Previously</span> <span class="n">existing</span> <span class="n">dend</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="n">points</span> <span class="n">to</span> <span class="n">a</span> <span class="n">section</span> <span class="n">which</span> <span class="ow">is</span> <span class="n">being</span> <span class="n">deleted</span>
+</pre></div>
+</div>
+<p>Check Topology, Geometry, and Biophysics. When you are sure they are correct, exit NEURON.</p>
+</section>
+</section>
+<section id="questions-and-answers-about-sessions-and-ses-files">
+<h2>Questions and answers about sessions and ses files<a class="headerlink" href="#questions-and-answers-about-sessions-and-ses-files" title="Link to this heading"></a></h2>
+<p>What’s a session? What’s a ses file good for? What’s in a ses file? For answers to these and other questions about sessions and ses files, <a class="reference internal" href="saving_windows.html#saving-windows"><span class="std std-ref">read this.</span></a></p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="the_cellbuilder.html" class="btn btn-neutral float-left" title="Using the CellBuilder" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="saving_windows.html" class="btn btn-neutral float-right" title="Saving Windows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

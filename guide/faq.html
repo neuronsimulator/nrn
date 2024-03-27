@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frequently asked questions (FAQ) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using “Plot what?” to Specify a Variable to be plotted" href="using_plotwhat_to_specify_a_variable.html" />
+    <link rel="prev" title="Adapting MOD files for C++ with NEURON 9.0[.dev]" href="porting_mechanisms_to_cpp.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Frequently asked questions (FAQ)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#now-that-i-ve-installed-neuron-how-do-i-run-it">Now that I’ve installed NEURON, how do I run it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-s-the-best-way-to-learn-how-to-use-neuron">What’s the best way to learn how to use NEURON?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-create-a-neuron-model">How do I create a NEURON model?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#help-i-m-having-a-hard-time-implementing-models">Help! I’m having a hard time implementing models!</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created">Why can’t NEURON read the text file (or <code class="docutils literal notranslate"><span class="pre">hoc</span></code> file) that I created?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-print-a-hard-copy-of-a-neuron-window">How do I print a hard copy of a NEURON window?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-plot-something-other-than-membrane-potential">How do I plot something other than membrane potential?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-save-and-edit-figures">How do I save and edit figures?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done">I’ve used the NEURON Main Menu to construct and manage models. How can I save what I have done?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-a-ses-session-file-can-i-edit-it">What is a ses (session) file? Can I edit it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-use-neuron-s-tools-for-electrotonic-analysis">How do I use NEURON’s tools for electrotonic analysis?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-should-i-use-an-odd-value-for-nseg">Why should I use an odd value for nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-s-a-good-stretegy-for-specifying-nseg">What’s a good stretegy for specifying nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs">How do I change the background color used in NEURON’s shape plots and other graphs?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-change-the-color-scale-used-in-shape-plots">How do I change the color scale used in shape plots?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc">I see an error message that says … procedure too big in ./foo.hoc …</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-can-i-find-examples-of-mod-files">Where can I find examples of mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-compile-mod-files">How do I compile mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-can-t-get-mod-files-to-compile">I can’t get mod files to compile.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version">I installed a new version of NEURON, and now I see error messages like this: ‘mecanisms fooba needs to be re-translated. its version 5.2 “c” code is incompatible with this neuron version’.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#is-there-a-list-of-functions-that-are-built-into-nmodl">Is there a list of functions that are built into NMODL?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#is-there-a-list-of-functions-that-are-built-into-hoc">Is there a list of functions that are built into hoc?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-units-does-neuron-use-for-current-concentration-etc">What units does NEURON use for current, concentration, etc.?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect">When I type a new value into a numeric field, it doesn’t seem to have any effect.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use">What is the difference between SEClamp and VClamp, and which should I use?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell">SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this">I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times">I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism">I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-can-i-read-data-from-a-binary-pclamp-file">How can I read data from a binary PClamp file?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything">How do I exit NEURON? I’m not using the GUI, and when I enter ^D at the oc&gt; prompt it doesn’t do anything?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#is-there-a-list-of-functions-that-are-built-into-neuron">Is there a list of functions that are built into NEURON?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="using_plotwhat_to_specify_a_variable.html">Using “Plot what?” to Specify a Variable to be plotted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="working_with_postscript_and_idraw.html">Working with PostScript and idraw figures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_session_files_for_saving.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_the_d_lambda_rule.html">Using the d_lambda Rule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html">How to change the background color used in shape plots and other graphs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html#how-create-a-custom-colormap">How create a custom colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="how_to_get_started_with_neuron.html">How to get started with NEURON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nmodls_built_in_functions.html">NMODL’s built-in functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html">UNITS Tutorial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#definition-of-new-units">Definition of new units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#function-and-argument-units">Function and Argument units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-for-kinetic-blocks">Units for KINETIC blocks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-in-neuron-models">Units in NEURON models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="finitialize_handler.html">FIinitializeHandler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_neuron_on_the_mac.html">Using NEURON on the Mac</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">Frequently asked questions (FAQ)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/faq.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="frequently-asked-questions-faq">
+<h1>Frequently asked questions (FAQ)<a class="headerlink" href="#frequently-asked-questions-faq" title="Link to this heading"></a></h1>
+<section id="now-that-i-ve-installed-neuron-how-do-i-run-it">
+<h2>Now that I’ve installed NEURON, how do I run it?<a class="headerlink" href="#now-that-i-ve-installed-neuron-how-do-i-run-it" title="Link to this heading"></a></h2>
+<p>To start NEURON and bring up the NEURON Main Menu toolbar (which you can use to build new models and load existing ones) :</p>
+<ul class="simple">
+<li><p>UNIX/Linux : type <code class="docutils literal notranslate"><span class="pre">nrngui</span></code> or <code class="docutils literal notranslate"><span class="pre">nrngui</span> <span class="pre">-python</span></code> at the system prompt. (The <code class="docutils literal notranslate"><span class="pre">-python</span></code> flag will give you a Python prompt instead of a HOC prompt.)</p></li>
+<li><p>OS X : double click on the nrngui icon in the folder where you installed NEURON.</p></li>
+<li><p>MSWin : double click on the nrngui icon in the NEURON Program Group (or in the desktop NEURON folder).</p></li>
+</ul>
+<p>To start NEURON from python and bring up the NEURON Main Menu, launch “python” then type</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+</pre></div>
+</div>
+<p>To make NEURON read a file called <code class="docutils literal notranslate"><span class="pre">foo.hoc</span></code> when it starts :</p>
+<ul class="simple">
+<li><p>UNIX/Linux : type nrngui foo.hoc at the system prompt. This also works for ses files.</p></li>
+<li><p>OS X : drag and drop foo.hoc onto the nrngui icon. This also works for ses files.</p></li>
+<li><p>MSWin : use Windows Explorer (not Internet Explorer) to navigate to the directory where foo.hoc is located, and then double click on foo.hoc . This does not work for ses files.</p></li>
+</ul>
+<p><a class="reference internal" href="using_neuron_on_the_mac.html#using-neuron-on-the-mac"><span class="std std-ref">macOS users will find additional information here.</span></a></p>
+<p>To exit NEURON : type <code class="docutils literal notranslate"><span class="pre">quit()</span></code> or <code class="docutils literal notranslate"><span class="pre">^D</span></code> (“control D”) at the <code class="docutils literal notranslate"><span class="pre">oc&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt, or use <span class="menuselection">File ‣ Quit</span> in the NEURON Main Menu toolbar.</p>
+</section>
+<section id="what-s-the-best-way-to-learn-how-to-use-neuron">
+<h2>What’s the best way to learn how to use NEURON?<a class="headerlink" href="#what-s-the-best-way-to-learn-how-to-use-neuron" title="Link to this heading"></a></h2>
+<p>First be sure to join <a class="reference external" href="https://www.neuron.yale.edu/phpBB/index.php">The NEURON Forum</a>.
+If you have time, watch our course <a class="reference internal" href="../videos/index.html#training-videos"><span class="std std-ref">videos</span></a>; the material in each course varies, but they generally include a mix of theory and applications.
+Then <a class="reference internal" href="how_to_get_started.html#how-to-get-started"><span class="std std-ref">read these suggestions</span></a>.</p>
+</section>
+<section id="how-do-i-create-a-neuron-model">
+<h2>How do I create a NEURON model?<a class="headerlink" href="#how-do-i-create-a-neuron-model" title="Link to this heading"></a></h2>
+<p>By specifying representations in the computer of the three basic physical components of an actual experiment.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Component</strong></p></th>
+<th class="head"><p><strong>Wet lab</strong></p></th>
+<th class="head"><p><strong>Compuational Modeling</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Experimental preparation - <em>What is the biology itself?</em></p></td>
+<td><p>brain slice, tissue culture etc.</p></td>
+<td><p>specification of what anatomical and biophysical properties to represent in model</p></td>
+</tr>
+<tr class="row-odd"><td><p>Instrumentation - <em>How will you stimulate it and record results?</em></p></td>
+<td><p>voltage/current clamp, electrodes, stimulator, recorder etc.</p></td>
+<td><p>computational representations of clamps, electrodes etc.</p></td>
+</tr>
+<tr class="row-even"><td><p>Control - <em>How do you automate the experimental protocol?</em></p></td>
+<td><p>programmable pulse generators etc.</p></td>
+<td><p>specification of which variables to monitor and record time step, when to stop, integration method, optimization algorithms</p></td>
+</tr>
+</tbody>
+</table>
+<p>The classical approach to using NEURON is to specify all three components by writing a program in <code class="docutils literal notranslate"><span class="pre">hoc</span></code>, NEURON’s programming language. You can do this with any editor you prefer, as long as it can save your code to an ASCII text file. Make sure your <code class="docutils literal notranslate"><span class="pre">hoc</span></code> files end with the extension <code class="docutils literal notranslate"><span class="pre">.hoc</span></code></p>
+<p>A more recent approach is to use the NEURON Main Menu toolbar’s dropdown menus, which allow you to quickly create a wide range of models without having to write any code at all. You can save the GUI’s windows and panels to session files that you can use later to recreate what you built (see the FAQ “What is a ses (session) file?”).</p>
+<p>The most flexible and productive way to work with NEURON is to combine hoc and the GUI in ways that exploit their respective strengths. Don’t be afraid of the GUI–noone will accuse you of being a “girly man” if you take advantange of its powerful tools for model specification, instrumentation, and control. In fact, many of the GUI’s most useful tools would be extremely difficult and time consuming to try to duplicate by writing your own hoc code.</p>
+<p>Be sure to read the FAQ “Help! I’m having a hard time implementing models!”</p>
+</section>
+<section id="help-i-m-having-a-hard-time-implementing-models">
+<h2>Help! I’m having a hard time implementing models!<a class="headerlink" href="#help-i-m-having-a-hard-time-implementing-models" title="Link to this heading"></a></h2>
+<p>Here are some general tips about program development.</p>
+<ul class="simple">
+<li><p>Before you write any code, write down an explicit outline of how it should work. Use a “top-down” approach to avoid being overwhelmed at the start by implementational details.</p></li>
+<li><p>Successful programming demands an incremental cycle of revision and testing. Start small with something simple that works. Add things one at a time, testing at every step to make sure the new stuff works and didn’t break the old stuff.</p></li>
+<li><p>Comment your code.</p></li>
+<li><p>Use a “modular” programming style. At the most concrete level, this means using lots of short, simple procs and funcs.</p></li>
+</ul>
+<p>Also, “don’t throw all your code into one giant <code class="docutils literal notranslate"><span class="pre">hoc</span></code> (or <code class="docutils literal notranslate"><span class="pre">ses</span></code>) file.” Regardless of whether you use <code class="docutils literal notranslate"><span class="pre">hoc</span></code>, the GUI, or both, it will be much easier to create and revise programs if you keep model specification (the “experimental preparation”) separate from instrumentation and control (the “user interface”). You might even put them in separate files, e.g. <code class="file docutils literal notranslate"><span class="pre">model.hoc</span></code> might contain the code that specifies the anatomy and biophysics of your model cell or network, and <code class="file docutils literal notranslate"><span class="pre">rig.ses</span></code> might specify a RunControl panel and other graphical tools that you use to run simulations, apply stimuli, and display results. Then you create a third file, called <code class="file docutils literal notranslate"><span class="pre">init.hoc</span></code>, which contains the following statements :</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">load_file</span><span class="p">(</span><span class="s">&quot;nrngui.hoc&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// get NEURON&#39;s gui library</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;model.hoc&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// the model specification</span>
+<span class="n">load_file</span><span class="p">(</span><span class="s">&quot;rig.ses&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// the instrumentation, control, and user interface</span>
+</pre></div>
+</div>
+<p>When NEURON executes <code class="file docutils literal notranslate"><span class="pre">init.hoc</span></code>, up comes your model and user interface.</p>
+<p>This greatly simplifies program development, testing and maintentance. For example, complex models and experimental rigs can be constructed in an incremental manner, so that <code class="file docutils literal notranslate"><span class="pre">init.hoc</span></code> grows to contain many <a class="reference internal" href="../python/programming/dynamiccode.html#load_file" title="load_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_file()</span></code></a> statements.</p>
+<ul class="simple">
+<li><p>Mine other code (e.g. the Programmers’ Reference) for reusable or customizable working examples. “Good programmers imitate great code, great programmers steal great code.” But test all code.</p></li>
+</ul>
+</section>
+<section id="why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created">
+<h2>Why can’t NEURON read the text file (or <code class="docutils literal notranslate"><span class="pre">hoc</span></code> file) that I created?<a class="headerlink" href="#why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created" title="Link to this heading"></a></h2>
+<p>The Mac, MSWin, and UNIX/Linux versions of NEURON can read ASCII text files created under any of these operating systems. ASCII, which is sometimes called “plain text” or “ANSI text”, encodes each character with only 7 bits of each byte. Some text editors offer alternative formats for saving text files, and if you choose one of these you may find that NEURON will not read the file. For example, Notepad under Win2k allows files to be saved as “Unicode text”, which will gag NEURON.</p>
+</section>
+<section id="how-do-i-print-a-hard-copy-of-a-neuron-window">
+<h2>How do I print a hard copy of a NEURON window?<a class="headerlink" href="#how-do-i-print-a-hard-copy-of-a-neuron-window" title="Link to this heading"></a></h2>
+<p>Use the Print &amp; File Window Manager (PFWM). View <a class="reference internal" href="print_file_manager.html#print-file-manager"><span class="std std-ref">Print &amp; File Manager</span></a> to learn how.</p>
+</section>
+<section id="how-do-i-plot-something-other-than-membrane-potential">
+<h2>How do I plot something other than membrane potential?<a class="headerlink" href="#how-do-i-plot-something-other-than-membrane-potential" title="Link to this heading"></a></h2>
+<p>Use the <a class="reference internal" href="using_plotwhat_to_specify_a_variable.html#using-plotwhat-to-specify-a-variable-to-be-plotted"><span class="std std-ref">Plot what?</span></a> tool</p>
+</section>
+<section id="how-do-i-save-and-edit-figures">
+<h2>How do I save and edit figures?<a class="headerlink" href="#how-do-i-save-and-edit-figures" title="Link to this heading"></a></h2>
+<p>The quick and dirty way is to capture screen images as bitmaps. The results are suitable for posting on WWW sites but resolution is generally too low for publication or grant proposals, and editing is a pain. For highest quality, PostScript is best. Use the Print &amp; File Window Manager (PFWM) to save the graphs you want to an Idraw file. This is an encapsulated PostScript format that can be edited by idraw, which comes with the UNIX/Linux version of NEURON. It can also be imported by many draw programs, e.g. CorelDraw.</p>
+<p>To learn more, <a class="reference internal" href="working_with_postscript_and_idraw.html#working-with-postscript-and-idraw-figures"><span class="std std-ref">see this tutorial</span></a> from the NEURON Summer Course.</p>
+</section>
+<section id="i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done">
+<h2>I’ve used the NEURON Main Menu to construct and manage models. How can I save what I have done?<a class="headerlink" href="#i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="using_session_files_for_saving.html#using-session-files-for-saving-and-retrieving-windows"><span class="std std-ref">Here’s how to save the GUI tools</span></a> you spawned to a session file.</p>
+</section>
+<section id="what-is-a-ses-session-file-can-i-edit-it">
+<h2>What is a ses (session) file? Can I edit it?<a class="headerlink" href="#what-is-a-ses-session-file-can-i-edit-it" title="Link to this heading"></a></h2>
+<p>A session file is a plain text file that contains hoc statements that will recreate the windows that were saved to it. It is often quite informative to examine the contents of a ses file, and sometimes it is very useful to change the file’s contents with a text editor. <a class="reference internal" href="data/units.dat.html#id184"><span class="std std-ref">Read this</span></a> for more information.</p>
+</section>
+<section id="how-do-i-use-neuron-s-tools-for-electrotonic-analysis">
+<h2>How do I use NEURON’s tools for electrotonic analysis?<a class="headerlink" href="#how-do-i-use-neuron-s-tools-for-electrotonic-analysis" title="Link to this heading"></a></h2>
+<p>See this <a class="reference internal" href="../courses/electrotonic_analysis.html#electrotonic-analysis"><span class="std std-ref">sample lesson</span></a> from the NEURON Summer Course</p>
+</section>
+<section id="why-should-i-use-an-odd-value-for-nseg">
+<h2>Why should I use an odd value for nseg?<a class="headerlink" href="#why-should-i-use-an-odd-value-for-nseg" title="Link to this heading"></a></h2>
+<p>So there will always be a node at 0.5 (the middle of a section).</p>
+<p>Read about this in <a class="reference external" href="https://doi.org/10.1177/107385840100700207">NEURON: a Tool for Neuroscientists</a> by Hines &amp; Carnevale.</p>
+</section>
+<section id="what-s-a-good-stretegy-for-specifying-nseg">
+<h2>What’s a good stretegy for specifying nseg?<a class="headerlink" href="#what-s-a-good-stretegy-for-specifying-nseg" title="Link to this heading"></a></h2>
+<p>Probably the easiest and most efficient way is to use what we call the d_lambda rule, which means “set nseg to a value that is a small fraction of the AC length constant at a high frequency.”</p>
+<p><a class="reference download internal" download="" href="../_downloads/10d7208986ecc4c4dcc4f7edc0cca861/neurontoolforneuroscientists.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Get</span> <span class="pre">a</span> <span class="pre">copy</span> <span class="pre">of</span> <span class="pre">&quot;NEURON:</span> <span class="pre">a</span> <span class="pre">Tool</span> <span class="pre">for</span> <span class="pre">Neuroscientists&quot;</span></code></a>, which explains how it works.</p>
+<p>Read <a class="reference internal" href="using_the_d_lambda_rule.html#using-the-d-lambda-rule"><span class="std std-ref">how to use the d_lambda rule with your own models</span></a>.</p>
+</section>
+<section id="how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs">
+<h2>How do I change the background color used in NEURON’s shape plots and other graphs?<a class="headerlink" href="#how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs" title="Link to this heading"></a></h2>
+<p>Edit the <a class="reference internal" href="nrn_defaults.html#nrn-defaults"><span class="std std-ref">nrn.defaults</span></a> file</p>
+</section>
+<section id="how-do-i-change-the-color-scale-used-in-shape-plots">
+<h2>How do I change the color scale used in shape plots?<a class="headerlink" href="#how-do-i-change-the-color-scale-used-in-shape-plots" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="nrn_defaults.html#nrn-defaults"><span class="std std-ref">Create a file that specifies the desired RGB values.</span></a></p>
+</section>
+<section id="i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc">
+<h2>I see an error message that says … procedure too big in ./foo.hoc …<a class="headerlink" href="#i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc" title="Link to this heading"></a></h2>
+<p>There is an upper limit on the size of a procedure that the hoc parser can handle. The workaround is simple.</p>
+<p>Instead of having a single giant procedure, break it into several smaller procedures, and then call these procedures one after another. For example, suppose your procedure is</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="nf">buildcell</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="p">...</span><span class="w"> </span><span class="n">lots</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">hoc</span><span class="w"> </span><span class="n">statements</span><span class="w"> </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>just chop it into smaller chunks like this</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="n">proc</span><span class="w"> </span><span class="nf">buildcell_1</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="p">...</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">hoc</span><span class="w"> </span><span class="n">statements</span><span class="w"> </span><span class="p">...</span>
+<span class="p">}</span>
+<span class="n">proc</span><span class="w"> </span><span class="nf">buildcell_2</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="p">...</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">hoc</span><span class="w"> </span><span class="n">statements</span><span class="w"> </span><span class="p">...</span>
+<span class="p">}</span>
+<span class="p">...</span><span class="w"> </span><span class="n">etc</span><span class="w"> </span><span class="p">...</span>
+</pre></div>
+</div>
+<p>then execute them with</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="n">buildcell_1</span><span class="p">()</span>
+<span class="n">buildcell_2</span><span class="p">()</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>How big can a procedure be? I’ve never tried to find out. Try cutting your big procedure in half and see if that works. If it doesn’t, cut the pieces in half and try again. Eventually you’ll find a size that works.</p>
+</section>
+<section id="where-can-i-find-examples-of-mod-files">
+<h2>Where can I find examples of mod files?<a class="headerlink" href="#where-can-i-find-examples-of-mod-files" title="Link to this heading"></a></h2>
+<p>See the NMODL tops on <a class="reference internal" href="how_to_get_started_with_neuron.html#how-to-get-started-with-neuron"><span class="std std-ref">the “getting started” page.</span></a></p>
+</section>
+<section id="how-do-i-compile-mod-files">
+<span id="faq-how-do-i-compile-mod-files"></span><h2>How do I compile mod files?<a class="headerlink" href="#how-do-i-compile-mod-files" title="Link to this heading"></a></h2>
+<p>If the folder with your NEURON scripts (HOC or Python) is the same as the folder with the mod files, open it in a terminal and type <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span></code>. You can also specify paths; e.g. if all the mod files are in a subfolder called <code class="docutils literal notranslate"><span class="pre">mod</span></code> but you’re running NEURON from the current folder, type <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span> <span class="pre">mod</span></code>.</p>
+<p>Windows and Mac also provide graphical tools that can be used to compile mod files.</p>
+</section>
+<section id="i-can-t-get-mod-files-to-compile">
+<h2>I can’t get mod files to compile.<a class="headerlink" href="#i-can-t-get-mod-files-to-compile" title="Link to this heading"></a></h2>
+<p>Go to <a class="reference external" href="https://www.neuron.yale.edu/phpBB/index.php">The NEURON Forum</a> and check out the “NEURON installation and configuration” discussions for your particular operating system (MacOS, MSWin, UNIX/Linux). For MacOS and UNIX/Linux this problem often means that the software development environment (compilers and associated libraries) is missing or incomplete.</p>
+</section>
+<section id="i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version">
+<h2>I installed a new version of NEURON, and now I see error messages like this: ‘mecanisms fooba needs to be re-translated. its version 5.2 “c” code is incompatible with this neuron version’.<a class="headerlink" href="#i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version" title="Link to this heading"></a></h2>
+<p>Compiling NMODL files produces several “intermediate files” whose names end in .o and .c . This error message means that you have some old intermediate files that were produced under the earlier version of NEURON. So just delete all the .o and .c files, then run nrnivmodl (or mknrndll), and the problem should disappear.</p>
+</section>
+<section id="is-there-a-list-of-functions-that-are-built-into-nmodl">
+<h2>Is there a list of functions that are built into NMODL?<a class="headerlink" href="#is-there-a-list-of-functions-that-are-built-into-nmodl" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="nmodls_built_in_functions.html#nmodls-built-in-functions"><span class="std std-ref">Look here.</span></a></p>
+</section>
+<section id="is-there-a-list-of-functions-that-are-built-into-hoc">
+<h2>Is there a list of functions that are built into hoc?<a class="headerlink" href="#is-there-a-list-of-functions-that-are-built-into-hoc" title="Link to this heading"></a></h2>
+<p>You’ll find them in the <a class="reference external" href="https://nrn.readthedocs.io/en/latest/python/index.html">Programmer’s Reference</a>. Also see chapter 11. <a class="reference internal" href="hoc_chapter_11_old_reference.html#hoc-chapter-11-old-reference"><span class="std std-ref">Interpreter - General in the old “Reference Manual.”</span></a></p>
+</section>
+<section id="what-units-does-neuron-use-for-current-concentration-etc">
+<h2>What units does NEURON use for current, concentration, etc.?<a class="headerlink" href="#what-units-does-neuron-use-for-current-concentration-etc" title="Link to this heading"></a></h2>
+<p>If you’re using the GUI, you’ve probably noticed that buttons next to numeric fields generally indicate the units, such as (mV), (nA), (ms) for millivolt, nanoamp, or millisecond.</p>
+<p><a class="reference internal" href="units.html#units-used-in-neuron"><span class="std std-ref">Here’s a chart of the units that NEURON uses by default.</span></a></p>
+<p>If you’re writing your own mod files, you can specify what units will be used. For example, you may prefer to work with micromolar or nanomolar concentrations when dealing with intracellular free calcium or other second messengers. You can also define new units. <a class="reference internal" href="units_tutorial.html#units-tutorial"><span class="std std-ref">See this tutorial</span></a> to get a better understanding of units in NMODL.</p>
+<p>For the terminally curious, here is a copy of the <a class="reference download internal" download="" href="../_downloads/82f9d2b6299e041234779bbb5285b053/units.dat.txt"><code class="xref download docutils literal notranslate"><span class="pre">units.dat</span></code></a> file that accompanies one of the popular Linux distributions. Presumably mod file variables should be able to use any of its entries.</p>
+</section>
+<section id="when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect">
+<h2>When I type a new value into a numeric field, it doesn’t seem to have any effect.<a class="headerlink" href="#when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect" title="Link to this heading"></a></h2>
+<p>You seem to be using a very old version of NEURON. If you can’t update to the most recent version, try this:</p>
+<p>After entering a new value, be sure to click on the button next to the numeric field (or press the Return key) so that the bright yellow warning indicator on the button is turned off. While the yellow indicator is showing, the field editor is still in entry mode and its contents have not yet been assigned to the proper variable in memory.</p>
+</section>
+<section id="what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use">
+<h2>What is the difference between SEClamp and VClamp, and which should I use?<a class="headerlink" href="#what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#SEClamp" title="SEClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">SEClamp</span></code></a> is just an ideal voltage source in series with a resistance (Single Electrode Clamp), while <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#VClamp" title="VClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">VClamp</span></code></a> is a model of a two electrode voltage clamp with this equivalent circuit:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>                 tau2
+                 gain
+                +-|\____rstim____&gt;to cell
+-amp --&#39;\/`-------|/
+                |
+                |----||---
+                |___    __|-----/|___from cell
+                    `&#39;`&#39;        \|
+                    tau1
+</pre></div>
+</div>
+<p>If the purpose of your model is to study the properties of a cell, use <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#SEClamp" title="SEClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">SEClamp</span></code></a>. If the purpose is to study how instrumentation artefacts affect voltage clamp data, use <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/mech.html#VClamp" title="VClamp"><code class="xref py py-class docutils literal notranslate"><span class="pre">VClamp</span></code></a>.</p>
+</section>
+<section id="seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell">
+<h2>SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?<a class="headerlink" href="#seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell" title="Link to this heading"></a></h2>
+<p>The Vector class’s play method can be used to drive any variable with a sequence of values stored in a Vector. For example, you can play a Vector into an IClamp’s amp, an SEClamp’s amp1, an SEClamp’s series resistance rs (e.g. if you have an experimentally measured synaptic conductance time course). To learn how to do this, get <a class="reference download internal" download="" href="../_downloads/ac7c8bb4fa0cad0a0d5bc19013998382/vecplay.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/vecplay.hoc</span></code></a>, which contains an exercise from one of our 5-day hands-on NEURON courses. Unzip it in an empty directory. This creates a subdirectory called <code class="file docutils literal notranslate"><span class="pre">vectorplay</span></code>, where you will find a file called <code class="file docutils literal notranslate"><span class="pre">arbforc.html</span></code></p>
+<p>Open this file with your browser and start the exercise.</p>
+</section>
+<section id="i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this">
+<h2>I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.<a class="headerlink" href="#i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this" title="Link to this heading"></a></h2>
+<p>Right you are. Pick up <a class="reference external" href="http://www.neuron.yale.edu/neuron/static/docs/repstim/pulsedistrib.zip">pulsedistrib.zip</a>, and unzip it into an empty directory. This creates a subdirectory called pulsedistrib, which contains <code class="xref download docutils literal notranslate"><span class="pre">data/Ipulse1.mod</span></code>, <code class="xref download docutils literal notranslate"><span class="pre">data/Ipulse2.mod</span></code>, <a class="reference download internal" download="" href="../_downloads/4a0c85d061c03a0e97a5c8cf26511cd6/readme.txt"><code class="xref download docutils literal notranslate"><span class="pre">data/readme.txt</span></code></a>, and <a class="reference download internal" download="" href="../_downloads/1402ad1691fccbad69e258d971d33495/test_1_and_2.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_1_and_2.hoc</span></code></a>. Read <a class="reference download internal" download="" href="../_downloads/4a0c85d061c03a0e97a5c8cf26511cd6/readme.txt"><code class="xref download docutils literal notranslate"><span class="pre">data/readme.txt</span></code></a>, compile the mod files, and then use NEURON to load <a class="reference download internal" download="" href="../_downloads/1402ad1691fccbad69e258d971d33495/test_1_and_2.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_1_and_2.hoc</span></code></a>, which is a simple demo of these two current pulse generators.</p>
+<p>pulsedistrib also contains <a class="reference download internal" download="" href="../_downloads/f881c4834b3d6e5b7cdeba20f03a3d69/ipulse3.mod"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3.mod</span></code></a>, <a class="reference download internal" download="" href="../_downloads/8d0139fd128dfffeb85c90eb09d3a98b/ipulse3rig.ses"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3rig.ses</span></code></a>, and <a class="reference download internal" download="" href="../_downloads/96b254178d13c1011d9b71784f57175f/test_3.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_3.hoc</span></code></a>, which address the next question in this list.</p>
+</section>
+<section id="i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times">
+<h2>I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.<a class="headerlink" href="#i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times" title="Link to this heading"></a></h2>
+<p>Then get <a class="reference external" href="http://www.neuron.yale.edu/neuron/static/docs/repstim/pulsedistrib.zip">pulsedistrib.zip</a>, and unzip it. Inside the pulsedistrib subdirectory you’ll find <a class="reference download internal" download="" href="../_downloads/f881c4834b3d6e5b7cdeba20f03a3d69/ipulse3.mod"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3.mod</span></code></a>, <a class="reference download internal" download="" href="../_downloads/8d0139fd128dfffeb85c90eb09d3a98b/ipulse3rig.ses"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3rig.ses</span></code></a>, and <a class="reference download internal" download="" href="../_downloads/96b254178d13c1011d9b71784f57175f/test_3.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_3.hoc</span></code></a> (and some other files that pertain to the previous question). <a class="reference download internal" download="" href="../_downloads/f881c4834b3d6e5b7cdeba20f03a3d69/ipulse3.mod"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3.mod</span></code></a> contains the NMODL code for a current clamp that produces a current pulse when it receives an input event. <a class="reference download internal" download="" href="../_downloads/96b254178d13c1011d9b71784f57175f/test_3.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_3.hoc</span></code></a> is a simple demo of the Ipulse3 mechanism, and <a class="reference download internal" download="" href="../_downloads/8d0139fd128dfffeb85c90eb09d3a98b/ipulse3rig.ses"><code class="xref download docutils literal notranslate"><span class="pre">data/ipulse3rig.ses</span></code></a> is used by <a class="reference download internal" download="" href="../_downloads/96b254178d13c1011d9b71784f57175f/test_3.hoc"><code class="xref download docutils literal notranslate"><span class="pre">data/test_3.hoc</span></code></a> to create the GUI for a demo of Ipulse3. It uses a <a class="reference internal" href="../hoc/modelspec/programmatic/mechanisms/mech.html#NetStim" title="NetStim"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">NetStim</span></code></a> to generate the events that drive the Ipulse3. If you want to drive an Ipulse3 with recorded or precomputed event times, use the VecStim class as described under the topic <a class="reference external" href="https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&amp;t=2117">Driving a synapse with recorded or precomputed spike events</a> in the “Hot tips” area of the <a class="reference external" href="https://www.neuron.yale.edu/phpBB/">NEURON Forum</a>.</p>
+</section>
+<section id="i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism">
+<h2>I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?<a class="headerlink" href="#i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism" title="Link to this heading"></a></h2>
+<p>Assuming that your synaptic mechanism has a <code class="docutils literal notranslate"><span class="pre">NET_RECEIVE</span></code> block, so that it is driven by events delivered by a <a class="reference internal" href="../hoc/modelspec/programmatic/network/netcon.html#NetCon" title="NetCon"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">NetCon</span></code></a>, I can think of two ways this might be done. Which one to use depends on how many calculated spike times you are dealing with.</p>
+<p>If you only have a “few” spikes (up to a few dozen), you could just dump them into the spike queue at the onset of the simulation. Here’s how:</p>
+<ol class="arabic">
+<li><p>Create a Vector and load it with the times at which you want to activate the synaptic mechanism.</p></li>
+<li><p>Then use an <a class="reference internal" href="finitialize_handler.html#finitialize-handler"><span class="std std-ref">FIinitializeHandler</span></a> that stuffs the spike times into the NetCon’s event queue by calling the <a class="reference external" href="https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html">NetCon class’s event() method</a> during initialization.</p>
+<p>For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:</p>
+</li>
+</ol>
+<p>For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">objref</span><span class="w"> </span><span class="n">fih</span>
+<span class="n">fih</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FInitializeHandler</span><span class="p">(</span><span class="s">&quot;loadqueue()&quot;</span><span class="p">)</span>
+<span class="n">proc</span><span class="w"> </span><span class="n">loadqueue</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">local</span><span class="w"> </span><span class="n">ii</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">ii</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">syntimes</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="mi">-1</span><span class="w"> </span><span class="n">nc</span><span class="p">.</span><span class="n">event</span><span class="p">(</span><span class="n">syntimes</span><span class="p">.</span><span class="n">x</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Don’t forget that these are treated as <em>delivery</em> times, i.e. the NetCon’s delay will have no effect on the times of synaptic activation. If additional conduction latency is needed, you will have to incorporate it by adding the extra time to the elements of syntimes before the FInitializeHandler is called.</p>
+<p>If you have a lot of spikes then it’s best to use an NMODL-defined artificial spiking cell that generates spike events at times that are stored in a Vector (which you fill with data before the simulation). For more information see <a class="reference external" href="https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&amp;t=2117">Driving a synapse with recorded or precomputed spike events</a> in the “Hot tips” area of the <a class="reference external" href="https://www.neuron.yale.edu/phpBB/">NEURON Forum</a>.</p>
+</section>
+<section id="how-can-i-read-data-from-a-binary-pclamp-file">
+<h2>How can I read data from a binary PClamp file?<a class="headerlink" href="#how-can-i-read-data-from-a-binary-pclamp-file" title="Link to this heading"></a></h2>
+<p>clampex.zip contains a mod file that defines an object class (ClampExData) whose methods can read PClamp binary files — or at least it could several years ago - plus a sample data file and a hoc file to illustrate usage. If ClampExData doesn’t work with the most recent PClamp file formats, at least <code class="docutils literal notranslate"><span class="pre">clampex.mod</span></code> is a starting point that you can modify as needed.</p>
+</section>
+<section id="how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything">
+<h2>How do I exit NEURON? I’m not using the GUI, and when I enter ^D at the oc&gt; prompt it doesn’t do anything?<a class="headerlink" href="#how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything" title="Link to this heading"></a></h2>
+<p>You seem to be using an older MSWin or MacOS version of NEURON (why not get the most recent version?). Typing the command</p>
+<p>quit()</p>
+<p>at the oc&gt; prompt works for all versions, new or old, under all OSes. Don’t forget the parentheses, because quit() is a function. Oh, and you need to press the Enter or Return key too.</p>
+</section>
+<section id="is-there-a-list-of-functions-that-are-built-into-neuron">
+<h2>Is there a list of functions that are built into NEURON?<a class="headerlink" href="#is-there-a-list-of-functions-that-are-built-into-neuron" title="Link to this heading"></a></h2>
+<p>For available functions when scripting or interactively using NEURON, see the <a class="reference external" href="../python/index.html">Python programmer’s reference</a> or the <a class="reference external" href="../hoc/index.html">HOC programmer’s reference</a> as appropriate. (Standard Python functions and libraries may be used as well.)</p>
+<p>For functions available when defining ion channel mechanisms etc with NMODL, see <a class="reference internal" href="nmodls_built_in_functions.html#nmodls-built-in-functions"><span class="std std-ref">here</span></a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="porting_mechanisms_to_cpp.html" class="btn btn-neutral float-left" title="Adapting MOD files for C++ with NEURON 9.0[.dev]" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using_plotwhat_to_specify_a_variable.html" class="btn btn-neutral float-right" title="Using “Plot what?” to Specify a Variable to be plotted" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

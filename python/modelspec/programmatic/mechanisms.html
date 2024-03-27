@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamics (Channels, etc…) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="HOC-based Mechanisms" href="hocmech.html" />
+    <link rel="prev" title="Ions" href="ions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">Model Specification GUI Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Model Specification</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ions.html">Ions</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Dynamics (Channels, etc…)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="rxd.html">Basic Reaction-Diffusion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="network.html">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="electrod.html">Electrode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mechtype.html">MechanismType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ste.html">StateTransitionEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="obsoletestimuli.html">Obsolete Stimuli</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Model Specification</a></li>
+      <li class="breadcrumb-item active">Dynamics (Channels, etc…)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/modelspec/programmatic/mechanisms.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/modelspec/programmatic/mechanisms.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dynamics-channels-etc">
+<h1>Dynamics (Channels, etc…)<a class="headerlink" href="#dynamics-channels-etc" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hocmech.html">HOC-based Mechanisms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hocmech.html#make_pointprocess"><code class="docutils literal notranslate"><span class="pre">make_pointprocess()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="hocmech.html#make_mechanism"><code class="docutils literal notranslate"><span class="pre">make_mechanism()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kschan.html">KSChan</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kschan.html#KSChan"><code class="docutils literal notranslate"><span class="pre">KSChan</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.setstructure"><code class="docutils literal notranslate"><span class="pre">KSChan.setstructure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.remove_state"><code class="docutils literal notranslate"><span class="pre">KSChan.remove_state()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.remove_transition"><code class="docutils literal notranslate"><span class="pre">KSChan.remove_transition()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.ngate"><code class="docutils literal notranslate"><span class="pre">KSChan.ngate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.nstate"><code class="docutils literal notranslate"><span class="pre">KSChan.nstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.ntrans"><code class="docutils literal notranslate"><span class="pre">KSChan.ntrans()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.nligand"><code class="docutils literal notranslate"><span class="pre">KSChan.nligand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.pr"><code class="docutils literal notranslate"><span class="pre">KSChan.pr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.iv_type"><code class="docutils literal notranslate"><span class="pre">KSChan.iv_type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.gmax"><code class="docutils literal notranslate"><span class="pre">KSChan.gmax()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.erev"><code class="docutils literal notranslate"><span class="pre">KSChan.erev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.add_hhstate"><code class="docutils literal notranslate"><span class="pre">KSChan.add_hhstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.add_ksstate"><code class="docutils literal notranslate"><span class="pre">KSChan.add_ksstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.add_transition"><code class="docutils literal notranslate"><span class="pre">KSChan.add_transition()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.trans"><code class="docutils literal notranslate"><span class="pre">KSChan.trans()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.state"><code class="docutils literal notranslate"><span class="pre">KSChan.state()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.gate"><code class="docutils literal notranslate"><span class="pre">KSChan.gate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.name"><code class="docutils literal notranslate"><span class="pre">KSChan.name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.ion"><code class="docutils literal notranslate"><span class="pre">KSChan.ion()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSChan.ligand"><code class="docutils literal notranslate"><span class="pre">KSChan.ligand()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kschan.html#KSState"><code class="docutils literal notranslate"><span class="pre">KSState</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSState.frac"><code class="docutils literal notranslate"><span class="pre">KSState.frac()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSState.index"><code class="docutils literal notranslate"><span class="pre">KSState.index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSState.gate"><code class="docutils literal notranslate"><span class="pre">KSState.gate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSState.name"><code class="docutils literal notranslate"><span class="pre">KSState.name()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kschan.html#KSGate"><code class="docutils literal notranslate"><span class="pre">KSGate</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSGate.nstate"><code class="docutils literal notranslate"><span class="pre">KSGate.nstate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSGate.power"><code class="docutils literal notranslate"><span class="pre">KSGate.power()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSGate.sindex"><code class="docutils literal notranslate"><span class="pre">KSGate.sindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSGate.index"><code class="docutils literal notranslate"><span class="pre">KSGate.index()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kschan.html#KSTrans"><code class="docutils literal notranslate"><span class="pre">KSTrans</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.set_f"><code class="docutils literal notranslate"><span class="pre">KSTrans.set_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.index"><code class="docutils literal notranslate"><span class="pre">KSTrans.index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.type"><code class="docutils literal notranslate"><span class="pre">KSTrans.type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.ftype"><code class="docutils literal notranslate"><span class="pre">KSTrans.ftype()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.ab"><code class="docutils literal notranslate"><span class="pre">KSTrans.ab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.inftau"><code class="docutils literal notranslate"><span class="pre">KSTrans.inftau()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.f"><code class="docutils literal notranslate"><span class="pre">KSTrans.f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.src"><code class="docutils literal notranslate"><span class="pre">KSTrans.src()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.target"><code class="docutils literal notranslate"><span class="pre">KSTrans.target()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.parm"><code class="docutils literal notranslate"><span class="pre">KSTrans.parm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kschan.html#KSTrans.ligand"><code class="docutils literal notranslate"><span class="pre">KSTrans.ligand()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="linmod.html">LinearMechanism</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="linmod.html#LinearMechanism"><code class="docutils literal notranslate"><span class="pre">LinearMechanism</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mechanisms/mech.html">Point Processes and Artificial Cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mechanisms/mech.html#general">General</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#pnt.get_loc"><code class="docutils literal notranslate"><span class="pre">pnt.get_loc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#pnt.get_segment"><code class="docutils literal notranslate"><span class="pre">pnt.get_segment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#pnt.loc"><code class="docutils literal notranslate"><span class="pre">pnt.loc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#pnt.has_loc"><code class="docutils literal notranslate"><span class="pre">pnt.has_loc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#IClamp"><code class="docutils literal notranslate"><span class="pre">IClamp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#AlphaSynapse"><code class="docutils literal notranslate"><span class="pre">AlphaSynapse</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#VClamp"><code class="docutils literal notranslate"><span class="pre">VClamp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#SEClamp"><code class="docutils literal notranslate"><span class="pre">SEClamp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#APCount"><code class="docutils literal notranslate"><span class="pre">APCount</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#ExpSyn"><code class="docutils literal notranslate"><span class="pre">ExpSyn</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#Exp2Syn"><code class="docutils literal notranslate"><span class="pre">Exp2Syn</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#NetStim"><code class="docutils literal notranslate"><span class="pre">NetStim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#PatternStim"><code class="docutils literal notranslate"><span class="pre">PatternStim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#IntFire1"><code class="docutils literal notranslate"><span class="pre">IntFire1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#IntFire2"><code class="docutils literal notranslate"><span class="pre">IntFire2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/mech.html#IntFire4"><code class="docutils literal notranslate"><span class="pre">IntFire4</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mechanisms/mech.html#mechanisms">Mechanisms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mechanisms/nmodl.html">NMODL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mechanisms/nmodl2.html">NEURON Extension to NMODL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#neuron">NEURON</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#before-after">BEFORE / AFTER</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#for-netcons">FOR_NETCONS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#protect">PROTECT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#mutexlock-mutexunlock">MUTEXLOCK / MUTEXUNLOCK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#connecting-mechanisms-together">Connecting Mechanisms Together</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl2.html#verbatim">VERBATIM</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mechanisms/nmodl.html#model-description-language">Model Description Language</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#general-paradigm">General Paradigm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#basic-nmodl-statements">Basic NMODL Statements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#watch">WATCH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#function-table">FUNCTION_TABLE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#conductance">CONDUCTANCE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#while">WHILE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#if-else-if-else">IF / ELSE IF / ELSE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mechanisms/nmodl.html#lag">LAG</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ions.html" class="btn btn-neutral float-left" title="Ions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hocmech.html" class="btn btn-neutral float-right" title="HOC-based Mechanisms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

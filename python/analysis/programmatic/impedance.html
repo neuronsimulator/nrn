@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impedance &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Optimization" href="optimization.html" />
+    <link rel="prev" title="Programmatic Analysis Tools" href="../programmatic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#analysis">Analysis</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../programmatic.html">Programmatic Analysis Tools</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Impedance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="optimization.html">Optimization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="misc.html">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../guitools.html">GUI Analysis Tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../programmatic.html">Programmatic Analysis Tools</a></li>
+      <li class="breadcrumb-item active">Impedance</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/analysis/programmatic/impedance.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/analysis/programmatic/impedance.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#Impedance" title="Link to this definition">Impedance</a></dt><dd><a href="#Impedance.compute" title="Link to this definition">compute</a> &middot; <a href="#Impedance.deltafac" title="Link to this definition">deltafac</a> &middot; <a href="#Impedance.input" title="Link to this definition">input</a> &middot; <a href="#Impedance.input_phase" title="Link to this definition">input_phase</a> &middot; <a href="#Impedance.loc" title="Link to this definition">loc</a> &middot; <a href="#Impedance.ratio" title="Link to this definition">ratio</a> &middot; <a href="#Impedance.transfer" title="Link to this definition">transfer</a> &middot; <a href="#Impedance.transfer_phase" title="Link to this definition">transfer_phase</a></dd></dl></p><section id="impedance">
+<span id="impedanc"></span><h1>Impedance<a class="headerlink" href="#impedance" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="Impedance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Impedance</span></span><a class="headerlink" href="#Impedance" title="Link to this definition"></a></dt>
+<dd><p>For calculating input and transfer impedances at an instant of time
+Usage involves first defining a location either
+for the current stimulus or else the voltage measuring electrode, then
+computing the global transfer and input impedance function
+at a particular frequency, then retrieving values of the complex
+transfer and input impedance at particular locations.</p>
+<p>The default calculation (the only calculation prior to version 5.3)
+is defined by di/dv only. i.e it assumes conductances depend only
+locally on v and does not take into account the impedance contributions of gating state
+differential equations. Specifically, the cable equation,
+c*dv/dt = i(v),
+where the d2v/dx2 compartmental terms are in i, yields the linearized impedance
+matrix
+[(jwc - di/dv)v = i0 ] * exp(jwt)
+The di/dv terms, apart from the axial terms,
+are defined by the current calculation in the BREAKPOINT
+blocks of the membrane mechanisms.</p>
+<p>In version 5.3 the calculation was extended to take into account effects of
+other gating states. The calculation is currently limited to systems that can
+be solved with the CVode method but can be extended to systems solvable by
+the DASPK method. ie. currently one cannot deal with the extracellular mechanism
+or <a class="reference internal" href="../../modelspec/programmatic/linmod.html#LinearMechanism" title="LinearMechanism"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearMechanism</span></code></a>. It would be easy to implement the LinearMechanism extension
+and that would be the only way one could handle non-local interactions such
+as gap junctions. The extension takes into account not only di/dv but also
+di/ds, ds’/dv and ds’/ds contributions to the impedance where s are all the
+other states of the membrane mechanisms. i.e the system can be written</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    |c 0| * d/dt |v| = |i(v,s)|
+    |0 1|        |s|   |f(v,x)|
+</pre></div>
+</div>
+<p>which is formally similar to the original.
+E.g. the hh mechanism has a sodium
+channel defined by</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    ina = gnabar*m^3*h*(v - ena)
+    m&#39; = (minf - m)/mtau
+    h&#39; = (hinf - h)/htau
+</pre></div>
+</div>
+<p>the only thing contributed (one compartment) by the default method is</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    (jwc + gnabar*m^3*h) * v = i0
+</pre></div>
+</div>
+<p>but the full linearized method contributes a matrix of terms like</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    (jwc + gnabar*m^3*h)   gnabar*3*m^2*h*(v-ena)   gnabar*m^3*(v-ena)
+    -d((minf - m)/mtau)/dv (jw - 1/mtau)
+    -d((hinf - h)/htau)/dv                          (jw - 1/htau)
+</pre></div>
+</div>
+<p>associated with the vector of states (v, m, h)</p>
+<p>The extended full impedance calculation is invoked with an extra argument
+to the <a class="reference internal" href="#Impedance.compute" title="Impedance.compute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.compute()</span></code></a> function. One should also review the
+<a class="reference internal" href="#Impedance.deltafac" title="Impedance.deltafac"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.deltafac()</span></code></a> method which defines the accuracy of the calculation.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.loc">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">loc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.loc" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.loc(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A fixed current stimulus or voltage electrode location
+at position 0&lt;=x&lt;=1 of the specified section.
+This is needed for the transfer impedance calculation. Note that
+transfer impedances obey the relation
+<code class="docutils literal notranslate"><span class="pre">v(x)/i(loc)</span> <span class="pre">==</span> <span class="pre">v(loc)/i(x)</span></code> where <em>loc</em> is the fixed location and
+x ranges over every position of every section.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.compute">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.compute" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.compute(freq)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.compute(freq,</span> <span class="pre">1)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.compute(freg,</span> <span class="pre">1,</span> <span class="pre">maxiter=500)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Transfer impedance between location specified above and any other
+location is computed. Also the input impedance at all locations
+is computed – <code class="docutils literal notranslate"><span class="pre">v(x)/i(x)</span></code>
+Frequency specified in Hz.
+All membrane conductances are computed and used in the
+calculation as if <a class="reference internal" href="../../simctrl/programmatic.html#fcurrent" title="fcurrent"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a> was called.
+The compute call is expensive but as a rule of thumb is not
+as expensive as <a class="reference internal" href="../../simctrl/programmatic.html#fadvance" title="fadvance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>.</p>
+<p>Since version 5.3, when the second argument is 1, an extended impedance
+calculation is performed which takes into account the effect of
+differential gating states. ie. the linearized cy’ = f(y) system is used
+where y is all the membrane potentials plus all the states in KINETIC and
+DERIVATIVE blocks of membrane mechanisms. Currently, the system must
+be computable with the Cvode method, i.e.extracellular and
+LinearMechanism are not allowed. See <a class="reference internal" href="#Impedance.deltafac" title="Impedance.deltafac"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.deltafac()</span></code></a></p>
+<p>Note that the extended impedance calculation may involve a singular matrix
+because of the negative resistance contributions of excitable channels.</p>
+<p>If the extended impedance calculation has been chosen (second arg = 1)
+then parallel gap junction effects will be taken into account.
+But for parallel gap junctions, there are several qualifications:</p>
+<p>One and only one rank can have a stimulus location. <a class="reference internal" href="#Impedance.loc" title="Impedance.loc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.loc()</span></code></a>
+can be used with an arg of -1 to remove the stimulus location on
+a rank.</p>
+<p>Every rank must participate in the call to compute (because of the use of
+MPI collective calls to carry out the impedance calculation). Note that only the
+freq arg value on the rank that has a location matters. If not all ranks have the
+second arg value of 1, the machine will hang in an MPI collective call.</p>
+<p>Not more than 5 types of gap junction POINT_PROCESS mechanisms can be instantiated.
+If any POINT_PROCESS instance participates in a gap junction
+(via <a class="reference internal" href="../../modelspec/programmatic/network/parcon.html#ParallelContext.target_var" title="ParallelContext.target_var"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParallelContext.target_var()</span></code></a>) then all instances of that type
+must participate in gap junctions.</p>
+<p>Only <a class="reference internal" href="#Impedance.transfer" title="Impedance.transfer"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.transfer()</span></code></a> and <a class="reference internal" href="#Impedance.transfer_phase" title="Impedance.transfer_phase"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.transfer_phase()</span></code></a> can be used
+to access the impedance values.
+Ranks do not have to participate in the calls to the those two
+methods since no MPI collective calls are involved. After
+<a class="reference internal" href="#Impedance.compute" title="Impedance.compute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.compute()</span></code></a> is called, the transfer impedance is available at any
+cell location and multiple calls from a rank are allowed. Note that if the stimulus
+location is at location x and the transfer impedance is obtained at location x and
+y, the input impedance is known only at location x (equal to the transfer impedance)
+and the voltage ratio is known only at x and y. Note that the voltage ratio at
+x is trivially 1.0, and the voltage at y, given that x is voltage clamped to a 1mV
+sine wave with freq, is transfer(y)/transfer(x) . Unfortunately this is the opposite
+of the definition given for <a class="reference internal" href="#Impedance.ratio" title="Impedance.ratio"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.ratio()</span></code></a> which voltage clamped y
+and recorded at x. I regret
+the original convention which was an artifact of
+<a class="reference internal" href="#Impedance.compute" title="Impedance.compute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.compute()</span></code></a> with args (freq, 0) calculating at one time, not only all the transfer
+impedances, but also all the input impedances at every location.  The problem with
+the original convention for <a class="reference internal" href="#Impedance.ratio" title="Impedance.ratio"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.ratio()</span></code></a>, and also with
+<a class="reference internal" href="#Impedance.input" title="Impedance.input"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.input()</span></code></a>, when the second <a class="reference internal" href="#Impedance.compute" title="Impedance.compute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Impedance.compute()</span></code></a> arg is 1,
+is that their use necessitates a solve with a moved input stimulus location
+specified by their argument. This is very inconvenient in a parallel context, as
+that solve would require the participation of all the ranks where all the args except
+one would have to be -1.  An error message will be generated if one attempts to use the
+ratio or input methods in the context of parallel gap junctions when nhost &gt; 1.</p>
+<p>Impedance calculations with parallel gap junctions use the
+Jacobi iterative method to solve the linear matrix equation.
+This method converges linearly and the number of iterations
+required is proportional to the gap junction strength. Up to 500 iterations
+are allowed before an error message is generated. Iteration stops when no state
+changes more than 1e-9 after an iteration. It is expected that the number of
+iterations will be quite modest with realistic gap junction conductances (a dozen
+or so). A third argument to .compute specifies the maximum number of iterations
+(default 500).</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There are many limitations to the extended linearization of the
+complete system. It basically handles only voltage sensitive
+density channels where the gating states are defined by
+DERIVATIVE or KINETIC blocks. Prominent limitations are:</p>
+<p>extracellular mechanism not allowed.</p>
+<p>LinearMechanism not allowed.</p>
+<p>Because we are not doing the complete full df/dy calculation, there
+may be interactions between states that are not computed.
+An example is  where ion concentration
+equations are voltage sensitive in one mechanism and then the ionic
+current is concentration sensitive in another mechanism. ie. the
+typical way NEURON deals with ionic concentration coupling to current
+is not handled.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.transfer">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">transfer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.transfer" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.transfer(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>absolute amplitude of the transfer impedance between the position
+specified in the <code class="docutils literal notranslate"><span class="pre">loc(x)</span></code> call above and 0&lt;=x&lt;=1 of the
+specified section at the freq specified by a previous
+compute(freq). The value returned can be thought of as either
+<code class="docutils literal notranslate"><span class="pre">|v(loc)/i(x)|</span> <span class="pre">or</span> <span class="pre">|v(x)/i(loc)|</span></code>
+Probably the more useful way of thinking about it is to assume
+a current stimulus of 1nA injected at x and the voltage in mV
+recorded at loc.</p>
+<p>Return value has the units of
+Megohms and can be thought of as the amplitude of the voltage (mV)
+at one location that would result from the injection of 1nA at the
+other.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.input">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">input</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.input" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.input(x,</span> <span class="pre">sec=section)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>absolute amplitude of <code class="docutils literal notranslate"><span class="pre">v(x)/i(x)</span></code> of the specified section</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.ratio">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">ratio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.ratio" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.ratio(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">|v(loc)/v(x)|</span></code> Think of it as voltage clamping to 1mV at x at some
+frequency and recording the voltage at loc.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.transfer_phase">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">transfer_phase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.transfer_phase" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.transfer_phase(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>phase of transfer impedance. The phase is modulo 2Pi in the range
+-Pi to +Pi so as one moves away from the loc remember that the
+actual phase can become less than -Pi. If the amplitude is very
+small the phase may be inaccurate and cannot be computed at all
+if the amplitude is 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.input_phase">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">input_phase</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.input_phase" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.input_phase(x)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>phase of input impedance.</p>
+<p>Note: Impedance makes heavy use of memory since four complex
+vectors are allocated with size equal to the total number of
+segments. After compute is called two of these vectors holds
+the input and transfer impedance for a given loc, freq, and
+neuron state. Because
+of the way results of calculations are stored it is very efficient
+to access amp and phase; reasonably efficient to change freq or loc,
+and inefficient to vary neuron state, eg, diameters. The last case
+implies at least the overhead of a call like <a class="reference internal" href="../../simctrl/programmatic.html#fcurrent" title="fcurrent"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a>.(actually
+the present implementation calls <a class="reference internal" href="../../simctrl/programmatic.html#fcurrent" title="fcurrent"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a> on every <code class="docutils literal notranslate"><span class="pre">compute()</span></code> call
+but that could be fixed if increased performance was needed).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="py method">
+<dt class="sig sig-object py" id="Impedance.deltafac">
+<span class="sig-prename descclassname"><span class="pre">Impedance.</span></span><span class="sig-name descname"><span class="pre">deltafac</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Impedance.deltafac" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fac</span> <span class="pre">=</span> <span class="pre">imp.deltafac()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">fac</span> <span class="pre">=</span> <span class="pre">imp.deltafac(fac)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Gets or sets and gets the factor used in computing the numerical derivatives
+during calculation of the extended full impedance. Jacobian elements are
+calculated via the formula <code class="docutils literal notranslate"><span class="pre">f(s+delta)</span> <span class="pre">-</span> <span class="pre">f(s))/delta</span></code> where
+delta is defined by fac * the state tolerance scale factor for cvode.
+Note that default state tolerance scale factors are 1.0 except when
+specifically declared in mod files or changed by calling
+<a class="reference internal" href="../../simctrl/cvode.html#CVode.atolscale" title="CVode.atolscale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CVode.atolscale()</span></code></a>. The default delta factor is 0.001 which is consistent
+with the factor used by the default impedance calculation. Note that the
+factor for the default impedance calculation cannot be changed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../programmatic.html" class="btn btn-neutral float-left" title="Programmatic Analysis Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="optimization.html" class="btn btn-neutral float-right" title="Optimization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

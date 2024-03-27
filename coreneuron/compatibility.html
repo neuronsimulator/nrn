@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoreNEURON Compatibility &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Getting CoreNEURON" href="installation.html" />
+    <link rel="prev" title="CoreNEURON" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">CoreNEURON</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">CoreNEURON Compatibility</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unsupported-features">Unsupported Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mod-file-compatibility">MOD File Compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#thread-safe-mod-files">Thread Safe MOD Files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#table-usage-with-gpu-execution">TABLE Usage With GPU Execution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#neuron-only-mod-files">NEURON Only MOD Files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#explicit-ion-variables-update">Explicit ION Variables Update</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#random-number-generators-random123-vs-mcellran4">Random Number Generators: Random123 vs MCellRan4</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#memory-management-for-pointer-variables">Memory Management for POINTER Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#have-a-question">Have a question?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Getting CoreNEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="running-a-simulation.html">Running a simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">CoreNEURON</a></li>
+      <li class="breadcrumb-item active">CoreNEURON Compatibility</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/coreneuron/compatibility.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="coreneuron-compatibility">
+<h1>CoreNEURON Compatibility<a class="headerlink" href="#coreneuron-compatibility" title="Link to this heading"></a></h1>
+<p>CoreNEURON can transparently handle all spiking network simulations, including gap junction coupling, with the fixed time step method. In this document we summarise NEURON features that are not supported by CoreNEURON and changes required to make a model compatible with CoreNEURON.</p>
+<section id="unsupported-features">
+<h2>Unsupported Features<a class="headerlink" href="#unsupported-features" title="Link to this heading"></a></h2>
+<p>The below table summarises NEURON features that are presently not supported with CoreNEURON:</p>
+<table class="fixed-table docutils align-default">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>NEURON</p></th>
+<th class="head"><p>CoreNEURON</p></th>
+<th class="head"><p>Remarks *</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Variable time step methods (i.e CVODE and IDA)</p></td>
+<td><p>✔</p></td>
+<td><p>✖</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Extracellular Mechanism</p></td>
+<td><p>✔</p></td>
+<td><p>✖ *</p></td>
+<td><p>If <cite>i_membrane</cite> is of sole interest, then you can switch from extracellular to <cite>cvode.use_fast_imem(1)</cite> and make use of <cite>i_membrane_</cite></p></td>
+</tr>
+<tr class="row-even"><td><p>Linear Mechanism</p></td>
+<td><p>✔</p></td>
+<td><p>✖</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>RxD Module</p></td>
+<td><p>✔</p></td>
+<td><p>✖</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Per-timestep interpreter calculations during simulation</p></td>
+<td><p>✔</p></td>
+<td><p>✖ *</p></td>
+<td><p>Generally, <cite>Vector.record</cite> and <cite>Vector.play</cite> are ok, as are the display of GUI variable trajectories.
+Anything requiring callbacks into the interpreter (Python or HOC) are not implemented.</p></td>
+</tr>
+</tbody>
+</table>
+<p>If you are using any of the above mentioned features in your model then CoreNEURON library can not be used for simulations. If you are interested in these features with CoreNEURON or performance improvement in general, feel free to provide feedback via a GitHub issue.</p>
+</section>
+<section id="mod-file-compatibility">
+<h2>MOD File Compatibility<a class="headerlink" href="#mod-file-compatibility" title="Link to this heading"></a></h2>
+<p>In order to use CoreNEURON, you need to build MOD files with CoreNEURON support i.e. use <code class="docutils literal notranslate"><span class="pre">-coreneuron</span></code> option as <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span> <span class="pre">-coreneuron</span> <span class="pre">&lt;mod</span> <span class="pre">dir&gt;</span></code>. If this command fails during compilation or translating MOD files but <code class="docutils literal notranslate"><span class="pre">nrnivmodl</span> <span class="pre">&lt;mod</span> <span class="pre">dir&gt;</span></code> is working fine then most likely there are MOD files incompatibility issues. In this section we describe how you can address such incompatibility.</p>
+<section id="thread-safe-mod-files">
+<h3>Thread Safe MOD Files<a class="headerlink" href="#thread-safe-mod-files" title="Link to this heading"></a></h3>
+<p>One of the important difference in CoreNEURON execution with respect to NEURON is that multiple instances of a specific channel or synapse are executed in parallel. This parallelism could be via threads or SIMD instructions on modern CPUs/GPUs. Most of the MOD files are thread safe for parallel execution but there are certain constructs like <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variables or <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks that are not compatible by default. In this case user has to make sure MOD files are
+thread safe. NEURON provides a script <code class="docutils literal notranslate"><span class="pre">mkthreadsafe</span></code> that can provide some help to make your MOD files are thread safe. You can find more information <a class="reference external" href="https://neuron.yale.edu/neuron/docs/multithread-parallelization">here</a>. Here are some additional examples that will help you to make a MOD file thread safe:</p>
+<ul>
+<li><p>If you are using <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variables in a mod file, make sure those are not updated during execution (e.g. in <code class="docutils literal notranslate"><span class="pre">INITIAL</span></code>, <code class="docutils literal notranslate"><span class="pre">BREAKPOINT</span></code> or <code class="docutils literal notranslate"><span class="pre">DERIVATIVE</span></code> block etc). If <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variable is writen then those variables are now needed to be defined as <code class="docutils literal notranslate"><span class="pre">RANGE</span></code>. You can find information about <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> and <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variables in <a class="reference internal" href="../python/modelspec/programmatic/mechanisms/nmodl2.html#nmodltoneuron"><span class="std std-ref">NMODL specification</span></a>.</p>
+<blockquote>
+<div><p>As an example, below MOD file defines <code class="docutils literal notranslate"><span class="pre">minf</span></code> variable as a <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> and it is being updated in the <code class="docutils literal notranslate"><span class="pre">DERIVATIVE</span></code> block when <code class="docutils literal notranslate"><span class="pre">PROCEDURE</span> <span class="pre">rates()</span></code> is executed.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SUFFIX</span><span class="w"> </span><span class="n">test</span>
+<span class="w">  </span><span class="n">GLOBAL</span><span class="w"> </span><span class="n">minf</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="n">DERIVATIVE</span><span class="w"> </span><span class="n">states</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">rates</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="w">  </span><span class="n">m</span><span class="err">&#39;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">minf</span><span class="o">-</span><span class="n">m</span><span class="p">)</span><span class="o">/</span><span class="mf">1.5</span>
+<span class="p">}</span>
+
+<span class="n">PROCEDURE</span><span class="w"> </span><span class="n">rates</span><span class="p">(</span><span class="n">v</span><span class="w"> </span><span class="p">(</span><span class="n">mV</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">minf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">minf</span><span class="o">+</span><span class="mi">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>As <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> variable is shared across multiple instances of a mechanism, parallel execution will result into a race condition when <code class="docutils literal notranslate"><span class="pre">minf</span></code> is updated. In order to avoid this we need to simply convert it to a <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SUFFIX</span><span class="w"> </span><span class="n">test</span>
+<span class="w">  </span><span class="n">RANGE</span><span class="w"> </span><span class="n">minf</span>
+<span class="p">}</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>Note that if you are accessing such variable via HOC or Python scripting interface then syntax for accessing <code class="docutils literal notranslate"><span class="pre">GLOBAL</span></code> is different than <code class="docutils literal notranslate"><span class="pre">RANGE</span></code> variable. So you need to update your code accordingly.</p>
+</div></blockquote>
+</li>
+<li><p>If you are using <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks to overcome some limitations of NMODL language then such MOD file is by default treated as not thread safe. For example, in below case we are are using <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> block to include some C header and return early from <code class="docutils literal notranslate"><span class="pre">INITIAL</span></code> block:</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SUFFIX</span><span class="w"> </span><span class="n">test</span>
+<span class="w">  </span><span class="n">RANGE</span><span class="w"> </span><span class="n">minf</span>
+<span class="p">}</span>
+
+<span class="n">VERBATIM</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
+<span class="n">ENDVERBATIM</span>
+
+<span class="n">ASSIGNED</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">v</span><span class="w">            </span><span class="p">(</span><span class="n">mV</span><span class="p">)</span>
+<span class="w">  </span><span class="n">minf</span>
+<span class="p">}</span>
+
+<span class="n">STATE</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">m</span>
+<span class="p">}</span>
+
+<span class="n">INITIAL</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">rate</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="w">  </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">minf</span>
+<span class="w">  </span><span class="n">VERBATIM</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">  </span><span class="n">ENDVERBATIM</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>Technically, this mod file is thread safe as we don’t have any race condition. But due to <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> block this mod file is assumed non thread safe and hence we have to explicitly specify <cite>THREADSAFE</cite> keywork in the beginning of the <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block as:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">NEURON</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">THREADSAFE</span>
+<span class="w">  </span><span class="n">SUFFIX</span><span class="w"> </span><span class="n">test</span>
+<span class="w">  </span><span class="n">RANGE</span><span class="w"> </span><span class="n">minf</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>Also, note that <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block needs to be before any <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> block in the MOD file. So its safer to keep <code class="docutils literal notranslate"><span class="pre">NEURON</span></code> block at the top of MOD file.</p>
+</div></blockquote>
+</li>
+<li><p>Certain <code class="docutils literal notranslate"><span class="pre">SOLVE</span></code> methods like <code class="docutils literal notranslate"><span class="pre">euler</span></code> are not thread safe since the best practical methods are <code class="docutils literal notranslate"><span class="pre">cnexp</span></code> for HH-like equations and <code class="docutils literal notranslate"><span class="pre">derivimplicit</span></code> for all the others. If you have such a MOD file:</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">SOLVE</span><span class="w"> </span><span class="n">state</span><span class="w"> </span><span class="n">METHOD</span><span class="w"> </span><span class="n">euler</span>
+</pre></div>
+</div>
+<p>then replace <code class="docutils literal notranslate"><span class="pre">euler</span></code> with <code class="docutils literal notranslate"><span class="pre">cnexp</span></code>.</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="table-usage-with-gpu-execution">
+<h3>TABLE Usage With GPU Execution<a class="headerlink" href="#table-usage-with-gpu-execution" title="Link to this heading"></a></h3>
+<p>Currently <code class="docutils literal notranslate"><span class="pre">TABLE</span></code> constructs are not supported if you are building MOD files with GPU support. As <code class="docutils literal notranslate"><span class="pre">TABLE</span></code> constructs are used for efficiency reason (and not accuracy), you can safely comment out <code class="docutils literal notranslate"><span class="pre">TABLE</span></code> statement using <code class="docutils literal notranslate"><span class="pre">:</span></code> operator:</p>
+<blockquote>
+<div><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PROCEDURE</span><span class="w"> </span><span class="nf">rates</span><span class="p">(</span><span class="n">v</span><span class="p">(</span><span class="n">mV</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">   </span><span class="o">:</span><span class="w"> </span><span class="n">TABLE</span><span class="w"> </span><span class="n">minf</span><span class="p">,</span><span class="w"> </span><span class="n">mtau</span><span class="p">,</span><span class="w"> </span><span class="n">hinf</span><span class="p">,</span><span class="w"> </span><span class="n">htau</span><span class="p">,</span><span class="w"> </span><span class="n">ninf</span><span class="p">,</span><span class="w"> </span><span class="n">ntau</span><span class="w"> </span><span class="n">DEPEND</span><span class="w"> </span><span class="n">celsius</span><span class="w"> </span><span class="n">FROM</span><span class="w"> </span><span class="mi">-100</span><span class="w"> </span><span class="n">TO</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="n">WITH</span><span class="w"> </span><span class="mi">200</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="neuron-only-mod-files">
+<h3>NEURON Only MOD Files<a class="headerlink" href="#neuron-only-mod-files" title="Link to this heading"></a></h3>
+<p>Certain MOD files are used for aspects like progress callbacks, reading inputs, etc. Often such MOD files are heavily depend on <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks and use internal data structure or functions provided by NEURON. Most likely such MOD files won’t be compiled by CoreNEURON as they are using internal, NEURON specific APIs in <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks. If such mod file is used for only a usability aspect like progress bar then you can exclude that from compilation. Other option is to conditionally compile all <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks using macro <code class="docutils literal notranslate"><span class="pre">NRNBBCORE</span></code>.</p>
+<p>As an example, the code in below <code class="docutils literal notranslate"><span class="pre">#ifndef</span> <span class="pre">NRNBBCORE</span></code> block will be only compiled for NEURON.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">VERBATIM</span>
+<span class="cp">#ifndef NRNBBCORE</span>
+<span class="o">&lt;</span><span class="n">code</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">executed</span><span class="w"> </span><span class="n">only</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">NEURON</span><span class="o">&gt;</span>
+<span class="cp">#endif</span>
+<span class="n">ENDVERBATIM</span>
+</pre></div>
+</div>
+<p>This way you can hide NEURON specific code from CoreNEURON compilation process.</p>
+</section>
+<section id="explicit-ion-variables-update">
+<h3>Explicit ION Variables Update<a class="headerlink" href="#explicit-ion-variables-update" title="Link to this heading"></a></h3>
+<p>In some old MOD files ion currents are explicitly initialized in <code class="docutils literal notranslate"><span class="pre">INITIAL</span></code> blocks using <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> construct as:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">VERBATIM</span>
+<span class="n">cai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_ion_cai</span><span class="p">;</span>
+<span class="n">Cai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_ion_Cai</span><span class="p">;</span>
+<span class="n">ENDVERBATIM</span>
+</pre></div>
+</div>
+<p>Since such ion variables are implicitely updated by the code from NMODL transpiler, <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks like above are not required and must be deleted from the MOD files.</p>
+</section>
+<section id="random-number-generators-random123-vs-mcellran4">
+<h3>Random Number Generators: Random123 vs MCellRan4<a class="headerlink" href="#random-number-generators-random123-vs-mcellran4" title="Link to this heading"></a></h3>
+<p>Pseudo-random numbers from a variety of distributions can be generated using NEURON’s <code class="docutils literal notranslate"><span class="pre">Random</span></code> class. CoreNEURON only supports <code class="docutils literal notranslate"><span class="pre">Random123</span></code> generator.</p>
+</section>
+<section id="memory-management-for-pointer-variables">
+<h3>Memory Management for POINTER Variables<a class="headerlink" href="#memory-management-for-pointer-variables" title="Link to this heading"></a></h3>
+<p>User-allocated data managed in NMODL is a complex topic. Using <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables, users can reference data that has been allocated in <code class="docutils literal notranslate"><span class="pre">HOC</span></code> or in <code class="docutils literal notranslate"><span class="pre">VERBATIM</span></code> blocks. Using this end users can built more advanced data-structures that are not natively supported in NMODL. Another commonly used example is point processes / synapses where <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables used for holding random number generator object.</p>
+<p>Since NEURON itself has no knowledge of the layout and size of this user allocated data,
+it cannot transfer <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> data automatically to CoreNEURON.
+Furtheremore, in many cases there is no need to transfer the data between the two instances.
+In some cases, however, the programmer would like to transfer certain user-defined data into CoreNEURON.
+The most prominent example are Random123 random number stream parameters used in synapse mechanisms.</p>
+<p>In order to inform NEURON that such <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variable needs to be transferred, the <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code> type was introduced.
+Variables that are declared as <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code> behave exactly the same as <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> but are
+additionally taken into account when NEURON is transferring model to CoreNEURON for simulation.
+For NEURON to be able to write (and indeed CoreNEURON to be able to read) <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code>
+data, the programmer has to additionally provide two C functions that are called as part
+of the serialization/deserialization:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bbcore_write</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">d_offset</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">x_offset</span><span class="p">,</span><span class="w"> </span><span class="n">_threadargsproto_</span><span class="p">);</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bbcore_read</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">d_offset</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">x_offset</span><span class="p">,</span><span class="w"> </span><span class="n">_threadargsproto_</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The implementation of <code class="docutils literal notranslate"><span class="pre">bbcore_write</span></code> and <code class="docutils literal notranslate"><span class="pre">bbcore_read</span></code> determines the serialization and
+deserialization of the per-instance mechanism data referenced through the various
+<code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code>.</p>
+<p>NEURON will call <code class="docutils literal notranslate"><span class="pre">bbcore_write</span></code> twice per mechanism instance.
+In a first sweep, the call is used to determine the required memory to be allocated on the serialization arrays.
+In the second sweep the call is used to fill in the data per mechanism instance.</p>
+<table class="fixed-table docutils align-default" id="id1">
+<caption><span class="caption-text">Arguments to <code class="docutils literal notranslate"><span class="pre">bbcore_read</span></code> and <code class="docutils literal notranslate"><span class="pre">bbcore_write</span></code>.</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">x</span></code></p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">double</span></code> type array that will be allocated by NEURON to fill
+with real-valued data. In the first call, <code class="docutils literal notranslate"><span class="pre">x</span></code> is <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>
+as it has not been allocated yet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">d</span></code></p></td>
+<td><p>An <code class="docutils literal notranslate"><span class="pre">int</span></code> type array that will be allocated by NEURON to fill
+with integer-valued data. In the first call, <code class="docutils literal notranslate"><span class="pre">d</span></code> is
+<code class="docutils literal notranslate"><span class="pre">nullptr</span></code> as it has not been allocated yet.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">x_offset</span></code></p></td>
+<td><p>The offset in <code class="docutils literal notranslate"><span class="pre">x</span></code> at which the mechanism instance should write
+its real-valued <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code> data. In the first call this is
+an output argument that is expected to be updated by the
+per-instance size to be allocated.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">d_offset</span></code></p></td>
+<td><p>The offset in <code class="docutils literal notranslate"><span class="pre">d</span></code> at which the mechanism instance should write
+its integer-valued <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code> data. In the first call
+this is an output argument that is expected to be updated by the
+per-instance size to be allocated.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">_threadargsproto_</span></code></p></td>
+<td><p>A macro placeholder for NEURON/CoreNEURON data-structure
+parameters. They are typically only used through generated
+defines and not by the programmer. The macro is defined as
+follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#define _threadargsproto_ int _iml, int _cntml_padded, double *_p, Datum *_ppvar, \</span>
+<span class="cp">                          ThreadDatum *_thread, NrnThread *_nt, double _v</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Putting all of this together, the following is a minimal MOD using <code class="docutils literal notranslate"><span class="pre">BBCOREPOINTER</span></code>:</p>
+<div class="highlight-hoc notranslate"><div class="highlight"><pre><span></span>TITLE A BBCOREPOINTER Example
+
+NEURON {
+  BBCOREPOINTER my_data : changed from POINTER
+}
+
+ASSIGNED {
+  my_data
+}
+
+: Do something interesting with my_data ...
+VERBATIM
+static void bbcore_write(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  if (x) {
+    double* x_i = x + *x_offset;
+    x_i[0] = _p_my_data[0];
+    x_i[1] = _p_my_data[1];
+  }
+  *x_offset += 2; // reserve 2 doubles on serialization buffer x
+}
+
+static void bbcore_read(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  assert(!_p_my_data);
+  double* x_i = x + *x_offset;
+  // my_data needs to be allocated somehow
+  _p_my_data = (double*)malloc(sizeof(double)*2);
+  _p_my_data[0] = x_i[0];
+  _p_my_data[1] = x_i[1];
+  *x_offset += 2;
+}
+ENDVERBATIM
+</pre></div>
+</div>
+<p>If you have models with <code class="docutils literal notranslate"><span class="pre">POINTER</span></code> variables and user allocated memory then this requires due diligence. Below are some of the existing models adapted for CoreNEURON. These MOD files can act as a reference or you can simply reuse them if applicable:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/HumanBrainProject/olfactory-bulb-3d/tree/master/sim">https://github.com/HumanBrainProject/olfactory-bulb-3d/tree/master/sim</a></p></li>
+<li><p><a class="reference external" href="https://github.com/nrnhines/nrntraub/tree/master/mod">https://github.com/nrnhines/nrntraub/tree/master/mod</a></p></li>
+<li><p><a class="reference external" href="https://github.com/suny-downstate-medical-center/M1_NEURON_paper/tree/main/mod">https://github.com/suny-downstate-medical-center/M1_NEURON_paper/tree/main/mod</a></p></li>
+<li><p><a class="reference external" href="https://github.com/neuronsimulator/testcorenrn/tree/master/mod">https://github.com/neuronsimulator/testcorenrn/tree/master/mod</a></p></li>
+<li><p><a class="reference external" href="https://github.com/neuronsimulator/reduced_dentate/tree/master/mechanisms">https://github.com/neuronsimulator/reduced_dentate/tree/master/mechanisms</a></p></li>
+</ul>
+</section>
+<section id="have-a-question">
+<h3>Have a question?<a class="headerlink" href="#have-a-question" title="Link to this heading"></a></h3>
+<p>If you have any questions to make your model compatible with CoreNEURON, reach out to us via <a class="reference external" href="https://github.com/neuronsimulator/nrn/issues">GitHub issue</a>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="CoreNEURON" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Getting CoreNEURON" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

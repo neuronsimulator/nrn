@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI Look And Feel &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="MenuExplore" href="shapebox.html" />
+    <link rel="prev" title="Notification" href="notify.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="grapher.html">Grapher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">GUI Look And Feel</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#scene">Scene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wholescene">WholeScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setview">SetView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scene-view">Scene = View</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#objectname">ObjectName</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#browser">Browser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fieldeditor">FieldEditor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#print-file-window-manager">Print &amp; File Window Manager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#graph">Graph</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">GUI Look And Feel</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/gui.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/gui.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gui-look-and-feel">
+<span id="gui"></span><h1>GUI Look And Feel<a class="headerlink" href="#gui-look-and-feel" title="Link to this heading"></a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../simctrl/stdrun.html#neuronmainmenu"><span class="std std-ref">NEURON Main Menu</span></a>, <a class="reference internal" href="../simctrl/stdrun.html#standardruntools"><span class="std std-ref">Standard Run Tools</span></a></p>
+</div>
+<p>The Print window manager gives special meaning to each mouse button
+as described in the PrintWindowManager section.</p>
+<p>This interface is profligate in its use of windows. In the course
+of a simulation it is expected that windows will be created and
+destroyed freely. In OpenLook one dismisses a window merely by
+pressing the right(menu) button in the window header area and
+selecting dismiss. If your window manager does not support easy
+dismissing of windows then you <em>MUST</em> invoke nrniv with the
+automatic dismiss button feature. The default widget style is
+MOTIF but openlook style can be selected. The relevant options are</p>
+<p><code class="docutils literal notranslate"><span class="pre">nrniv</span> <span class="pre">-dismissbutton</span> <span class="pre">-openlook</span> <span class="pre">...</span></code></p>
+<section id="scene">
+<h2>Scene<a class="headerlink" href="#scene" title="Link to this heading"></a></h2>
+<p>Graphs and Shape windows are instances of views into a scene.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;here is some text&quot;</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">beginline</span><span class="p">()</span>
+<span class="n">g</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+<span class="c1">#pop up an example of a scene</span>
+</pre></div>
+</div>
+<p>A scene is defined as the space represented by the model
+coordinate system. A view is defined as that portion of the scene
+which is drawn in the window.
+There can be many views into a scene and each scene has its own
+menu selections but they can be different for different scenes.
+Scenes use an openlook style in which the right(menu) mouse button
+pops up menus from which one either selects an action to be performed
+immediately, eg. Round or Whole Scene, or else selects a meaning for
+the left(select) mouse button which will be used when the left mouse
+button is pressed within any view of that particular scene. This can
+be thought of as selecting a tool with the right button and wielding
+that tool with the left button.
+These menu items are like radio buttons in that only one is active at
+a time. It is recommended that when you move into a view you quickly
+pop up the menu so you can be certain of the meaning of the left button.
+The middle button translates the view around the scene. All
+scenes have a common View menu as the first menu item
+with which one can create a new view, zoom in/out, round the view
+or make the view correspond to the natural size of the scene.</p>
+<section id="view-plot">
+<span id="gui-view-equal-plot"></span><h3>View = Plot<a class="headerlink" href="#view-plot" title="Link to this heading"></a></h3>
+<p>View = plot: scale the view with respect to the variables being
+plotted.</p>
+</section>
+<section id="zoomout10">
+<h3>ZoomOut10<a class="headerlink" href="#zoomout10" title="Link to this heading"></a></h3>
+<p>10% Zoom out: View more of the scene keeping the center of the view
+fixed.</p>
+</section>
+<section id="zoomin10">
+<h3>ZoomIn10<a class="headerlink" href="#zoomin10" title="Link to this heading"></a></h3>
+<p>10% Zoom in: View less of the scene keeping the center of the view
+fixed.</p>
+</section>
+<section id="newview">
+<h3>NewView<a class="headerlink" href="#newview" title="Link to this heading"></a></h3>
+<p>New View: Mode for creation of new view windows.
+Use the left mouse button to
+draw a rectangle in the view which will become the interior of
+a new view. Press the left mouse button at one corner of the desired
+view and drag it to the opposite corner. The new view window can then be
+resized and positioned using your window manager.</p>
+</section>
+<section id="zoominout">
+<h3>ZoomInOut<a class="headerlink" href="#zoominout" title="Link to this heading"></a></h3>
+<p>Zoom in/out: The location where the left mouse button is pressed is
+the fixed point of zooming, ie doesn’t change its position.
+Dragging the mouse up and to the right zooms in. Dragging
+the mouse down and to the left zooms out. Graph views have
+independent scaling in the x and y directions. There is
+a bias toward changing only one dimension corresponding to
+the general drag direction.  Shape views
+have a constant aspect ratio so only the x direction is used
+for zooming.</p>
+</section>
+<section id="translate">
+<h3>Translate<a class="headerlink" href="#translate" title="Link to this heading"></a></h3>
+<p>Translate: Drag the scene around in the view. The middle mouse button
+is always attached to this tool. There is a drag bias which
+makes it easier to move in the horizontal or vertical direction
+without change in the other dimension.</p>
+</section>
+<section id="roundview">
+<h3>RoundView<a class="headerlink" href="#roundview" title="Link to this heading"></a></h3>
+<p>Round View: The header of each view window shows the size of the canvas
+in model coordinates. Pressing this button rounds the view
+so these numbers don’t have so many decimal places.
+The algorithm for rounding needs improvement.</p>
+</section>
+</section>
+<section id="wholescene">
+<h2>WholeScene<a class="headerlink" href="#wholescene" title="Link to this heading"></a></h2>
+<p>Whole Scene: Adjusts the zoom and translation so the view is of the
+entire scene with a  10% border.</p>
+</section>
+<section id="setview">
+<h2>SetView<a class="headerlink" href="#setview" title="Link to this heading"></a></h2>
+<p>Set View: Successive dialogs for x and y view size each require user to
+enter two space separated numbers for the beginning and end
+of axis. Default values are left, right, bottom, top of view
+reduced by 10%. The view size is set to the entries and then
+the view zooms out by 10%. ie accepting the default values
+leaves the view unchanged.</p>
+</section>
+<section id="scene-view">
+<h2>Scene = View<a class="headerlink" href="#scene-view" title="Link to this heading"></a></h2>
+<p>Scene=View: Defines the size of the whole scene.
+Sets the scene size to the size of the view. Subsequent
+Whole Scene adjustments will return to this size.</p>
+</section>
+<section id="objectname">
+<h2>ObjectName<a class="headerlink" href="#objectname" title="Link to this heading"></a></h2>
+<p>Prints the name by which the interpreter knows this object. Within this
+session the user can use this name to manipulate the object via interpreter
+commands.</p>
+</section>
+<section id="browser">
+<h2>Browser<a class="headerlink" href="#browser" title="Link to this heading"></a></h2>
+<p>Browsers are visible lists.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">File</span><span class="p">()</span>
+<span class="n">f</span><span class="o">.</span><span class="n">chooser</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Example file browser&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;Type file name&#39;</span><span class="p">,</span> <span class="s1">&#39;Cancel&#39;</span><span class="p">)</span>
+<span class="k">while</span> <span class="n">f</span><span class="o">.</span><span class="n">chooser</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">getname</span><span class="p">())</span>
+</pre></div>
+</div>
+<img alt="../../_images/filechooser.png" class="align-center" src="../../_images/filechooser.png" />
+<p>The list can be scrolled with a scroll bar but
+I think it is most convenient to drag the list up and down with the middle
+mouse button. Rate scrolling is controlled with the right mouse button.
+The left button highlights a selection. Double clicking generally executes
+the selection. Browsers are used to select files for printing,
+variables for plotting, etc. Sometimes, a browser has a field editor in which
+one can directly type an entry. Usually after an item has been selected you
+have to press an <span class="guilabel">Accept</span> or <span class="guilabel">Cancel</span> button to actually execute the selection.
+Browsers can be scrolled with <kbd class="kbd docutils literal notranslate">d</kbd>, <kbd class="kbd docutils literal notranslate">u</kbd>, <kbd class="kbd docutils literal notranslate">j</kbd>, <kbd class="kbd docutils literal notranslate">k</kbd>, <kbd class="kbd docutils literal notranslate">n</kbd>, <kbd class="kbd docutils literal notranslate">p</kbd> and others.</p>
+</section>
+<section id="fieldeditor">
+<h2>FieldEditor<a class="headerlink" href="#fieldeditor" title="Link to this heading"></a></h2>
+<p>See also <a class="reference internal" href="#valueeditor"><span class="std std-ref">ValueEditor</span></a>, a FieldEditor for floating point numbers.
+Field editors accept a string entered by the user.  The allowed strings
+are determined by the context.  In not all cases does typing the return
+key signal the execution of a selection (if not, press the <span class="guilabel">accept</span>
+button).  Field editors have an emacs-like syntax and typing characters
+inserts them at the cursor.  The left mouse button specifies the cursor
+location and dragging selects a portion of the string.  After selecting
+a portion of the string, typing a character will replace that portion
+with the character.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    ^A beginning of line
+    ^E end of line
+    ^F forward one character
+    ^B backward one character
+    ^U select whole string
+    ^W select from cursor to beginning of string
+    ^D delete next character
+    ^H delete previous character
+    return (normally accept)
+    escape, ^G (normally cancel)
+    and others
+</pre></div>
+</div>
+</section>
+<section id="panel">
+<h2>Panel<a class="headerlink" href="#panel" title="Link to this heading"></a></h2>
+<p>Panels: windows containing buttons, menus, and value editors. All mouse buttons
+mean the same thing.</p>
+<p>If the number of items in a vertically arranged single panel is greater
+than the number in the <code class="docutils literal notranslate"><span class="pre">*panel_scroll:</span></code> resource in the
+<a href="#id6"><span class="problematic" id="id7">`$(NEURONHOME)/lib/nrn.defaults https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrn.defaults.in&gt;`_</span></a> file (default 12) then the panel items
+are shown in a scroll box so that they do not take up so much screen
+space.</p>
+<p>See <a class="reference internal" href="../programming/gui/widgets.html#xpanel" title="xpanel"><code class="xref py py-func docutils literal notranslate"><span class="pre">xpanel()</span></code></a> for hoc functions to generate panels</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+
+<span class="c1"># pop up example panel</span>
+<span class="n">strdef</span> <span class="n">tempstr</span>
+<span class="n">tempstr</span> <span class="o">=</span> <span class="s2">&quot;slider.................&quot;</span>
+<span class="n">x</span><span class="o">=</span><span class="mf">.1</span>
+<span class="n">xx</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">y</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">z</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">(</span><span class="s2">&quot;Example Panel&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;PushButton&quot;</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">released button</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Following two are for variable x&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;Value Editor&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;print x&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvalue</span><span class="p">(</span><span class="s2">&quot;Default Value Editor for variable x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;print x&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xcheckbox</span><span class="p">(</span><span class="s2">&quot;Checkbox&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">state y is </span><span class="se">\&quot;</span><span class="s2">, y&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xstatebutton</span><span class="p">(</span><span class="s2">&quot;StateButton&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">z</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">state z is </span><span class="se">\&quot;</span><span class="s2">, z&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">(</span><span class="s2">&quot;Example Menu&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Item 1&quot;</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">selected item 1</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xbutton</span><span class="p">(</span><span class="s2">&quot;Item 2&quot;</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">selected item 2</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xcheckbox</span><span class="p">(</span><span class="s2">&quot;Checkbox&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">,</span> <span class="s2">&quot;print </span><span class="se">\&quot;</span><span class="s2">state y is </span><span class="se">\&quot;</span><span class="s2">, y&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 1&quot;</span><span class="p">,</span> <span class="s2">&quot;print 1&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 2&quot;</span><span class="p">,</span> <span class="s2">&quot;print 2&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 3&quot;</span><span class="p">,</span> <span class="s2">&quot;print 3&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xmenu</span><span class="p">()</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Following 3 are mutually exclusive&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 1&quot;</span><span class="p">,</span> <span class="s2">&quot;print 1&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 2&quot;</span><span class="p">,</span> <span class="s2">&quot;print 2&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xradiobutton</span><span class="p">(</span><span class="s2">&quot;Radio 3&quot;</span><span class="p">,</span> <span class="s2">&quot;print 3&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xvarlabel</span><span class="p">(</span><span class="n">tempstr</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xslider</span><span class="p">(</span><span class="o">&amp;</span><span class="n">xx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;sprint(tempstr, </span><span class="se">\&quot;</span><span class="s2">slider for xx = </span><span class="si">%g</span><span class="se">\&quot;</span><span class="s2">, xx)&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">xpanel</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="button">
+<h3>Button<a class="headerlink" href="#button" title="Link to this heading"></a></h3>
+<p>Buttons: execute an action when the mouse button is pressed and released over
+the button widget.</p>
+</section>
+<section id="menu">
+<h3>Menu<a class="headerlink" href="#menu" title="Link to this heading"></a></h3>
+<p>Menus: Drag the mouse to the desired item. If the menu fails to go away you
+can press one item and then move the mouse away and release. This
+should cause the menu to unmap without executing the item.</p>
+</section>
+<section id="valueeditor">
+<span id="id1"></span><h3>ValueEditor<a class="headerlink" href="#valueeditor" title="Link to this heading"></a></h3>
+<p>Value editor: A combination button with label and a field editor.
+If a value is being entered the label is colored yellow
+and there is
+a cursor in the field editor. You might have a desired value in the
+editor but if the label is yellow the computer will not know it. Make
+sure values are accepted by pressing return or by pressing the button.
+Arbitrary expressions may be entered into value editors. They will
+be replaced by their value upon acceptance.
+Pressing the middle/right mouse button over a digit will
+increase/decrease the digit by 1. Dragging
+will increase/decrease repeatedly.
+(but don’t forget to release the label button to accept
+the value).</p>
+</section>
+<section id="default-value-editor">
+<h3>Default Value Editor<a class="headerlink" href="#default-value-editor" title="Link to this heading"></a></h3>
+<p>Default Value editor:
+These value editors have an extra check box to the left of the value
+field  which is marked when
+the value is different from its creation value. One may toggle
+between the default and most recent value by pressing the check box
+with the left or middle mouse button.
+The default value may be permanently changed by pressing the check
+box with the right button.
+On the right of the value field is a stepper
+(little button with the up arrow) that is used to change values in
+lieu of typing a number.
+The stepper works as follows:
+left mouse button: increase by the increment
+middle mouse button: decrease by the increment
+right mouse button: select the increment. Res stands for resolution
+and means the increment is the least significant digit in the value
+field. The only other increments are the decades between .001
+and 1000. When holding down the left or right mouse button, after
+a short time the stepper will repeatedly increment the value
+field. Every 20 steps, the increment will increase by a factor of
+10 but will return to its first step value on release. The repetition
+mode will not cross 0. To cross 0 release and re-press.
+Only on release of the mouse button will the action (if any)
+be executed and finally all value editors will be updated.
+The default increment starts at the least significant digit in the
+value field. Stepper delays use the resources:</p>
+<ul class="simple">
+<li><p>autorepeatStart: .05    //seconds</p></li>
+<li><p>autorepeatDelay: .02</p></li>
+</ul>
+</section>
+</section>
+<section id="print-file-window-manager">
+<span id="pwm"></span><h2>Print &amp; File Window Manager<a class="headerlink" href="#print-file-window-manager" title="Link to this heading"></a></h2>
+<p>Its primary purpose is to organize the windows onto a page for printing.
+The manager contains two scenes representing the screen and a piece of
+paper.  The location and relative size of each hoc window appears on the
+screen scene.</p>
+<p>See <a class="reference internal" href="../programming/gui/misc.html#pwman_place" title="pwman_place"><code class="xref py py-func docutils literal notranslate"><span class="pre">pwman_place()</span></code></a>.</p>
+<section id="screenitem">
+<h3>ScreenItem<a class="headerlink" href="#screenitem" title="Link to this heading"></a></h3>
+<p>To specify which subset of windows is to be printed you click on the
+relevant rectangles in the screen scene.  A rectangle representing the
+relative location and size on the page will appear in the page scene.</p>
+</section>
+<section id="paperitem">
+<h3>PaperItem<a class="headerlink" href="#paperitem" title="Link to this heading"></a></h3>
+<p>Windows selected for printing may be manipulated in the page scene.
+Place the mouse cursor over the desired window rectangle in the page
+scene and:</p>
+<dl class="simple">
+<dt>Right button</dt><dd><p>remove the window from the page.  If one clicks again
+on that window in the screen scene then the window will return to the
+same location and relative size on the page as when it was removed.</p>
+</dd>
+<dt>Middle button</dt><dd><p>resize the window.  This resizes not the window on the
+screen but how large the window will appear on the page.  The window
+always maintains the same aspect ratio as the window on the console
+screen.  To resize, drag the mouse with the button down til the desired
+size is reached.</p>
+</dd>
+<dt>Left button</dt><dd><p>move the window.  Drag the mouse to the desired position
+and release the button.</p>
+</dd>
+</dl>
+<p>When the manager is iconified, all the windows disappear.  When the
+manager is redisplayed all the windows come back where they left off.
+(This is the case for openlook. Many window managers do not allow easy
+dismissing, moving, and resizing of transient windows and therefore
+require the use of top level windows which do not iconify as a group)</p>
+</section>
+<section id="help">
+<h3>Help<a class="headerlink" href="#help" title="Link to this heading"></a></h3>
+<p>Help: Toggles the interface into help mode. In help mode
+the cursor changes to a “?” and a help message will be
+displayed for any button or menu item that is pressed while
+the question mark cursor is present. No actions are executed
+in help mode but sometimes dialog boxes may pop up which
+should be canceled in order for them not to do anything.
+Pressing the help button in help mode will return to
+the normal interface with an arrow cursor.</p>
+<p>The help system requires a running Netscape process. If the system
+is not working properly on your machine, the help
+button can be removed by specifying <code class="docutils literal notranslate"><span class="pre">*pwm_help:</span> <span class="pre">off</span></code> in the
+<code class="file docutils literal notranslate"><span class="pre">nrn/lib/nrn.defaults</span></code> file.</p>
+</section>
+<section id="print">
+<span id="pwm-print"></span><h3>Print<a class="headerlink" href="#print" title="Link to this heading"></a></h3>
+<p>Print: Sends the postscript images of the windows to a printer
+selected by the Other menu item, <a class="reference internal" href="#selectprinter"><span class="std std-ref">SelectPrinter</span></a>.
+If no printer has been selected a printer
+dialog pops up. See <a class="reference internal" href="#windowtitlesprinted"><span class="std std-ref">WindowTitlesPrinted</span></a> .</p>
+</section>
+<section id="printtofile">
+<h3>PrintToFile<a class="headerlink" href="#printtofile" title="Link to this heading"></a></h3>
+<p>Print to File: Menu for saving windows to a printable file in the formats</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../simctrl/sessionsave.html#print_session" title="print_session"><code class="xref py py-func docutils literal notranslate"><span class="pre">print_session()</span></code></a>, <a class="reference internal" href="#windowtitlesprinted"><span class="std std-ref">WindowTitlesPrinted</span></a></p>
+</div>
+<section id="postscript">
+<h4>PostScript<a class="headerlink" href="#postscript" title="Link to this heading"></a></h4>
+<p>PostScript: Pops up dialogue requesting Filename for saving the postscript
+images of the windows appearing in the page icon. A <code class="file docutils literal notranslate"><span class="pre">.ps</span></code> suffix is recommended.</p>
+</section>
+<section id="idraw">
+<h4>Idraw<a class="headerlink" href="#idraw" title="Link to this heading"></a></h4>
+<p>Idraw: Filename for saving an idraw format of graph windows appearing
+in the page icon. Each graph is an idraw group. Idraw is an excellent
+program for polishing graphs to publication quality.
+A .id suffix is recommended.</p>
+</section>
+<section id="ascii">
+<span id="printtofile-ascii"></span><h4>Ascii<a class="headerlink" href="#ascii" title="Link to this heading"></a></h4>
+<p>Ascii: Filename for saving an ascii format of the lines in graph windows
+appearing in the page icon. <a class="reference internal" href="graph.html#Graph.addvar" title="Graph.addvar"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addvar()</span></code></a> and <a class="reference internal" href="graph.html#Graph.addexpr" title="Graph.addexpr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addexpr()</span></code></a>
+lines in a Graph window are saved if there are some and there
+is no <a class="reference internal" href="graph.html#Graph.family" title="Graph.family"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.family()</span></code></a> label. If there are no addvar/addexpr lines
+or if there is a family label then all lines on the graph with more
+than two points are printed (along with their labels, if any).
+If all the lines have the same number of points and they are all
+labeled then the file is printed in matrix form (with the first column
+being the x values). Header information is also printed that gives
+a manifest of the lines and their sizes.</p>
+<p>Unlabeled lines are printed at the end of the file with the format</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    number unlabeled
+    number points in first unlabeled line
+    x y pairs of point
+    number points in second unlabeled line
+    ...
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#familylabel"><span class="std std-ref">FamilyLabel</span></a></p>
+</div>
+</section>
+</section>
+<section id="session">
+<h3>Session<a class="headerlink" href="#session" title="Link to this heading"></a></h3>
+<p>Session: Menu for savings windows for recall</p>
+<section id="retrieve">
+<h4>Retrieve<a class="headerlink" href="#retrieve" title="Link to this heading"></a></h4>
+<p>Retrieve: Retrieves a saved session. Note that the saved values in the value
+editors become the default values when retrieved.</p>
+</section>
+<section id="saveselected">
+<h4>SaveSelected<a class="headerlink" href="#saveselected" title="Link to this heading"></a></h4>
+<p>SaveSelected: Saves size, location, and values of the panels, graphs,
+and shapes (but not browsers) appearing on the paper icon in the
+indicated file. A .ses suffix is recommended. This is usually more
+useful than saving all items on the screen since it is normally
+the case that most of the user effort goes into specifying the
+graphs and most of the other windows are generated by the interpreter.
+The model coordinate size of all scenes is given by the view size
+of the primary view window. Therefore after a retrieve, the
+“whole scene” menu operation will restore the view size when saved.</p>
+</section>
+<section id="saveall">
+<span id="session-saveall"></span><h4>SaveAll<a class="headerlink" href="#saveall" title="Link to this heading"></a></h4>
+<p>SaveAll: Saves all windows in the specified file.</p>
+<p>See <a class="reference internal" href="../simctrl/sessionsave.html#save_session" title="save_session"><code class="xref py py-func docutils literal notranslate"><span class="pre">save_session()</span></code></a></p>
+</section>
+</section>
+<section id="other">
+<h3>Other<a class="headerlink" href="#other" title="Link to this heading"></a></h3>
+<p>Other: Menu of other options</p>
+<section id="selectprinter">
+<span id="id2"></span><h4>SelectPrinter<a class="headerlink" href="#selectprinter" title="Link to this heading"></a></h4>
+<p>SelectPrinter: Enter your normal system command for printing. The Print button will
+send post script to this command. for example:
+<code class="docutils literal notranslate"><span class="pre">lpr</span> <span class="pre">-Plp</span></code></p>
+<p>Unix and Mswindows versions construct a print line of the form</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pwm_postscript_filter &lt; temp_filename | PRINT_CMD ; rm temp_filename
+pwm_postscript_filter temp_filename printer_command
+</pre></div>
+</div>
+<p>respectively.
+In the mswindows version pwm_postscript_filter and printer_command may
+be set in the nrn.def(aults) file. The default printer command is
+“ &gt; prn”</p>
+<p>In the unix version the printer command is found from the
+“PRINT_CMD” environment variable.</p>
+</section>
+<section id="windowtitlesprinted">
+<span id="id3"></span><h4>WindowTitlesPrinted<a class="headerlink" href="#windowtitlesprinted" title="Link to this heading"></a></h4>
+<p>If checked, then window titles are printed when the windows are printed.
+Titles are always printed when <a class="reference internal" href="../simctrl/sessionsave.html#print_session" title="print_session"><code class="xref py py-func docutils literal notranslate"><span class="pre">print_session()</span></code></a> is executed.</p>
+</section>
+<section id="virtualscreen">
+<h4>VirtualScreen<a class="headerlink" href="#virtualscreen" title="Link to this heading"></a></h4>
+<p>VirtualScreen: Useful for mswindows version when using low-resolution monitor.
+Also invoked under mswindows when the <kbd class="kbd docutils literal notranslate">F1</kbd> key is pressed when focus in
+any InterViews window.</p>
+<p>Pops up a view of the print window manager’s screen icon to allow moving
+of windows (select and drag with left mouse) and changing the center of the
+screen (click with middle button).</p>
+<p>What makes this useful under mswindows is 1) the fact that it can
+be raised to the top of the window hierarchy (The print window manager
+can’t since it is the parent to all InterViews windows) and 2) there is
+a scale button which can scale the window size so all windows will fit
+on the screen.</p>
+</section>
+<section id="landport">
+<h4>LandPort<a class="headerlink" href="#landport" title="Link to this heading"></a></h4>
+<p>LandPort
+Land/Port: The page will be printed in landscape or portrait mode.  The
+mode is indicated by the orientation of the page icon.</p>
+</section>
+<section id="tray">
+<h4>Tray<a class="headerlink" href="#tray" title="Link to this heading"></a></h4>
+<p>Tray: The windows on the page icon are collected into a single larger
+window consisting of a row of columns. The algorithm for doing this
+isn’t too smart but you can get good trays by arranging the page window icons
+in a row of columns. When you dismiss a tray a dialog box pops up which asks
+if you want to dismiss the window or dissolve it into its original windows.
+Trays can be saved and retrieved but they cannot be subsequently dissolved.</p>
+</section>
+<section id="quit">
+<h4>Quit<a class="headerlink" href="#quit" title="Link to this heading"></a></h4>
+<p>Quit: Pops up dialog to allow Exit from NEURON.
+On exit will ask if you want to save open editor buffers.</p>
+</section>
+</section>
+</section>
+<section id="graph">
+<span id="gui-graph"></span><h2>Graph<a class="headerlink" href="#graph" title="Link to this heading"></a></h2>
+<section id="crosshair">
+<span id="graph-crosshair"></span><h3>Crosshair<a class="headerlink" href="#crosshair" title="Link to this heading"></a></h3>
+<p>Crosshair: shows coordinates and enables access to all line data.
+Press the left mouse button (LMB) near a line and drag the
+mouse left or right. A cross hairs will appear with the x,y value in
+model coordinates. The behaviour of the cross hairs makes it
+convenient to find local maxima. On creation the crosshairs starts
+at the nearest point on the line. On dragging it searches from the
+last point for the nearest point but will stop searching if any point
+becomes farther away. This makes it possible to easily follow
+phase plane plots. Crosshairs may call a hoc function on a keypress.
+See <a class="reference internal" href="graph.html#Graph.crosshair_action" title="Graph.crosshair_action"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.crosshair_action()</span></code></a>.</p>
+<p>If no crosshair action has been installed, any keypress will print
+the x,y coordinates of the crosshair in the terminal window.</p>
+<p>Note that a crosshair_action can obtain all the x,y coordinate data
+for a line. Also the global variables <code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_cross_x_</span></code> and
+<code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_cross_y_</span></code> contain the last value of the crosshair coordinates.</p>
+</section>
+<section id="plotwhat">
+<span id="gui-plotwhat"></span><h3>PlotWhat<a class="headerlink" href="#plotwhat" title="Link to this heading"></a></h3>
+<p>Plot What?: Pops up a browser with which one can navigate to any
+variable (double clicking) to enter it into the field
+editor. Double clicking on object names or section names
+will cause more names to appear in the adjacent browser and allows
+one to quickly build a complete symbol name. Alternatively one
+can directly type or edit the name in the field editor. When you
+are satisfied with the name in the field editor type return or
+press the accept button. The program will check if the name (or
+arbitrary expression) is interpretable and, if so, will be added to
+the list of expressions to be plotted in this graph whenever
+Graph.plot(xvalue) is executed. Warning: some names in the
+browsers are not interpretable or make no sense being plotted.
+If there are inconveniently many names in the first browser,
+you can use the Show menu to reduce the selection to only
+variables, objectvars, sections, or objects. Note that the objects
+allow plotting of variables which may otherwise not be accessible
+to the interpreter because there is no objectvar that references
+them. However, unfortunately, such graph lines cannot be saved in
+a session.</p>
+<p>If a variable in the browser contains the word [all] in place of
+an explicit index then the Graph will plot it as a function of
+its index. See <a class="reference internal" href="graph.html#Graph.vector" title="Graph.vector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.vector()</span></code></a> .</p>
+</section>
+<section id="pickvector">
+<span id="gui-pickvector"></span><h3>PickVector<a class="headerlink" href="#pickvector" title="Link to this heading"></a></h3>
+<p>When this tool is chosen, clicking the left mouse button near
+a graphed line will copy the y and x coordinates of the line
+into two new <a class="reference internal" href="../programming/math/vector.html#Vector" title="Vector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Vector</span></code></a>’s which are referenced by <code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_obj_</span></code>[0] and
+<code class="xref py py-data docutils literal notranslate"><span class="pre">hoc_obj_</span></code>[1] respectively. The vectors may be saved to a file by selecting
+the <a class="reference internal" href="../simctrl/stdrun.html#vector-savetofile"><span class="std std-ref">Save to File</span></a> item from the Vector menu of the
+NEURONMainMenu</p>
+</section>
+<section id="plotrange">
+<h3>PlotRange<a class="headerlink" href="#plotrange" title="Link to this heading"></a></h3>
+<p>If the graph is doing a space plot with a RangeVarPlot then
+the PlotWhat item changes its style to request entry of another
+range variable to plot using the same path. Also one can enter
+an expression involving $1. The expression will be executed for
+each section in the path for each arc position set to $1.</p>
+</section>
+<section id="changecolor-brush">
+<span id="gui-changecolor-brush"></span><h3>ChangeColor-Brush<a class="headerlink" href="#changecolor-brush" title="Link to this heading"></a></h3>
+<p>Change Color: Pops up a color and brush palette to select the
+default color and brush style for the graph.
+Clicking on text or lines will change the line/text to that style.
+After the palette is dismissed it can be retrieved by clicking
+on another radiomenu item and then clicking on this one again.
+Note: Lines associated with labels always have the same color.
+Kept lines are not associated with labels.
+The number of selectable colors and brushes may be set by
+changing the values in your <code class="file docutils literal notranslate"><span class="pre">~/.nrn.defaults</span></code> file (see CBWidget in
+<a class="reference external" href="https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrn.defaults.in">$(NEURONHOME)/lib/nrn.defaults</a>)</p>
+</section>
+<section id="axistype">
+<h3>AxisType<a class="headerlink" href="#axistype" title="Link to this heading"></a></h3>
+<p>Axis Type:
+Menu of View Axis, New Axis, View Box, and Erase Axis.</p>
+<section id="viewaxis">
+<h4>ViewAxis<a class="headerlink" href="#viewaxis" title="Link to this heading"></a></h4>
+<p>View Axis:
+Erases the old axis and draws a set of axes in the background.
+The axes are sized dynamically with respect to the view coordinates.</p>
+</section>
+<section id="newaxis">
+<h4>NewAxis<a class="headerlink" href="#newaxis" title="Link to this heading"></a></h4>
+<p>New Axis:
+Erases the old axis and draws a new axis in a rounded view.
+The new axis depends on the size of the view and is the same in
+every view of the scene.</p>
+</section>
+<section id="viewbox">
+<h4>ViewBox<a class="headerlink" href="#viewbox" title="Link to this heading"></a></h4>
+<p>View Box:
+Erases the old axis and draws an axis box as a background
+with clipping. The box is sized dynamically with respect to the
+view coordinates.</p>
+</section>
+</section>
+<section id="keeplines">
+<span id="id4"></span><h3>KeepLines<a class="headerlink" href="#keeplines" title="Link to this heading"></a></h3>
+<p>Keep Lines: While checked, lines are saved. When not checked
+the previous line is discarded every time
+<a class="reference internal" href="graph.html#Graph.begin" title="Graph.begin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.begin()</span></code></a> is executed in preparation for plotting new lines.
+A useful idiom to save a reference line is to toggle the Keep Lines
+item on and then off.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="graph.html#Graph.family" title="Graph.family"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.family()</span></code></a>, <a class="reference internal" href="#familylabel"><span class="std std-ref">FamilyLabel</span></a></p>
+</div>
+</section>
+<section id="familylabel">
+<span id="id5"></span><h3>FamilyLabel<a class="headerlink" href="#familylabel" title="Link to this heading"></a></h3>
+<p>Pops up a global (same for all Graph windows) symbol chooser
+which is used to select a label for <a class="reference internal" href="#keeplines"><span class="std std-ref">KeepLines</span></a>. Function is
+identical to <a class="reference internal" href="graph.html#Graph.family" title="Graph.family"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.family()</span></code></a>. Ie. the label is used as a variable name
+and the value of the variable is used to actually label the kept lines.
+To get a compatible label (instead of an <a class="reference internal" href="graph.html#Graph.addexpr" title="Graph.addexpr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Graph.addexpr()</span></code></a> label)
+for the last line, the KeepLines menu item should be toggled off.</p>
+<p>If all lines are labeled and have the same size then <a class="reference internal" href="#printtofile-ascii"><span class="std std-ref">Ascii</span></a>
+has a matrix format.</p>
+</section>
+<section id="erase">
+<h3>Erase<a class="headerlink" href="#erase" title="Link to this heading"></a></h3>
+<p>Lines are erased but not text or axes.</p>
+</section>
+<section id="movetext">
+<h3>MoveText<a class="headerlink" href="#movetext" title="Link to this heading"></a></h3>
+<p>One can drag text to another location in the scene.</p>
+</section>
+<section id="changetext">
+<h3>ChangeText<a class="headerlink" href="#changetext" title="Link to this heading"></a></h3>
+<p>Clicking on existing text allows one to change it.
+Clicking on an empty spot creates a label at that location.
+One can change a plot expression. eg. to add a scale factor.
+Labels for plot variables that use the more efficient
+pointers cannot be changed. Labels can be marked as either
+fixed with respect to scene/model coordinates or fixed
+with respect to view/screen coordinates</p>
+</section>
+<section id="delete">
+<h3>Delete<a class="headerlink" href="#delete" title="Link to this heading"></a></h3>
+<p>Delete: One can delete text or lines by pressing the left key while
+the mouse cursor is over the object.  If the text is associated with a
+line the line is deleted as well as its label.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="notify.html" class="btn btn-neutral float-left" title="Notification" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="shapebox.html" class="btn btn-neutral float-right" title="MenuExplore" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programmatic Simulation Control &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CVode" href="cvode.html" />
+    <link rel="prev" title="Obsolete Stimuli" href="../modelspec/programmatic/obsoletestimuli.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Programmatic Simulation Control</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="cvode.html">CVode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="batch.html">Running and Saving Batch Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="savstate.html">SaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bbsavestate.html">BBSaveState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sessionsave.html">Session Printing and Saving</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#finitializehandler">FInitializeHandler</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="stdrun.html">Standard Run Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../compilationoptions.html">Rarely Used Compilation Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interpretermanagement.html">Interpreter Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+      <li class="breadcrumb-item active">Programmatic Simulation Control</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/simctrl/programmatic.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/simctrl/programmatic.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#celsius" title="Link to this definition">celsius</a> &middot; <a href="#checkpoint" title="Link to this definition">checkpoint</a> &middot; <a href="#clamp_resist" title="Link to this definition">clamp_resist</a> &middot; <a href="#dt" title="Link to this definition">dt</a> &middot; <a href="#fadvance" title="Link to this definition">fadvance</a> &middot; <a href="#fcurrent" title="Link to this definition">fcurrent</a> &middot; <a href="#finitialize" title="Link to this definition">finitialize</a> &middot; <a href="#fmatrix" title="Link to this definition">fmatrix</a> &middot; <a href="#frecord_init" title="Link to this definition">frecord_init</a> &middot; <a href="#initnrn" title="Link to this definition">initnrn</a> &middot; <a href="#secondorder" title="Link to this definition">secondorder</a> &middot; <a href="#stoprun" title="Link to this definition">stoprun</a> &middot; <a href="#t" title="Link to this definition">t</a></p><p><dl class="docutils"><dt><a href="#FInitializeHandler" title="Link to this definition">FInitializeHandler</a></dt><dd><a href="#FInitializeHandler.allprint" title="Link to this definition">allprint</a></dd></dl></p><section id="programmatic-simulation-control">
+<h1>Programmatic Simulation Control<a class="headerlink" href="#programmatic-simulation-control" title="Link to this heading"></a></h1>
+<p>See also:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cvode.html">CVode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="batch.html">Running and Saving Batch Jobs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="savstate.html">SaveState</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bbsavestate.html">BBSaveState</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sessionsave.html">Session Printing and Saving</a></li>
+</ul>
+</div>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="initnrn">
+<span class="sig-name descname"><span class="pre">initnrn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#initnrn" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">initnrn()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Initialize <code class="docutils literal notranslate"><span class="pre">t,</span> <span class="pre">dt,</span> <span class="pre">clamp_resist</span></code>, and <code class="docutils literal notranslate"><span class="pre">celsius</span></code> to the values
+they had when the program was first run.</p>
+<p>Note that in this
+version <code class="docutils literal notranslate"><span class="pre">Ra</span></code> is no longer a global variable but a section variable
+like <em>L</em> and <em>rallbranch</em>. Thus <code class="docutils literal notranslate"><span class="pre">Ra</span></code> can be different for different
+sections.  In order to set <code class="docutils literal notranslate"><span class="pre">Ra</span></code> to a constant value, use:</p>
+<p><code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">Ra=...</span></code></p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Not very useful. No way to completely restart neuron except to <a class="reference internal" href="interpretermanagement.html#quit" title="quit"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">quit()</span></code></a> and
+re-load.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="fadvance">
+<span class="sig-name descname"><span class="pre">fadvance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fadvance" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fadvance()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Integrate all section equations over the interval <a class="reference internal" href="#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a> .
+The value of <a class="reference internal" href="#t" title="t"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">t</span></code></a> is incremented by dt.
+The default method is first order implicit but may be changed to
+Crank-Nicolson by changing <a class="reference internal" href="#secondorder" title="secondorder"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">secondorder</span></code></a> = 2.</p>
+<p>fadvance integrates the equation over the dt step by
+calling all the BREAKPOINT blocks of models at t+dt/2 twice with
+v+.001 and v in order to compute the current and conductance to form
+the matrix conductance*voltage = current.
+This matrix is then solved for v(t+dt).
+(if secondorder == 2 the ionic currents are adjusted to be second order
+correct. If secondorder == 1 the ionic currents are not adjusted but
+the voltages are second order correct)
+Lastly the SOLVE statement within the BREAKPOINT block of models is
+executed with t+dt and the new values of v in order to integrate those
+states (from new t-.5dt to new t+.5dt).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="finitialize">
+<span class="sig-name descname"><span class="pre">finitialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#finitialize" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">finitialize()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">finitialize(v)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Call the INITIAL block for all mechanisms and point processes
+inserted in the sections.
+If the optional argument is present then all voltages of all sections
+are initialized to <em>v</em>.
+<a class="reference internal" href="#t" title="t"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">t</span></code></a> is set to 0.</p>
+<p>The order of principal actions during an finitialize call is:</p>
+<ul class="simple">
+<li><p>Type 3 FInitializeHandler statements executed.</p></li>
+<li><dl class="simple">
+<dt>Make sure internal structures needed by integration methods are consistent</dt><dd><p>with the current biophysical spec.</p>
+</dd>
+</dl>
+</li>
+<li><p>t = 0</p></li>
+<li><p>Clear the event queue.</p></li>
+<li><p>Random.play values assigned to variables.</p></li>
+<li><p>Vector.play at t=0 values assigned to variables.</p></li>
+<li><p>All v = arg if the arg is present.</p></li>
+<li><p>Type 0 FInitializeHandler statements executed.</p></li>
+<li><p>All mechanism BEFORE INITIAL blocks are called.</p></li>
+<li><dl class="simple">
+<dt>All mechanism INITIAL blocks called.</dt><dd><p>Mechanisms that WRITE concentrations are after ion mechanisms and
+before mechanisms that READ concentrations.</p>
+</dd>
+</dl>
+</li>
+<li><p>LinearMechanism states are initialized</p></li>
+<li><p>INITIAL blocks inside NETRECEIVE blocks are called.</p></li>
+<li><p>All mechanism AFTER INITIAL blocks are called.</p></li>
+<li><p>Type 1 FInitializeHandler statements executed.</p></li>
+<li><p>The INITIAL block net_send(0, flag) events are delivered.</p></li>
+<li><p>Effectively a call to CVode.re_init or fcurrent(), whichever appropriate.</p></li>
+<li><p>Various record functions at t=0. e.g. CVode.record, Vector.record</p></li>
+<li><p>Type 2 FInitializeHandler statements executed.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#FInitializeHandler" title="FInitializeHandler"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">FInitializeHandler</span></code></a>, <a class="reference internal" href="runctrl.html#hoc-runcontrol-init"><span class="std std-ref">Init</span></a>, <a class="reference internal" href="cvode.html#CVode.re_init" title="CVode.re_init"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">CVode.re_init()</span></code></a>, <a class="reference internal" href="#fcurrent" title="fcurrent"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a>, <a class="reference internal" href="#frecord_init" title="frecord_init"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">frecord_init()</span></code></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="frecord_init">
+<span class="sig-name descname"><span class="pre">frecord_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#frecord_init" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">frecord_init()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Initializes the Vectors which are recording variables. i.e. resize to 0 and
+append the current values of the variables.  This is done at the end
+of an <a class="reference internal" href="#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> call but needs to be done again to complete initialization
+if the user changes states or assigned variables that are being recorded..</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../programming/math/vector.html#Vector.record" title="Vector.record"><code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">Vector.record()</span></code></a>, <a class="reference internal" href="runctrl.html#hoc-runcontrol-init"><span class="std std-ref">Init</span></a></p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="fcurrent">
+<span class="sig-name descname"><span class="pre">fcurrent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fcurrent" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fcurrent()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Make all assigned variables (currents, conductances, etc)
+consistent with the values of the states. Useful in combination
+with <a class="reference internal" href="#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>create soma
+access soma
+insert hh
+print &quot;default el_hh = &quot;, el_hh
+// set el_hh so that the steady state is exactly -70 mV
+finitialize(-70) // sets v to -70 and m,h,n to corresponding steady state values
+
+fcurrent()  // set all assigned variables consistent with states
+
+// use current balance: 0 = ina + ik + gl_hh*(v - el_hh)
+el_hh = (ina + ik + gl_hh*v)/gl_hh
+
+print &quot;-70 mV steady state el_hh = &quot;, el_hh
+fcurrent()  // recalculate currents (il_hh)
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="fmatrix">
+<span class="sig-name descname"><span class="pre">fmatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fmatrix" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fmatrix()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">section</span> <span class="pre">{value</span> <span class="pre">=</span> <span class="pre">fmatrix(x,</span> <span class="pre">index)}</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>No args: print the jacobian matrix for the tree structure in a particularly
+confusing way. for debugging only.</p>
+<p>With args, return the matrix element associated with the integer index
+in the row corresponding to the currently accessed
+section at position x. The index 1…4 is associated with:
+The coeeficient for the effect of this locations voltage on current balance at the parent location,
+The coeeficient for the effect of this locations voltage on current balance at this location,
+The coeeficient for the effect of the parent locations voltage on current balance at this location,
+The right hand side of the matrix equation for this location. These are the
+values of NODEA, NODED NODEB, and NODERHS respectively in
+nrn/src/nrnoc/section.h . The matrix elements are properly setup on return
+from a call to the <a class="reference internal" href="#fcurrent" title="fcurrent"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fcurrent()</span></code></a> function. For the fixed step method
+<a class="reference internal" href="#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a> modifies NODED and NODERHS
+but leaves NODEA and NODEB unchanged.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="secondorder">
+<span class="sig-name descname"><span class="pre">secondorder</span></span><a class="headerlink" href="#secondorder" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">secondorder</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>This is a global variable which specifies the time integration method.</p>
+<dl class="simple">
+<dt>=0</dt><dd><p>default fully implicit backward euler. Very numerically stable.
+gives steady state in one step when <em>dt=1e10</em>. Numerical errors
+are proportional to <a class="reference internal" href="#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a>.</p>
+</dd>
+<dt>=1</dt><dd><p>crank-nicholson Can give large (but damped) numerical error
+oscillations. For small <a class="reference internal" href="#dt" title="dt"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">dt</span></code></a> the numerical errors are proportional
+to <code class="docutils literal notranslate"><span class="pre">dt^2</span></code>. Cannot be used with voltage clamps. Ionic currents
+are first order correct. Channel conductances are second order
+correct when plotted at <code class="docutils literal notranslate"><span class="pre">t+dt/2</span></code></p>
+</dd>
+<dt>=2</dt><dd><p>crank-nicholson like 1 but in addition Ion currents (<em>ina</em>, <em>ik</em>,
+etc) are fixed up so that they are second order correct when
+plotted at <code class="docutils literal notranslate"><span class="pre">t-dt/2</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="t">
+<span class="sig-name descname"><span class="pre">t</span></span><a class="headerlink" href="#t" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">t</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The global time variable.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="dt">
+<span class="sig-name descname"><span class="pre">dt</span></span><a class="headerlink" href="#dt" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">dt</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The integration interval for <a class="reference internal" href="#fadvance" title="fadvance"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fadvance()</span></code></a>.</p>
+<p>When using the default implicit integration method (<a class="reference internal" href="#secondorder" title="secondorder"><code class="xref hoc hoc-data docutils literal notranslate"><span class="pre">secondorder</span></code></a> = 0)
+there is no upper limit on dt for numerical stability and in fact for
+passive models it is often convenient to use dt=1.9 to obtain the
+steady state in a single time step.</p>
+<p>dt can be changed by the user at any time during a simulation. However,
+some inserted mechanisms may use tables which depend on the value of dt
+which will be automatically recomputed. In this situation, the tables
+are not useful and should be bypassed by setting the appropriate
+usetable_suffix global variables to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="clamp_resist">
+<span class="sig-name descname"><span class="pre">clamp_resist</span></span><a class="headerlink" href="#clamp_resist" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">clamp_resist</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Obsolete, used by fclamp.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="celsius">
+<span class="sig-name descname"><span class="pre">celsius</span></span><a class="headerlink" href="#celsius" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">celsius</span> <span class="pre">=</span> <span class="pre">6.3</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Temperature in degrees centigrade.</p>
+<p>Generally, rate function tables (eg. used by the hh mechanism)
+depend on temperature and will automatically be re-computed
+whenever celsius changes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc data">
+<dt class="sig sig-object hoc" id="stoprun">
+<span class="sig-name descname"><span class="pre">stoprun</span></span><a class="headerlink" href="#stoprun" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">stoprun</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>A flag which is watched by <a class="reference internal" href="../analysis/programmatic/optimization.html#fit_praxis" title="fit_praxis"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a>, <a class="reference internal" href="cvode.html#CVode" title="CVode"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">CVode</span></code></a>, and other procedures
+during a run or family of runs.
+When stoprun==1 they will immediately return without completing
+normally. This allows safe stopping in the middle of a long run. Procedures
+that do multiple runs should check stoprun after each run and exit
+gracefully. The <code class="xref hoc hoc-meth docutils literal notranslate"><span class="pre">RunControl.Stop()</span></code> of the RunControl GUI sets this variable.
+It is cleared at the beginning of a run or when continuing a run.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="checkpoint">
+<span class="sig-name descname"><span class="pre">checkpoint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#checkpoint" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="samp docutils literal notranslate"><span class="pre">checkpoint(&quot;</span><em><span class="pre">filename</span></em><span class="pre">&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>saves the current state of the system in a portable file to
+allow one to take up where you left off – possibly on another
+machine. Returning to this state is accomplished by running the
+program with the checkpoint file as the first argument.
+If the checkpoint file is inconsistent with the executable the
+program prints an error message and exits.</p>
+<p>At this time many portions of the computer state are left out of the
+checkpoint file, i.e. it is not as complete as a core dump.
+Some things that ARE included are:
+all interpreter symbols with definitions and values,
+all hoc instructions,
+all neuron state/parameters with mechanisms.
+Many aspects of the GUI are not included.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There is not enough implementation at this time to make this
+facility useful. Use the <a class="reference internal" href="savstate.html#SaveState" title="SaveState"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">SaveState</span></code></a> class instead.</p>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+</section>
+<section id="finitializehandler">
+<span id="hoc-finithnd"></span><h2>FInitializeHandler<a class="headerlink" href="#finitializehandler" title="Link to this heading"></a></h2>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="FInitializeHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FInitializeHandler</span></span><a class="headerlink" href="#FInitializeHandler" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fih</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">FInitializeHandler(&quot;stmt&quot;,</span> <span class="pre">[obj])</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">fih</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">FInitializeHandler(type,</span> <span class="pre">&quot;stmt&quot;,</span> <span class="pre">[obj])</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Install an initialization handler statement to be called during a call to
+<a class="reference internal" href="#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a>. The default type is 1. The
+statement will be executed at the top level of the interpreter
+or else in the context of the optional obj arg.</p>
+<p>Type 0 handlers are called before the mechanism INITIAL blocks.</p>
+<p>Type 1 handlers are called after the mechanism INITIAL blocks.
+This is the best place to change state values.</p>
+<p>Type 2 handlers are called just before return from finitialize.
+This is the best place to record values at t=0.</p>
+<p>Type 3 handlers are called at the beginning of finitialize.
+At this point it is allowed to change the structure of the model.</p>
+<p>See <a class="reference internal" href="#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> for more details about the order of initialization processes
+within that function.</p>
+<p>This class helps alleviate the administrative problems of maintaining variations
+of the proc <a class="reference internal" href="runctrl.html#hoc-runcontrol-init"><span class="std std-ref">Init</span></a>.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// specify an example model
+load_file(&quot;nrngui.hoc&quot;)
+create a, b
+access a
+forall insert hh
+
+objref fih[3]
+fih[0] = new FInitializeHandler(0, &quot;fi0()&quot;)
+fih[1] = new FInitializeHandler(1, &quot;fi1()&quot;)
+fih[2] = new FInitializeHandler(2, &quot;fi2()&quot;)
+
+proc fi0() {
+    print &quot;fi0() called after v set but before INITIAL blocks&quot;
+    printf(&quot;  a.v=%g a.m_hh=%g\n&quot;, a.v, a.m_hh)
+    a.v = 10
+}
+
+proc fi1() {
+    print &quot;fi1() called after INITIAL blocks but before BREAKPOINT blocks&quot;
+    print &quot;     or variable step initialization.&quot;
+    print &quot;     Good place to change any states.&quot;
+    printf(&quot;  a.v=%g a.m_hh=%g\n&quot;, a.v, a.m_hh)
+    printf(&quot;  b.v=%g b.m_hh=%g\n&quot;, b.v, b.m_hh)
+    b.v = 10
+}
+
+proc fi2() {
+    print &quot;fi2() called after everything initialized. Just before return&quot;
+    print &quot;     from finitialize.&quot;
+    print &quot;     Good place to record or plot initial values&quot;
+    printf(&quot;  a.v=%g a.m_hh=%g\n&quot;, a.v, a.m_hh)
+    printf(&quot;  b.v=%g b.m_hh=%g\n&quot;, b.v, b.m_hh)
+}
+
+begintemplate Test
+objref fih, this
+proc init() {
+    fih = new FInitializeHandler(&quot;p()&quot;, this)
+}
+proc p() {
+    printf(&quot;inside %s.p()\n&quot;, this)
+}
+endtemplate Test
+
+objref test
+test = new Test()
+
+stdinit()
+fih[0].allprint()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="FInitializeHandler.allprint">
+<span class="sig-prename descclassname"><span class="pre">FInitializeHandler.</span></span><span class="sig-name descname"><span class="pre">allprint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#FInitializeHandler.allprint" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">fih.allprint()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints all the FInitializeHandler statements along with their object context
+in the order they will be executed during an <a class="reference internal" href="#finitialize" title="finitialize"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">finitialize()</span></code></a> call.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../modelspec/programmatic/obsoletestimuli.html" class="btn btn-neutral float-left" title="Obsolete Stimuli" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cvode.html" class="btn btn-neutral float-right" title="CVode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

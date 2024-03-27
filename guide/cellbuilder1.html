@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creating a stylized (“stick-figure”) model cell &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Managing a model cell with complex anatomy" href="cellbuilder2.html" />
+    <link rel="prev" title="Using the Cell Builder GUI" href="cellbuilder.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Creating a stylized (“stick-figure”) model cell</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-bring-up-a-cellbuilder">Step 1. Bring up a CellBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-specify-topology">Step 2. Specify topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-specify-subsets">Step 3. Specify subsets</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-specify-geometry">Step 4. Specify geometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-specify-biophysics">Step 5. Specify biophysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-use-the-model-specification">Step 6. Use the model specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#modular-programming-and-reusable-code">Modular programming and reusable code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#exporting-hoc-code-vs-saving-a-cell-type">Exporting hoc code vs. saving a cell type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#always-save-your-configured-cellbuilder-to-a-session-file">Always save your configured CellBuilder to a session file</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder2.html">Managing a model cell with complex anatomy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cellbuilder3.html">Specifying parameterized variation of biophysical properties</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+      <li class="breadcrumb-item active">Creating a stylized (“stick-figure”) model cell</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/cellbuilder1.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="creating-a-stylized-stick-figure-model-cell">
+<span id="cellbuilder1"></span><h1>Creating a stylized (“stick-figure”) model cell<a class="headerlink" href="#creating-a-stylized-stick-figure-model-cell" title="Link to this heading"></a></h1>
+<p>Our goal is to build an extremely simplified model of a pyramidal cell.</p>
+<p>This model will have a soma, an apical dendritic tree with a primary trunk and two distal branches, a basilar tree that is lumped into a single equivalent cylinder, and an axon (see table for dimensions). The soma and axon will have HH spike currents at normal density. The apical dendrites will also have spike currents, but only at 10% of the density in the soma and axon. The basilar dendrites are to be passive.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Section</p></th>
+<th class="head"><p>Geometry L (µm)</p></th>
+<th class="head"><p>diam (µm)</p></th>
+<th class="head"><p>Biophysics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>soma</p></td>
+<td><p>20</p></td>
+<td><p>20</p></td>
+<td><p>hh</p></td>
+</tr>
+<tr class="row-odd"><td><p>ap[0]</p></td>
+<td><p>400</p></td>
+<td><p>2</p></td>
+<td><p>reduced hh <sup>†</sup></p></td>
+</tr>
+<tr class="row-even"><td><p>ap[1]</p></td>
+<td><p>300</p></td>
+<td><p>1</p></td>
+<td><p>reduced hh <sup>†</sup></p></td>
+</tr>
+<tr class="row-odd"><td><p>ap[2]</p></td>
+<td><p>500</p></td>
+<td><p>1</p></td>
+<td><p>reduced hh <sup>†</sup></p></td>
+</tr>
+<tr class="row-even"><td><p>bas</p></td>
+<td><p>200</p></td>
+<td><p>3</p></td>
+<td><p>pas</p></td>
+</tr>
+<tr class="row-odd"><td><p>axon</p></td>
+<td><p>800</p></td>
+<td><p>1</p></td>
+<td><p>hh</p></td>
+</tr>
+</tbody>
+</table>
+<p>† In the apical dendrites, <code class="docutils literal notranslate"><span class="pre">gnabar_hh</span></code> and <code class="docutils literal notranslate"><span class="pre">gkbar_hh</span></code> are reduced to 10% of normal,
+and el_hh (equilibrium potential of the hh leak current) is changed to -64 mV.
+In the basilar dendrite, e_pas is -65 mV. With these values, resting potential is
+approximately -65 mV throughout the cell.
+Other parameters: cm = 1 µf/cm2, Ra = 160 ohm cm.</p>
+<section id="step-1-bring-up-a-cellbuilder">
+<h2>Step 1. Bring up a CellBuilder<a class="headerlink" href="#step-1-bring-up-a-cellbuilder" title="Link to this heading"></a></h2>
+<p>Bring up a CellBuilder by clicking on <span class="menuselection">Build ‣ Cell Builder</span>.</p>
+<img alt="../_images/spawncellbld.gif" src="../_images/spawncellbld.gif" />
+<p>Release the mouse button and a CellBuilder appears.
+This one is called <code class="docutils literal notranslate"><span class="pre">CellBuild[0]</span></code>.</p>
+<img alt="../_images/cb0.gif" src="../_images/cb0.gif" />
+<p>Across the top of the CellBuilder is an array of radio buttons labeled Topology, Subsets, Geometry, Biophysics, and Management. Each button brings up a different page of the CellBuilder. There is also a checkbox labeled Continuous Create. We’re going to see how to use these controls to build a model cell.</p>
+<p>Next we will set up the branched architecture of our model cell.</p>
+</section>
+<section id="step-2-specify-topology">
+<h2>Step 2. Specify topology<a class="headerlink" href="#step-2-specify-topology" title="Link to this heading"></a></h2>
+<p>Clicking on the Topology button brings up the Topology page of the CellBuilder. This is where we set up the model’s branching pattern by making sections and connecting them to each other.</p>
+<p><em>A word about the Hints button. There’s a Hints button on almost every page of the CellBuilder (the sole exception is the “About” page). Each page’s Hints button brings up a window full of useful tips for that particular page. Many of these go beyond what we can cover in this tutorial, so you’re going to want to check them out for yourself.</em></p>
+<p>The large white area is the CellBuilder’s “canvas,” which shows the sections in our model cell. When a CellBuilder is first created, it comes up with a section called soma.</p>
+<p>The radio buttons just to the right of the canvas control what happens when we click on the canvas. Notice that the CellBuilder starts up in “Make Section” mode.</p>
+<img alt="../_images/top0.gif" src="../_images/top0.gif" />
+<p>In “Make Section” mode, clicking on the canvas spawns a new section. If we just started clicking away, these new sections would be called dend[0], dend[1],  … because the Basename is “dend” (look to the right of the Basename button, next to the canvas’s right upper corner).</p>
+<p>Let’s do this right. We want to set up the apical dendrites, and we want them to be called ap[0], ap[1], and ap[2], so we need to change the Basename to ap.</p>
+<p>To do this, click on the Basename button.</p>
+<img alt="../_images/basnam0.gif" src="../_images/basnam0.gif" />
+<p>This brings up a window with an editable field.
+Click inside this field.</p>
+<img alt="../_images/basnam1.gif" src="../_images/basnam1.gif" />
+<p>Type the new Basename, then click on Accept.</p>
+<img alt="../_images/basnam2.gif" src="../_images/basnam2.gif" />
+<p>Now the Basename is ap (see for yourself!) and we can start to build the apical tree.</p>
+<p>To make a new section, position the cursor just to the right of the soma  …</p>
+<img alt="../_images/make1.gif" src="../_images/make1.gif" />
+<p>… press the left mouse button  …</p>
+<img alt="../_images/make2.gif" src="../_images/make2.gif" />
+<p>… and hold it down while dragging the section to the desired length.</p>
+<img alt="../_images/make3.gif" src="../_images/make3.gif" />
+<p>Then release the button.</p>
+<img alt="../_images/make4.gif" src="../_images/make4.gif" />
+<p>Comments:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>The soma isn’t really a circle or a sphere–it’s a cylinder, like every other section. By default, the CellBuilder draws short sections as a circle so they’re easier to see. <sup>‡</sup> The 0 and 1 ends of the soma are on the left and right sides of the circle.</p>
+<blockquote>
+<div><p>‡ You can toggle this behavior on and off by going to the Management / Import page and clicking on the box “Don’t draw short sections as circles”.</p>
+</div></blockquote>
+</li>
+<li><p>Notice that a new section springs into existence as a “rubber band” that connects the tip of the cursor to the nearest end of an existing section.</p></li>
+</ol>
+</div></blockquote>
+<p>To make the distal apical branches, start by placing the cursor just to the right of the distal end of ap, then click and drag to arrange the new sections as shown in the Outline of this tutorial.</p>
+<p>Next create the basilar branch and the axon in the same way. Use the other buttons as necessary (Basename, Undo Last, Delete Section, Change Name etc.). Finally, move the labels so they are next to the sections, not on top of them (hint: use Move Label).</p>
+<p>Time to <a class="reference internal" href="saveses.html#saveses"><span class="std std-ref">save everything to a session file</span></a>! Let’s call it <code class="docutils literal notranslate"><span class="pre">cell.ses</span></code></p>
+<p>Next we specify the subsets.</p>
+</section>
+<section id="step-3-specify-subsets">
+<h2>Step 3. Specify subsets<a class="headerlink" href="#step-3-specify-subsets" title="Link to this heading"></a></h2>
+<p>The Subsets page is for grouping sections with similar features into subsets. This will make our job much easier when it comes time to assign biophysical properties.
+<em>This page is also for specifying rules, if any, that govern spatially inhomogeneous parameters that vary systematically with location. We’ll use this feature in the second CellBuilder tutorial.</em></p>
+<img alt="../_images/subset0.gif" src="../_images/subset0.gif" />
+<p>The gray panel in the middle of the Subsets page lists the names of all sets of sections. At first, the only set is “all”, which contains every section in the model. We’ll need this, so let’s leave it alone.</p>
+<p>Each of the apicals has identical active currents, so let’s make a subset called apicals.</p>
+<p>Click the Select Subtree radio button.</p>
+<img alt="../_images/selsubtr.gif" src="../_images/selsubtr.gif" />
+<p>Then click on the root section of the apical tree (i.e. the section called ap).
+Notice that the entire apical tree is red, and the unselected sections are black.</p>
+<img alt="../_images/seltree.gif" src="../_images/seltree.gif" />
+<p>Also notice this message in the list of sets :</p>
+<img alt="../_images/alldiffers.gif" src="../_images/alldiffers.gif" />
+<p>Now click on the New SectionList button (that’s right, programmers–these “sets” are implemented with <a class="reference internal" href="../python/modelspec/programmatic/topology/seclist.html#SectionList" title="SectionList"><code class="xref py py-class docutils literal notranslate"><span class="pre">SectionList</span></code></a>).</p>
+<img alt="../_images/newlist.gif" src="../_images/newlist.gif" />
+<p>Click in the edit field of the window that pops up.</p>
+<img alt="../_images/listnam1.gif" src="../_images/listnam1.gif" />
+<p>Type the name of the new SectionList, and then click on Accept.</p>
+<img alt="../_images/listnam2.gif" src="../_images/listnam2.gif" />
+<p>Notice the new item in the list of sets.</p>
+<img alt="../_images/subset2.gif" src="../_images/subset2.gif" />
+<p>Quick, before we lose anything, save this CellBuilder to a session file!</p>
+<p>Now think–do we need to create any more sets? The answer is no.</p>
+<p>Also ask if we need to change the order of subsets. Sequence is important if a section appears in more than one set, because sequence determines the order in which Geometry and Biophysical properties are assigned. If a section appears in more than one set, earlier assignments may be overwritten by later assignments. So the order of sets should to go from general to specific.</p>
+<p>The sequence we have here is fine.
+We’re ready to move on to geometry.</p>
+</section>
+<section id="step-4-specify-geometry">
+<h2>Step 4. Specify geometry<a class="headerlink" href="#step-4-specify-geometry" title="Link to this heading"></a></h2>
+<p>The Geometry page lets us specify the physical dimensions of the sections in our model, and how NEURON will compartmentalize the model (nseg).</p>
+<img alt="../_images/geom0.gif" src="../_images/geom0.gif" />
+<section id="set-up-a-strategy">
+<h3>Set up a strategy<a class="headerlink" href="#set-up-a-strategy" title="Link to this heading"></a></h3>
+<p>The first thing we need to do is to set up an efficient strategy for assigning L, diam, and nseg. The aim is to figure out how to specify these parameters in a way that requires the least effort. So we start with the Specify Strategy checkbox ON (checked). After we have built our strategy, we will toggle the Specify Strategy checkbox OFF, and then we can enter numeric values for these parameters.</p>
+<blockquote>
+<div><p>An important aside: when planning a strategy, keep the sequence of subsets and sections in mind. If the order isn’t right, or if you need more subsets, then go back to the Subsets page and make the necessary changes.</p>
+</div></blockquote>
+<p>We begin by dealing with the spatial grid (i.e. discretization or compartmentalization). This is really just a computational issue, not a biological one–we should be focussing on anatomically- and physiologically-relevant subdivisions of the cell, not “how small should the pieces be to get numerical accuracy and stability.”</p>
+<p>The CellBuilder offers three different ways to make this as painless as possible.</p>
+<ol class="arabic simple">
+<li><p>The “nseg” button lets us set nseg manually.</p></li>
+<li><p>The “d_X” button lets us specify a maximum physical length, in microns, for each segment.</p></li>
+<li><p>The “d_lambda” button is probably the best all-round choice. This lets us specify a maximum length for each segment, expressed as a fraction (“d_lambda”) of the AC length constant at 100 Hz for a cylindrical cable with the same diameter, Ra, and cm. We’ll return to this topic later.</p></li>
+</ol>
+<p>If we choose d_X or d_lambda, the CellBuilder will always set nseg to an odd number. This ensures that each section will have a node exactly halfway down its length, which makes a lot of sense (see “Why should I use an odd value for nseg?” in the FAQ list). If we enter nseg manually, we can specify an even or odd number as we like.</p>
+<p>Let’s apply the d_lambda strategy to every section in the model. Click on the “all” subset to make sure it is selected, and glance at the shape plot just to check–every section should be red. Then click on the d_lambda checkbox.</p>
+<img alt="../_images/alldl.gif" src="../_images/alldl.gif" />
+<p>Each section of our model is a different size, so we need to specify L and diam individually for every one of them. With versions of NEURON prior to 5.7, this would have required us to select each section individually, and click on its L and diam buttons. That’s a lot of clicks.</p>
+<p>However, starting with NEURON 5.7 we can save a few clicks by using the “Distinct values over subset” buttons. These tell the CellBuilder that each member of a subset has its own value of L (and/or diam).</p>
+<p>So let’s stick with the “all” set, and click on the “Distinct values over subset” L and diam buttons.</p>
+<blockquote>
+<div><p>And if we had a set whose members should have identical lengths, we’d click on the “Constant value over subset” L button, etc..</p>
+</div></blockquote>
+<p>This is what the strategy should look like now.</p>
+<img alt="../_images/geomstratfin.gif" src="../_images/geomstratfin.gif" />
+<p>Having set up the strategy, we’re ready to implement it. But first, save a session file!</p>
+</section>
+<section id="execute-the-strategy">
+<h3>Execute the strategy<a class="headerlink" href="#execute-the-strategy" title="Link to this heading"></a></h3>
+<p>Click on the Specify Strategy box to turn it OFF.</p>
+<p>The right panel of the Geometry page now contains a set of buttons with numeric fields and spinners which we can use to enter the values of d_lambda, L, and diam. The sequence of these controls parallels their sequence in the middle panel of the CellBuilder.</p>
+<img alt="../_images/geom1.gif" src="../_images/geom1.gif" />
+<p>The first parameter is d_lambda, which controls the spatial grid. Its default value is 0.1, i.e. one tenth of a length constant at 100 Hz, This is short enough for most models, so we can leave it alone. We can always come back later and try a different value if we like.</p>
+<p>All of the lengths need to be changed.</p>
+<img alt="../_images/newL.gif" src="../_images/newL.gif" />
+<p>But where are the diameters?</p>
+<p>The drag bar at the right edge is our clue–we only have to pull it down …</p>
+<img alt="../_images/newdiam0.gif" src="../_images/newdiam0.gif" />
+<p>… to see that some diameters also need changing.</p>
+<p>Here they are with the desired values.</p>
+<img alt="../_images/newdiam1.gif" src="../_images/newdiam1.gif" />
+<p>Time once again to save a session file!</p>
+</section>
+</section>
+<section id="step-5-specify-biophysics">
+<h2>Step 5. Specify biophysics<a class="headerlink" href="#step-5-specify-biophysics" title="Link to this heading"></a></h2>
+<p>The Biophysics page is where we specify the biophysical attributes (e.g. Ra, cm, ion channels, buffers, pumps) of subsets and individual sections. Just like we did in the Geometry page, we first set up a strategy, and then review and adjust parameter values. So be sure to start with Specify Strategy ON.</p>
+<img alt="../_images/biophys0.gif" src="../_images/biophys0.gif" />
+<p>Once again, remember that the specification will be executed in the same order as is shown in the list of subsets and sections. If the order isn’t right, or if you need more subsets, go back to the Subsets page and make the necessary changes–and then check the Geometry and Biophysics pages to make sure that your changes didn’t break anything.</p>
+<section id="id1">
+<h3>Set up a strategy<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>Ra and cm are uniform in this particular model, so we select the “all” subset and then click on the Ra and cm checkboxes.</p>
+<img alt="../_images/allracm.gif" src="../_images/allracm.gif" />
+<p>Notice that when you select a subset or section in the middle panel, the string above the column of checkboxes changes accordingly, i.e. in this case it reads “forsec all {”. Also notice that the corresponding part of the shape plot turns red
+(you are working along with this tutorial, aren’t you?). These visual reminders can help you verify that</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>the subsets have been properly constructed
+and</p></li>
+<li><p>you’re assigning properties to the right section or subset.</p></li>
+</ol>
+</div></blockquote>
+<p>The apicals have the hh mechanism, so we click on apicals and then on hh.</p>
+<img alt="../_images/apicalshh.gif" src="../_images/apicalshh.gif" />
+<p>The soma and axon also have hh, while the basilars have pas</p>
+<img alt="../_images/axonhh.gif" src="../_images/axonhh.gif" />
+<p>Now we are ready to click on the Specify Strategy box to turn it OFF,</p>
+</section>
+<section id="id2">
+<h3>Execute the strategy<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>The middle panel of the Geometry page lists all of the sets and sections that we selected when we set up our strategy. Beneath each set or section name we also see, indented slightly, the names of the mechanisms that we are inserting. We proceed by clicking on each mechanism, and review and adjust its parameters according to the design we layed out for this model.</p>
+<img alt="../_images/allravalue0.gif" src="../_images/allravalue0.gif" />
+<p>Right off the bat, we see that the value of Ra is not right for the “all” subset.</p>
+<p>So we change it to the desired value.</p>
+<img alt="../_images/allravalue1.gif" src="../_images/allravalue1.gif" />
+<p>The default value of cm is OK (1 µf/cm <sup>2</sup> – you did check it, right?), so we leave it alone.</p>
+<p>For the apicals subset, we must change gnabar_hh, gkbar_hh, and el_hh from their defaults …</p>
+<img alt="../_images/apicalshhvalues0.gif" src="../_images/apicalshhvalues0.gif" />
+<p>… to what we need.</p>
+<img alt="../_images/apicalshhvalues1.gif" src="../_images/apicalshhvalues1.gif" />
+<p><em>Notice that an x marks each mechanism with one or more parameters that have been changed from their defaults.</em></p>
+<p>The soma and axon sections use the default hh values.</p>
+<p>For the bas section, we change e_pas from its default (-70 mV) to the desired value (-65mV).</p>
+<img alt="../_images/baspasvalue1.gif" src="../_images/baspasvalue1.gif" />
+<p>We’re almost done – but first, save this to a session file!</p>
+<p>Next we consider how to use the model specification, and what can be done with the Management page.</p>
+</section>
+</section>
+<section id="step-6-use-the-model-specification">
+<h2>Step 6. Use the model specification<a class="headerlink" href="#step-6-use-the-model-specification" title="Link to this heading"></a></h2>
+<p>Now that the CellBuilder contains a complete specifcation of our model, how do we use it? We have three alternatives :</p>
+<ul class="simple">
+<li><p>use “Continuous Create”</p></li>
+<li><p>save this model cell to a hoc file (“export” hoc code)</p></li>
+<li><p>save this model cell to a hoc file as a class definition (save it as a “cell type”)</p></li>
+</ul>
+<p>Let’s consider each of these.</p>
+<section id="using-continuous-create">
+<h3>Using “Continuous Create”<a class="headerlink" href="#using-continuous-create" title="Link to this heading"></a></h3>
+<p>It may come as a surprise, but if you followed the instructions up to this point, no sections will actually exist. You can test this for yourself by executing a couple of simple Python (or HOC) commands.</p>
+<p>At the Python interpreter’s <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt, (assuming you already did a <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">neuron</span> <span class="pre">import</span> <span class="pre">h</span></code>) enter</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(If you instead have an <code class="docutils literal notranslate"><span class="pre">oc&gt;</span></code> prompt, you’re using HOC as your interpreter, and should simply type <code class="docutils literal notranslate"><span class="pre">topology()</span></code> instead.)</p>
+<p>If sections exist, you will see a crude but informative on-screen printout that shows how they are interconnected.</p>
+<p>Now see what happens when you type the Python command</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">():</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">psection</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>(For HOC, enter <code class="docutils literal notranslate"><span class="pre">forall</span> <span class="pre">psection()</span></code> instead.)</p>
+<p>This prints a brief text summary of the properties of each existing section. (For a machine-readable version in Python, use the <code class="docutils literal notranslate"><span class="pre">sec.psection()</span></code> method which returns a dictionary instead.)</p>
+<p>But there aren’t any sections yet, so these commands print out nothing.</p>
+<p>It might help to think of the CellBuilder as being roughly analogous to one of those on-line airline ticket sellers. You can tinker with origin and destination, dates of departure and return, connecting flights, etc., as much as you like, but you don’t get a ticket until you click on the “Submit order” button.
+The most convenient way to work with the CellBuilder, at least during model development, is to use the Continuous Create checkbox.</p>
+<p>Turning Continuous Create ON …</p>
+<img alt="../_images/ccon.gif" src="../_images/ccon.gif" />
+<p>… makes the CellBuilder send hoc straight to NEURON’s interpreter without bothering to write a script (Python or HOC) file.</p>
+<p>Presto! Suddenly, your model cell exists (test this as above).</p>
+<p>Any changes made to the model while Continuous Create is ON will automatically be echoed to NEURON’s interpreter. This lets you immediately test the model you just created or revised.</p>
+<p>Automatic updates may bog things down if you are dealing with a large model on a slow machine. If this happens, just turn Continuous Create OFF.</p>
+<img alt="../_images/ccoff.gif" src="../_images/ccoff.gif" />
+<p>Then make whatever changes you want, and when you’re done just toggle Continuous Create ON and then OFF again.</p>
+<p>A very practical way to work with a configured CellBuilder, at least for single cell modeling, is to save it to a session file with Continuous Create ON. Then reading this file will automatically recreate the model cell.</p>
+<p>Here’s a concrete example of how to do this.</p>
+<ol class="arabic">
+<li><p>Turn Continuous Create ON and save the CellBuilder we just built to a session file called <code class="file docutils literal notranslate"><span class="pre">mycell.ses</span></code></p></li>
+<li><p>Create a Python file called <code class="file docutils literal notranslate"><span class="pre">init.py</span></code>, and put these statements in it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;mycell.ses&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Start NEURON and have it read <code class="file docutils literal notranslate"><span class="pre">init.py</span></code> by typing <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">init.py</span></code> on a terminal.</p></li>
+<li><p>Use the NEURON Main Menu toolbar to construct a custom graphical user interface that has the following items:</p>
+<ul class="simple">
+<li><p>A RunControl panel</p></li>
+<li><p>An IClamp that applies a 0.6 nA x 1.0 ms current pulse to the soma starting at t = 5 ms.</p></li>
+<li><p>A graph of somatic membrane potential vs. time. Since the CellBuilder automatically makes the soma be the default section, all you have to do is click on
+Graph / Voltage axis in the NEURON Main Menu.</p></li>
+</ul>
+</li>
+<li><p>Run a test simulation with Tstop = 20 ms to make sure that things work.</p></li>
+<li><p>Use the Print &amp; File Window Manager to save the RunControl, IClamp, and voltage graph to a session file called iclamprig.ses (after all, this is a “virtual experimental rig”).</p></li>
+<li><p>Exit NEURON and edit <code class="file docutils literal notranslate"><span class="pre">init.py</span></code> so that it reads</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;mycell.ses&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;iclamprig.ses&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>Now when you run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">init.py</span></code>, up comes your CellBuilder, which recreates your model cell, and you also get your custom experimental rig, all ready for you to run some current clamp simulations, as shown here :</p>
+<img alt="../_images/iclamprig.gif" src="../_images/iclamprig.gif" />
+<p><em>The CellBuilder was hidden for this illustration, in order to save screen space.</em></p>
+</section>
+</section>
+<section id="modular-programming-and-reusable-code">
+<h2>Modular programming and reusable code<a class="headerlink" href="#modular-programming-and-reusable-code" title="Link to this heading"></a></h2>
+<p>You might think of <code class="file docutils literal notranslate"><span class="pre">mycell.ses</span></code> as being roughly analogous to the wet lab experimentalist’s neuron in a brain slice or tissue culture. It’s a “virtual experimental preparation,” and it’s reusable–you can construct many different kinds of “custom experimental rigs” to do “virtual experiments” on it.</p>
+<p>For instance, you could set up an interface that uses an SEClamp to do voltage clamp experiments, and save it to a file called something imaginative like <code class="file docutils literal notranslate"><span class="pre">vclamprig.ses</span></code>. In that case, it would make sense to have two init files with different contents and descriptive names, like this:</p>
+<blockquote>
+<div><p>initiclamp.py</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;mycell.ses&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;iclamprig.ses&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>initvclamp.py</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">gui</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;mycell.ses&quot;</span><span class="p">)</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;vclamprig.ses&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<p>Also note that <code class="file docutils literal notranslate"><span class="pre">iclamprig.ses</span></code> and <code class="file docutils literal notranslate"><span class="pre">vclamprig.ses</span></code> are reusable with any model that happens to have a default section called soma.</p>
+<p>This is an example of the benefits of “modular programming” (i.e. keeping the model specification (CellBuilder) separate from the specification of the instrumentation (RunControl + IClamp + graph)) and “reusable code.”</p>
+</section>
+<section id="exporting-hoc-code-vs-saving-a-cell-type">
+<h2>Exporting hoc code vs. saving a cell type<a class="headerlink" href="#exporting-hoc-code-vs-saving-a-cell-type" title="Link to this heading"></a></h2>
+<p>The Management page contains the CellBuilder’s controls for exporting hoc code and saving a model as a cell type. This page also can be used to import models, which we will consider in the second tutorial.</p>
+<p>The Export button is for saving a hoc file that contains the basic specification of the model cell. This is OK if you intend to work on a single cell model.</p>
+<img alt="../_images/export.gif" src="../_images/export.gif" />
+<p>If your aim is to define a new cell class for use in a network model, you’ll want to click on the Cell Type radio button.</p>
+<img alt="../_images/celltype.gif" src="../_images/celltype.gif" />
+</section>
+<section id="always-save-your-configured-cellbuilder-to-a-session-file">
+<h2>Always save your configured CellBuilder to a session file<a class="headerlink" href="#always-save-your-configured-cellbuilder-to-a-session-file" title="Link to this heading"></a></h2>
+<p>Experience shows that, sooner or later, most models need to be revised. This is especially true of models that seem at first to be perfect in all regards. Saving a configured CellBuilder to a session file usually simplifies future revisions, because it’s easier to use the CellBuilder than to decipher idiosyncratic old code. Especially somebody else’s idiosyncratic old code. You should save your configured CellBuilder to a session file even if you have already written a hoc file with the Management page’s Export or Cell Type functions.</p>
+<p>“But wait,” someone asks, “can’t the CellBuilder import a model cell?”</p>
+<p>Not entirely. At present the CellBuilder can import topology and pt3d information, which is very useful, as we will see in the next tutorial. However, it can’t import subsets, geometry (L, diam, and nseg), or biophysical properties. So throwing away a CellBuilder is “breaking the mold” – you lose all the time and effort you invested setting it up.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cellbuilder.html" class="btn btn-neutral float-left" title="Using the Cell Builder GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cellbuilder2.html" class="btn btn-neutral float-right" title="Managing a model cell with complex anatomy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

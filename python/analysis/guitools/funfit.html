@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FunctionFitter &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="RunFitter" href="runfit.html" />
+    <link rel="prev" title="GUI Analysis Tools" href="../guitools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#analysis">Analysis</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../programmatic.html">Programmatic Analysis Tools</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../guitools.html">GUI Analysis Tools</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">FunctionFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="runfit.html">RunFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mulfit.html">MulRunFitter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="impedancetools.html">Impedance Tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">NEURON Python documentation</a></li>
+          <li class="breadcrumb-item"><a href="../guitools.html">GUI Analysis Tools</a></li>
+      <li class="breadcrumb-item active">FunctionFitter</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../../..html/../hoc/analysis/guitools/funfit.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/python/analysis/guitools/funfit.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="functionfitter">
+<span id="funfit"></span><h1>FunctionFitter<a class="headerlink" href="#functionfitter" title="Link to this heading"></a></h1>
+<p>A widget for graphing a parameterized function while exploring parameter
+variations. Also can adjust the parameters automatically to fit data.
+Function, parameters, independent variable can be specified by the user.
+This widget may be saved in a session.</p>
+<p>The FunctionFitter starts out with entries for graphing a single exponential
+with two parameters.  When a parameter value is changed the graph is replotted.</p>
+<section id="plot">
+<h2>Plot<a class="headerlink" href="#plot" title="Link to this heading"></a></h2>
+<p>Replots function with current arg values</p>
+</section>
+<section id="steps">
+<h2>Steps<a class="headerlink" href="#steps" title="Link to this heading"></a></h2>
+<p>Number of values of independent variable used in plot</p>
+</section>
+<section id="independentvar">
+<h2>IndependentVar<a class="headerlink" href="#independentvar" title="Link to this heading"></a></h2>
+<p>Enter the name of independent variable in a
+string dialog.</p>
+</section>
+<section id="args">
+<h2>Args<a class="headerlink" href="#args" title="Link to this heading"></a></h2>
+<p>Enter space separated names of parameters in a string dialog.
+Default value editors for these parameters will appear in the rightmost
+box.</p>
+</section>
+<section id="yexpr">
+<h2>Yexpr<a class="headerlink" href="#yexpr" title="Link to this heading"></a></h2>
+<p>Enter an expression involving the independent variable and the
+parameters (args). Any valid top level hoc expression is acceptable.</p>
+</section>
+<section id="praxisfit">
+<h2>PraxisFit<a class="headerlink" href="#praxisfit" title="Link to this heading"></a></h2>
+<p>Starts fitting the function to the data with respect to the DataWeights
+by adjusting the checked argument values. See <a class="reference internal" href="../programmatic/optimization.html#fit_praxis" title="fit_praxis"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_praxis()</span></code></a> .</p>
+</section>
+<section id="stopatnextquadform">
+<h2>StopAtNextQuadForm<a class="headerlink" href="#stopatnextquadform" title="Link to this heading"></a></h2>
+<p>Stop the praxis fitter when it finishes its current/next cycle.
+At this point it contains a computation of the quadratic form of the parameter
+phase space (printed in the terminal window).</p>
+</section>
+<section id="running">
+<h2>Running<a class="headerlink" href="#running" title="Link to this heading"></a></h2>
+<p>Checked when the praxis fitter is executing.</p>
+</section>
+<section id="watchthefit">
+<h2>WatchTheFit<a class="headerlink" href="#watchthefit" title="Link to this heading"></a></h2>
+<p>Plot the function on each call to the error function during fitting.
+Things are slower if this box is checked.</p>
+</section>
+<section id="roughfit">
+<h2>RoughFit<a class="headerlink" href="#roughfit" title="Link to this heading"></a></h2>
+<p>Instead of fitting all the data according to the data weights, use
+only 5 equally spaced points in each of the two central data regions.
+Things can be much faster if this box is checked.</p>
+</section>
+<section id="argvalues">
+<h2>ArgValues<a class="headerlink" href="#argvalues" title="Link to this heading"></a></h2>
+<p>The values of the arguments are used in the plot. When a value
+is changed the function is replotted. When fit data is present, a
+checkbox is added to the left of each argument button. When the box is checked
+then the fitter adjusts the value for a best fit. When not checked the parameter
+is treated as a constant.</p>
+<section id="currentvaluesasdefault">
+<h3>CurrentValuesAsDefault<a class="headerlink" href="#currentvaluesasdefault" title="Link to this heading"></a></h3>
+<p>Resets the default values of the parameter field editors to their current values.</p>
+</section>
+</section>
+<section id="fittodata">
+<h2>FittoData<a class="headerlink" href="#fittodata" title="Link to this heading"></a></h2>
+<section id="readdatafile">
+<h3>ReadDataFile<a class="headerlink" href="#readdatafile" title="Link to this heading"></a></h3>
+<p>Get data from a file. The format is the number of data points followed
+by pairs of x,y data.</p>
+</section>
+<section id="commonfunctionalforms">
+<h3>CommonFunctionalForms<a class="headerlink" href="#commonfunctionalforms" title="Link to this heading"></a></h3>
+</section>
+<section id="fitcriterion">
+<h3>FitCriterion<a class="headerlink" href="#fitcriterion" title="Link to this heading"></a></h3>
+<p>not implemented</p>
+</section>
+<section id="parameterrangelimits">
+<h3>ParameterRangeLimits<a class="headerlink" href="#parameterrangelimits" title="Link to this heading"></a></h3>
+<p>Pops up a panel of parameters with their range limits. When
+the fitter calls the error function and one of the parameters is
+outside its range the error function will return a value of 1e6.</p>
+</section>
+<section id="dataweights">
+<h3>DataWeights<a class="headerlink" href="#dataweights" title="Link to this heading"></a></h3>
+<p>Pops up a panel of data weight intervals and weights. The first interval
+ranges from the beginning of the data to the interval 1 endpoint. From
+the interval3 endpoint to the end of the data, the weight is 0. The entire
+interval is given the weight indicated. Intervals can be manipulated directly
+by the <span class="guilabel">AdjustWeightRegions</span> tool of the <span class="guilabel">Graph</span> menu.</p>
+</section>
+<section id="saverestorefunction">
+<h3>SaveRestoreFunction<a class="headerlink" href="#saverestorefunction" title="Link to this heading"></a></h3>
+<p>Arg values and the y-expression can be saved in a list and restored by selection
+with a browser.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../guitools.html" class="btn btn-neutral float-left" title="GUI Analysis Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="runfit.html" class="btn btn-neutral float-right" title="RunFitter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

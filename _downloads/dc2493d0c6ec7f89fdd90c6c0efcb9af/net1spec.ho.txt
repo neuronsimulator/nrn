@@ -1,0 +1,56 @@
+//Network cell templates
+//Artificial cells
+  create acell_home_
+  access acell_home_
+//   C_IntFire1
+//   S_NetStim
+
+
+begintemplate C_IntFire1
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new IntFire1(.5)
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate C_IntFire1
+
+begintemplate S_NetStim
+public pp, connect2target, x, y, z, position, is_art
+external acell_home_
+objref pp
+proc init() {
+  acell_home_ pp = new NetStim(.5)
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate S_NetStim
+
+//Network specification interface
+
+objref cells, nclist, netcon
+{cells = new List()  nclist = new List()}
+
+func cell_append() {cells.append($o1)  $o1.position($2,$3,$4) return cells.count - 1 }
+
+func nc_append() {//srcindex, tarcelindex, synindex
+  if ($3 >= 0) {
+    cells.object($1).connect2target(cells.object($2).synlist.object($3),netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }else{
+    cells.object($1).connect2target(cells.object($2).pp,netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }
+  nclist.append(netcon)
+  return nclist.count - 1
+}
+
+//Network instantiation
+
+  /* S0 */  cell_append(new S_NetStim(),	-62,	 4, 0)
+  /* C1 */  cell_append(new C_IntFire1(),	196,	 0, 0)
+  /* S0 -> C1    */  nc_append(0, 1, -1,  2,1)

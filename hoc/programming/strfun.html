@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StringFunctions (String Manipulation Class) &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="String Parsing (sscanf)" href="sscanf.html" />
+    <link rel="prev" title="Strings" href="strings.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="strings.html">Strings</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">StringFunctions (String Manipulation Class)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sscanf.html">String Parsing (sscanf)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="strings.html#sprint"><code class="docutils literal notranslate"><span class="pre">sprint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="strings.html#strcmp"><code class="docutils literal notranslate"><span class="pre">strcmp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system.html">System Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+          <li class="breadcrumb-item"><a href="strings.html">Strings</a></li>
+      <li class="breadcrumb-item active">StringFunctions (String Manipulation Class)</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/strfun.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/strfun.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><dl class="docutils"><dt><a href="#StringFunctions" title="Link to this definition">StringFunctions</a></dt><dd><a href="#StringFunctions.alias" title="Link to this definition">alias</a> &middot; <a href="#StringFunctions.alias_list" title="Link to this definition">alias_list</a> &middot; <a href="#StringFunctions.head" title="Link to this definition">head</a> &middot; <a href="#StringFunctions.is_artificial" title="Link to this definition">is_artificial</a> &middot; <a href="#StringFunctions.is_name" title="Link to this definition">is_name</a> &middot; <a href="#StringFunctions.is_point_process" title="Link to this definition">is_point_process</a> &middot; <a href="#StringFunctions.left" title="Link to this definition">left</a> &middot; <a href="#StringFunctions.len" title="Link to this definition">len</a> &middot; <a href="#StringFunctions.references" title="Link to this definition">references</a> &middot; <a href="#StringFunctions.right" title="Link to this definition">right</a> &middot; <a href="#StringFunctions.substr" title="Link to this definition">substr</a> &middot; <a href="#StringFunctions.tail" title="Link to this definition">tail</a></dd></dl></p><section id="stringfunctions-string-manipulation-class">
+<span id="hoc-strfun"></span><h1>StringFunctions (String Manipulation Class)<a class="headerlink" href="#stringfunctions-string-manipulation-class" title="Link to this heading"></a></h1>
+<dl class="hoc class">
+<dt class="sig sig-object hoc" id="StringFunctions">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StringFunctions</span></span><a class="headerlink" href="#StringFunctions" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">obj</span> <span class="pre">=</span> <span class="pre">new</span> <span class="pre">StringFunctions()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The StringFunctions class contains functions which you can apply to a <code class="docutils literal notranslate"><span class="pre">strdef</span></code>.  This class
+exists purely for the utility of preventing pollution of name space with string operations.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>objref strobj
+strobj = new StringFunctions()
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.len">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">len</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.len" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">length</span> <span class="pre">=</span> <span class="pre">strobj.len(str)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the length of a string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.substr">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">substr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.substr" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">index</span> <span class="pre">=</span> <span class="pre">strobj.substr(s1,</span> <span class="pre">s2)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return the index into <em>s1</em> of the first occurrence of <em>s2</em>.
+If <em>s2</em> isn’t a substring then the return value is -1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.head">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">head</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.head" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strobj.head(str,</span> <span class="pre">&quot;regexp&quot;,</span> <span class="pre">result)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The result contains the head of the string
+up to but not including the <em>regexp</em>. returns index of
+last char.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.tail">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">tail</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.tail" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strobj.tail(str,</span> <span class="pre">&quot;regexp&quot;,</span> <span class="pre">result)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>The result contains the tail of the string
+from the char following <em>regexp</em> to the end of the string.
+return index of first char.</p>
+<p>Other functions can be added as needed,
+eg., <code class="docutils literal notranslate"><span class="pre">index(s1,</span> <span class="pre">c1)</span></code>, <code class="docutils literal notranslate"><span class="pre">char(s1,</span> <span class="pre">i)</span></code>, etc.
+without polluting the global name space. In recent versions
+functions can return strings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.right">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">right</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.right" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strobj.right(str,</span> <span class="pre">n)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Removes first n characters from <em>str</em> and puts the result in
+<em>str</em>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.left">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">left</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.left" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.left(str,</span> <span class="pre">n)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Removes all but first n characters from <em>str</em> and puts the
+result in <em>str</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.is_name">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">is_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.is_name" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.is_name(str)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 1 if the <em>str</em> is the name of a symbol, 0 otherwise.
+This is so useful that the same thing is available with the top level
+<a class="reference internal" href="internals.html#name_declared" title="name_declared"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">name_declared()</span></code></a> function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.alias">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">alias</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.alias" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">.alias(obj,</span> <span class="pre">&quot;name&quot;,</span> <span class="pre">&amp;var2)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.alias(obj,</span> <span class="pre">&quot;name&quot;,</span> <span class="pre">obj2)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.alias(obj,</span> <span class="pre">&quot;name&quot;)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">.alias(obj)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>“name” becomes a public variable for obj and points to the
+scalar var2 or object obj2. obj.name may be used anywhere the var2 or obj2 may
+be used. With no third arg, the “name” is removed from the objects
+alias list. With no second arg, the objects alias list is cleared.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.alias_list">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">alias_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.alias_list" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">list</span> <span class="pre">=</span> <span class="pre">sf.alias_list(obj)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return a new List object containing String objects which contain
+the alias names.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The String class is not a built-in class. It generally gets declared when
+the nrngui.hoc file is loaded and lives in stdlib.hoc.
+Note that the String class must exist and its
+constructor must allow a single strdef argument. Minimally:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>begintemplate String
+public s
+strdef s
+proc init() { s = $s1 }
+endtemplate String
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.references">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">references</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.references" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">sf.references(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Prints the number of references to the object and all objref names
+that reference that object (including references via
+<a class="reference internal" href="gui/layout.html#HBox" title="HBox"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">HBox</span></code></a>, <a class="reference internal" href="gui/layout.html#VBox" title="VBox"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">VBox</span></code></a>, and <a class="reference internal" href="gui/list.html#List" title="List"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">List</span></code></a>). It also prints the number of references found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.is_point_process">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">is_point_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.is_point_process" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">=</span> <span class="pre">sf.is_point_process(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 0 if the object is not a POINT_PROCESS. Otherwise
+returns the point type (which is always 1 greater than the index into the
+<a class="reference internal" href="../modelspec/programmatic/mechtype.html#MechanismType" title="MechanismType"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">MechanismType(1)</span></code></a> list).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc method">
+<dt class="sig sig-object hoc" id="StringFunctions.is_artificial">
+<span class="sig-prename descclassname"><span class="pre">StringFunctions.</span></span><span class="sig-name descname"><span class="pre">is_artificial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#StringFunctions.is_artificial" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">=</span> <span class="pre">sf.is_artificial(object)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise
+returns the point type (which is always 1 greater than the index into the
+<a class="reference internal" href="../modelspec/programmatic/mechtype.html#MechanismType" title="MechanismType"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">MechanismType(1)</span></code></a> list).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="strings.html" class="btn btn-neutral float-left" title="Strings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sscanf.html" class="btn btn-neutral float-right" title="String Parsing (sscanf)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

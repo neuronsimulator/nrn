@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example: Calcium waves &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example: combining MOD file ion channels with rxd" href="combining%20currents%20from%20mod%20files%20with%20rxd.html" />
+    <link rel="prev" title="Example: Circadian rhythm" href="circadian.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python RXD tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Reaction-Diffusion%20tutorial.html">Reaction-diffusion introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-initialization.html">Initialization Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Changing%20initial%20conditions%20and%20parameters.html">Varying initial concentrations and parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="thresholds.html">Reaction-diffusion thresholds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extracellular.html">Extracellular reaction-diffusion tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Restricting%20reactions%20to%20certain%20sections.html">Restricting reactions to a part of a region</a></li>
+<li class="toctree-l2"><a class="reference internal" href="degradable_buffer.html">Example: Degradable buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circadian.html">Example: Circadian rhythm</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Example: Calcium waves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Concept">Concept</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Specification">Specification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Basic-structure">Basic structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Enable-variable-time-step">Enable variable time step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Regions">Regions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Species">Species</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="combining%20currents%20from%20mod%20files%20with%20rxd.html">Example: combining MOD file ion channels with rxd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ip3-demo.html">IP3 demo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python RXD tutorials</a></li>
+      <li class="breadcrumb-item active">Example: Calcium waves</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rxd-tutorials/calcium waves.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Example:-Calcium-waves">
+<h1>Example: Calcium waves<a class="headerlink" href="#Example:-Calcium-waves" title="Link to this heading"></a></h1>
+<section id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading"></a></h2>
+<p><p>In every cell type, intracellular Ca2+ signaling plays a major role in a diverse set of activities, including process homeostasis and genetic expression. In neurons, Ca2+ wave propagation has been implicated as a major component of intracellular signaling and is complementary to membrane electrical signaling via action potentials. It follows that the cell must contain tightly-controlled intrinsic mechanisms for regulating intracellular Ca2+ content and waves; these include cytosolic buffers,
+storage in the ER, and sequestration into mitochondria. In this tutorial, we examine how some of these basic mechanisms interact to produce a Ca2+ wave.</p>
+</p></section>
+<section id="Concept">
+<h2>Concept<a class="headerlink" href="#Concept" title="Link to this heading"></a></h2>
+<p><p>Ca2+ is well-buffered by several cytosolic proteins (e.g. calmodulin, calbindin, etc…), but must still traverse a significant distance within the neuron to reach its targets. This distance is long enough that pure diffusion would pose a temporal problem for cell communication. Instead, the cell uses oscillating Ca2+ waves to harness the power of chemical signaling. These waves can travel up and down the Endoplasmic Reticulum (ER) to effect homeostatic changes. Understanding how these waves are
+modulated in real time by the cell poses a great difficulty because of complex spatiotemporal patterns and nonuniform distribution of the channels that control Ca2+ flux across the ER. Inositol triphosphate (IP3) receptors IP3Rs), Sarco/endoplasmic reticulum Ca2+-ATPase (SERCA pump), and Ryanoine receptors (RyRs). For simplicity’s sake, we will not deal with RyRs in this tutorial.</p>
+</p><p><p>Diffusible Ca2+ is released directly from the ER via IP3Rs upon cooperative binding of free Ca2+ and IP3 to the receptor. When IP3 levels are ideal, this results in Ca2+-induced Ca2+ release (CICR), yielding a wave that can travel along the ER. As mentioned above, these waves are implicated in the gene expression and protein upregulation associated with neuronal plasticity by way of their interaction with the neuronal soma. The SERCA pumps within ER are normally responsible for maintaining
+appropriate intracellular Ca2+ levels. Two models exist for wave propagation: continuous and saltatory. To understand the physical and functional differences between these models, it is ideal to compare them using Reaction-Diffusion (RxD) wtihin the NEURON environment.</p>
+</p><p><p>The model presented in this tutorial generates Ca2+ waves and is based loosely off of the model we used in Neymotin et al., 2015.</p>
+</p></section>
+<section id="Specification">
+<h2>Specification<a class="headerlink" href="#Specification" title="Link to this heading"></a></h2>
+<p><p>Python is a rich and user-friendly programming language that offers significant options for systems integration. For this reason, we will run the NEURON and RxD modules within the Python interpreter.</p>
+</p><p><p>Like other RxD problems within NEURON, the first step is to import and load the appropriate libraries into the Python interpreter.</p>
+</p><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+</pre></div>
+</div>
+</div>
+<p>It is often convenient to load NEURON’s stdrun library, which provides high level functions for controlling integration; we do so here:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+</section>
+<section id="Basic-structure">
+<h2>Basic structure<a class="headerlink" href="#Basic-structure" title="Link to this heading"></a></h2>
+<p>First, we define parameters for the section to be used. Like any imported module within Python, the imported libraries can be accessed by the h and rxd prefixes:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sec</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;sec&quot;</span><span class="p">)</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">101</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">sec</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">101</span>
+</pre></div>
+</div>
+</div>
+<p>The above code defines a section of a neuron with Length = 101 ({<span class="math">\mu</span>}m), diameter = 1 ({<span class="math">\mu</span>}m), and 101 discrete segments. By chunking the neuron into a large number of segments, we increase the resolution of the output at the expense of processing power. For a smaller number of segments, the opposite is true. In larger models, it is useful to represent nseg as a variable – this way, if changes need to be made during any number of simulations, the single
+variable can be altered and will affect all subsequent iterations of nseg. In this example, we only reference a single section, so there is no need to elaborate.</p>
+</section>
+<section id="Enable-variable-time-step">
+<h2>Enable variable time step<a class="headerlink" href="#Enable-variable-time-step" title="Link to this heading"></a></h2>
+<p>Next, we activate the variable time-step integration algorithm. This is a class of functions which are part of the SUNDIALS package and allow variable-order, variable time-step, and implicit solving of ordinary differential equations (ODE). This is a particularly useful tool for solving a system with multiple species, whose concentrations may change suddenly from stable conditions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">CVode</span><span class="p">()</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<p>The argument of active specifies whether or not variable step integration will be used. To use fix step integration, pass the argument False instead.</p>
+</section>
+<section id="Parameters">
+<h2>Parameters<a class="headerlink" href="#Parameters" title="Link to this heading"></a></h2>
+<p><p>The diffusion coefficients caDiff and ip3Diff here denote the effective diffusion rate after buffering by native cytosol proteins is taken into account.</p>
+</p><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">caDiff</span> <span class="o">=</span> <span class="mf">0.016</span>
+<span class="n">ip3Diff</span> <span class="o">=</span> <span class="mf">0.283</span>
+<span class="n">cac_init</span> <span class="o">=</span> <span class="mf">1.0e-4</span>
+<span class="n">ip3_init</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">gip3r</span> <span class="o">=</span> <span class="mi">12040</span>
+<span class="n">gserca</span> <span class="o">=</span> <span class="mf">0.3913</span>
+<span class="n">gleak</span> <span class="o">=</span> <span class="mf">6.020</span>
+<span class="n">kserca</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">kip3</span> <span class="o">=</span> <span class="mf">0.15</span>
+<span class="n">kact</span> <span class="o">=</span> <span class="mf">0.4</span>
+<span class="n">ip3rtau</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">fc</span> <span class="o">=</span> <span class="mf">0.83</span>
+<span class="n">fe</span> <span class="o">=</span> <span class="mf">0.17</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Regions">
+<h2>Regions<a class="headerlink" href="#Regions" title="Link to this heading"></a></h2>
+<p>An rxd.Region is the volume in which species exist and reactions can occur.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cyt</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span>
+    <span class="n">nrn_region</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">,</span>
+    <span class="n">geometry</span><span class="o">=</span><span class="n">rxd</span><span class="o">.</span><span class="n">FractionalVolume</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">surface_fraction</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cyt&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><p>This uses the rxd.Region class to define the properties for the region on the immediate interior of the membrane (nrn_region = “i”). Electrophysiologically, the only regions that matter for this simulation are the spaces directly inside the membranes. The “i” marks that we are concerned with the inner region only. For any region, a geometry may be specified. For this model, we make the assumption that ER is roughly evenly-mixed throughout the neuron segment. That is, in any given chunk of
+neuron, we assume there is a constant fraction of that chunk that is ER and a constant fraction that is cytosol; this is indicated using an rxd.FractionalVolume. The geometry argument tells NEURON what to expect the region to actually look like (i.e. a cylinder has a specific 3D spatial representation and therefore requires specific diffusion modeling for ions within that particular geometry).</p>
+</p><p><p>We set surface_fraction=1 because for the purposes of this model we suppose that at all points the plasma membrane is in contact with the cytosol (i.e. we assume the ER does not contact the plasma membrane and that all calcium influx from ion channels must first enter the cytosol before it can be sequestered into the ER).</p>
+</p><p><p>name is an optional argument, but it can be queried later and some tools support using it to identify the region.</p>
+</p><p>We define the ER similarly, except we omit the surface_fraction argument as it defaults to 0; i.e. that the ER does not contact the plasma membrane:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">er</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span> <span class="n">geometry</span><span class="o">=</span><span class="n">rxd</span><span class="o">.</span><span class="n">FractionalVolume</span><span class="p">(</span><span class="n">fe</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;er&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we define the membrane separating the cytosol from the ER. rxd.MultiCompartmentReactions crossing this membrane will be scaled by its surface area. Given that we are assuming that all chunks of neuron have ER and cytosol mixed together in the same way, it follows that the area of the membrane within a volume should be proportional to the size of that volume. We indicate this using the rxd.DistributedBoundary geometry. This is typically the right rule for separating two volumes defined
+as rxd.FractionalVolumes:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cyt_er_membrane</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">(),</span> <span class="n">geometry</span><span class="o">=</span><span class="n">rxd</span><span class="o">.</span><span class="n">DistributedBoundary</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cyt_er_membrane&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here the argument 2 to rxd.DistributedBoundary indicates that there is 2 μm2 of ER boundary per cubic micron of volume. Ideally, this number would be based on empirical data, but for now we choose it arbitrarily.</p>
+</section>
+<section id="Species">
+<h2>Species<a class="headerlink" href="#Species" title="Link to this heading"></a></h2>
+<p>Recall that the definition of an rxd.Species has the general form:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">regions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">atolscale</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>where:</p>
+<ul><li><p>regions can either be a single region or a list of regions.</p>
+</li><li><p>d is the diffusion coefficient for the species; if none is specified, the species does not diffuse.</p>
+</li><li><p>name assigns a name to the Species that syncs with the rest of NEURON (NMODL, GUI tools, variables of the form e.g. cai, etc)</p>
+</li><li><p>charge refers to the charge of the Species; e.g. a calcium ion would have charge 2</p>
+</li><li><p>initial refers to the initial concentration of the Species. If initial is not specified and the Species has a name and exists on an rxd.Region with nrn_region set, then NEURON’s default initialization rules apply; otherwise the default is 0.</p>
+</li><li><p>atolscale indicates a tolerance scale factor for variable step integration and is especially important for calcium and other substances with a low concentration</p>
+</li></ul><p>Because these are keyword arguments, they can be left out or even entered in any order.</p>
+<p>We suppose calcium exists in both the ER and cytosol, and IP3 is present in the cytosol alone:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">caCYT_init</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">ca</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">([</span><span class="n">cyt</span><span class="p">,</span> <span class="n">er</span><span class="p">],</span> <span class="n">d</span><span class="o">=</span><span class="n">caDiff</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ca&quot;</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">caCYT_init</span><span class="p">)</span>
+<span class="n">ip3</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cyt</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">ip3Diff</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">ip3_init</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We apologize, but this tutorial is incomplete and under revision. Please continue to explore the other examples. If you want to get a sense of where this is going, this is based on an older example but that file has a number of issues.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="circadian.html" class="btn btn-neutral float-left" title="Example: Circadian rhythm" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="combining%20currents%20from%20mod%20files%20with%20rxd.html" class="btn btn-neutral float-right" title="Example: combining MOD file ion channels with rxd" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

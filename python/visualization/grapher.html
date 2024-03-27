@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grapher &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="PlotShape" href="plotshapeclass.html" />
+    <link rel="prev" title="Graph" href="graph.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON Python documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#visualization">Visualization</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="glyph.html">Glyph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="graph.html">Graph</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Grapher</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#plot">Plot</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eraseall">EraseAll</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#steps">Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#independentvar">IndependentVar</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generator">Generator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#indepbegin">IndepBegin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#independ">IndepEnd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#xexpr">Xexpr</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="plotshapeclass.html">PlotShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotshape.html">PlotShape Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rvarplt.html">RangeVarPlot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="notify.html">Notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html">GUI Look And Feel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapebox.html">MenuExplore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oldgrph.html">Obsolete Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON Python documentation</a></li>
+      <li class="breadcrumb-item active">Grapher</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../hoc/visualization/grapher.html" >  Switch to HOC</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/python/visualization/grapher.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="grapher">
+<span id="id1"></span><h1>Grapher<a class="headerlink" href="#grapher" title="Link to this heading"></a></h1>
+<p>A tool for graphing any set of expressions as a function of
+an independent variable.</p>
+<p>The Grapher is similar to a “for” statement.
+It iterates the independent variable over the range specified by the
+“Indep Begin” and “Indep End” field editors using “Steps” steps.
+At each step, it executes the statements
+specified in the Generator field (if any), and plots the values that are
+specified in the Graph scene from the <a class="reference internal" href="gui.html#gui-plotwhat"><span class="std std-ref">PlotWhat</span></a> menu item at the x-axis
+location specified by the value of the “X-expr” (normally the same
+as the independent variable).</p>
+<p>These y values and X-expr can be variable names or function names.</p>
+<p>To pop up the widget say:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;grapher.hoc&quot;</span><span class="p">)</span>  <span class="c1"># reads this file</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">makegrapher</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>            <span class="c1"># pop up a new grapher</span>
+</pre></div>
+</div>
+<p>Creating a grapher using</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="n">h</span><span class="o">.</span><span class="n">makegrapher</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>pops up a short form of the Grapher without “Indep Begin”, “Indep
+End”, or “X-expr” buttons. The limits are defined by the x-axis length
+of the current view.</p>
+<p>Graphers may be saved in a .ses file.</p>
+<p>To use the grapher widget:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>enter the independent variable name (press the button) eg. x</p></li>
+<li><p>enter the begin, end, and steps values.</p></li>
+<li><p>specify the y variables:
+in the graph panel press the left button and select “Plot What?”
+and enter a HOC expression or variable to plot. eg. sin(x)
+You can do this several times to plot several expressions.</p></li>
+<li><p>If the y variables are actual functions of the independent variable
+press the Plot button to see the plot. If the y variables
+are in fact just variables then you will need a generator
+statement that tells how to compute the y variables given
+a value of the independent variable. eg. Just for fun you can
+try entering the generator statement: <code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">x,</span> <span class="pre">sin(x)</span></code></p></li>
+</ol>
+</div></blockquote>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    Example 1: plot sin(t)
+    1) PlotWhat: sin(t)
+    2) Plot
+
+    Example 2: plot of steady state m process in nrniv
+    1) Independent Var: x
+    2) Generator: rates_hh(x)
+    3) IndepBegin -100, Indep End 50
+    4) Set View: x: -100 50  y: 0 1
+    5) PlotWhat: minf_hh
+    6) Plot
+
+    Example 3: In context of Neuron Main Menu simulation
+    0) pop up grapher by selecting appropriate &quot;New Graph&quot; submenu item.
+    1) Independent Var: v_init
+    2) Generator: init()
+    3) IndepBegin -100, Indep End 50
+    4) SetView: x: -100 50 y:cancel
+    5) PlotWhat: &lt;any set of variables in any section&gt;
+    6) Plot
+
+    Example 4: peak inward current during voltage clamp
+    Replace the standard: proc advance() {fadvance()} with a procedure
+    that stores the peak inward current (and possibly sets stoprun=1
+    when you are past the peak). Then in the Grapher set Steps to 20
+    the independent variable to the voltage clamp amplitude and the
+    generator to run().
+</pre></div>
+</div>
+<section id="plot">
+<h2>Plot<a class="headerlink" href="#plot" title="Link to this heading"></a></h2>
+<p>For each value of the independent variable the generator statement
+is executed (if it exists) and the PlotWhat expressions are plotted.</p>
+</section>
+<section id="eraseall">
+<h2>EraseAll<a class="headerlink" href="#eraseall" title="Link to this heading"></a></h2>
+<p>Removes all expressions from the graph.</p>
+</section>
+<section id="steps">
+<h2>Steps<a class="headerlink" href="#steps" title="Link to this heading"></a></h2>
+<p>Number of independent variable values used to make the graph.
+For the small grapher, the range of the independent variable is
+the length of the x-axis.</p>
+</section>
+<section id="independentvar">
+<h2>IndependentVar<a class="headerlink" href="#independentvar" title="Link to this heading"></a></h2>
+<p>Dialog appears requesting the variable to be used as the independent
+variable (default t). If the variable is undefined it will
+be created.</p>
+</section>
+<section id="generator">
+<h2>Generator<a class="headerlink" href="#generator" title="Link to this heading"></a></h2>
+<p>A statement to be executed after setting a value of the independent
+variable but before plotting the expressions. This allows plotting
+of variables that depend implicitly on the independent variable.</p>
+</section>
+<section id="indepbegin">
+<h2>IndepBegin<a class="headerlink" href="#indepbegin" title="Link to this heading"></a></h2>
+<p>For a grapher made with <code class="docutils literal notranslate"><span class="pre">h.makegrapher(1)</span></code>, specifies initial value
+of the independent variable.</p>
+</section>
+<section id="independ">
+<h2>IndepEnd<a class="headerlink" href="#independ" title="Link to this heading"></a></h2>
+<p>Specifies final value of independent variable.</p>
+</section>
+<section id="xexpr">
+<h2>Xexpr<a class="headerlink" href="#xexpr" title="Link to this heading"></a></h2>
+<p>A grapher made with <code class="docutils literal notranslate"><span class="pre">h.makegrapher(1)</span></code> allows separate specification of
+independent variable and the x axis plot functions. This allows
+phase plane plots. The Xexpr may be any function of the independent
+variable or an implicit function if a generator statement exists.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="graph.html" class="btn btn-neutral float-left" title="Graph" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plotshapeclass.html" class="btn btn-neutral float-right" title="PlotShape" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

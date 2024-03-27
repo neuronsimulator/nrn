@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview of the Tasks &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Custom Initialization" href="custom-initialization.html" />
+    <link rel="prev" title="Inhomogeneous Channel Distribution" href="specifying_inhomogeneous_channel_dis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="exercises2018.html">NEURON Course Exercises</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro_to_gui.html">Introduction to the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interactive_modeling.html">Interactive Modeling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="the_cellbuilder.html">Using the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neuron_scripting_exercises.html">NEURON scripting exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_morphometric_data.html">Working with Morphometric Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nmodl_files.html">Using NMODL files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_modeldb_and_modelview.html">Using ModelDB with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rxd_exercises.html">Reaction-Diffusion Exercises</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html#physical-system">Physical System</a></li>
+<li class="toctree-l3"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html#conceptual-model">Conceptual Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html#computational-model">Computational Model</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="specifying_inhomogeneous_channel_dis.html#the-exercise">The exercise</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Overview of the Tasks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#details">Details</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="custom-initialization.html">Custom Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction_to_the_linear_circuit.html">Introduction to the Linear Circuit Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="state_and_parameter_discontinuities.html">State and parameter discontinuities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_runs_with_bulletin_board.html">Batch runs with bulletin board parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html">HOC Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#operators-and-numerical-functions">Operators and numerical functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#conditionals">Conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hoc_exercises.html#procedures-and-functions">Procedures and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multithread_parallelization.html">Multithreaded parallelization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro_to_the_network_builder.html">Introduction to the Network Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_ready_cells_from_the_cellb.html">Network ready cells from the CellBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html">Hopfield Brody synchronization (sync) model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#beyond-the-gui-saving-and-displaying-spikes">Beyond the GUI – Saving and displaying spikes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#synchronization-measures">Synchronization measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#procedure-interval2-in-ocomm-hoc-sets-cell-periods-randomly">Procedure interval2() in ocomm.hoc sets cell periods randomly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#rewiring-the-network">Rewiring the network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#assessing-connectivity">Assessing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#graphing-connectivity">Graphing connectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hopfield_brody_network_in_python.html#animate">Animate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi_parallelization.html">Parallel Computing with MPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_nsg_portal.html">Using the Neuroscience Gateway (NSG) portal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="numerical-methods-exercises.html">Numerical Methods Exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="electrotonic_analysis.html">Electrotonic Analysis with NEURON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="exercises2018.html">NEURON Course Exercises</a></li>
+          <li class="breadcrumb-item"><a href="specifying_inhomogeneous_channel_dis.html">Inhomogeneous Channel Distribution</a></li>
+      <li class="breadcrumb-item active">Overview of the Tasks</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/courses/hints_for_inhomogeneous_channel_dist.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview-of-the-tasks">
+<span id="hints-for-inhomogeneous-channel-distribution"></span><h1>Overview of the Tasks<a class="headerlink" href="#overview-of-the-tasks" title="Link to this heading"></a></h1>
+<ol class="arabic">
+<li><p>Specify the</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>subset</p></li>
+<li><p>distance metric <code class="docutils literal notranslate"><span class="pre">p</span></code></p></li>
+<li><p>parameter <code class="docutils literal notranslate"><span class="pre">param</span></code> that depends on distance</p></li>
+<li><p>function <code class="docutils literal notranslate"><span class="pre">f</span></code> that governs the relationship between the parameter and the distance metric</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Verify the implementation.</p></li>
+</ol>
+</section>
+<section id="details">
+<h1>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h1>
+<p>This involves a lot of steps–remember to save intermediate results to session files!</p>
+<p><strong>Act 1: Specify the subset</strong></p>
+<p>On the CellBuilder’s Subsets page, create the subset.</p>
+<p><strong>Act 2: Specify the distance metric</strong></p>
+<p>Do this with a SubsetDomainIterator.</p>
+<ul>
+<li><p>Create a SubsetDomainIterator.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Click on the subset, then click on “Parameterized Domain Page”</p></li>
+<li><p>Click on “Create a SubsetDomainIterator”.</p></li>
+</ul>
+<p>The name of the SubsetDomainIterator will appear in the middle panel of the CellBuilder. It will be called name_x, where <em>name</em> is the name of the subset.</p>
+</div></blockquote>
+</li>
+<li><p>Use the SubsetDomainIterator to specify the distance metric.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Click on name_x.</p></li>
+</ul>
+<p>The right panel of the CellBuider will show the controls for specifying the distance metric. Default is path length in µm from the root of the cell (0 end of soma).</p>
+<p>Drag the slider back and forth to see the corresponding location(s) in the shape plot (boundary between red and black). Distance from the root to the red-black boundary is shown on the canvas as “p=nnn.nnn”. You can also click on the canvas near the shape and drag the cursor back and forth; the canvas will now show the “range” of the boundary in the nearest section, and the name of that section.</p>
+<ul class="simple">
+<li><p><strong>metric</strong> offers three choices: path length from root, radial (euclidian) distance from root, and “projection onto line” (distance from a plane that passes through the root and is orthogonal to the principal axis of the root section).</p></li>
+<li><p><strong>proximal</strong> allows specifying an “offset” for the proximal end(s) of the subset. This lets you assign a distance of 0 to the origin of the apical tree.</p></li>
+<li><p><strong>distal</strong> allows specifying whether or not to normalize the distance metric, and if normalized, whether the metric is to become 1 only at the most distal end, or at all distal ends.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p><strong>Act 3: Specify the parameters that depend on distance</strong></p>
+<p>Do this on the CellBuilder’s Biophysics page.</p>
+<ul>
+<li><p>Select Strategy (make a check mark appear in the box).</p>
+<blockquote>
+<div><p>name_x (the name of the SubsetDomainIterator) will appear in the middle panel.</p>
+</div></blockquote>
+</li>
+<li><p>Click on name_x.</p></li>
+<li><p>In the right panel of the CellBuider, select the parameters that the SubsetDomainIterator will control.</p></li>
+</ul>
+<p><strong>Intermezzo</strong></p>
+<p>Time to step back and see where we are.</p>
+<p>At this point, name_x “knows” these things:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the sections that are in its subset</p></li>
+<li><p>the distance metric for each spatial location in these sections</p></li>
+<li><p>the parameters in these sections that will be governed by this distance metric</p></li>
+</ul>
+</div></blockquote>
+<p>But it doesn’t know the functional relationships between the parameters and the distance metric–and each parameter can have its own function. Defining these functions is the next item to take care of.</p>
+<p><strong>Act 4: Specify the functional relationship between each parameter and the distance metric</strong></p>
+<ul>
+<li><p>Clear the Strategy checkbox.</p>
+<blockquote>
+<div><p>name_x will appear in the middle panel of the CellBuilder, and beneath it will be the names of each of the paramters that were selected in the strategy.</p>
+</div></blockquote>
+</li>
+<li><p>Click on one of the parameter names.</p>
+<blockquote>
+<div><p>The right hand panel presents controls for specifying f.</p>
+<p>The default is a Boltzmann function. <strong>f(p)</strong> offers this and three other choices:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Ramp</strong> (linear)</p></li>
+<li><p><strong>Exponential</strong></p></li>
+<li><p><strong>New</strong> lets you enter your own function</p></li>
+</ul>
+</div></blockquote>
+<p>Each of these has its own list of user-settable parameters.</p>
+<p><strong>show</strong> allows you to bring up a graph or shape plot for visual confirmation of how the biophysical parameter varies in space. This is convenient, but you’ll probably want to check the finished model with Model View.</p>
+</div></blockquote>
+</li>
+</ul>
+<p><strong>Finale</strong></p>
+<p>Turn on Continuous Create, and use Model View to verify the channel distributions.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="specifying_inhomogeneous_channel_dis.html" class="btn btn-neutral float-left" title="Inhomogeneous Channel Distribution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="custom-initialization.html" class="btn btn-neutral float-right" title="Custom Initialization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

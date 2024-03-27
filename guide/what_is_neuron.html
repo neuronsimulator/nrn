@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What is NEURON &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to get started with NEURON" href="how_to_get_started.html" />
+    <link rel="prev" title="Guides" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">What is NEURON</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-flexible-and-powerful-simulator-of-neurons-and-networks">A flexible and powerful simulator of neurons and networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advantages-over-general-purpose-simulators">Advantages over general-purpose simulators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#separates-biology-from-purely-computational-concerns">Separates biology from purely computational concerns</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#working-with-familiar-idioms">Working with familiar idioms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#integrator-independent-model-specification">Integrator-independent model specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#efficient-and-painless-spatial-and-temporal-discretization">Efficient and painless spatial and temporal discretization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#convenient-user-interface">Convenient user interface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-interpreters">The interpreters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-graphical-user-interface">The graphical user interface</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#user-extendable-library-of-biophysical-mechanisms">User-extendable library of biophysical mechanisms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enhancements-for-modeling-networks">Enhancements for modeling networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#customizable-initialization-and-simulation-flow-control">Customizable initialization and simulation flow control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#large-user-base">Large user base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#development-support-and-documentation">Development, support, and documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#availability-and-system-requirements">Availability and system requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+      <li class="breadcrumb-item active">What is NEURON</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/what_is_neuron.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="what-is-neuron">
+<h1>What is NEURON<a class="headerlink" href="#what-is-neuron" title="Link to this heading"></a></h1>
+<p>NEURON:</p>
+<ul class="simple">
+<li><p>is a flexible and powerful simulator of neurons and networks</p></li>
+<li><p>has important advantages over general-purpose simulators</p></li>
+<li><p>helps users focus on important biological issues rather than purely computational concerns</p></li>
+<li><p>has a convenient user interface</p></li>
+<li><p>has a user-extendable library of biophysical mechanisms</p></li>
+<li><p>has many enhancements for efficient network modeling</p></li>
+<li><p>offers customizable initialization and simulation flow control</p></li>
+<li><p>is widely used in neuroscience research by experimentalists and theoreticians</p></li>
+<li><p>is well-documented and actively supported</p></li>
+<li><p>is free, open source, and runs on (almost) everything</p></li>
+</ul>
+<section id="a-flexible-and-powerful-simulator-of-neurons-and-networks">
+<h2>A flexible and powerful simulator of neurons and networks<a class="headerlink" href="#a-flexible-and-powerful-simulator-of-neurons-and-networks" title="Link to this heading"></a></h2>
+<p>NEURON is a simulation environment for modeling individual neurons and networks of neurons. It provides tools for conveniently building, managing, and using models in a way that is numerically sound and computationally efficient. It is particularly well-suited to problems that are closely linked to experimental data, especially those that involve cells with complex anatomical and biophysical properties.</p>
+</section>
+<section id="advantages-over-general-purpose-simulators">
+<h2>Advantages over general-purpose simulators<a class="headerlink" href="#advantages-over-general-purpose-simulators" title="Link to this heading"></a></h2>
+<p>NEURON had its beginnings in the laboratory of John W. Moore at Duke University, where he and Michael Hines started their collaboration to develop simulation software for neuroscience research. It has benefited from judicious revision and selective enhancement, guided by feedback from the growing number of neuroscientists who have used it to incorporate empirically-based modeling into their research strategies.</p>
+<p>NEURON’s computational engine employs special algorithms that achieve high efficiency by exploiting the structure of the equations that describe neuronal properties. It has functions that are tailored for conveniently controlling simulations, and presenting the results of real neurophysiological problems graphically in ways that are quickly and intuitively grasped. Instead of forcing users to reformulate their conceptual models to fit the requirements of a general purpose simulator, NEURON is designed to let them deal directly with familiar neuroscience concepts. Consequently, users can think in terms of the biophysical properties of membrane and cytoplasm, the branched architecture of neurons, and the effects of synaptic communication between cells.</p>
+</section>
+<section id="separates-biology-from-purely-computational-concerns">
+<h2>Separates biology from purely computational concerns<a class="headerlink" href="#separates-biology-from-purely-computational-concerns" title="Link to this heading"></a></h2>
+<p>From its inception, one of NEURON’s design goals has been to help modelers address high-level neuroscience research questions without being distracted by low-level mathematical or computational issues. Here are some of the strategies that help it approach this goal.</p>
+<section id="working-with-familiar-idioms">
+<h3>Working with familiar idioms<a class="headerlink" href="#working-with-familiar-idioms" title="Link to this heading"></a></h3>
+<p>The most important strategy is to offer users what might be called “natural syntax,” which allows them to specify model properties in familiar idioms, rather than having to cast kinetic schemes or differential equations in the form of statements in C or some other generic programming language. Perhaps the most prominent example of natural syntax in NEURON is the notion of a section, which is a continuous unbranched cable (directly analogous to an unbranched neurite). Sections can be connected together to form branched trees, and are endowed with properties that can vary continuously with position along their lengths. Sections let investigators represent neuronal anatomy without having to wrestle with the cable equation. They also easily lend themselves to manipulation by graphical tools, such as the CellBuilder, for building and managing models. Other examples of natural syntax are seen in the NMODL programming language, and in the Linear Circuit Builder and Channel Builder (see User-extendable library of biophysical mechanisms below).</p>
+</section>
+<section id="integrator-independent-model-specification">
+<h3>Integrator-independent model specification<a class="headerlink" href="#integrator-independent-model-specification" title="Link to this heading"></a></h3>
+<p>NEURON offers several different, user-selectable numerical integration methods.</p>
+<ul class="simple">
+<li><p>The default integration method is implicit Euler, which provides robust stability and first order accuracy in time (sufficient for most applications).</p></li>
+<li><p>There is also a Crank-Nicholson method that provides second order accuracy at little additional computational cost. However, this is prone to numerical oscillations if dt is too long, voltage clamps are present, or system states are described by algebraic equations.</p></li>
+<li><p>Increased accuracy, faster run times, and sometimes both, may be achieved by choosing adaptive integration, which adjusts integration order and time step as necessary to satisfy a local error criterion. For historical reasons, the adaptive integrators are genericallly called “CVODE” in NEURON; the actual method is either IDA (Hindmarsh and Taylor, 1999) or CVODES (Hindmarsh and Serban, 2002), a decision that is made automatically (i.e. without requiring user judgement) depending on whether or not a model involves states that are described by algebraic equations.</p></li>
+</ul>
+<p>Users can switch between these integration methods without having to rewrite the model specification because NEURON avoids computation-specific representations of biological properties. This convenience is essential because deciding which method is best in any particular situation is often an empirical question. Further details about numeric integration in NEURON are provided in chapter 4 of The NEURON Book (Carnevale and Hines, 2006).</p>
+</section>
+<section id="efficient-and-painless-spatial-and-temporal-discretization">
+<h3>Efficient and painless spatial and temporal discretization<a class="headerlink" href="#efficient-and-painless-spatial-and-temporal-discretization" title="Link to this heading"></a></h3>
+<p>Another important strategy is to allow users to defer or avoid the explicit specification of spatial and temporal discretization. NEURON’s approach to spatial discretization, which sets it apart from other modeling tools, eliminates preoccupation with compartments. This approach has two components:</p>
+<ol class="arabic simple">
+<li><p>Each section has its own discretization parameter nseg, which governs the number of internal points at which the discretized form of the cable equation is integrated, and can be changed after the anatomical and biophysical properties of the model have been specified.</p></li>
+<li><p>Parameters and variables that are spatially nonuniform are described in terms of normalized distance from one end of the section, e.g. soma.v(0.5) means the membrane potential midway between the 0 and 1 ends of the soma section.</p></li>
+</ol>
+<p>In addition, NEURON provides tools that can automatically take care of discretization. Numerical simulation of models of biological neurons can pose a special challenge because such models tend to include mechanisms that span a wide range of spatial and temporal scales, with state variables that involve a wide range of magnitudes. With the CellBuilder, users may apply the d_lambda rule (Hines and Carnevale 2001; p. 122 et seq. in Carnevale and Hines 2006), to automatically assign values of nseg based on the model’s anatomical and biophysical properties. The d_lambda rule can also be applied via hoc code. Similarly, the error tolerances that govern time step size (and integration order) during adaptive integration can be adjusted automatically by the GUI’s Absolute Tolerance Scale Tool, which is part of the VariableTimeStep tool.</p>
+</section>
+</section>
+<section id="convenient-user-interface">
+<h2>Convenient user interface<a class="headerlink" href="#convenient-user-interface" title="Link to this heading"></a></h2>
+<section id="the-interpreters">
+<h3>The interpreters<a class="headerlink" href="#the-interpreters" title="Link to this heading"></a></h3>
+<p>NEURON offers users a choice of programming languages. Most programming has been done done with hoc, an interpreted language with C-like syntax (Kernighan and Pike, 1984) that has been extended to include functions specific to the domain of modeling neurons, implementing a graphical interface, and object-oriented programming. More recently, Python was adopted as an alternative interpreter. All hoc variables, procedures, and functions can be accessed from Python, and vice-versa. This provides a tremendous degree of flexibility for setting up the anatomical and biophysical properties of models, defining the appearance of the graphical interface, controlling simulations, and plotting results.</p>
+<p>Users can take advantage of multiprocessors or workstation clusters in order to accelerate embarrassingly parallel problems, such as optimization and parameter space exploration. Furthermore, network models, and complex models of a single neuron, can be distributed over multiple processors to achieve nearly linear speedup.</p>
+</section>
+<section id="the-graphical-user-interface">
+<h3>The graphical user interface<a class="headerlink" href="#the-graphical-user-interface" title="Link to this heading"></a></h3>
+<p>The default graphical user interface can be used to create and exercise models that have a wide range of complexity. With the GUI, it is possible to generate publication-quality results without having to write any program code at all. However, the most flexible and powerful strategy is to combine hoc programming and the GUI in order to exploit the strengths of both approaches.</p>
+<p>Many GUI tools are designed to be analogous to biology and lab instrumentation, and are very convenient for initial exploratory simulations, setting parameters, common control of voltage and current stimuli, and graphing variables as functions of time and position. Perhaps the most noteworthy model specification tools are</p>
+<ul class="simple">
+<li><p>The Channel Builder, which is discussed below (see User-extendable library of biophysical mechanisms).</p></li>
+<li><p>The CellBuilder, which can be used to create new models of cells from scratch and modify existing models without writing any code. Biophysical properties may be constant over the length of each section, or governed by user-specified functions of position according to radial distance from a point, path distance from a reference location in the cell, or distance along an axis in the xy plane.</p></li>
+<li><p>The Import3D tool, which can convert morphometric data from Eutectic, Neurolucida, and SWC formats into model cells. It fixes many common errors automatically, and helps pinpoint complex problems that require judgment.</p></li>
+<li><p>The Linear Circuit Builder, a tool for setting up models that involve gap junctions, ephaptic interactions, dual-electrode voltage clamps, dynamic clamps, or other combinations of neurons and electrical circuit elements. For example, this model of a dynamic clamp was implemented with the Linear Circuit Builder.</p></li>
+<li><p>The Network Builder, which can be used to prototype small networks that can be mined later for reusable code in order to create large-scale networks.</p></li>
+</ul>
+<p>There are also powerful tools for model analysis and optimization.</p>
+<ul class="simple">
+<li><p>The ModelView tool automatically discovers model properties and presents them in a browsable textual and graphical form. This can be very helpful for code development and maintenance. It is growing increasingly important as code sharing becomes more common, not only because it helps users understand each others’ models, but also because it can emit and import model specifications in XML, thereby facilitating interoperability with other simulators.</p></li>
+<li><p>The Impedance tools perform electrotonic analyses of a model cell, including input and transfer impedance, voltage transfer ratios, and the electrotonic transformation, and presents the results in easily understood graphs.</p></li>
+<li><p>The Multiple Run Fitter facilitates setting up and managing optimization protocols for automated tuning of model parameters that are constrained by data from one or more experimental protocols.</p></li>
+</ul>
+<p>For some examples of how NEURON can be used, be sure to see Demonstrations and examples.</p>
+</section>
+</section>
+<section id="user-extendable-library-of-biophysical-mechanisms">
+<h2>User-extendable library of biophysical mechanisms<a class="headerlink" href="#user-extendable-library-of-biophysical-mechanisms" title="Link to this heading"></a></h2>
+<p>User-defined mechanisms such as voltage- and ligand-gated ion channels, diffusion, buffering, active transport, etc., can be added by writing model descriptions in NMODL, a high-level programming language that has a simple syntax for expressing kinetic schemes and sets of simultaneous algebraic and/or differential equations. NMODL can also be used to write model descriptions for new classes of artificial spiking cells. These model descriptions are compiled so that membrane voltage and states can be computed efficiently using integration methods that have been optimized for branched structures. A large number of mechanisms written in NMODL have been made available on the WWW by the authors of published models; many of these have been entered into <a class="reference external" href="https://modeldb.yale.edu">ModelDB</a> which makes it easy for users to find and retrieve model source code according to search criteria such as author, type of model (e.g. cell or network), ionic currents, etc..</p>
+<p>As mentioned above, NEURON also has a GUI tool called the ChannelBuilder that makes it easy to specify voltage- and ligand-gated ion channels in terms of ODEs (HH-style, including Borg-Graham formulation) and/or kinetic schemes. ChannelBuilder channels actually execute faster than identical mechanisms specified with NMODL. Their states and total conductance can be simulated as deterministic (continuous in time), or stochastic (countably many channels with independent state transitions, producing random, abrupt conductance changes).</p>
+</section>
+<section id="enhancements-for-modeling-networks">
+<h2>Enhancements for modeling networks<a class="headerlink" href="#enhancements-for-modeling-networks" title="Link to this heading"></a></h2>
+<p>Although NEURON began in the domain of single-cell models, since the early 1990s it has been applied to network models that contain large numbers of cells and connections. Its suitability for network models has been enhanced by the introduction of features that include</p>
+<ul class="simple">
+<li><p>an event delivery system that manages delivery of spike events to synaptic targets, and has enabled the implementation of artificial spiking cells that are several orders of magnitude faster than biophysical model cells and can be used in network models that may also include biophysical model cells</p></li>
+<li><p>a Network Connection object class, which has greatly simplified the construction and management of networks</p></li>
+<li><p>generalized synapses which facilitate computationally efficient implementation of synaptic convergence, while allowing stream-specific synaptic plasticity governed by user-specified rules (e.g. use-dependent and/or spike-timing-dependent plasticity)</p></li>
+<li><p>global and local variable-order, variable-stepsize integration methods, which can substantially shorten runtimes for some models</p></li>
+<li><p>ability to implement network models that are distributed across processors in a parallel computational architecture (Migliore et al, 2006). Properly written code will work on a single processor standalone PC, or on parallel hardware, without modification.</p></li>
+</ul>
+</section>
+<section id="customizable-initialization-and-simulation-flow-control">
+<h2>Customizable initialization and simulation flow control<a class="headerlink" href="#customizable-initialization-and-simulation-flow-control" title="Link to this heading"></a></h2>
+<p>Complex models often require custom initialization and/or simulation flow control. Simulation control in NEURON employs a standard run system that is designed for convenient customization.</p>
+</section>
+<section id="large-user-base">
+<h2>Large user base<a class="headerlink" href="#large-user-base" title="Link to this heading"></a></h2>
+<p>As of February 2021, we know of <a class="reference external" href="https://neuron.yale.edu/neuron/publications/neuron-bibliography">more than 2400 scientific articles and books have reported work that was done with NEURON</a>. The NEURON mailing list has about 500 subscribers, and <a class="reference external" href="https://www.neuron.yale.edu/phpBB/">The NEURON Forum</a>, which was started in May 2005 and is gradually supplanting the old mailing list, has more than 1600 registered users and over 17,000 posted messages in greater than 4000 discussion threads.</p>
+</section>
+<section id="development-support-and-documentation">
+<h2>Development, support, and documentation<a class="headerlink" href="#development-support-and-documentation" title="Link to this heading"></a></h2>
+<p>NEURON is actively developed and supported, with new standard releases appearing about twice a year, supplemented by bug fixes as needed. Alpha versions that contain “the very latest features” are made available at shorter intervals.</p>
+<p>Support is available by email, telephone, and consultation. Users can also post questions and share information with other members of the NEURON community through a mailing list and the NEURON Forum. In addition to being a browsable and searchable venue for discussions on specific questions, the Forum contains a growing list of tips, how-tos, and hacks of interest to users at all levels of expertise.</p>
+<p>Extensive documentation is available, including an on-line programmer’s reference, FAQ list, tutorials, and preprints of key articles about NEURON. The authoritative book about NEURON is The NEURON Book (Carnevale and Hines, 2006). Four other books have made extensive use of NEURON (Destexhe and Sejnowski, 2001; Johnston and Wu, 1995; Lytton, 2002; Moore and Stuart, 2000), and several of these include source code or have made it available online.</p>
+<p>One day courses on NEURON are presented as a satellite to the annual meetings of the Society for Neuroscience, and intensive five day hands-on summer courses are given at the University of California in San Diego and other locations; <a class="reference external" href="https://neuron.yale.edu/neuron/courses">click here for announcements of future courses</a>. Special seminars and tutorials are presented at The NEURON Simulator Meeting, an episodic gathering of neuroscience investigators and educators who are interested in using computational modeling in their work. Instruction and consultation on NEURON are also provided at the european Advanced Course in Computational Neuroscience.</p>
+</section>
+<section id="availability-and-system-requirements">
+<h2>Availability and system requirements<a class="headerlink" href="#availability-and-system-requirements" title="Link to this heading"></a></h2>
+<p>NEURON is distributed free of charge from <a class="reference external" href="https://neuron.yale.edu">neuron.yale.edu</a>. It runs on all popular hardware platforms under MSWin (98 or later), UNIX, Linux, and OS X, and on parallel hardware including Beowulf clusters, the IBM Blue Gene, and the Cray XT3.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>Carnevale, N.T. and Hines, M.L. The NEURON Book. Cambridge, UK: Cambridge University Press, 2006.</p>
+<p>Destexhe, A. and Sejnowski, T.J. Thalamocortical Assemblies. New York: Oxford University Press, 2001.</p>
+<p>Hindmarsh, A.C. and Serban, R. User documentation for CVODES, an ODE solver with sensitivity analysis capabilities. Lawrence Livermore National Laboratory, 2002.</p>
+<p>Hindmarsh, A.C. and Taylor, A.G. User documentation for IDA, a differential-algebraic solver for sequential and parallel computers. Lawrence Livermore National Laboratory, 1999.</p>
+<p>Hines, M.L. and Carnevale, N.T. NEURON: a tool for neuroscientists. The Neuroscientist 7:123-135, 2001.</p>
+<p>Johnston, D. and Wu, S.M.-S. Foundations of Cellular Neurophysiology. Cambridge,MA: MIT Press, 1995.</p>
+<p>Kernighan, B.W. and Pike, R. Appendix 2: Hoc manual. In: The Unix Programming Environment. Englewood Cliffs, NJ: Prentice-Hall, 1984.</p>
+<p>Lytton, W.W. From Computer to Brain. New York: Springer-Verlag, 2002.</p>
+<p>Migliore, M., Cannia, C., Lytton, W.W., Markram, H. and Hines, M.L. Parallel network simulations with NEURON. Journal of Computational Neuroscience 21:110-119, 2006.</p>
+<p>Moore, J.W. and Stuart, A.E. Neurons in Action: Computer Simulations with NeuroLab. Sunderland, MA: Sinauer Associates, 2000.</p>
+<p>SUNDIALS is available from <a class="reference external" href="https://computation.llnl.gov/projects/sundials">https://computation.llnl.gov/projects/sundials</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Guides" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_get_started.html" class="btn btn-neutral float-right" title="How to get started with NEURON" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

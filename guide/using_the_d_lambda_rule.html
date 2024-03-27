@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using the d_lambda Rule &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=36754332"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to change the background color used in shape plots and other graphs" href="nrn_defaults.html" />
+    <link rel="prev" title="Using Session Files for Saving and Retrieving Windows" href="using_session_files_for_saving.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="what_is_neuron.html">What is NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_get_started.html">How to get started with NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bio_faq.html">Biology Modeling FAQ</a></li>
+<li class="toctree-l2"><a class="reference internal" href="units.html">Units used in NEURON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="saveses.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cellbuilder.html">Using the Cell Builder GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="import3d.html">Using the Import3D GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network_builder_tutorials.html">Network Builder tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">Using NEURON’s Optimization Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modelview_compact_display.html">ModelView: Compact display of parameters for NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="randomness.html">Randomness in NEURON models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting_mechanisms_to_cpp.html">Adapting MOD files for C++ with NEURON 9.0[.dev]</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="faq.html">Frequently asked questions (FAQ)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="faq.html#now-that-i-ve-installed-neuron-how-do-i-run-it">Now that I’ve installed NEURON, how do I run it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-the-best-way-to-learn-how-to-use-neuron">What’s the best way to learn how to use NEURON?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-create-a-neuron-model">How do I create a NEURON model?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#help-i-m-having-a-hard-time-implementing-models">Help! I’m having a hard time implementing models!</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-can-t-neuron-read-the-text-file-or-hoc-file-that-i-created">Why can’t NEURON read the text file (or <code class="docutils literal notranslate"><span class="pre">hoc</span></code> file) that I created?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-print-a-hard-copy-of-a-neuron-window">How do I print a hard copy of a NEURON window?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-plot-something-other-than-membrane-potential">How do I plot something other than membrane potential?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-save-and-edit-figures">How do I save and edit figures?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-ve-used-the-neuron-main-menu-to-construct-and-manage-models-how-can-i-save-what-i-have-done">I’ve used the NEURON Main Menu to construct and manage models. How can I save what I have done?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-a-ses-session-file-can-i-edit-it">What is a ses (session) file? Can I edit it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-use-neuron-s-tools-for-electrotonic-analysis">How do I use NEURON’s tools for electrotonic analysis?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#why-should-i-use-an-odd-value-for-nseg">Why should I use an odd value for nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-s-a-good-stretegy-for-specifying-nseg">What’s a good stretegy for specifying nseg?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-background-color-used-in-neuron-s-shape-plots-and-other-graphs">How do I change the background color used in NEURON’s shape plots and other graphs?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-change-the-color-scale-used-in-shape-plots">How do I change the color scale used in shape plots?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-see-an-error-message-that-says-procedure-too-big-in-foo-hoc">I see an error message that says … procedure too big in ./foo.hoc …</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#where-can-i-find-examples-of-mod-files">Where can I find examples of mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-compile-mod-files">How do I compile mod files?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-can-t-get-mod-files-to-compile">I can’t get mod files to compile.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-installed-a-new-version-of-neuron-and-now-i-see-error-messages-like-this-mecanisms-fooba-needs-to-be-re-translated-its-version-5-2-c-code-is-incompatible-with-this-neuron-version">I installed a new version of NEURON, and now I see error messages like this: ‘mecanisms fooba needs to be re-translated. its version 5.2 “c” code is incompatible with this neuron version’.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-nmodl">Is there a list of functions that are built into NMODL?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-hoc">Is there a list of functions that are built into hoc?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-units-does-neuron-use-for-current-concentration-etc">What units does NEURON use for current, concentration, etc.?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#when-i-type-a-new-value-into-a-numeric-field-it-doesn-t-seem-to-have-any-effect">When I type a new value into a numeric field, it doesn’t seem to have any effect.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#what-is-the-difference-between-seclamp-and-vclamp-and-which-should-i-use">What is the difference between SEClamp and VClamp, and which should I use?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#seclamp-and-iclamp-just-deliver-rectangular-step-waveforms-how-can-i-make-them-produce-an-arbitrary-waveform-e-g-something-that-i-calculated-or-recorded-from-a-real-cell">SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-just-want-a-current-clamp-that-will-deliver-a-sequence-of-current-pulses-at-regular-intervals-vector-play-seems-like-overkill-for-this">I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-want-a-current-clamp-that-will-generate-a-pulse-when-i-send-it-an-event-or-that-i-can-use-to-produce-pulses-at-precalculated-times">I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#i-have-a-set-of-recorded-or-calculated-spike-times-how-can-i-use-these-to-drive-a-postsynaptic-mechanism">I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-can-i-read-data-from-a-binary-pclamp-file">How can I read data from a binary PClamp file?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="faq.html#how-do-i-exit-neuron-i-m-not-using-the-gui-and-when-i-enter-d-at-the-oc-prompt-it-doesn-t-do-anything">How do I exit NEURON? I’m not using the GUI, and when I enter ^D at the oc&gt; prompt it doesn’t do anything?</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="faq.html#is-there-a-list-of-functions-that-are-built-into-neuron">Is there a list of functions that are built into NEURON?</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="using_plotwhat_to_specify_a_variable.html">Using “Plot what?” to Specify a Variable to be plotted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="working_with_postscript_and_idraw.html">Working with PostScript and idraw figures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_session_files_for_saving.html">Using Session Files for Saving and Retrieving Windows</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Using the d_lambda Rule</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html">How to change the background color used in shape plots and other graphs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nrn_defaults.html#how-create-a-custom-colormap">How create a custom colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="how_to_get_started_with_neuron.html">How to get started with NEURON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="nmodls_built_in_functions.html">NMODL’s built-in functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html">UNITS Tutorial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#definition-of-new-units">Definition of new units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#function-and-argument-units">Function and Argument units</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-for-kinetic-blocks">Units for KINETIC blocks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="units_tutorial.html#units-in-neuron-models">Units in NEURON models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="finitialize_handler.html">FIinitializeHandler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="using_neuron_on_the_mac.html">Using NEURON on the Mac</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="faq.html">Frequently asked questions (FAQ)</a></li>
+      <li class="breadcrumb-item active">Using the d_lambda Rule</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/using_the_d_lambda_rule.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-the-d-lambda-rule">
+<span id="id1"></span><h1>Using the d_lambda Rule<a class="headerlink" href="#using-the-d-lambda-rule" title="Link to this heading"></a></h1>
+<p>The d_lambda rule is built into the CellBuilder and is available by clicking on a checkbox–see the CellBuilder tutorial.</p>
+<p>If you don’t use the GUI, you can still use the d_lambda rule. Just save this code</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Sets nseg in each section to an odd value</span>
+<span class="cm">    so that its segments are no longer than</span>
+<span class="cm">        d_lambda x the AC length constant</span>
+<span class="cm">    at frequency freq in that section.</span>
+
+<span class="cm">    Be sure to specify your own Ra and cm before calling geom_nseg()</span>
+
+<span class="cm">    To understand why this works,</span>
+<span class="cm">    and the advantages of using an odd value for nseg,</span>
+<span class="cm">    see  Hines, M.L. and Carnevale, N.T.</span>
+<span class="cm">            NEURON: a tool for neuroscientists.</span>
+<span class="cm">            The Neuroscientist 7:123-135, 2001.</span>
+<span class="cm">*/</span>
+
+<span class="c1">// these are reasonable values for most models</span>
+<span class="n">freq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="w">      </span><span class="c1">// Hz, frequency at which AC length constant will be computed</span>
+<span class="n">d_lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1</span>
+
+<span class="n">func</span><span class="w"> </span><span class="n">lambda_f</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">local</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">x2</span><span class="p">,</span><span class="w"> </span><span class="n">d1</span><span class="p">,</span><span class="w"> </span><span class="n">d2</span><span class="p">,</span><span class="w"> </span><span class="n">lam</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">n3d</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="mf">1e5</span><span class="o">*</span><span class="n">sqrt</span><span class="p">(</span><span class="n">diam</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">PI</span><span class="o">*</span><span class="n">$1</span><span class="o">*</span><span class="n">Ra</span><span class="o">*</span><span class="n">cm</span><span class="p">))</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="c1">// above was too inaccurate with large variation in 3d diameter</span>
+<span class="c1">// so now we use all 3-d points to get a better approximate lambda</span>
+<span class="w">        </span><span class="n">x1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arc3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="n">d1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">diam3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="n">lam</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n3d</span><span class="p">()</span><span class="mi">-1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">x2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arc3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">                </span><span class="n">d2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">                </span><span class="n">lam</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">x2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x1</span><span class="p">)</span><span class="o">/</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">d2</span><span class="p">)</span>
+<span class="w">                </span><span class="n">x1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x2</span><span class="w">   </span><span class="n">d1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d2</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="c1">//  length of the section in units of lambda</span>
+<span class="w">        </span><span class="n">lam</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e-5</span><span class="o">*</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">PI</span><span class="o">*</span><span class="n">$1</span><span class="o">*</span><span class="n">Ra</span><span class="o">*</span><span class="n">cm</span><span class="p">)</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">L</span><span class="o">/</span><span class="n">lam</span>
+<span class="p">}</span>
+
+<span class="n">proc</span><span class="w"> </span><span class="n">geom_nseg</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">soma</span><span class="w"> </span><span class="nf">area</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="c1">// make sure diam reflects 3d points</span>
+<span class="w">    </span><span class="n">forall</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">nseg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">int</span><span class="p">((</span><span class="n">L</span><span class="o">/</span><span class="p">(</span><span class="n">d_lambda</span><span class="o">*</span><span class="n">lambda_f</span><span class="p">(</span><span class="n">freq</span><span class="p">))</span><span class="o">+</span><span class="mf">0.9</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>in a file called <code class="docutils literal notranslate"><span class="pre">fixnseg.hoc</span></code></p>
+<p>After specifying the topolgy, geometry, and biophysics of your model, execute the statements</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">xopen</span><span class="p">(</span><span class="s">&quot;fixnseg.hoc&quot;</span><span class="p">)</span>
+<span class="n">geom_nseg</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using_session_files_for_saving.html" class="btn btn-neutral float-left" title="Using Session Files for Saving and Retrieving Windows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nrn_defaults.html" class="btn btn-neutral float-right" title="How to change the background color used in shape plots and other graphs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
