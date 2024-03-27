@@ -8,6 +8,7 @@
 #include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "multisplit.h"
+#include "node_order_optim/node_order_optim.h"
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
@@ -474,7 +475,11 @@ static void nrn_fixed_step_thread(neuron::model_sorted_token const& cache_token,
     setup_tree_matrix(cache_token, nt);
     {
         nrn::Instrumentor::phase p("matrix-solver");
-        nrn_solve(nth);
+        if (neuron::interleave_permute_type) {
+            neuron::solve_interleaved(nt.id);
+        } else {
+            nrn_solve(nth);
+        }
     }
     {
         nrn::Instrumentor::phase p("second-order-cur");

@@ -13,6 +13,7 @@
 #include "multicore.h"
 #include "nrnpy.h"
 #include "utils/profile/profiler_interface.h"
+#include "node_order_optim/node_order_optim.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -956,6 +957,14 @@ static double thread_how_many_proc(void*) {
     return double(i);
 }
 
+static double optimize_node_order(void*) {
+    hoc_return_type_code = 1;  // integer
+    if (ifarg(1)) {
+        neuron::nrn_optimize_node_order(int(chkarg(1, 0, 2)));
+    }
+    return double(neuron::interleave_permute_type);
+}
+
 static double sec_in_thread(void*) {
     hoc_return_type_code = 2;  // boolean
     Section* sec = chk_access();
@@ -1111,6 +1120,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"thread_stat", thread_stat},
                                 {"thread_busywait", thread_busywait},
                                 {"thread_how_many_proc", thread_how_many_proc},
+                                {"optimize_node_order", optimize_node_order},
                                 {"sec_in_thread", sec_in_thread},
                                 {"thread_ctime", thread_ctime},
                                 {"dt", thread_dt},
