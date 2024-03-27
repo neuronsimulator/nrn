@@ -177,15 +177,6 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
     return type == 0 ? 1 : 0;
 }
 
-int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
-                        NrnThread& nt,
-                        int& type,
-                        int& index) {
-    backward_wrapper();
-    throw std::runtime_error("Not implemented. [ivue]");
-}
-
-
 #if defined(HAVE_DLFCN_H)
 
 extern char* neuron_home;

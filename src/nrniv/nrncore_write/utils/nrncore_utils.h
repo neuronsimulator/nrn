@@ -8,10 +8,6 @@ struct NrnThread;
 void model_ready();
 int count_distinct(double* data, int len);
 extern void nrnbbcore_register_mapping();
-int nrn_dblpntr2nrncore(neuron::container::data_handle<double> pd,
-                        NrnThread& nt,
-                        int& type,
-                        int& index);
 
 int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
