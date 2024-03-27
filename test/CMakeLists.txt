@@ -23,7 +23,8 @@ add_executable(
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
   unit_tests/utils/enumerate.cpp
-  unit_tests/oc/hoc_interpreter.cpp)
+  unit_tests/oc/hoc_interpreter.cpp
+  cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
@@ -510,6 +511,12 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/nmodl/test_random.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_random.py)
+  nrn_add_test(
+    GROUP nmodl_tests
+    NAME "test_path_spaces"
+    SCRIPT_PATTERNS "test/nmodl/Project Path Space/test.*"
+    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+    COMMAND bash -c "pwd && cd 'test/nmodl/Project Path Space' && nrnivmodl")
 
   nrn_add_test_group(
     CORENEURON

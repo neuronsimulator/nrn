@@ -1,5 +1,4 @@
-#ifndef bounded_value_h
-#define bounded_value_h
+#pragma once
 
 #include <InterViews/adjust.h>
 
@@ -37,6 +36,3 @@ class BoundedValue: public Adjustable {
     Coord scroll_incr_;
     Coord page_incr_;
 };
-
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef hoc_code_h
-#define hoc_code_h
+#pragma once
 
 #include "redef.h"
 
@@ -50,6 +49,3 @@ extern void hoc_ifseclist(void), mech_uninsert(void);
 extern void simpleconnectsection(void), range_interpolate_single(void);
 extern void hoc_sec_internal_push(void);
 /* END NEWCABLE*/
-
-
-#endif

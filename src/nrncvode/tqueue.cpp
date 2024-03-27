@@ -43,20 +43,6 @@ of struct _spblk, we are really using TQItem
 
 void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 
-TQItem::TQItem() {
-    left_ = 0;
-    right_ = 0;
-    parent_ = 0;
-}
-
-TQItem::~TQItem() {}
-
-bool TQItem::check() {
-#if DOCHECK
-#endif
-    return true;
-}
-
 static void prnt(const TQItem* b, int level) {
     int i;
     for (i = 0; i < level; ++i) {

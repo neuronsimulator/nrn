@@ -27,8 +27,7 @@
  * SymChooser -- select a Symbol
  */
 
-#ifndef symchooser_h
-#define symchooser_h
+#pragma once
 
 #include <InterViews/dialog.h>
 #include <InterViews/resource.h>
@@ -66,5 +65,3 @@ class SymChooser: public Dialog {
 };
 
 #include <InterViews/_leave.h>
-
-#endif
