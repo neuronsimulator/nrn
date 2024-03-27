@@ -119,7 +119,6 @@ set(SUNDIALS_USE_GENERIC_MATH 1)
 # =============================================================================
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
 nrn_check_include_files(execinfo.h HAVE_EXECINFO_H)
-nrn_check_include_files(fenv.h HAVE_FENV_H)
 nrn_check_include_files(malloc.h HAVE_MALLOC_H)
 nrn_check_include_files(strings.h HAVE_STRINGS_H)
 nrn_check_include_files(sys/types.h HAVE_SYS_TYPES_H)
@@ -152,8 +151,6 @@ nrn_check_symbol_exists("sigaction" "signal.h" HAVE_SIGACTION)
 nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
-nrn_check_cxx_symbol_exists("fesetround" "fenv.h" HAVE_FESETROUND)
-nrn_check_cxx_symbol_exists("feenableexcept" "fenv.h" HAVE_FEENABLEEXCEPT)
 
 # =============================================================================
 # Check data types

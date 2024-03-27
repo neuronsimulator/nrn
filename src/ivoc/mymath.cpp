@@ -5,6 +5,7 @@
 #include "oc2iv.h"
 #include <cmath>
 #include <cstdio>
+#include <cfenv>
 
 extern int hoc_return_type_code;
 
@@ -26,14 +27,9 @@ static double inside(void*) {
 int nrn_feround(int);
 // return last rounding mode and set to given mode if 1,2,3,4.
 // order is FE_DOWNWARD, FE_TONEAREST, FE_TOWARDZERO, FE_UPWARD
-#if defined(HAVE_FENV_H) && defined(HAVE_FESETROUND)
-#include <fenv.h>
 static int round_mode[] = {FE_DOWNWARD, FE_TONEAREST, FE_TOWARDZERO, FE_UPWARD};
-#endif
 int nrn_feround(int mode) {
-#if defined(HAVE_FENV_H) && defined(HAVE_FESETROUND)
-    int oldmode = fegetround();
-    int m;
+    int oldmode = std::fegetround();
     if (oldmode == FE_TONEAREST) {
         oldmode = 2;
     } else if (oldmode == FE_TOWARDZERO) {
@@ -46,12 +42,9 @@ int nrn_feround(int mode) {
         assert(0);
     }
     if (mode > 0 && mode < 5) {
-        nrn_assert(fesetround(round_mode[mode - 1]) == 0);
+        nrn_assert(std::fesetround(round_mode[mode - 1]) == 0);
     }
     return oldmode;
-#else
-    return 0;
-#endif
 }
 
 static double feround(void*) {
