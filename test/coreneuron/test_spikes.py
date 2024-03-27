@@ -127,7 +127,7 @@ def test_spikes(
             coreneuron.model_path = "coreneuron_input"
             run(0)
             # revert setting for the following coreneuron runs
-            coreneuron._model_path = None
+            coreneuron.model_path = None
 
     return h
 
