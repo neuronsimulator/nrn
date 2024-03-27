@@ -484,7 +484,8 @@ T* SPTree<T>::fast_next(T* n) const {
         return n;
     }
 
-    // If there is a right element, the next element is the smallest item on the most left of this right element
+    // If there is a right element, the next element is the smallest item on the most left of this
+    // right element
     if (T* x = n->rightlink; x != nullptr) {
         while (x->leftlink != nullptr) {
             x = x->leftlink;
