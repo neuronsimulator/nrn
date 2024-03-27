@@ -44,6 +44,11 @@ extern double* stdindex2ptr(int mtype,
                             int const* array_prefixsums,
                             int variable_count,
                             NrnThread&);
+extern double* stdindex2ptr(int mtype,
+                            int index,
+                            int const* array_dims,
+                            int variable_count,
+                            NrnThread&);
 extern void delete_trajectory_requests(NrnThread&);
 extern void nrn_cleanup();
 extern void nrn_cleanup_ion_map();

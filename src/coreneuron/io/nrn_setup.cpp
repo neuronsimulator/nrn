@@ -639,7 +639,6 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 double* stdindex2ptr(int mtype,
                      int index,
                      int const* array_dims,
-                     int const* array_prefixsums,
                      int variable_count,
                      NrnThread& nt) {
     if (mtype == voltage) {  // voltage
@@ -660,18 +659,21 @@ double* stdindex2ptr(int mtype,
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
 
-        int row_width = array_prefixsums[variable_count - 1];
+        int row_width = std::accumulate(array_dims, array_dims + variable_count, 0);
         int instance = index / row_width;
 
         int column_index = index % row_width;
         int variable_index = 0;
-        for (size_t k = 1; k < variable_count; ++k) {
-            if (column_index >= array_prefixsums[k - 1]) {
-                variable_index = k;
+        int prefix_sum = 0;
+        for (size_t k = 0; k < variable_count - 1; ++k) {
+            if (column_index >= prefix_sum + array_dims[k]) {
+                prefix_sum += array_dims[k];
+                variable_index = k + 1;
+            } else {
+                break;
             }
         }
-        int array_index = variable_index == 0 ? column_index
-                                              : column_index - array_prefixsums[variable_index - 1];
+        int array_index = column_index - prefix_sum;
 
         int padded_cnt = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
 
@@ -696,6 +698,15 @@ double* stdindex2ptr(int mtype,
         nrn_assert(0);
     }
     return nullptr;
+}
+
+double* stdindex2ptr(int mtype,
+                     int index,
+                     int const* array_dims,
+                     int const* /* array_prefixsums */,
+                     int variable_count,
+                     NrnThread& nt) {
+    return stdindex2ptr(mtype, index, array_dims, variable_count, nt);
 }
 
 double* stdindex2ptr(int mtype, int index, NrnThread& nt) {

@@ -248,13 +248,17 @@ void nrn_partrans::gap_data_indices_setup(NrnThread* n) {
 
     // For copying into src_gather from NrnThread._data
     for (size_t i = 0; i < sti.src_sid.size(); ++i) {
-        double* d = stdindex2ptr(sti.src_type[i], sti.src_index[i], nt);
+        const auto& array_dims = corenrn.get_array_dims()[sti.src_type[i]];
+        double* d = stdindex2ptr(
+            sti.src_type[i], sti.src_index[i], array_dims.data(), array_dims.size(), nt);
         sti.src_index[i] = int(d - nt._data);
     }
 
     // For copying into NrnThread._data from insrc_buf.
     for (size_t i = 0; i < sti.tar_sid.size(); ++i) {
-        double* d = stdindex2ptr(sti.tar_type[i], sti.tar_index[i], nt);
+        const auto& array_dims = corenrn.get_array_dims()[sti.tar_type[i]];
+        double* d = stdindex2ptr(
+            sti.tar_type[i], sti.tar_index[i], array_dims.data(), array_dims.size(), nt);
         // todo : this should be revisited once nt._data will be broken
         // into mechanism specific data
         sti.tar_index[i] = int(d - nt._data);
