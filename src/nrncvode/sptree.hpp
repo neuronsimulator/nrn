@@ -10,11 +10,13 @@
 **
 ** Originaly written by Douglas W. Jones in Fortran helped by Srinivas R. Sataluri.
 ** Translated by David Brower to C circa 1988.
+**
+** For some litterature about this Splay tree: https://en.wikipedia.org/wiki/Splay_tree
 */
 
 #pragma once
 
-#define STRCMP(a, b) (a - b)
+#include <functional>
 
 template <typename T>
 class SPTree {
@@ -72,6 +74,7 @@ class SPTree {
     void apply_all(void (*f)(const T*, int), T* n) const;
 
   private:
+    // Dequeue the first node in the subtree np
     T* dequeue(T** np);
 
     // Reorganize the tree.
@@ -101,8 +104,11 @@ class SPTree {
     // This is a fast (on average) version that does not splay.
     T* fast_next(T* n) const;
 
+    // The node at the top of the tree
     T* root{};
-    int enqcmps{}; /* compares in spenq */
+
+    // Number of comparison in enqueue
+    int enqcmps{};
 };
 
 template <typename T>
@@ -142,8 +148,9 @@ void SPTree<T>::enqueue(T* n) {
        note that the children will be reversed! */
 
         enqcmps++;
-        if (STRCMP(next->key, key) > 0)
+        if (next->key - key > 0) {
             goto two;
+        }
 
     one:   /* assert next->key <= key */
         do /* walk to the right in the left tree */
@@ -157,7 +164,7 @@ void SPTree<T>::enqueue(T* n) {
             }
 
             enqcmps++;
-            if (STRCMP(temp->key, key) > 0) {
+            if (temp->key - key > 0) {
                 left->rightlink = next;
                 next->uplink = left;
                 left = next;
@@ -166,8 +173,9 @@ void SPTree<T>::enqueue(T* n) {
             }
 
             next->rightlink = temp->leftlink;
-            if (temp->leftlink != nullptr)
+            if (temp->leftlink != nullptr) {
                 temp->leftlink->uplink = next;
+            }
             left->rightlink = temp;
             temp->uplink = left;
             temp->leftlink = next;
@@ -181,7 +189,7 @@ void SPTree<T>::enqueue(T* n) {
 
             enqcmps++;
 
-        } while (STRCMP(next->key, key) <= 0); /* change sides */
+        } while (next->key - key <= 0); /* change sides */
 
     two:   /* assert next->key > key */
         do /* walk to the left in the right tree */
@@ -195,7 +203,7 @@ void SPTree<T>::enqueue(T* n) {
             }
 
             enqcmps++;
-            if (STRCMP(temp->key, key) <= 0) {
+            if (temp->key - key <= 0) {
                 right->leftlink = next;
                 next->uplink = right;
                 right = next;
@@ -203,8 +211,9 @@ void SPTree<T>::enqueue(T* n) {
                 goto one; /* change sides */
             }
             next->leftlink = temp->rightlink;
-            if (temp->rightlink != nullptr)
+            if (temp->rightlink != nullptr) {
                 temp->rightlink->uplink = next;
+            }
             right->leftlink = temp;
             temp->uplink = right;
             temp->rightlink = next;
@@ -218,7 +227,7 @@ void SPTree<T>::enqueue(T* n) {
 
             enqcmps++;
 
-        } while (STRCMP(next->key, key) > 0); /* change sides */
+        } while (next->key - key > 0); /* change sides */
 
         goto one;
 
@@ -252,10 +261,10 @@ T* SPTree<T>::dequeue(T** np) /* pointer to a node pointer */
             deq = next;
             *np = next->rightlink;
 
-            if (*np != nullptr)
+            if (*np != nullptr) {
                 (*np)->uplink = nullptr;
-
-        } else
+            }
+        } else {
             for (;;) /* left is not null */
             {
                 /* next is not it, left is not nullptr, might be it */
@@ -289,6 +298,7 @@ T* SPTree<T>::dequeue(T** np) /* pointer to a node pointer */
                 next = farleft;
                 left = farfarleft;
             }
+        }
     }
 
     return deq;
@@ -319,22 +329,25 @@ void SPTree<T>::splay(T* n) {
             {
                 upupup = upup->uplink;
                 upup->leftlink = up->rightlink;
-                if (upup->leftlink != nullptr)
+                if (upup->leftlink != nullptr) {
                     upup->leftlink->uplink = upup;
+                }
                 up->rightlink = upup;
                 upup->uplink = up;
-                if (upupup == nullptr)
+                if (upupup == nullptr) {
                     root = up;
-                else if (upupup->leftlink == upup)
+                } else if (upupup->leftlink == upup) {
                     upupup->leftlink = up;
-                else
+                } else {
                     upupup->rightlink = up;
+                }
                 up->uplink = upupup;
                 upup = upupup;
             }
             up->leftlink = right;
-            if (right != nullptr)
+            if (right != nullptr) {
                 right->uplink = up;
+            }
             right = up;
 
         } else /* up is to the left of n */
@@ -343,22 +356,25 @@ void SPTree<T>::splay(T* n) {
             {
                 upupup = upup->uplink;
                 upup->rightlink = up->leftlink;
-                if (upup->rightlink != nullptr)
+                if (upup->rightlink != nullptr) {
                     upup->rightlink->uplink = upup;
+                }
                 up->leftlink = upup;
                 upup->uplink = up;
-                if (upupup == nullptr)
+                if (upupup == nullptr) {
                     root = up;
-                else if (upupup->rightlink == upup)
+                } else if (upupup->rightlink == upup) {
                     upupup->rightlink = up;
-                else
+                } else {
                     upupup->leftlink = up;
+                }
                 up->uplink = upupup;
                 upup = upupup;
             }
             up->rightlink = left;
-            if (left != nullptr)
+            if (left != nullptr) {
                 left->uplink = up;
+            }
             left = up;
         }
         prev = up;
@@ -374,10 +390,12 @@ void SPTree<T>::splay(T* n) {
 
     n->leftlink = left;
     n->rightlink = right;
-    if (left != nullptr)
+    if (left != nullptr) {
         left->uplink = n;
-    if (right != nullptr)
+    }
+    if (right != nullptr) {
         right->uplink = n;
+    }
     root = n;
     n->uplink = nullptr;
 }
@@ -392,8 +410,9 @@ T* SPTree<T>::first() {
     x->rightlink = root;
     x->leftlink = nullptr;
     x->uplink = nullptr;
-    if (root != nullptr)
+    if (root != nullptr) {
         root->uplink = x;
+    }
     root = x;
 
     return x;
@@ -406,17 +425,20 @@ void SPTree<T>::remove(T* n) {
     if (x == nullptr) /* empty right subtree */
     {
         root = root->leftlink;
-        if (root)
+        if (root) {
             root->uplink = nullptr;
+        }
     } else /* non-empty right subtree */
     {
         x->uplink = nullptr;
         x->leftlink = root->leftlink;
         x->rightlink = root->rightlink;
-        if (x->leftlink != nullptr)
+        if (x->leftlink != nullptr) {
             x->leftlink->uplink = x;
-        if (x->rightlink != nullptr)
+        }
+        if (x->rightlink != nullptr) {
             x->rightlink->uplink = x;
+        }
         root = x;
     }
 }
@@ -429,8 +451,9 @@ T* SPTree<T>::find(double key) {
     }
 
     /* reorganize tree around this node */
-    if (n != nullptr)
+    if (n != nullptr) {
         splay(n);
+    }
 
     return n;
 }
@@ -438,20 +461,20 @@ T* SPTree<T>::find(double key) {
 template <typename T>
 void SPTree<T>::apply_all(void (*f)(const T*, int), T* n) const {
     for (T* x = n != nullptr ? n : fast_first(); x != nullptr; x = fast_next(x)) {
-        (*f)(x, 0);
+        std::invoke(f, x, 0);
     }
 }
 
 template <typename T>
 T* SPTree<T>::fast_first() const {
-    T* x;
-
-    if (nullptr != (x = root)) {
-        while (x->leftlink != nullptr) {
-            x = x->leftlink;
-        }
+    if (empty()) {
+        return nullptr;
     }
 
+    T* x{root};
+    while (x->leftlink != nullptr) {
+        x = x->leftlink;
+    }
     return x;
 }
 
@@ -464,12 +487,13 @@ T* SPTree<T>::fast_next(T* n) const {
      */
 
     if (n == nullptr)
-        return (n);
+        return n;
 
     T* x = n->rightlink;
     if (x != nullptr) {
-        while (x->leftlink != nullptr)
+        while (x->leftlink != nullptr) {
             x = x->leftlink;
+        }
         next = x;
     } else /* x == nullptr */
     {
