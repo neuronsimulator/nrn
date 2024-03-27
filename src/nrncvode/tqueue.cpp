@@ -51,8 +51,8 @@ static void prnt(const TQItem* b, int level) {
     Printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_ ? 'x' : 'o', b->cnt_, b, b->data_);
 }
 
-TQueue::TQueue(TQItemPool* tp, int mkmut) {
-    MUTCONSTRUCT(mkmut)
+
+TQueue::TQueue(TQItemPool* tp) {
     tpool_ = tp;
     nshift_ = 0;
     sptree_ = new SPTREE<TQItem>;
@@ -77,7 +77,6 @@ TQueue::~TQueue() {
         remove(q);
     }
     delete binq_;
-    MUTDESTRUCT
 }
 
 void TQueue::deleteitem(TQItem* i) {
@@ -85,7 +84,6 @@ void TQueue::deleteitem(TQItem* i) {
 }
 
 void TQueue::print() {
-    MUTLOCK
     if (least_) {
         prnt(least_, 0);
     }
@@ -93,11 +91,9 @@ void TQueue::print() {
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         prnt(q, 0);
     }
-    MUTUNLOCK
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
-    MUTLOCK
     if (least_) {
         f(least_, 0);
     }
@@ -105,7 +101,6 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         f(q, 0);
     }
-    MUTUNLOCK
 }
 
 void TQueue::check(const char* mes) {}
@@ -122,9 +117,7 @@ TQItem* TQueue::second_least(double t) {
 }
 
 void TQueue::move_least(double tnew) {
-    MUTLOCK
     move_least_nolock(tnew);
-    MUTUNLOCK
 }
 
 void TQueue::move_least_nolock(double tnew) {
@@ -142,7 +135,6 @@ void TQueue::move_least_nolock(double tnew) {
 }
 
 void TQueue::move(TQItem* i, double tnew) {
-    MUTLOCK
     STAT(nmove)
     if (i == least_) {
         move_least_nolock(tnew);
@@ -156,7 +148,6 @@ void TQueue::move(TQItem* i, double tnew) {
         i->t_ = tnew;
         spenq(i, sptree_);
     }
-    MUTUNLOCK
 }
 
 void TQueue::statistics() {
@@ -184,7 +175,6 @@ void TQueue::spike_stat(double* d) {
 }
 
 TQItem* TQueue::insert(double t, void* d) {
-    MUTLOCK
     STAT(ninsert);
     TQItem* i = tpool_->alloc();
     i->data_ = d;
@@ -198,18 +188,15 @@ TQItem* TQueue::insert(double t, void* d) {
     } else {
         spenq(i, sptree_);
     }
-    MUTUNLOCK
     return i;
 }
 
 TQItem* TQueue::enqueue_bin(double td, void* d) {
-    MUTLOCK
     STAT(ninsert);
     TQItem* i = tpool_->alloc();
     i->data_ = d;
     i->t_ = td;
     binq_->enqueue(td, i);
-    MUTUNLOCK
     return i;
 }
 
@@ -219,7 +206,6 @@ void TQueue::release(TQItem* q) {
 }
 
 void TQueue::remove(TQItem* q) {
-    MUTLOCK
     STAT(nrem);
     if (q) {
         if (q == least_) {
@@ -235,12 +221,10 @@ void TQueue::remove(TQItem* q) {
         }
         tpool_->hpfree(q);
     }
-    MUTUNLOCK
 }
 
 TQItem* TQueue::atomic_dq(double tt) {
     TQItem* q = 0;
-    MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
         STAT(nrem);
@@ -250,13 +234,11 @@ TQItem* TQueue::atomic_dq(double tt) {
             least_ = nullptr;
         }
     }
-    MUTUNLOCK
     return q;
 }
 
 TQItem* TQueue::find(double t) {
     TQItem* q;
-    MUTLOCK
     // search only in the  splay tree. if this is a bug then fix it.
     STAT(nfind)
     if (t == least_t_nolock()) {
@@ -264,7 +246,6 @@ TQItem* TQueue::find(double t) {
     } else {
         q = splookup(t, sptree_);
     }
-    MUTUNLOCK
     return (q);
 }
 
@@ -390,17 +371,14 @@ void BinQ::remove(TQItem* q) {
     }
 }
 
-SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
-    MUTCONSTRUCT(mkmut)
+SelfQueue::SelfQueue(TQItemPool* tp) {
     tpool_ = tp;
     head_ = nullptr;
 }
 SelfQueue::~SelfQueue() {
     remove_all();
-    MUTDESTRUCT
 }
 TQItem* SelfQueue::insert(void* d) {
-    MUTLOCK
     TQItem* q = tpool_->alloc();
     q->left_ = nullptr;
     q->right_ = head_;
@@ -409,11 +387,9 @@ TQItem* SelfQueue::insert(void* d) {
     }
     head_ = q;
     q->data_ = d;
-    MUTUNLOCK
     return q;
 }
 void* SelfQueue::remove(TQItem* q) {
-    MUTLOCK
     if (q->left_) {
         q->left_->right_ = q->right_;
     }
@@ -424,14 +400,11 @@ void* SelfQueue::remove(TQItem* q) {
         head_ = q->right_;
     }
     tpool_->hpfree(q);
-    MUTUNLOCK
     return q->data_;
 }
 void SelfQueue::remove_all() {
-    MUTLOCK
     for (TQItem* q = first(); q; q = next(q)) {
         tpool_->hpfree(q);
     }
     head_ = nullptr;
-    MUTUNLOCK
 }
