@@ -74,7 +74,7 @@ TEST_CASE("LFP_PointSource_LineSource") {
         // TEST of analytic vs numerical integration
         std::clog << "ANALYTIC line source " << analytic_circling_lfp
                   << " vs NUMERIC line source LFP " << numeric_circling_lfp << "\n";
-        REQUIRE_THAT(analytic_circling_lfp, Catch::Matchers::WithinRel(numeric_circling_lfp, 1.0e-6));
+        REQUIRE_THAT(analytic_circling_lfp, Catch::Matchers::WithinAbs(numeric_circling_lfp, 1.0e-6));
         // TEST of LFP Flooring
         if (approaching_elec[1] < 0.866e-6) {
             REQUIRE(analytic_approaching_lfp == 1.0e6);
@@ -104,8 +104,8 @@ TEST_CASE("LFP_PointSource_LineSource") {
         segments_starts, segments_ends, radii, indices, electrodes, 1.0);
     lfpp.template lfp<std::vector<double>>({0.0, 1.0, 2.0, 3.0});
     std::vector<double> res_point_source = lfpp.lfp_values();
-    REQUIRE_THAT(res_line_source[0], Catch::Matchers::WithinRel(res_point_source[0], 1.0));
-    REQUIRE_THAT(res_line_source[1], Catch::Matchers::WithinRel(res_point_source[1], 1.0));
+    REQUIRE_THAT(res_line_source[0], Catch::Matchers::WithinAbs(res_point_source[0], 1.0));
+    REQUIRE_THAT(res_line_source[1], Catch::Matchers::WithinAbs(res_point_source[1], 1.0));
 #if NRNMPI
     nrnmpi_finalize();
 #endif
