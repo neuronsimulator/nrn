@@ -3,7 +3,7 @@
 #include <iostream>
 #include "ivocvect.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 using namespace Catch::literals;
 
 template <typename T = double>
