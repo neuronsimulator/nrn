@@ -114,7 +114,6 @@ TEST_CASE("LFP_PointSource_LineSource") {
 
 #ifdef ENABLE_SONATA_REPORTS
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
 
 TEST_CASE("LFP_ReportEvent") {
     const std::string report_name = "compartment_report";
@@ -180,8 +179,8 @@ TEST_CASE("LFP_ReportEvent") {
     ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, report_type);
     event.lfp_calc(&nt);
 
-    REQUIRE(mapinfo->_lfp[0] == Approx(5.5).margin(1.0));
-    REQUIRE(mapinfo->_lfp[3] == Approx(7.0).margin(1.0));
+    REQUIRE_THAT(mapinfo->_lfp[0], Catch::Matchers::WithinAbs(5.5, 1.0));
+    REQUIRE_THAT(mapinfo->_lfp[3], Catch::Matchers::WithinAbs(7.0, 1.0));
 
     delete mapinfo;
     delete nt.nrn_fast_imem;
