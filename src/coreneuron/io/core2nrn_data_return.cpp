@@ -84,24 +84,46 @@ static void soa2aos_inverse_permute_copy(size_t n,
     }
 }
 
-/** @brief SoA unpermuted mechanism data copied to unpermuted AoS data.
- *  dest is an array of n pointers to the beginning of each sz length array.
- *  src is a contiguous array of sz segments of size stride. The stride
- *  may be slightly greater than n for purposes of alignment.
- *  Each of the sz segments of src have the same order as the n pointers
- *  of dest.
+/** @brief SoAoS unpermuted mechanism data copied to unpermuted SoAoS data.
+ *
+ *  This function copies the CoreNEURON SoAoS format into the NEURON format. There
+ *  are two differences:
+ *    1. NRN allocates a separate array for each variable, while CoreNEURON
+ *       allocates a single large chunk of memory.
+ *    2. CoreNEURON pads the instance number.
+ *
+ *  For ARRAY variables both NRN and CoreNRN store consecutive elements of the
+ *  array consecutively in memory.
+ *
+ *  Let `K` be the number of variables, counting array variables as one
+ *  variable. Then `dest` is an array of `K` pointers, one for each variable of
+ *  the mechanism. The pointer `dest[i]` is an array of size `n*array_dims[i]`
+ *  and the array element `k` for instance `i` is stored at `dest[i*n + k]`.
+ *
+ *  The pointer `src` points to `stride*sum(array_dims)` doubles.
  */
-static void soa2aos_unpermuted_copy(size_t n,
-                                    int sz,
-                                    int stride,
-                                    double* src,
-                                    std::vector<double*>& dest) {
-    // src is soa and permuted. dest is n pointers to sz doubles (aos).
-    for (size_t instance = 0; instance < n; ++instance) {
-        double* s = src + instance;
-        for (int i = 0; i < sz; ++i) {
-            dest[i][instance] = s[i * stride];
+static void soaos_unpermuted_copy_cnrn2nrn(size_t n,
+                                           int stride,
+                                           double const* const src,
+                                           std::vector<double*>& dest,
+                                           const std::vector<int>& array_dims) {
+    // i : runs over instances: 0, ..., n.
+    // k : runs over array dimension: 0, ..., array_dims[i_var] =: K.
+
+    int n_vars = array_dims.size();
+    size_t offset_var = 0;
+    for (size_t i_var = 0; i_var < n_vars; ++i_var) {
+        size_t K = array_dims[i_var];
+
+        // memcpy(dest[i_var], src + offset_var, n*K);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t k = 0; k < K; ++k) {
+                size_t i_src = offset_var + i * K + k;
+                dest[i_var][i * K + k] = src[i_src];
+            }
         }
+
+        offset_var += stride * K;
     }
 }
 
@@ -327,12 +349,14 @@ void core2nrn_data_return() {
             double* cndat = ml->data;
             int layout = corenrn.get_mech_data_layout()[mtype];
             int sz = corenrn.get_prop_param_size()[mtype];
+            const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
             if (layout == Layout::SoA) {
                 int stride = ml->_nodecount_padded;
                 if (permute) {
+                    // TODO fix
                     soa2aos_inverse_permute_copy(n, sz, stride, cndat, mdata, permute);
                 } else {
-                    soa2aos_unpermuted_copy(n, sz, stride, cndat, mdata);
+                    soaos_unpermuted_copy_cnrn2nrn(n, stride, cndat, mdata, array_dims);
                 }
             } else { /* AoS */
                 aos2aos_copy(n, sz, cndat, mdata);
