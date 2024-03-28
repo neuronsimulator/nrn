@@ -154,15 +154,17 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
     }
     GIVEN("A HOC object constructor that throws") {
         REQUIRE_THAT(hoc_oc_require_error("util = new UtilityThatLikesThrowing()\n"),
-                     ContainsSubstring("hoc_execerror: UtilityThatLikesThrowing[0] constructor: need at "
-                              "least one argument"));
+                     ContainsSubstring(
+                         "hoc_execerror: UtilityThatLikesThrowing[0] constructor: need at "
+                         "least one argument"));
     }
     GIVEN("A HOC object destructor that throws") {
         REQUIRE_THAT(hoc_oc_require_error("util = nil\n"
                                           "util = new UtilityThatLikesThrowing(1)\n"
                                           "util = nil\n"),
-                     ContainsSubstring("hoc_execerror: UtilityThatLikesThrowing[0] destructor: throwing "
-                              "from HOC destructor"));
+                     ContainsSubstring(
+                         "hoc_execerror: UtilityThatLikesThrowing[0] destructor: throwing "
+                         "from HOC destructor"));
     }
     GIVEN("A HOC object whose constructor and destructor succeed") {
         // Make sure there are not any instances alive from previous tests, otherwise we can't
@@ -175,9 +177,10 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
         WHEN("A member function that throws is called") {
             REQUIRE_THAT(
                 hoc_oc_require_error(("util.throw_error" + method_suffix + "()\n").c_str()),
-                ContainsSubstring("hoc_execerror: UtilityThatLikesThrowing[0]::throw_error" + method_suffix +
-                         ": throwing "
-                         "from throw_error"));
+                ContainsSubstring("hoc_execerror: UtilityThatLikesThrowing[0]::throw_error" +
+                                  method_suffix +
+                                  ": throwing "
+                                  "from throw_error"));
         }
         WHEN("A member function that calls hoc_execerror is called") {
             REQUIRE_THAT(hoc_oc_require_error(
