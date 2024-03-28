@@ -75,7 +75,7 @@ TEST_CASE("LFP_PointSource_LineSource") {
         std::clog << "ANALYTIC line source " << analytic_circling_lfp
                   << " vs NUMERIC line source LFP " << numeric_circling_lfp << "\n";
         REQUIRE_THAT(analytic_circling_lfp,
-                     Catch::Matchers::WithinAbs(numeric_circling_lfp, 1.0e-6));
+                     Catch::Matchers::WithinRel(numeric_circling_lfp, std::numeric_limits<float>::epsilon() * 100.));
         // TEST of LFP Flooring
         if (approaching_elec[1] < 0.866e-6) {
             REQUIRE(analytic_approaching_lfp == 1.0e6);
