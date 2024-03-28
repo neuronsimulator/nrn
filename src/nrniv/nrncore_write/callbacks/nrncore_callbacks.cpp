@@ -148,7 +148,7 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
 
 /** @brief Return location for CoreNEURON to copy data into.
  *  The type is mechanism type or special negative type for voltage,
- *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:stdindex2ptr.
+ *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:legacy_index2pointer.
  *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
  *  how its data is arranged (SoA and possibly permuted).
  *  This function figures out the size (just for sanity check)
