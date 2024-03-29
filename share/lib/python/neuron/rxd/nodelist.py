@@ -17,18 +17,7 @@ class NodeList(list):
 
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
-        r = []
-        err = 0
-
-        for i in self:
-            try:
-                if i.satisfies(restriction):
-                    r.append(i)
-            except RxDException:
-                err += 1
-        if err == len(self):
-            raise RxDException("no such region")
-        return NodeList(r)
+        return NodeList([i for i in self if i.safe_satisfies(restriction)])
 
     def __getitem__(self, key):
         if isinstance(key, slice):
