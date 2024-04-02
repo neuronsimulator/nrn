@@ -97,39 +97,46 @@ void BBSLocal::pkbegin() {
 }
 
 void BBSLocal::pkint(int i) {
-    if (!posting_ || posting_->pkint(i)) {
+    if (!posting_) {
         perror("pkint");
     }
+    posting_->pkint(i);
 }
 
 void BBSLocal::pkdouble(double x) {
-    if (!posting_ || posting_->pkdouble(x)) {
+    if (!posting_) {
         perror("pkdouble");
     }
+    posting_->pkdouble(x);
 }
 
 void BBSLocal::pkvec(int n, double* x) {
-    if (!posting_ || posting_->pkvec(n, x)) {
+    if (!posting_) {
         perror("pkdouble");
     }
+    posting_->pkvec(n, x);
 }
 
 void BBSLocal::pkstr(const char* s) {
-    if (!posting_ || posting_->pkint(strlen(s))) {
+    if (!posting_) {
         perror("pkstr length");
     }
-    if (!posting_ || posting_->pkstr(s)) {
+    posting_->pkint(strlen(s));
+    if (!posting_) {
         perror("pkstr string");
     }
+    posting_->pkstr(s);
 }
 
 void BBSLocal::pkpickle(const char* s, size_t n) {
-    if (!posting_ || posting_->pkint(n)) {
+    if (!posting_) {
         perror("pkpickle size");
     }
-    if (!posting_ || posting_->pkpickle(s, n)) {
+    posting_->pkint(n);
+    if (!posting_) {
         perror("pkpickle data");
     }
+    posting_->pkpickle(s, n);
 }
 
 void BBSLocal::post(const char* key) {
@@ -215,7 +222,6 @@ void BBSLocal::return_args(int userid) {
     Resource::unref(taking_);
     taking_ = (MessageValue*) ((*i).second);
     keepargs_->erase(i);
-    taking_->init_unpack();
     BBSImpl::return_args(userid);
 }
 
