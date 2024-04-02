@@ -126,8 +126,7 @@ nrn_check_include_files(unistd.h HAVE_UNISTD_H)
 # =============================================================================
 # Check for standard headers
 # =============================================================================
-check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;string.h;float.h"
-                    STDC_HEADERS)
+check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;string.h;float.h" STDC_HEADERS)
 
 # =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
