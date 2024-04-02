@@ -39,7 +39,6 @@ class WorkItem final {
     int id_{};
     bool todo_less_than(const WorkItem*) const;
 
-  private:
     MessageValue* val_{};
 };
 
@@ -55,16 +54,8 @@ struct ltWorkItem {
     }
 };
 
-using MessageList = std::multimap<const char*, const MessageValue*, ltstr>;
-using WorkList = std::map<int, const WorkItem*>;
-using ReadyList = std::set<WorkItem*, ltWorkItem>;
-using ResultList = std::multimap<int, const WorkItem*>;
-
-class BBSLocalServer {
+class BBSLocalServer final {
   public:
-    BBSLocalServer();
-    virtual ~BBSLocalServer();
-
     void post(const char* key, MessageValue*);
     bool look(const char* key, MessageValue**);
     bool look_take(const char* key, MessageValue**);
@@ -75,9 +66,9 @@ class BBSLocalServer {
     int look_take_result(int pid, MessageValue**);
 
   private:
-    MessageList* messages_;
-    WorkList* work_;
-    ReadyList* todo_;
-    ResultList* results_;
-    int next_id_;
+    std::multimap<const char*, const MessageValue*, ltstr> messages_;
+    std::map<int, const WorkItem*> work_;
+    std::set<WorkItem*, ltWorkItem> todo_;
+    std::multimap<int, const WorkItem*> results_;
+    int next_id_{-1};
 };
