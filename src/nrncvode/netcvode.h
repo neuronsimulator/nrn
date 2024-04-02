@@ -1,5 +1,4 @@
-#ifndef netcvode_h
-#define netcvode_h
+#pragma once
 
 #define PRINT_EVENT 1
 
@@ -7,7 +6,7 @@
 
 #include "cvodeobj.h"
 #include "neuron/container/data_handle.hpp"
-#include "tqueue.h"
+#include "tqueue.hpp"
 
 #include <cmath>
 #include <vector>
@@ -86,12 +85,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 4
-    TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
-#if BBTQ == 5
     TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
@@ -267,5 +261,3 @@ class NetCvode {
     void allthread_handle();
     HocEventList* allthread_hocevents_;
 };
-
-#endif

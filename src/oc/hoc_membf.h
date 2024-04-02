@@ -1,5 +1,4 @@
-#ifndef hoc_membf_h
-#define hoc_membf_h
+#pragma once
 
 struct Object;
 
@@ -17,5 +16,3 @@ typedef struct Member_ret_str_func {
     const char* name;
     const char** (*member)(void*);
 } Member_ret_str_func;
-
-#endif

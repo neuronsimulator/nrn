@@ -1,5 +1,4 @@
-#ifndef kschan_h
-#define kschan_h
+#pragma once
 
 #include <math.h>
 #include "nrnoc2iv.h"
@@ -419,8 +418,8 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
-    void update_size();
-    void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
+    void err_if_has_instances() const;
+    void register_data_fields();
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);
@@ -443,6 +442,7 @@ class KSChan {
     std::string ion_;   // name of ion , "" means non-specific
     double gmax_deflt_;
     double erev_deflt_;
+    void parm_default_fill();
     int cond_model_;
     KSIv* iv_relation_;
     int ngate_;       // number of gating complexes
@@ -482,6 +482,6 @@ class KSChan {
     double vmin_, vmax_, dvinv_, dtsav_;
     int hh_tab_size_;
     bool usetable_;
-};
 
-#endif
+    std::vector<double> parm_default{};
+};

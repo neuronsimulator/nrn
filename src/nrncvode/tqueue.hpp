@@ -1,5 +1,15 @@
-//#ifndef tqueue_h
-//#define tqueue_h
+#pragma once
+
+#undef check
+
+#include <assert.h>
+
+#include <nrnmutdec.h>
+#include <pool.hpp>
+
+#include "tqitem.hpp"
+
+using TQItemPool = MutexPool<TQItem>;
 
 // bin queue for the fixed step method for NetCons and PreSyns. Splay tree
 // for others.
@@ -11,27 +21,9 @@
 // not in time order)
 // The bin part assumes a fixed step method.
 
-#include <assert.h>
-
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
 struct SPTREE;
-
-class TQItem {
-  public:
-    TQItem();
-    virtual ~TQItem();
-    bool check();
-    void clear(){};
-
-  public:
-    void* data_;
-    double t_;
-    TQItem* left_;
-    TQItem* right_;
-    TQItem* parent_;
-    int cnt_;  // reused: -1 means it is in the splay tree, >=0 gives bin
-};
 
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {
@@ -152,4 +144,22 @@ class TQueue {
 #endif
 };
 
-//#endif
+class SelfQueue {  // not really a queue but a doubly linked list for fast
+  public:          // insertion, deletion, iteration
+    SelfQueue(TQItemPool*, int mkmut = 0);
+    virtual ~SelfQueue();
+    TQItem* insert(void*);
+    void* remove(TQItem*);
+    void remove_all();
+    TQItem* first() {
+        return head_;
+    }
+    TQItem* next(TQItem* q) {
+        return q->right_;
+    }
+
+  private:
+    TQItem* head_;
+    TQItemPool* tpool_;
+    MUTDEC
+};

@@ -1,7 +1,6 @@
 /* /local/src/master/nrn/src/oc/redef.h,v 1.3 1994/10/28 15:18:01 hines Exp */
 
-#ifndef hoc_redef_h
-#define hoc_redef_h
+#pragma once
 
 #define Break              hoc_Break
 #define Continue           hoc_Continue
@@ -126,5 +125,3 @@
 #define wopen              hoc_wopen
 #define xopen              hoc_xopen
 #define zzdebug            hoc_zzdebug
-
-#endif

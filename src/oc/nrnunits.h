@@ -1,5 +1,4 @@
-#ifndef nrnunits_modern_h
-#define nrnunits_modern_h
+#pragma once
 
 /**
  NMODL translated MOD files get unit constants typically from
@@ -26,5 +25,3 @@ constexpr double _gasconstant_codata2018 =
 /* e/k in K/millivolt */
 constexpr double _e_over_k_codata2018 = .001 * _electron_charge_codata2018 /
                                         _boltzmann_codata2018; /* 11.604518... K/mV */
-
-#endif /* nrnunits_modern_h */
