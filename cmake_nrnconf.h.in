@@ -64,9 +64,6 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGBUS
 
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
