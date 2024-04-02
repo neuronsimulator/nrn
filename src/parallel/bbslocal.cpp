@@ -9,13 +9,7 @@
 #include <set>
 #include <string>
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, const MessageValue*, ltint> {};
+class KeepArgs: public std::map<int, const MessageValue*> {};
 
 static MessageValue* posting_;
 static MessageValue* taking_;
