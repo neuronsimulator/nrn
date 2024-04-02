@@ -38,6 +38,7 @@ class WorkItem final {
     WorkItem* parent_{};
     int id_{};
     bool todo_less_than(const WorkItem*) const;
+
   private:
     MessageValue* val_{};
 };

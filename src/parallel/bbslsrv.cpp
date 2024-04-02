@@ -19,8 +19,8 @@ static char* newstr(const char* s) {
 }
 
 WorkItem::WorkItem(int id, MessageValue* m)
-    : id_(id), val_(m)
-{
+    : id_(id)
+    , val_(m) {
     val_->ref();
 }
 
