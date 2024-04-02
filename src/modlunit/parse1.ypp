@@ -3,6 +3,7 @@
 
 #include <../../nmodlconf.h>
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 
 /* Constructs a parse tree. No translation is done, ie. on exit printing

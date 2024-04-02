@@ -1,5 +1,6 @@
 #include <../../nmodlconf.h>
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 #include "parse1.hpp"
 #include "symbol.h"
