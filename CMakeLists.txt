@@ -523,7 +523,7 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
   get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
   # NEURON tests that link against CoreNEURON need to depend on it.
-  set(CORENEURON_TARGET_TO_DEPEND coreneuron-core)
+  set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 
   # When we are using CoreNEURON, OpenACC and shared libraries then it is important that the first
   # library *compiled by nvc++* to be opened is linked against OpenACC, to avoid the NVIDIA runtime

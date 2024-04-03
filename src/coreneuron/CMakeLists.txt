@@ -608,9 +608,11 @@ if(CORENRN_ENABLE_GPU)
   target_compile_options(coreneuron-core PRIVATE ${CORENRN_ACC_FLAGS})
 endif()
 
+# Create an extra target for use by NEURON when CoreNEURON is being built as a submodule. NEURON
+# tests will depend on this, so it must in turn depend on everything that is needed to run nrnivmodl
+# -coreneuron.
 add_custom_target(coreneuron-for-tests)
-add_dependencies(coreneuron-for-tests coreneuron-core ${NMODL_TO_DEPEND})
-
+add_dependencies(coreneuron-for-tests coreneuron-core ${NMODL_TARGET_TO_DEPEND})
 # Create an extra target for internal use that unit tests and so on can depend on.
 # ${corenrn_mech_library} is libcorenrnmech_internal.{a,so}, which contains both the compiled
 # default mechanisms and the content of libcoreneuron-core.a.
