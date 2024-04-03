@@ -6,7 +6,6 @@
 #include "neuron/model_data_fwd.hpp"
 
 #include <optional>
-#include <sstream>
 
 namespace neuron {
 /** @brief Top-level structure.

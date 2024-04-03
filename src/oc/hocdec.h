@@ -7,7 +7,6 @@
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
 #include "wrap_sprintf.h"
 
-#include <iostream>
 #include <cstdint>
 #include <cstring>
 #include <vector>

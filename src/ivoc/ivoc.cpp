@@ -4,6 +4,7 @@
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include "neuron/container/soa_container.hpp"
 #include <nrnmutdec.h>
 #include "oc2iv.h"

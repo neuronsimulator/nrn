@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <iostream>
+#include <ios>
 #include <fstream>
 #include <vector>
 #include <cmath>

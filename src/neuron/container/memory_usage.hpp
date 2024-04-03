@@ -2,9 +2,8 @@
 
 #include <cstdio>
 #include <vector>
-#include <ostream>
 #include <cmath>
-#include <sstream>
+#include <string>
 
 namespace neuron::container {
 /** @brief Size and capacity in bytes. */

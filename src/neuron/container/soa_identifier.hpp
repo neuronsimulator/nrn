@@ -5,10 +5,9 @@
 
 #include <cassert>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <memory>
-#include <ostream>
+#include <iostream>
 #include <vector>
 
 namespace neuron::container {

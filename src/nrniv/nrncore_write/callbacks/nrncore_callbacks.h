@@ -1,8 +1,7 @@
 #pragma once
 
-#include <fstream>
-#include <sstream>
 #include <vector>
+#include <iosfwd>
 #include <set>
 #include <cstdlib>
 #include <inttypes.h>

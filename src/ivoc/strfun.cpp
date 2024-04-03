@@ -4,6 +4,7 @@
 #include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
+#include <iostream>
 #include <regex>
 // for alias
 #include <symdir.h>
