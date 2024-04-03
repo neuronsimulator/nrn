@@ -68,7 +68,7 @@ run_mpi_test () {
   # run python test via nrniv and special (except on azure pipelines)
   if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
     $mpi_launcher -n 2 ./$ARCH_DIR/special -python src/parallel/test0.py -mpi --expected-hosts 2
-    $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+    $mpi_launcher -n 2 nrniv src/parallel/test0.py -mpi --expected-hosts 2
   fi
 
   # coreneuron execution via neuron
@@ -80,7 +80,7 @@ run_mpi_test () {
 
     # using -python doesn't work on Azure CI
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+      $mpi_launcher -n 2 nrniv -mpi test/coreneuron/test_direct.py
       NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
   fi
@@ -126,7 +126,7 @@ run_serial_test () {
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-      nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+      ${python_exe} -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
       $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
@@ -146,7 +146,7 @@ run_serial_test () {
       # using -python doesn't work on Azure CI
       if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
         ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-        nrniv -python test/coreneuron/test_direct.py
+        nrniv test/coreneuron/test_direct.py
       fi
 
       rm -rf $ARCH_DIR
