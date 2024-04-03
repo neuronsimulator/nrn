@@ -706,13 +706,17 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                         Memb_list* eml = nt._ml_list[etype];
                         int edata0 = eml->data - nt._data;
                         int ecnt = eml->nodecount;
+                        int ecnt_padded = nrn_soa_padded_size(ecnt, Layout::SoA);
                         int esz = corenrn.get_prop_param_size()[etype];
+                        const std::vector<int>& array_dims = corenrn.get_array_dims()[etype];
                         for (int iml = 0; iml < cnt; ++iml) {
                             int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
-                            int ix = *pd;  // relative to the ion data
-                            nrn_assert((ix >= 0) && (ix < ecnt * esz));
-                            /* Original pd order assumed ecnt groups of esz */
-                            *pd = edata0 + nrn_param_layout(ix, etype, eml);
+                            int legacy_index = *pd;  // relative to the ion data
+                            nrn_assert((legacy_index >= 0) && (legacy_index < ecnt * esz));
+
+                            auto soaos_index = legacy2soaos_index(legacy_index, array_dims);
+                            *pd = edata0 +
+                                  soaos2cnrn_index(soaos_index, array_dims, ecnt_padded, nullptr);
                         }
                     }
                 }
@@ -736,10 +740,17 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                             } else {
                                 Memb_list* pml = nt._ml_list[ptype];
                                 int pcnt = pml->nodecount;
+                                int pcnt_padded = nrn_soa_padded_size(pcnt, Layout::SoA);
                                 int psz = corenrn.get_prop_param_size()[ptype];
+                                const std::vector<int>& array_dims =
+                                    corenrn.get_array_dims()[ptype];
                                 nrn_assert((ix >= 0) && (ix < pcnt * psz));
+
                                 int elem0 = pml->data - nt._data;
-                                *pd = elem0 + nrn_param_layout(ix, ptype, pml);
+                                auto soaos_index = legacy2soaos_index(ix, array_dims);
+                                *pd =
+                                    elem0 +
+                                    soaos2cnrn_index(soaos_index, array_dims, pcnt_padded, nullptr);
                             }
                         }
                     }
@@ -934,10 +945,12 @@ void Phase2::set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc) {
 #endif
         Memb_list* ml = nt._ml_list[vecPlay.mtype];
 
-        vecPlay.ix = nrn_param_layout(vecPlay.ix, vecPlay.mtype, ml);
-        if (ml->_permute) {
-            vecPlay.ix = nrn_index_permute(vecPlay.ix, vecPlay.mtype, ml);
-        }
+        const std::vector<int>& array_dims = corenrn.get_array_dims()[vecPlay.mtype];
+
+        auto padded_nodecount = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+        auto soaos_index = legacy2soaos_index(vecPlay.ix, array_dims);
+        vecPlay.ix = soaos2cnrn_index(soaos_index, array_dims, padded_nodecount, ml->_permute);
+
         nt._vecplay[i] = new VecPlayContinuous(ml->data + vecPlay.ix,
                                                std::move(vecPlay.yvec),
                                                std::move(vecPlay.tvec),
