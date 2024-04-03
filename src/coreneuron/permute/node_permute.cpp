@@ -360,26 +360,6 @@ void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     update_pdata_values(ml, type, nt);
 }
 
-int nrn_index_permute(int ix, int type, Memb_list* ml) {
-    int* p = ml->_permute;
-    if (!p) {
-        return ix;
-    }
-    int layout = corenrn.get_mech_data_layout()[type];
-    if (layout == Layout::AoS) {
-        int sz = corenrn.get_prop_param_size()[type];
-        int i_cnt = ix / sz;
-        int i_sz = ix % sz;
-        return p[i_cnt] * sz + i_sz;
-    } else {
-        assert(layout == Layout::SoA);
-        int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
-        int i_cnt = ix % padded_cnt;
-        int i_sz = ix / padded_cnt;
-        return i_sz * padded_cnt + p[i_cnt];
-    }
-}
-
 #if CORENRN_DEBUG
 static void pr(const char* s, int* x, int n) {
     printf("%s:", s);
