@@ -1,4 +1,3 @@
-#include <../../nrnconf.h>
 #include "nrnmpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,16 +10,11 @@
 #include "bbsrcli.h"
 #endif
 
-#if defined(HAVE_TMS) && !NRNMPI
-#include <time.h>
-#include <sys/times.h>
-#include <limits.h>
-static struct tms tmsbuf, tms_start_;
-static clock_t starttime;
-#endif
+static double starttime;
 
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+extern double nrn_timeus();
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
@@ -132,11 +126,7 @@ double BBSImpl::time() {
 #if NRNMPI
     return nrnmpi_wtime();
 #else
-#ifdef HAVE_TMS
-    return double(times(&tmsbuf)) / 100.;
-#else
-    return 0.;
-#endif
+    return nrn_timeus();
 #endif
 }
 
@@ -493,18 +483,12 @@ void BBSImpl::done() {
         return;
     }
     done_ = true;
-#ifdef HAVE_TMS
-    clock_t elapsed = times(&tmsbuf) - starttime;
+    double elapsed = nrn_timeus() - starttime;
     printf("%d tasks in %g seconds. %g seconds waiting for tasks\n",
            etaskcnt,
            total_exec_time,
            worker_take_time);
-    printf("user=%g sys=%g elapsed=%g %g%%\n",
-           (double) (tmsbuf.tms_utime - tms_start_.tms_utime) / 100,
-           (double) (tmsbuf.tms_stime - tms_start_.tms_stime) / 100,
-           (double) (elapsed) / 100,
-           100. * (double) (tmsbuf.tms_utime - tms_start_.tms_utime) / (double) elapsed);
-#endif
+    printf("elapsed=%g\n", elapsed);
 }
 
 void BBSImpl::start() {
@@ -512,7 +496,5 @@ void BBSImpl::start() {
         return;
     }
     started_ = 1;
-#ifdef HAVE_TMS
-    starttime = times(&tms_start_);
-#endif
+    starttime = nrn_timeus();
 }
