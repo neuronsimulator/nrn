@@ -129,9 +129,6 @@
 	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
-
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #undef SUNDIALS_DOUBLE_PRECISION
 
@@ -201,4 +198,3 @@ namespace neuron::config {
 #endif
 
 #endif /* H_nrnconf_included */
-
