@@ -11,11 +11,8 @@
 #include "bbsrcli.h"
 #endif
 
-static double starttime;
-
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
-extern double nrn_timeus();
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
@@ -124,11 +121,7 @@ double BBS::time() {
 }
 
 double BBSImpl::time() {
-#if NRNMPI
     return nrnmpi_wtime();
-#else
-    return nrn_timeus();
-#endif
 }
 
 double BBS::wait_time() {
@@ -484,12 +477,6 @@ void BBSImpl::done() {
         return;
     }
     done_ = true;
-    double elapsed = nrn_timeus() - starttime;
-    printf("%d tasks in %g seconds. %g seconds waiting for tasks\n",
-           etaskcnt,
-           total_exec_time,
-           worker_take_time);
-    printf("elapsed=%g\n", elapsed);
 }
 
 void BBSImpl::start() {
@@ -497,5 +484,4 @@ void BBSImpl::start() {
         return;
     }
     started_ = 1;
-    starttime = nrn_timeus();
 }
