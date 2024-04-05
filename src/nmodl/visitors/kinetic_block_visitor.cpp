@@ -8,7 +8,9 @@
 #include "kinetic_block_visitor.hpp"
 
 #include "ast/all.hpp"
+#include "constant_folder_visitor.hpp"
 #include "index_remover.hpp"
+#include "loop_unroll_visitor.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
@@ -476,7 +478,41 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock& node) {
     kinetic_blocks.push_back(&node);
 }
 
+void KineticBlockVisitor::unroll_kinetic_blocks(ast::Program& node) {
+    const auto& kineticBlockNodes = collect_nodes(node, {ast::AstNodeType::KINETIC_BLOCK});
+
+    // Before: FROM i = 0 TO N-1
+    // After:  FROM i = 0 TO 2
+    visitor::ConstantFolderVisitor const_folder;
+    for (const auto& ii: kineticBlockNodes) {
+        ii->accept(const_folder);
+    }
+
+    // Before:
+    // FROM i = 0 TO 2 {
+    //   ~ ca[i] <-> ca[i+1] (a, b)
+    // }
+    //
+    // After:
+    // ~ ca[0] <-> ca[0+1] (a, b)
+    // ~ ca[1] <-> ca[1+1] (a, b)
+    // ~ ca[2] <-> ca[2+1] (a, b)
+    //
+    visitor::LoopUnrollVisitor unroller;
+    for (const auto& ii: kineticBlockNodes) {
+        ii->accept(unroller);
+    }
+
+    // Before: ca[0+1]
+    // After:  ca[1]
+    for (const auto& ii: kineticBlockNodes) {
+        ii->accept(const_folder);
+    }
+}
+
 void KineticBlockVisitor::visit_program(ast::Program& node) {
+    unroll_kinetic_blocks(node);
+
     conserve_statement_count = 0;
     statements_to_remove.clear();
     current_statement_block = nullptr;

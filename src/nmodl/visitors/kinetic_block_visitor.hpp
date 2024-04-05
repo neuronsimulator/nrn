@@ -56,6 +56,13 @@ class KineticBlockVisitor: public AstVisitor {
     void compute_compartment_factor(ast::Compartment& node, const ast::Name& name);
     void compute_indexed_compartment_factor(ast::Compartment& node, const ast::Name& name);
 
+    /// Unroll loops in KINETIC blocks.
+    ///
+    /// The subsequent processing in KineticBlockVisitor fails if there's any
+    /// reaction equation inside a `FROM .. TO ..` block. The solution is to
+    /// unroll any loops first to satisfy the assumption.
+    void unroll_kinetic_blocks(ast::Program& node);
+
     /// stochiometric matrices nu_L, nu_R
     /// forwards/backwards fluxes k_f, k_b
     /// (see kinetic_schemes.ipynb notebook for details)
