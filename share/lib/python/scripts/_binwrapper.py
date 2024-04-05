@@ -4,16 +4,13 @@ A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
+from importlib.metadata import metadata, PackageNotFoundError
+from importlib.util import find_spec
 
-if sys.version_info >= (3, 9):
-    from importlib.metadata import metadata, PackageNotFoundError
-    from importlib.resources import files
-else:
-    from importlib_metadata import metadata, PackageNotFoundError
-    from importlib_resources import files
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
@@ -75,7 +72,7 @@ def _config_exe(exe_name):
     except PackageNotFoundError:
         pass
 
-    NRN_PREFIX = str(files("neuron") / ".data")
+    NRN_PREFIX = os.path.join(Path(find_spec("neuron").origin).parent, ".data")
 
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share", "nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
