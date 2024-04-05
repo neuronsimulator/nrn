@@ -17,8 +17,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 
-#ifndef _std_h
-#define _std_h 1
+#pragma once
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -28,4 +27,3 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <cstdio>
 #include <cerrno>
 #include <fcntl.h>
-#endif 

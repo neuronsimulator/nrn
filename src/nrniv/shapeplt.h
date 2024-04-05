@@ -1,6 +1,4 @@
-#ifndef shapeplot_h
-#define shapeplot_h
-
+#pragma once
 
 #if HAVE_IV
 #include "shape.h"
@@ -123,5 +121,4 @@ class Hinton: public Observer, public FastShape {
     Coord xsize_, ysize_;
     ShapeScene* ss_;
 };
-#endif
 #endif

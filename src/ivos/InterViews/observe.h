@@ -26,8 +26,7 @@
  * Observable - object to observe
  */
 
-#ifndef iv_observe_h
-#define iv_observe_h
+#pragma once
 
 #include <InterViews/enter-scope.h>
 
@@ -59,5 +58,3 @@ public:
 };
 
 #include <InterViews/_leave.h>
-
-#endif

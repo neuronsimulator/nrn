@@ -6,10 +6,12 @@
 #include "nrn_ansi.h"
 #include "ocfunc.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <vector>
 
 /* @brief

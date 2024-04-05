@@ -15,13 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _RNG_h
-#define _RNG_h 1
-#ifdef __GNUG__
-//#pragma interface
-#endif
-
-
+#pragma once
 /*
  * int32_t and uint32_t have been defined by the configure procedure.  Just
  * use these in place of the ones that libg++ used to provide. 
@@ -60,5 +54,3 @@ public:
     virtual float asFloat();
     virtual double asDouble();
 };
-
-#endif
