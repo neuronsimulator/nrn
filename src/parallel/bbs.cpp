@@ -13,6 +13,7 @@
 
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+extern double nrn_timeus();
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
@@ -121,7 +122,11 @@ double BBS::time() {
 }
 
 double BBSImpl::time() {
+#if NRNMPI
     return nrnmpi_wtime();
+#else
+    return nrn_timeus();
+#endif
 }
 
 double BBS::wait_time() {
