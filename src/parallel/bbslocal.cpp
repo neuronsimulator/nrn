@@ -205,7 +205,7 @@ int BBSLocal::take_todo() {
 
 void BBSLocal::save_args(int userid) {
     server_->post_todo(working_id_, posting_);
-    keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
+    keepargs_->emplace(userid, posting_);
     posting_ = nullptr;
 }
 
