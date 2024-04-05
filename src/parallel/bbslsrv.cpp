@@ -33,12 +33,6 @@ struct ltstr {
     }
 };
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
 struct ltWorkItem {
     bool operator()(const WorkItem* w1, const WorkItem* w2) const {
         return w1->todo_less_than(w2);
@@ -86,9 +80,9 @@ bool WorkItem::todo_less_than(const WorkItem* w) const {
 }
 
 class MessageList: public std::multimap<const char*, const MessageValue*, ltstr> {};
-class WorkList: public std::map<int, const WorkItem*, ltint> {};
+class WorkList: public std::map<int, const WorkItem*> {};
 class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
-class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
+class ResultList: public std::multimap<int, const WorkItem*> {};
 
 MessageItem::MessageItem() {
     next_ = nullptr;

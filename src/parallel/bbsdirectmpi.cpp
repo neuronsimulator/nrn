@@ -19,13 +19,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 
 #define debug 0
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
+class KeepArgs: public std::map<int, bbsmpibuf*> {};
 
 BBSDirect::BBSDirect() {
     if (!BBSDirectServer::server_) {

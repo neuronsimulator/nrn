@@ -20,13 +20,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 
 #include <map>
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
+class KeepArgs: public std::map<int, bbsmpibuf*> {};
 
 int BBSClient::sid_;
 
