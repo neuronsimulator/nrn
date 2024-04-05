@@ -73,7 +73,7 @@ def test_array_variable_transfer(
     if enable_coreneuron:
         pc = h.ParallelContext()
 
-        # Next three lines appease CoreNEURON. Something about GIDs.
+        # set gid for the cell (necessary for coreneuron data transfer)
         pc.set_gid2node(pc.id() + 1, pc.id())
         myobj = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
         pc.cell(pc.id() + 1, myobj)
