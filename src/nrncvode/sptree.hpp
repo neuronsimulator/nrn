@@ -10,8 +10,17 @@
 **
 ** Originaly written by Douglas W. Jones in Fortran helped by Srinivas R. Sataluri.
 ** Translated by David Brower to C circa 1988.
+** Some fixes by Mark Moraes <moraes@csri.toronto.edu>.
 **
 ** For some litterature about this Splay tree: https://en.wikipedia.org/wiki/Splay_tree
+** The original implementation is based on:
+**     Self Adjusting Binary Trees
+**         by D. D. Sleator and R. E. Tarjan,
+**             Proc. ACM SIGACT Symposium on Theory
+**             of Computing (Boston, Apr 1983) 235-245.
+**
+** For more insights, `enqueue` is doing the splay top-down.
+** `splay` itself is doing it bottom-up.
 */
 
 #pragma once
@@ -23,17 +32,17 @@ class SPTree {
   public:
     SPTree() = default;
 
-    // Is this SPTree empty.
+    // Is this SPTree empty?
     bool empty() const;
 
     // Return the value of enqcmps.
     int get_enqcmps() const;
 
-    // Insert item in a tree.
+    // Insert item in the tree.
     //
-    // Put n after all other nodes with the same key; when this is
-    // done, n will be the root of the splay tree, all nodes
-    // with keys less than or equal to that of n will be in the
+    // Put `n` after all other nodes with the same key; when this is
+    // done, `n` will be the root of the splay tree, all nodes
+    // with keys less than or equal to that of `n` will be in the
     // left subtree, all with greater keys will be in the right subtree;
     // the tree is split into these subtrees from the top down, with rotations
     // performed along the way to shorten the left branch of the right subtree
@@ -55,21 +64,21 @@ class SPTree {
     // This is done by dequeue and enqueuing the first item.
     T* first();
 
-    // Remove node from a tree.
+    // Remove node `n` from the tree.
     //
-    // n is removed; the resulting splay tree has been splayed
+    // `n` is removed; the resulting splay tree has been splayed
     // around its new root, which is the successor of n
     void remove(T* n);
 
-    // Given key, find a node in a tree.
+    // Find a node with the given key.
     //
     // Splays the found node to the root.
     T* find(double key);
 
-    // Apply a function to nodes in ascending order.
+    // Apply the function `f` to each node in ascending order.
     //
-    // f is the function that will be applied to nodes. The first argument will be
-    // a pointer to the current node, the integer valued is unused and will always be 0.
+    // `f` is the function that will be applied to nodes. The first argument will be
+    // a pointer to the current node, the integer value is unused and will always be `0`.
     // If n is given, start at that node, otherwise start from the head.
     void apply_all(void (*f)(const T*, int), T* n) const;
 
@@ -79,16 +88,16 @@ class SPTree {
 
     // Reorganize the tree.
     //
-    // The tree is reorganized so that n is the root of the
-    // splay tree; results are unpredictable if n is not
-    // in the tree; the tree is split from n up to the old root, with all
-    // nodes to the left of n ending up in the left subtree, and all nodes
+    // The tree is reorganized so that `n` is the root of the
+    // splay tree; operation is undefined if `n` is not
+    // in the tree; the tree is split from `n` up to the old root, with all
+    // nodes to the left of `n` ending up in the left subtree, and all nodes
     // to the right of n ending up in the right subtree; the left branch of
     // the right subtree and the right branch of the left subtree are
     // shortened in the process
     //
-    // This code assumes that n is not nullptr and is in the tree; it can sometimes
-    // detect n not in the tree and complain.
+    // This code assumes that `n` is not `nullptr` and is in the tree; it can sometimes
+    // detect that `n` is not in the tree and throw an exception.
     void splay(T* n);
 
     // Return the first element in the tree witout splaying.
@@ -100,7 +109,7 @@ class SPTree {
 
     // Fast return next higher item in the tree, or nullptr
     //
-    // Return the successor of n, represented as a splay tree.
+    // Return the successor of `n`, represented as a splay tree.
     // This is a fast (on average) version that does not splay.
     T* fast_next(T* n) const;
 
@@ -231,7 +240,7 @@ void SPTree<T>::enqueue(T* n) {
 
         goto one;
 
-    done: /* split is done, branches of n need reversal */
+    done: /* split is done, branches of `n` need reversal */
         temp = n->leftlink;
         n->leftlink = n->rightlink;
         n->rightlink = temp;
@@ -321,7 +330,7 @@ void SPTree<T>::splay(T* n) {
 
     while (up != nullptr) {
         /* walk up the tree towards the root, splaying all to the left of
-           n into the left subtree, all to right into the right subtree */
+           `n` into the left subtree, all to right into the right subtree */
         upup = up->uplink;
         if (up->leftlink == prev) /* up is to the right of n */
         {
@@ -350,7 +359,7 @@ void SPTree<T>::splay(T* n) {
             }
             right = up;
 
-        } else /* up is to the left of n */
+        } else /* up is to the left of `n` */
         {
             if (upup != nullptr && upup->rightlink == up) /* rotate */
             {
@@ -471,7 +480,7 @@ T* SPTree<T>::fast_first() const {
         return nullptr;
     }
 
-    T* x{root};
+    T* x = root;
     while (x->leftlink != nullptr) {
         x = x->leftlink;
     }
@@ -494,7 +503,7 @@ T* SPTree<T>::fast_next(T* n) const {
     }
 
     // Otherwise we have to go up and left
-    T* next{};
+    T* next = nullptr;
     T* x = n->uplink;
     while (x != nullptr) {
         if (x->leftlink == n) {
