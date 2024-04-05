@@ -120,24 +120,14 @@ set(SUNDIALS_USE_GENERIC_MATH 1)
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
 nrn_check_include_files(execinfo.h HAVE_EXECINFO_H)
 nrn_check_include_files(malloc.h HAVE_MALLOC_H)
-nrn_check_include_files(strings.h HAVE_STRINGS_H)
 nrn_check_include_files(sys/types.h HAVE_SYS_TYPES_H)
 nrn_check_include_files(unistd.h HAVE_UNISTD_H)
-
-# =============================================================================
-# Check for standard headers
-# =============================================================================
-check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h"
-                    STDC_HEADERS)
 
 # =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
 # =============================================================================
 # note that this must be called after all *check_include_files because we use
 # NRN_HEADERS_INCLUDE_LIST is second argument (headers) is empty.
-nrn_check_symbol_exists("bcopy" "strings.h" HAVE_BCOPY)
-nrn_check_symbol_exists("bzero" "strings.h" HAVE_BZERO)
-nrn_check_symbol_exists("index" "strings.h" HAVE_INDEX)
 nrn_check_symbol_exists("isatty" "unistd.h" HAVE_ISATTY)
 nrn_check_symbol_exists("iv" "" HAVE_IV)
 nrn_check_symbol_exists("mallinfo" "malloc.h" HAVE_MALLINFO)
