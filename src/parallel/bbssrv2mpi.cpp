@@ -43,12 +43,6 @@ struct ltstr {
     }
 };
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
 struct ltWorkItem {
     bool operator()(const WorkItem* w1, const WorkItem* w2) const {
         return w1->todo_less_than(w2);
@@ -95,10 +89,10 @@ bool WorkItem::todo_less_than(const WorkItem* w) const {
 
 class MessageList: public std::multimap<const char*, bbsmpibuf*, ltstr> {};
 class PendingList: public std::multimap<const char*, const int, ltstr> {};
-class WorkList: public std::map<int, const WorkItem*, ltint> {};
-class LookingToDoList: public std::set<int, ltint> {};
+class WorkList: public std::map<int, const WorkItem*> {};
+class LookingToDoList: public std::set<int> {};
 class ReadyList: public std::set<const WorkItem*, ltWorkItem> {};
-class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
+class ResultList: public std::multimap<int, const WorkItem*> {};
 
 BBSDirectServer::BBSDirectServer() {
     messages_ = new MessageList();
