@@ -15,6 +15,7 @@ endif()
 unset(NMODL_GOLDEN_REFERNCES)
 
 add_custom_target(generate_references)
+
 foreach(usecase ${NMODL_USECASE_DIRS})
   # Non-existant dependencies are a way of unconditionally running commands in CMake.
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/references/${usecase}/_does_not_exist_weiohbge)
@@ -34,6 +35,7 @@ foreach(usecase ${NMODL_USECASE_DIRS})
 
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/references/${usecase}/_does_not_exist_weiohbge
+    DEPENDS nmodl
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_references.sh ${CMAKE_BINARY_DIR}/bin/nmodl
             ${CMAKE_CURRENT_SOURCE_DIR}/${usecase})
 
