@@ -1,5 +1,10 @@
 #pragma once
 
+#include <queue>
+#include <string>
+#include <variant>
+#include <vector>
+
 #include <InterViews/resource.h>
 
 class MessageList;
@@ -7,26 +12,10 @@ class WorkList;
 class ReadyList;
 class ResultList;
 
-class MessageItem {
-  public:
-    MessageItem();
-    virtual ~MessageItem();
-    MessageItem* next_;
-    int type_;
-    size_t size_;  // for pickle type
-    union {
-        int i;
-        double d;
-        double* pd;
-        char* s;
-    } u;
-};
+using MessageItem = std::variant<int, double, std::vector<double>, std::vector<char>, std::string>;
 
 class MessageValue: public Resource {
   public:
-    MessageValue();
-    virtual ~MessageValue();
-    void init_unpack();
     // following return 0 if success, -1 if failure
     int upkint(int*);
     int upkdouble(double*);
@@ -41,12 +30,7 @@ class MessageValue: public Resource {
     int pkpickle(const char*, size_t);
 
   private:
-    MessageItem* link();
-
-  private:
-    MessageItem* first_;
-    MessageItem* last_;
-    MessageItem* unpack_;
+    std::queue<MessageItem> unpack_;
 };
 
 class BBSLocalServer {

@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <string.h>
-#include "bbslsrv.h"
+#include "bbslsrv.hpp"
 #include "oc_ansi.h"
 
 #define INT    1
@@ -90,144 +90,87 @@ class WorkList: public std::map<int, const WorkItem*, ltint> {};
 class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
 
-MessageItem::MessageItem() {
-    next_ = nullptr;
-    type_ = 0;
-}
-
-MessageItem::~MessageItem() {
-    switch (type_) {
-    case STRING:
-        delete[] u.s;
-        break;
-    case VECTOR:
-        delete[] u.pd;
-        break;
-    case PICKLE:
-        delete[] u.s;
-        break;
-    }
-}
-
-MessageValue::MessageValue() {
-    first_ = nullptr;
-    last_ = nullptr;
-    unpack_ = nullptr;
-}
-
-MessageValue::~MessageValue() {
-    MessageItem *mi, *next;
-    for (mi = first_; mi; mi = next) {
-        next = mi->next_;
-        delete mi;
-    }
-}
-
-MessageItem* MessageValue::link() {
-    MessageItem* mi = new MessageItem();
-    if (last_) {
-        last_->next_ = mi;
-    } else {
-        first_ = mi;
-        unpack_ = mi;
-    }
-    last_ = mi;
-    return mi;
-}
-
-void MessageValue::init_unpack() {
-    unpack_ = first_;
-}
-
 int MessageValue::pkint(int i) {
-    MessageItem* m = link();
-    m->type_ = INT;
-    m->u.i = i;
+    unpack_.emplace(i);
     return 0;
 }
 
 int MessageValue::pkdouble(double x) {
-    MessageItem* m = link();
-    m->type_ = DOUBLE;
-    m->u.d = x;
+    unpack_.emplace(x);
     return 0;
 }
 
 int MessageValue::pkvec(int n, double* x) {
-    int i;
-    MessageItem* m = link();
-    m->type_ = VECTOR;
-    m->u.pd = new double[n];
-    for (i = 0; i < n; ++i) {
-        m->u.pd[i] = x[i];
-    }
+    unpack_.emplace(std::vector<double>(x, x + n));
     return 0;
 }
 
 int MessageValue::pkstr(const char* str) {
-    MessageItem* m = link();
-    m->type_ = STRING;
-    m->u.s = new char[strlen(str) + 1];
-    strcpy(m->u.s, str);
+    unpack_.emplace(std::string(str));
     return 0;
 }
 
 int MessageValue::pkpickle(const char* bytes, size_t n) {
-    MessageItem* m = link();
-    m->type_ = PICKLE;
-    m->u.s = new char[n];
-    m->size_ = n;
-    memcpy(m->u.s, bytes, n);
+    unpack_.emplace(std::vector<char>(bytes, bytes + n));
     return 0;
 }
 
 int MessageValue::upkint(int* i) {
-    if (!unpack_ || unpack_->type_ != INT) {
-        return -1;
+    const auto& mi = unpack_.front();
+    if (const auto* val = std::get_if<int>(&mi)) {
+        *i = *val;
+        unpack_.pop();
+        return 0;
     }
-    *i = unpack_->u.i;
-    unpack_ = unpack_->next_;
-    return 0;
+    return -1;
 }
 
 int MessageValue::upkdouble(double* d) {
-    if (!unpack_ || unpack_->type_ != DOUBLE) {
-        return -1;
+    const auto& mi = unpack_.front();
+    if (const auto* val = std::get_if<double>(&mi)) {
+        *d = *val;
+        unpack_.pop();
+        return 0;
     }
-    *d = unpack_->u.d;
-    unpack_ = unpack_->next_;
-    return 0;
+    return -1;
 }
 
 int MessageValue::upkvec(int n, double* d) {
-    int i;
-    if (!unpack_ || unpack_->type_ != VECTOR) {
-        return -1;
+    const auto& mi = unpack_.front();
+    if (const auto* val = std::get_if<std::vector<double>>(&mi)) {
+        for (std::size_t i = 0; i < n; ++i) {
+            d[i] = val->at(i);
+        }
+        unpack_.pop();
+        return 0;
     }
-    for (i = 0; i < n; ++i) {
-        d[i] = unpack_->u.pd[i];
-    }
-    unpack_ = unpack_->next_;
-    return 0;
+    return -1;
 }
 
 int MessageValue::upkstr(char* s) {
-    if (!unpack_ || unpack_->type_ != STRING) {
-        return -1;
+    const auto& mi = unpack_.front();
+    if (const auto* val = std::get_if<std::string>(&mi)) {
+        for (std::size_t i = 0; i < val->size(); ++i) {
+            s[i] = val->at(i);
+        }
+        s[val->size()] = '\0';
+        unpack_.pop();
+        return 0;
     }
-    strcpy(s, unpack_->u.s);
-    unpack_ = unpack_->next_;
-    return 0;
+    return -1;
 }
 
 int MessageValue::upkpickle(char* s, size_t* n) {
-    if (!unpack_ || unpack_->type_ != PICKLE) {
-        return -1;
+    const auto& mi = unpack_.front();
+    if (const auto* val = std::get_if<std::vector<char>>(&mi)) {
+        *n = val->size();
+        for (std::size_t i = 0; i < *n; ++i) {
+            s[i] = val->at(i);
+        }
+        unpack_.pop();
+        return 0;
     }
-    *n = unpack_->size_;
-    memcpy(s, unpack_->u.s, *n);
-    unpack_ = unpack_->next_;
-    return 0;
+    return -1;
 }
 
 BBSLocalServer::BBSLocalServer() {
