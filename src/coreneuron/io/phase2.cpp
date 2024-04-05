@@ -89,7 +89,7 @@ namespace coreneuron {
 template <typename T>
 void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims, int layout) {
     if (layout == Layout::AoS) {
-        throw std::runtime_error("Not implemented. [idowie]");
+        throw std::runtime_error("AoS memory layout not implemented.");
     }
 
     int n_vars = array_dims.size();
