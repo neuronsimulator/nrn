@@ -207,14 +207,11 @@ namespace coreneuron {
 */
 template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
-    int imod = cnt % chunk;
-    if (layout == Layout::AoS)
+    if (layout == Layout::AoS) {
         return cnt;
-    if (imod) {
-        int idiv = cnt / chunk;
-        return (idiv + 1) * chunk;
+    } else {
+        return ((cnt + chunk - 1) / chunk) * chunk;
     }
-    return cnt;
 }
 
 /** Check for the pointer alignment.
