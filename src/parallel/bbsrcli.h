@@ -18,7 +18,7 @@ class BBSClient: public BBSImpl {  // implemented as PVM Client
     int upkint() override;
     double upkdouble() override;
     void upkvec(int, double*) override;
-    char* upkstr() override;            // delete [] char* when finished
+    char* upkstr() override;  // delete [] char* when finished
     std::vector<char> upkpickle() override;
 
     // before posting use these

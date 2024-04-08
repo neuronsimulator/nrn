@@ -383,7 +383,8 @@ static Object** pyret(void* v) {
 }
 Object** BBS::pyret() {
     assert(neuron::python::methods.pickle2po);
-    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_.data(), impl_->pickle_ret_.size());
+    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_.data(),
+                                                   impl_->pickle_ret_.size());
     impl_->pickle_ret_.clear();
     return hoc_temp_objptr(po);
 }
@@ -1353,7 +1354,7 @@ void BBSImpl::return_args(int id) {
         break;
     case 3:
         auto pickle = upkpickle();  // pickled callable
-        i = upkint();       // arg manifest
+        i = upkint();               // arg manifest
         break;
     }
     // now only args are left and ready to unpack.

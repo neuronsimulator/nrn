@@ -15,7 +15,7 @@ class BBSImpl {
     virtual int upkint() = 0;
     virtual double upkdouble() = 0;
     virtual void upkvec(int, double*) = 0;
-    virtual char* upkstr() = 0;            // delete [] char* when finished
+    virtual char* upkstr() = 0;  // delete [] char* when finished
     virtual std::vector<char> upkpickle() = 0;
 
     // before posting use these
