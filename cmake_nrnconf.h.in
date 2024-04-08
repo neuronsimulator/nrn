@@ -8,11 +8,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
 /* if mac os x */
 #undef DARWIN
 
@@ -73,9 +68,6 @@
 /* define if using mingw */
 #undef MINGW
 
-/* define if using Mike Neubig <neubig@salk.edu> contributions */
-#undef MikeNeubig
-
 /* where the lib hoc is */
 #undef NEURON_DATA_DIR
 
@@ -120,14 +112,6 @@
 
 /* define if RETSIGTYPE(*)(int) is not the prototype for a signal handler */
 #undef SIGNAL_CAST
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-#undef STACK_DIRECTION
 
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #undef SUNDIALS_DOUBLE_PRECISION
