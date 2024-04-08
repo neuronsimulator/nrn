@@ -166,12 +166,12 @@ int MessageValue::pkstr(const char* str) {
     return 0;
 }
 
-int MessageValue::pkpickle(const char* bytes, size_t n) {
+int MessageValue::pkpickle(const std::vector<char>& s) {
     MessageItem* m = link();
     m->type_ = PICKLE;
-    m->u.s = new char[n];
-    m->size_ = n;
-    memcpy(m->u.s, bytes, n);
+    m->u.s = new char[s.size()];
+    m->size_ = s.size();
+    memcpy(m->u.s, s.data(), s.size());
     return 0;
 }
 
@@ -214,12 +214,14 @@ int MessageValue::upkstr(char* s) {
     return 0;
 }
 
-int MessageValue::upkpickle(char* s, size_t* n) {
+int MessageValue::upkpickle(std::vector<char>& s) {
     if (!unpack_ || unpack_->type_ != PICKLE) {
         return -1;
     }
-    *n = unpack_->size_;
-    memcpy(s, unpack_->u.s, *n);
+    int len{};
+    len = unpack_->size_;
+    s.reserve(len);
+    memcpy(s.data(), unpack_->u.s, len);
     unpack_ = unpack_->next_;
     return 0;
 }

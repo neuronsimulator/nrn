@@ -94,18 +94,10 @@ BBSImpl::BBSImpl() {
     integ_time_ = 0.;
     working_id_ = 0;
     n_ = 0;
-    pickle_ret_ = 0;
-    pickle_ret_size_ = 0;
 }
 
 BBS::~BBS() {
     delete impl_;
-}
-
-BBSImpl::~BBSImpl() {
-    if (pickle_ret_) {
-        delete[] pickle_ret_;
-    }
 }
 
 bool BBS::is_master() {
@@ -190,10 +182,10 @@ char* BBS::upkstr() {
     return s;
 }
 
-char* BBS::upkpickle(size_t* n) {
-    char* s = impl_->upkpickle(n);
+std::vector<char> BBS::upkpickle() {
+    auto s = impl_->upkpickle();
     if (debug) {
-        printf("upkpickle %lu |%s|\n", *n, s);
+        printf("upkpickle %lu |%s|\n", s.size(), s.data());
     }
     return s;
 }
@@ -233,11 +225,11 @@ void BBS::pkstr(const char* s) {
     impl_->pkstr(s);
 }
 
-void BBS::pkpickle(const char* s, size_t n) {
+void BBS::pkpickle(const std::vector<char>& s) {
     if (debug) {
-        printf("pkpickle %lu |%s|\n", n, s);
+        printf("pkpickle %lu |%s|\n", s.size(), s.data());
     }
-    impl_->pkpickle(s, n);
+    impl_->pkpickle(s);
 }
 
 #if 0
@@ -309,7 +301,7 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     if (!rs) {
         pkdouble(hoc_ac_);
     } else {
-        pkpickle(rs, n);
+        pkpickle(std::vector<char>(rs, rs + n));
         delete[] rs;
     }
     working_id_ = save_id;
@@ -388,10 +380,7 @@ bool BBSImpl::working(int& id, double& x, int& userid) {
             } else {
                 assert(rtype == 1);
                 x = 0.0;
-                if (pickle_ret_) {
-                    delete[] pickle_ret_;
-                }
-                pickle_ret_ = upkpickle(&pickle_ret_size_);
+                pickle_ret_ = upkpickle();
             }
             --n_;
             if (debug) {
