@@ -977,6 +977,7 @@ std::vector<CodegenCppVisitor::SymbolType> CodegenCppVisitor::get_float_variable
     if (net_receive_exist()) {
         variables.push_back(make_symbol(naming::T_SAVE_VARIABLE));
     }
+
     return variables;
 }
 
