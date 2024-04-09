@@ -72,8 +72,7 @@ class OcBBS: public BBS, public Resource {
 };
 
 OcBBS::OcBBS(int n)
-    : BBS(n) {
-}
+    : BBS(n) {}
 
 static bool posting_ = false;
 static void pack_help(int, OcBBS*);
@@ -827,7 +826,8 @@ static double alltoall(void*) {
             c[i] = 1;
             rdispl[i + 1] = i + 1;
         }
-        nrnmpi_int_alltoallv(scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
+        nrnmpi_int_alltoallv(
+            scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
         for (int i = 0; i < np; ++i) {
             rdispl[i + 1] = rdispl[i] + rcnt[i];
         }
@@ -1172,7 +1172,7 @@ void ParallelContext_reg() {
 //     Return a string that is of size `size`.
 //     Dry run if `exec` is false.
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
-    char* python_pickle; // Used only for style == 3
+    char* python_pickle;  // Used only for style == 3
     int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
     int style = upkint();
     if (subworld) {
@@ -1185,25 +1185,23 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
     char* rs = nullptr;
     *size = 0;
     switch (style) {
-    case 0:
-        {
-            char* statement = upkstr();
-            if (subworld) {
-                int size = strlen(statement) + 1;
-                nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(statement, size, 0);
-            }
-            hoc_obj_run(statement, nullptr);
-            delete[] statement;
+    case 0: {
+        char* statement = upkstr();
+        if (subworld) {
+            int size = strlen(statement) + 1;
+            nrnmpi_int_broadcast(&size, 1, 0);
+            nrnmpi_char_broadcast(statement, size, 0);
         }
-        break;
+        hoc_obj_run(statement, nullptr);
+        delete[] statement;
+    } break;
     default: {
         size_t npickle;
         Symbol* fname = nullptr;
         Object* ob = nullptr;
-        std::vector<char*> sarg; // Store the strings pointer to delete[] them later
-        int narg = 0;      // total number of args
-        if (style == 2) {  // object first
+        std::vector<char*> sarg;  // Store the strings pointer to delete[] them later
+        int narg = 0;             // total number of args
+        if (style == 2) {         // object first
             char* template_name = upkstr();
             int object_index = upkint();  // object index
             Symbol* sym = hoc_lookup(template_name);
@@ -1223,7 +1221,10 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 ob = nullptr;
             }
             if (!ob) {
-                fprintf(stderr, "%s[%d] is not an Object in this process\n", template_name, object_index);
+                fprintf(stderr,
+                        "%s[%d] is not an Object in this process\n",
+                        template_name,
+                        object_index);
                 hoc_execerror("ParallelContext execution error", 0);
             }
             delete[] template_name;
