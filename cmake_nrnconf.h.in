@@ -8,11 +8,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
 /* if mac os x */
 #undef DARWIN
 
@@ -64,9 +59,6 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGBUS
 
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
@@ -75,9 +67,6 @@
 
 /* define if using mingw */
 #undef MINGW
-
-/* define if using Mike Neubig <neubig@salk.edu> contributions */
-#undef MikeNeubig
 
 /* where the lib hoc is */
 #undef NEURON_DATA_DIR
@@ -123,17 +112,6 @@
 
 /* define if RETSIGTYPE(*)(int) is not the prototype for a signal handler */
 #undef SIGNAL_CAST
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-#undef STACK_DIRECTION
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
 
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #undef SUNDIALS_DOUBLE_PRECISION
@@ -204,4 +182,3 @@ namespace neuron::config {
 #endif
 
 #endif /* H_nrnconf_included */
-

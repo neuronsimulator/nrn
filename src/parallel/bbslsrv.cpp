@@ -33,12 +33,6 @@ struct ltstr {
     }
 };
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
 struct ltWorkItem {
     bool operator()(const WorkItem* w1, const WorkItem* w2) const {
         return w1->todo_less_than(w2);
@@ -86,9 +80,9 @@ bool WorkItem::todo_less_than(const WorkItem* w) const {
 }
 
 class MessageList: public std::multimap<const char*, const MessageValue*, ltstr> {};
-class WorkList: public std::map<int, const WorkItem*, ltint> {};
+class WorkList: public std::map<int, const WorkItem*> {};
 class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
-class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
+class ResultList: public std::multimap<int, const WorkItem*> {};
 
 MessageItem::MessageItem() {
     next_ = nullptr;
@@ -285,8 +279,7 @@ bool BBSLocalServer::look(const char* key, MessageValue** val) {
 }
 
 void BBSLocalServer::post(const char* key, MessageValue* val) {
-    MessageList::iterator m = messages_->insert(
-        std::pair<const char* const, const MessageValue*>(newstr(key), val));
+    MessageList::iterator m = messages_->emplace(newstr(key), val);
     Resource::ref(val);
 #if debug
     printf("srvr_post |%s|\n", key);
@@ -299,8 +292,8 @@ void BBSLocalServer::post_todo(int parentid, MessageValue* val) {
     if (p != work_->end()) {
         w->parent_ = (WorkItem*) ((*p).second);
     }
-    work_->insert(std::pair<const int, const WorkItem*>(w->id_, w));
-    todo_->insert(w);
+    work_->emplace(w->id_, w);
+    todo_->emplace(w);
 #if debug
     printf("srvr_post_todo id=%d pid=%d\n", w->id_, parentid);
 #endif
@@ -312,7 +305,7 @@ void BBSLocalServer::post_result(int id, MessageValue* val) {
     val->ref();
     w->val_->unref();
     w->val_ = val;
-    results_->insert(std::pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
+    results_->emplace(w->parent_ ? w->parent_->id_ : 0, w);
 #if debug
     printf("srvr_post_done id=%d pid=%d\n", id, w->parent_ ? w->parent_->id_ : 0);
 #endif
