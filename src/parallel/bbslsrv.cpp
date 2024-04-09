@@ -84,6 +84,10 @@ class WorkList: public std::map<int, const WorkItem*> {};
 class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*> {};
 
+void MessageValue::init_unpack() {
+    index_ = 0;
+}
+
 int MessageValue::pkint(int i) {
     args_.emplace_back(i);
     return 0;

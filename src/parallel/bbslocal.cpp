@@ -209,6 +209,7 @@ void BBSLocal::return_args(int userid) {
     Resource::unref(taking_);
     taking_ = (MessageValue*) ((*i).second);
     keepargs_->erase(i);
+    taking_->init_unpack();
     BBSImpl::return_args(userid);
 }
 

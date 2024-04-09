@@ -15,6 +15,7 @@ using MessageItem = std::variant<int, double, std::vector<double>, std::vector<c
 
 class MessageValue: public Resource {
   public:
+    void init_unpack();
     // following return 0 if success, -1 if failure
     int upkint(int*);
     int upkdouble(double*);
