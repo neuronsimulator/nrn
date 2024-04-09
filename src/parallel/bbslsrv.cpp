@@ -245,7 +245,7 @@ BBSLocalServer::~BBSLocalServer() {
 bool BBSLocalServer::look_take(const char* key, MessageValue** val) {
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
-        *val = (MessageValue*) ((*m).second);
+        *val = const_cast<MessageValue*>((*m).second);
         char* s = (char*) ((*m).first);
         messages_->erase(m);
         delete[] s;
@@ -263,7 +263,7 @@ bool BBSLocalServer::look_take(const char* key, MessageValue** val) {
 bool BBSLocalServer::look(const char* key, MessageValue** val) {
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
-        *val = (MessageValue*) ((*m).second);
+        *val = const_cast<MessageValue*>((*m).second);
         Resource::ref(*val);
 #if debug
         printf("srvr_look true |%s|\n", key);
