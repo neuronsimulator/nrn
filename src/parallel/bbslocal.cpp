@@ -207,7 +207,7 @@ void BBSLocal::return_args(int userid) {
     KeepArgs::iterator i = keepargs_->find(userid);
     assert(i != keepargs_->end());
     Resource::unref(taking_);
-    taking_ = (MessageValue*) ((*i).second);
+    taking_ = const_cast<MessageValue*>((*i).second);
     keepargs_->erase(i);
     taking_->init_unpack();
     BBSImpl::return_args(userid);
