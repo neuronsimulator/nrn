@@ -2159,20 +2159,22 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
         std::string expected_text = R"(
             DERIVATIVE kstates {
                 EIGEN_NEWTON_SOLVE[2]{
-                    LOCAL old_C1, old_C2
+                    LOCAL kf0_, kb0_, old_C1, old_C2
                 }{
+                    kb0_ = alfa(v)
+                    kf0_ = alfa(v)
                     old_C1 = C1
                     old_C2 = C2
                 }{
                     nmodl_eigen_x[0] = C1
                     nmodl_eigen_x[1] = C2
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*alfa(v)-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*alfa(v)+old_C1
-                    nmodl_eigen_j[0] = -dt*alfa(v)-1.0
-                    nmodl_eigen_j[2] = dt*alfa(v)
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*alfa(v)-nmodl_eigen_x[1]*dt*alfa(v)-nmodl_eigen_x[1]+old_C2
-                    nmodl_eigen_j[1] = dt*alfa(v)
-                    nmodl_eigen_j[3] = -dt*alfa(v)-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*kb0_+old_C1
+                    nmodl_eigen_j[0] = -dt*kf0_-1.0
+                    nmodl_eigen_j[2] = dt*kb0_
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[1]*dt*kb0_-nmodl_eigen_x[1]+old_C2
+                    nmodl_eigen_j[1] = dt*kf0_
+                    nmodl_eigen_j[3] = -dt*kb0_-1.0
                 }{
                     C1 = nmodl_eigen_x[0]
                     C2 = nmodl_eigen_x[1]
@@ -2207,20 +2209,22 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
         std::string expected_text = R"(
             DERIVATIVE kstates {
                 EIGEN_NEWTON_SOLVE[2]{
-                    LOCAL old_C1, old_C2
+                    LOCAL kf0_, kb0_, old_C1, old_C2
                 }{
+                    kb0_ = lowergamma(v)
+                    kf0_ = beta(v)
                     old_C1 = C1
                     old_C2 = C2
                 }{
                     nmodl_eigen_x[0] = C1
                     nmodl_eigen_x[1] = C2
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*beta(v)-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*lowergamma(v)+old_C1
-                    nmodl_eigen_j[0] = -dt*beta(v)-1.0
-                    nmodl_eigen_j[2] = dt*lowergamma(v)
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*beta(v)-nmodl_eigen_x[1]*dt*lowergamma(v)-nmodl_eigen_x[1]+old_C2
-                    nmodl_eigen_j[1] = dt*beta(v)
-                    nmodl_eigen_j[3] = -dt*lowergamma(v)-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*kb0_+old_C1
+                    nmodl_eigen_j[0] = -dt*kf0_-1.0
+                    nmodl_eigen_j[2] = dt*kb0_
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[1]*dt*kb0_-nmodl_eigen_x[1]+old_C2
+                    nmodl_eigen_j[1] = dt*kf0_
+                    nmodl_eigen_j[3] = -dt*kb0_-1.0
                 }{
                     C1 = nmodl_eigen_x[0]
                     C2 = nmodl_eigen_x[1]

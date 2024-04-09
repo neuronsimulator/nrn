@@ -71,7 +71,9 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         static const std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (a*c/3.2)
+                LOCAL source0_
+                source0_ = a*c/3.2
+                x' = (source0_)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -89,7 +91,9 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x'[0] = (a*c/3.2)
+                LOCAL source0_
+                source0_ = a*c/3.2
+                x'[0] = (source0_)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -109,9 +113,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL source0_
+                source0_ = a*c/3.2
                 f0 = 0*2
                 f1 = 0+0
-                x'[0] = (a*c/3.2)
+                x'[0] = (source0_)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -143,9 +149,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                zf = a*x
+                LOCAL kf0_
+                kf0_ = a
+                zf = kf0_*x
                 zb = 0
-                x' = (-1*(a*x))
+                x' = (-1*(kf0_*x))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -163,8 +171,10 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (-1*(f(v)*x*y))
-                y' = (-1*(f(v)*x*y))
+                LOCAL kf0_
+                kf0_ = f(v)
+                x' = (-1*(kf0_*x*y))
+                y' = (-1*(kf0_*x*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -183,9 +193,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_
+                kf0_ = f(v)
                 CONSERVE y = 1-x
-                x' = (-1*(f(v)*x*y))
-                y' = (-1*(f(v)*x*y))
+                x' = (-1*(kf0_*x*y))
+                y' = (-1*(kf0_*x*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -206,9 +218,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_
+                kf0_ = f(v)
                 CONSERVE y = (1-(a*1*x))/(b*1)
-                x' = ((-1*(f(v)*x*y)))/(a)
-                y' = ((-1*(f(v)*x*y)))/(b)
+                x' = ((-1*(kf0_*x*y)))/(a)
+                y' = ((-1*(kf0_*x*y)))/(b)
             })";
         THEN(
             "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement inc COMPARTMENT "
@@ -228,8 +242,10 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x'[0] = (-1*(f(v)*x[0]*x[1]))
-                x'[1] = (-1*(f(v)*x[0]*x[1]))
+                LOCAL kf0_
+                kf0_ = f(v)
+                x'[0] = (-1*(kf0_*x[0]*x[1]))
+                x'[1] = (-1*(kf0_*x[0]*x[1]))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -248,8 +264,10 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x'[0] = ((-1*(f(v)*x[0]*x[1])))/(vol[0])
-                x'[1] = ((-1*(f(v)*x[0]*x[1])))/(vol[1])
+                LOCAL kf0_
+                kf0_ = f(v)
+                x'[0] = ((-1*(kf0_*x[0]*x[1])))/(vol[0])
+                x'[1] = ((-1*(kf0_*x[0]*x[1])))/(vol[1])
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -273,8 +291,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                c1 = r*x-r*c
-                x' = (-1*(r*x-r*c))
+                LOCAL kf0_, kb0_
+                kf0_ = r
+                kb0_ = r
+                c1 = kf0_*x-kb0_*c
+                x' = (-1*(kf0_*x-kb0_*c))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -292,8 +313,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (-1*(a*x-b*y))
-                y' = (1*(a*x-b*y))
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
+                x' = (-1*(kf0_*x-kb0_*y))
+                y' = (1*(kf0_*x-kb0_*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -312,9 +336,12 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
                 CONSERVE y = 0-x
-                x' = (-1*(a*x-b*y))
-                y' = (1*(a*x-b*y))
+                x' = (-1*(kf0_*x-kb0_*y))
+                y' = (1*(kf0_*x-kb0_*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -336,11 +363,16 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_, kb0_, kf1_, kb1_
+                kf0_ = a
+                kb0_ = b
+                kf1_ = c
+                kb1_ = d
                 CONSERVE x[2] = 1-y-x[0]-x[1]
-                x'[0] = (-1*(a*x[0]-b*x[1]))
-                x'[1] = (1*(a*x[0]-b*x[1]))
-                x'[2] = (-1*(c*x[2]-d*y))
-                y' = (1*(c*x[2]-d*y))
+                x'[0] = (-1*(kf0_*x[0]-kb0_*x[1]))
+                x'[1] = (1*(kf0_*x[0]-kb0_*x[1]))
+                x'[2] = (-1*(kf1_*x[2]-kb1_*y))
+                y' = (1*(kf1_*x[2]-kb1_*y))
             })";
         THEN(
             "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement after summing over "
@@ -364,11 +396,16 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_, kb0_, kf1_, kb1_
+                kf0_ = a
+                kb0_ = b
+                kf1_ = c
+                kb1_ = d
                 CONSERVE y = 1-x[0]-x[1]-x[2]
-                x'[0] = (-1*(a*x[0]-b*x[1]))
-                x'[1] = (1*(a*x[0]-b*x[1]))
-                x'[2] = (-1*(c*x[2]-d*y))
-                y' = (1*(c*x[2]-d*y))
+                x'[0] = (-1*(kf0_*x[0]-kb0_*x[1]))
+                x'[1] = (1*(kf0_*x[0]-kb0_*x[1]))
+                x'[2] = (-1*(kf1_*x[2]-kb1_*y))
+                y' = (1*(kf1_*x[2]-kb1_*y))
             })";
         THEN(
             "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement after summing over "
@@ -389,8 +426,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = ((-1*(a*x-b*y)))/(c-d)
-                y' = ((1*(a*x-b*y)))/(c-d)
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
+                x' = ((-1*(kf0_*x-kb0_*y)))/(c-d)
+                y' = ((1*(kf0_*x-kb0_*y)))/(c-d)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -413,16 +453,49 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE ihkin {
+                LOCAL kf0_, kb0_, kf1_, kb1_, kf2_, kb2_
                 evaluate_fct(v, cai)
+                kf0_ = alpha
+                kb0_ = beta
+                kf1_ = k1ca
+                kb1_ = k2
+                kf2_ = k3p
+                kb2_ = k4
                 CONSERVE p1 = 1-p0
                 CONSERVE o2 = 1-c1-o1
-                c1' = (-1*(alpha*c1-beta*o1))
-                o1' = (1*(alpha*c1-beta*o1))+(-1*(k3p*o1-k4*o2))
-                o2' = (1*(k3p*o1-k4*o2))
-                p0' = (-1*(k1ca*p0-k2*p1))
-                p1' = (1*(k1ca*p0-k2*p1))
+                c1' = (-1*(kf0_*c1-kb0_*o1))
+                o1' = (1*(kf0_*c1-kb0_*o1))+(-1*(kf2_*o1-kb2_*o2))
+                o2' = (1*(kf2_*o1-kb2_*o2))
+                p0' = (-1*(kf1_*p0-kb1_*p1))
+                p1' = (1*(kf1_*p0-kb1_*p1))
             })";
         THEN("Convert to equivalent DERIVATIVE block, re-order both CONSERVE statements") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with one reaction statement & clashing local") {
+        std::string input_nmodl_text = R"(
+            ASSIGNED {
+                kf0_
+            }
+            STATE {
+                x y
+            }
+            KINETIC states {
+                LOCAL kf0_0000, kb0_0000
+                ~ x <-> y (kf0_, b)
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                LOCAL kf0_0000, kb0_0000, kf0_0001, kb0_
+                kf0_0001 = kf0_
+                kb0_ = b
+                x' = (-1*(kf0_0001*x-kb0_*y))
+                y' = (1*(kf0_0001*x-kb0_*y))
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
@@ -440,8 +513,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = ((-1*(a*x-b*y)))/(cx)
-                y' = ((1*(a*x-b*y)))/(cy)
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
+                x' = ((-1*(kf0_*x-kb0_*y)))/(cx)
+                y' = ((1*(kf0_*x-kb0_*y)))/(cy)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -460,10 +536,15 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                w' = (-1*(c*w-d*z))
-                x' = (-1*(a*x-b*y))
-                y' = (1*(a*x-b*y))
-                z' = (1*(c*w-d*z))
+                LOCAL kf0_, kb0_, kf1_, kb1_
+                kf0_ = a
+                kb0_ = b
+                kf1_ = c
+                kb1_ = d
+                w' = (-1*(kf1_*w-kb1_*z))
+                x' = (-1*(kf0_*x-kb0_*y))
+                y' = (1*(kf0_*x-kb0_*y))
+                z' = (1*(kf1_*w-kb1_*z))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -482,9 +563,14 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (-1*(a*x-b*y))
-                y' = (1*(a*x-b*y))+(-1*(c*y-d*z))
-                z' = (1*(c*y-d*z))
+                LOCAL kf0_, kb0_, kf1_, kb1_
+                kf0_ = a
+                kb0_ = b
+                kf1_ = c
+                kb1_ = d
+                x' = (-1*(kf0_*x-kb0_*y))
+                y' = (1*(kf0_*x-kb0_*y))+(-1*(kf1_*y-kb1_*z))
+                z' = (1*(kf1_*y-kb1_*z))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -506,12 +592,17 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                LOCAL kf0_, kb0_, kf1_, kb1_
                 c0 = 0
-                c1 = a*x+b*y
-                c2 = c*y-2*d*z
-                x' = (-1*(a*x-b*y))
-                y' = (1*(a*x-b*y))+(-1*(c*y-d*z))
-                z' = (1*(c*y-d*z))
+                kf0_ = a
+                kb0_ = b
+                c1 = kf0_*x+kb0_*y
+                kf1_ = c
+                kb1_ = d
+                c2 = kf1_*y-2*kb1_*z
+                x' = (-1*(kf0_*x-kb0_*y))
+                y' = (1*(kf0_*x-kb0_*y))+(-1*(kf1_*y-kb1_*z))
+                z' = (1*(kf1_*y-kb1_*z))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -529,8 +620,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (-2*(a*x*x-b*y))
-                y' = (1*(a*x*x-b*y))
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
+                x' = (-2*(kf0_*x*x-kb0_*y))
+                y' = (1*(kf0_*x*x-kb0_*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -548,8 +642,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                x' = (-2*(a*x*x-b*y))
-                y' = (1*(a*x*x-b*y))
+                LOCAL kf0_, kb0_
+                kf0_ = a
+                kb0_ = b
+                x' = (-2*(kf0_*x*x-kb0_*y))
+                y' = (1*(kf0_*x*x-kb0_*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -568,8 +665,11 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                mc' = (-1*(a(v)*mc-b(v)*m))
-                m' = (1*(a(v)*mc-b(v)*m))
+                LOCAL kf0_, kb0_
+                kf0_ = a(v)
+                kb0_ = b(v)
+                mc' = (-1*(kf0_*mc-kb0_*m))
+                m' = (1*(kf0_*mc-kb0_*m))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -589,11 +689,17 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
-                A' = (-2*(k1*A*A*B-k2*C))+(1*(k3*C*D-k4*A*B*B))
-                B' = (-1*(k1*A*A*B-k2*C))+(2*(k3*C*D-k4*A*B*B))
-                C' = (1*(k1*A*A*B-k2*C))+(-1*(k3*C*D-k4*A*B*B))
-                D' = (-1*(k3*C*D-k4*A*B*B))
+                LOCAL kf0_, kb0_, kf1_, kb1_
+                kf0_ = k1
+                kb0_ = k2
+                kf1_ = k3
+                kb1_ = k4
+                A' = (-2*(kf0_*A*A*B-kb0_*C))+(1*(kf1_*C*D-kb1_*A*B*B))
+                B' = (-1*(kf0_*A*A*B-kb0_*C))+(2*(kf1_*C*D-kb1_*A*B*B))
+                C' = (1*(kf0_*A*A*B-kb0_*C))+(-1*(kf1_*C*D-kb1_*A*B*B))
+                D' = (-1*(kf1_*C*D-kb1_*A*B*B))
             })";
+
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
@@ -621,13 +727,24 @@ SCENARIO("Convert KINETIC to DERIVATIVE using KineticBlock visitor", "[kinetic][
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE kin {
+                LOCAL kf0_, kb0_, kf1_, kb1_, kf2_, kb2_, kf3_, kb3_, source4_, kf5_
+                source4_ = a
                 {
+                    kf0_ = b[0]
+                    kb0_ = c[0]
+                    kf1_ = b[1]
+                    kb1_ = c[1]
+                    kf2_ = b[2]
+                    kb2_ = c[2]
+                    kf3_ = b[3]
+                    kb3_ = c[3]
                 }
-                x'[0] = (a)+(-1*(b[0]*x[0]-c[0]*x[1]))
-                x'[1] = (1*(b[0]*x[0]-c[0]*x[1]))+(-1*(b[1]*x[1]-c[1]*x[2]))
-                x'[2] = (1*(b[1]*x[1]-c[1]*x[2]))+(-1*(b[2]*x[2]-c[2]*x[3]))
-                x'[3] = (1*(b[2]*x[2]-c[2]*x[3]))+(-1*(b[3]*x[3]-c[3]*x[4]))
-                x'[4] = (1*(b[3]*x[3]-c[3]*x[4]))+(-1*(d*x[4]))
+                kf5_ = d
+                x'[0] = (source4_)+(-1*(kf0_*x[0]-kb0_*x[1]))
+                x'[1] = (1*(kf0_*x[0]-kb0_*x[1]))+(-1*(kf1_*x[1]-kb1_*x[2]))
+                x'[2] = (1*(kf1_*x[1]-kb1_*x[2]))+(-1*(kf2_*x[2]-kb2_*x[3]))
+                x'[3] = (1*(kf2_*x[2]-kb2_*x[3]))+(-1*(kf3_*x[3]-kb3_*x[4]))
+                x'[4] = (1*(kf3_*x[3]-kb3_*x[4]))+(-1*(kf5_*x[4]))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
