@@ -42,9 +42,6 @@
 /* The size of a `long int', as computed by sizeof. */
 #undef SIZEOF_LONG_INT
 
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
-
 /* FCMIX: Make function names lowercase */
 #undef SUNDIALS_CASE_LOWER
 
