@@ -91,83 +91,85 @@ class ReadyList: public std::set<WorkItem*, ltWorkItem> {};
 class ResultList: public std::multimap<int, const WorkItem*, ltint> {};
 
 int MessageValue::pkint(int i) {
-    unpack_.emplace(i);
+    args_.emplace_back(i);
     return 0;
 }
 
 int MessageValue::pkdouble(double x) {
-    unpack_.emplace(x);
+    args_.emplace_back(x);
     return 0;
 }
 
 int MessageValue::pkvec(int n, double* x) {
-    unpack_.emplace(std::vector<double>(x, x + n));
+    args_.emplace_back(std::vector<double>(x, x + n));
     return 0;
 }
 
 int MessageValue::pkstr(const char* str) {
-    unpack_.emplace(std::string(str));
+    args_.emplace_back(std::string(str));
     return 0;
 }
 
 int MessageValue::pkpickle(const char* bytes, size_t n) {
-    unpack_.emplace(std::vector<char>(bytes, bytes + n));
+    args_.emplace_back(std::vector<char>(bytes, bytes + n));
     return 0;
 }
 
 int MessageValue::upkint(int* i) {
-    const auto& mi = unpack_.front();
-    if (const auto* val = std::get_if<int>(&mi)) {
+    if (index_ > args_.size()) {
+        return -1;
+    }
+    if (const auto* val = std::get_if<int>(args_.data() + index_)) {
         *i = *val;
-        unpack_.pop();
+        ++index_;
         return 0;
     }
     return -1;
 }
 
 int MessageValue::upkdouble(double* d) {
-    const auto& mi = unpack_.front();
-    if (const auto* val = std::get_if<double>(&mi)) {
+    const auto& mi = args_.front();
+    if (const auto* val = std::get_if<double>(args_.data() + index_)) {
         *d = *val;
-        unpack_.pop();
+        ++index_;
         return 0;
     }
     return -1;
 }
 
 int MessageValue::upkvec(int n, double* d) {
-    const auto& mi = unpack_.front();
-    if (const auto* val = std::get_if<std::vector<double>>(&mi)) {
+    const auto& mi = args_.front();
+    if (const auto* val = std::get_if<std::vector<double>>(args_.data() + index_)) {
         for (std::size_t i = 0; i < n; ++i) {
             d[i] = val->at(i);
         }
-        unpack_.pop();
+        ++index_;
         return 0;
     }
     return -1;
 }
 
 int MessageValue::upkstr(char* s) {
-    const auto& mi = unpack_.front();
-    if (const auto* val = std::get_if<std::string>(&mi)) {
+    const auto& mi = args_.front();
+    if (const auto* val = std::get_if<std::string>(args_.data() + index_)) {
         for (std::size_t i = 0; i < val->size(); ++i) {
             s[i] = val->at(i);
         }
         s[val->size()] = '\0';
-        unpack_.pop();
+        ++index_;
         return 0;
     }
     return -1;
 }
 
 int MessageValue::upkpickle(char* s, size_t* n) {
-    const auto& mi = unpack_.front();
-    if (const auto* val = std::get_if<std::vector<char>>(&mi)) {
+    const auto& mi = args_.front();
+    if (const auto* val = std::get_if<std::vector<char>>(args_.data() + index_)) {
         *n = val->size();
         for (std::size_t i = 0; i < *n; ++i) {
             s[i] = val->at(i);
         }
-        unpack_.pop();
+        ++index_;
         return 0;
     }
     return -1;

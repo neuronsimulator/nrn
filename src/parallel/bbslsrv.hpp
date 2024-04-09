@@ -1,6 +1,5 @@
 #pragma once
 
-#include <queue>
 #include <string>
 #include <variant>
 #include <vector>
@@ -30,7 +29,8 @@ class MessageValue: public Resource {
     int pkpickle(const char*, size_t);
 
   private:
-    std::queue<MessageItem> unpack_;
+    std::vector<MessageItem> args_{};
+    std::size_t index_{};
 };
 
 class BBSLocalServer {
