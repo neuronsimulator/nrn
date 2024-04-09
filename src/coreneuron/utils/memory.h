@@ -226,11 +226,10 @@ namespace neuron {
 */
 template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
-<<<<<<< HEAD
-#if CORENRN_BUILD if (layout == Layout::AoS) {
+#if CORENRN_BUILD
+    if (layout == Layout::AoS) {
         return cnt;
-    }
-    else {
+    } else {
         return ((cnt + chunk - 1) / chunk) * chunk;
     }
 #else
