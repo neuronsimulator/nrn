@@ -7,7 +7,7 @@ include(FetchContent)
 FetchContent_Declare(
   ringtest
   GIT_REPOSITORY https://github.com/neuronsimulator/ringtest
-  GIT_TAG fe646b018ce5bb5d6dbc7b7c9ea359d8cb62f253
+  GIT_TAG 4ede4751c68f72a9884c6af4f94f65ff638054a8
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/ringtest)
 
 FetchContent_Declare(

@@ -12,7 +12,7 @@ interleave_order
     check
     quality
     admin1 if permute type 1 else admin2
-    return the permutation new int[nnode]                                                              
+    return the permutation new int[nnode]
   if thread 0
     print_quality1 if permute type 1 else print_quality2
     warp_balance
