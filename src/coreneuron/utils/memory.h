@@ -226,17 +226,16 @@ namespace neuron {
 */
 template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
-    int imod = cnt % chunk;
+<<<<<<< HEAD
 #if CORENRN_BUILD
     if (layout == Layout::AoS) {
         return cnt;
+    } else {
+        return ((cnt + chunk - 1) / chunk) * chunk;
     }
+#else
+    return ((cnt + chunk - 1) / chunk) * chunk;
 #endif
-    if (imod) {
-        int idiv = cnt / chunk;
-        return (idiv + 1) * chunk;
-    }
-    return cnt;
 }
 
 /** Check for the pointer alignment.

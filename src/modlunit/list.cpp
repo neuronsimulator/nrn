@@ -30,6 +30,7 @@ following function calls.
 */
 
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 #include "parse1.hpp"
 

@@ -9,13 +9,7 @@
 #include <set>
 #include <string>
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, const MessageValue*, ltint> {};
+class KeepArgs: public std::map<int, const MessageValue*> {};
 
 static MessageValue* posting_;
 static MessageValue* taking_;
@@ -205,7 +199,7 @@ int BBSLocal::take_todo() {
 
 void BBSLocal::save_args(int userid) {
     server_->post_todo(working_id_, posting_);
-    keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
+    keepargs_->emplace(userid, posting_);
     posting_ = nullptr;
 }
 
@@ -213,7 +207,7 @@ void BBSLocal::return_args(int userid) {
     KeepArgs::iterator i = keepargs_->find(userid);
     assert(i != keepargs_->end());
     Resource::unref(taking_);
-    taking_ = (MessageValue*) ((*i).second);
+    taking_ = const_cast<MessageValue*>((*i).second);
     keepargs_->erase(i);
     taking_->init_unpack();
     BBSImpl::return_args(userid);
