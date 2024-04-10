@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <list>
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
