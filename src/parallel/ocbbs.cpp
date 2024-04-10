@@ -1208,11 +1208,11 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         size_t npickle;
         Symbol* fname = nullptr;
         Object* ob = nullptr;
-        std::list<char*> sarg; // Store the strings pointer to delete[] them later
-                               // Use a list because, we push pointers of the object into
-                               // the hoc stack
-        int narg = 0;          // total number of args
-        if (style == 2) {      // object first
+        std::list<char*> sarg;  // Store the strings pointer to delete[] them later
+                                // Use a list because, we push pointers of the object into
+                                // the hoc stack
+        int narg = 0;           // total number of args
+        if (style == 2) {       // object first
             char* template_name = upkstr();
             int object_index = upkint();  // object index
             Symbol* sym = hoc_lookup(template_name);
