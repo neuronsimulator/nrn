@@ -219,22 +219,22 @@ extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
 extern void nrnmpi_barrier();
-extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
+extern void nrnmpi_int_alltoallv(const int*, const int*, const int*, int*, int*, int*);
+extern void nrnmpi_dbl_alltoallv(const double*, const int*, const int*, double*, int*, int*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
 static void nrnmpi_barrier() {}
-static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+static void nrnmpi_int_alltoallv(const int* s, const int* scnt, const int* sdispl, int* r, int* rcnt, int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
         r[i] = s[i];
     }
 }
-static void nrnmpi_dbl_alltoallv(double* s,
-                                 int* scnt,
-                                 int* sdispl,
+static void nrnmpi_dbl_alltoallv(const double* s,
+                                 const int* scnt,
+                                 const int* sdispl,
                                  double* r,
                                  int* rcnt,
                                  int* rdispl) {

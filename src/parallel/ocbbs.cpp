@@ -60,23 +60,18 @@ extern int nrncore_is_enabled();
 extern int nrncore_is_file_mode();
 extern int nrncore_psolve(double tstop, int file_mode);
 
-class OcBBS: public BBS, public Resource {
+class OcBBS final: public BBS, public Resource {
   public:
     OcBBS(int nhost_request);
-    virtual ~OcBBS();
 
   public:
-    double retval_;
-    int userid_;
-    int next_local_;
+    double retval_ = 0.;
+    int userid_ = 0;
+    int next_local_ = 0;
 };
 
 OcBBS::OcBBS(int n)
-    : BBS(n) {
-    next_local_ = 0;
-}
-
-OcBBS::~OcBBS() {}
+    : BBS(n) {}
 
 static bool posting_ = false;
 static void pack_help(int, OcBBS*);
@@ -800,57 +795,45 @@ static double allgather(void*) {
     return 0.;
 }
 
+// This function takes 3 arguments:
+//   - vsrc (In)
+//   - vscnt (In)
+//   - vdest (Out)
 static double alltoall(void*) {
-    int i, ns, np = nrnmpi_numprocs;
-    Vect* vsrc = vector_arg(1);
-    Vect* vscnt = vector_arg(2);
-    ns = vector_capacity(vsrc);
-    double* s = vector_vec(vsrc);
-    if (vector_capacity(vscnt) != np) {
-        hoc_execerror("size of source counts vector is not nhost", 0);
+    int np = nrnmpi_numprocs;
+    const Vect* vsrc = vector_arg(1);
+    const Vect* vscnt = vector_arg(2);
+    Vect* vdest = vector_arg(3);
+    std::size_t ns = vsrc->size();
+    if (vscnt->size() != np) {
+        hoc_execerror("size of source counts vector is not nhost", nullptr);
     }
-    double* x = vector_vec(vscnt);
-    int* scnt = new int[np];
-    int* sdispl = new int[np + 1];
-    sdispl[0] = 0;
-    for (i = 0; i < np; ++i) {
-        scnt[i] = int(x[i]);
+    const std::vector<int> scnt(vscnt->cbegin(), vscnt->cend()); // cast from double to int
+    std::vector<int> sdispl(np + 1);
+    for (int i = 0; i < np; ++i) {
         sdispl[i + 1] = sdispl[i] + scnt[i];
     }
     if (ns != sdispl[np]) {
-        hoc_execerror("sum of source counts is not the size of the src vector", 0);
+        hoc_execerror("sum of source counts is not the size of the src vector", nullptr);
     }
-    Vect* vdest = vector_arg(3);
     if (nrnmpi_numprocs > 1) {
 #if NRNMPI
-        int* rcnt = new int[np];
-        int* rdispl = new int[np + 1];
-        int* c = new int[np];
-        rdispl[0] = 0;
-        for (i = 0; i < np; ++i) {
-            c[i] = 1;
-            rdispl[i + 1] = i + 1;
-        }
-        nrnmpi_int_alltoallv(scnt, c, rdispl, rcnt, c, rdispl);
-        delete[] c;
-        for (i = 0; i < np; ++i) {
+        std::vector<int> rcnt(np);
+        std::vector<int> c(np, 1);
+        std::vector<int> rdispl(np + 1);
+        std::iota(rdispl.begin(), rdispl.end(), 0);
+
+        nrnmpi_int_alltoallv(scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
+        for (int i = 0; i < np; ++i) {
             rdispl[i + 1] = rdispl[i] + rcnt[i];
         }
-        vector_resize(vdest, rdispl[np]);
-        double* r = vector_vec(vdest);
-        nrnmpi_dbl_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-        delete[] rcnt;
-        delete[] rdispl;
+        vdest->resize(rdispl[np]);
+        nrnmpi_dbl_alltoallv(vsrc->data(), scnt.data(), sdispl.data(), vdest->data(), rcnt.data(), rdispl.data());
 #endif
     } else {
-        vector_resize(vdest, ns);
-        double* r = vector_vec(vdest);
-        for (i = 0; i < ns; ++i) {
-            r[i] = s[i];
-        }
+        vdest->resize(ns);
+        std::copy(vsrc->cbegin(), vsrc->cend(), vdest->begin());
     }
-    delete[] scnt;
-    delete[] sdispl;
     return 0.;
 }
 
