@@ -227,7 +227,12 @@ extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
 static void nrnmpi_barrier() {}
-static void nrnmpi_int_alltoallv(const int* s, const int* scnt, const int* sdispl, int* r, int* rcnt, int* rdispl) {
+static void nrnmpi_int_alltoallv(const int* s,
+                                 const int* scnt,
+                                 const int* sdispl,
+                                 int* r,
+                                 int* rcnt,
+                                 int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
         r[i] = s[i];
     }

@@ -808,7 +808,7 @@ static double alltoall(void*) {
     if (vscnt->size() != np) {
         hoc_execerror("size of source counts vector is not nhost", nullptr);
     }
-    const std::vector<int> scnt(vscnt->begin(), vscnt->end()); // cast from double to int
+    const std::vector<int> scnt(vscnt->begin(), vscnt->end());  // cast from double to int
     std::vector<int> sdispl(np + 1);
     for (int i = 0; i < np; ++i) {
         sdispl[i + 1] = sdispl[i] + scnt[i];
@@ -823,12 +823,14 @@ static double alltoall(void*) {
         std::vector<int> rdispl(np + 1);
         std::iota(rdispl.begin(), rdispl.end(), 0);
 
-        nrnmpi_int_alltoallv(scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
+        nrnmpi_int_alltoallv(
+            scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
         for (int i = 0; i < np; ++i) {
             rdispl[i + 1] = rdispl[i] + rcnt[i];
         }
         vdest->resize(rdispl[np]);
-        nrnmpi_dbl_alltoallv(vsrc->data(), scnt.data(), sdispl.data(), vdest->data(), rcnt.data(), rdispl.data());
+        nrnmpi_dbl_alltoallv(
+            vsrc->data(), scnt.data(), sdispl.data(), vdest->data(), rcnt.data(), rdispl.data());
 #endif
     } else {
         vdest->resize(ns);

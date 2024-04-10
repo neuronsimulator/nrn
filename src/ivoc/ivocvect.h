@@ -31,7 +31,7 @@ class IvocVect {
         return vec_;
     }
 
-    inline double const * data() const {
+    inline double const* data() const {
         return vec_.data();
     }
 
