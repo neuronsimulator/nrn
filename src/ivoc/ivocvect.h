@@ -61,12 +61,12 @@ class IvocVect {
         return vec_.at(index);
     }
 
-    inline auto cbegin() const -> std::vector<double>::const_iterator {
-        return vec_.cbegin();
+    inline auto begin() const -> std::vector<double>::const_iterator {
+        return vec_.begin();
     }
 
-    inline auto cend() const -> std::vector<double>::const_iterator {
-        return vec_.cend();
+    inline auto end() const -> std::vector<double>::const_iterator {
+        return vec_.end();
     }
 
     inline auto begin() -> std::vector<double>::iterator {

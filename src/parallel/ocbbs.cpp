@@ -808,7 +808,7 @@ static double alltoall(void*) {
     if (vscnt->size() != np) {
         hoc_execerror("size of source counts vector is not nhost", nullptr);
     }
-    const std::vector<int> scnt(vscnt->cbegin(), vscnt->cend()); // cast from double to int
+    const std::vector<int> scnt(vscnt->begin(), vscnt->end()); // cast from double to int
     std::vector<int> sdispl(np + 1);
     for (int i = 0; i < np; ++i) {
         sdispl[i + 1] = sdispl[i] + scnt[i];
@@ -832,7 +832,7 @@ static double alltoall(void*) {
 #endif
     } else {
         vdest->resize(ns);
-        std::copy(vsrc->cbegin(), vsrc->cend(), vdest->begin());
+        std::copy(vsrc->begin(), vsrc->end(), vdest->begin());
     }
     return 0.;
 }
