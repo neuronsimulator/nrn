@@ -807,7 +807,7 @@ static double alltoall(void*) {
     ns = vector_capacity(vsrc);
     double* s = vector_vec(vsrc);
     if (vector_capacity(vscnt) != np) {
-        hoc_execerror("size of source counts vector is not nhost", 0);
+        hoc_execerror("size of source counts vector is not nhost", nullptr);
     }
     double* x = vector_vec(vscnt);
     int* scnt = new int[np];
@@ -818,7 +818,7 @@ static double alltoall(void*) {
         sdispl[i + 1] = sdispl[i] + scnt[i];
     }
     if (ns != sdispl[np]) {
-        hoc_execerror("sum of source counts is not the size of the src vector", 0);
+        hoc_execerror("sum of source counts is not the size of the src vector", nullptr);
     }
     Vect* vdest = vector_arg(3);
     if (nrnmpi_numprocs > 1) {
@@ -991,7 +991,7 @@ static double thread_dt(void*) {
 
 static double nrncorewrite_argvec(void*) {
     if (ifarg(2) && !(hoc_is_object_arg(2) && is_vector_arg(2))) {
-        hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", NULL);
+        hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", nullptr);
     }
     return double(nrncore_write());
 }
@@ -1013,7 +1013,7 @@ static double print_memory_stats(void*) {
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
-            "nrncore_write: optional second arg is not a number (True or False append flag)", NULL);
+            "nrncore_write: optional second arg is not a number (True or False append flag)", nullptr);
     }
     return double(nrncore_write());
 }
@@ -1236,18 +1236,18 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                         "%s[%d] is not an Object in this process\n",
                         template_name,
                         object_index);
-                hoc_execerror("ParallelContext execution error", 0);
+                hoc_execerror("ParallelContext execution error", nullptr);
             }
             delete[] template_name;
             char* fname_str = upkstr();
             fname = hoc_table_lookup(fname_str, sym->u.ctemplate->symtable);
             if (!fname) {
                 fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
-                hoc_execerror("ParallelContext execution error", 0);
+                hoc_execerror("ParallelContext execution error", nullptr);
             }
             delete[] fname_str;
             if (subworld) {
-                hoc_execerror("with subworlds, this submit style not implemented", 0);
+                hoc_execerror("with subworlds, this submit style not implemented", nullptr);
             }
         } else if (style == 3) {  // Python callable
             python_pickle = upkpickle(&npickle);
@@ -1266,7 +1266,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             fname = hoc_lookup(fname_str);
             if (!fname) {
                 fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
-                hoc_execerror("ParallelContext execution error", 0);
+                hoc_execerror("ParallelContext execution error", nullptr);
             }
             delete[] fname_str;
         }
