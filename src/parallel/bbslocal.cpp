@@ -2,7 +2,7 @@
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbslocal.h"
-#include "bbslsrv.h"
+#include "bbslsrv.hpp"
 #include <nrnmpi.h>
 
 #include <map>
