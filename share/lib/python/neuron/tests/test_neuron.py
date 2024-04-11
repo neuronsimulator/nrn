@@ -5,6 +5,7 @@ Items declared in neuron/__init__.py
 $Id$
 """
 
+from pathlib import Path
 import unittest
 import neuron
 from neuron import h
@@ -198,6 +199,14 @@ class NeuronTestCase(unittest.TestCase):
             error = True
         self.assertFalse(error)
         return 0
+
+    def test_load_mechanisms_from_non_existent_path(self):
+        """Assure mechanisms are not loaded from a non-existent directory."""
+        from neuron import load_mechanisms, nrn_dll_loaded
+
+        mech_path1 = "fake_mechanisms_dir"
+        assert not load_mechanisms(mech_path1)
+        assert Path(mech_path1).resolve().as_posix() not in nrn_dll_loaded
 
     def testRxDexistence(self):
         from neuron import config
