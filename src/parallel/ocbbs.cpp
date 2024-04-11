@@ -1013,7 +1013,8 @@ static double print_memory_stats(void*) {
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
-            "nrncore_write: optional second arg is not a number (True or False append flag)", nullptr);
+            "nrncore_write: optional second arg is not a number (True or False append flag)",
+            nullptr);
     }
     return double(nrncore_write());
 }
