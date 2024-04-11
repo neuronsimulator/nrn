@@ -361,6 +361,11 @@ jobs:
               else
                 echo nrn-enable-sanitizer not found, not using it
               fi
+          elif [[ "$BUILD_MODE" == "setuptools" ]]; then
+            python3 -m pip install cibuildwheel
+            CIBW_BUILD="cp${PYTHON%.}*" cibuildwheel
+          fi;
+
           if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
             nrn_enable_sanitizer_preload_python="${PYTHON}"
           fi
