@@ -14,10 +14,10 @@ using namespace coreneuron;
 
 TEST_CASE("random123 smoke test") {
     nrnran123_State* s;
-    int KEY_1 = 1;
-    int KEY_2 = 2;
-    int NUM_TRIES = 20;
-    double EPSILON = 0.00001;
+    const int KEY_1 = 1;
+    const int KEY_2 = 2;
+    const int NUM_TRIES = 20;
+    const double EPSILON = 0.00001;
 
     // random123 is a fully deterministic PRNG; it should generate the following stream of doubles
     // with (1,2) initial key:
@@ -32,7 +32,7 @@ TEST_CASE("random123 smoke test") {
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:NUM_TRIES]) is_device_ptr(s))
     nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) deviceptr(s))
     for (int i = 0; i < NUM_TRIES; i++) {
-        nrnran123_setseq(s, i / 4, char(i % 4));
+        nrnran123_setseq(s, i, char(i % 4));
         res[i] = nrnran123_dblpick(s);
     }
 
