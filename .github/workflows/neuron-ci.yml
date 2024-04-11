@@ -361,9 +361,6 @@ jobs:
               else
                 echo nrn-enable-sanitizer not found, not using it
               fi
-          elif [[ "$BUILD_MODE" == "setuptools" ]]; then
-            ./packaging/python/build_wheels.bash CI;
-          fi;
           if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
             nrn_enable_sanitizer_preload_python="${PYTHON}"
           fi

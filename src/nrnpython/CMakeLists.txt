@@ -181,7 +181,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py build
+      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} _setup.py build
               ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       COMMENT "Building python module with: ${pyexe} setup.py build

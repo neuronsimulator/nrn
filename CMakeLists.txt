@@ -809,14 +809,6 @@ if(NRN_ENABLE_TESTS)
     include(Catch)
   endif()
   include(CTest)
-  if(NRN_ENABLE_PYTHON)
-    # Need this for *all* Python versions we try and run tests with
-    nrn_find_python_module(MODULE pytest ALL REQUIRED)
-    nrn_find_python_module(MODULE pytest_cov ALL)
-    if(NOT PYTEST_COV_FOUND)
-      message(STATUS "pytest-cov package not installed. Python coverage will not be generated.")
-    endif()
-  endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)
   # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
   # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
