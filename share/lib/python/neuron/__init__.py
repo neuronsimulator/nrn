@@ -290,12 +290,12 @@ def test_rxd(exitOnError=True):
 # h.anyclass methods may be overridden. If so the base method can be called
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
-
+from pathlib import Path
 import sys, types
 from neuron.hclass3 import HocBaseObject, hclass
 
 # global list of paths already loaded by load_mechanisms
-nrn_dll_loaded = []
+nrn_dll_loaded = set()
 
 
 def load_mechanisms(path, warn_if_already_loaded=True):
@@ -313,10 +313,11 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     import platform
 
     global nrn_dll_loaded
-    if path in nrn_dll_loaded:
-        if warn_if_already_loaded:
-            print("Mechanisms already loaded from path: %s.  Aborting." % path)
-        return True
+    path_obj = Path(path).resolve()
+    if path_obj.as_posix() in nrn_dll_loaded:
+            if warn_if_already_loaded:
+                print(f"Mechanisms already loaded from path: {path_obj}. Aborting.")
+            return True
 
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
@@ -332,10 +333,10 @@ def load_mechanisms(path, warn_if_already_loaded=True):
         arch_list = [""]
 
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, libsubdir, libname)
-        if os.path.exists(lib_path):
-            h.nrn_load_dll(lib_path)
-            nrn_dll_loaded.append(path)
+        lib_path = path_obj / arch / libsubdir / libname
+        if lib_path.exists():
+            h.nrn_load_dll(lib_path.as_posix())
+            nrn_dll_loaded.add(path_obj.as_posix())
             return True
     print("NEURON mechanisms not found in %s." % path)
     return False
