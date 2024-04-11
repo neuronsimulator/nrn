@@ -315,9 +315,9 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     global nrn_dll_loaded
     path_obj = Path(path).resolve()
     if path_obj.as_posix() in nrn_dll_loaded:
-            if warn_if_already_loaded:
-                print(f"Mechanisms already loaded from path: {path_obj}. Aborting.")
-            return True
+        if warn_if_already_loaded:
+            print(f"Mechanisms already loaded from path: {path_obj}. Aborting.")
+        return True
 
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
