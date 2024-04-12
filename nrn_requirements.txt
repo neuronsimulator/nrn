@@ -13,3 +13,4 @@ pytest-cov
 mpi4py
 numpy
 find_libpython
+sympy
