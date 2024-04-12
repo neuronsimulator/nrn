@@ -102,8 +102,6 @@ void bbs_done() {
 }
 
 static int submit_help(OcBBS* bbs) {
-    posting_ = true;
-    bbs->pkbegin();
     int i = 1;
     Message mess{};
     if (hoc_is_double_arg(i)) {
@@ -164,8 +162,13 @@ static int submit_help(OcBBS* bbs) {
             delete[] pname;
         }
     }
-    writeMessage(bbs, mess);
-    posting_ = false;
+
+    {
+        posting_ = true;
+        bbs->pkbegin();
+        writeMessage(bbs, mess);
+        posting_ = false;
+    }
     return mess.userid;
 }
 
@@ -266,24 +269,8 @@ static void pack_help(int i, OcBBS* bbs) {
         bbs->pkbegin();
         posting_ = true;
     }
-    for (; ifarg(i); ++i) {
-        if (hoc_is_double_arg(i)) {
-            bbs->pkdouble(*getarg(i));
-        } else if (hoc_is_str_arg(i)) {
-            bbs->pkstr(gargstr(i));
-        } else if (is_vector_arg(i)) {
-            int n;
-            double* px;
-            n = vector_arg_px(i, &px);
-            bbs->pkint(n);
-            bbs->pkvec(n, px);
-        } else {  // must be a PythonObject
-            size_t size;
-            char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
-            bbs->pkpickle(s, size);
-            delete[] s;
-        }
-    }
+    auto args = readArgsFromOc(i);
+    writeArgs(bbs, args);
 }
 
 static double pack(void* v) {

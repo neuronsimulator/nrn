@@ -517,6 +517,30 @@ static std::vector<double> fromUpkvec(BBSImpl* impl) {
     return vec;
 }
 
+std::vector<Message::ArgType> readArgsFromOc(int hoc_arg_index) {
+    std::vector<Message::ArgType> args;
+    for (; ifarg(i); ++i) {
+        if (hoc_is_double_arg(i)) {
+            args.push_back(*getarg(i));
+        } else if (hoc_is_str_arg(i)) {
+            char* s = gargstr(i);
+            args.push_back(std::string(s));
+            delete[] s;
+        } else if (is_vector_arg(i)) {
+            Vect* vec = vector_arg(i);
+            args.push_back(vec->vec());
+        } else {  // must be a PythonObject
+            size_t size;
+            char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
+            std::vector<char> pickle(size);
+            std::copy(s, s + size, pickle.data());
+            delete[] s;
+            args.push_back(pickle);
+        }
+    }
+    return args;
+}
+
 Message readMessage(BBSImpl* impl) {
     Message mess{};
     mess.userid = impl->upkint();
@@ -566,6 +590,39 @@ Message readMessage(BBSImpl* impl) {
     return mess;
 }
 
+int computeArgType(const std::vector<Message::ArgType>& args) {
+    int argtype = 0;
+    int ii = 1;
+    for (auto& arg: args) {
+        if (auto* var = std::get_if<double>(&arg)) {
+            argtype += 1 * ii;
+        } else if (auto* var = std::get_if<MyStr>(&arg)) {
+            argtype += 2 * ii;
+        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
+            argtype += 3 * ii;
+        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
+            argtype += 4 * ii;
+        }
+        ii *= 5;
+    }
+    return argtype;
+}
+
+void writeArgs(BBS* impl, std::vector<Message::ArgType>& args) {
+    for (auto& arg: args) {
+        if (auto* var = std::get_if<double>(&arg)) {
+            impl->pkdouble(*var);
+        } else if (auto* var = std::get_if<MyStr>(&arg)) {
+            impl->pkstr(var->data());
+        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
+            impl->pkint(var->size());
+            impl->pkvec(var->size(), var->data());
+        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
+            impl->pkpickle(var->data(), var->size());
+        }
+    }
+}
+
 void writeMessage(BBS* impl, Message& mess) {
     impl->pkint(mess.userid);
     impl->pkint(mess.wid);
@@ -584,32 +641,6 @@ void writeMessage(BBS* impl, Message& mess) {
         impl->pkpickle(mess.pickle.data(), mess.pickle.size());
     }
 
-    int argtype = 0;
-    int ii = 1;
-    for (auto& arg: mess.args) {
-        if (auto* var = std::get_if<double>(&arg)) {
-            argtype += 1 * ii;
-        } else if (auto* var = std::get_if<MyStr>(&arg)) {
-            argtype += 2 * ii;
-        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
-            argtype += 3 * ii;
-        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
-            argtype += 4 * ii;
-        }
-        ii *= 5;
-    }
-    impl->pkint(argtype);
-
-    for (auto& arg: mess.args) {
-        if (auto* var = std::get_if<double>(&arg)) {
-            impl->pkdouble(*var);
-        } else if (auto* var = std::get_if<MyStr>(&arg)) {
-            impl->pkstr(var->data());
-        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
-            impl->pkint(var->size());
-            impl->pkvec(var->size(), var->data());
-        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
-            impl->pkpickle(var->data(), var->size());
-        }
-    }
+    impl->pkint(computeArgType(mess.args));
+    writeArgs(impl, mess.args);
 }
