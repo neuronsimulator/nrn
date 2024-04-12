@@ -273,7 +273,7 @@ jobs:
                   else
                     CC=$(command -v clang-14)
                     CXX=$(command -v clang++-14)
-                    symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                    symbolizer_path=$(cd "$(command -v llvm-symbolizer-14)"; pwd -P)
                     cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
                   fi
                 fi
