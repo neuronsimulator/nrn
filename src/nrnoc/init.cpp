@@ -225,45 +225,44 @@ int nrn_is_cable(void) {
     return 1;
 }
 
-// the consumer has to deallocate the returned value
-char* nrn_realpath(const char* relpath) {
+std::string nrn_realpath(const char* relpath) {
     char* abspath = NULL;
 
 #if defined(HAVE_REALPATH)
     abspath = realpath(relpath, NULL);
 #elif defined(__MINGW32__)
-    abspath = _fullpath(NULL, relpath, _MAX_PATH);
+    abspath = _fullpath(NULL, relpath, 0);
 #else
     abspath = strdup(relpath);
 #endif
     if (!abspath) {
-        fprintf(stderr, "Failed to resolve path: %s, due to error: %s\n", relpath, strerror(errno));
+        Fprintf(stderr, "Failed to resolve path: %s, due to error: %s\n", relpath, strerror(errno));
+        return "";
     }
-    return abspath;
+    std::string resolved_path(abspath);
+    free(abspath);
+    return resolved_path;
 }
 
 // Global set to keep track of loaded DLLs
 static std::unordered_set<std::string> loaded_dlls;
 
 int mswin_load_dll(const char* cp1) {
-    char* resolved_path = nrn_realpath(cp1);
-    if (!resolved_path) {
+    std::string full_path = nrn_realpath(cp1);
+    if (full_path.empty()) {
         return 0;
     }
 
-    std::string full_path(resolved_path);
-    free(resolved_path);
-
     // Check if the DLL has already been loaded
     if (loaded_dlls.find(full_path) != loaded_dlls.end()) {
-        fprintf(stderr, "DLL already loaded: %s\n", full_path.c_str());
+        Fprintf(stderr, "DLL already loaded: %s\n", full_path.c_str());
         return 1;  // Return success as the DLL is already loaded
     }
 
     // Load the DLL
     void* handle = dlopen(full_path.c_str(), RTLD_NOW);
     if (!handle) {
-        fprintf(stderr, "dlopen failed: %s\n", dlerror());
+        Fprintf(stderr, "dlopen failed: %s\n", dlerror());
 #if DARWIN
         // Darwin-specific architecture mismatch handling
         nrn_possible_mismatched_arch(full_path.c_str());
@@ -277,7 +276,7 @@ int mswin_load_dll(const char* cp1) {
         loaded_dlls.insert(full_path);  // Insert the path into the set
         return 1;
     } else {
-        fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
+        std::cerr << "dlsym modl_reg failed: " << dlerror() << std::endl;
         dlclose(handle);
         return 0;
     }
