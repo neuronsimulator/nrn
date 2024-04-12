@@ -149,6 +149,7 @@ set(NRN_OC_GENERATED_SOURCES
 # =============================================================================
 set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_IVOC_SRC_FILES}
+    ${NRN_NODEORDEROPTIM_SRC_FILES}
     ${NRN_NRNCVODE_SRC_FILES}
     ${NRN_NRNIV_SRC_FILES}
     ${NRN_NRNOC_SRC_FILES}

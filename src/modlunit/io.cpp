@@ -3,6 +3,7 @@
 
 /* file.mod input routines */
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 #include <ctype.h>
 #undef METHOD

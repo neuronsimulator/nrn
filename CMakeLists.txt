@@ -444,6 +444,10 @@ if(NRN_ENABLE_THREADS)
   list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
+# Some files are shared by NEURON and CoreNEURON and use #if CORENRN_BUILD to distinguish between
+# which build is occurring.
+list(APPEND NRN_COMPILE_DEFS CORENRN_BUILD=0)
+
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
