@@ -264,27 +264,46 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     return handle;
 }
 
+// Global set to keep track of loaded DLLs
+static std::unordered_set<std::string> loaded_dlls;
+
 int mswin_load_dll(const char* cp1) {
+    char* resolved_path = realpath(cp1, NULL);
+    if (!resolved_path) {
+        fprintf(stderr, "Failed to resolve path: %s\n", strerror(errno));
+        return 0;
+    }
+
+    std::string full_path(resolved_path);
+    free(resolved_path);
+
+    // Check if the DLL has already been loaded
+    if (loaded_dlls.find(full_path) != loaded_dlls.end()) {
+        fprintf(stderr, "DLL already loaded: %s\n", full_path.c_str());
+        return 1;  // Return success as the DLL is already loaded
+    }
+
     void* handle;
     if (nrnmpi_myid < 1)
         if (!nrn_nobanner_ && nrn_istty_) {
             fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
         }
 #if DARWIN
-    handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
+    handle = nrn_realpath_dlopen(full_path.c_str(), RTLD_NOW);
 #else   // not DARWIN
-    handle = dlopen(cp1, RTLD_NOW);
+    handle = dlopen(full_path.c_str(), RTLD_NOW);
 #endif  // not DARWIN
     if (handle) {
         Pfrv mreg = (Pfrv) dlsym(handle, "modl_reg");
         if (mreg) {
             (*mreg)();
+            loaded_dlls.insert(full_path);  // Insert the path into the set
+            return 1;
         } else {
             fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
             dlclose(handle);
             return 0;
         }
-        return 1;
     } else {
         fprintf(stderr, "dlopen failed - \n%s\n", dlerror());
     }
