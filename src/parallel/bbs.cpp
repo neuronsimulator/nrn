@@ -549,40 +549,40 @@ Message readMessage(BBSImpl* impl) {
 
     int arg_manifest = 0;
     switch (mess.style) {
-        case 0:
-            mess.statement = fromUpkstr(impl);
-            break;
-        case 1:
-            mess.fname = fromUpkstr(impl);
-            arg_manifest = impl->upkint();
-            break;
-        case 2:
-            mess.template_name = fromUpkstr(impl);
-            mess.object_index = impl->upkint();
-            mess.fname = fromUpkstr(impl);
-            arg_manifest = impl->upkint();
-            break;
-        case 3:
-            mess.pickle = fromUpkpickle(impl);
-            arg_manifest = impl->upkint();
-            break;
+    case 0:
+        mess.statement = fromUpkstr(impl);
+        break;
+    case 1:
+        mess.fname = fromUpkstr(impl);
+        arg_manifest = impl->upkint();
+        break;
+    case 2:
+        mess.template_name = fromUpkstr(impl);
+        mess.object_index = impl->upkint();
+        mess.fname = fromUpkstr(impl);
+        arg_manifest = impl->upkint();
+        break;
+    case 3:
+        mess.pickle = fromUpkpickle(impl);
+        arg_manifest = impl->upkint();
+        break;
     }
 
     if (arg_manifest != 0) {
         for (int i = 0, j = arg_manifest; (i = j % 5) != 0; j /= 5) {
             switch (i) {
-                case 1:
-                    mess.args.push_back(impl->upkdouble());
-                    break;
-                case 2:
-                    mess.args.push_back(fromUpkstr2(impl));
-                    break;
-                case 3:
-                    mess.args.push_back(fromUpkvec(impl));
-                    break;
-                case 4:
-                    mess.args.push_back(fromUpkpickle(impl));
-                    break;
+            case 1:
+                mess.args.push_back(impl->upkdouble());
+                break;
+            case 2:
+                mess.args.push_back(fromUpkstr2(impl));
+                break;
+            case 3:
+                mess.args.push_back(fromUpkvec(impl));
+                break;
+            case 4:
+                mess.args.push_back(fromUpkpickle(impl));
+                break;
             }
         }
     }
