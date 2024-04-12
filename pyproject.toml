@@ -70,9 +70,13 @@ CMAKE_PREFIX_PATH = {env="CMAKE_PREFIX_PATH"}
 
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:latest-gcc9-aarch64"
+manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:latest-gcc9-x86_64"
 
 [tool.cibuildwheel.macos]
 environment = { CMAKE_PREFIX_PATH="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" }
+# workaround for NMODL issue when building in temp dir
+config-settings = {build-dir = "_build"}
+
 [tool.cibuildwheel.linux]
 # we set NRN_MPI_DYNAMIC here since we have full control of the container
 environment = { CMAKE_PREFIX_PATH="/nrnwheel/ncurses;/nrnwheel/readline", NRN_MPI_DYNAMIC="/nrnwheel/openmpi/include;/nrnwheel/mpich;/include/nrnwheel/mpt/include" }
