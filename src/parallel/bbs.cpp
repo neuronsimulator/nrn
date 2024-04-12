@@ -269,7 +269,6 @@ void BBS::pkpickle(const char* s, size_t n) {
 void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     ++etaskcnt;
     double st, et;
-    int userid;
     char* rs;
     char* s;
     size_t n;
@@ -282,18 +281,17 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     if (debug_) {
         printf("execute begin %g: working_id_=%d\n", st, working_id_);
     }
-    userid = upkint();
-    int wid = upkint();
+    Message mess = readMessage(this);
     hoc_ac_ = double(id);
-    rs = execute_helper(&n, id);  // builds and execute hoc statement
+    rs = execute_helper(mess, &n, id);  // builds and execute hoc statement
     et = time() - st;
     total_exec_time += et;
     if (debug) {
         printf("execute end elapsed %g: working_id_=%d hoc_ac_=%g\n", et, working_id_, hoc_ac_);
     }
     pkbegin();
-    pkint(userid);
-    pkint(wid);
+    pkint(mess.userid);
+    pkint(mess.wid);
     pkint(rs ? 1 : 0);
     if (!rs) {
         pkdouble(hoc_ac_);
@@ -489,4 +487,129 @@ void BBSImpl::start() {
         return;
     }
     started_ = 1;
+}
+
+static std::vector<char> fromUpkpickle(BBSImpl* impl) {
+    std::size_t n;
+    char* s = impl->upkpickle(&n);
+    std::vector<char> pickle(s, s + n);
+    delete[] s;
+    return pickle;
+}
+
+static std::string fromUpkstr(BBSImpl* impl) {
+    char* s = impl->upkstr();
+    std::string str(s);
+    delete[] s;
+    return str;
+}
+
+static MyStr fromUpkstr2(BBSImpl* impl) {
+    char* s = impl->upkstr();
+    MyStr str(s);
+    return str;
+}
+
+static std::vector<double> fromUpkvec(BBSImpl* impl) {
+    std::size_t n = impl->upkint();
+    std::vector<double> vec(n);
+    impl->upkvec(n, vec.data());
+    return vec;
+}
+
+Message readMessage(BBSImpl* impl) {
+    Message mess{};
+    mess.userid = impl->upkint();
+    mess.wid = impl->upkint();
+    mess.style = impl->upkint();
+
+    int arg_manifest = 0;
+    switch (mess.style) {
+        case 0:
+            mess.statement = fromUpkstr(impl);
+            break;
+        case 1:
+            mess.fname = fromUpkstr(impl);
+            arg_manifest = impl->upkint();
+            break;
+        case 2:
+            mess.template_name = fromUpkstr(impl);
+            mess.object_index = impl->upkint();
+            mess.fname = fromUpkstr(impl);
+            arg_manifest = impl->upkint();
+            break;
+        case 3:
+            mess.pickle = fromUpkpickle(impl);
+            arg_manifest = impl->upkint();
+            break;
+    }
+
+    if (arg_manifest != 0) {
+        for (int i = 0, j = arg_manifest; (i = j % 5) != 0; j /= 5) {
+            switch (i) {
+                case 1:
+                    mess.args.push_back(impl->upkdouble());
+                    break;
+                case 2:
+                    mess.args.push_back(fromUpkstr2(impl));
+                    break;
+                case 3:
+                    mess.args.push_back(fromUpkvec(impl));
+                    break;
+                case 4:
+                    mess.args.push_back(fromUpkpickle(impl));
+                    break;
+            }
+        }
+    }
+
+    return mess;
+}
+
+void writeMessage(BBS* impl, Message& mess) {
+    impl->pkint(mess.userid);
+    impl->pkint(mess.wid);
+    impl->pkint(mess.style);
+
+    if (mess.style == 0) {
+        impl->pkstr(mess.statement.c_str());
+        return;
+    } else if (mess.style == 1) {
+        impl->pkstr(mess.fname.c_str());
+    } else if (mess.style == 2) {
+        impl->pkstr(mess.template_name.c_str());
+        impl->pkint(mess.object_index);
+        impl->pkstr(mess.fname.c_str());
+    } else if (mess.style == 3) {
+        impl->pkpickle(mess.pickle.data(), mess.pickle.size());
+    }
+
+    int argtype = 0;
+    int ii = 1;
+    for (auto& arg: mess.args) {
+        if (auto* var = std::get_if<double>(&arg)) {
+            argtype += 1 * ii;
+        } else if (auto* var = std::get_if<MyStr>(&arg)) {
+            argtype += 2 * ii;
+        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
+            argtype += 3 * ii;
+        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
+            argtype += 4 * ii;
+        }
+        ii *= 5;
+    }
+    impl->pkint(argtype);
+
+    for (auto& arg: mess.args) {
+        if (auto* var = std::get_if<double>(&arg)) {
+            impl->pkdouble(*var);
+        } else if (auto* var = std::get_if<MyStr>(&arg)) {
+            impl->pkstr(var->data());
+        } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
+            impl->pkint(var->size());
+            impl->pkvec(var->size(), var->data());
+        } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {
+            impl->pkpickle(var->data(), var->size());
+        }
+    }
 }

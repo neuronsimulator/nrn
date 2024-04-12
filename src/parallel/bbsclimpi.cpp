@@ -226,13 +226,12 @@ int BBSClient::take_todo() {
     size_t n;
     while ((type = get(0, TAKE_TODO)) == CONTEXT) {
         upkbegin();
-        upkint();  // throw away userid
-        upkint();  // throw away info in reserved second slot for worker_id
+        Message mess = readMessage(this);
 #if debug
         printf("%d execute context\n", nrnmpi_myid_bbs);
         fflush(stdout);
 #endif
-        rs = execute_helper(&n, -1);
+        rs = execute_helper(mess, &n, -1);
         if (rs) {
             delete[] rs;
         }

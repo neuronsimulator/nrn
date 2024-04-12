@@ -1,5 +1,11 @@
 #pragma once
 
+#include <string>
+#include <variant>
+#include <vector>
+
+struct Message;
+
 class BBSImpl {
   public:
     BBSImpl();
@@ -63,7 +69,7 @@ class BBSImpl {
     static bool master_works_;
 
   protected:
-    char* execute_helper(size_t*, int id, bool exec = true);  // involves hoc specific details in
+    char* execute_helper(Message&, size_t*, int id, bool exec = true);  // involves hoc specific details in
                                                               // ocbbs.cpp
     void subworld_worker_execute();                           // shadows execute_helper. ie. each of
                                      // the nrnmpi_myid_bbs workers (and master) need to execute
@@ -72,3 +78,44 @@ class BBSImpl {
                                      // intracommunicate via the bulletin board but only via
                                      // mpi on the subworld communicator.
 };
+
+class MyStr {
+    public:
+        MyStr(char* s)
+            : s_(s)
+        {};
+
+        ~MyStr() {
+            delete[] s_;
+        }
+
+        std::size_t size() {
+            return strlen(s_);
+        }
+
+        char*& data() {
+            return s_;
+        }
+
+    private:
+        char* s_ = nullptr;
+};
+
+struct Message {
+    int userid;
+    int wid; // working_id
+    int style;
+
+    std::string statement;
+
+    std::string fname;
+    std::string template_name;
+    int object_index;
+
+    std::vector<char> pickle;
+
+    using ArgType = std::variant<double, std::vector<double>, std::vector<char>, MyStr>;
+    std::vector<ArgType> args;
+};
+
+Message readMessage(BBSImpl* impl); 

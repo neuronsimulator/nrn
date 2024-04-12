@@ -102,83 +102,76 @@ void bbs_done() {
 }
 
 static int submit_help(OcBBS* bbs) {
-    int id, i, firstarg, style;
-    char* pname = 0;  // if using Python callable
     posting_ = true;
     bbs->pkbegin();
-    i = 1;
+    int i = 1;
+    Message mess{};
     if (hoc_is_double_arg(i)) {
-        bbs->pkint((id = (int) chkarg(i++, 0, MD)));
+        mess.userid = (int) chkarg(i++, 0, MD);
     } else {
-        bbs->pkint((id = --bbs->next_local_));
+        mess.userid = --bbs->next_local_;
     }
-    bbs->pkint(0);  // space for working_id
+    mess.wid = 0;
     if (ifarg(i + 1)) {
-#if 1
-        int argtypes = 0;
-        int ii = 1;
         if (hoc_is_str_arg(i)) {
-            style = 1;
-            bbs->pkint(style);  // "fname", arg1, ... style
-            bbs->pkstr(gargstr(i++));
+            mess.style = 1;
+            mess.fname = gargstr(i++);
         } else {
             Object* ob = *hoc_objgetarg(i++);
-            size_t size;
+            char* pname = nullptr;
             if (neuron::python::methods.po2pickle) {
+                std::size_t size;
                 pname = neuron::python::methods.po2pickle(ob, &size);
-            }
-            if (pname) {
-                style = 3;
-                bbs->pkint(style);  // pyfun, arg1, ... style
-                bbs->pkpickle(pname, size);
-                delete[] pname;
-            } else {
-                style = 2;
-                bbs->pkint(style);  // [object],"fname", arg1, ... style
-                bbs->pkstr(ob->ctemplate->sym->name);
-                bbs->pkint(ob->index);
-                // printf("ob=%s\n", hoc_object_name(ob));
-                bbs->pkstr(gargstr(i++));
+                if (pname != nullptr) {
+                    mess.style = 3;
+                    mess.pickle.resize(size);
+                    std::copy(pname, pname + size, mess.pickle.data());
+                    delete[] pname;
+                } else {
+                    mess.style = 2;
+                    mess.template_name = ob->ctemplate->sym->name;
+                    mess.object_index = ob->index;
+                    mess.fname = gargstr(i++);
+                }
             }
         }
-        firstarg = i;
-        for (; ifarg(i); ++i) {  // first is least significant
+        for (; ifarg(i); ++i) {
             if (hoc_is_double_arg(i)) {
-                argtypes += 1 * ii;
+                mess.args.push_back(*getarg(i));
             } else if (hoc_is_str_arg(i)) {
-                argtypes += 2 * ii;
-            } else if (is_vector_arg(i)) {  // hoc Vector
-                argtypes += 3 * ii;
+                mess.args.push_back(MyStr(gargstr(i)));
+            } else if (is_vector_arg(i)) {
+                Vect* vec = vector_arg(i);
+                mess.args.push_back(vec->vec());
             } else {  // must be a PythonObject
-                argtypes += 4 * ii;
+                size_t size;
+                char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
+                std::vector<char> pickle(size);
+                std::copy(s, s + size, pickle.data());
+                mess.pickle = pickle;
+                delete[] s;
             }
-            ii *= 5;
         }
-        // printf("submit style %d %s argtypes=%o\n", style, gargstr(firstarg-1), argtypes);
-        bbs->pkint(argtypes);
-        pack_help(firstarg, bbs);
-#endif
     } else {
         if (hoc_is_str_arg(i)) {
-            bbs->pkint(0);  // hoc statement style
-            bbs->pkstr(gargstr(i));
+            mess.style = 0;
+            mess.statement = gargstr(i);
         } else if (neuron::python::methods.po2pickle) {
+            mess.style = 3;
             size_t size;
-            pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
-            bbs->pkint(3);  // pyfun with no arg style
-            bbs->pkpickle(pname, size);
-            bbs->pkint(0);  // argtypes
+            char* pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
+            std::copy(pname, pname + size, mess.pickle.data());
             delete[] pname;
         }
     }
+    writeMessage(bbs, mess);
     posting_ = false;
-    return id;
+    return mess.userid;
 }
 
 static double submit(void* v) {
-    int id;
     OcBBS* bbs = (OcBBS*) v;
-    id = submit_help(bbs);
+    int id = submit_help(bbs);
     bbs->submit(id);
     return double(id);
 }
@@ -186,7 +179,6 @@ static double submit(void* v) {
 static double context(void* v) {
     OcBBS* bbs = (OcBBS*) v;
     submit_help(bbs);
-    //	printf("%d context %s %s\n", bbs->myid(), hoc_object_name(*hoc_objgetarg(1)), gargstr(2));
     bbs->context();
     return 1.;
 }
@@ -1181,53 +1173,46 @@ void ParallelContext_reg() {
 //     A python pickle (https://docs.python.org/3/library/pickle.html) followed by arguments.
 //     Return a string that is of size `size`.
 //     Dry run if `exec` is false.
-char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
-    char* python_pickle;  // Used only for style == 3
+char* BBSImpl::execute_helper(Message& mess, size_t* size, int id, bool exec) {
     int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
-    int style = upkint();
     if (subworld) {
         assert(nrnmpi_myid == 0);
         int info[2];
         info[0] = id;
-        info[1] = style;
+        info[1] = mess.style;
         nrnmpi_int_broadcast(info, 2, 0);
     }
     char* rs = nullptr;
     *size = 0;
-    switch (style) {
+    switch (mess.style) {
     case 0: {
-        char* statement = upkstr();
         if (subworld) {
-            int size = strlen(statement) + 1;
+            int size = mess.statement.size() + 1;
             nrnmpi_int_broadcast(&size, 1, 0);
-            nrnmpi_char_broadcast(statement, size, 0);
+            nrnmpi_char_broadcast(mess.statement.data(), size, 0);
         }
-        hoc_obj_run(statement, nullptr);
-        delete[] statement;
+        hoc_obj_run(mess.statement.data(), nullptr);
     } break;
     default: {
-        size_t npickle;
         Symbol* fname = nullptr;
         Object* ob = nullptr;
         std::list<char*> sarg;  // Store the strings pointer to delete[] them later
                                 // Use a list because, we push pointers of the object into
                                 // the hoc stack
         int narg = 0;           // total number of args
-        if (style == 2) {       // object first
-            char* template_name = upkstr();
-            int object_index = upkint();  // object index
-            Symbol* sym = hoc_lookup(template_name);
+        if (mess.style == 2) {       // object first
+            Symbol* sym = hoc_lookup(mess.template_name.c_str());
             if (sym) {
                 sym = hoc_which_template(sym);
             }
             if (!sym) {
-                hoc_execerror(template_name, "is not a template");
+                hoc_execerror(mess.template_name.c_str(), "is not a template");
             }
             hoc_Item *q, *ql;
             ql = sym->u.ctemplate->olist;
             ITERATE(q, ql) {
                 ob = OBJ(q);
-                if (ob->index == object_index) {
+                if (ob->index == mess.object_index) {
                     break;
                 }
                 ob = nullptr;
@@ -1235,41 +1220,35 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             if (!ob) {
                 fprintf(stderr,
                         "%s[%d] is not an Object in this process\n",
-                        template_name,
-                        object_index);
+                        mess.template_name.c_str(),
+                        mess.object_index);
                 hoc_execerror("ParallelContext execution error", nullptr);
             }
-            delete[] template_name;
-            char* fname_str = upkstr();
-            fname = hoc_table_lookup(fname_str, sym->u.ctemplate->symtable);
+            fname = hoc_table_lookup(mess.fname.c_str(), sym->u.ctemplate->symtable);
             if (!fname) {
-                fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
+                fprintf(stderr, "%s not a function in %s\n", mess.fname.c_str(), hoc_object_name(ob));
                 hoc_execerror("ParallelContext execution error", nullptr);
             }
-            delete[] fname_str;
             if (subworld) {
                 hoc_execerror("with subworlds, this submit style not implemented", nullptr);
             }
-        } else if (style == 3) {  // Python callable
-            python_pickle = upkpickle(&npickle);
+        } else if (mess.style == 3) {  // Python callable
             if (subworld) {
-                int size = npickle;
+                int size = mess.pickle.size();
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(python_pickle, size, 0);
+                nrnmpi_char_broadcast(mess.pickle.data(), size, 0);
             }
         } else {
-            char* fname_str = upkstr();
             if (subworld) {
-                int size = strlen(fname_str) + 1;
+                int size = mess.fname.size() + 1;
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(fname_str, size, 0);
+                nrnmpi_char_broadcast(mess.fname.data(), size, 0);
             }
-            fname = hoc_lookup(fname_str);
+            fname = hoc_lookup(mess.fname.c_str());
             if (!fname) {
-                fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
+                fprintf(stderr, "%s not a function in %s\n", mess.fname.c_str(), hoc_object_name(ob));
                 hoc_execerror("ParallelContext execution error", nullptr);
             }
-            delete[] fname_str;
         }
 
         int argtypes = upkint();  // first is least signif
@@ -1277,48 +1256,42 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             // printf("%d exec argtypes = %d\n", nrnmpi_myid_world, argtypes);
             nrnmpi_int_broadcast(&argtypes, 1, 0);
         }
-        for (int i = 0, j = argtypes; (i = j % 5) != 0; j /= 5) {
-            ++narg;
-            if (i == 1) {
-                double x = upkdouble();
+        for (auto& arg: mess.args) {
+            if (auto* var = std::get_if<double>(&arg)) {
                 if (subworld) {
-                    nrnmpi_dbl_broadcast(&x, 1, 0);
+                    nrnmpi_dbl_broadcast(var, 1, 0);
                 }
-                hoc_pushx(x);
-            } else if (i == 2) {
-                sarg.push_back(upkstr());
+                hoc_pushx(*var);
+            } else if (auto* var = std::get_if<MyStr>(&arg)) {
                 if (subworld) {
-                    int size = strlen(sarg.back()) + 1;
+                    int size = var->size() + 1;
                     nrnmpi_int_broadcast(&size, 1, 0);
-                    nrnmpi_char_broadcast(sarg.back(), size, 0);
+                    nrnmpi_char_broadcast(var->data(), size, 0);
                 }
-                hoc_pushstr(&(sarg.back()));
-            } else if (i == 3) {
-                int n = upkint();
+                hoc_pushstr(&var->data());
+            } else if (auto* var = std::get_if<std::vector<double>>(&arg)) {
+                int size = var->size();
                 if (subworld) {
-                    nrnmpi_int_broadcast(&n, 1, 0);
+                    nrnmpi_int_broadcast(&size, 1, 0);
                 }
-                Vect* vec = new Vect(n);
-                upkvec(n, vec->data());
+                Vect* vec = new Vect();
+                vec->vec() = *var;
                 if (subworld) {
-                    nrnmpi_dbl_broadcast(vec->data(), n, 0);
+                    nrnmpi_dbl_broadcast(vec->data(), size, 0);
                 }
                 hoc_pushobj(vec->temp_objvar());
-            } else {  // PythonObject
-                size_t n;
-                char* pickle = upkpickle(&n);
-                int size = n;
+            } else if (auto* var = std::get_if<std::vector<char>>(&arg)) {  // PythonObject
+                int size = var->size();
                 if (subworld) {
                     nrnmpi_int_broadcast(&size, 1, 0);
-                    nrnmpi_char_broadcast(pickle, size, 0);
+                    nrnmpi_char_broadcast(var->data(), size, 0);
                 }
                 assert(neuron::python::methods.pickle2po);
-                Object* po = neuron::python::methods.pickle2po(pickle, n);
-                delete[] pickle;
+                Object* po = neuron::python::methods.pickle2po(var->data(), size);
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
-        if (style == 3) {
+        if (mess.style == 3) {
             assert(neuron::python::methods.call_picklef);
             if (pickle_ret_) {
                 delete[] pickle_ret_;
@@ -1326,18 +1299,14 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 pickle_ret_size_ = 0;
             }
             if (exec) {
-                rs = neuron::python::methods.call_picklef(python_pickle, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(mess.pickle.data(), mess.pickle.size(), mess.args.size(), size);
             }
             hoc_ac_ = 0.;
-            delete[] python_pickle;
         } else {
             hoc_ac_ = 0.;
             if (exec) {
-                hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+                hoc_ac_ = hoc_call_objfunc(fname, mess.args.size(), ob);
             }
-        }
-        for (auto& arg: sarg) {
-            delete[] arg;
         }
     } break;
     }

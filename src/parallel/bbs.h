@@ -72,3 +72,5 @@ class BBS {
   protected:
     BBSImpl* impl_;
 };
+
+void writeMessage(BBS* impl, Message& mess);
