@@ -225,53 +225,29 @@ int nrn_is_cable(void) {
     return 1;
 }
 
-void* nrn_realpath_dlopen(const char* relpath, int flags) {
+// the consumer has to deallocate the returned value
+char* nrn_realpath(const char* relpath) {
     char* abspath = NULL;
-    void* handle = NULL;
 
-    /* use realpath or _fullpath even if is already a full path */
-
-#if defined(HAVE_REALPATH)
+    #if defined(HAVE_REALPATH)
     abspath = realpath(relpath, NULL);
-#else /* not HAVE_REALPATH */
-#if defined(__MINGW32__)
-    abspath = _fullpath(NULL, relpath, 0);
-#else  /* not __MINGW32__ */
+    #elif defined(__MINGW32__)
+    abspath = _fullpath(NULL, relpath, _MAX_PATH);
+    #else
     abspath = strdup(relpath);
-#endif /* not __MINGW32__ */
-#endif /* not HAVE_REALPATH */
-    if (abspath) {
-        handle = dlopen(abspath, flags);
-#if DARWIN
-        if (!handle) {
-            nrn_possible_mismatched_arch(abspath);
-        }
-#endif  // DARWIN
-        free(abspath);
-    } else {
-        int patherr = errno;
-        handle = dlopen(relpath, flags);
-        if (!handle) {
-            Fprintf(stderr,
-                    "realpath failed errno=%d (%s) and dlopen failed with %s\n",
-                    patherr,
-                    strerror(patherr),
-                    relpath);
-#if DARWIN
-            nrn_possible_mismatched_arch(abspath);
-#endif  // DARWIN
-        }
+    #endif
+    if (!abspath) {
+        fprintf(stderr, "Failed to resolve path: %s, due to error: %s\n", relpath, strerror(errno));
     }
-    return handle;
+    return abspath;
 }
 
 // Global set to keep track of loaded DLLs
 static std::unordered_set<std::string> loaded_dlls;
 
 int mswin_load_dll(const char* cp1) {
-    char* resolved_path = realpath(cp1, NULL);
+    char* resolved_path = nrn_realpath(cp1);
     if (!resolved_path) {
-        fprintf(stderr, "Failed to resolve path: %s\n", strerror(errno));
         return 0;
     }
 
@@ -284,31 +260,27 @@ int mswin_load_dll(const char* cp1) {
         return 1;  // Return success as the DLL is already loaded
     }
 
-    void* handle;
-    if (nrnmpi_myid < 1)
-        if (!nrn_nobanner_ && nrn_istty_) {
-            fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
-        }
+    // Load the DLL
+    void* handle = dlopen(full_path.c_str(), RTLD_NOW);
+    if (!handle) {
+        fprintf(stderr, "dlopen failed: %s\n", dlerror());
 #if DARWIN
-    handle = nrn_realpath_dlopen(full_path.c_str(), RTLD_NOW);
-#else   // not DARWIN
-    handle = dlopen(full_path.c_str(), RTLD_NOW);
-#endif  // not DARWIN
-    if (handle) {
-        Pfrv mreg = (Pfrv) dlsym(handle, "modl_reg");
-        if (mreg) {
-            (*mreg)();
-            loaded_dlls.insert(full_path);  // Insert the path into the set
-            return 1;
-        } else {
-            fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
-            dlclose(handle);
-            return 0;
-        }
-    } else {
-        fprintf(stderr, "dlopen failed - \n%s\n", dlerror());
+        // Darwin-specific architecture mismatch handling
+        nrn_possible_mismatched_arch(full_path.c_str());
+#endif
+        return 0;
     }
-    return 0;
+
+    Pfrv mreg = (Pfrv) dlsym(handle, "modl_reg");
+    if (mreg) {
+        (*mreg)();
+        loaded_dlls.insert(full_path);  // Insert the path into the set
+        return 1;
+    } else {
+        fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
+        dlclose(handle);
+        return 0;
+    }
 }
 
 void hoc_nrn_load_dll(void) {
