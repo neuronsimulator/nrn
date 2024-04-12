@@ -162,6 +162,9 @@ check_include_files(malloc.h have_malloc_h)
 if(have_malloc_h)
   list(APPEND CORENRN_COMPILE_DEFS HAVE_MALLOC_H)
 endif()
+# Code incompletely shared with NEURON via #if CORENRN_BUILD fragments. NRN and CORENEURON builds
+# sometimes compile the same few files but, for example, with different name spaces.
+list(APPEND CORENRN_COMPILE_DEFS CORENRN_BUILD=1)
 
 # =============================================================================
 # Build option specific compiler flags
