@@ -229,13 +229,13 @@ int nrn_is_cable(void) {
 char* nrn_realpath(const char* relpath) {
     char* abspath = NULL;
 
-    #if defined(HAVE_REALPATH)
+#if defined(HAVE_REALPATH)
     abspath = realpath(relpath, NULL);
-    #elif defined(__MINGW32__)
+#elif defined(__MINGW32__)
     abspath = _fullpath(NULL, relpath, _MAX_PATH);
-    #else
+#else
     abspath = strdup(relpath);
-    #endif
+#endif
     if (!abspath) {
         fprintf(stderr, "Failed to resolve path: %s, due to error: %s\n", relpath, strerror(errno));
     }
