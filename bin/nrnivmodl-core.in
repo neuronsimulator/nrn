@@ -109,7 +109,7 @@ shopt -s nullglob
 if [ -d "$params_MODS_PATH" ]; then
     files=( "$params_MODS_PATH"/*.mod )
     if [ ${#files} -eq 0 ]; then
-        echo "WARNING: No mod files found in '$(cd "${params_MODS_PATH}"; pwd -P)', compiling default ones only!"
+        echo "WARNING: No mod files found in '$(readlink -f "${params_MODS_PATH}")', compiling default ones only!"
     fi
 else
     echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"
