@@ -48,7 +48,7 @@ stages:
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           python3 -m pip install cibuildwheel
-          cibuildwheel
+          CIBW_BUILD='cp311*' cibuildwheel
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -103,7 +103,7 @@ stages:
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
           export MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
           python3 -m pip install cibuildwheel
-          cibuildwheel
+          CIBW_BUILD='cp311*' cibuildwheel
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
