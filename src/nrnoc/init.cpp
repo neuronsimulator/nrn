@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
