@@ -71,6 +71,7 @@ CMAKE_PREFIX_PATH = {env="CMAKE_PREFIX_PATH"}
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:latest-gcc9-aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:latest-gcc9-x86_64"
+skip = ["pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64"]
 
 [tool.cibuildwheel.macos]
 environment = { CMAKE_PREFIX_PATH="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" }
