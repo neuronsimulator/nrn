@@ -69,9 +69,9 @@ class BBSImpl {
     static bool master_works_;
 
   protected:
-    char* execute_helper(Message&, size_t*, int id, bool exec = true);  // involves hoc specific details in
-                                                              // ocbbs.cpp
-    void subworld_worker_execute();                           // shadows execute_helper. ie. each of
+    char* execute_helper(Message&, size_t*, int id, bool exec = true);  // involves hoc specific
+                                                                        // details in ocbbs.cpp
+    void subworld_worker_execute();  // shadows execute_helper. ie. each of
                                      // the nrnmpi_myid_bbs workers (and master) need to execute
                                      // the same thing on each of the subworld processes
                                      // associated with nrnmpi_myid==0. A subworld does not
@@ -80,30 +80,29 @@ class BBSImpl {
 };
 
 class MyStr {
-    public:
-        MyStr(char* s)
-            : s_(s)
-        {};
+  public:
+    MyStr(char* s)
+        : s_(s){};
 
-        ~MyStr() {
-            delete[] s_;
-        }
+    ~MyStr() {
+        delete[] s_;
+    }
 
-        std::size_t size() {
-            return strlen(s_);
-        }
+    std::size_t size() {
+        return strlen(s_);
+    }
 
-        char*& data() {
-            return s_;
-        }
+    char*& data() {
+        return s_;
+    }
 
-    private:
-        char* s_ = nullptr;
+  private:
+    char* s_ = nullptr;
 };
 
 struct Message {
     int userid;
-    int wid; // working_id
+    int wid;  // working_id
     int style;
 
     std::string statement;
@@ -118,4 +117,4 @@ struct Message {
     std::vector<ArgType> args;
 };
 
-Message readMessage(BBSImpl* impl); 
+Message readMessage(BBSImpl* impl);

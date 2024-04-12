@@ -1200,7 +1200,7 @@ char* BBSImpl::execute_helper(Message& mess, size_t* size, int id, bool exec) {
                                 // Use a list because, we push pointers of the object into
                                 // the hoc stack
         int narg = 0;           // total number of args
-        if (mess.style == 2) {       // object first
+        if (mess.style == 2) {  // object first
             Symbol* sym = hoc_lookup(mess.template_name.c_str());
             if (sym) {
                 sym = hoc_which_template(sym);
@@ -1226,7 +1226,10 @@ char* BBSImpl::execute_helper(Message& mess, size_t* size, int id, bool exec) {
             }
             fname = hoc_table_lookup(mess.fname.c_str(), sym->u.ctemplate->symtable);
             if (!fname) {
-                fprintf(stderr, "%s not a function in %s\n", mess.fname.c_str(), hoc_object_name(ob));
+                fprintf(stderr,
+                        "%s not a function in %s\n",
+                        mess.fname.c_str(),
+                        hoc_object_name(ob));
                 hoc_execerror("ParallelContext execution error", nullptr);
             }
             if (subworld) {
@@ -1246,7 +1249,10 @@ char* BBSImpl::execute_helper(Message& mess, size_t* size, int id, bool exec) {
             }
             fname = hoc_lookup(mess.fname.c_str());
             if (!fname) {
-                fprintf(stderr, "%s not a function in %s\n", mess.fname.c_str(), hoc_object_name(ob));
+                fprintf(stderr,
+                        "%s not a function in %s\n",
+                        mess.fname.c_str(),
+                        hoc_object_name(ob));
                 hoc_execerror("ParallelContext execution error", nullptr);
             }
         }
@@ -1299,7 +1305,10 @@ char* BBSImpl::execute_helper(Message& mess, size_t* size, int id, bool exec) {
                 pickle_ret_size_ = 0;
             }
             if (exec) {
-                rs = neuron::python::methods.call_picklef(mess.pickle.data(), mess.pickle.size(), mess.args.size(), size);
+                rs = neuron::python::methods.call_picklef(mess.pickle.data(),
+                                                          mess.pickle.size(),
+                                                          mess.args.size(),
+                                                          size);
             }
             hoc_ac_ = 0.;
         } else {
