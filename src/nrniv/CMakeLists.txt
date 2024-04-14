@@ -582,8 +582,10 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+  OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
+  NO_TARGET)
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
                        OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
