@@ -582,10 +582,8 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-cpp_cc_build_time_copy(
-  INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-  OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
-  NO_TARGET)
+cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
                        OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
@@ -593,8 +591,9 @@ cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
                        OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
-add_custom_target(neuron-copy-nrnivmodl-dependencies ALL
-                  DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+set(nrn_macosx13_nrnivmodl_dependencies
+    ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
+    ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
