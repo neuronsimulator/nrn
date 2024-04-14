@@ -834,6 +834,7 @@ if(NRN_ENABLE_TESTS)
     OUTPUT ${neurondemo_files}
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
             ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+    DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
     VERBATIM)
 
