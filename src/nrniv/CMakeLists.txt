@@ -593,5 +593,8 @@ cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
                        OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
+add_custom_target(neuron-copy-nrnivmodl-dependencies ALL
+                  DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
