@@ -382,8 +382,14 @@ cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
   NO_TARGET)
-set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
-                                "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
 # {build_dir}/share/modfile/
 file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
@@ -650,10 +656,6 @@ endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
-# main program required for building special-core
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
-
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
 # `special` to link against `libcorenrnmech_internal.{a,so}`
@@ -670,14 +672,12 @@ configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
                ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
                @ONLY)
-
 # nrnivmodl-core depends on the building of NMODL_TARGET_TO_DEPEND and the configuration of the
 # nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in
 # one of those files then the prebuilt mod files are going to be rebuilt
 add_custom_target(
   nrnivmodl-core ALL
   DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-          ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp
           ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
 
 if(CORENRN_ENABLE_UNIT_TESTS)
