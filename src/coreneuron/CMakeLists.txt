@@ -676,6 +676,7 @@ configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/b
 add_custom_target(
   nrnivmodl-core ALL
   DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
+          ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp
           ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
 
 if(CORENRN_ENABLE_UNIT_TESTS)
