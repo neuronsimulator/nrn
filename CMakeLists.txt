@@ -830,6 +830,8 @@ if(NRN_ENABLE_TESTS)
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+  message(STATUS "nrn_macosx13_... = ${nrn_macosx13_nrnivmodl_dependencies}")
   add_custom_command(
     OUTPUT ${neurondemo_files}
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
