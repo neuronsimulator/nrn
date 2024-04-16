@@ -60,10 +60,10 @@ TEST_CASE("random123 smoke test") {
 
         if (old_size == new_size) {
             std::cerr << "Duplicate found! i = " << i << ", d = " << d << std::endl;
-            FAIL("Duplicate found!");
+//            FAIL("Duplicate found!");
         }
-
-
         //        REQUIRE(delta < EPSILON);
     }
+    REQUIRE(check_set.size() == NUM_TRIES);
+
 }
