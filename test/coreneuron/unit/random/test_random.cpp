@@ -44,9 +44,12 @@ TEST_CASE("random123 smoke test") {
     nrnran123_setseq(s, 0, 0);
 
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:NUM_TRIES]) is_device_ptr(s))
-    nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) present(s))
+    nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) deviceptr(s))
     for (int i = 0; i < NUM_TRIES; i++) {
-        res[i] = nrnran123_dblpick(s);
+        nrn_pragma_acc(atomic)
+        double val = nrnran123_dblpick(s);
+
+        res[i] = val;
     }
 
     // there should be no duplicates
