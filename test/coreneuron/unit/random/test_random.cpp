@@ -22,16 +22,17 @@ TEST_CASE("random123 smoke test") {
     const int KEY_1 = 1;
     const int KEY_2 = 2;
     const int NUM_TRIES = 10000;
-//    const double EPSILON = 0.00001;
+    //    const double EPSILON = 0.00001;
 
-/*
-    // random123 is a fully deterministic PRNG; it should generate the following stream of doubles
-    // with (1,2) initial key:
+    /*
+        // random123 is a fully deterministic PRNG; it should generate the following stream of
+       doubles
+        // with (1,2) initial key:
 
-    double ref[] = {0.724128,  0.507056, 0.446231, 0.331509, 0.84732,  0.0942423, 0.5401,
-                    0.0496035, 0.286901, 0.777649, 0.584096, 0.468876, 0.545774,  0.584586,
-                    0.630361,  0.875837, 0.703636, 0.853706, 0.173552, 0.917358};
-*/
+        double ref[] = {0.724128,  0.507056, 0.446231, 0.331509, 0.84732,  0.0942423, 0.5401,
+                        0.0496035, 0.286901, 0.777649, 0.584096, 0.468876, 0.545774,  0.584586,
+                        0.630361,  0.875837, 0.703636, 0.853706, 0.173552, 0.917358};
+    */
 
     double res[NUM_TRIES];
 
@@ -59,6 +60,6 @@ TEST_CASE("random123 smoke test") {
         }
 
 
-//        REQUIRE(delta < EPSILON);
+        //        REQUIRE(delta < EPSILON);
     }
 }
