@@ -596,7 +596,8 @@ cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
 
 set(nrn_macosx13_nrnivmodl_dependencies
     nrnmain_cpp ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
-    ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
+    ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h
+    PARENT_SCOPE)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
