@@ -581,7 +581,7 @@ endif()
 # Install / copy cpp and required headers for binary special flavor
 # =============================================================================
 
-add_custom_target(nrnivmodl_dependency)
+add_custom_target(nrnivmodl_dependency ALL)
 
 # For testneuron CTest
 cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
