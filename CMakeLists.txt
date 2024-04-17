@@ -733,7 +733,7 @@ add_custom_target(
 # =============================================================================
 # ~~~
 # Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANHE
+# - Replace GLOBAL variable by RANGE
 # - Comment out TABLE
 # ~~~
 # =============================================================================
