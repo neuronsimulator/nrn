@@ -221,12 +221,7 @@ static void xopen_audit(void) {
 #endif
 }
 
-#ifdef NeXT
-int hoc_retrieve_audit(int id) /* I have no idea why... CMC */
-#else
 int hoc_retrieve_audit(int id)
-
-#endif
 {
 #if !OCSMALL
     RetrieveAudit save;
