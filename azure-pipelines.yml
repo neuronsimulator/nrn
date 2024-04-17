@@ -34,8 +34,9 @@ stages:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          Python38:
-            python.version: '3.8'
+          # Disabled while fixing a SEGFAULT in `nmodl`.
+          # Python38:
+          #   python.version: '3.8'
           Python39:
             python.version: '3.9'
           Python310:
