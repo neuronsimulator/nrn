@@ -262,6 +262,12 @@ set(NRNIV_FILE_LIST
     vrecord.cpp)
 
 # =============================================================================
+# Files from coreneuron/permute that get compiled also for NEURON
+# =============================================================================
+set(NODEORDEROPTIM_FILE_LIST balance.cpp cellorder.cpp cellorder1.cpp cellorder2.cpp
+                             node_permute.cpp)
+
+# =============================================================================
 # Files in nrncvode directory
 # =============================================================================
 set(NRNCVODE_FILE_LIST
@@ -436,6 +442,7 @@ set(NRN_OC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/oc)
 set(NRN_NRNOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrnoc)
 set(NRN_NRNOC_BUILD_DIR ${PROJECT_BINARY_DIR}/src/nrnoc)
 set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
+set(NRN_NODEORDEROPTIM_SRC_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron/permute)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
@@ -450,6 +457,9 @@ nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
+nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
+                     ${NODEORDEROPTIM_FILE_LIST})
+list(APPEND NRN_NODEORDEROPTIM_SRC_FILES ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp)
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv

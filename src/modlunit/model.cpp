@@ -24,6 +24,7 @@
  * still gives the prefix of the .c and .var files.
  */
 
+#include <cstring>
 #include "model.h"
 #include "parse1.hpp"
 

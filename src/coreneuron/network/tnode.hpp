@@ -11,7 +11,11 @@
 #include <vector>
 
 // experiment with ordering strategies for Tree Nodes
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
 class TNode;
 
 using VecTNode = std::vector<TNode*>;
@@ -63,10 +67,10 @@ size_t level_from_root(VecTNode&);
  *
  * The main steps are the following:
  * 1. warp_balance function creates balanced groups of cells.
- * 2. The compartments/tree nodes populate the groups vector (VVVTN) based on their groudindex and
+ * 2. The compartments/tree nodes populate the groups vector (VVVTN) based on their groupindex and
  * their level (see level_from_root).
  * 3. The analyze() & question2() functions (operating per group) make sure that each cell is still
- * a tree (treenode_order) and that the dependent nodes belong to separate warps.
+ * a tree (treenode_order) and that the nodes with same parents belong to separate warps.
  */
 void group_order2(VecTNode&, size_t groupsize, size_t ncell);
 size_t dist2child(TNode* nd);

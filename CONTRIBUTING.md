@@ -94,6 +94,10 @@ formatted, indented, documented, and commented.
 
 The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.html) section of the documentation provides a starting point for understanding NEURON's internals.
 
+### Building NEURON
+
+To build NEURON, please follow the instructions [here](docs/install/install_instructions.md#installing-source-distributions).
+
 ### Code Formatting
 
 Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format and clang-format as below:
@@ -141,9 +145,6 @@ Or,
 ```
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
-
-make && make format-pr
-```
 
 ## Python Contributions
 

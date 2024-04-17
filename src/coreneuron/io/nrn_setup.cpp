@@ -636,14 +636,14 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
 double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     if (mtype == voltage) {  // voltage
-        int ix{index};       // relative to _actual_v
+        int ix = index;      // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
         return nt._actual_v + ix;
     } else if (mtype == i_membrane_) {  // membrane current from fast_imem calculation
-        int ix{index};                  // relative to nrn_fast_imem->nrn_sav_rhs
+        int ix = index;                 // relative to nrn_fast_imem->nrn_sav_rhs
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);

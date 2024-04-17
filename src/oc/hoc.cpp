@@ -20,6 +20,7 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include <cfenv>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -48,21 +49,11 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FEENABLEEXCEPT
-#define NRN_FLOAT_EXCEPTION 1
-#else
-#define NRN_FLOAT_EXCEPTION 0
-#endif
-
-#if NRN_FLOAT_EXCEPTION
-#if !defined(__USE_GNU)
-#define __USE_GNU
-#endif
-#include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
+    const int e = std::fetestexcept(FEEXCEPT);
     /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (fegetexcept()) {
+    switch (e) {
     case FE_DIVBYZERO:
         fprintf(stderr, "Floating exception: Divide by zero\n");
         break;
@@ -74,7 +65,6 @@ static void matherr1(void) {
         break;
     }
 }
-#endif
 
 int nrn_mpiabort_on_error_{1};
 
@@ -95,35 +85,9 @@ void nrn_feenableexcept() {
     hoc_pushx((double) result);
 }
 
-#if 0
-/* performance debugging when gprof is inadequate */
-#include <sys/time.h>
-static unsigned long usec[30];
-static unsigned long oldusec[30];
-static struct timeval tp;
-void start_profile(int i){
-	gettimeofday(&tp, 0);
-	oldusec[i] = tp.tv_usec;
-}
-void add_profile(int i) {
-	gettimeofday(&tp, 0);
-	if (tp.tv_usec > oldusec[i]) {
-		usec[i] += tp.tv_usec - oldusec[i];
-	}
-}
-void pr_profile(void) {
-	int i;
-	for (i=0; i < 30; ++i) {
-		if (usec[i]) {
-			printf("sec[%d]=%g\n", i, ((double)usec[i])/1000000.);
-		}
-	}
-}
-#else
 void start_profile(int i) {}
 void add_profile(int i) {}
 void pr_profile(void) {}
-#endif
 
 #if OCSMALL
 #define READLINE 0

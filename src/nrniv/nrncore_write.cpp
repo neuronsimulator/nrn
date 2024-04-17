@@ -415,6 +415,11 @@ int nrncore_psolve(double tstop, int file_mode) {
                     CORENRN_DATA_DIR = find_datpath_in_arguments(args);
                 }
                 write_corenrn_model(CORENRN_DATA_DIR);
+#if NRNMPI
+                if (nrnmpi_numprocs > 1) {
+                    nrnmpi_barrier();
+                }
+#endif
             }
             nrncore_run(args);
             // data return nt._t so copy to t
