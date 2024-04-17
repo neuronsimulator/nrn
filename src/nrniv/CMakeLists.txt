@@ -582,29 +582,24 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
-                       TARGET nrnivmodl_nrnmain_cpp)
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
+                                                          TARGET nrnivmodl_nrnmain_cpp)
 
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
-                       TARGET nrnivmodl_nrnmpiuse_h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h TARGET nrnivmodl_nrnmpiuse_h)
 
-cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h
-                       TARGET nrnivmodl_nrnneosm_h)
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+  OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h TARGET nrnivmodl_nrnneosm_h)
 
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h
-                       TARGET nrnivmodl_nrnconf_h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h TARGET nrnivmodl_nrnconf_h)
 
-add_custom_target(nrnivmodl_dependency ALL DEPENDS
-                       ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
-                       ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
-                       ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h
-                       ${CMAKE_BINARY_DIR}/include/nrnconf.h
-)
-
+add_custom_target(
+  nrnivmodl_dependency ALL
+  DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
+          ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
