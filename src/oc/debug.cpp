@@ -6,11 +6,7 @@
 #include <stdio.h>
 int zzdebug;
 
-#if DOS
 #define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
-#else
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
-#endif
 
 void debug(void) /* print the machine */
 {
