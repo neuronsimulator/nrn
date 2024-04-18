@@ -22,10 +22,11 @@ using namespace coreneuron;
 
 
 TEST_CASE("random123 smoke test") {
-    nrnran123_State* s;
     const int KEY_1 = 1;
     const int KEY_2 = 2;
-    const int NUM_TRIES = 10000;
+    const int NUM_STREAMS = 20;
+    const int NUM_SAMPLES = 1000;
+    nrnran123_State* s;
     //    const double EPSILON = 0.00001;
 
     /*
@@ -38,22 +39,24 @@ TEST_CASE("random123 smoke test") {
                         0.630361,  0.875837, 0.703636, 0.853706, 0.173552, 0.917358};
     */
 
-    double res[NUM_TRIES];
+    const int res_size = NUM_SAMPLES * NUM_STREAMS;
+    double res[res_size];
 
-    s = nrnran123_newstream(KEY_1, KEY_2);
-    nrnran123_setseq(s, 0, 0);
-
-    nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:NUM_TRIES]) is_device_ptr(s))
-    nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) deviceptr(s) num_gangs(1) num_workers(1))
-    for (int i = 0; i < NUM_TRIES; i++) {
-        double val = nrnran123_dblpick(s);
-        res[i] = val;
+    nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:res_size]) is_device_ptr(s))
+    nrn_pragma_acc(parallel loop copy(res [0:res_size]) deviceptr(s))
+    for (int i = 0; i < NUM_STREAMS; i++) {
+        s = nrnran123_newstream(KEY_1, i);
+        nrnran123_setseq(s, 0, 0);
+        for (int j = 0; j < NUM_SAMPLES; j++) {
+            double val = nrnran123_dblpick(s);
+            res[i * NUM_SAMPLES + j] = val;
+        }
     }
 
     // there should be no duplicates
     std::set<double> check_set;
 
-    for (int i = 0; i < NUM_TRIES; i++) {
+    for (int i = 0; i < NUM_STREAMS * NUM_SAMPLES; i++) {
         double d = res[i];
         size_t old_size = check_set.size();
         check_set.insert(res[i]);
@@ -61,9 +64,9 @@ TEST_CASE("random123 smoke test") {
 
         if (old_size == new_size) {
             std::cerr << "Duplicate found! i = " << i << ", d = " << d << std::endl;
-            //            FAIL("Duplicate found!");
+            FAIL("Duplicate found!");
         }
         //        REQUIRE(delta < EPSILON);
     }
-    REQUIRE(check_set.size() == NUM_TRIES);
+    REQUIRE(check_set.size() == NUM_SAMPLES * NUM_STREAMS);
 }
