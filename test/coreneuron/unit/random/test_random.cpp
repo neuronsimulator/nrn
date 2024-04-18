@@ -44,12 +44,9 @@ TEST_CASE("random123 smoke test") {
     nrnran123_setseq(s, 0, 0);
 
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:NUM_TRIES]) is_device_ptr(s))
-    nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) deviceptr(s))
+    nrn_pragma_acc(parallel loop copy(res [0:NUM_TRIES]) deviceptr(s) num_gangs(1))
     for (int i = 0; i < NUM_TRIES; i++) {
-        nrn_pragma_acc(atomic update)
-        nrn_pragma_omp(atomic update)
         double val = nrnran123_dblpick(s);
-
         res[i] = val;
     }
 
