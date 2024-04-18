@@ -59,9 +59,7 @@ mv temp nvector_nrnthread_ld.h
  * -----------------------------------------------------------------
  */
 
-#ifndef _NVECTOR_NRNTHREAD_LD_H
-#define _NVECTOR_NRNTHREAD_LD_H
-
+#pragma once
 
 #include "nvector.h"
 #include "sundialstypes.h"
@@ -298,6 +296,3 @@ void N_VCompare_NrnThreadLD(realtype c, N_Vector x, N_Vector z);
 booleantype N_VInvTest_NrnThreadLD(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_NrnThreadLD(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_NrnThreadLD(N_Vector num, N_Vector denom);
-
-
-#endif

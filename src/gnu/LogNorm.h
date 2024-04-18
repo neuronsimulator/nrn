@@ -15,11 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _LogNormal_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _LogNormal_h 
+#pragma once
 
 #include "Normal.h"
 
@@ -74,5 +70,3 @@ inline double LogNormal::variance(double x)
     double t=logVariance; logVariance = x; setState();
     return t;
 }
-
-#endif

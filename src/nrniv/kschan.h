@@ -1,5 +1,4 @@
-#ifndef kschan_h
-#define kschan_h
+#pragma once
 
 #include <math.h>
 #include "nrnoc2iv.h"
@@ -486,5 +485,3 @@ class KSChan {
 
     std::vector<double> parm_default{};
 };
-
-#endif

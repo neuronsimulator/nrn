@@ -5,10 +5,6 @@
 /* changes as of 2-jan-89 */
 /*  version 7.2.1 2-jan-89 short form of the for statement */
 
-#if AIX
-#pragma alloca
-#endif
-
 #include "hoc.h"
 #include "hocdec.h"
 #include "ocmisc.h"

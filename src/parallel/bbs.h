@@ -1,5 +1,4 @@
-#ifndef bbs_h
-#define bbs_h
+#pragma once
 
 #include "bbsimpl.h"
 
@@ -73,5 +72,3 @@ class BBS {
   protected:
     BBSImpl* impl_;
 };
-
-#endif

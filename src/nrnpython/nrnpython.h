@@ -1,5 +1,4 @@
-#ifndef nrnpython_h
-#define nrnpython_h
+#pragma once
 
 #ifdef _WIN64
 #define MS_WIN64
@@ -95,4 +94,3 @@ extern "C" PyObject* nrn_hocobj_ptr(double*);
 int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
 int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);
-#endif

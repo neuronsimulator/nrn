@@ -444,6 +444,10 @@ if(NRN_ENABLE_THREADS)
   list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
+# Some files are shared by NEURON and CoreNEURON and use #if CORENRN_BUILD to distinguish between
+# which build is occurring.
+list(APPEND NRN_COMPILE_DEFS CORENRN_BUILD=0)
+
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
@@ -805,7 +809,7 @@ if(NRN_ENABLE_TESTS)
   if(NOT TARGET Catch2::Catch2)
     nrn_add_external_project(catch2)
     set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/extras)
     include(Catch)
   endif()
   include(CTest)
