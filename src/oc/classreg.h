@@ -1,9 +1,7 @@
 #pragma once
-#include <stdio.h>
 
 #include <hocdec.h>
 #include <hoc_membf.h>
-
 
 extern void class2oc(const char*,
                      void* (*cons)(Object*),
