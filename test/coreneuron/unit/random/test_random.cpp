@@ -14,7 +14,7 @@ using namespace coreneuron;
 
 TEST_CASE("random123 smoke test") {
     const int KEY_1 = 1;
-//    const int KEY_2 = 2;
+    //    const int KEY_2 = 2;
     const int NUM_STREAMS = 20;
     const int NUM_SAMPLES = 1000;
     nrnran123_State* rand_streams[NUM_STREAMS];
@@ -58,7 +58,7 @@ TEST_CASE("random123 smoke test") {
 
         if (old_size == new_size) {
             std::cerr << "Duplicate found! i = " << i << ", d = " << d << std::endl;
-//            FAIL("Duplicate found!");
+            //            FAIL("Duplicate found!");
         }
         //        REQUIRE(delta < EPSILON);
     }
