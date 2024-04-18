@@ -290,12 +290,6 @@ int main(int argc, const char* argv[]) {
     fs::create_directories(output_dir);
     fs::create_directories(scratch_dir);
 
-    if (sympy_opt) {
-        nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
-            .api()
-            ->initialize_interpreter();
-    }
-
     logger->set_level(spdlog::level::from_str(verbose));
 
     /// write ast to nmodl
@@ -487,22 +481,31 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(*ast, filepath("localize"));
         }
 
-        if (sympy_conductance) {
-            logger->info("Running sympy conductance visitor");
-            SympyConductanceVisitor().visit_program(*ast);
-            SymtabVisitor(update_symtab).visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("sympy_conductance"));
-        }
-
-        if (sympy_analytic || sparse_solver_exists(*ast)) {
-            if (!sympy_analytic) {
-                logger->info(
-                    "Automatically enable sympy_analytic because it exists solver of type sparse");
+        if (sympy_conductance || sympy_analytic || sparse_solver_exists(*ast)) {
+            nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
+                .api()
+                ->initialize_interpreter();
+            if (sympy_conductance) {
+                logger->info("Running sympy conductance visitor");
+                SympyConductanceVisitor().visit_program(*ast);
+                SymtabVisitor(update_symtab).visit_program(*ast);
+                ast_to_nmodl(*ast, filepath("sympy_conductance"));
             }
-            logger->info("Running sympy solve visitor");
-            SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);
-            SymtabVisitor(update_symtab).visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("sympy_solve"));
+
+            if (sympy_analytic || sparse_solver_exists(*ast)) {
+                if (!sympy_analytic) {
+                    logger->info(
+                        "Automatically enable sympy_analytic because it exists solver of type "
+                        "sparse");
+                }
+                logger->info("Running sympy solve visitor");
+                SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);
+                SymtabVisitor(update_symtab).visit_program(*ast);
+                ast_to_nmodl(*ast, filepath("sympy_solve"));
+            }
+            nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
+                .api()
+                ->finalize_interpreter();
         }
 
         {
@@ -578,9 +581,5 @@ int main(int argc, const char* argv[]) {
                     "backends");
             }
         }
-    }
-
-    if (sympy_opt) {
-        nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->finalize_interpreter();
     }
 }
