@@ -39,7 +39,7 @@ TEST_CASE("random123 smoke test") {
         s = nrnran123_newstream(KEY_1, i);
         nrnran123_setseq(s, 0, 0);
 
-//        nrn_pragma_acc(loop seq)
+        //        nrn_pragma_acc(loop seq)
         nrn_pragma_omp(single)
         for (int j = 0; j < NUM_SAMPLES; j++) {
             double val = nrnran123_dblpick(s);
@@ -60,7 +60,7 @@ TEST_CASE("random123 smoke test") {
 
         if (old_size == new_size) {
             std::cerr << "Duplicate found! i = " << i << ", d = " << d << std::endl;
-//            FAIL("Duplicate found!");
+            //            FAIL("Duplicate found!");
         }
         //        REQUIRE(delta < EPSILON);
     }
