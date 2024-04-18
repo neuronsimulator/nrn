@@ -33,8 +33,8 @@ TEST_CASE("random123 smoke test") {
     const int res_size = NUM_SAMPLES * NUM_STREAMS;
     double res[res_size];
 
+    //    nrn_pragma_acc(parallel loop copy(res [0:res_size]) deviceptr(s))
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:res_size]) is_device_ptr(s))
-//    nrn_pragma_acc(parallel loop copy(res [0:res_size]) deviceptr(s))
     for (int i = 0; i < NUM_STREAMS; i++) {
         s = nrnran123_newstream(KEY_1, i);
         nrnran123_setseq(s, 0, 0);
