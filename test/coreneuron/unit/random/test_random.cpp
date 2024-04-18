@@ -39,7 +39,7 @@ TEST_CASE("random123 smoke test") {
     }
 
     nrn_pragma_omp(target teams distribute parallel for map(tofrom: res[0:res_size]) to(rand_streams[0:NUM_STREAMS]))
-    nrn_pragma_acc(parallel loop copy(res[0:res_size]) copyin(rand_streams[0:NUM_STREAMS]))
+    nrn_pragma_acc(parallel loop copy(res [0:res_size]) copyin(rand_streams [0:NUM_STREAMS]))
     for (int i = 0; i < NUM_STREAMS; i++) {
         for (int j = 0; j < NUM_SAMPLES; j++) {
             double val = nrnran123_dblpick(rand_streams[i]);
