@@ -151,7 +151,12 @@ bool CodegenCppVisitor::defined_method(const std::string& name) const {
 }
 
 int CodegenCppVisitor::float_variables_size() const {
-    return codegen_float_variables.size();
+    int n_floats = 0;
+    for (const auto& var: codegen_float_variables) {
+        n_floats += var->get_length();
+    }
+
+    return n_floats;
 }
 
 

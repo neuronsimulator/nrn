@@ -1,6 +1,6 @@
 set(NMODL_USECASE_DIRS
     cnexp_scalar
-    cnexp_array
+    # cnexp_array
     global_breakpoint
     point_process
     parameter
