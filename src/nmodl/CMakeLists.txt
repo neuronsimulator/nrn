@@ -34,6 +34,7 @@ target_link_libraries(
   util
   lexer
   ${NMODL_WRAPPER_LIBS})
+add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
 # =============================================================================
