@@ -54,7 +54,7 @@ TEST_CASE("random123 smoke test") {
             res[i * NUM_SAMPLES + j] = val;
         }
 
-//        nrnran123_deletestream(s);
+        //        nrnran123_deletestream(s);
     }
 
     // there should be no duplicates
