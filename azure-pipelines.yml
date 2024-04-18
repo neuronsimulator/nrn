@@ -34,19 +34,16 @@ stages:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          # These have been disabled to fix a SEGFAULT in `nmodl` with
-          # Python 3.8. The first step was to detect mismatching Python
-          # versions. Which is why 3.9, 3.11 and 3.12 have been disabled.
-          # Python38:
-          #   python.version: '3.8'
-          # Python39:
-          #   python.version: '3.9'
+          Python38:
+            python.version: '3.8'
+          Python39:
+            python.version: '3.9'
           Python310:
             python.version: '3.10'
-          # Python311:
-          #   python.version: '3.11'
-          # Python312:
-          #   python.version: '3.12'
+          Python311:
+            python.version: '3.11'
+          Python312:
+            python.version: '3.12'
       steps:
 
       # Secure files documentation:
