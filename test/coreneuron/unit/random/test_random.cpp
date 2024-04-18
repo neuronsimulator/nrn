@@ -14,7 +14,7 @@ using namespace coreneuron;
 
 TEST_CASE("random123 smoke test") {
     const int KEY_1 = 1;
-    const int KEY_2 = 2;
+//    const int KEY_2 = 2;
     const int NUM_STREAMS = 20;
     const int NUM_SAMPLES = 1000;
     nrnran123_State* s;
@@ -45,8 +45,6 @@ TEST_CASE("random123 smoke test") {
             double val = nrnran123_dblpick(s);
             res[i * NUM_SAMPLES + j] = val;
         }
-
-        //        nrnran123_deletestream(s);
     }
 
     // there should be no duplicates
