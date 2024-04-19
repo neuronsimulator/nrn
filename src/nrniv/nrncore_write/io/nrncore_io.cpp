@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char* bbcore_write_version = "1.7";  // NMODLRandom
+const char* bbcore_write_version = "1.8";  // Include ArrayDims
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
