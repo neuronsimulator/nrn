@@ -1403,7 +1403,10 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
     {
         char buf1[NRN_BUFSIZE];
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, fs::absolute(finname).c_str());
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::absolute(finname).c_str());
 #else
         Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
 #endif
