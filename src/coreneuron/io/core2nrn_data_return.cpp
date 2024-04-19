@@ -72,23 +72,22 @@ static void soaos_copy_cnrn2nrn_impl(size_t n,
                                      const std::vector<int>& array_dims,
                                      int* permute) {
     // i : runs over instances: 0, ..., n.
+    // j : runs over variables: 0, ..., array_dims.size() =: n_vars.
     // k : runs over array dimension: 0, ..., array_dims[i_var] =: K.
 
     int n_vars = array_dims.size();
-    size_t offset_var = 0;
-    for (size_t i_var = 0; i_var < n_vars; ++i_var) {
-        size_t K = array_dims[i_var];
+    double const* src_var = src;
+    for (size_t j_var = 0; j_var < n_vars; ++j_var) {
+        size_t K = array_dims[j_var];
 
-        // memcpy(dest[i_var], src + offset_var, n*K);
         for (size_t i = 0; i < n; ++i) {
+            size_t i_src = needs_permute ? static_cast<size_t>(permute[i]) : i;
             for (size_t k = 0; k < K; ++k) {
-                size_t i_src = needs_permute ? static_cast<size_t>(permute[i]) : i;
-                size_t j_src = offset_var + i_src * K + k;
-                dest[i_var][i * K + k] = src[j_src];
+                dest[j_var][i * K + k] = src_var[i_src * K + k];
             }
         }
 
-        offset_var += stride * K;
+        src_var += stride * K;
     }
 }
 
