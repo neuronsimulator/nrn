@@ -22,6 +22,8 @@
 
 #include <vector>
 #include <unordered_map>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
@@ -225,42 +227,13 @@ int nrn_is_cable(void) {
 }
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
-    char* abspath = NULL;
-    void* handle = NULL;
-
-    /* use realpath or _fullpath even if is already a full path */
-
-#if defined(HAVE_REALPATH)
-    abspath = realpath(relpath, NULL);
-#else /* not HAVE_REALPATH */
-#if defined(__MINGW32__)
-    abspath = _fullpath(NULL, relpath, 0);
-#else  /* not __MINGW32__ */
-    abspath = strdup(relpath);
-#endif /* not __MINGW32__ */
-#endif /* not HAVE_REALPATH */
-    if (abspath) {
-        handle = dlopen(abspath, flags);
+    auto abspath = fs::absolute(relpath);
+    void* handle = dlopen(abspath.c_str(), flags);
 #if DARWIN
-        if (!handle) {
-            nrn_possible_mismatched_arch(abspath);
-        }
-#endif  // DARWIN
-        free(abspath);
-    } else {
-        int patherr = errno;
-        handle = dlopen(relpath, flags);
-        if (!handle) {
-            Fprintf(stderr,
-                    "realpath failed errno=%d (%s) and dlopen failed with %s\n",
-                    patherr,
-                    strerror(patherr),
-                    relpath);
-#if DARWIN
-            nrn_possible_mismatched_arch(abspath);
-#endif  // DARWIN
-        }
+    if (!handle) {
+        nrn_possible_mismatched_arch(abspath.c_str());
     }
+#endif  // DARWIN
     return handle;
 }
 

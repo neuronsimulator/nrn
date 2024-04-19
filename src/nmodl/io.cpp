@@ -1,4 +1,6 @@
 #include <../../nmodlconf.h>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 /* file.mod input routines */
 #include <stdlib.h>
@@ -385,7 +387,6 @@ static FILE* include_open(char* fname, int err) {
 }
 
 void include_file(Item* q) {
-    char* pf = NULL;
     char fname[NRN_BUFSIZE];
     Item* qinc;
     FileStackItem* fsi;
@@ -415,14 +416,8 @@ void include_file(Item* q) {
     qinc = filetxtlist->prev;
     Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
-#if HAVE_REALPATH
-    pf = realpath(fname, NULL);
-#endif
-    if (pf) {
-        Sprintf(buf, ":::realpath %s\n", pf);
-        free(pf);
-        lappendstr(filetxtlist, buf);
-    }
+    Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
+    lappendstr(filetxtlist, buf);
 }
 
 static void pop_file_stack() {
