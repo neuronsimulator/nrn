@@ -676,6 +676,25 @@ if(NRN_ENABLE_PYTHON)
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
       COMMAND ${modtests_launch_py} test/gjtests/test_natrans.py)
+
+    foreach(run_mode RANGE 2)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME array_variable_transfer_run_mode_${run_mode}_py_${processor}
+        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+        SCRIPT_PATTERNS test/coreneuron/test_array_variables_transfer.py
+        ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=${run_mode} NRN_TEST_FILE_MODE=false
+        COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
+    endforeach()
+
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME array_variable_transfer_file_mode_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_array_variables_transfer.py
+      ENVIRONMENT ${processor_env} NRN_TEST_RUN_MODE=0 NRN_TEST_FILE_MODE=true
+      COMMAND ${modtests_launch_py} test/coreneuron/test_array_variables_transfer.py)
+
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
       if(mpi4py_FOUND)

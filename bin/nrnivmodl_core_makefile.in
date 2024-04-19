@@ -145,7 +145,7 @@ endif
 
 
 # main target to build binary
-$(SPECIAL_EXE): $(corenrnmech_lib_target)
+$(SPECIAL_EXE): $(corenrnmech_lib_target) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp
 	@printf " => $(C_GREEN)Binary$(C_RESET) creating $(SPECIAL_EXE)\n"
 	$(CXX_LINK_EXE_CMD) -o $(SPECIAL_EXE) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
