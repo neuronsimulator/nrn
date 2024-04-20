@@ -847,10 +847,23 @@ void register_data_fields(int mechtype,
     register_data_fields(mechtype, params, dparams);
 }
 
+
+// Count the number of floating point variables.
+//
+// An array variable with N elements counts as N floating point variables.
+static int count_prop_param_size(const std::vector<std::pair<const char*, int>>& param_info) {
+    int float_variables = 0;
+    for (const auto& [i, n]: param_info) {
+        float_variables += n;
+    }
+
+    return float_variables;
+}
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
-    nrn_prop_param_size_[mechtype] = param_info.size();
+    nrn_prop_param_size_[mechtype] = count_prop_param_size(param_info);
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
     delete[] std::exchange(memb_func[mechtype].dparam_semantics, nullptr);
     if (!dparam_info.empty()) {
