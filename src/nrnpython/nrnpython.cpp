@@ -155,7 +155,9 @@ int nrnpy_pyrun(const char* fname) {
 }
 
 /**
- * @brief Execute Python interpreter lines (gotten from hoc readline).
+ * @brief Like a PyRun_InteractiveLoop that does not need a FILE*
+ * Use InteractiveConsole to work around the issue of mingw FILE*
+ * not being compatible with Python via the CAPI on windows11.
  * @return 0 on success, nonzero on failure.
  */
 static int nrnmingw_pyrun_interactiveloop() {
@@ -163,7 +165,7 @@ static int nrnmingw_pyrun_interactiveloop() {
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
-        "nrnmingw_interpreter.interact(\"Hello\")\n"};
+        "nrnmingw_interpreter.interact(\"\")\n"};
     for (const auto& line: lines) {
         if (PyRun_SimpleString(line.c_str())) {
             PyErr_Print();
@@ -307,10 +309,15 @@ static int nrnpython_start(int b) {
         // There used to be a call to PySys_SetArgv here, which dates back to
         // e48d933e03b5c25a454e294deea55e399f8ba1b1 and a comment about sys.argv not being set with
         // nrniv -python. Today, it seems like this is not needed any more.
-#if !defined(MINGW)
-        // cannot get this to avoid crashing with MINGW
+
+        // Used to crash with MINGW when assocated with a python gui thread e.g
+        // from neuron import h, gui
+        // g = h.Graph()
+        // del g
+        // Also, NEURONMainMenu/File/Quit did not work. The solution to both
+        // seems to be to just avoid gui threads if MINGW and launched nrniv
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
-#endif
+
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
         for (int i = 1; i < nrn_global_argc; ++i) {
