@@ -228,7 +228,7 @@ int nrn_is_cable(void) {
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
     auto abspath = fs::absolute(relpath);
-    void* handle = dlopen(abspath.c_str(), flags);
+    void* handle = dlopen(abspath.string().c_str(), flags);
 #if DARWIN
     if (!handle) {
         nrn_possible_mismatched_arch(abspath.c_str());
