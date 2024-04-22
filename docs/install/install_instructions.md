@@ -211,11 +211,6 @@ The following packages are optional (see build options):
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
-Note that you may have to force Cython version:
-```bash
-pip install "cython<3"
-```
-
 Depending on platform you can install these dependencies as follows:
 
 <a name="Mac-OS-Depend"></a>
@@ -226,20 +221,27 @@ The easiest way to install dependencies on Mac OS is to use [brew](https://brew.
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
 
 ```bash
-brew install coreutils openmpi cmake
+brew install coreutils openmpi cmake flex bison
 brew install --cask xquartz
 ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/usr/local/bin/:$PATH
+export PATH="/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/macos/). Also, note that
+[official distribution](https://www.python.org/downloads/macos/) or via brew. Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
+
+Finally, if you are building NEURON with the Python interface, you need to install all of the Python dependencies:
+
+```bash
+pip3 install --user --upgrade pip
+pip3 install --user -r nrn_requirements.txt
+```
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -267,20 +269,17 @@ needs to be installed for development.
   echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
   eval $(/opt/homebrew/bin/brew shellenv)
 
-  brew install cmake
-  brew install open-mpi
+  brew install open-mpi cmake flex bison
 
   pip3 install --user --upgrade pip
-  export PATH="$HOME/Library/Python/3.8/bin":$PATH
-  pip3 install --user cython
+  pip3 install --user -r nrn_requirements.txt
   ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+export PATH="/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH"
 ```
-
 
 #### Linux
 
@@ -293,7 +292,7 @@ sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
      libxcomposite-dev openmpi-bin python3-dev
 # for python dependencies
-pip install scipy numpy cython
+pip install -r nrn_requirements.txt
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.

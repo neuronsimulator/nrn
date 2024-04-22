@@ -485,10 +485,6 @@ static void point_menu(Object* ob, int make_label) {
             }
             if (vartype == nrnocCONST) {
                 deflt = true;
-
-#if defined(MikeNeubig)
-                deflt = false;
-#endif  // end of hack
             } else {
                 deflt = false;
             }

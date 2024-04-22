@@ -162,6 +162,9 @@ check_include_files(malloc.h have_malloc_h)
 if(have_malloc_h)
   list(APPEND CORENRN_COMPILE_DEFS HAVE_MALLOC_H)
 endif()
+# Code incompletely shared with NEURON via #if CORENRN_BUILD fragments. NRN and CORENEURON builds
+# sometimes compile the same few files but, for example, with different name spaces.
+list(APPEND CORENRN_COMPILE_DEFS CORENRN_BUILD=1)
 
 # =============================================================================
 # Build option specific compiler flags
@@ -334,6 +337,7 @@ add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 file(
   GLOB
   CORENEURON_CODE_FILES
+  CONFIGURE_DEPENDS
   "apps/main1.cpp"
   "apps/corenrn_parameters.cpp"
   "gpu/nrn_acc_manager.cpp"
@@ -378,8 +382,14 @@ cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
   NO_TARGET)
-set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
-                                "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
 # {build_dir}/share/modfile/
 file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
@@ -468,6 +478,7 @@ endif()
 # Hines solver. This cannot be included in coreneuron-core because of this issue:
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
+add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
@@ -645,10 +656,6 @@ endforeach()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
-
-# main program required for building special-core
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
