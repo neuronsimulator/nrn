@@ -228,7 +228,7 @@ int nrn_is_cable(void) {
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
     void* handle = nullptr;
-    try { // Try with an absolute path otherwise relpath
+    try {  // Try with an absolute path otherwise relpath
         auto abspath = fs::absolute(relpath);
         handle = dlopen(abspath.string().c_str(), flags);
 #if DARWIN
@@ -239,7 +239,8 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            std::cerr << "std::filesystem::absolute failed (" << e.what() << ") and dlopen failed with '" << relpath << "'" << std::endl;
+            std::cerr << "std::filesystem::absolute failed (" << e.what()
+                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
