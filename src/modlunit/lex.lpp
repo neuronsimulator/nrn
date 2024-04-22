@@ -15,7 +15,7 @@
 #undef input
 #endif
 
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include "model.h"
 #include "parse1.hpp"
 

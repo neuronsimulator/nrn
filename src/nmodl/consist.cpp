@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /*
  * Check that names do not have conflicting types.  This is done after the

@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 

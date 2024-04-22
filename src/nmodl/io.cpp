@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <filesystem>
 namespace fs = std::filesystem;
 
