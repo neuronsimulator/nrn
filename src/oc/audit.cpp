@@ -221,8 +221,7 @@ static void xopen_audit(void) {
 #endif
 }
 
-int hoc_retrieve_audit(int id)
-{
+int hoc_retrieve_audit(int id) {
 #if !OCSMALL
     RetrieveAudit save;
     char buf[200];
