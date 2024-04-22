@@ -1,7 +1,7 @@
 %{
 /* /local/src/master/nrn/src/nmodl/parse1.ypp,v 4.11 1999/03/24 18:34:08 hines Exp */
 
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include "modl.h"
 #include <stdlib.h>
 
