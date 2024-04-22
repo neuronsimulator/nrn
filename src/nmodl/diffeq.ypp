@@ -6,7 +6,7 @@
   The only thing that makes this less than elegant is dealing with 0.0
 */
 
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <string.h>
 #include "modl.h"
 #include "difeqdef.h"
