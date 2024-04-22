@@ -1,5 +1,5 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
-#include "wrap_sprintf.h"
+#include "utils/wrap_sprintf.hpp"
 #include <stdio.h>
 #include <assert.h>
 

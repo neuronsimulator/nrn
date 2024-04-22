@@ -16,48 +16,12 @@ endif()
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
-set(BISON_FLEX_WORKING_DIR "${CMAKE_BINARY_DIR}")
-set(NRN_MODLUNIT_GEN "${CMAKE_CURRENT_BINARY_DIR}/modlunit_generated")
-file(MAKE_DIRECTORY "${NRN_MODLUNIT_GEN}")
-file(RELATIVE_PATH NRN_MODLUNIT_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLUNIT_GEN}")
-file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLUNIT_SRC_DIR}")
-# Run flex and bison with relative paths, so absolute paths are not present in the generated source
-# file because of include, __FILE__ and so on. This improves ccache performance. To generate code
-# coverage correctly, the *relative* paths that are present need to be with respect to the build
-# directory.
-add_custom_command(
-  OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
-          "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
-  DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
-  COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
-add_custom_command(
-  OUTPUT "${NRN_MODLUNIT_GEN}/parse1.hpp" "${NRN_MODLUNIT_GEN}/parse1.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_MODLUNIT_GEN_REL}/parse1.hpp" -o
-          "${NRN_MODLUNIT_GEN_REL}/parse1.cpp" "${NRN_MODLUNIT_SRC_REL}/parse1.ypp"
-  DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
-  COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
-
 add_custom_target(generated_source_files true)
-add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
-                                                   "${NRN_MODLUNIT_GEN}/parse1.cpp")
-add_dependencies(generated_source_files modlunit_generated_files)
-add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
-                        "${NRN_MODLUNIT_GEN}/parse1.cpp")
-target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
-cpp_cc_configure_sanitizers(TARGET modlunit)
-# Generated .cpp needs to find source-directory .hpp and vice versa.
-target_include_directories(modlunit PRIVATE "${NRN_MODLUNIT_SRC_DIR}" "${NRN_MODLUNIT_GEN}")
-
-if(NRN_NMODL_CXX_FLAGS)
-  target_compile_options(modlunit PRIVATE ${NRN_NMODL_CXX_FLAGS})
-endif()
 
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
+set(BISON_FLEX_WORKING_DIR "${CMAKE_BINARY_DIR}")
 set(NRN_NMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
 file(MAKE_DIRECTORY "${NRN_NMODL_GEN}")
 file(RELATIVE_PATH NRN_NMODL_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_GEN}")
@@ -571,7 +535,7 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
+install(TARGETS nrniv nocmodl DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
