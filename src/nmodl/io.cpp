@@ -416,8 +416,12 @@ void include_file(Item* q) {
     qinc = filetxtlist->prev;
     Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
-    Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
-    lappendstr(filetxtlist, buf);
+    try {
+        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
+        lappendstr(filetxtlist, buf);
+    } catch (const std::filesystem::filesystem_error&) {
+        // If we are not able to get an absolute path from fname, simply avoid to write it.
+    }
 }
 
 static void pop_file_stack() {

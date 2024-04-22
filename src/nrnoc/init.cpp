@@ -227,13 +227,23 @@ int nrn_is_cable(void) {
 }
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
-    auto abspath = fs::absolute(relpath);
-    void* handle = dlopen(abspath.string().c_str(), flags);
+    try { // Try with an absolute path otherwise relpath
+        auto abspath = fs::absolute(relpath);
+        void* handle = dlopen(abspath.string().c_str(), flags);
 #if DARWIN
-    if (!handle) {
-        nrn_possible_mismatched_arch(abspath.c_str());
+        if (!handle) {
+            nrn_possible_mismatched_arch(abspath.c_str());
+        }
+#endif
+    } catch (const std::filesystem::filesystem_error& e) {
+        void *handle = dlopen(relpath, flags);
+        if (!handle) {
+            std::cerr << "std::filesystem::absolute failed (" << e.what() << ") and dlopen failed with '" << relpath << "'" << std::endl;
+#if DARWIN
+            nrn_possible_mismatched_arch(relpath);
+#endif
+        }
     }
-#endif  // DARWIN
     return handle;
 }
 
