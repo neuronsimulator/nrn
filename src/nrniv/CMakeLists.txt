@@ -13,60 +13,7 @@ if(NRN_AVOID_ABSOLUTE_PATHS)
   add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
 endif()
 
-# =============================================================================
-# Build modlunit : Mod file units checker
-# =============================================================================
 add_custom_target(generated_source_files true)
-
-# =============================================================================
-# Build nocmodl : source-to-source compiler for NMODL
-# =============================================================================
-set(BISON_FLEX_WORKING_DIR "${CMAKE_BINARY_DIR}")
-set(NRN_NMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
-file(MAKE_DIRECTORY "${NRN_NMODL_GEN}")
-file(RELATIVE_PATH NRN_NMODL_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_GEN}")
-file(RELATIVE_PATH NRN_NMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_SRC_DIR}")
-add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/lex.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NMODL_GEN_REL}/lex.cpp" "${NRN_NMODL_SRC_REL}/lex.lpp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/lex.lpp"
-  COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
-add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/parse1.hpp" -o
-          "${NRN_NMODL_GEN_REL}/parse1.cpp" "${NRN_NMODL_SRC_REL}/parse1.ypp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/parse1.ypp"
-  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
-add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/diffeq.hpp" -o
-          "${NRN_NMODL_GEN_REL}/diffeq.cpp" "${NRN_NMODL_SRC_REL}/diffeq.ypp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/diffeq.ypp"
-  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
-
-add_custom_target(
-  nocmodl_generated_files
-  DEPENDS "${NRN_NMODL_GEN}/lex.cpp" "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
-          "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp")
-add_dependencies(generated_source_files nocmodl_generated_files)
-add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
-                       "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
-cpp_cc_configure_sanitizers(TARGET nocmodl)
-target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
-# Otherwise the generated code in the binary directory does not find headers in the modlunit source
-# directory and the source files in the source directory do not find generated headers in the binary
-# directory. TODO: (see also coreneuron) fix adding a dependency on CLI11::CLI11 when CLI11 is a
-# submodule. Right now this doesn't work because the CLI11 targets are not exported/installed but
-# coreneuron-core is.
-get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(nocmodl PRIVATE "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}"
-                                           "${CLI11_HEADER_DIRECTORY}")
-if(NRN_NMODL_CXX_FLAGS)
-  target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
-endif()
 
 # =============================================================================
 # Translate all MOD files to C and mark them generated
@@ -92,11 +39,11 @@ set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 # =============================================================================
 set(NRN_OC_GEN "${CMAKE_CURRENT_BINARY_DIR}/oc_generated")
 file(MAKE_DIRECTORY "${NRN_OC_GEN}")
-file(RELATIVE_PATH NRN_OC_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_OC_GEN}")
-file(RELATIVE_PATH NRN_OC_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_OC_SRC_DIR}")
+file(RELATIVE_PATH NRN_OC_GEN_REL "${CMAKE_CURRENT_BINARY_DIR}" "${NRN_OC_GEN}")
+file(RELATIVE_PATH NRN_OC_SRC_REL "${CMAKE_CURRENT_BINARY_DIR}" "${NRN_OC_SRC_DIR}")
 add_custom_command(
   OUTPUT "${NRN_OC_GEN}/parse.hpp" "${NRN_OC_GEN}/parse.cpp"
-  WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_OC_GEN_REL}/parse.hpp" -o
           "${NRN_OC_GEN_REL}/parse.cpp" "${NRN_OC_SRC_REL}/parse.ypp"
   DEPENDS "${NRN_OC_SRC_DIR}/parse.ypp"

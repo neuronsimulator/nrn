@@ -393,25 +393,6 @@ set(MODFILE_BASE_NAMES
     syn
     vclmp)
 
-set(NMODL_FILES_LIST
-    consist.cpp
-    deriv.cpp
-    discrete.cpp
-    init.cpp
-    io.cpp
-    kinetic.cpp
-    list.cpp
-    modl.cpp
-    nocpout.cpp
-    noccout.cpp
-    parsact.cpp
-    netrec_discon.cpp
-    simultan.cpp
-    solve.cpp
-    symbol.cpp
-    units.cpp
-    version.cpp)
-
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
@@ -428,7 +409,6 @@ set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
 set(NRN_NODEORDEROPTIM_SRC_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron/permute)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
-set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 
@@ -457,7 +437,6 @@ nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
-nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
