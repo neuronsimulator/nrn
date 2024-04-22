@@ -19,8 +19,7 @@ add_executable(modlunit
     units1.cpp
     version.cpp
     "${CMAKE_CURRENT_BINARY_DIR}/lex.cpp"
-    "${CMAKE_CURRENT_BINARY_DIR}/parse1.cpp"
-    "${PROJECT_BINARY_DIR}/nrnconf.h")
+    "${CMAKE_CURRENT_BINARY_DIR}/parse1.cpp")
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
 # Generated .cpp needs to find source-directory .hpp and vice versa.
