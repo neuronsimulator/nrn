@@ -36,9 +36,6 @@
 /* Define to 1 if you have the `posix_memalign' function. */
 #cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
 
-/* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
-
 /* Define to 1 if you have the `setenv' function. */
 #cmakedefine HAVE_SETENV @HAVE_SETENV@
 
