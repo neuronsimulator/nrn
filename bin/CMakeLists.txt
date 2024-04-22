@@ -47,20 +47,22 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/
 # Make sure nrnivmodl and neurondemo are executable in the build folder, so we can execute it to
 # prepare test files. This can be done more elegantly in newer CMake versions; v3.19+ have
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
-configure_file("neurondemo.in" "neurondemo" @ONLY)
-configure_file("nrnivmodl.in" "nrnivmodl" @ONLY)
-file(
-  CHMOD
-  "${CMAKE_CURRENT_BINARY_DIR}/neurondemo"
-  "${CMAKE_CURRENT_BINARY_DIR}/nrnivmodl"
-  PERMISSIONS
-  OWNER_READ
-  OWNER_WRITE
-  OWNER_EXECUTE
-  GROUP_READ
-  GROUP_EXECUTE
-  WORLD_READ
-  WORLD_EXECUTE)
+set(NRN_CONFIG_EXE_FILES "nrnivmodl" "neurondemo")
+foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
+  configure_file("${NRN_CONFIG_EXE_FILE}.in" "tmp/${NRN_CONFIG_EXE_FILE}" @ONLY)
+  file(
+    COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/${NRN_CONFIG_EXE_FILE}"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+    FILE_PERMISSIONS
+      OWNER_READ
+      OWNER_WRITE
+      OWNER_EXECUTE
+      GROUP_READ
+      GROUP_EXECUTE
+      WORLD_READ
+      WORLD_EXECUTE)
+endforeach()
+file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 
 # =============================================================================
 # Install targets
