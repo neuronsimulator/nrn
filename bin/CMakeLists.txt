@@ -49,14 +49,18 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
 configure_file("neurondemo.in" "neurondemo" @ONLY)
 configure_file("nrnivmodl.in" "nrnivmodl" @ONLY)
-file(CHMOD "${CMAKE_CURRENT_BINARY_DIR}/neurondemo" "${CMAKE_CURRENT_BINARY_DIR}/nrnivmodl" PERMISSIONS
-    OWNER_READ
-    OWNER_WRITE
-    OWNER_EXECUTE
-    GROUP_READ
-    GROUP_EXECUTE
-    WORLD_READ
-    WORLD_EXECUTE)
+file(
+  CHMOD
+  "${CMAKE_CURRENT_BINARY_DIR}/neurondemo"
+  "${CMAKE_CURRENT_BINARY_DIR}/nrnivmodl"
+  PERMISSIONS
+  OWNER_READ
+  OWNER_WRITE
+  OWNER_EXECUTE
+  GROUP_READ
+  GROUP_EXECUTE
+  WORLD_READ
+  WORLD_EXECUTE)
 
 # =============================================================================
 # Install targets

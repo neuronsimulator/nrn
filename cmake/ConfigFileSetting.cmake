@@ -164,29 +164,39 @@ list(TRANSFORM version_strs APPEND "\"")
 list(TRANSFORM version_strs PREPEND "\"")
 string(JOIN ", " NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS ${version_strs})
 configure_file("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in" "${PROJECT_BINARY_DIR}/nrnconf.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/src/oc/nrnmpiuse.h.in" "${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/src/nrnoc/nrnconfigargs.h.in" "${PROJECT_BINARY_DIR}/src/nrnoc/nrnconfigargs.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/src/nrncvode/nrnneosm.h.in" "${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/src/sundials/sundials_config.h.in" "${PROJECT_BINARY_DIR}/src/sundials/sundials_config.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in" "${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/src/oc/nrnmpiuse.h.in"
+               "${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/src/nrnoc/nrnconfigargs.h.in"
+               "${PROJECT_BINARY_DIR}/src/nrnoc/nrnconfigargs.h" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/src/nrncvode/nrnneosm.h.in"
+               "${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/src/sundials/sundials_config.h.in"
+               "${PROJECT_BINARY_DIR}/src/sundials/sundials_config.h" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in"
+               "${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults" @ONLY)
 file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib
      DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
 
 if(NRN_MACOS_BUILD)
   set(abs_top_builddir ${PROJECT_BINARY_DIR})
-  configure_file("${PROJECT_SOURCE_DIR}/src/mac/macdist.pkgproj.in" "${PROJECT_BINARY_DIR}/src/mac/macdist.pkgproj" @ONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/src/mac/postinstall.sh.in" "${PROJECT_BINARY_DIR}/src/mac/postinstall.sh" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/src/mac/macdist.pkgproj.in"
+                 "${PROJECT_BINARY_DIR}/src/mac/macdist.pkgproj" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/src/mac/postinstall.sh.in"
+                 "${PROJECT_BINARY_DIR}/src/mac/postinstall.sh" @ONLY)
 endif()
 if(MINGW)
   dospath("${CMAKE_INSTALL_PREFIX}" WIN_MARSHAL_NRN_DIR)
-  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/nrnsetupmingw.nsi.in" "${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi" @ONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/pre_setup_exe.sh.in" "${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/nrnsetupmingw.nsi.in"
+                 "${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/pre_setup_exe.sh.in"
+                 "${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh" @ONLY)
   # Just name and not path since setup.exe user chooses location of install.
   set(CXX x86_64-w64-mingw32-g++.exe)
   set(BUILD_MINGW_TRUE "")
   set(BUILD_MINGW_FALSE "#")
   set(nrnskip_rebase "#")
-  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/lib/mknrndll.mak.in" "${PROJECT_BINARY_DIR}/src/mswin/lib/mknrndll.mak" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/src/mswin/lib/mknrndll.mak.in"
+                 "${PROJECT_BINARY_DIR}/src/mswin/lib/mknrndll.mak" @ONLY)
 endif()
 
 # Prepare some variables for setup.py extension building (hoc_module, rx3d and music)
