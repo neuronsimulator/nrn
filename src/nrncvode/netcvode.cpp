@@ -5567,7 +5567,7 @@ static int trajec_buffered(NrnThread& nt,
 // beyond their current size and CoreNEURON will start filling from the
 // current fill time, h.t, location of the arrays. I.e. starting at CoreNEURON's
 // start time. (Multiple calls to psolve append to these arrays.)
-// n_pr refers the the number of PlayRecord instances in the vpr array.
+// n_pr refers to the number of PlayRecord instances in the vpr array.
 // n_trajec refers to the number of trajectories to be recorded on the
 // CoreNEURON side and is the size of the types, indices, and varrays.
 // n_pr is different from n_trajec when one of the GLineRecord instances has

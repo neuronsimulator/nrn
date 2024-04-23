@@ -8,37 +8,14 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
 /* if mac os x */
 #undef DARWIN
-
-/* Define to 1 if you have the `bcopy' function. */
-#undef HAVE_BCOPY
-
-/* Define to 1 if you have the `bzero' function. */
-#undef HAVE_BZERO
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
-
-/* Define to 1 if you have the <fenv.h> header file. */
-#undef HAVE_FENV_H
-
-/* Define to 1 if you have the `fesetround' function. */
-#undef HAVE_FESETROUND
-
-/* Define to 1 if you have the `feenableexcept' function. */
-#undef HAVE_FEENABLEEXCEPT
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the `index' function. */
 #undef HAVE_INDEX
@@ -64,9 +41,6 @@
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
 
-/* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
-
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
 
@@ -82,9 +56,6 @@
 /* (Define if this signal exists) */
 #undef HAVE_SIGBUS
 
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
@@ -93,9 +64,6 @@
 
 /* define if using mingw */
 #undef MINGW
-
-/* define if using Mike Neubig <neubig@salk.edu> contributions */
-#undef MikeNeubig
 
 /* where the lib hoc is */
 #undef NEURON_DATA_DIR
@@ -141,17 +109,6 @@
 
 /* define if RETSIGTYPE(*)(int) is not the prototype for a signal handler */
 #undef SIGNAL_CAST
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-#undef STACK_DIRECTION
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
 
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #undef SUNDIALS_DOUBLE_PRECISION
@@ -222,4 +179,3 @@ namespace neuron::config {
 #endif
 
 #endif /* H_nrnconf_included */
-

@@ -1,5 +1,4 @@
-#ifndef bbsimpl_h
-#define bbsimpl_h
+#pragma once
 
 class BBSImpl {
   public:
@@ -73,5 +72,3 @@ class BBSImpl {
                                      // intracommunicate via the bulletin board but only via
                                      // mpi on the subworld communicator.
 };
-
-#endif

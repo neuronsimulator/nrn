@@ -7,7 +7,10 @@ import os
 import shutil
 import subprocess
 import sys
-from pkg_resources import working_set
+from importlib.metadata import metadata, PackageNotFoundError
+from importlib.util import find_spec
+from pathlib import Path
+
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
@@ -63,21 +66,14 @@ def _check_cpp_compiler_version():
 
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
-
-    package_name = "neuron"
-
-    # determine package to find the install location
-    if "neuron-nightly" in working_set.by_key:
+    try:
+        metadata("neuron-nightly")
         print("INFO : Using neuron-nightly Package (Developer Version)")
-        package_name = "neuron-nightly"
-    elif "neuron" in working_set.by_key:
-        package_name = "neuron"
-    else:
-        raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
+    except PackageNotFoundError:
+        pass
 
-    NRN_PREFIX = os.path.join(
-        working_set.by_key[package_name].location, "neuron", ".data"
-    )
+    NRN_PREFIX = str(Path(find_spec("neuron").origin).parent / ".data")
+
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["CORENRNHOME"] = NRN_PREFIX

@@ -1,5 +1,4 @@
-#ifndef nrn_dataclass_h
-#define nrn_dataclass_h
+#pragma once
 
 #include <InterViews/resource.h>
 
@@ -40,5 +39,3 @@ class SectionList: public Resource {
   private:
     SectionListImpl* sli_;
 };
-
-#endif

@@ -10,7 +10,13 @@
 
 #include "coreneuron/utils/memory.h"
 #include <algorithm>
+#include <vector>
+
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
 
 /**
  * \brief Function that performs the permutation of the cells such that the
@@ -23,11 +29,16 @@ namespace coreneuron {
  *
  * \return int* order, interleaved order of the cells
  */
+#if CORENRN_BUILD
 int* interleave_order(int ith, int ncell, int nnode, int* parent);
+#else
+std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent);
+#endif
 
 void create_interleave_info();
 void destroy_interleave_info();
 
+#if CORENRN_BUILD
 /**
  *
  * \brief Solve the Hines matrices based on the interleave_permute_type (1 or 2).
@@ -37,8 +48,10 @@ void destroy_interleave_info();
  * is solved by multiple execution threads (with coalesced memory access as well)
  */
 extern void solve_interleaved(int ith);
+#endif
 
 class InterleaveInfo;  // forward declaration
+#if CORENRN_BUILD
 /**
  *
  * \brief CUDA branch of the solve_interleaved with interleave_permute_type == 2.
@@ -46,6 +59,7 @@ class InterleaveInfo;  // forward declaration
  * This branch is activated in runtime with the --cuda-interface CLI flag
  */
 void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore, void* stream);
+#endif
 
 class InterleaveInfo: public MemoryManaged {
   public:
@@ -95,7 +109,11 @@ class InterleaveInfo: public MemoryManaged {
  * \param stridedispl
  * \return int* : a permutation of length nnode
  */
+#if CORENRN_BUILD
 int* node_order(int ncell,
+#else
+std::vector<int> node_order(int ncell,
+#endif
                 int nnode,
                 int* parents,
                 int& nwarp,

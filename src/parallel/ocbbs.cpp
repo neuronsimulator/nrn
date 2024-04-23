@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <list>
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
@@ -13,6 +13,7 @@
 #include "multicore.h"
 #include "nrnpy.h"
 #include "utils/profile/profiler_interface.h"
+#include "node_order_optim/node_order_optim.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -807,7 +808,7 @@ static double alltoall(void*) {
     ns = vector_capacity(vsrc);
     double* s = vector_vec(vsrc);
     if (vector_capacity(vscnt) != np) {
-        hoc_execerror("size of source counts vector is not nhost", 0);
+        hoc_execerror("size of source counts vector is not nhost", nullptr);
     }
     double* x = vector_vec(vscnt);
     int* scnt = new int[np];
@@ -818,7 +819,7 @@ static double alltoall(void*) {
         sdispl[i + 1] = sdispl[i] + scnt[i];
     }
     if (ns != sdispl[np]) {
-        hoc_execerror("sum of source counts is not the size of the src vector", 0);
+        hoc_execerror("sum of source counts is not the size of the src vector", nullptr);
     }
     Vect* vdest = vector_arg(3);
     if (nrnmpi_numprocs > 1) {
@@ -956,6 +957,14 @@ static double thread_how_many_proc(void*) {
     return double(i);
 }
 
+static double optimize_node_order(void*) {
+    hoc_return_type_code = 1;  // integer
+    if (ifarg(1)) {
+        neuron::nrn_optimize_node_order(int(chkarg(1, 0, 2)));
+    }
+    return double(neuron::interleave_permute_type);
+}
+
 static double sec_in_thread(void*) {
     hoc_return_type_code = 2;  // boolean
     Section* sec = chk_access();
@@ -991,7 +1000,7 @@ static double thread_dt(void*) {
 
 static double nrncorewrite_argvec(void*) {
     if (ifarg(2) && !(hoc_is_object_arg(2) && is_vector_arg(2))) {
-        hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", NULL);
+        hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", nullptr);
     }
     return double(nrncore_write());
 }
@@ -1013,7 +1022,8 @@ static double print_memory_stats(void*) {
 static double nrncorewrite_argappend(void*) {
     if (ifarg(2) && !hoc_is_double_arg(2)) {
         hoc_execerror(
-            "nrncore_write: optional second arg is not a number (True or False append flag)", NULL);
+            "nrncore_write: optional second arg is not a number (True or False append flag)",
+            nullptr);
     }
     return double(nrncore_write());
 }
@@ -1111,6 +1121,7 @@ static Member_func members[] = {{"submit", submit},
                                 {"thread_stat", thread_stat},
                                 {"thread_busywait", thread_busywait},
                                 {"thread_how_many_proc", thread_how_many_proc},
+                                {"optimize_node_order", optimize_node_order},
                                 {"sec_in_thread", sec_in_thread},
                                 {"thread_ctime", thread_ctime},
                                 {"dt", thread_dt},
@@ -1160,8 +1171,28 @@ void ParallelContext_reg() {
     class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
 }
 
+// A BBS message is something to execute.
+// This helper execute depending of the style of the message.
+// style == 0:
+//     This is a string that is a hoc statement, execute it with `hoc_obj_run`.
+//     Return `nullptr`, set `size` argument to 0.
+//     Not listen to `exec`.
+//     No arguments.
+// style == 1:
+//     This is a function name as a string followed by a list of arguments.
+//     Return `nullptr` and set `size` to 0.
+//     Dry run if `exec` is false.
+// style == 2:
+//     From a template, find a object with an id and inside this object find a member
+//     with a name as a string. Execute this member with arguments.
+//     Return `nullptr` and set `size` to 0.
+//     Dry run if `exec` is false.
+// style == 3:
+//     A python pickle (https://docs.python.org/3/library/pickle.html) followed by arguments.
+//     Return a string that is of size `size`.
+//     Dry run if `exec` is false.
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
-    char* s;
+    char* python_pickle;  // Used only for style == 3
     int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
     int style = upkint();
     if (subworld) {
@@ -1171,113 +1202,113 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         info[1] = style;
         nrnmpi_int_broadcast(info, 2, 0);
     }
-    char* rs = 0;
+    char* rs = nullptr;
     *size = 0;
     switch (style) {
-    case 0:
-        s = upkstr();
+    case 0: {
+        char* statement = upkstr();
         if (subworld) {
-            int size = strlen(s) + 1;
+            int size = strlen(statement) + 1;
             nrnmpi_int_broadcast(&size, 1, 0);
-            nrnmpi_char_broadcast(s, size, 0);
+            nrnmpi_char_broadcast(statement, size, 0);
         }
-        hoc_obj_run(s, nullptr);
-        delete[] s;
-        break;
+        hoc_obj_run(statement, nullptr);
+        delete[] statement;
+    } break;
     default: {
-#if 1
-        int i, j;
         size_t npickle;
-        Symbol* fname = 0;
+        Symbol* fname = nullptr;
         Object* ob = nullptr;
-        char* sarg[20];    // upto 20 argument may be strings
-        int ns = 0;        // number of args that are strings
-        int narg = 0;      // total number of args
-        if (style == 2) {  // object first
-            s = upkstr();  // template name
-            i = upkint();  // object index
-                           // printf("template |%s| index=%d\n", s, i);
-            Symbol* sym = hoc_lookup(s);
+        std::list<char*> sarg;  // Store the strings pointer to delete[] them later
+                                // Use a list because, we push pointers of the object into
+                                // the hoc stack
+        int narg = 0;           // total number of args
+        if (style == 2) {       // object first
+            char* template_name = upkstr();
+            int object_index = upkint();  // object index
+            Symbol* sym = hoc_lookup(template_name);
             if (sym) {
                 sym = hoc_which_template(sym);
             }
             if (!sym) {
-                hoc_execerror(s, "is not a template");
+                hoc_execerror(template_name, "is not a template");
             }
             hoc_Item *q, *ql;
             ql = sym->u.ctemplate->olist;
             ITERATE(q, ql) {
                 ob = OBJ(q);
-                if (ob->index == i) {
+                if (ob->index == object_index) {
                     break;
                 }
                 ob = nullptr;
             }
             if (!ob) {
-                fprintf(stderr, "%s[%d] is not an Object in this process\n", s, i);
-                hoc_execerror("ParallelContext execution error", 0);
+                fprintf(stderr,
+                        "%s[%d] is not an Object in this process\n",
+                        template_name,
+                        object_index);
+                hoc_execerror("ParallelContext execution error", nullptr);
             }
-            delete[] s;
-            s = upkstr();
-            fname = hoc_table_lookup(s, sym->u.ctemplate->symtable);
+            delete[] template_name;
+            char* fname_str = upkstr();
+            fname = hoc_table_lookup(fname_str, sym->u.ctemplate->symtable);
+            if (!fname) {
+                fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
+                hoc_execerror("ParallelContext execution error", nullptr);
+            }
+            delete[] fname_str;
             if (subworld) {
-                hoc_execerror("with subworlds, this submit style not implemented", 0);
+                hoc_execerror("with subworlds, this submit style not implemented", nullptr);
             }
         } else if (style == 3) {  // Python callable
-            s = upkpickle(&npickle);
+            python_pickle = upkpickle(&npickle);
             if (subworld) {
                 int size = npickle;
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(s, size, 0);
+                nrnmpi_char_broadcast(python_pickle, size, 0);
             }
         } else {
-            s = upkstr();
+            char* fname_str = upkstr();
             if (subworld) {
-                int size = strlen(s) + 1;
-                // printf("%d exec hoc fun size = %d\n", nrnmpi_myid_world, size);
+                int size = strlen(fname_str) + 1;
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(s, size, 0);
+                nrnmpi_char_broadcast(fname_str, size, 0);
             }
-            fname = hoc_lookup(s);
+            fname = hoc_lookup(fname_str);
+            if (!fname) {
+                fprintf(stderr, "%s not a function in %s\n", fname_str, hoc_object_name(ob));
+                hoc_execerror("ParallelContext execution error", nullptr);
+            }
+            delete[] fname_str;
         }
-        // printf("execute helper style %d fname=%s obj=%s\n", style, fname->name,
-        // hoc_object_name(ob));
-        if (style != 3 && !fname) {
-            fprintf(stderr, "%s not a function in %s\n", s, hoc_object_name(ob));
-            hoc_execerror("ParallelContext execution error", 0);
-        }
+
         int argtypes = upkint();  // first is least signif
         if (subworld) {
             // printf("%d exec argtypes = %d\n", nrnmpi_myid_world, argtypes);
             nrnmpi_int_broadcast(&argtypes, 1, 0);
         }
-        for (j = argtypes; (i = j % 5) != 0; j /= 5) {
+        for (int i = 0, j = argtypes; (i = j % 5) != 0; j /= 5) {
             ++narg;
             if (i == 1) {
                 double x = upkdouble();
-                // printf("%d arg %d scalar %g\n", nrnmpi_myid_world, narg, x);
                 if (subworld) {
                     nrnmpi_dbl_broadcast(&x, 1, 0);
                 }
                 hoc_pushx(x);
             } else if (i == 2) {
-                sarg[ns] = upkstr();
-                // printf("arg %d string |%s|\n", narg, sarg[ns]);
+                sarg.push_back(upkstr());
                 if (subworld) {
-                    int size = strlen(sarg[ns]) + 1;
+                    int size = strlen(sarg.back()) + 1;
                     nrnmpi_int_broadcast(&size, 1, 0);
-                    nrnmpi_char_broadcast(sarg[ns], size, 0);
+                    nrnmpi_char_broadcast(sarg.back(), size, 0);
                 }
-                hoc_pushstr(sarg + ns);
-                ns++;
+                hoc_pushstr(&(sarg.back()));
             } else if (i == 3) {
-                int n;
-                n = upkint();
+                int n = upkint();
                 if (subworld) {
                     nrnmpi_int_broadcast(&n, 1, 0);
                 }
                 Vect* vec = new Vect(n);
-                // printf("arg %d vector size=%d\n", narg, n);
                 upkvec(n, vec->data());
                 if (subworld) {
                     nrnmpi_dbl_broadcast(vec->data(), n, 0);
@@ -1285,15 +1316,15 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 hoc_pushobj(vec->temp_objvar());
             } else {  // PythonObject
                 size_t n;
-                char* s = upkpickle(&n);
+                char* pickle = upkpickle(&n);
                 int size = n;
                 if (subworld) {
                     nrnmpi_int_broadcast(&size, 1, 0);
-                    nrnmpi_char_broadcast(s, size, 0);
+                    nrnmpi_char_broadcast(pickle, size, 0);
                 }
                 assert(neuron::python::methods.pickle2po);
-                Object* po = neuron::python::methods.pickle2po(s, n);
-                delete[] s;
+                Object* po = neuron::python::methods.pickle2po(pickle, n);
+                delete[] pickle;
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
@@ -1301,27 +1332,23 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             assert(neuron::python::methods.call_picklef);
             if (pickle_ret_) {
                 delete[] pickle_ret_;
-                pickle_ret_ = 0;
+                pickle_ret_ = nullptr;
                 pickle_ret_size_ = 0;
             }
             if (exec) {
-                rs = neuron::python::methods.call_picklef(s, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(python_pickle, npickle, narg, size);
             }
             hoc_ac_ = 0.;
+            delete[] python_pickle;
         } else {
-            // printf("%d exec hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
             hoc_ac_ = 0.;
             if (exec) {
                 hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
             }
-            // printf("%d exec return from hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name,
-            // narg);
         }
-        delete[] s;
-        for (i = 0; i < ns; ++i) {
-            delete[] sarg[i];
+        for (auto& arg: sarg) {
+            delete[] arg;
         }
-#endif
     } break;
     }
     return rs;

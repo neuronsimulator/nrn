@@ -3,11 +3,13 @@
 #include "neuron/container/soa_container.hpp"
 #include "neuron/model_data.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <array>
 #include <iostream>
+#include <numeric>
 #include <optional>
+#include <random>
 #include <sstream>
 #include <vector>
 

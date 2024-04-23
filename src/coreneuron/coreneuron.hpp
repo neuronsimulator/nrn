@@ -90,6 +90,7 @@ class CoreNeuron {
      * Internal lookup tables. Number of float and int variables in each mechanism and memory layout
      * future --> mech class
      */
+    std::vector<std::vector<int>> nrn_array_dims;
     std::vector<int> nrn_prop_param_size;
     std::vector<int> nrn_prop_dparam_size;
     std::vector<int> nrn_mech_data_layout; /* 1 AoS (default), 0 SoA */
@@ -157,6 +158,10 @@ class CoreNeuron {
 
     auto& get_bamech() {
         return bamech;
+    }
+
+    auto& get_array_dims() {
+        return nrn_array_dims;
     }
 
     auto& get_prop_param_size() {
