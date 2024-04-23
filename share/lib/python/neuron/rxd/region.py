@@ -348,13 +348,14 @@ class Extracellular:
 
     def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
-        if index is None:
-            vol = 0
-            if any(self._secs3d):
-                vol += np.sum(self._vol)
-            if any(self._secs1d):
-                vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
-            return vol
+        # TODO: Check validity on extracellular
+        # if index is None:
+        #     vol = 0
+        #     if hasattr(self, "_vol") and any(self._secs3d):
+        #         vol += np.sum(self._vol)
+        #     if hasattr(self, "_geometry") and any(self._secs1d):
+        #         vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
+        #     return vol
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
@@ -1014,9 +1015,9 @@ class Region(object):
         initializer._do_init()
         if index is None:
             vol = 0
-            if any(self._secs3d):
+            if hasattr(self, "_vol") and any(self._secs3d):
                 vol += np.sum(self._vol)
-            if any(self._secs1d):
+            if hasattr(self, "_geometry") and any(self._secs1d):
                 vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
             return vol
         return self._vol[index]
