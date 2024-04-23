@@ -159,22 +159,22 @@ macro(nrn_print_matching_variables prefix_regex)
 endmacro()
 
 # =============================================================================
-# Run nocmodl to convert NMODL to C
+# Run nocmodl to convert NMODL to C++
 # =============================================================================
-macro(nocmodl_mod_to_cpp modfile_basename source_dir working_dir)
+macro(nocmodl_mod_to_cpp modfile_basename source_dir target_dir)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
   if(NOT MSVC)
     set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
   endif()
   add_custom_command(
-    OUTPUT ${working_dir}/${modfile_basename}.cpp
+    OUTPUT "${target_dir}/${modfile_basename}.cpp"
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl> -o "${working_dir}"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl> -o "${target_dir}"
       "${source_dir}/${modfile_basename}.mod"
-    COMMAND sed -i ${NOCMODL_SED_EXPR} "${working_dir}/${modfile_basename}.cpp"
+    COMMAND sed -i -e ${NOCMODL_SED_EXPR} "${target_dir}/${modfile_basename}.cpp"
     DEPENDS nocmodl "${source_dir}/${modfile_basename}.mod" "${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-    WORKING_DIRECTORY ${working_dir})
+    WORKING_DIRECTORY ${target_dir})
 endmacro()
 
 # =============================================================================
