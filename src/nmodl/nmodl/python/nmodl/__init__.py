@@ -31,11 +31,23 @@ os.environ["NMODLHOME"] = os.environ.get(
 )
 
 
-try:
-    # Try importing but catch exception in case bindings are not available
-    from ._nmodl import NmodlDriver, to_json, to_nmodl  # noqa
-    from ._nmodl import __version__
+import builtins
 
-    __all__ = ["NmodlDriver", "to_json", "to_nmodl"]
-except ImportError:
-    print("[NMODL] [warning] :: Python bindings are not available")
+nmodl_binding_check = True
+
+# attribute is set from `pybind/wrapper.cpp` when nmodl module is used
+# for sympy based solvers
+if hasattr(builtins, "nmodl_python_binding_check"):
+    nmodl_binding_check = builtins.nmodl_python_binding_check
+
+if nmodl_binding_check:
+    try:
+        # Try importing but catch exception in case bindings are not available
+        from ._nmodl import NmodlDriver, to_json, to_nmodl  # noqa
+        from ._nmodl import __version__
+
+        __all__ = ["NmodlDriver", "to_json", "to_nmodl"]
+    except ImportError:
+        print(
+            "[NMODL] [warning] :: Python bindings are not available with this installation"
+        )

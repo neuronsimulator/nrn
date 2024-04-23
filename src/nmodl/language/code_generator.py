@@ -33,6 +33,7 @@ class CodeGenerator(
         [
             "base_dir",
             "clang_format",
+            "disable_pybind",
             "jinja_env",
             "jinja_templates_dir",
             "modification_date",
@@ -49,6 +50,7 @@ class CodeGenerator(
     Attributes:
         base_dir: output root directory where Jinja templates are rendered
         clang_format: clang-format command line if C++ files have to be formatted, `None` otherwise
+        disable_pybind: disable python bindings related code generation
         py_files: list of Path objects to the Python files used by this program
         yaml_files: list of Path object to YAML files describing the NMODL language
         modification_date: most recent modification date of the Python and YAML files in this directory
@@ -58,7 +60,7 @@ class CodeGenerator(
         temp_dir: path to the directory where to create temporary files
     """
 
-    def __new__(cls, base_dir, clang_format=None):
+    def __new__(cls, base_dir, clang_format=None, disable_pybind=False):
         this_dir = Path(__file__).parent.resolve()
         jinja_templates_dir = this_dir / "templates"
         py_files = [Path(p).relative_to(this_dir) for p in this_dir.glob("*.py")]
@@ -67,6 +69,7 @@ class CodeGenerator(
             cls,
             base_dir=base_dir,
             clang_format=clang_format,
+            disable_pybind=disable_pybind,
             this_dir=this_dir,
             jinja_templates_dir=jinja_templates_dir,
             jinja_env=jinja2.Environment(
@@ -174,6 +177,11 @@ class CodeGenerator(
         tasks = []
         for path in self.jinja_templates_dir.iterdir():
             sub_dir = PurePath(path).name
+
+            # skip pybind directory as it's needed for python bindings only
+            if self.disable_pybind and sub_dir == "pybind":
+                continue
+
             # create output directory if missing
             (self.base_dir / sub_dir).mkdir(parents=True, exist_ok=True)
             for filepath in path.glob("*.[ch]pp"):
@@ -358,6 +366,12 @@ def parse_args(args=None):
     parser.add_argument(
         "-v", "--verbosity", action="count", default=0, help="increase output verbosity"
     )
+    parser.add_argument(
+        "--disable-pybind",
+        action="store_true",
+        help="Do not generate code related to python bindigs",
+    )
+
     args = parser.parse_args(args=args)
 
     # construct clang-format command line to use, if provided
@@ -393,7 +407,11 @@ def main(args=None):
     args = parse_args(args)
     configure_logger(args.verbosity)
 
-    codegen = CodeGenerator(clang_format=args.clang_format, base_dir=args.base_dir)
+    codegen = CodeGenerator(
+        clang_format=args.clang_format,
+        base_dir=args.base_dir,
+        disable_pybind=args.disable_pybind,
+    )
     num_tasks = 0
     tasks_performed = []
     for task in codegen.workload():

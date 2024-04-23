@@ -14,6 +14,10 @@ if(NMODL_CLANG_FORMAT OR NMODL_FORMATTING)
   endforeach()
 endif()
 
+if(NOT NMODL_ENABLE_PYTHON_BINDINGS)
+  list(APPEND CODE_GENERATOR_OPTS "--disable-pybind")
+endif()
+
 add_custom_command(
   OUTPUT ${NMODL_GENERATED_SOURCES}
   COMMAND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/code_generator.py

@@ -29,6 +29,8 @@ void SolveLinearSystemExecutor::operator()() {
                                  "function_calls"_a = function_calls,
                                  "tmp_unique_prefix"_a = tmp_unique_prefix);
     py::exec(R"(
+                import builtins
+                builtins.nmodl_python_binding_check = False
                 from nmodl.ode import solve_lin_system
                 exception_message = ""
                 try:
@@ -62,6 +64,8 @@ void SolveNonLinearSystemExecutor::operator()() {
                                  "vars"_a = vars,
                                  "function_calls"_a = function_calls);
     py::exec(R"(
+                import builtins
+                builtins.nmodl_python_binding_check = False
                 from nmodl.ode import solve_non_lin_system
                 exception_message = ""
                 try:
@@ -95,6 +99,8 @@ void DiffeqSolverExecutor::operator()() {
         // with forwards Euler timestep:
         // x = x + f(x) * dt
         py::exec(R"(
+                import builtins
+                builtins.nmodl_python_binding_check = False
                 from nmodl.ode import forwards_euler2c
                 exception_message = ""
                 try:
@@ -111,6 +117,8 @@ void DiffeqSolverExecutor::operator()() {
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
         py::exec(R"(
+                import builtins
+                builtins.nmodl_python_binding_check = False
                 from nmodl.ode import integrate2c
                 exception_message = ""
                 try:
@@ -134,6 +142,8 @@ void DiffeqSolverExecutor::operator()() {
 void AnalyticDiffExecutor::operator()() {
     auto locals = py::dict("expressions"_a = expressions, "vars"_a = used_names_in_block);
     py::exec(R"(
+                            import builtins
+                            builtins.nmodl_python_binding_check = False
                             from nmodl.ode import differentiate2c
                             exception_message = ""
                             try:
