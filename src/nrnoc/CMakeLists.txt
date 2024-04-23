@@ -18,8 +18,8 @@ set(MODFILE_BASE_NAMES
     syn
     vclmp)
 foreach(modfile ${MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
-  list(APPEND NRN_MODFILE_CPP ${CMAKE_CURRENT_BINARY_DIR}/${modfile}.cpp)
+  nocmodl_mod_to_cpp("${modfile}" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
+  list(APPEND NRN_MODFILE_CPP "${CMAKE_CURRENT_BINARY_DIR}/${modfile}.cpp")
 endforeach()
 set_property(
   SOURCE ${NRN_MODFILE_CPP}
@@ -33,6 +33,6 @@ set_property(
   PROPERTY INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/include)
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
-# Create a static library from mod fiels to be included in nrniv
+# Create a static library from mod files to be included in nrniv
 add_library(default_mods STATIC ${NRN_MODFILE_CPP})
 set_property(TARGET default_mods PROPERTY POSITION_INDEPENDENT_CODE ON)
