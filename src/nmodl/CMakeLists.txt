@@ -37,7 +37,7 @@ target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # submodule. Right now this doesn't work because the CLI11 targets are not exported/installed but
 # coreneuron-core is.
 get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(nocmodl PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${CLI11_HEADER_DIRECTORY}" "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(nocmodl PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" "${CLI11_HEADER_DIRECTORY}" "${PROJECT_SOURCE_DIR}/src")
 if(NRN_NMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()
