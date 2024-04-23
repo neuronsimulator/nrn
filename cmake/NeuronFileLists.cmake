@@ -373,26 +373,6 @@ set(NRNPYTHON_FILES_LIST
     rxd_marching_cubes.cpp
     rxd_llgramarea.cpp)
 
-# built-in mod files
-set(MODFILE_BASE_NAMES
-    apcount
-    exp2syn
-    expsyn
-    feature
-    hh
-    intfire1
-    intfire2
-    intfire4
-    netstim
-    oclmp
-    passive
-    pattern
-    ppmark
-    stim
-    svclmp
-    syn
-    vclmp)
-
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
@@ -434,7 +414,6 @@ nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
-nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi

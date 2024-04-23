@@ -16,25 +16,6 @@ endif()
 add_custom_target(generated_source_files true)
 
 # =============================================================================
-# Translate all MOD files to C and mark them generated
-# =============================================================================
-foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
-  list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
-endforeach()
-set_property(
-  SOURCE ${NRN_MODFILE_CPP}
-  APPEND
-  PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
-# we are basically emulating nrnivmodl with CMake here. nrnivmodl uses headers from the include
-# directory in the build or install directory.
-set_property(
-  SOURCE ${NRN_MODFILE_CPP}
-  APPEND
-  PROPERTY INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/include)
-set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
-
-# =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
 set(NRN_OC_GEN "${CMAKE_CURRENT_BINARY_DIR}/oc_generated")
@@ -55,6 +36,7 @@ set(NRN_OC_GENERATED_SOURCES
     "${NRN_OC_GEN}"
     PARENT_SCOPE)
 
+add_subdirectory(../nrnoc ../nrnoc)
 # =============================================================================
 # Source code lists
 # =============================================================================
@@ -65,7 +47,6 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_NRNIV_SRC_FILES}
     ${NRN_NRNOC_SRC_FILES}
     ${NRN_OC_SRC_FILES}
-    ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
@@ -321,6 +302,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
+target_link_libraries(nrniv_lib default_mods)
 target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
