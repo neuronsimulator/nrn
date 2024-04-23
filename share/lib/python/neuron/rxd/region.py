@@ -1,3 +1,5 @@
+import numpy as np
+
 from .rxdException import RxDException
 from neuron import h
 
@@ -344,11 +346,15 @@ class Extracellular:
     def _short_repr(self):
         return "Extracellular"
 
-    def _volume(self, species):
-        return sum(species.nodes(self).volume)
-
-    def volume(self, index):
+    def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
+        if index is None:
+            vol = 0
+            if any(self._secs3d):
+                vol += np.sum(self._vol)
+            if any(self._secs1d):
+                vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
+            return vol
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
@@ -1003,6 +1009,14 @@ class Region(object):
         else:
             raise RxDException("Cannot set secs now; model already instantiated")
 
-    def volume(self, index):
+    def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
+        initializer._do_init()
+        if index is None:
+            vol = 0
+            if any(self._secs3d):
+                vol += np.sum(self._vol)
+            if any(self._secs1d):
+                vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
+            return vol
         return self._vol[index]
