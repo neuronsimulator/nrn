@@ -18,4 +18,3 @@ def test_region_volume(neuron_nosave_instance):
     h.finitialize()
     assert abs(cyt1.volume() - sum(ca1.nodes(cyt1).volume)) < diff
     assert abs(cyt2.volume() - sum(ca2.nodes(cyt2).volume)) < diff
-
