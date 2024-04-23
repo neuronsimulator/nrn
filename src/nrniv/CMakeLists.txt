@@ -429,12 +429,6 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 # =============================================================================
 # Final executable
 # =============================================================================
@@ -464,7 +458,7 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl DESTINATION bin)
+install(TARGETS nrniv DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)

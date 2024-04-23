@@ -42,8 +42,4 @@ if(NRN_NMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()
 
-if(NRN_COVERAGE_FILES)
-    target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 install(TARGETS nocmodl DESTINATION bin)
