@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/version.c,v 1.1.1.1 1994/10/12 17:22:51 hines Exp */
 
 const char* RCS_version = "1.1.1.1";

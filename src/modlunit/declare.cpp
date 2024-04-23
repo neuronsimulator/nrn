@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <stdlib.h>
 #include <cstring>
 #include "model.h"
