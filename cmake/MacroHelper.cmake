@@ -80,51 +80,6 @@ macro(nrn_check_signal_return_type VARIABLE)
 endmacro()
 
 # =============================================================================
-# Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
-# =============================================================================
-# ~~~
-# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
-# PROJECT_BINARY_DIR/bdir/bfile .
-# THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
-# PROJECT_BINARY_DIR/dir/file
-# This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
-# so that the normal cmake configure_file command works to make a proper
-# cmake_file. Then that is compared to a possibly existing bfile and,
-# if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
-# .o files that depend on unchanged bfile. The sdir arg is the path relative to
-# PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
-# Note that everytime cmake is run, the bfile is compared to a newly created
-# _cmake_tmp_bfile consistent with the current cmake args.
-# Note that the sfile arg does NOT contain the .in suffix.
-# ~~~
-macro(nrn_configure_dest_src bfile bdir sfile sdir)
-  set(infile ${PROJECT_SOURCE_DIR}/${sdir}/${sfile}.in)
-  set(bin_dir ${PROJECT_BINARY_DIR}/${bdir})
-  file(MAKE_DIRECTORY ${bin_dir})
-  execute_process(
-    COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
-    INPUT_FILE ${infile}
-    OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile}
-                  RESULT_VARIABLE result)
-  if(result EQUAL 0)
-    file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
-  else()
-    file(RENAME ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile})
-  endif()
-  file(REMOVE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  set_property(
-    DIRECTORY
-    APPEND
-    PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
-endmacro()
-
-macro(nrn_configure_file file dir)
-  nrn_configure_dest_src(${file} ${dir} ${file} ${dir})
-endmacro()
-
-# =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
 # CXX will call check_include_files_cxx instead.
 # =============================================================================

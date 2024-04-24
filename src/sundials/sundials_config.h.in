@@ -1,70 +1,68 @@
-/* config.hin.  Generated from configure.ac by autoheader.  */
-
 /* FCMIX: Define name-mangling macro */
-#undef F77_FUNC
+#cmakedefine F77_FUNC @F77_FUNC@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Define to 1 if you have the `m' library (-lm). */
-#undef HAVE_LIBM
+#cmakedefine HAVE_LIBM @HAVE_LIBM@
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
+#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#cmakedefine PACKAGE_NAME @PACKAGE_NAME@
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
+#cmakedefine PACKAGE_STRING @PACKAGE_STRING@
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
+#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
 
 /* The size of a `double', as computed by sizeof. */
-#undef SIZEOF_DOUBLE
+#cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 
 /* The size of a `float', as computed by sizeof. */
-#undef SIZEOF_FLOAT
+#cmakedefine SIZEOF_FLOAT @SIZEOF_FLOAT@
 
 /* The size of a `int', as computed by sizeof. */
-#undef SIZEOF_INT
+#cmakedefine SIZEOF_INT @SIZEOF_INT@
 
 /* The size of a `long double', as computed by sizeof. */
-#undef SIZEOF_LONG_DOUBLE
+#cmakedefine SIZEOF_LONG_DOUBLE @SIZEOF_LONG_DOUBLE@
 
 /* The size of a `long int', as computed by sizeof. */
-#undef SIZEOF_LONG_INT
+#cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
 
 /* FCMIX: Make function names lowercase */
-#undef SUNDIALS_CASE_LOWER
+#cmakedefine SUNDIALS_CASE_LOWER @SUNDIALS_CASE_LOWER@
 
 /* FCMIX: Make function names uppercase */
-#undef SUNDIALS_CASE_UPPER
+#cmakedefine SUNDIALS_CASE_UPPER @SUNDIALS_CASE_UPPER@
 
 /* Define SUNDIALS data type 'realtype' as 'double' */
-#undef SUNDIALS_DOUBLE_PRECISION
+#cmakedefine SUNDIALS_DOUBLE_PRECISION @SUNDIALS_DOUBLE_PRECISION@
 
 /* Define SUNDIALS data type 'realtype' as 'long double' */
-#undef SUNDIALS_EXTENDED_PRECISION
+#cmakedefine SUNDIALS_EXTENDED_PRECISION @SUNDIALS_EXTENDED_PRECISION@
 
 /* Define SUNDIALS data type 'realtype' as 'float' */
-#undef SUNDIALS_SINGLE_PRECISION
+#cmakedefine SUNDIALS_SINGLE_PRECISION @SUNDIALS_SINGLE_PRECISION@
 
 /* FCMIX: Do NOT append any underscores to functions names */
-#undef SUNDIALS_UNDERSCORE_NONE
+#cmakedefine SUNDIALS_UNDERSCORE_NONE @SUNDIALS_UNDERSCORE_NONE@
 
 /* FCMIX: Append ONE underscore to function names */
-#undef SUNDIALS_UNDERSCORE_ONE
+#cmakedefine SUNDIALS_UNDERSCORE_ONE @SUNDIALS_UNDERSCORE_ONE@
 
 /* FCMIX: Append TWO underscores to function names */
-#undef SUNDIALS_UNDERSCORE_TWO
+#cmakedefine SUNDIALS_UNDERSCORE_TWO @SUNDIALS_UNDERSCORE_TWO@
 
 /* Use generic math functions */
-#undef SUNDIALS_USE_GENERIC_MATH
+#cmakedefine SUNDIALS_USE_GENERIC_MATH @SUNDIALS_USE_GENERIC_MATH@
