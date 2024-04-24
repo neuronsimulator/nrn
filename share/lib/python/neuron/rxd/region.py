@@ -1,5 +1,3 @@
-import numpy as np
-
 from .rxdException import RxDException
 from neuron import h
 
@@ -348,14 +346,12 @@ class Extracellular:
 
     def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
-        # TODO: Check validity on extracellular
-        # if index is None:
-        #     vol = 0
-        #     if hasattr(self, "_vol") and any(self._secs3d):
-        #         vol += np.sum(self._vol)
-        #     if hasattr(self, "_geometry") and any(self._secs1d):
-        #         vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
-        #     return vol
+        if index is None:
+            if numpy.isscalar(self.alpha):
+                vol = self._nx * self._ny * self._nz * numpy.prod(self._dx) * self.alpha
+            else:
+                vol = numpy.sum(self.alpha) * numpy.prod(self._dx)
+            return vol
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
@@ -1016,8 +1012,8 @@ class Region(object):
         if index is None:
             vol = 0
             if hasattr(self, "_vol") and any(self._secs3d):
-                vol += np.sum(self._vol)
+                vol += numpy.sum(self._vol)
             if hasattr(self, "_geometry") and any(self._secs1d):
-                vol += np.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
+                vol += numpy.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
             return vol
         return self._vol[index]

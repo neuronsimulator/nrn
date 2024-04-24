@@ -912,18 +912,19 @@ def _setup_matrices():
             volumes1d = numpy.asarray(volumes1d, dtype=float)
             volumes3d = numpy.asarray(volumes3d, dtype=float)
             dxs = numpy.asarray(grids_dx, dtype=float)
-            set_hybrid_data(
-                num_1d_indices_per_grid,
-                num_3d_indices_per_grid,
-                hybrid_indices1d,
-                hybrid_indices3d,
-                num_3d_indices_per_1d_seg,
-                hybrid_grid_ids,
-                rates,
-                volumes1d,
-                volumes3d,
-                dxs,
-            )
+            if hybrid_grid_ids:
+                set_hybrid_data(
+                    num_1d_indices_per_grid,
+                    num_3d_indices_per_grid,
+                    hybrid_indices1d,
+                    hybrid_indices3d,
+                    num_3d_indices_per_1d_seg,
+                    hybrid_grid_ids,
+                    rates,
+                    volumes1d,
+                    volumes3d,
+                    dxs,
+                )
 
         # TODO: Replace this this to handle 1d/3d hybrid models
         """
