@@ -984,7 +984,9 @@ void hoc_final_exit(void) {
     std::string cmd{neuron_home};
     cmd += "/lib/cleanup ";
     cmd += std::to_string(hoc_pid());
-    system(cmd.c_str());
+    if (system(cmd.c_str())) {  // fix warning: ignoring return value
+        return;
+    }
 #endif
 }
 

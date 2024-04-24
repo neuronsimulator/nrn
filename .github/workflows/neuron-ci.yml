@@ -108,12 +108,12 @@ jobs:
           # Unlink and re-link to prevent errors when GitHub macOS runner images
           # install Python outside of brew; See actions/setup-python#577 and BlueBrain/libsonata/pull/317
           brew list -1 | grep python | while read formula; do brew unlink $formula; brew link --overwrite $formula; done
-          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf autoconf automake libtool
+          brew install ccache coreutils doxygen flex bison mpich ninja xz autoconf automake libtool
           # We use both for dynamic mpi in nrn
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
-          echo /usr/local/opt/flex/bin:/usr/local/opt/bison/bin >> $GITHUB_PATH
+          echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
@@ -273,7 +273,7 @@ jobs:
                   else
                     CC=$(command -v clang-14)
                     CXX=$(command -v clang++-14)
-                    symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                    symbolizer_path="$(readlink -f "$(command -v llvm-symbolizer-14)")"
                     cmake_args+=(-DLLVM_SYMBOLIZER_PATH="${symbolizer_path}")
                   fi
                 fi
