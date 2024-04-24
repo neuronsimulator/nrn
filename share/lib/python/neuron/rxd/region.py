@@ -1014,6 +1014,8 @@ class Region(object):
             if hasattr(self, "_vol") and any(self._secs3d):
                 vol += numpy.sum(self._vol)
             if hasattr(self, "_geometry") and any(self._secs1d):
-                vol += numpy.sum([self._geometry.volumes1d(sec) for sec in self._secs1d])
+                vol += numpy.sum(
+                    [self._geometry.volumes1d(sec) for sec in self._secs1d]
+                )
             return vol
         return self._vol[index]
