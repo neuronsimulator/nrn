@@ -945,7 +945,7 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   ntar  // number of targets in this thread (vpre)
   nsrc  // number of sources in this thread (v)
 
-  Note: type, index is sufficient for CoreNEURON stdindex2ptr to determine
+  Note: type, index is sufficient for CoreNEURON legacy_index2pointer to determine
     double* in its NrnThread.data array.
 
   src_sid // nsrc of these
