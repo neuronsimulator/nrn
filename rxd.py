@@ -529,8 +529,8 @@ def _cxx_compile(formula):
         gcc,
         sysconfig.get_path("include"),
     )
-    gcc_cmd += f"-shared {fpic} \"{filename}.cpp\" \"{_find_librxdmath()}\""
-    gcc_cmd += f" -o \"{filename}.so\" \"{math_library}\""
+    gcc_cmd += f'-shared {fpic} "{filename}.cpp" "{_find_librxdmath()}"'
+    gcc_cmd += f' -o "{filename}.so" "{math_library}"'
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
         os.putenv(
