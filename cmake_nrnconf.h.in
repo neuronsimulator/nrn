@@ -69,9 +69,6 @@
 /* if 1 then dlopen nrnmech instead of special */
 #cmakedefine NRNMECH_DLL_STYLE @NRNMECH_DLL_STYLE@
 
-/* if 1 then dynamic units default is legacy units */
-#cmakedefine DYNAMIC_UNITS_USE_LEGACY_DEFAULT @DYNAMIC_UNITS_USE_LEGACY_DEFAULT@
-
 /* if nrnoc can use X11 */
 #cmakedefine NRNOC_X11 @NRNOC_X11@
 
@@ -81,41 +78,17 @@
 /* Name of package */
 #cmakedefine PACKAGE @PACKAGE@
 
-/* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
-
-/* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME @PACKAGE_NAME@
-
-/* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING @PACKAGE_STRING@
-
-/* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
-
-/* Define to the home page for this package. */
-#cmakedefine PACKAGE_URL @PACKAGE_URL@
-
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #cmakedefine RETSIGTYPE @RETSIGTYPE@
 
-/* define if RETSIGTYPE(*)(int) is not the prototype for a signal handler */
-#cmakedefine SIGNAL_CAST @SIGNAL_CAST@
-
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #cmakedefine SUNDIALS_DOUBLE_PRECISION @SUNDIALS_DOUBLE_PRECISION@
 
 /* Use generic math functions */
 #cmakedefine SUNDIALS_USE_GENERIC_MATH @SUNDIALS_USE_GENERIC_MATH@
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#cmakedefine TIME_WITH_SYS_TIME @TIME_WITH_SYS_TIME@
-
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
-#cmakedefine TM_IN_SYS_TIME @TM_IN_SYS_TIME@
 
 /* Version number of package */
 #cmakedefine VERSION @VERSION@
@@ -132,25 +105,12 @@
 # endif
 #endif
 
-/* Define to 1 if the X Window System is missing or not being used. */
-#cmakedefine X_DISPLAY_MISSING @X_DISPLAY_MISSING@
-
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #cmakedefine YYTEXT_POINTER @YYTEXT_POINTER@
 
-/* Define to the type of a signed integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#cmakedefine int64_t @int64_t@
-
-/* Define to `long int' if <sys/types.h> does not define. */
-#cmakedefine off_t @off_t@
-
 /* Define to `int' if <sys/types.h> does not define. */
 #cmakedefine pid_t @pid_t@
-
-/* Define to `unsigned int' if <sys/types.h> does not define. */
-#cmakedefine size_t @size_t@
 
 /* __cplusplus guard still needed because this header is included from C code in
  * mesch (and maybe others)
