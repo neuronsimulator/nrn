@@ -75,7 +75,7 @@ run_mpi_test () {
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf $ARCH_DIR
     # also copy one MOD file containing sparse solver
-    cp external/nmodl/test/integration/mod/glia_sparse.mod "test/coreneuron/mod files/"/
+    cp share/examples/nrniv/nmodl/capmp.mod "test/coreneuron/mod files/"
     nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
     $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
