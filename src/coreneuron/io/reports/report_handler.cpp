@@ -367,7 +367,7 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     }
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     VarsToReport vars_to_report;
-    off_t offset_lfp = 0;
+    std::size_t offset_lfp = 0;
     for (const auto& gid: gids_to_report) {
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {

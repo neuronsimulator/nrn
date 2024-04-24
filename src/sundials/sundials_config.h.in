@@ -12,35 +12,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* The size of a `double', as computed by sizeof. */
-#undef SIZEOF_DOUBLE
-
-/* The size of a `float', as computed by sizeof. */
-#undef SIZEOF_FLOAT
-
-/* The size of a `int', as computed by sizeof. */
-#undef SIZEOF_INT
-
-/* The size of a `long double', as computed by sizeof. */
-#undef SIZEOF_LONG_DOUBLE
-
-/* The size of a `long int', as computed by sizeof. */
-#undef SIZEOF_LONG_INT
 
 /* FCMIX: Make function names lowercase */
 #undef SUNDIALS_CASE_LOWER
