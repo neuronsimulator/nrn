@@ -5,6 +5,7 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <limits>
