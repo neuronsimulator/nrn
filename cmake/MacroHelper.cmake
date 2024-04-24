@@ -173,7 +173,8 @@ macro(nocmodl_mod_to_cpp modfile_basename source_dir target_dir)
       ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl> -o "${target_dir}"
       "${source_dir}/${modfile_basename}.mod"
     COMMAND sed -i -e ${NOCMODL_SED_EXPR} "${target_dir}/${modfile_basename}.cpp"
-    DEPENDS nocmodl "${source_dir}/${modfile_basename}.mod" "${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+    DEPENDS nocmodl "${source_dir}/${modfile_basename}.mod"
+            "${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
     WORKING_DIRECTORY ${target_dir})
 endmacro()
 
