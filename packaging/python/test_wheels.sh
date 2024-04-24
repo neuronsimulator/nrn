@@ -74,9 +74,8 @@ run_mpi_test () {
   # coreneuron execution via neuron
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf $ARCH_DIR
-    SKIP_PYTHONPATH=1 nrnivmodl -coreneuron "test/coreneuron/mod files/"
-
-    rm -rf $ARCH_DIR
+    # also copy one MOD file containing sparse solver
+    cp external/nmodl/test/integration/mod/glia_sparse.mod "test/coreneuron/mod files/"/
     nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
     $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
@@ -86,15 +85,6 @@ run_mpi_test () {
       $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
       NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
-
-    # also copy one MOD file containing sparse solver
-    cp wheelhouse/glia_sparse.mod "test/coreneuron/mod files/"/
-    cat $(which nmodl)
-
-    nmodl wheelhouse/glia_sparse.mod
-    rm -rf $ARCH_DIR
-    nrnivmodl -coreneuron "test/coreneuron/mod files/"
-
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -271,16 +261,9 @@ $python_exe -m pip install --upgrade pip
 # we install setuptools because since python 3.12 it is no more installed
 # by default
 $python_exe -m pip install numpy pytest setuptools
-$python_exe -m pip install $python_wheel sympy
+$python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
-cat $(which nmodl)
-cp wheelhouse/nmodl $(which nmodl)
-# script after
-cat $(which nmodl)
-
-install_path=`pip show neuron-nightly | grep "Location:" | awk '{print $2}'`
-tree -a ${install_path}/neuron
 
 # check the existence of coreneuron support
 compile_options=`nrniv -nobanner -nogui -c 'nrnversion(6)'`

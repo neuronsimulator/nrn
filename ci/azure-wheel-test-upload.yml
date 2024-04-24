@@ -18,12 +18,7 @@ steps:
 
   - script: |
       export SKIP_EMBEDED_PYTHON_TEST=true
-      if [ "$(uname)" == "Darwin" ]; then
-        wheel=$(ls -t wheelhouse/*macosx*.whl)
-      else
-        wheel=$(ls -t wheelhouse/*manylinux*.whl)
-      fi
-      packaging/python/test_wheels.sh $(which python) ${wheel}
+      packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
     displayName: 'Test with System Python'
 
   - task: TwineAuthenticate@1
