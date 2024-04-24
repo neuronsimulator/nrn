@@ -509,7 +509,13 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging", "find_libpython", "setuptools", "sympy>=1.3"],
+        install_requires=[
+            "numpy>=1.9.3",
+            "packaging",
+            "find_libpython",
+            "setuptools",
+            "sympy>=1.3",
+        ],
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs
