@@ -424,7 +424,6 @@ set(NMODL_FILES_LIST
     simultan.cpp
     solve.cpp
     symbol.cpp
-    units.cpp
     version.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
@@ -480,6 +479,7 @@ nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmp
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
+list(APPEND NRN_NMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
 
 # =============================================================================
 # Create mswin install lists needed for setup_exe target
