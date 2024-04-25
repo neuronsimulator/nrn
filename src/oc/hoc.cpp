@@ -1171,7 +1171,7 @@ int hoc_moreinput() {
 }
 
 using SignalType = void(int);
-static SignalType signals[4];
+static SignalType* signals[4];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
