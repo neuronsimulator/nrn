@@ -265,8 +265,8 @@ if(nmodl_FOUND)
   set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
-      ON
-      CACHE BOOL "Disable NMODL python bindings")
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
   nrn_add_external_project(nmodl OFF)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})

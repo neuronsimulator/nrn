@@ -87,6 +87,10 @@ def _config_exe(exe_name):
     if "NMODL_PYLIB" not in os.environ:
         os.environ["NMODL_PYLIB"] = find_libpython()
 
+    # nmodl module is inside <prefix>/lib directory
+    sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))
+    os.environ["PYTHONPATH"] = ":".join(sys.path)
+
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)
 
