@@ -162,7 +162,7 @@ add_custom_target(
 # =============================================================================
 # Adjust install prefix for wheel
 # =============================================================================
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT LINK_AGAINST_PYTHON AND NOT NMODL_AS_SUBPROJECT)
   set(NMODL_INSTALL_DIR_SUFFIX "nmodl/.data/")
 endif()
 
