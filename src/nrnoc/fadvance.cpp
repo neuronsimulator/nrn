@@ -811,13 +811,13 @@ void nonvint(NrnThread* _nt) {
         if (memb_func[tml->index].state) {
             std::string mechname("state-");
             mechname += memb_func[tml->index].sym->name;
-            nrn::Instrumentor::phase_begin(mechname.c_str());
             Pvmi s = memb_func[tml->index].state;
-            nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
                 w = nrnmpi_wtime();
             }
+            nrn::Instrumentor::phase_begin(mechname.c_str());
             (*s)(_nt, tml->ml, tml->index);
+            nrn::Instrumentor::phase_end(mechname.c_str());
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
             }
