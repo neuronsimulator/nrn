@@ -514,8 +514,16 @@ def setup_package():
             "packaging",
             "find_libpython",
             "setuptools",
-            "sympy>=1.3",
-        ],
+        ]
+        + (
+            [
+                "sympy>=1.3",
+                "importlib_resources;python_version<'3.9'",
+                "importlib_metadata;python_version<'3.9'",
+            ]
+            if Components.CORENRN
+            else []
+        ),
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel", "setuptools_scm"]
         + maybe_docs
