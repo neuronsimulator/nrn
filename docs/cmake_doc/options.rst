@@ -404,8 +404,8 @@ NMODL options
 
 To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
 
-NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
-------------------------------------
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
+-------------------------------------
   Enable pybind11 based python bindings
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
