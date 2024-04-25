@@ -746,7 +746,8 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     execerror("Floating point exception.", (char*) 0);
 }
 
-__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to arg type error */
+__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+                                                              arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
     print_bt();
