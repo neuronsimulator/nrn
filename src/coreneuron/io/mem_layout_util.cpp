@@ -8,6 +8,8 @@
 
 #include "mem_layout_util.hpp"
 
+#include <numeric>
+
 namespace coreneuron {
 
 /// calculate size after padding for specific memory layout
@@ -42,23 +44,45 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
     return 0;
 }
 
-// file data is AoS. ie.
-// organized as cnt array instances of mtype each of size sz.
-// So input index i refers to i_instance*sz + i_item offset
-// Return the corresponding SoA index -- taking into account the
-// alignment requirements. Ie. i_instance + i_item*align_cnt.
+std::array<int, 3> legacy2soaos_index(int legacy_index, const std::vector<int>& array_dims) {
+    int variable_count = static_cast<int>(array_dims.size());
+    int row_width = std::accumulate(array_dims.begin(), array_dims.end(), 0);
 
-int nrn_param_layout(int i, int mtype, Memb_list* ml) {
-    int layout = corenrn.get_mech_data_layout()[mtype];
-    switch (layout) {
-    case Layout::AoS:
-        return i;
-    case Layout::SoA:
-        nrn_assert(layout == Layout::SoA);
-        int sz = corenrn.get_prop_param_size()[mtype];
-        return nrn_i_layout(i / sz, ml->nodecount, i % sz, sz, layout);
+    int column_index = legacy_index % row_width;
+
+    int instance_index = legacy_index / row_width;
+    int variable_index = 0;
+    int prefix_sum = 0;
+    for (size_t k = 0; k < variable_count - 1; ++k) {
+        if (column_index >= prefix_sum + array_dims[k]) {
+            prefix_sum += array_dims[k];
+            variable_index = k + 1;
+        } else {
+            break;
+        }
     }
-    nrn_assert(false);
-    return 0;
+    int array_index = column_index - prefix_sum;
+
+    return {instance_index, variable_index, array_index};
 }
+
+int soaos2cnrn_index(const std::array<int, 3>& soaos_indices,
+                     const std::vector<int>& array_dims,
+                     int padded_node_count,
+                     int* permute) {
+    auto [i, j, k] = soaos_indices;
+    if (permute) {
+        i = permute[i];
+    }
+
+    int offset = 0;
+    for (int ij = 0; ij < j; ++ij) {
+        offset += padded_node_count * array_dims[ij];
+    }
+
+    int K = array_dims[j];
+    return offset + i * K + k;
+}
+
+
 }  // namespace coreneuron

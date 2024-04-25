@@ -36,7 +36,7 @@ include(CMakeListsNrnMech)
 # =============================================================================
 # nrnmech_makefile (based on coreneuron Configure templates)
 # =============================================================================
-nrn_configure_file(nrngui bin)
+configure_file("nrngui.in" "nrngui" @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/sortspike COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
@@ -49,10 +49,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
 set(NRN_CONFIG_EXE_FILES "nrnivmodl" "neurondemo")
 foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
-  nrn_configure_dest_src(${NRN_CONFIG_EXE_FILE} bin/tmp ${NRN_CONFIG_EXE_FILE} bin)
+  configure_file("${NRN_CONFIG_EXE_FILE}.in" "tmp/${NRN_CONFIG_EXE_FILE}" @ONLY)
   file(
-    COPY ${PROJECT_BINARY_DIR}/bin/tmp/${NRN_CONFIG_EXE_FILE}
-    DESTINATION ${PROJECT_BINARY_DIR}/bin
+    COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/${NRN_CONFIG_EXE_FILE}"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
     FILE_PERMISSIONS
       OWNER_READ
       OWNER_WRITE
@@ -62,7 +62,7 @@ foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
       WORLD_READ
       WORLD_EXECUTE)
 endforeach()
-file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/bin/tmp)
+file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 
 # =============================================================================
 # Install targets

@@ -496,7 +496,7 @@ void nrn_setup(const char* filesdat,
 
     // gap junctions
     // Gaps are done after phase2, in order to use layout and permutation
-    // information via calls to stdindex2ptr.
+    // information via calls to legacy_index2pointer.
     if (nrn_have_gaps) {
         nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
         if (!corenrn_embedded) {
@@ -634,7 +634,7 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // mech_type enum or non-artificial cell mechanisms.
 // take into account alignment, layout, permutation
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
-double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
+double* legacy_index2pointer(int mtype, int index, NrnThread& nt) {
     if (mtype == voltage) {  // voltage
         int ix = index;      // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
@@ -652,15 +652,19 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     } else if (mtype > 0 && mtype < static_cast<int>(corenrn.get_memb_funcs().size())) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
-        int ix = nrn_param_layout(index, mtype, ml);
-        if (ml->_permute) {
-            ix = nrn_index_permute(ix, mtype, ml);
-        }
-        return ml->data + ix;
+
+        const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
+        int padded_node_count = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+
+        auto soaos_index = legacy2soaos_index(index, array_dims);
+        auto cnrn_index =
+            soaos2cnrn_index(soaos_index, array_dims, padded_node_count, ml->_permute);
+
+        return ml->data + cnrn_index;
     } else if (mtype == 0) {  // time
         return &nt._t;
     } else {
-        printf("stdindex2ptr does not handle mtype=%d\n", mtype);
+        printf("legacy_index2pointer does not handle mtype=%d\n", mtype);
         nrn_assert(0);
     }
     return nullptr;

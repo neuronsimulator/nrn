@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is
@@ -151,17 +151,14 @@ int main(int argc, char** argv) {
 #endif
     if (nmodl_text) {
         Item* q;
-        char* pf{nullptr};
-#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, nullptr);
-#endif
         fprintf(
             fcout,
             "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
-        if (pf) {
-            free(pf);
-        }
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", fs::absolute(finname).c_str());
+#else
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", finname);
+#endif
         fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
             char* s = STR(q);
