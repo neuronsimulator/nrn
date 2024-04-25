@@ -27,12 +27,9 @@ set_property(
   PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
 # we are basically emulating nrnivmodl with CMake here. nrnivmodl uses headers from the include
 # directory in the build or install directory.
-set_property(
-  SOURCE ${NRN_MODFILE_CPP}
-  APPEND
-  PROPERTY INCLUDE_DIRECTORIES ${PROJECT_BINARY_DIR}/include)
 set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
 # Create a static library from mod files to be included in nrniv
 add_library(default_mods STATIC ${NRN_MODFILE_CPP})
+target_include_directories(default_mods PRIVATE "${PROJECT_BINARY_DIR}/include")
 set_property(TARGET default_mods PROPERTY POSITION_INDEPENDENT_CODE ON)
