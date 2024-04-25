@@ -204,14 +204,7 @@ endif()
 # =============================================================================
 set(NRNIV_FILE_LIST
     backtrace_utils.cpp
-    bbs.cpp
     bbsavestate.cpp
-    bbsdirect.cpp
-    bbslocal.cpp
-    bbslsrv.cpp
-    bbslsrv2.cpp
-    bbsrcli.cpp
-    bbssrv.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
@@ -243,7 +236,6 @@ set(NRNIV_FILE_LIST
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
     nvector_nrnthread_ld.cpp
-    ocbbs.cpp
     ocjump.cpp
     partrans.cpp
     ppshape.cpp
@@ -432,6 +424,16 @@ set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.i
 
 set(NRN_MUSIC_FILES_LIST nrnmusic.cpp)
 
+set(NRN_PARALLEL_FILES_LIST
+    bbs.cpp
+    bbsclimpi.cpp
+    bbsdirectmpi.cpp
+    bbslocal.cpp
+    bbslsrv.cpp
+    bbssrv2mpi.cpp
+    bbssrvmpi.cpp
+    ocbbs.cpp)
+
 # =============================================================================
 # Top level directories under src
 # =============================================================================
@@ -446,6 +448,7 @@ set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
+set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
 
 # =============================================================================
 # Create source file lists by gathering from various directories
@@ -459,6 +462,7 @@ nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
 list(APPEND NRN_NODEORDEROPTIM_SRC_FILES ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp)
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
+nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${NRN_PARALLEL_SRC_DIR} ${NRN_PARALLEL_FILES_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
