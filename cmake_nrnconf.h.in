@@ -81,9 +81,6 @@
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
 
-/* Define as the return type of signal handlers (`int' or `void'). */
-#cmakedefine RETSIGTYPE @RETSIGTYPE@
-
 /* Define SUNDIALS data type 'realtype' as 'long double' */
 #cmakedefine SUNDIALS_DOUBLE_PRECISION @SUNDIALS_DOUBLE_PRECISION@
 

@@ -63,23 +63,6 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
 endmacro()
 
 # =============================================================================
-# Check return type of signal
-# =============================================================================
-macro(nrn_check_signal_return_type VARIABLE)
-  # code template to check signal support
-  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n" "#include <signal.h>\n"
-                "int main () {\n" "  return *(signal (0, 0)) (0) == 1\;\n" "}\n")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
-  try_compile(MY_RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
-  if(MY_RESULT_VAR)
-    set(${VARIABLE} int)
-  else()
-    set(${VARIABLE} void)
-  endif()
-  file(REMOVE "conftest.cpp")
-endmacro()
-
-# =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
 # CXX will call check_include_files_cxx instead.
 # =============================================================================
