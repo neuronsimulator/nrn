@@ -38,8 +38,8 @@ void nrn_vecsim_add(void* v, bool record) {
     if (hoc_is_object_arg(1)) {
         iarg = 1;
         ppobj = *hoc_objgetarg(1);
-        if (!ppobj || ppobj->ctemplate->is_point_ <= 0 ||
-            nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type]) {
+        if (!ppobj || (ppobj->ctemplate->is_point_ <= 0 &&
+                       !nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type])) {
             hoc_execerror("Optional first arg is not a POINT_PROCESS", 0);
         }
     }
