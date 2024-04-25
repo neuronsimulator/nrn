@@ -487,7 +487,13 @@ list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 if(MINGW)
   set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
   nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel test0.hoc test0.py)
+
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
+
+  list(APPEND NRN_MODLUNIT_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_NMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_OC_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+
   nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)
   nrn_create_file_list(
     MSWIN_LIB_FILES
