@@ -53,7 +53,8 @@ class SymDirectoryImpl: public Observer {
 
 static bool compare_entries(const SymbolItem* e1, const SymbolItem* e2) {
     // Cannot use std::tie because array_index return an r-value ref
-    return std::make_tuple(e1->name(), e1->array_index()) < std::make_tuple(e2->name(), e2->array_index());
+    return std::make_tuple(e1->name(), e1->array_index()) <
+           std::make_tuple(e2->name(), e2->array_index());
 };
 
 void SymDirectoryImpl::sort() {
@@ -69,10 +70,7 @@ SymDirectory::SymDirectory(const std::string& parent_path,
     impl_ = new SymDirectoryImpl();
     Objectdata* obd = parent_obj ? parent_obj->u.dataspace : hoc_top_level_data;
     char suffix = sym->type == TEMPLATE ? '_' : '.';
-    impl_->make_pathname(parent_path,
-                         sym->name,
-                         hoc_araystr(sym, array_index, obd),
-                         suffix);
+    impl_->make_pathname(parent_path, sym->name, hoc_araystr(sym, array_index, obd), suffix);
     switch (sym->type) {
     case SECTION:
         if (object_psecitm(sym, obd)[array_index]) {
@@ -107,8 +105,7 @@ SymDirectory::SymDirectory(const std::string& parent_path,
     impl_->sort();
 }
 SymDirectory::SymDirectory(Object* ob)
-    : impl_(new SymDirectoryImpl())
-{
+    : impl_(new SymDirectoryImpl()) {
     impl_->obj_ = ob;
     impl_->make_pathname("", hoc_object_name(ob), "", '.');
     ObjObservable::Attach(impl_->obj_, impl_);
@@ -136,12 +133,10 @@ SymDirectory* SymDirectory::newsymdir(int index) {
 }
 
 SymDirectory::SymDirectory()
-    : impl_(new SymDirectoryImpl)
-{}
+    : impl_(new SymDirectoryImpl) {}
 
 SymDirectory::SymDirectory(int type)
-    : impl_(new SymDirectoryImpl())
-{
+    : impl_(new SymDirectoryImpl()) {
     ParseTopLevel ptl;
     ptl.save();
     impl_->load(type);
@@ -289,8 +284,7 @@ SymbolItem::SymbolItem(std::string&& n, int whole_array)
 SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array)
     : symbol_(sym)
     , index_(index)
-    , whole_array_(whole_array)
-{
+    , whole_array_(whole_array) {
     if (ISARRAY(sym)) {
         if (whole_array_) {
             name_ = fmt::format("{}{}", sym->name, "[all]");
@@ -312,8 +306,7 @@ int SymbolItem::whole_vector() {
 
 SymbolItem::SymbolItem(Object* ob)
     : name_(std::to_string(ob->index))
-    , ob_(ob)
-{}
+    , ob_(ob) {}
 
 void SymbolItem::no_object() {
     ob_ = nullptr;
