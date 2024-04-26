@@ -97,4 +97,5 @@ def test_different_regions(neuron_nosave_instance):
     ecs = rxd.Extracellular(-10, -10, -10, 10, 10, 10, dx=10)
     k = rxd.Species([ecs, cyt], name="k", charge=1)
     nd = k.nodes(sec)
-    assert nd == [0.5]
+    assert abs(nd.x[0] - 0.5) < 1e-12
+
