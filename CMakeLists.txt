@@ -488,6 +488,10 @@ if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
   set(NRN_INCLUDE_MPI_HEADERS ON)
 endif()
 
+# initialize fmt submodule
+cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 # initialize CLI11 submodule
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 

@@ -5,6 +5,7 @@
 class SymbolItem {
   public:
     SymbolItem(const char*, int whole_array = 0);
+    SymbolItem(std::string&&, int whole_array = 0);
     SymbolItem(Symbol*, Objectdata*, int index = 0, int whole_array = 0);
     SymbolItem(Object*);
     ~SymbolItem();
@@ -23,14 +24,14 @@ class SymbolItem {
         return index_;
     }
     int whole_vector();
-    int pysec_type_; /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
-    void* pysec_;    /* Name2Section* or Section* */
+    int pysec_type_ = 0; /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
+    void* pysec_ = nullptr;    /* Name2Section* or Section* */
   private:
-    std::string name_;
-    Symbol* symbol_;
-    int index_;
-    Object* ob_;
-    int whole_array_;
+    std::string name_{};
+    Symbol* symbol_ = nullptr;
+    int index_ = 0;
+    Object* ob_ = nullptr;
+    int whole_array_ = 0;
 };
 
 void nrn_symdir_load_pysec(std::vector<SymbolItem*>& sl, void*);

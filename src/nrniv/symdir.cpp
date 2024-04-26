@@ -1,4 +1,7 @@
 #include <../../nrnconf.h>
+
+#include <fmt/format.h>
+
 #include <stdlib.h>
 #include <InterViews/resource.h>
 #include <stdio.h>
@@ -18,18 +21,6 @@ extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
 #include "symdir.h"
 
 #include "nrnsymdiritem.h"
-
-const char* concat(const char* s1, const char* s2) {
-    static char* tmp = 0;
-    int l1 = strlen(s1);
-    int l2 = strlen(s2);
-    if (tmp) {
-        delete[] tmp;
-    }
-    tmp = new char[l1 + l2 + 1];
-    std::snprintf(tmp, l1 + l2 + 1, "%s%s", s1, s2);
-    return (const char*) tmp;
-}
 
 class SymDirectoryImpl: public Observer {
   public:
@@ -51,7 +42,7 @@ class SymDirectoryImpl: public Observer {
     void load_object();
     void load_aliases();
     void load_template();
-    void load_mechanism(const Prop*, int, const char*);
+    void load_mechanism(const Prop*, int, const std::string&);
     void append(Symbol* sym, Objectdata* od, Object* o = NULL);
     void append(Object*);
     void un_append(Object*);
@@ -155,8 +146,7 @@ SymDirectory* SymDirectory::newsymdir(int index) {
         section_ref(d->impl_->sec_);
         d->impl_->load_section();
     }
-    d->impl_->path_ = concat(path().c_str(), si->name().c_str());
-    d->impl_->path_ = concat(d->impl_->path_.c_str(), ".");
+    d->impl_->path_ = path() + si->name() + ".";
     d->impl_->sort();
     return d;
 }
@@ -255,21 +245,15 @@ double* SymDirectory::variable(int index) {
             break;
         }
     else {
-        char buf[256], *cp;
-        Sprintf(buf, "%s%s", path().c_str(), name(index).c_str());
+        std::string buf = path() + name(index);
         if (whole_vector(index)) {  // rangevar case for [all]
             // replace [all] with [0]
-            cp = strstr(buf, "[all]");
-            assert(cp);
-            *(++cp) = '0';
-            for (++cp; cp[2]; ++cp) {
-                *cp = cp[2];
-            }
-            *cp = '\0';
+            auto pos = buf.find("[all]");
+            buf.replace(pos, 5, "[0]");
         }
-        return hoc_val_pointer(buf);
+        return hoc_val_pointer(buf.c_str());
     }
-    return NULL;
+    return nullptr;
 }
 
 int SymDirectory::whole_vector(int index) {
@@ -320,29 +304,28 @@ Object* SymDirectory::obj(int index) {
 }
 
 // SymbolItem
-SymbolItem::SymbolItem(const char* n, int whole_array) {
-    symbol_ = NULL;
-    index_ = 0;
-    ob_ = NULL;
-    name_ = n;
-    whole_array_ = whole_array;
-    pysec_type_ = 0;
-    pysec_ = NULL;
-}
+SymbolItem::SymbolItem(const char* n, int whole_array)
+    : name_(n)
+    , whole_array_(whole_array)
+{}
+
+SymbolItem::SymbolItem(std::string&& n, int whole_array)
+    : name_(n)
+    , whole_array_(whole_array)
+{}
+
 SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) {
     symbol_ = sym;
     ob_ = NULL;
     whole_array_ = whole_array;
     if (ISARRAY(sym)) {
         if (whole_array_) {
-            name_ = concat(sym->name, "[all]");
+            name_ = fmt::format("{}{}", sym->name, "[all]");
         } else {
             if (od) {
-                name_ = concat(sym->name, hoc_araystr(sym, index, od));
+                name_ = fmt::format("{}{}", sym->name, hoc_araystr(sym, index, od));
             } else {
-                char buf[50];
-                Sprintf(buf, "[%d]", index);
-                name_ = concat(sym->name, buf);
+                name_ = fmt::format("{}[{}]", sym->name, index);
             }
         }
     } else {
@@ -358,14 +341,12 @@ int SymbolItem::whole_vector() {
 }
 
 SymbolItem::SymbolItem(Object* ob) {
-    symbol_ = NULL;
+    symbol_ = nullptr;
     index_ = 0;
     ob_ = ob;
-    char buf[10];
-    Sprintf(buf, "%d", ob->index);
-    name_ = buf;
+    name_ = std::to_string(ob->index);
     pysec_type_ = 0;
-    pysec_ = NULL;
+    pysec_ = nullptr;
 }
 
 void SymbolItem::no_object() {
@@ -399,9 +380,7 @@ void SymDirectoryImpl::make_pathname(const char* parent,
                                      const char* name,
                                      const char* index,
                                      int suffix) {
-    char buf[200];
-    Sprintf(buf, "%s%s%s%c", parent, name, index, suffix);
-    path_ = buf;
+    path_ = fmt::format("{}{}{}{}", parent, name, index, suffix);
 }
 
 
@@ -484,16 +463,13 @@ void SymDirectoryImpl::load_template() {
 }
 
 void SymDirectoryImpl::load_section() {
-    char xarg[20];
-    char buf[100];
     Section* sec = sec_;
     int n = sec->nnode;
 
     int i = 0;
     double x = nrn_arc_position(sec, sec->pnode[0]);
-    Sprintf(xarg, "( %g )", x);
-    Sprintf(buf, "v%s", xarg);
-    symbol_lists_.push_back(new SymbolItem(buf));
+    auto xarg = fmt::format("( {:g} )", x);
+    symbol_lists_.push_back(new SymbolItem(fmt::format("v{}", xarg)));
     nrn_pushsec(sec);
     Node* nd = sec->pnode[i];
     for (const Prop* p = nd->prop; p; p = p->next) {
@@ -502,7 +478,7 @@ void SymDirectoryImpl::load_section() {
     nrn_popsec();
 }
 
-void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const char* xarg) {
+void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const std::string& xarg) {
     int type = p->_type;
     if (memb_func[type].is_point) {
         return;
@@ -516,16 +492,20 @@ void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const char* xa
             if (ISARRAY(sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
-                    Sprintf(buf, "%s[all]%s", sym->name, xarg);
-                    symbol_lists_.push_back(new SymbolItem(buf, n));
+                    auto buf = fmt::format("{}[all]{}", sym->name, xarg);
+                    symbol_lists_.push_back(new SymbolItem(std::move(buf), n));
                 }
-                Sprintf(buf, "%s[%d]%s", sym->name, 0, xarg);
-                symbol_lists_.push_back(new SymbolItem(buf));
-                Sprintf(buf, "%s[%d]%s", sym->name, n - 1, xarg);
-                symbol_lists_.push_back(new SymbolItem(buf));
+                {
+                    auto buf = fmt::format("{}[{}]{}", sym->name, 0, xarg);
+                    symbol_lists_.push_back(new SymbolItem(std::move(buf)));
+                }
+                {
+                    auto buf = fmt::format("{}[{}]{}", sym->name, n - 1, xarg);
+                    symbol_lists_.push_back(new SymbolItem(std::move(buf)));
+                }
             } else {
-                Sprintf(buf, "%s%s", sym->name, xarg);
-                symbol_lists_.push_back(new SymbolItem(buf));
+                auto buf = sym->name + xarg;
+                symbol_lists_.push_back(new SymbolItem(std::move(buf)));
             }
         }
     }
