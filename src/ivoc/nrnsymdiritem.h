@@ -7,7 +7,6 @@ class SymbolItem {
     SymbolItem(std::string&&, int whole_array = 0);
     SymbolItem(Symbol*, Objectdata*, int index = 0, int whole_array = 0);
     SymbolItem(Object*);
-    ~SymbolItem();
     Symbol* symbol() const {
         return symbol_;
     }

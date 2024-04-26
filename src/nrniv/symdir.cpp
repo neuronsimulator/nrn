@@ -254,11 +254,6 @@ int SymDirectory::index(const std::string& name) const {
     }
     return -1;
 }
-void SymDirectory::whole_name(int index, std::string& s) const {
-    auto s1 = impl_->path_;
-    auto s2 = name(index);
-    s = s1 + s2;
-}
 bool SymDirectory::is_directory(int index) const {
     return impl_->symbol_lists_.at(index)->is_directory();
 }
@@ -312,8 +307,6 @@ void SymbolItem::no_object() {
     ob_ = nullptr;
     name_ = "Deleted";
 }
-
-SymbolItem::~SymbolItem() {}
 
 bool SymbolItem::is_directory() const {
     if (symbol_)
@@ -407,8 +400,9 @@ void SymDirectoryImpl::load_object() {
 
 void SymDirectoryImpl::load_aliases() {
     IvocAliases* a = (IvocAliases*) obj_->aliases;
-    if (!a)
+    if (a == nullptr) {
         return;
+    }
     for (const auto& [_, s]: a->symtab_) {
         append(s, nullptr, obj_);
     }

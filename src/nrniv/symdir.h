@@ -39,7 +39,6 @@ class SymDirectory: public Resource {
     virtual int count() const;
     virtual const std::string& name(int index) const;
     virtual int index(const std::string&) const;
-    virtual void whole_name(int index, std::string&) const;
     virtual bool is_directory(int index) const;
     virtual double* variable(int index);
     virtual int whole_vector(int index);
