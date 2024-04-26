@@ -23,8 +23,8 @@ class SymbolItem {
         return index_;
     }
     int whole_vector();
-    int pysec_type_ = 0; /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
-    void* pysec_ = nullptr;    /* Name2Section* or Section* */
+    int pysec_type_ = 0;    /* PYSECOBJ (cell prefix) or PYSECNAME (Section) */
+    void* pysec_ = nullptr; /* Name2Section* or Section* */
   private:
     std::string name_{};
     Symbol* symbol_ = nullptr;

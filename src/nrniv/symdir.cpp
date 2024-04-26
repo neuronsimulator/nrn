@@ -284,8 +284,7 @@ Object* SymDirectory::obj(int index) {
 // SymbolItem
 SymbolItem::SymbolItem(std::string&& n, int whole_array)
     : name_(n)
-    , whole_array_(whole_array)
-{}
+    , whole_array_(whole_array) {}
 
 SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array)
     : symbol_(sym)
