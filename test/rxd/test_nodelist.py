@@ -92,9 +92,9 @@ def test_only_nodes(neuron_instance):
 
 def test_different_regions(neuron_nosave_instance):
     h, rxd, _ = neuron_nosave_instance
-    sec = h.Section(name='sec')
+    sec = h.Section(name="sec")
     cyt = rxd.Region(h.allsec())
     ecs = rxd.Extracellular(-10, -10, -10, 10, 10, 10, dx=10)
-    k = rxd.Species([ecs, cyt], name='k', charge=1)
+    k = rxd.Species([ecs, cyt], name="k", charge=1)
     nd = k.nodes(sec)
     assert nd == [0.5]
