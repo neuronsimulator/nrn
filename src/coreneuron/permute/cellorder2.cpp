@@ -13,15 +13,26 @@
 #include <cstring>
 #include <numeric>
 
+#if CORENRN_BUILD
 #include "coreneuron/utils/nrn_assert.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
+#else
+#include "oc/nrnassrt.h"
+#endif
+
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/network/tnode.hpp"
-#include "coreneuron/nrniv/nrniv_decl.h"
+
 
 // experiment starting with identical cell ordering
 // groupindex aleady defined that keeps identical cells together
 // begin with leaf to root ordering
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
+
 using VTN = VecTNode;             // level of nodes
 using VVTN = std::vector<VTN>;    // group of levels
 using VVVTN = std::vector<VVTN>;  // groups

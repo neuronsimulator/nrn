@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 #include "modl.h"
 #include "parse1.hpp"

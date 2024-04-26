@@ -163,6 +163,7 @@ function(nrn_add_test_group)
     if(NRN_ADD_TEST_GROUP_CORENEURON AND NRN_ENABLE_CORENEURON)
       list(APPEND hash_components -coreneuron)
       list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
+      list(APPEND nrnivmodl_dependencies coreneuron-core)
       list(APPEND nrnivmodl_command -coreneuron)
     endif()
     list(APPEND nrnivmodl_command .)
@@ -354,7 +355,7 @@ function(nrn_add_test)
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
     file(
-      GLOB script_files
+      GLOB script_files CONFIGURE_DEPENDS
       RELATIVE "${test_source_directory}/${sim_directory}"
       "${test_source_directory}/${sim_directory}/${script_pattern}")
     foreach(script_file ${script_files})

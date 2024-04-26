@@ -132,9 +132,7 @@ class FileHandler {
 
             std::vector<double> lfp_factors;
             if (total_lfp_factors > 0) {
-                // ASan reports container overflow on read_array with vec.reserve, resize does work
-                lfp_factors.resize(nseg);
-                read_array<double>(&lfp_factors[0], total_lfp_factors);
+                lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
             int factor_offset = 0;
