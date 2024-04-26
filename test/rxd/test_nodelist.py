@@ -98,4 +98,3 @@ def test_different_regions(neuron_nosave_instance):
     k = rxd.Species([ecs, cyt], name="k", charge=1)
     nd = k.nodes(sec)
     assert abs(nd.x[0] - 0.5) < 1e-12
-
