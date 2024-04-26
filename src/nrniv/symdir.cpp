@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <fmt/format.h>
+#include <tuple>
 
 #include <stdlib.h>
 #include <InterViews/resource.h>
@@ -28,12 +29,12 @@ class SymDirectoryImpl: public Observer {
     void update(Observable*);      // watching a template
   private:
     friend class SymDirectory;
-    Section* sec_;
-    Object* obj_;
-    cTemplate* t_;
+    Section* sec_ = nullptr;
+    Object* obj_ = nullptr;
+    cTemplate* t_ = nullptr;
 
-    std::vector<SymbolItem*> symbol_lists_;
-    std::string path_;
+    std::vector<SymbolItem*> symbol_lists_{};
+    std::string path_{};
 
     void load(int type);
     void load(int type, Symlist*);
@@ -46,16 +47,13 @@ class SymDirectoryImpl: public Observer {
     void append(Symbol* sym, Objectdata* od, Object* o = NULL);
     void append(Object*);
     void un_append(Object*);
-    void make_pathname(const char*, const char*, const char*, int s = '.');
+    void make_pathname(const std::string&, const std::string&, const std::string&, char s = '.');
     void sort();
 };
 
-static int compare_entries(const SymbolItem* e1, const SymbolItem* e2) {
-    int i = strcmp(e1->name().c_str(), e2->name().c_str());
-    if (i == 0) {
-        return e1->array_index() > e2->array_index();
-    }
-    return i > 0;
+static bool compare_entries(const SymbolItem* e1, const SymbolItem* e2) {
+    // Cannot use std::tie because array_index return an r-value ref
+    return std::make_tuple(e1->name(), e1->array_index()) < std::make_tuple(e2->name(), e2->array_index());
 };
 
 void SymDirectoryImpl::sort() {
@@ -69,21 +67,9 @@ SymDirectory::SymDirectory(const std::string& parent_path,
                            int array_index,
                            int) {
     impl_ = new SymDirectoryImpl();
-    impl_->sec_ = NULL;
-    impl_->obj_ = NULL;
-    impl_->t_ = NULL;
-    Objectdata* obd;
-    if (parent_obj) {
-        obd = parent_obj->u.dataspace;
-    } else {
-        //		obd = hoc_objectdata;
-        obd = hoc_top_level_data;
-    }
-    int suffix = '.';
-    if (sym->type == TEMPLATE) {
-        suffix = '_';
-    }
-    impl_->make_pathname(parent_path.c_str(),
+    Objectdata* obd = parent_obj ? parent_obj->u.dataspace : hoc_top_level_data;
+    char suffix = sym->type == TEMPLATE ? '_' : '.';
+    impl_->make_pathname(parent_path,
                          sym->name,
                          hoc_araystr(sym, array_index, obd),
                          suffix);
@@ -120,12 +106,10 @@ SymDirectory::SymDirectory(const std::string& parent_path,
     }
     impl_->sort();
 }
-SymDirectory::SymDirectory(Object* ob) {
-    impl_ = new SymDirectoryImpl();
-    impl_->sec_ = NULL;
+SymDirectory::SymDirectory(Object* ob)
+    : impl_(new SymDirectoryImpl())
+{
     impl_->obj_ = ob;
-    impl_->t_ = NULL;
-    int suffix = '.';
     impl_->make_pathname("", hoc_object_name(ob), "", '.');
     ObjObservable::Attach(impl_->obj_, impl_);
     impl_->load_object();
@@ -134,7 +118,7 @@ SymDirectory::SymDirectory(Object* ob) {
 
 bool SymDirectory::is_pysec(int index) const {
     SymbolItem* si = impl_->symbol_lists_.at(index);
-    return si->pysec_ ? true : false;
+    return si->pysec_ != nullptr;
 }
 SymDirectory* SymDirectory::newsymdir(int index) {
     SymbolItem* si = impl_->symbol_lists_.at(index);
@@ -151,21 +135,15 @@ SymDirectory* SymDirectory::newsymdir(int index) {
     return d;
 }
 
-SymDirectory::SymDirectory() {
-    impl_ = new SymDirectoryImpl();
-    impl_->sec_ = NULL;
-    impl_->obj_ = NULL;
-    impl_->t_ = NULL;
-}
+SymDirectory::SymDirectory()
+    : impl_(new SymDirectoryImpl)
+{}
 
-SymDirectory::SymDirectory(int type) {
+SymDirectory::SymDirectory(int type)
+    : impl_(new SymDirectoryImpl())
+{
     ParseTopLevel ptl;
     ptl.save();
-    impl_ = new SymDirectoryImpl();
-    impl_->sec_ = NULL;
-    impl_->obj_ = NULL;
-    impl_->t_ = NULL;
-    impl_->path_ = "";
     impl_->load(type);
     impl_->sort();
     ptl.restore();
@@ -304,20 +282,16 @@ Object* SymDirectory::obj(int index) {
 }
 
 // SymbolItem
-SymbolItem::SymbolItem(const char* n, int whole_array)
-    : name_(n)
-    , whole_array_(whole_array)
-{}
-
 SymbolItem::SymbolItem(std::string&& n, int whole_array)
     : name_(n)
     , whole_array_(whole_array)
 {}
 
-SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) {
-    symbol_ = sym;
-    ob_ = NULL;
-    whole_array_ = whole_array;
+SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array)
+    : symbol_(sym)
+    , index_(index)
+    , whole_array_(whole_array)
+{
     if (ISARRAY(sym)) {
         if (whole_array_) {
             name_ = fmt::format("{}{}", sym->name, "[all]");
@@ -331,26 +305,19 @@ SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) 
     } else {
         name_ = sym->name;
     }
-    index_ = index;
-    pysec_type_ = 0;
-    pysec_ = NULL;
 }
 
 int SymbolItem::whole_vector() {
     return whole_array_;
 }
 
-SymbolItem::SymbolItem(Object* ob) {
-    symbol_ = nullptr;
-    index_ = 0;
-    ob_ = ob;
-    name_ = std::to_string(ob->index);
-    pysec_type_ = 0;
-    pysec_ = nullptr;
-}
+SymbolItem::SymbolItem(Object* ob)
+    : name_(std::to_string(ob->index))
+    , ob_(ob)
+{}
 
 void SymbolItem::no_object() {
-    ob_ = NULL;
+    ob_ = nullptr;
     name_ = "Deleted";
 }
 
@@ -376,11 +343,11 @@ bool SymbolItem::is_directory() const {
     return false;
 }
 
-void SymDirectoryImpl::make_pathname(const char* parent,
-                                     const char* name,
-                                     const char* index,
-                                     int suffix) {
-    path_ = fmt::format("{}{}{}{}", parent, name, index, suffix);
+void SymDirectoryImpl::make_pathname(const std::string& parent,
+                                     const std::string& name,
+                                     const std::string& index,
+                                     char suffix) {
+    path_ = parent + name + index + std::to_string(suffix);
 }
 
 

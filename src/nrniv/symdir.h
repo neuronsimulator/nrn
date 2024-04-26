@@ -53,5 +53,5 @@ class SymDirectory: public Resource {
     SymDirectory* newsymdir(int index);
 
   private:
-    SymDirectoryImpl* impl_;
+    SymDirectoryImpl* impl_ = nullptr;
 };

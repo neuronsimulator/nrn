@@ -4,7 +4,6 @@
 
 class SymbolItem {
   public:
-    SymbolItem(const char*, int whole_array = 0);
     SymbolItem(std::string&&, int whole_array = 0);
     SymbolItem(Symbol*, Objectdata*, int index = 0, int whole_array = 0);
     SymbolItem(Object*);
