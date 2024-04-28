@@ -905,6 +905,7 @@ def _setup_matrices():
             num_3d_indices_per_1d_seg = numpy.asarray(
                 num_3d_indices_per_1d_seg, dtype=numpy.int64
             )
+            hybrid_grid_ids.append(-1)
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
@@ -912,7 +913,7 @@ def _setup_matrices():
             volumes1d = numpy.asarray(volumes1d, dtype=float)
             volumes3d = numpy.asarray(volumes3d, dtype=float)
             dxs = numpy.asarray(grids_dx, dtype=float)
-            if hybrid_grid_ids:
+            if hybrid_grid_ids.size > 1:
                 set_hybrid_data(
                     num_1d_indices_per_grid,
                     num_3d_indices_per_grid,
