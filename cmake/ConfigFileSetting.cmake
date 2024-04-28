@@ -145,11 +145,6 @@ nrn_check_type_exists(sys/types.h size_t "unsigned int" size_t)
 nrn_check_type_exists(sys/types.h uid_t int uid_t)
 
 # =============================================================================
-# Set return type of signal in RETSIGTYPE
-# =============================================================================
-nrn_check_signal_return_type(RETSIGTYPE)
-
-# =============================================================================
 # Generate file from file.in template
 # =============================================================================
 set(version_strs ${NRN_PYTHON_VERSIONS})

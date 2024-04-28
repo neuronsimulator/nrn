@@ -34,7 +34,7 @@ export prefix
 export bindir
 export libdir
 
-if command -v xcrun; then
+if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
