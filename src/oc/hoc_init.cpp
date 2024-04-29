@@ -3,7 +3,7 @@
 
 #include "hoc.h"
 #include "parse.hpp"
-#include <math.h>
+#include <cmath>
 #include "equation.h"
 #include "nrnunits.h"
 
@@ -17,12 +17,11 @@ extern void hoc_nrnmpi_init();
 #if PVM
 extern int numprocs(), myproc(), psync();
 #endif
-#if 0
-extern int	hoc_co();
-#endif
-#if DOS || defined(WIN32)
+
+#if defined(WIN32)
 extern double erf(), erfc(); /* supplied by unix */
 #endif
+
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
@@ -197,9 +196,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"numprocs", numprocs},
                  {"myproc", myproc},
                  {"psync", psync},
-#endif
-#if DOS
-                 {"settext", hoc_settext},
 #endif
 #if defined(WIN32)
                  {"WinExec", hoc_win_exec},
