@@ -251,6 +251,7 @@ function(get_link_libraries link_defs libs)
     message(NOTICE "${description} Got: ${link_flag}")
     string(APPEND all_defs " ${link_flag}")
   endforeach()
-  set(${link_defs} "${all_defs}" PARENT_SCOPE)
+  set(${link_defs}
+      "${all_defs}"
+      PARENT_SCOPE)
 endfunction(get_link_libraries)
-

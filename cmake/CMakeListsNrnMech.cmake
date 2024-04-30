@@ -23,7 +23,9 @@ endif()
 # Interview might have linked to libnrniv but we don't want to link to special
 list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 
-set(NRN_LINK_DEFS "" PARENT_SCOPE)
+set(NRN_LINK_DEFS
+    ""
+    PARENT_SCOPE)
 get_link_libraries(NRN_LINK_DEFS "${NRN_LINK_LIBS}")
 
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
