@@ -241,9 +241,7 @@ function(get_link_libraries link_defs libs)
     elseif("${dir_path}" MATCHES "^/nrnwheel")
       continue()
     elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-      # NAME_WLE not avaialble with CMake version < 3.14
-      get_filename_component(libname ${link_lib} NAME)
-      string(REGEX REPLACE "\\.[^.]*$" "" libname_wle ${libname})
+      get_filename_component(libname_wle ${link_lib} NAME_WLE)
       string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
       set(link_flag "-l${libname_wle}")
       set(description

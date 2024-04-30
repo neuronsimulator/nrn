@@ -492,7 +492,7 @@ endforeach()
 
 # we can link to MPI libraries in non-dynamic-mpi build
 if(NRN_ENABLE_MPI AND NOT NRN_ENABLE_MPI_DYNAMIC)
-  target_link_libraries(coreneuron-core PUBLIC ${MPI_CXX_LIBRARIES})
+  target_link_libraries(coreneuron-core PUBLIC ${MPI_C_LIBRARIES})
 endif()
 
 # ~~~
