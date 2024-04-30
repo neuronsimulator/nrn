@@ -37,6 +37,9 @@ if(NOT CORENRN_ENABLE_SHARED)
 endif()
 
 get_target_property(target_libraries coreneuron-core LINK_LIBRARIES)
+if(NOT target_libraries)
+    set(target_libraries "")
+endif()
 set(CORENRN_LIB_LINK_DEP_FLAGS "" PARENT_SCOPE)
 get_link_libraries(CORENRN_LIB_LINK_DEP_FLAGS ${target_libraries})
 
