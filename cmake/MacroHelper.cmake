@@ -200,6 +200,10 @@ macro(nrn_mpi_find_package)
 endmacro()
 
 function(get_link_libraries link_defs libs)
+  if (NOT libs)
+    set(${link_defs} "" PARENT_SCOPE)
+    return()
+  endif()
   set(all_defs "")
   # CMake does some magic to transform sys libs to -l<libname>. We replicate it
   foreach(link_lib ${libs})
