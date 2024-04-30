@@ -35,63 +35,11 @@ set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " -lcorenrnmec
 if(NOT CORENRN_ENABLE_SHARED)
   set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " -Wl,--no-whole-archive")
 endif()
-# Essentially we "just" want to unpack the CMake dependencies of the `coreneuron-core` target into a
-# plain string that we can bake into the Makefiles in both NEURON and CoreNEURON.
-function(coreneuron_process_library_path library)
-  get_filename_component(library_dir "${library}" DIRECTORY)
-  if(NOT library_dir)
-    # In case target is not a target but is just the name of a library, e.g. "dl"
-    set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_DEP_FLAGS " -l${library}")
-  elseif("${library_dir}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-    # e.g. /usr/lib64/libpthread.so -> -lpthread TODO: consider using
-    # https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_IMPLICIT_LINK_DIRECTORIES.html, or
-    # dropping this special case entirely
-    get_filename_component(libname ${library} NAME_WE)
-    string(REGEX REPLACE "^lib" "" libname ${libname})
-    set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_DEP_FLAGS " -l${libname}")
-  else()
-    # It's a full path, include that on the line
-    set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_DEP_FLAGS
-                                               " -Wl,-rpath,${library_dir} ${library}")
-  endif()
-endfunction()
-function(coreneuron_process_target target)
-  if(TARGET ${target})
-    if(NOT target STREQUAL "coreneuron-core")
-      # This is a special case: libcoreneuron-core.a is manually unpacked into .o files by the
-      # nrnivmodl-core Makefile, so we do not want to also emit an -lcoreneuron-core argument.
-      get_target_property(target_inc_dirs ${target} INTERFACE_INCLUDE_DIRECTORIES)
-      if(target_inc_dirs)
-        foreach(inc_dir_genex ${target_inc_dirs})
-          string(GENEX_STRIP "${inc_dir_genex}" inc_dir)
-          if(inc_dir)
-            set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_EXTRA_COMPILE_FLAGS " -I${inc_dir}")
-          endif()
-        endforeach()
-      endif()
-      get_target_property(target_imported ${target} IMPORTED)
-      if(target_imported)
-        # In this case we can extract the full path to the library
-        get_target_property(target_location ${target} LOCATION)
-        coreneuron_process_library_path(${target_location})
-      else()
-        # This is probably another of our libraries, like -lcoreneuron-cuda. We might need to add -L
-        # and an RPATH later.
-        set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_DEP_FLAGS " -l${target}")
-      endif()
-    endif()
-    get_target_property(target_libraries ${target} LINK_LIBRARIES)
-    if(target_libraries)
-      foreach(child_target ${target_libraries})
-        coreneuron_process_target(${child_target})
-      endforeach()
-    endif()
-    return()
-  endif()
-  coreneuron_process_library_path("${target}")
-endfunction()
-coreneuron_process_target(coreneuron-core)
-get_property(CORENRN_LIB_LINK_DEP_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_DEP_FLAGS)
+
+get_target_property(target_libraries coreneuron-core LINK_LIBRARIES)
+set(CORENRN_LIB_LINK_DEP_FLAGS "" PARENT_SCOPE)
+get_link_libraries(CORENRN_LIB_LINK_DEP_FLAGS ${target_libraries})
+
 set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " ${CORENRN_LIB_LINK_DEP_FLAGS}")
 # In static builds then NEURON uses dlopen(nullptr, ...) to look for the corenrn_embedded_run
 # symbol, which comes from libcoreneuron-core.a and gets included in libcorenrnmech.
