@@ -8,7 +8,7 @@ bokeh<3
 ipython
 cython<3
 packaging
-pytest
+pytest==8.1.1 # Bug from 8.2.0 due to parallelism?
 pytest-cov
 mpi4py
 numpy
