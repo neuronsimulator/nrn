@@ -349,22 +349,22 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 
         {
             Instrumentor::phase p("setup-tree-matrix");
-            setup_tree_matrix_minimal(nth);
+            //setup_tree_matrix_minimal(nth);
         }
 
         {
             Instrumentor::phase p("matrix-solver");
-            nrn_solve_minimal(nth);
+            //nrn_solve_minimal(nth);
         }
 
         {
             Instrumentor::phase p("second-order-cur");
-            second_order_cur(nth, secondorder);
+            //second_order_cur(nth, secondorder);
         }
 
         {
             Instrumentor::phase p("update");
-            update(nth);
+            //update(nth);
         }
     }
     if (!nrn_have_gaps) {
@@ -382,7 +382,7 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
         nrn_pragma_acc(wait(nth->stream_id))
         nrn_pragma_omp(target update to(nth->_t) if (nth->compute_gpu))
         fixed_play_continuous(nth);
-        nonvint(nth);
+        //nonvint(nth);
         nrn_ba(nth, AFTER_SOLVE);
         nrn_ba(nth, BEFORE_STEP);
         nrncore2nrn_send_values(nth);  // consistent with NEURON. (after BEFORE_STEP)
