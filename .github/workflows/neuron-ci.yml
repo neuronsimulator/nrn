@@ -49,7 +49,7 @@ jobs:
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
-          - { matrix_eval : "CC=gcc-10 CXX=g++-10",   build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", python_dynamic: ON}
           - { matrix_eval : "CC=gcc-9 CXX=g++-9" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
@@ -114,9 +114,14 @@ jobs:
           brew install openmpi
           brew install --cask xquartz
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
-          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-          echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
-          echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+          if [[ "${{matrix.os}}" == "macOS-13" ]]; then
+              echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+              echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+          else
+              echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+              echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+          fi
           echo CI_OS_NAME=osx >> $GITHUB_ENV
         shell: bash
 
@@ -130,9 +135,9 @@ jobs:
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
           fi
-          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-          echo CMAKE_BUILD_PARALLEL_LEVEL=2 >> $GITHUB_ENV
-          echo CTEST_PARALLEL_LEVEL=2 >> $GITHUB_ENV
+          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+          echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+          echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CI_OS_NAME=linux >> $GITHUB_ENV
         shell: bash
 
