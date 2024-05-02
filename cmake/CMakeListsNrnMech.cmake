@@ -14,13 +14,7 @@ string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS} ${NRN_EXTRA_MECH_C
 string(JOIN " " NRN_LINK_FLAGS_STRING ${NRN_LINK_FLAGS} ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
 string(JOIN " " NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING ${NRN_NOCMODL_SANITIZER_ENVIRONMENT})
 
-# extract link defs to the whole project
-get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)
-
-# Interview might have linked to libnrniv but we don't want to link to special
-list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
-
-get_link_libraries(NRN_LINK_DEFS "${NRN_LINK_LIBS}")
+get_link_libraries(NRN_LINK_DEFS NOT_USE_INCLUDE_HERE nrniv_lib interviews)
 
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)

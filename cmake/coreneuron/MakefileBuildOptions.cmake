@@ -36,8 +36,7 @@ if(NOT CORENRN_ENABLE_SHARED)
   set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " -Wl,--no-whole-archive")
 endif()
 
-get_target_property(target_libraries coreneuron-core LINK_LIBRARIES)
-get_link_libraries(CORENRN_LIB_LINK_DEP_FLAGS ${target_libraries})
+get_link_libraries(CORENRN_LIB_LINK_DEP_FLAGS CORENRN_EXTRA_COMPILE_FLAGS coreneuron-core "")
 
 set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " ${CORENRN_LIB_LINK_DEP_FLAGS}")
 # In static builds then NEURON uses dlopen(nullptr, ...) to look for the corenrn_embedded_run
@@ -45,7 +44,6 @@ set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " ${CORENRN_LI
 if(NOT CORENRN_ENABLE_SHARED)
   set_property(GLOBAL APPEND_STRING PROPERTY CORENRN_LIB_LINK_FLAGS " -rdynamic")
 endif()
-get_property(CORENRN_EXTRA_COMPILE_FLAGS GLOBAL PROPERTY CORENRN_EXTRA_COMPILE_FLAGS)
 get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
 
 # Detect if --start-group and --end-group are valid linker arguments. These are typically needed

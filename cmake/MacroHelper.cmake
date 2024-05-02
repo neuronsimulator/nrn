@@ -200,63 +200,94 @@ macro(nrn_mpi_find_package)
   endif()
 endmacro()
 
-function(get_link_libraries link_defs libs)
-  if(NOT libs)
+function(get_for_a_not_target link_defs lib)
+  if(NOT lib OR TARGET ${lib})
     set(${link_defs}
         ""
         PARENT_SCOPE)
+  endif()
+  # CMake does some magic to transform sys libs to -l<libname>. We replicate it
+  set(link_flag "")
+  # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub
+  # libraries from OSX can be skipped
+  if("${lib}" MATCHES "(libreadline.a|/*.tbd)")
+    continue()
+  endif()
+
+  get_filename_component(dir_path ${lib} DIRECTORY)
+  if(NOT dir_path)
+    set(link_flag "-l${lib}")
+    # avoid library paths from special directory /nrnwheel which used to build wheels under docker
+    # container
+  elseif("${dir_path}" MATCHES "^/nrnwheel")
+  elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
+    get_filename_component(libname_wle ${lib} NAME_WLE)
+    string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
+    set(link_flag "-l${libname_wle}")
+  else()
+    set(link_flag "${lib} -Wl,-rpath,${dir_path}")
+  endif()
+  set(${link_defs}
+      "${link_flag}"
+      PARENT_SCOPE)
+endfunction()
+
+function(get_link_libraries link_defs include_defs target exclude)
+  if(NOT TARGET ${target})
+    set(${link_defs}
+        ""
+        PARENT_SCOPE)
+    set(${include_defs}
+        ""
+        PARENT_SCOPE)
+    message(WARNING "${target} is not a target, get_link_libraries aborted")
     return()
   endif()
-  set(all_defs "")
-  # CMake does some magic to transform sys libs to -l<libname>. We replicate it
-  foreach(link_lib ${libs})
-    # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub
-    # libraries from OSX can be skipped
-    if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
-      continue()
-    endif()
-
-    get_filename_component(dir_path ${link_lib} DIRECTORY)
-    if(TARGET ${link_lib})
-      get_property(
-        sublink_flag
-        TARGET ${link_lib}
-        PROPERTY INTERFACE_LINK_LIBRARIES)
-      set(description
-          "Extracting link flags from target '${link_lib}', beware that this can be fragile.")
-      # Not use it yet because it can be generator expressions get_property(compile_flag TARGET
-      # ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS
-      # ${compile_flag})
-      foreach(sublink_lib ${sublink_flag})
-        if(TARGET ${sublink_lib})
-          message(NOTICE "For '${link_lib}' going to see TARGET '${sublink_lib}' recursively.")
-          get_link_libraries(${sublink_lib})
-        else()
-          set(link_flag "${link_flag} ${sublink_flag}")
-        endif()
-      endforeach()
-    elseif(NOT dir_path)
-      set(link_flag "-l${link_lib}")
-      set(description
-          "Generating link flags from name '${link_lib}', beware that this can be fragile.")
-      # avoid library paths from special directory /nrnwheel which used to build wheels under docker
-      # container
-    elseif("${dir_path}" MATCHES "^/nrnwheel")
-      continue()
-    elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-      get_filename_component(libname_wle ${link_lib} NAME_WLE)
-      string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
-      set(link_flag "-l${libname_wle}")
-      set(description
-          "Extracting link flags from path '${link_lib}', beware that this can be fragile.")
-    else()
-      set(link_flag "${link_lib} -Wl,-rpath,${dir_path}")
-      set(description "Generating link flags from path ${link_lib}")
-    endif()
-    message(NOTICE "${description} Got: ${link_flag}")
-    string(APPEND all_defs " ${link_flag}")
+  message(STATUS "Will look recursively to includes and libs of ${target}")
+  set(link_flag "")
+  set(include_flag "")
+  get_target_property(target_imported ${target} IMPORTED)
+  if(target_imported)
+    get_target_property(target_location ${target} LOCATION)
+      if (target_location)
+        get_for_a_not_target(link_flag_ ${target_location})
+        string(APPEND link_flag " ${link_flag_}")
+      endif()
+  endif()
+  get_property(
+    include_flag_
+    TARGET ${target}
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+  foreach(include_def ${include_flag_})
+    string(APPEND include_flag " -I${include_def}")
+  endforeach()
+  # Not use it yet because it can be generator expressions get_property(compile_flag TARGET
+  # ${target} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS
+  # ${compile_flag})
+  get_property(
+    sublink_flag
+    TARGET ${target}
+    PROPERTY INTERFACE_LINK_LIBRARIES)
+  foreach(sublink_lib ${sublink_flag})
+      if (${sublink_lib} IN_LIST exclude)
+          message(STATUS "Excluding ${sublink_lib} from ${target}")
+          continue()
+      endif()
+      message(STATUS "${target} is composed of ${sublink_lib}")
+      if(TARGET ${sublink_lib})
+        get_link_libraries(link_flag_ include_flag_ ${sublink_lib} "${exclude}")
+        string(APPEND link_flag " ${link_flag_}")
+        string(APPEND include_flag " ${include_flag_}")
+      else()
+        get_for_a_not_target(link_flag_ "${sublink_lib}")
+        string(APPEND link_flag " ${link_flag_}")
+      endif()
   endforeach()
   set(${link_defs}
-      "${all_defs}"
+      "${link_flag}"
       PARENT_SCOPE)
+  set(${include_defs}
+      "${include_flag}"
+      PARENT_SCOPE)
+  message(STATUS "For ${target} got '${link_flag}' and '${include_flag}'")
 endfunction(get_link_libraries)
