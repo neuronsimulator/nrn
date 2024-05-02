@@ -208,8 +208,8 @@ function(get_for_a_not_target link_defs lib)
   endif()
   # CMake does some magic to transform sys libs to -l<libname>. We replicate it
   set(link_flag "")
-  # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub
-  # libraries from OSX can be skipped
+  # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
+  # from OSX can be skipped
   if("${lib}" MATCHES "(libreadline.a|/*.tbd)")
     continue()
   endif()
@@ -220,6 +220,7 @@ function(get_for_a_not_target link_defs lib)
     # avoid library paths from special directory /nrnwheel which used to build wheels under docker
     # container
   elseif("${dir_path}" MATCHES "^/nrnwheel")
+
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
     get_filename_component(libname_wle ${lib} NAME_WLE)
     string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
@@ -249,10 +250,10 @@ function(get_link_libraries link_defs include_defs target exclude)
   get_target_property(target_imported ${target} IMPORTED)
   if(target_imported)
     get_target_property(target_location ${target} LOCATION)
-      if (target_location)
-        get_for_a_not_target(link_flag_ ${target_location})
-        string(APPEND link_flag " ${link_flag_}")
-      endif()
+    if(target_location)
+      get_for_a_not_target(link_flag_ ${target_location})
+      string(APPEND link_flag " ${link_flag_}")
+    endif()
   endif()
   get_property(
     include_flag_
@@ -262,26 +263,25 @@ function(get_link_libraries link_defs include_defs target exclude)
     string(APPEND include_flag " -I${include_def}")
   endforeach()
   # Not use it yet because it can be generator expressions get_property(compile_flag TARGET
-  # ${target} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS
-  # ${compile_flag})
+  # ${target} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS ${compile_flag})
   get_property(
     sublink_flag
     TARGET ${target}
     PROPERTY INTERFACE_LINK_LIBRARIES)
   foreach(sublink_lib ${sublink_flag})
-      if (${sublink_lib} IN_LIST exclude)
-          message(STATUS "Excluding ${sublink_lib} from ${target}")
-          continue()
-      endif()
-      message(STATUS "${target} is composed of ${sublink_lib}")
-      if(TARGET ${sublink_lib})
-        get_link_libraries(link_flag_ include_flag_ ${sublink_lib} "${exclude}")
-        string(APPEND link_flag " ${link_flag_}")
-        string(APPEND include_flag " ${include_flag_}")
-      else()
-        get_for_a_not_target(link_flag_ "${sublink_lib}")
-        string(APPEND link_flag " ${link_flag_}")
-      endif()
+    if(${sublink_lib} IN_LIST exclude)
+      message(STATUS "Excluding ${sublink_lib} from ${target}")
+      continue()
+    endif()
+    message(STATUS "${target} is composed of ${sublink_lib}")
+    if(TARGET ${sublink_lib})
+      get_link_libraries(link_flag_ include_flag_ ${sublink_lib} "${exclude}")
+      string(APPEND link_flag " ${link_flag_}")
+      string(APPEND include_flag " ${include_flag_}")
+    else()
+      get_for_a_not_target(link_flag_ "${sublink_lib}")
+      string(APPEND link_flag " ${link_flag_}")
+    endif()
   endforeach()
   set(${link_defs}
       "${link_flag}"
