@@ -211,7 +211,7 @@ function(get_for_a_not_target link_defs lib)
   # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
   # from OSX can be skipped
   if("${lib}" MATCHES "(libreadline.a|/*.tbd)")
-    continue()
+    return()
   endif()
 
   get_filename_component(dir_path ${lib} DIRECTORY)
