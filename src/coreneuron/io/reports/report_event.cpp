@@ -117,6 +117,7 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
                                 gids_to_report.size(),
                                 gids_to_report.data(),
                                 report_path.data());
+        nrn_flush_reports(t);
 #endif
         send(t + dt, nc, nt);
         step++;

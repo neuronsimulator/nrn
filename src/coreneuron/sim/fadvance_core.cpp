@@ -113,7 +113,7 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 #ifdef ENABLE_SONATA_REPORTS
     {
         Instrumentor::phase p("flush_reports");
-        nrn_flush_reports(nrn_threads[0]._t);
+        //nrn_flush_reports(nrn_threads[0]._t);
     }
 #endif
     t = nrn_threads[0]._t;
@@ -165,7 +165,7 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
 #ifdef ENABLE_SONATA_REPORTS
         {
             Instrumentor::phase p("flush_reports");
-            nrn_flush_reports(nrn_threads[0]._t);
+            //nrn_flush_reports(nrn_threads[0]._t);
         }
 #endif
         if (stoprun) {
