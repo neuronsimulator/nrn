@@ -113,6 +113,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
     int num_reports = 0;
     report_conf >> num_reports;
     std::vector<ReportConfiguration> reports(num_reports);
+    int report_index = 0;
     for (auto& report: reports) {
         report.buffer_size = 4;  // default size to 4 Mb
 
@@ -156,6 +157,8 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
             // extra new line: skip
             report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
+        report.report_index = report_index;
+        report_index++;
     }
     // read population information for spike report
     int num_populations;
