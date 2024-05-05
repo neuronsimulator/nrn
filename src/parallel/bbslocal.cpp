@@ -2,7 +2,7 @@
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbslocal.h"
-#include "bbslsrv.h"
+#include "bbslsrv.hpp"
 #include <nrnmpi.h>
 
 #include <map>
@@ -198,7 +198,7 @@ int BBSLocal::take_todo() {
 
 void BBSLocal::save_args(int userid) {
     server_->post_todo(working_id_, posting_);
-    keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
+    keepargs_->emplace(userid, posting_);
     posting_ = nullptr;
 }
 
@@ -206,7 +206,7 @@ void BBSLocal::return_args(int userid) {
     KeepArgs::iterator i = keepargs_->find(userid);
     assert(i != keepargs_->end());
     Resource::unref(taking_);
-    taking_ = (MessageValue*) ((*i).second);
+    taking_ = const_cast<MessageValue*>((*i).second);
     keepargs_->erase(i);
     taking_->init_unpack();
     BBSImpl::return_args(userid);

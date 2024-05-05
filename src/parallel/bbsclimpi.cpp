@@ -255,7 +255,7 @@ int BBSClient::look_take_result(int pid) {
 
 void BBSClient::save_args(int userid) {
     nrnmpi_ref(sendbuf_);
-    keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
+    keepargs_->emplace(userid, sendbuf_);
     post_todo(working_id_);
 }
 

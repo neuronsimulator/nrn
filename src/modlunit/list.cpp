@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/list.c,v 1.3 1997/11/24 16:19:10 hines Exp */
 
 /* The following routines support the concept of a list.
