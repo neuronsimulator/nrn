@@ -1203,7 +1203,7 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
         delete[] statement;
     } break;
     default: {
-        std::vector<char> python_pickle{}; // Only for style == 3
+        std::vector<char> python_pickle{};  // Only for style == 3
         Symbol* fname = nullptr;
         Object* ob = nullptr;
         std::list<char*> sarg;  // Store the strings pointer to delete[] them later
