@@ -1188,7 +1188,6 @@ void ParallelContext_reg() {
 //     Return a string that is of size `size`.
 //     Dry run if `exec` is false.
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
-    char* python_pickle;  // Used only for style == 3
     int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
     int style = upkint();
     if (subworld) {
@@ -1212,7 +1211,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         delete[] statement;
     } break;
     default: {
-        size_t npickle;
+        std::vector<char> python_pickle{}; // Only for style == 3
         Symbol* fname = nullptr;
         Object* ob = nullptr;
         std::list<char*> sarg;  // Store the strings pointer to delete[] them later
@@ -1257,15 +1256,14 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 hoc_execerror("with subworlds, this submit style not implemented", nullptr);
             }
         } else if (style == 3) {  // Python callable
-            auto ret = upkpickle();
+            python_pickle = upkpickle();
             if (subworld) {
-                int size = ret.size();
+                int size = python_pickle.size();
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(ret.data(), size, 0);
+                nrnmpi_char_broadcast(python_pickle.data(), size, 0);
             }
-            char* s = new char[ret.size()];
-            std::copy(ret.begin(), ret.end(), s);
-            npickle = ret.size();
+            char* s = new char[python_pickle.size()];
+            std::copy(python_pickle.begin(), python_pickle.end(), s);
         } else {
             char* fname_str = upkstr();
             if (subworld) {
@@ -1327,12 +1325,10 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         }
         if (style == 3) {
             assert(neuron::python::methods.call_picklef);
-            pickle_ret_.clear();
             if (exec) {
-                rs = neuron::python::methods.call_picklef(python_pickle, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(python_pickle.data(), python_pickle.size(), narg, size);
             }
             hoc_ac_ = 0.;
-            delete[] python_pickle;
         } else {
             hoc_ac_ = 0.;
             if (exec) {
