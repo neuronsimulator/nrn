@@ -1211,7 +1211,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         delete[] statement;
     } break;
     default: {
-        std::vector<char> python_pickle{}; // Only for style == 3
+        std::vector<char> python_pickle{};  // Only for style == 3
         Symbol* fname = nullptr;
         Object* ob = nullptr;
         std::list<char*> sarg;  // Store the strings pointer to delete[] them later
@@ -1326,7 +1326,10 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         if (style == 3) {
             assert(neuron::python::methods.call_picklef);
             if (exec) {
-                rs = neuron::python::methods.call_picklef(python_pickle.data(), python_pickle.size(), narg, size);
+                rs = neuron::python::methods.call_picklef(python_pickle.data(),
+                                                          python_pickle.size(),
+                                                          narg,
+                                                          size);
             }
             hoc_ac_ = 0.;
         } else {
