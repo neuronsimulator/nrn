@@ -1263,7 +1263,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 nrnmpi_int_broadcast(&size, 1, 0);
                 nrnmpi_char_broadcast(ret.data(), size, 0);
             }
-            s = new char[ret.size()];
+            char* s = new char[ret.size()];
             std::copy(ret.begin(), ret.end(), s);
             npickle = ret.size();
         } else {
