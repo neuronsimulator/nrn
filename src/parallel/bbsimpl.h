@@ -64,7 +64,7 @@ class BBSImpl {
     static bool master_works_;
 
   protected:
-    char* execute_helper(size_t*, int id, bool exec = true);  // involves hoc specific details in
+    std::vector<char> execute_helper(int id, bool exec = true);  // involves hoc specific details in
                                                               // ocbbs.cpp
     void subworld_worker_execute();                           // shadows execute_helper. ie. each of
                                      // the nrnmpi_myid_bbs workers (and master) need to execute

@@ -611,26 +611,26 @@ static PyObject* loads;
 static PyObject* dumps;
 
 static void setpickle() {
-    PyObject* pickle;
-    if (!dumps) {
-        pickle = PyImport_ImportModule("pickle");
-        if (pickle) {
-            Py_INCREF(pickle);
-            dumps = PyObject_GetAttrString(pickle, "dumps");
-            loads = PyObject_GetAttrString(pickle, "loads");
-            if (dumps) {
-                Py_INCREF(dumps);
-                Py_INCREF(loads);
-            }
+    if (dumps) {
+        return;
+    }
+    PyObject* pickle = PyImport_ImportModule("pickle");
+    if (pickle) {
+        Py_INCREF(pickle);
+        dumps = PyObject_GetAttrString(pickle, "dumps");
+        loads = PyObject_GetAttrString(pickle, "loads");
+        if (dumps) {
+            Py_INCREF(dumps);
+            Py_INCREF(loads);
         }
-        if (!dumps || !loads) {
-            hoc_execerror("Neither Python cPickle nor pickle are available", 0);
-        }
+    }
+    if (!dumps || !loads) {
+        hoc_execerror("Neither Python cPickle nor pickle are available", 0);
     }
 }
 
 // note that *size includes the null terminating character if it exists
-static char* pickle(PyObject* p, size_t* size) {
+static std::vector<char> pickle(PyObject* p) {
     PyObject* arg = PyTuple_Pack(1, p);
     PyObject* r = nrnpy_pyCallObject(dumps, arg);
     Py_XDECREF(arg);
@@ -639,29 +639,25 @@ static char* pickle(PyObject* p, size_t* size) {
     }
     assert(r);
     assert(PyBytes_Check(r));
-    *size = PyBytes_Size(r);
-    char* buf1 = PyBytes_AsString(r);
-    char* buf = new char[*size];
-    for (size_t i = 0; i < *size; ++i) {
-        buf[i] = buf1[i];
-    }
+    std::size_t size = PyBytes_Size(r);
+    char* buf = PyBytes_AsString(r);
+    std::vector<char> ret(buf, buf + size);
     Py_XDECREF(r);
-    return buf;
+    return ret;
 }
 
-static char* po2pickle(Object* ho, std::size_t* size) {
+static std::vector<char> po2pickle(Object* ho) {
     setpickle();
     if (ho && ho->ctemplate->sym == nrnpy_pyobj_sym_) {
         PyObject* po = nrnpy_hoc2pyobject(ho);
-        char* buf = pickle(po, size);
-        return buf;
+        return pickle(po);
     } else {
-        return 0;
+        return {};
     }
 }
 
-static PyObject* unpickle(char* s, size_t size) {
-    PyObject* ps = PyBytes_FromStringAndSize(s, size);
+static PyObject* unpickle(const std::vector<char>& s) {
+    PyObject* ps = PyBytes_FromStringAndSize(s.data(), s.size());
     PyObject* arg = PyTuple_Pack(1, ps);
     PyObject* po = nrnpy_pyCallObject(loads, arg);
     assert(po);
@@ -670,9 +666,9 @@ static PyObject* unpickle(char* s, size_t size) {
     return po;
 }
 
-static Object* pickle2po(char* s, std::size_t size) {
+static Object* pickle2po(const std::vector<char>& s) {
     setpickle();
-    PyObject* po = unpickle(s, size);
+    PyObject* po = unpickle(s);
     Object* ho = nrnpy_pyobject_in_obj(po);
     Py_XDECREF(po);
     return ho;
@@ -739,7 +735,7 @@ static char* nrnpyerr_str() {
     return NULL;
 }
 
-char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize) {
+std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     // fname is a pickled callable, narg is the number of args on the
     // hoc stack with types double, char*, hoc Vector, and PythonObject
     // callable return must be pickleable.
@@ -748,7 +744,7 @@ char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize
     PyObject* callable;
 
     setpickle();
-    PyObject* ps = PyBytes_FromStringAndSize(fname, size);
+    PyObject* ps = PyBytes_FromStringAndSize(fname.data(), fname.size());
     args = PyTuple_Pack(1, ps);
     callable = nrnpy_pyCallObject(loads, args);
     assert(callable);
@@ -777,7 +773,7 @@ char* call_picklef(char* fname, std::size_t size, int narg, std::size_t* retsize
             PyErr_Print();
         }
     }
-    char* rs = pickle(result, retsize);
+    auto rs = pickle(result);
     Py_XDECREF(result);
     return rs;
 }
@@ -801,7 +797,7 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
             PyList_SetItem(plist, i, Py_None);
         } else {
-            PyObject* p = unpickle(buf + displ[i], cnt[i]);
+            PyObject* p = unpickle(std::vector<char>(buf + displ[i], buf + displ[i] + cnt[i]));
             PyList_SetItem(plist, i, p);
         }
     }
@@ -811,17 +807,15 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
 #if NRNMPI
 static PyObject* py_allgather(PyObject* psrc) {
     int np = nrnmpi_numprocs;
-    size_t sz;
-    char* sbuf = pickle(psrc, &sz);
+    auto sbuf = pickle(psrc);
     // what are the counts from each rank
     int* rcnt = new int[np];
-    rcnt[nrnmpi_myid] = int(sz);
+    rcnt[nrnmpi_myid] = sbuf.size();
     nrnmpi_int_allgather_inplace(rcnt, 1);
     int* rdispl = mk_displ(rcnt);
     char* rbuf = new char[rdispl[np]];
 
-    nrnmpi_char_allgatherv(sbuf, rbuf, rcnt, rdispl);
-    delete[] sbuf;
+    nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl);
 
     PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl);
     delete[] rbuf;
@@ -832,10 +826,9 @@ static PyObject* py_allgather(PyObject* psrc) {
 
 static PyObject* py_gather(PyObject* psrc, int root) {
     int np = nrnmpi_numprocs;
-    size_t sz;
-    char* sbuf = pickle(psrc, &sz);
+    auto sbuf = pickle(psrc);
     // what are the counts from each rank
-    int scnt = int(sz);
+    int scnt = sbuf.size();
     int* rcnt = NULL;
     if (root == nrnmpi_myid) {
         rcnt = new int[np];
@@ -848,8 +841,7 @@ static PyObject* py_gather(PyObject* psrc, int root) {
         rbuf = new char[rdispl[np]];
     }
 
-    nrnmpi_char_gatherv(sbuf, scnt, rbuf, rcnt, rdispl, root);
-    delete[] sbuf;
+    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl, root);
 
     PyObject* pdest = Py_None;
     if (root == nrnmpi_myid) {
@@ -865,25 +857,23 @@ static PyObject* py_gather(PyObject* psrc, int root) {
 
 static PyObject* py_broadcast(PyObject* psrc, int root) {
     // Note: root returns reffed psrc.
-    char* buf = NULL;
+    std::vector<char> buf{};
     int cnt = 0;
     if (root == nrnmpi_myid) {
-        size_t sz;
-        buf = pickle(psrc, &sz);
-        cnt = int(sz);
+        buf = pickle(psrc);
+        cnt = buf.size();
     }
     nrnmpi_int_broadcast(&cnt, 1, root);
     if (root != nrnmpi_myid) {
-        buf = new char[cnt];
+        buf.resize(cnt);
     }
-    nrnmpi_char_broadcast(buf, cnt, root);
+    nrnmpi_char_broadcast(buf.data(), cnt, root);
     PyObject* pdest = psrc;
     if (root != nrnmpi_myid) {
-        pdest = unpickle(buf, size_t(cnt));
+        pdest = unpickle(buf);
     } else {
         Py_INCREF(pdest);
     }
-    delete[] buf;
     return pdest;
 }
 #endif
@@ -1003,11 +993,10 @@ static Object* py_alltoall_type(int size, int type) {
                     Py_DECREF(p);
                     continue;
                 }
-                size_t sz;
-                char* b = pickle(p, &sz);
+                auto b = pickle(p);
                 if (size >= 0) {
-                    if (curpos + sz >= bufsz) {
-                        bufsz = bufsz * 2 + sz;
+                    if (curpos + b.size() >= bufsz) {
+                        bufsz = bufsz * 2 + b.size();
                         char* s2 = new char[bufsz];
                         for (size_t i = 0; i < curpos; ++i) {
                             s2[i] = s[i];
@@ -1015,13 +1004,12 @@ static Object* py_alltoall_type(int size, int type) {
                         delete[] s;
                         s = s2;
                     }
-                    for (size_t j = 0; j < sz; ++j) {
+                    for (size_t j = 0; j < b.size(); ++j) {
                         s[curpos + j] = b[j];
                     }
                 }
-                curpos += sz;
-                scnt[i] = sz;
-                delete[] b;
+                curpos += b.size();
+                scnt[i] = b.size();
                 Py_DECREF(p);
             }
             Py_DECREF(iterator);
@@ -1048,7 +1036,6 @@ static Object* py_alltoall_type(int size, int type) {
             // exchange
             sdispl = mk_displ(scnt);
             rdispl = mk_displ(rcnt);
-            char* r = 0;
             if (size < 0) {
                 pdest = PyTuple_New(2);
                 PyTuple_SetItem(pdest, 0, Py_BuildValue("l", (long) sdispl[np]));
@@ -1058,7 +1045,7 @@ static Object* py_alltoall_type(int size, int type) {
                 delete[] rcnt;
                 delete[] rdispl;
             } else {
-                r = new char[rdispl[np] + 1];  // force > 0 for all None case
+                char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
                 nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
                 delete[] s;
                 delete[] scnt;
@@ -1076,13 +1063,13 @@ static Object* py_alltoall_type(int size, int type) {
             // destination counts
             rcnt = new int[1];
             nrnmpi_int_scatter(scnt, rcnt, 1, root);
-            r = new char[rcnt[0] + 1];  // rcnt[0] can be 0
+            std::vector<char> r(rcnt[0] + 1);  // rcnt[0] can be 0
 
             // exchange
             if (nrnmpi_myid == root) {
                 sdispl = mk_displ(scnt);
             }
-            nrnmpi_char_scatterv(s, scnt, sdispl, r, rcnt[0], root);
+            nrnmpi_char_scatterv(s, scnt, sdispl, r.data(), rcnt[0], root);
             if (s)
                 delete[] s;
             if (scnt)
@@ -1091,13 +1078,12 @@ static Object* py_alltoall_type(int size, int type) {
                 delete[] sdispl;
 
             if (rcnt[0]) {
-                pdest = unpickle(r, size_t(rcnt[0]));
+                pdest = unpickle(r);
             } else {
                 pdest = Py_None;
                 Py_INCREF(pdest);
             }
 
-            delete[] r;
             delete[] rcnt;
             assert(rdispl == NULL);
         }

@@ -262,9 +262,7 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     ++etaskcnt;
     double st, et;
     int userid;
-    char* rs;
     char* s;
-    size_t n;
     int i;
     int save_id = working_id_;
     int save_n = n_;
@@ -277,7 +275,7 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     userid = upkint();
     int wid = upkint();
     hoc_ac_ = double(id);
-    rs = execute_helper(&n, id);  // builds and execute hoc statement
+    auto rs = execute_helper(id);  // builds and execute hoc statement
     et = time() - st;
     total_exec_time += et;
     if (debug) {
@@ -286,12 +284,11 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     pkbegin();
     pkint(userid);
     pkint(wid);
-    pkint(rs ? 1 : 0);
-    if (!rs) {
+    pkint(!rs.empty() ? 1 : 0);
+    if (rs.empty()) {
         pkdouble(hoc_ac_);
     } else {
-        pkpickle(std::vector<char>(rs, rs + n));
-        delete[] rs;
+        pkpickle(rs);
     }
     working_id_ = save_id;
     n_ = save_n;

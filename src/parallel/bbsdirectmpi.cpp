@@ -50,7 +50,6 @@ void BBSDirect::context() {
     // then id > 0 need to execute the context statement
     // but id == 0 does not.
     if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
-        size_t n;
         bbsmpibuf* rsav = recvbuf_;  // May naturally be NULL anyway
         recvbuf_ = nrnmpi_newbuf(sendbuf_->size);
         nrnmpi_ref(recvbuf_);
@@ -58,7 +57,7 @@ void BBSDirect::context() {
         nrnmpi_upkbegin(recvbuf_);
         nrnmpi_upkint(recvbuf_);
         nrnmpi_upkint(recvbuf_);  // slot reserved for tag
-        execute_helper(&n, -1, false);
+        execute_helper(-1, false);
         nrnmpi_unref(recvbuf_);
         recvbuf_ = rsav;
     }
