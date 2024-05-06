@@ -7,10 +7,6 @@
 #endif
 #endif
 
-#if defined(__alpha)
-#undef USG
-#endif
-
 #if NRNOC_X11
 
 #if defined(IVX11_DYNAM)

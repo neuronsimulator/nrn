@@ -387,22 +387,8 @@
 /*
  * MEMORY ALLOCATION
  */
-#if 1
 #include "spmatrix.h"
 #include <stdlib.h>
-#else
-#if !defined(__MWERKS__)
-extern char *malloc(), *calloc(), *realloc();
-
-#ifdef ultrix
-extern void free();
-extern void abort();
-#else
-extern free();
-extern abort();
-#endif
-#endif
-#endif
 
 #define ALLOC(type, number) ((type*)malloc((unsigned)(sizeof(type) * (number))))
 #define REALLOC(ptr, type, number) \

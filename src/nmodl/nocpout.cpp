@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 
@@ -71,6 +71,8 @@ directly by hoc.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <filesystem>
+namespace fs = std::filesystem;
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
@@ -184,6 +186,7 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
    pvarcount indexes pointers to variables such as ena
 */
 static int varcount, parraycount;
+static int prop_size;
 static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
 static std::vector<std::string> data_field_strings;
 
@@ -321,7 +324,7 @@ void parout() {
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 
     nrndeclare();
-    varcount = parraycount = 0;
+    varcount = parraycount = prop_size = 0;
     declare_p();
     // iondef defined _nrn_mechanism_cache_range
     ioncount = iondef(&pointercount); /* first is _nd_area if point process */
@@ -1282,7 +1285,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         }
         register_data_fields.append(");\n");
         lappendstr(defs_list, register_data_fields.c_str());
-        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
+        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", prop_size, ppvar_cnt);
         Lappendstr(defs_list, buf);
         if (watch_seen_) {
             Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
@@ -1400,14 +1403,14 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
-        char* pf{};
-#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::absolute(finname).c_str());
+#else
+        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
 #endif
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname);
-        if (pf) {
-            free(pf);
-        }
         Lappendstr(defs_list, buf1);
     }
     if (suffix[0]) {
@@ -1799,6 +1802,9 @@ static void var_count(Symbol* s) {
     if (s->subtype & ARRAY) {
         field.append(", ");
         field.append(std::to_string(s->araydim));
+        prop_size += s->araydim;
+    } else {
+        prop_size += 1;
     }
     // **ATTENTION** in AoS NEURON then parraycount was incremented by s->araydim if the variable
     // was an array. In SoA NEURON this is not done; the array dimension is communicated separately.

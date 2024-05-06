@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
 #include "model.h"
@@ -13,8 +13,9 @@
 #include <cstring>
 
 #ifdef MINGW
-#include "../mswin/extra/d2upath.cpp"
+#include "../mswin/extra/d2upath.h"
 #endif
+
 #if defined(WIN32)
 #include <windows.h>
 #endif
@@ -109,7 +110,7 @@ static int Getc(FILE* inp) {
 static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
 static char* neuronhome() {
-#if defined(WIN32)
+#if defined(MINGW)
     int i;
     static char buf[256];
     GetModuleFileName(NULL, buf, 256);
