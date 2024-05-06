@@ -167,7 +167,7 @@ simulation_stack:
   variables:
     bb5_ntasks: 2   # so we block 16 cores
     bb5_cpus_per_task: 8 # ninja -j {this}
-    bb5_memory: 76G # ~16*384/80
+    bb5_memory: 160G # ~2*16*384/80 (~2x more as we have seen OOMs)
 
 .spack_intel:
   variables:
@@ -192,7 +192,7 @@ simulation_stack:
   extends: [.ctest]
   variables:
     bb5_ntasks: 16
-    bb5_memory: 76G # ~16*384/80
+    bb5_memory: 160G # ~2*16*384/80 (~2x more as we have seen OOMs)
 
 # Build NMODL once with GCC
 build:nmodl:

@@ -79,10 +79,6 @@ void nrnsecmenu() {
     hoc_retpushx(1.);
 }
 
-#ifdef ultrix
-char* strstr(const char*, const char*);
-#endif
-
 static bool has_globals(const char* name) {
     Symbol* sp;
     char suffix[100];
@@ -485,10 +481,6 @@ static void point_menu(Object* ob, int make_label) {
             }
             if (vartype == nrnocCONST) {
                 deflt = true;
-
-#if defined(MikeNeubig)
-                deflt = false;
-#endif  // end of hack
             } else {
                 deflt = false;
             }

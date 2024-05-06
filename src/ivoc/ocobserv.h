@@ -1,5 +1,4 @@
-#ifndef ocobserve_h
-#define ocobserve_h
+#pragma once
 
 #include "oc_ansi.h"
 
@@ -61,5 +60,3 @@ class ClassObservable: public Observable {
     int message_;
     int cnt_;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef nrnmenu_h
-#define nrnmenu_h
+#pragma once
 
 #include "ndatclas.h"
 class MechTypeImpl;
@@ -74,5 +73,3 @@ class MechanismType: public Resource {
   private:
     MechTypeImpl* mti_;
 };
-
-#endif

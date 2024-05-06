@@ -1,6 +1,4 @@
-
-#ifndef hocdec_h
-#define hocdec_h
+#pragma once
 #define INCLUDEHOCH 1
 
 #include "neuron/container/generic_data_handle.hpp"
@@ -294,7 +292,4 @@ int num_procs;
 int* tids;
 int node_num;
 int mytid;
-#endif
-
-
 #endif

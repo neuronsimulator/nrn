@@ -1,5 +1,4 @@
-#ifndef ivoc_vector_h
-#define ivoc_vector_h
+#pragma once
 
 #include "nrnmutdec.h"
 #include "ocnotify.h"
@@ -121,5 +120,3 @@ extern void vector_set_label(IvocVect*, char*);
 
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;
-
-#endif

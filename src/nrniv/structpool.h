@@ -1,5 +1,4 @@
-#ifndef structpool_h
-#define structpool_h
+#pragma once
 
 // same as ../nrncvode/pool.h but items do not require a clear method.
 
@@ -147,5 +146,3 @@ void Pool<T>::free_all() {
     assert(put_ == count_);
     put_ = 0;
 }
-
-#endif
