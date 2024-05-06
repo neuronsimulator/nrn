@@ -814,7 +814,7 @@ static PyObject* py_allgather(PyObject* psrc) {
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
     int* rcnt = new int[np];
-    rcnt[nrnmpi_myid] = sbuf.size();
+    rcnt[nrnmpi_myid] = static_cast<int>(sbuf.size());
     nrnmpi_int_allgather_inplace(rcnt, 1);
     int* rdispl = mk_displ(rcnt);
     char* rbuf = new char[rdispl[np]];
@@ -832,7 +832,7 @@ static PyObject* py_gather(PyObject* psrc, int root) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
-    int scnt = sbuf.size();
+    int scnt = static_cast<int>(sbuf.size());
     int* rcnt = NULL;
     if (root == nrnmpi_myid) {
         rcnt = new int[np];
@@ -865,7 +865,7 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
     int cnt = 0;
     if (root == nrnmpi_myid) {
         buf = pickle(psrc);
-        cnt = buf.size();
+        cnt = static_cast<int>(buf.size());
     }
     nrnmpi_int_broadcast(&cnt, 1, root);
     if (root != nrnmpi_myid) {
@@ -1013,7 +1013,7 @@ static Object* py_alltoall_type(int size, int type) {
                     }
                 }
                 curpos += b.size();
-                scnt[i] = b.size();
+                scnt[i] = static_cast<int>(b.size());
                 Py_DECREF(p);
             }
             Py_DECREF(iterator);

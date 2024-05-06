@@ -1250,7 +1250,7 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
         } else if (style == 3) {  // Python callable
             python_pickle = upkpickle();
             if (subworld) {
-                int size = python_pickle.size();
+                int size = static_cast<int>(python_pickle.size());
                 nrnmpi_int_broadcast(&size, 1, 0);
                 nrnmpi_char_broadcast(python_pickle.data(), size, 0);
             }
@@ -1303,7 +1303,7 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
                 hoc_pushobj(vec->temp_objvar());
             } else {  // PythonObject
                 auto s = upkpickle();
-                int size = s.size();
+                int size = static_cast<int>(s.size());
                 if (subworld) {
                     nrnmpi_int_broadcast(&size, 1, 0);
                     nrnmpi_char_broadcast(s.data(), size, 0);
