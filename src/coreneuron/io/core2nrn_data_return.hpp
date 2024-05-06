@@ -14,7 +14,7 @@ namespace coreneuron {
     I.e. voltage, i_membrane_, mechanism data, event queue, WATCH state,
     Play state, etc.
  */
-extern void core2nrn_data_return();
+extern void core2nrn_data_return(bool return_patternstim = true);
 
 /** @brief return first and last datum indices of WATCH statements
  */

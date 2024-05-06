@@ -190,7 +190,7 @@ extern void nrn_fixed_step_group_minimal(int total_sim_steps);
 extern void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop);
 extern void nrn_fixed_step_minimal(void);
 extern void nrn_finitialize(int setv, double v);
-extern void direct_mode_initialize();
+extern void direct_mode_initialize(bool send_patternstim = true);
 extern void nrn_mk_table_check(void);
 extern void nonvint(NrnThread* _nt);
 extern void update(NrnThread*);

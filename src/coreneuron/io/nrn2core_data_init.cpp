@@ -47,7 +47,7 @@ void (*nrn2core_transfer_watch_)(void (*cb)(int, int, int, int, int));
   nrn_finitialize above but without changing any simulation data. We follow
   some of the strategy of checkpoint_initialize.
 **/
-void direct_mode_initialize() {
+void direct_mode_initialize(bool send_patternstim) {
     dt2thread(-1.);
     nrn_thread_table_check();
 
@@ -90,7 +90,10 @@ void direct_mode_initialize() {
         nrn2core_PreSyn_flag_receive(tid);
     }
 
-    nrn2core_patstim_share_info();
+    // Transfer patternstim mech from neuron when pattern stim data is not specified by --pattern,
+    if (send_patternstim) {
+        nrn2core_patstim_share_info();
+    }
 
     nrn2core_tqueue();
 }

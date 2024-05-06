@@ -274,11 +274,6 @@ void nrn_init_and_load_data(int argc,
         report_mem_usage("After nrn_setup ");
     }
 
-    // Invoke PatternStim
-    if (!corenrn_param.patternstim.empty()) {
-        nrn_mkPatternStim(corenrn_param.patternstim.c_str(), corenrn_param.tstop);
-    }
-
     /// Setting the timeout
     nrn_set_timeout(200.);
 
@@ -311,9 +306,14 @@ void nrn_init_and_load_data(int argc,
         // all final state, including the event queue will be sent back
         // to NEURON. Here there is some first time only
         // initialization and queue transfer.
-        direct_mode_initialize();
+        direct_mode_initialize(corenrn_param.patternstim.empty());
         clear_spike_vectors();  // PreSyn send already recorded by NEURON
         (*nrn2core_part2_clean_)();
+    }
+
+    // Invoke PatternStim
+    if (!corenrn_param.patternstim.empty()) {
+        nrn_mkPatternStim(corenrn_param.patternstim.c_str(), corenrn_param.tstop);
     }
 
     if (corenrn_param.gpu) {
@@ -636,7 +636,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     if (corenrn_embedded) {
-        core2nrn_data_return();
+        core2nrn_data_return(corenrn_param.patternstim.empty());
     }
 
     {

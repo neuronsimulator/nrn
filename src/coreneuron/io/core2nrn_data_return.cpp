@@ -302,7 +302,7 @@ static void core2nrn_vecplay();
  *  Copies t, voltage, i_membrane_ if it used, and mechanism param data.
  *  Copies event queue and related state, e.g. WATCH, VecPlayContinuous.
  */
-void core2nrn_data_return() {
+void core2nrn_data_return(bool return_patternstim) {
     if (!nrn2core_type_return_) {
         return;
     }
@@ -331,8 +331,12 @@ void core2nrn_data_return() {
             }
         }
 
+        int patstimtype = nrn_get_mechtype("PatternStim");
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
             int mtype = tml->index;
+            if (!return_patternstim && mtype == patstimtype) {
+                continue;
+            }
             Memb_list* ml = tml->ml;
             n = (*nrn2core_type_return_)(mtype, tid, data, mdata);
             assert(n == size_t(ml->nodecount) && !mdata.empty());
