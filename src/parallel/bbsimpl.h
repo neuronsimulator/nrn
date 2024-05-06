@@ -65,8 +65,8 @@ class BBSImpl {
 
   protected:
     std::vector<char> execute_helper(int id, bool exec = true);  // involves hoc specific details in
-                                                              // ocbbs.cpp
-    void subworld_worker_execute();                           // shadows execute_helper. ie. each of
+                                                                 // ocbbs.cpp
+    void subworld_worker_execute();  // shadows execute_helper. ie. each of
                                      // the nrnmpi_myid_bbs workers (and master) need to execute
                                      // the same thing on each of the subworld processes
                                      // associated with nrnmpi_myid==0. A subworld does not
