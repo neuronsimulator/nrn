@@ -104,7 +104,6 @@ void bbs_done() {
 
 static int submit_help(OcBBS* bbs) {
     int id, i, firstarg, style;
-    char* pname = 0;  // if using Python callable
     posting_ = true;
     bbs->pkbegin();
     i = 1;
@@ -124,15 +123,14 @@ static int submit_help(OcBBS* bbs) {
             bbs->pkstr(gargstr(i++));
         } else {
             Object* ob = *hoc_objgetarg(i++);
-            size_t size;
+            std::vector<char> pname{};
             if (neuron::python::methods.po2pickle) {
-                pname = neuron::python::methods.po2pickle(ob, &size);
+                pname = neuron::python::methods.po2pickle(ob);
             }
-            if (pname) {
+            if (!pname.empty()) {
                 style = 3;
                 bbs->pkint(style);  // pyfun, arg1, ... style
-                bbs->pkpickle(pname, size);
-                delete[] pname;
+                bbs->pkpickle(pname);
             } else {
                 style = 2;
                 bbs->pkint(style);  // [object],"fname", arg1, ... style
@@ -164,12 +162,10 @@ static int submit_help(OcBBS* bbs) {
             bbs->pkint(0);  // hoc statement style
             bbs->pkstr(gargstr(i));
         } else if (neuron::python::methods.po2pickle) {
-            size_t size;
-            pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
+            auto pname = neuron::python::methods.po2pickle(*hoc_objgetarg(i));
             bbs->pkint(3);  // pyfun with no arg style
-            bbs->pkpickle(pname, size);
+            bbs->pkpickle(pname);
             bbs->pkint(0);  // argtypes
-            delete[] pname;
         }
     }
     posting_ = false;
@@ -287,10 +283,8 @@ static void pack_help(int i, OcBBS* bbs) {
             bbs->pkint(n);
             bbs->pkvec(n, px);
         } else {  // must be a PythonObject
-            size_t size;
-            char* s = neuron::python::methods.po2pickle(*hoc_objgetarg(i), &size);
-            bbs->pkpickle(s, size);
-            delete[] s;
+            auto s = neuron::python::methods.po2pickle(*hoc_objgetarg(i));
+            bbs->pkpickle(s);
         }
     }
 }
@@ -372,11 +366,9 @@ static Object** upkvec(void* v) {
 
 static Object** upkpyobj(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    size_t n;
-    char* s = bbs->upkpickle(&n);
+    std::vector<char> s = bbs->upkpickle();
     assert(neuron::python::methods.pickle2po);
-    Object* po = neuron::python::methods.pickle2po(s, n);
-    delete[] s;
+    Object* po = neuron::python::methods.pickle2po(s);
     return hoc_temp_objptr(po);
 }
 
@@ -385,12 +377,9 @@ static Object** pyret(void* v) {
     return bbs->pyret();
 }
 Object** BBS::pyret() {
-    assert(impl_->pickle_ret_);
     assert(neuron::python::methods.pickle2po);
-    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_, impl_->pickle_ret_size_);
-    delete[] impl_->pickle_ret_;
-    impl_->pickle_ret_ = 0;
-    impl_->pickle_ret_size_ = 0;
+    Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_);
+    impl_->pickle_ret_.clear();
     return hoc_temp_objptr(po);
 }
 
@@ -1191,8 +1180,7 @@ void ParallelContext_reg() {
 //     A python pickle (https://docs.python.org/3/library/pickle.html) followed by arguments.
 //     Return a string that is of size `size`.
 //     Dry run if `exec` is false.
-char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
-    char* python_pickle;  // Used only for style == 3
+std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
     int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
     int style = upkint();
     if (subworld) {
@@ -1202,8 +1190,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         info[1] = style;
         nrnmpi_int_broadcast(info, 2, 0);
     }
-    char* rs = nullptr;
-    *size = 0;
+    std::vector<char> rs{};
     switch (style) {
     case 0: {
         char* statement = upkstr();
@@ -1216,7 +1203,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         delete[] statement;
     } break;
     default: {
-        size_t npickle;
+        std::vector<char> python_pickle{};  // Only for style == 3
         Symbol* fname = nullptr;
         Object* ob = nullptr;
         std::list<char*> sarg;  // Store the strings pointer to delete[] them later
@@ -1261,11 +1248,11 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 hoc_execerror("with subworlds, this submit style not implemented", nullptr);
             }
         } else if (style == 3) {  // Python callable
-            python_pickle = upkpickle(&npickle);
+            python_pickle = upkpickle();
             if (subworld) {
-                int size = npickle;
+                int size = static_cast<int>(python_pickle.size());
                 nrnmpi_int_broadcast(&size, 1, 0);
-                nrnmpi_char_broadcast(python_pickle, size, 0);
+                nrnmpi_char_broadcast(python_pickle.data(), size, 0);
             }
         } else {
             char* fname_str = upkstr();
@@ -1315,31 +1302,23 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 }
                 hoc_pushobj(vec->temp_objvar());
             } else {  // PythonObject
-                size_t n;
-                char* pickle = upkpickle(&n);
-                int size = n;
+                auto s = upkpickle();
+                int size = static_cast<int>(s.size());
                 if (subworld) {
                     nrnmpi_int_broadcast(&size, 1, 0);
-                    nrnmpi_char_broadcast(pickle, size, 0);
+                    nrnmpi_char_broadcast(s.data(), size, 0);
                 }
                 assert(neuron::python::methods.pickle2po);
-                Object* po = neuron::python::methods.pickle2po(pickle, n);
-                delete[] pickle;
+                Object* po = neuron::python::methods.pickle2po(s);
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
         if (style == 3) {
             assert(neuron::python::methods.call_picklef);
-            if (pickle_ret_) {
-                delete[] pickle_ret_;
-                pickle_ret_ = nullptr;
-                pickle_ret_size_ = 0;
-            }
             if (exec) {
-                rs = neuron::python::methods.call_picklef(python_pickle, npickle, narg, size);
+                rs = neuron::python::methods.call_picklef(python_pickle, narg);
             }
             hoc_ac_ = 0.;
-            delete[] python_pickle;
         } else {
             hoc_ac_ = 0.;
             if (exec) {
@@ -1388,7 +1367,7 @@ void BBSImpl::subworld_worker_execute() {
     }
     int i, j;
     int npickle;
-    char* s;
+    std::vector<char> s{};
     Symbol* fname = 0;
     Object* ob = nullptr;
     char* sarg[20];  // up to 20 arguments may be strings
@@ -1397,15 +1376,15 @@ void BBSImpl::subworld_worker_execute() {
 
     if (style == 3) {  // python callable
         nrnmpi_int_broadcast(&npickle, 1, 0);
-        s = new char[npickle];
-        nrnmpi_char_broadcast(s, npickle, 0);
+        s.resize(npickle);
+        nrnmpi_char_broadcast(s.data(), npickle, 0);
     } else if (style == 1) {  // hoc function
         int size;
         nrnmpi_int_broadcast(&size, 1, 0);  // includes terminator
         // printf("%d subworld hoc function string size = %d\n", nrnmpi_myid_world, size);
-        s = new char[size];
-        nrnmpi_char_broadcast(s, size, 0);
-        fname = hoc_lookup(s);
+        s.resize(size);
+        nrnmpi_char_broadcast(s.data(), size, 0);
+        fname = hoc_lookup(s.data());
         if (!fname) {
             return;
         }  // error raised by sender
@@ -1440,26 +1419,21 @@ void BBSImpl::subworld_worker_execute() {
         } else {  // PythonObject
             int n;
             nrnmpi_int_broadcast(&n, 1, 0);
-            char* s;
-            s = new char[n];
-            nrnmpi_char_broadcast(s, n, 0);
-            Object* po = neuron::python::methods.pickle2po(s, size_t(n));
-            delete[] s;
+            std::vector<char> s(n);
+            nrnmpi_char_broadcast(s.data(), n, 0);
+            Object* po = neuron::python::methods.pickle2po(s);
             hoc_pushobj(hoc_temp_objptr(po));
         }
     }
 
     if (style == 3) {
-        size_t size;
-        char* rs = neuron::python::methods.call_picklef(s, size_t(npickle), narg, &size);
-        assert(rs);
-        delete[] rs;
+        auto rs = neuron::python::methods.call_picklef(s, narg);
+        assert(!rs.empty());
     } else {
         // printf("%d subworld hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
         hoc_call_objfunc(fname, narg, ob);
         // printf("%d subworld return from hoc call %s\n", nrnmpi_myid_world, fname->name);
     }
-    delete[] s;
     for (i = 0; i < ns; ++i) {
         delete[] sarg[i];
     }
@@ -1496,10 +1470,8 @@ void BBSImpl::return_args(int id) {
         delete[] s;
         break;
     case 3:
-        size_t n;
-        s = upkpickle(&n);  // pickled callable
-        i = upkint();       // arg manifest
-        delete[] s;
+        auto pickle = upkpickle();  // pickled callable
+        i = upkint();               // arg manifest
         break;
     }
     // now only args are left and ready to unpack.
