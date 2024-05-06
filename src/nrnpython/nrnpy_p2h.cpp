@@ -667,7 +667,7 @@ static PyObject* unpickle(const char* s, std::size_t len) {
 }
 
 static PyObject* unpickle(const std::vector<char>& s) {
-    unpickle(s.data(), s.size());
+    return unpickle(s.data(), s.size());
 }
 
 static Object* pickle2po(const std::vector<char>& s) {
