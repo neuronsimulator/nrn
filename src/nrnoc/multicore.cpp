@@ -1,4 +1,3 @@
-/* included by treeset.cpp */
 #include <nrnmpi.h>
 
 #include "hoclist.h"
