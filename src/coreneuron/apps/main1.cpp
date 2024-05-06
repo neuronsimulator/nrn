@@ -306,6 +306,7 @@ void nrn_init_and_load_data(int argc,
         // all final state, including the event queue will be sent back
         // to NEURON. Here there is some first time only
         // initialization and queue transfer.
+        // Transfer PatternStim from NEURON only when input is not specified by --pattern.
         direct_mode_initialize(corenrn_param.patternstim.empty());
         clear_spike_vectors();  // PreSyn send already recorded by NEURON
         (*nrn2core_part2_clean_)();

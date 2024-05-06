@@ -90,7 +90,6 @@ void direct_mode_initialize(bool send_patternstim) {
         nrn2core_PreSyn_flag_receive(tid);
     }
 
-    // Transfer patternstim mech from neuron when pattern stim data is not specified by --pattern,
     if (send_patternstim) {
         nrn2core_patstim_share_info();
     }
