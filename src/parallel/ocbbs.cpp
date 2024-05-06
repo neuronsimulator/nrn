@@ -1254,8 +1254,6 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
                 nrnmpi_int_broadcast(&size, 1, 0);
                 nrnmpi_char_broadcast(python_pickle.data(), size, 0);
             }
-            char* s = new char[python_pickle.size()];
-            std::copy(python_pickle.begin(), python_pickle.end(), s);
         } else {
             char* fname_str = upkstr();
             if (subworld) {
