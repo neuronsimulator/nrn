@@ -19,10 +19,6 @@ extern int numprocs(), myproc(), psync();
 #endif
 
 #if defined(WIN32)
-extern double erf(), erfc(); /* supplied by unix */
-#endif
-
-#if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
 
