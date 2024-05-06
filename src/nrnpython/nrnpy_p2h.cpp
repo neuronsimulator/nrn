@@ -656,14 +656,18 @@ static std::vector<char> po2pickle(Object* ho) {
     }
 }
 
-static PyObject* unpickle(const std::vector<char>& s) {
-    PyObject* ps = PyBytes_FromStringAndSize(s.data(), s.size());
+static PyObject* unpickle(const char* s, std::size_t len) {
+    PyObject* ps = PyBytes_FromStringAndSize(s, len);
     PyObject* arg = PyTuple_Pack(1, ps);
     PyObject* po = nrnpy_pyCallObject(loads, arg);
     assert(po);
     Py_XDECREF(arg);
     Py_XDECREF(ps);
     return po;
+}
+
+static PyObject* unpickle(const std::vector<char>& s) {
+    unpickle(s.data(), s.size());
 }
 
 static Object* pickle2po(const std::vector<char>& s) {
@@ -797,7 +801,7 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
             PyList_SetItem(plist, i, Py_None);
         } else {
-            PyObject* p = unpickle(std::vector<char>(buf + displ[i], buf + displ[i] + cnt[i]));
+            PyObject* p = unpickle(buf + displ[i], cnt[i]);
             PyList_SetItem(plist, i, p);
         }
     }
