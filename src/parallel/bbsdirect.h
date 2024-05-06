@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <nrnmpiuse.h>
 
 #include "bbsimpl.h"
@@ -25,8 +27,8 @@ class BBSDirect: public BBSImpl {
     int upkint() override;
     double upkdouble() override;
     void upkvec(int, double*) override;
-    char* upkstr() override;            // delete [] char* when finished
-    char* upkpickle(size_t*) override;  // delete [] char* when finished
+    char* upkstr() override;  // delete [] char* when finished
+    std::vector<char> upkpickle() override;
 
     // before posting use these
     void pkbegin() override;
@@ -34,7 +36,7 @@ class BBSDirect: public BBSImpl {
     void pkdouble(double) override;
     void pkvec(int, double*) override;
     void pkstr(const char*) override;
-    void pkpickle(const char*, size_t) override;
+    void pkpickle(const std::vector<char>&) override;
     void post(const char*) override;
 
     void post_todo(int parentid) override;
