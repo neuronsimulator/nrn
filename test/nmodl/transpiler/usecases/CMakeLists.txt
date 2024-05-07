@@ -6,7 +6,8 @@ set(NMODL_USECASE_DIRS
     parameter
     func_proc
     func_proc_pnt
-    nonspecific_current)
+    nonspecific_current
+    net_receive)
 
 file(GLOB NMODL_GOLDEN_REFERENCES "${CMAKE_CURRENT_SOURCE_DIR}/references/*")
 if(NMODL_GOLDEN_REFERENCES STREQUAL "")
