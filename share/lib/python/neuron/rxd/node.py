@@ -141,7 +141,7 @@ class Node(object):
             return self.region == condition
         raise RxDException("selector %r not supported for this node type" % condition)
 
-    def safe_satisfies(self, condition):
+    def _safe_satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
         Works the same as node.satisfies but replaces RxDException with False
