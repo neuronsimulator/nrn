@@ -1,5 +1,4 @@
-#ifndef bbsavestate_h
-#define bbsavestate_h
+#pragma once
 #include "neuron/container/data_handle.hpp"
 
 struct Object;
@@ -120,5 +119,3 @@ void bbss_save_done(void* bbss);
  *  cleanup. When this call returns, bbss will be invalid.
  */
 void bbss_restore_done(void* bbss);
-
-#endif

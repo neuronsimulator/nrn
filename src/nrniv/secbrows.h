@@ -1,5 +1,4 @@
-#ifndef secbrowser_h
-#define secbrowser_h
+#pragma once
 
 #include <InterViews/monoglyph.h>
 #include "ocbrowsr.h"
@@ -94,5 +93,3 @@ class PointProcessBrowser: public OcBrowser {
   private:
     PPBImpl* ppbi_;
 };
-
-#endif

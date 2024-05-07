@@ -29,8 +29,7 @@ for fast insertion, deletion, iteration
  * UList - list object.
  */
 
-#ifndef htlist_h
-#define htlist_h
+#pragma once
 
 class HTList {
   public:
@@ -85,4 +84,3 @@ inline void* HTList::operator()() {
 inline void* HTList::vptr() {
     return _object;
 }
-#endif

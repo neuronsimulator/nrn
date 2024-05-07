@@ -1,5 +1,4 @@
-#ifndef nrnran123_h
-#define nrnran123_h
+#pragma once
 
 /* interface to Random123 */
 /* http://www.thesalmons.org/john/random123/papers/random123sc11.pdf */
@@ -126,5 +125,3 @@ extern nrnran123_array4x32 nrnran123_iran3(std::uint32_t seq,
                                            std::uint32_t id1,
                                            std::uint32_t id2,
                                            std::uint32_t id3);
-
-#endif

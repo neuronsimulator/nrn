@@ -3,7 +3,7 @@
 #include "neuron/model_data.hpp"
 #include "nrn_ansi.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <thread>
 

@@ -1,5 +1,4 @@
-#ifndef graph_h
-#define graph_h
+#pragma once
 
 #include "neuron/container/data_handle.hpp"
 #include <OS/list.h>
@@ -516,5 +515,3 @@ class BrushPalette {
 };
 extern ColorPalette* colors;
 extern BrushPalette* brushes;
-
-#endif

@@ -4,8 +4,7 @@ be of the form "type foo(type arg, ...)". Moreover, the * needs to be attached
 to the type, e.g. `T*` is valid, but `T *` isn't.
 */
 
-#ifndef nrnmpidec_h
-#define nrnmpidec_h
+#pragma once
 #include <nrnmpiuse.h>
 #include <cstdint>
 using longdbl = long double;
@@ -131,6 +130,4 @@ extern int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
 /* clang-format on */
 }
-
-#endif /* NRNMPI */
-#endif /* nrnmpidec_h */
+#endif

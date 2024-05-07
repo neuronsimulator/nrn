@@ -1,5 +1,4 @@
-#ifndef cbwidget_h
-#define cbwidget_h
+#pragma once
 
 #include <InterViews/action.h>
 class Graph;
@@ -21,5 +20,3 @@ class ColorBrushWidget: public Action, public Observer {
     PolyGlyph* bb_;
     DismissableWindow* w_;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef cvodeobj_h
-#define cvodeobj_h
+#pragma once
 
 #include "nrnmpi.h"
 #include "nrnneosm.h"
@@ -268,5 +267,3 @@ class Cvode {
     int opmode_;  // 1 advance, 2 interpolate, 3 init; for testing
 #endif            // NRNMPI
 };
-
-#endif

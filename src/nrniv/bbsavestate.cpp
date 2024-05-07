@@ -771,10 +771,9 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
     if (nrnmpi_myid == 0) {  // save global time
-        BBSS_Cnt* io = new BBSS_Cnt();
-        io->d(1, nrn_threads->_t);
-        *global_size = io->bytecnt();
-        delete io;
+        BBSS_Cnt io{};
+        io.d(1, nrn_threads->_t);
+        *global_size = io.bytecnt();
     }
     *len = ss->counts(gids, sizes);
     return ss;
@@ -782,17 +781,15 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
 void bbss_save_global(void* bbss, char* buffer,
                       int sz) {  // call only on host 0
     usebin_ = 1;
-    BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
-    io->d(1, nrn_threads->_t);
-    delete io;
+    BBSS_BufferOut io(buffer, sz);
+    io.d(1, nrn_threads->_t);
 }
 void bbss_restore_global(void* bbss, char* buffer,
                          int sz) {  // call on all hosts
     usebin_ = 1;
-    BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
-    io->d(1, nrn_threads->_t);
+    BBSS_BufferIn io(buffer, sz);
+    io.d(1, nrn_threads->_t);
     t = nrn_threads->_t;
-    delete io;
     bbss_restore_begin();
 }
 void bbss_save(void* bbss, int gid, char* buffer, int sz) {

@@ -1,4 +1,5 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+#include <cstring>
 #include "model.h"
 #include "units.h"
 #include "parse1.hpp"

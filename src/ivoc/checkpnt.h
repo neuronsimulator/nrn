@@ -1,5 +1,4 @@
-#ifndef checkpoint_h
-#define checkpoint_h
+#pragma once
 
 #define CKPT(arg1, arg2)   \
     if (!arg1.xdr(arg2)) { \
@@ -17,5 +16,3 @@ class Checkpoint {
     bool xdr(long&);
     bool xdr(Object*&);
 };
-
-#endif

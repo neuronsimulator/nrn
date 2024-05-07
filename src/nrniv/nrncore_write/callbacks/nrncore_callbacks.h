@@ -1,5 +1,4 @@
-#ifndef NRN_NRNCORE_CALLBACKS_H
-#define NRN_NRNCORE_CALLBACKS_H
+#pragma once
 
 #include <fstream>
 #include <sstream>
@@ -17,7 +16,7 @@ typedef struct core2nrn_callback_t {
     CNB f;
 } core2nrn_callback_t;
 
-// Mechanism type to be used from stdindex2ptr (in CoreNeuron) and nrn_dblpntr2nrncore.
+// Mechanism type to be used from legacy_index2pointer (in CoreNeuron) and nrn_dblpntr2nrncore.
 // Values of the mechanism types should be negative numbers to avoid any conflict with
 // mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };
@@ -97,6 +96,18 @@ int nrnthread_dat2_vecplay_inst(int tid,
                                 int& last_index,
                                 int& discon_index,
                                 int& ubound_index);
+void nrnthread_dat3_cell_count(int& cell_count);
+void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_seclist);
+void nrnthread_dat3_secmapping(int i_c,
+                               int i_sec,
+                               std::string& sclname,
+                               int& nsec,
+                               int& nseg,
+                               size_t& total_lfp_factors,
+                               int& n_electrodes,
+                               std::vector<int>& data_sec,
+                               std::vector<int>& data_seg,
+                               std::vector<double>& data_lfp);
 
 int* datum2int(int type,
                Memb_list* ml,
@@ -215,6 +226,9 @@ static core2nrn_callback_t cnbs[] = {
     {"nrn2core_get_dat2_vecplay_", (CNB) nrnthread_dat2_vecplay},
     {"nrn2core_get_dat2_vecplay_inst_", (CNB) nrnthread_dat2_vecplay_inst},
     {"nrn2core_part2_clean_", (CNB) part2_clean},
+    {"nrn2core_get_dat3_cell_count_", (CNB) nrnthread_dat3_cell_count},
+    {"nrn2core_get_dat3_cellmapping_", (CNB) nrnthread_dat3_cellmapping},
+    {"nrn2core_get_dat3_secmapping_", (CNB) nrnthread_dat3_secmapping},
 
     {"nrn2core_get_trajectory_requests_", (CNB) nrnthread_get_trajectory_requests},
     {"nrn2core_trajectory_values_", (CNB) nrnthread_trajectory_values},
@@ -248,5 +262,3 @@ static core2nrn_callback_t cnbs[] = {
 
 
 void map_coreneuron_callbacks(void* handle);
-
-#endif  // NRN_NRNCORE_CALLBACKS_H
