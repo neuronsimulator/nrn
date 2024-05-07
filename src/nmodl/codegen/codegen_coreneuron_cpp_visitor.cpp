@@ -303,11 +303,6 @@ void CodegenCoreneuronCppVisitor::print_atomic_reduction_pragma() {
 }
 
 
-void CodegenCoreneuronCppVisitor::print_device_method_annotation() {
-    // backend specific, nothing for cpu
-}
-
-
 void CodegenCoreneuronCppVisitor::print_global_method_annotation() {
     // backend specific, nothing for cpu
 }
@@ -450,7 +445,6 @@ void CodegenCoreneuronCppVisitor::print_table_check_function(const Block& node) 
     auto float_type = default_float_data_type();
 
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->fmt_push_block("void check_{}({})",
                             method_name(name),
                             get_parameter_str(internal_params));
@@ -1079,7 +1073,6 @@ std::string CodegenCoreneuronCppVisitor::conc_write_statement(const std::string&
 
 void CodegenCoreneuronCppVisitor::print_first_pointer_var_index_getter() {
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int first_pointer_var_index()");
     printer->fmt_line("return {};", info.first_pointer_var_index);
     printer->pop_block();
@@ -1088,7 +1081,6 @@ void CodegenCoreneuronCppVisitor::print_first_pointer_var_index_getter() {
 
 void CodegenCoreneuronCppVisitor::print_first_random_var_index_getter() {
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int first_random_var_index()");
     printer->fmt_line("return {};", info.first_random_var_index);
     printer->pop_block();
@@ -1097,13 +1089,11 @@ void CodegenCoreneuronCppVisitor::print_first_random_var_index_getter() {
 
 void CodegenCoreneuronCppVisitor::print_num_variable_getter() {
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int float_variables_size()");
     printer->fmt_line("return {};", float_variables_size());
     printer->pop_block();
 
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int int_variables_size()");
     printer->fmt_line("return {};", int_variables_size());
     printer->pop_block();
@@ -1115,7 +1105,6 @@ void CodegenCoreneuronCppVisitor::print_net_receive_arg_size_getter() {
         return;
     }
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int num_net_receive_args()");
     printer->fmt_line("return {};", info.num_net_receive_parameters);
     printer->pop_block();
@@ -1124,7 +1113,6 @@ void CodegenCoreneuronCppVisitor::print_net_receive_arg_size_getter() {
 
 void CodegenCoreneuronCppVisitor::print_mech_type_getter() {
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline int get_mech_type()");
     // false => get it from the host-only global struct, not the instance structure
     printer->fmt_line("return {};", get_variable_name("mech_type", false));
@@ -1134,7 +1122,6 @@ void CodegenCoreneuronCppVisitor::print_mech_type_getter() {
 
 void CodegenCoreneuronCppVisitor::print_memb_list_getter() {
     printer->add_newline(2);
-    print_device_method_annotation();
     printer->push_block("static inline Memb_list* get_memb_list(NrnThread* nt)");
     printer->push_block("if (!nt->_ml_list)");
     printer->add_line("return nullptr;");
@@ -2903,7 +2890,6 @@ void CodegenCoreneuronCppVisitor::print_net_send_buffering() {
     }
 
     printer->add_newline(2);
-    print_device_method_annotation();
     auto args =
         "const NrnThread* nt, NetSendBuffer_t* nsb, int type, int vdata_index, "
         "int weight_index, int point_index, double t, double flag";
@@ -3183,7 +3169,6 @@ void CodegenCoreneuronCppVisitor::print_nrn_current(const BreakpointBlock& node)
     const auto& args = internal_method_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
-    print_device_method_annotation();
             printer->fmt_push_block("inline double nrn_current_{}({})",
                                     info.mod_suffix,
                                     get_parameter_str(args));

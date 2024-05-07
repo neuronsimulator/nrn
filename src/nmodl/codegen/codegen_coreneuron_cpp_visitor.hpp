@@ -251,14 +251,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print the backend specific device method annotation
-     *
-     * \note This is not used for the C++ backend
-     */
-    virtual void print_device_method_annotation();
-
-
-    /**
      * Print backend specific global method annotation
      *
      * \note This is not used for the C++ backend
@@ -1147,7 +1139,6 @@ void CodegenCoreneuronCppVisitor::print_function_declaration(const T& node,
         return_type = default_float_data_type();
     }
 
-    print_device_method_annotation();
     printer->add_indent();
     printer->fmt_text("inline {} {}({})",
                       return_type,

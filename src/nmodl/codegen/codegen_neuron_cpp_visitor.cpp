@@ -1447,7 +1447,6 @@ void CodegenNeuronCppVisitor::print_nrn_current(const BreakpointBlock& node) {
     const auto& args = nrn_current_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
-    // print_device_method_annotation();
     printer->fmt_push_block("inline double nrn_current_{}({})",
                             info.mod_suffix,
                             get_parameter_str(args));
