@@ -1033,7 +1033,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
                       int_variables_size());
 
     for (int i = 0; i < codegen_int_variables_size; ++i) {
-        const auto& int_var = codegen_int_variables[i];
         if (i != info.semantics[i].index) {
             throw std::runtime_error("Broken logic.");
         }
