@@ -108,8 +108,8 @@ int MessageValue::pkstr(const char* str) {
     return 0;
 }
 
-int MessageValue::pkpickle(const char* bytes, size_t n) {
-    args_.emplace_back(std::vector<char>(bytes, bytes + n));
+int MessageValue::pkpickle(const std::vector<char>& s) {
+    args_.emplace_back(std::vector<char>(s));
     return 0;
 }
 
@@ -160,13 +160,10 @@ int MessageValue::upkstr(char* s) {
     return -1;
 }
 
-int MessageValue::upkpickle(char* s, size_t* n) {
+int MessageValue::upkpickle(std::vector<char>& s) {
     const auto& mi = args_.front();
     if (const auto* val = std::get_if<std::vector<char>>(args_.data() + index_)) {
-        *n = val->size();
-        for (std::size_t i = 0; i < *n; ++i) {
-            s[i] = val->at(i);
-        }
+        s = *val;
         ++index_;
         return 0;
     }
