@@ -1217,6 +1217,8 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
     printer->fmt_line("auto node_data = make_node_data_{}(*_nt, *_ml_arg);", info.mod_suffix);
 
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
+    printer->add_line("auto* const _ml = &_lmr;");
+    printer->add_line("auto* _thread = _ml_arg->_thread;");
 }
 
 
@@ -1226,6 +1228,7 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
     print_global_function_common_code(BlockType::Initial);
 
     printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_line("auto& _ppvar = _ml_arg->pdata[id];");
     print_initial_block(info.initial_node);
     printer->pop_block();
 

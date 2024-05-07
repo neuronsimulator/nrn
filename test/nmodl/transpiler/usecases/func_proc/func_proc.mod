@@ -23,3 +23,7 @@ PROCEDURE set_a_x() {
     LOCAL a
     a = x
 }
+
+INITIAL {
+    set_a_x()
+}
