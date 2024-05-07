@@ -5,12 +5,17 @@ UNITS {
 NEURON {
         SUFFIX leonhard
         NONSPECIFIC_CURRENT il
+        RANGE c
 }
 
 ASSIGNED {
         il (mA/cm2)
 }
 
+PARAMETER {
+    c = 0.005
+}
+
 BREAKPOINT {
-        il = 0.005 * (v - 1.5)
+        il = c * (v - 1.5)
 }
