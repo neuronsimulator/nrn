@@ -31,5 +31,6 @@ set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
 # Create a static library from mod files to be included in nrniv
 add_library(default_mods STATIC ${NRN_MODFILE_CPP})
+add_dependencies(default_mods copy_headers_to_build)
 target_include_directories(default_mods PRIVATE "${PROJECT_BINARY_DIR}/include")
 set_property(TARGET default_mods PROPERTY POSITION_INDEPENDENT_CODE ON)
