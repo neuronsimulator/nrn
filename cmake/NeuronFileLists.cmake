@@ -100,11 +100,9 @@ set(OC_FILE_LIST
     memory.cpp
     mswinprt.cpp
     nonlin.cpp
-    ocerf.cpp
     plot.cpp
     plt.cpp
     scoprand.cpp
-    settext.cpp
     symbol.cpp
     version.cpp
     x.cpp
