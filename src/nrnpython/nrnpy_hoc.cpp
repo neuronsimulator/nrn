@@ -110,7 +110,7 @@ static void add2topdict(PyObject*);
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 #if 1
-#include <hoccontext.h>
+#include "hoccontext.h"
 #else
 extern Object* hoc_thisobject;
 #define HocTopContextSet  \

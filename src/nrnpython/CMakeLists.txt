@@ -15,6 +15,20 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 # =============================================================================
 set(nrnpython_lib_list)
 
+# nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
+set(NRNPYTHON_FILES_LIST
+    nrnpython.cpp
+    nrnpy_hoc.cpp
+    nrnpy_nrn.cpp
+    nrnpy_p2h.cpp
+    grids.cpp
+    rxd.cpp
+    rxd_extracellular.cpp
+    rxd_intracellular.cpp
+    rxd_vol.cpp
+    rxd_marching_cubes.cpp
+    rxd_llgramarea.cpp)
+
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
@@ -38,7 +52,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+    add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
     target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
     if(NRN_LINK_AGAINST_PYTHON)
@@ -48,6 +62,25 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
   endforeach()
+else()
+    add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
+    set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_include_directories(nrnpython PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+    target_include_directories(nrnpython PUBLIC "..")
+    target_include_directories(nrnpython PUBLIC "../oc")
+    target_include_directories(nrnpython PUBLIC "${PROJECT_BINARY_DIR}/src/oc")
+    target_include_directories(nrnpython PUBLIC "../nrniv")
+    target_include_directories(nrnpython PUBLIC "../nrnoc")
+    target_include_directories(nrnpython PUBLIC "../ivoc")
+    target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
+    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+    if(NRN_ENABLE_INTERVIEWS)
+        target_include_directories(nrnpython PUBLIC "${IV_INCLUDE_DIR}")
+    else()
+        target_include_directories(nrnpython PUBLIC "${PROJECT_SOURCE_DIR}/src/ivos")
+    endif()
+    target_include_directories(nrnpython PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
+    target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
