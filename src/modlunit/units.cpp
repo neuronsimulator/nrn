@@ -112,11 +112,6 @@ static int Getc(FILE* inp) {
 #define UNIT_STK_SIZE 20
 static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
-static std::string hoc_dos2unixpath(std::string d) {
-    std::replace(d.begin(), d.end(), '\\', '/');
-    return d;
-}
-
 static std::string neuronhome() {
 #if defined(MINGW)
     std::string buf(256, '\0');
@@ -130,8 +125,8 @@ static std::string neuronhome() {
     std::replace(buf.begin(), buf.end(), '\\', '/');
     return buf;
 #else
-    return std::getenv("NEURONHOME");
-#endif
+    char* buf = std::getenv("NEURONHOME");
+    return (buf != nullptr) ? std::string(buf) : std::string();
 }
 
 

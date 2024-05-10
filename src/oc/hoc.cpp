@@ -662,10 +662,6 @@ void onintr(int /* sig */) /* catch interrupt */
     IGNORE(signal(SIGINT, onintr));
 }
 
-#if DOS
-#include <float.h>
-#endif
-
 static int coredump;
 
 void hoc_coredump_on_error(void) {
@@ -731,9 +727,6 @@ void print_bt() {
 void fpecatch(int /* sig */) /* catch floating point exceptions */
 {
     /*ARGSUSED*/
-#if DOS
-    _fpreset();
-#endif
 #if NRN_FLOAT_EXCEPTION
     matherr1();
 #endif

@@ -43,9 +43,6 @@ void hoc_get_config_key();
 void hoc_get_config_val();
 void hoc_num_config_keys();
 extern int nrn_feenableexcept_;
-#if DOS
-extern void hoc_settext(void);
-#endif
 #if defined(WIN32)
 extern void hoc_win_exec();
 #endif
