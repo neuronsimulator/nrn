@@ -127,6 +127,7 @@ static std::string neuronhome() {
 #else
     char* buf = std::getenv("NEURONHOME");
     return (buf != nullptr) ? std::string(buf) : std::string();
+#endif
 }
 
 
