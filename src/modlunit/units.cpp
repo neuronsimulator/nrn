@@ -131,7 +131,8 @@ static std::string neuronhome() {
     std::replace(buf.begin(), buf.end(), '\\', '/');
     return buf;
 #else
-    return std::getenv("NEURONHOME");
+    char* buf = std::getenv("NEURONHOME");
+    return (buf != nullptr) ? std::string(buf) : std::string();
 #endif
 }
 
