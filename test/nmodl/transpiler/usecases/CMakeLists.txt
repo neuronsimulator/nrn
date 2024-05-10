@@ -1,13 +1,14 @@
 set(NMODL_USECASE_DIRS
     cnexp_scalar
-    # cnexp_array
-    global_breakpoint
-    point_process
-    parameter
+    cnexp_array
     func_proc
     func_proc_pnt
+    global_breakpoint
+    hodgkin_huxley
     nonspecific_current
-    net_receive)
+    net_receive
+    point_process
+    parameter)
 
 file(GLOB NMODL_GOLDEN_REFERENCES "${CMAKE_CURRENT_SOURCE_DIR}/references/*")
 if(NMODL_GOLDEN_REFERENCES STREQUAL "")

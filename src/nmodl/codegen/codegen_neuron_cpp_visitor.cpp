@@ -222,6 +222,16 @@ void CodegenNeuronCppVisitor::print_function_or_procedure(const ast::Block& node
         printer->fmt_line("int ret_{} = 0;", name);
     }
 
+    if (node.is_procedure_block() || node.is_function_block()) {
+        const auto& parameters = node.get_parameters();
+        auto result = std::find_if(parameters.begin(), parameters.end(), [](auto var) {
+            return var.get()->get_node_name() == "v";
+        });
+        if (result == parameters.end()) {
+            printer->fmt_line("auto v = inst.{}[id];", naming::VOLTAGE_UNUSED_VARIABLE);
+        }
+    }
+
     print_statement_block(*node.get_statement_block(), false, false);
     printer->fmt_line("return ret_{};", name);
     printer->pop_block();
@@ -1236,7 +1246,13 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
     print_global_function_common_code(BlockType::Initial);
 
     printer->push_block("for (int id = 0; id < nodecount; id++)");
-    printer->add_line("auto& _ppvar = _ml_arg->pdata[id];");
+    printer->add_multi_line(R"CODE(
+int node_id = node_data.nodeindices[id];
+auto* _ppvar = _ml_arg->pdata[id];
+auto v = node_data.node_voltages[node_id];
+)CODE");
+    printer->fmt_line("inst.{}[id] = v;", naming::VOLTAGE_UNUSED_VARIABLE);
+
     print_initial_block(info.initial_node);
     printer->pop_block();
 
@@ -1367,6 +1383,13 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
                                   ion.name,
                                   ion.variable_index(ion_var_name));
             }
+            // assign derivatives of the current as well
+            else if (ion.is_current_derivative(ion_var_name)) {
+                printer->fmt_line("_ppvar[{}] = _nrn_mechanism_get_param_handle({}_prop, {});",
+                                  i,
+                                  ion.name,
+                                  ion.variable_index(ion_var_name));
+            }
             //}
         }
     }
@@ -1392,6 +1415,11 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
     print_global_function_common_code(BlockType::State);
 
     printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_multi_line(R"CODE(
+int node_id = node_data.nodeindices[id];
+auto* _ppvar = _ml_arg->pdata[id];
+auto v = node_data.node_voltages[node_id];
+)CODE");
 
     /**
      * \todo Eigen solver node also emits IonCurVar variable in the functor
