@@ -28,20 +28,20 @@ set(NRNPYTHON_FILES_LIST
     rxd_marching_cubes.cpp
     rxd_llgramarea.cpp)
 
-  set(INCLUDE_DIRS
-      ..
-      ../oc
-      ../nrnoc
-      ../ivoc
-      ../nrniv
-      ../nrnmpi
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${PROJECT_BINARY_DIR}/src/oc)
-  if(NRN_ENABLE_INTERVIEWS)
-    list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
-  else()
-    list(APPEND INCLUDE_DIRS ../ivos)
-  endif()
+set(INCLUDE_DIRS
+    ..
+    ../oc
+    ../nrnoc
+    ../ivoc
+    ../nrniv
+    ../nrnmpi
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/src/oc)
+if(NRN_ENABLE_INTERVIEWS)
+  list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
+else()
+  list(APPEND INCLUDE_DIRS ../ivos)
+endif()
 
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
