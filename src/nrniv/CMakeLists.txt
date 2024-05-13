@@ -447,10 +447,6 @@ endif()
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
-endif()
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
