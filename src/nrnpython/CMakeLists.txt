@@ -32,7 +32,6 @@ set(NRNPYTHON_FILES_LIST
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
-      .
       ..
       ../oc
       ../nrnoc
