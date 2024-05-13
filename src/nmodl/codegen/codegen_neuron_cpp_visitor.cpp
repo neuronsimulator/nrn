@@ -1812,10 +1812,11 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
     const auto& point_process = get_variable_name("point_process", /* use_instance */ false);
     const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
 
-    printer->fmt_text("net_send(/* tqitem */ &{}, {}, {}.get<Point_process*>(), t + ",
+    printer->fmt_text("net_send(/* tqitem */ &{}, {}, {}.get<Point_process*>(), {} + ",
                       tqitem,
                       weight_pointer,
-                      point_process);
+                      point_process,
+                      get_variable_name("t"));
     print_vector_elements(arguments, ", ");
     printer->add_text(')');
 }

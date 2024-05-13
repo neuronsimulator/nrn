@@ -7,6 +7,7 @@ set(NMODL_USECASE_DIRS
     hodgkin_huxley
     nonspecific_current
     net_receive
+    net_send
     point_process
     parameter)
 
