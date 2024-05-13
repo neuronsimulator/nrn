@@ -41,7 +41,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ../gnu
       ../nrnmpi
       ${PROJECT_BINARY_DIR}/src/nrnpython
-      ${PROJECT_BINARY_DIR}/src/ivos
       ${PROJECT_BINARY_DIR}/src/oc)
   if(NRN_ENABLE_INTERVIEWS)
     list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
