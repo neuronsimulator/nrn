@@ -15,7 +15,6 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 # =============================================================================
 set(nrnpython_lib_list)
 
-# nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp
@@ -29,23 +28,23 @@ set(NRNPYTHON_FILES_LIST
     rxd_marching_cubes.cpp
     rxd_llgramarea.cpp)
 
-# user has selected dynamic python support (could be multiple versions)
-if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(INCLUDE_DIRS
       ..
       ../oc
       ../nrnoc
       ../ivoc
       ../nrniv
-      ../gnu
       ../nrnmpi
-      ${PROJECT_BINARY_DIR}/src/nrnpython
+      ${CMAKE_CURRENT_BINARY_DIR}
       ${PROJECT_BINARY_DIR}/src/oc)
   if(NRN_ENABLE_INTERVIEWS)
     list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
   else()
     list(APPEND INCLUDE_DIRS ../ivos)
   endif()
+
+# user has selected dynamic python support (could be multiple versions)
+if(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
@@ -64,17 +63,9 @@ else()
   add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
   add_dependencies(nrnpython generated_source_files)
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
-  target_include_directories(nrnpython PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
-  target_include_directories(nrnpython PUBLIC ".." "../oc" "../nrniv" "../nrnoc" "../ivoc"
-                                              "../nrnmpi")
-  target_include_directories(nrnpython PUBLIC "${PROJECT_BINARY_DIR}/src/oc")
+  target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
   target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
-  if(NRN_ENABLE_INTERVIEWS)
-    target_include_directories(nrnpython PUBLIC "${IV_INCLUDE_DIR}")
-  else()
-    target_include_directories(nrnpython PUBLIC "${PROJECT_SOURCE_DIR}/src/ivos")
-  endif()
   target_include_directories(nrnpython PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
 endif()
