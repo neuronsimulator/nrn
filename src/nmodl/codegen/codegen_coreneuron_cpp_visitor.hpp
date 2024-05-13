@@ -353,28 +353,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Check if the given name exist in the symbol
-     * \return \c return a tuple <true, array_length> if variable
-     *            is an array otherwise <false, 0>
-     */
-    std::tuple<bool, int> check_if_var_is_array(const std::string& name);
-
-
-    /**
-     * Print \c check\_function() for functions or procedure using table
-     * \param node The AST node representing a function or procedure block
-     */
-    void print_table_check_function(const ast::Block& node);
-
-
-    /**
-     * Print replacement function for function or procedure using table
-     * \param node The AST node representing a function or procedure block
-     */
-    void print_table_replacement_function(const ast::Block& node);
-
-
-    /**
      * Print check_table functions
      */
     void print_check_table_thread_function();
@@ -1082,15 +1060,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     virtual void visit_watch_statement(const ast::WatchStatement& node) override;
 
 
-    /**
-     * Print prototype declarations of functions or procedures
-     * \tparam T   The AST node type of the node (must be of nmodl::ast::Ast or subclass)
-     * \param node The AST node representing the function or procedure block
-     * \param name A user defined name for the function
-     */
-    template <typename T>
-    void print_function_declaration(const T& node, const std::string& name);
-
 
   public:
     /****************************************************************************************/
@@ -1113,40 +1082,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     void print_mechanism_range_var_structure(bool print_initializers) override;
 };
 
-
-/**
- * \details If there is an argument with name (say alpha) same as range variable (say alpha),
- * we want to avoid it being printed as instance->alpha. And hence we disable variable
- * name lookup during prototype declaration. Note that the name of procedure can be
- * different in case of table statement.
- */
-template <typename T>
-void CodegenCoreneuronCppVisitor::print_function_declaration(const T& node,
-                                                             const std::string& name) {
-    enable_variable_name_lookup = false;
-    auto type = default_float_data_type();
-
-    // internal and user provided arguments
-    auto internal_params = internal_method_parameters();
-    const auto& params = node.get_parameters();
-    for (const auto& param: params) {
-        internal_params.emplace_back("", type, "", param.get()->get_node_name());
-    }
-
-    // procedures have "int" return type by default
-    const char* return_type = "int";
-    if (node.is_function_block()) {
-        return_type = default_float_data_type();
-    }
-
-    printer->add_indent();
-    printer->fmt_text("inline {} {}({})",
-                      return_type,
-                      method_name(name),
-                      get_parameter_str(internal_params));
-
-    enable_variable_name_lookup = true;
-}
 
 /** \} */  // end of codegen_backends
 

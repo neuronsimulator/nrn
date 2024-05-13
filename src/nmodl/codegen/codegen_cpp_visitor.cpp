@@ -1175,5 +1175,235 @@ void CodegenCppVisitor::visit_program(const Program& node) {
     print_codegen_routines();
 }
 
+
+void CodegenCppVisitor::print_table_replacement_function(const ast::Block& node) {
+    auto name = node.get_node_name();
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->get_table_vars();
+    auto with = statement->get_with()->eval();
+    auto use_table_var = get_variable_name(naming::USE_TABLE_VARIABLE);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
+    auto function_name = method_name("f_" + name);
+
+    printer->add_newline(2);
+    print_function_declaration(node, name);
+    printer->push_block();
+    {
+        const auto& params = node.get_parameters();
+        printer->fmt_push_block("if ({} == 0)", use_table_var);
+        if (node.is_procedure_block()) {
+            printer->fmt_line("{}({}, {});",
+                              function_name,
+                              internal_method_arguments(),
+                              params[0].get()->get_node_name());
+            printer->add_line("return 0;");
+        } else {
+            printer->fmt_line("return {}({}, {});",
+                              function_name,
+                              internal_method_arguments(),
+                              params[0].get()->get_node_name());
+        }
+        printer->pop_block();
+
+        printer->fmt_line("double xi = {} * ({} - {});",
+                          mfac_name,
+                          params[0].get()->get_node_name(),
+                          tmin_name);
+        printer->push_block("if (isnan(xi))");
+        if (node.is_procedure_block()) {
+            for (const auto& var: table_variables) {
+                auto var_name = get_variable_name(var->get_node_name());
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line("{}[{}] = xi;", var_name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = xi;", var_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            printer->add_line("return xi;");
+        }
+        printer->pop_block();
+
+        printer->fmt_push_block("if (xi <= 0. || xi >= {}.)", with);
+        printer->fmt_line("int index = (xi <= 0.) ? 0 : {};", with);
+        if (node.is_procedure_block()) {
+            for (const auto& variable: table_variables) {
+                auto var_name = variable->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
+                auto [is_array, array_length] = check_if_var_is_array(var_name);
+                if (is_array) {
+                    for (int j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{}[{}] = {}[{}][index];", instance_name, j, table_name, j);
+                    }
+                } else {
+                    printer->fmt_line("{} = {}[index];", instance_name, table_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            auto table_name = get_variable_name("t_" + name);
+            printer->fmt_line("return {}[index];", table_name);
+        }
+        printer->pop_block();
+
+        printer->add_line("int i = int(xi);");
+        printer->add_line("double theta = xi - double(i);");
+        if (node.is_procedure_block()) {
+            for (const auto& var: table_variables) {
+                auto var_name = var->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                auto table_name = get_variable_name("t_" + var_name);
+                auto [is_array, array_length] = check_if_var_is_array(var->get_node_name());
+                if (is_array) {
+                    for (size_t j = 0; j < array_length; j++) {
+                        printer->fmt_line(
+                            "{0}[{1}] = {2}[{1}][i] + theta*({2}[{1}][i+1]-{2}[{1}][i]);",
+                            instance_name,
+                            j,
+                            table_name);
+                    }
+                } else {
+                    printer->fmt_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);",
+                                      instance_name,
+                                      table_name);
+                }
+            }
+            printer->add_line("return 0;");
+        } else {
+            auto table_name = get_variable_name("t_" + name);
+            printer->fmt_line("return {0}[i] + theta * ({0}[i+1] - {0}[i]);", table_name);
+        }
+    }
+    printer->pop_block();
+}
+
+
+void CodegenCppVisitor::print_table_check_function(const Block& node) {
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->get_table_vars();
+    auto depend_variables = statement->get_depend_vars();
+    const auto& from = statement->get_from();
+    const auto& to = statement->get_to();
+    auto name = node.get_node_name();
+    auto internal_params = internal_method_parameters();
+    auto with = statement->get_with()->eval();
+    auto use_table_var = get_variable_name(naming::USE_TABLE_VARIABLE);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
+    auto float_type = default_float_data_type();
+
+    printer->add_newline(2);
+    printer->fmt_push_block("void check_{}({})",
+                            method_name(name),
+                            get_parameter_str(internal_params));
+    {
+        printer->fmt_push_block("if ({} == 0)", use_table_var);
+        printer->add_line("return;");
+        printer->pop_block();
+
+        printer->add_line("static bool make_table = true;");
+        for (const auto& variable: depend_variables) {
+            printer->fmt_line("static {} save_{};", float_type, variable->get_node_name());
+        }
+
+        for (const auto& variable: depend_variables) {
+            const auto& var_name = variable->get_node_name();
+            const auto& instance_name = get_variable_name(var_name);
+            printer->fmt_push_block("if (save_{} != {})", var_name, instance_name);
+            printer->add_line("make_table = true;");
+            printer->pop_block();
+        }
+
+        printer->push_block("if (make_table)");
+        {
+            printer->add_line("make_table = false;");
+
+            printer->add_indent();
+            printer->add_text(tmin_name, " = ");
+            from->accept(*this);
+            printer->add_text(';');
+            printer->add_newline();
+
+            printer->add_indent();
+            printer->add_text("double tmax = ");
+            to->accept(*this);
+            printer->add_text(';');
+            printer->add_newline();
+
+
+            printer->fmt_line("double dx = (tmax-{}) / {}.;", tmin_name, with);
+            printer->fmt_line("{} = 1./dx;", mfac_name);
+
+            printer->fmt_line("double x = {};", tmin_name);
+            printer->fmt_push_block("for (std::size_t i = 0; i < {}; x += dx, i++)", with + 1);
+            auto function = method_name("f_" + name);
+            if (node.is_procedure_block()) {
+                printer->fmt_line("{}({}, x);", function, internal_method_arguments());
+                for (const auto& variable: table_variables) {
+                    auto var_name = variable->get_node_name();
+                    auto instance_name = get_variable_name(var_name);
+                    auto table_name = get_variable_name("t_" + var_name);
+                    auto [is_array, array_length] = check_if_var_is_array(var_name);
+                    if (is_array) {
+                        for (int j = 0; j < array_length; j++) {
+                            printer->fmt_line(
+                                "{}[{}][i] = {}[{}];", table_name, j, instance_name, j);
+                        }
+                    } else {
+                        printer->fmt_line("{}[i] = {};", table_name, instance_name);
+                    }
+                }
+            } else {
+                auto table_name = get_variable_name("t_" + name);
+                printer->fmt_line("{}[i] = {}({}, x);",
+                                  table_name,
+                                  function,
+                                  internal_method_arguments());
+            }
+            printer->pop_block();
+
+            for (const auto& variable: depend_variables) {
+                auto var_name = variable->get_node_name();
+                auto instance_name = get_variable_name(var_name);
+                printer->fmt_line("save_{} = {};", var_name, instance_name);
+            }
+        }
+        printer->pop_block();
+    }
+    printer->pop_block();
+}
+
+const ast::TableStatement* CodegenCppVisitor::get_table_statement(const ast::Block& node) {
+    const auto& table_statements = collect_nodes(node, {AstNodeType::TABLE_STATEMENT});
+
+    if (table_statements.size() != 1) {
+        auto message = fmt::format("One table statement expected in {} found {}",
+                                   node.get_node_name(),
+                                   table_statements.size());
+        throw std::runtime_error(message);
+    }
+    return dynamic_cast<const ast::TableStatement*>(table_statements.front().get());
+}
+
+
+std::tuple<bool, int> CodegenCppVisitor::check_if_var_is_array(const std::string& name) {
+    auto symbol = program_symtab->lookup_in_scope(name);
+    if (!symbol) {
+        throw std::runtime_error(
+            fmt::format("CodegenCppVisitor:: {} not found in symbol table!", name));
+    }
+    if (symbol->is_array()) {
+        return {true, symbol->get_length()};
+    } else {
+        return {false, 0};
+    }
+}
 }  // namespace codegen
 }  // namespace nmodl
