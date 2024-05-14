@@ -1,16 +1,15 @@
 #! /usr/bin/env bash
 set -eu
 
+if [[ $# -ne 3 ]]
+then
+  echo "Usage: $0 NMODL USECASE_DIR OUTPUT_DIR"
+  exit -1
+fi
+
 nmodl="$1"
 usecase_dir="$2"
-
-if [[ $# -eq 3 ]]
-then
-  output_dir="$3"
-else
-  script_dir="$(cd "$(dirname "$0")"; pwd -P)"
-  output_dir="${script_dir}/references/$(basename "$2")"
-fi
+output_dir="$3"
 
 function sanitize() {
   for f in "${1}"/*.cpp
