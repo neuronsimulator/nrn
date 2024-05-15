@@ -24,6 +24,26 @@ PROCEDURE set_a_x() {
     a = x
 }
 
+FUNCTION v_plus_a(a) {
+    v_plus_a = v + a
+}
+
+PROCEDURE set_x_v() {
+    x = v
+}
+
+FUNCTION just_v(v) {
+    just_v = v
+}
+
+PROCEDURE set_x_just_v() {
+    x = just_v(v)
+}
+
+PROCEDURE set_x_just_vv(v) {
+    x = just_v(v)
+}
+
 INITIAL {
     set_a_x()
 }
