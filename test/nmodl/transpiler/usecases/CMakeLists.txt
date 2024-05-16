@@ -9,7 +9,8 @@ set(NMODL_USECASE_DIRS
     net_receive
     net_send
     point_process
-    parameter)
+    parameter
+    func_in_breakpoint)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
   add_test(NAME usecase_${usecase}

@@ -1462,7 +1462,7 @@ std::string CodegenNeuronCppVisitor::nrn_current_arguments() {
     if (ion_variable_struct_required()) {
         throw std::runtime_error("Not implemented.");
     }
-    return "id, inst, node_data, v";
+    return "_ml, _nt, _ppvar, _thread, id, inst, node_data, v";
 }
 
 
@@ -1472,6 +1472,10 @@ CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::nrn_current_parame
     }
 
     ParamVector params;
+    params.emplace_back("", "_nrn_mechanism_cache_range*", "", "_ml");
+    params.emplace_back("", "NrnThread*", "", "_nt");
+    params.emplace_back("", "Datum*", "", "_ppvar");
+    params.emplace_back("", "Datum*", "", "_thread");
     params.emplace_back("", "size_t", "", "id");
     params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
     params.emplace_back("", fmt::format("{}&", node_data_struct()), "", "node_data");
@@ -1577,7 +1581,7 @@ void CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel() {
 void CodegenNeuronCppVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
     printer->add_line("int node_id = node_data.nodeindices[id];");
     printer->add_line("double v = node_data.node_voltages[node_id];");
-
+    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
     const auto& read_statements = ion_read_statements(BlockType::Equation);
     for (auto& statement: read_statements) {
         printer->add_line(statement);
