@@ -121,7 +121,6 @@ static OptionDesc options[] = {{"-dismissbutton", "*dismiss_button", OptionValue
                                {"-hidewinio", "*showwinio", OptionValueImplicit, "off"},
                                {"-isatty", "*isatty", OptionValueImplicit, "1"},
                                {"-notatty", "*isatty", OptionValueImplicit, "-1"},
-                               {"-neosim", "*neosim", OptionValueImplicit, "on"},
                                {"-bbs_nhost", "*bbs_nhost", OptionValueNext},
                                {"-NSTACK", "*NSTACK", OptionValueNext},
                                {"-NFRAME", "*NFRAME", OptionValueNext},
@@ -222,7 +221,6 @@ const char* path_prefix_to_libnrniv() {
 
 int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
-int (*p_neosim_main)(int, const char**, const char**);
 extern int nrn_global_argc;
 extern const char** nrn_global_argv;
 int always_false;
@@ -746,17 +744,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     } else {
         return 0;
     }
-#if HAVE_IV
-    if (session && session->style()->value_is_on("neosim")) {
-        if (p_neosim_main) {
-            (*p_neosim_main)(argc, argv, env);
-        } else {
-            printf(
-                "neosim not available.\nModify nrn/src/nrniv/Imakefile and remove "
-                "nrniv/$CPU/netcvode.o\n");
-        }
-    }
-#endif
     PR_PROFILE
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {

@@ -224,6 +224,7 @@ class Cvode {
 
   public:
     bool structure_change_;
+
   public:
     CvodeThreadData* ctd_;
     NrnThread* nth_;  // for lvardt
