@@ -2260,7 +2260,6 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
     }
 #endif
     p[tid].tqe_->move(q, tnew);
-#endif
 }
 
 void NetCvode::remove_event(TQItem* q, int tid) {
