@@ -130,11 +130,11 @@ cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
 cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 # Tell spdlog not to use its bundled fmt, it should either use the fmt submodule or a truly external
 # installation for consistency. This line should be harmless if we use an external spdlog.
-set(SPDLOG_FMT_EXTERNAL ON)
-set(SPDLOG_SYSTEM_INCLUDE ON)
+option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
+option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
 if(NMODL_3RDPARTY_USE_SPDLOG)
   # See above, same logic as fmt
-  set(SPDLOG_BUILD_PIC ON)
+  option(SPDLOG_BUILD_PIC "Needed to be PIC to be put compiled as a lib" ON)
 endif()
 cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
 
@@ -170,7 +170,7 @@ endif()
 # Find required python packages
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
-find_package(PythonInterp 3.8 REQUIRED)
+find_package(Python 3.8 REQUIRED COMPONENTS Interpreter)
 cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
 
 # =============================================================================
