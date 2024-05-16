@@ -1339,9 +1339,12 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
                 continue;
             }
             const auto& var_name = var->get_name();
+            auto var_pos = position_of_float_var(var_name);
+            double var_value = var->get_value() == nullptr ? 0.0 : *var->get_value();
+
             printer->fmt_line("_ml->template fpfield<{}>(_iml) = {}; /* {} */",
-                              position_of_float_var(var_name),
-                              *var->get_value(),
+                              var_pos,
+                              var_value,
                               var_name);
         }
     }

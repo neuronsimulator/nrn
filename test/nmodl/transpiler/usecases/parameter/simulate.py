@@ -7,17 +7,18 @@ s = h.Section()
 
 test_parameter_pp = h.test_parameter(s(0.5))
 
+# Defaults set in the PARAMETER block:
 assert test_parameter_pp.x == 42.0
+assert test_parameter_pp.y == 0.0
 
+# Assignable:
 test_parameter_pp.x = 42.1
 assert test_parameter_pp.x == 42.1
-
-s.insert("NeuronVariables")
-celsius_hoc = h.Vector().record(s(0.5)._ref_range_celsius_NeuronVariables)
 
 h.stdinit()
 h.tstop = 5.0 * ms
 h.run()
 
-celsius = np.array(celsius_hoc.as_numpy())
-assert celsius[-1] == 6.3, f"{celsius[-1]=}"
+# Values (not) set during the INITIAL block:
+assert test_parameter_pp.x == 42.1
+assert test_parameter_pp.y == 43.0

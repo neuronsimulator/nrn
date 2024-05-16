@@ -6,6 +6,7 @@ set(NMODL_USECASE_DIRS
     global_breakpoint
     hodgkin_huxley
     nonspecific_current
+    neuron_variables
     net_receive
     net_send
     point_process
