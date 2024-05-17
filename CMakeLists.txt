@@ -556,6 +556,10 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+if(NRN_ENABLE_PYTHON)
+  add_subdirectory(src/nrnpython)
+endif()
+
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
 add_subdirectory(src/nrniv)
@@ -584,10 +588,6 @@ if(NRN_ENABLE_PYTHON)
   prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
 add_subdirectory(bin)
-
-if(NRN_ENABLE_PYTHON)
-  add_subdirectory(src/nrnpython)
-endif()
 
 if(NRN_MACOS_BUILD)
   add_subdirectory(src/mac)
