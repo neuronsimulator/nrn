@@ -254,7 +254,10 @@ include(cmake/SanitizerHelper.cmake)
 # Make a CMake list NRN_SANITIZERS_LIST
 string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
-find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+find_package(
+  Python 3.8
+  COMPONENTS Interpreter Development
+  REQUIRED)
 
 if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
