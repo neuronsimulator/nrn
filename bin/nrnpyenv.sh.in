@@ -33,19 +33,6 @@ export originalPATH="$PATH"
 export originalPYTHONPATH="$PYTHONPATH"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
-# list the Python versions that this NEURON build supports
-# the format is {major}.{minor}, i.e. 3.8, 3.9, 3.10, ...
-_this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
-
-# order of preference is: -pyexe, $NRN_PYTHONEXE, python, python3,
-# pythonX..pythonY, where X..Y are the versions in
-# _this_neuron_py_versions. In this order, we accept the first one yielding a
-# version we support
-_pythons_to_try=(python python3)
-for _ver_with_dot in "${_this_neuron_py_versions[@]}"; do
-  _pythons_to_try+=("python${_ver_with_dot}")
-done
-
 # get the last argument
 for last; do true; done
 
@@ -101,10 +88,6 @@ function try_python {
   fi
   full_path=${ver_and_path#* }
   version=${ver_and_path%" ${full_path}"}
-  if [[ ! " ${_this_neuron_py_versions[*]} " =~ " ${version} " ]]; then
-    echo "# ran ${cmd_name} (${full_path}) but Python ${version} is not supported by this NEURON installation (supported: ${_this_neuron_py_versions[*]})."
-    return 1
-  fi
   PYTHON="${full_path}"
   PYTHON_VERSION="${version}"
 }
@@ -209,11 +192,6 @@ if [ -z "${PYTHON}" -a "${OS}" = "Windows_NT" -a -n "${APPDATA}" ]; then
     # In case one of the last-resort Windows hacks worked
     PYTHON_VERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
   fi
-fi
-
-if test "$PYTHON" = "" ; then
-  echo "Cannot find a Python in ${_pythons_to_try[@]} that matches the versions this NEURON installation supports: ${_this_neuron_py_versions[@]}" 1>&2
-  exit 1;
 fi
 
 echo "export NRN_PYTHONEXE=\"${PYTHON}\""
