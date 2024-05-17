@@ -45,33 +45,24 @@ endif()
 
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
-    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
-    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
-    target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
+    add_library(nrnpython${Python_VERSION} SHARED ${NRNPYTHON_FILES_LIST})
+    target_include_directories(nrnpython${Python_VERSION} BEFORE PUBLIC ${Python_INCLUDE_DIRS} ${INCLUDE_DIRS})
+    target_link_libraries(nrnpython${Python_VERSION} nrniv_lib ${Readline_LIBRARY})
     if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(nrnpython${pyver} ${pylib})
+      target_link_libraries(nrnpython${Python_VERSION} Python::Module)
     endif()
-    add_dependencies(nrnpython${pyver} nrniv_lib)
-    list(APPEND nrnpython_lib_list nrnpython${pyver})
-    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-  endforeach()
+    add_dependencies(nrnpython${Python_VERSION} nrniv_lib)
+    list(APPEND nrnpython_lib_list nrnpython${Python_VERSION})
+    install(TARGETS nrnpython${Python_VERSION} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 else()
   add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
   add_dependencies(nrnpython generated_source_files)
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
-  target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  target_link_libraries(nrnpython Python::Module)
   target_include_directories(nrnpython PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
 endif()
-
-configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
-               @ONLY)
 
 # Install package files that were created in build (e.g. .py.in)
 install(
@@ -87,7 +78,6 @@ install(
 # If NEURON python module installation is enabled (CMake install)
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
-
   # Setup MinGW toolchain for setuptools
   if(MINGW)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
@@ -195,23 +185,17 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
 
   # Build python module
-  foreach(pyexe ${NRN_PYTHON_EXECUTABLES})
-    add_custom_command(
-      TARGET hoc_module
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py build
-              ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      COMMENT "Building python module with: ${pyexe} setup.py build
-      ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}")
-  endforeach(pyexe)
+  add_custom_command(
+    TARGET hoc_module
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+            ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+    COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${Python_EXECUTABLE} setup.py build
+            ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Building python module with: ${Python_EXECUTABLE} setup.py build
+    ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}")
 
   add_dependencies(hoc_module nrniv_lib rxdmath ${nrnpython_lib_list})
   install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
-else()
-  # Make sure this is included in the wheels
-  install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
-          DESTINATION lib/python/neuron)
 endif()

@@ -265,24 +265,6 @@ static nrnpython_reg_real_t load_nrnpython() {
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
-        // It's possible to get this far with an incompatible version, if nrnpy_pyversion and
-        // friends were set from the environment to bypass nrnpyenv.sh, and nrniv -python was
-        // launched.
-        auto const& supported_versions = neuron::config::supported_python_versions;
-        auto const iter =
-            std::find(supported_versions.begin(), supported_versions.end(), pyversion);
-        if (iter == supported_versions.end()) {
-            std::cerr << "Python " << pyversion
-                      << " is not supported by this NEURON installation (supported:";
-            for (auto const& good_ver: supported_versions) {
-                std::cerr << ' ' << good_ver;
-            }
-            std::cerr << "). If you are seeing this message, your environment probably contains "
-                         "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
-                         "incompatible with this NEURON. Try unsetting them."
-                      << std::endl;
-            return nullptr;
-        }
     }
     // Construct libnrnpythonX.Y.so (or other platforms' equivalent)
     std::string name;

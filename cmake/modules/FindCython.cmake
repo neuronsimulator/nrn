@@ -22,7 +22,7 @@
 # =============================================================================
 
 # Use the Cython executable that lives next to the Python executable if it is a local installation.
-get_filename_component(_python_path ${NRN_DEFAULT_PYTHON_EXECUTABLE} PATH)
+get_filename_component(_python_path ${Python_EXECUTABLE} PATH)
 find_program(
   CYTHON_EXECUTABLE
   NAMES cython cython.bat cython3

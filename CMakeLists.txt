@@ -254,22 +254,8 @@ include(cmake/SanitizerHelper.cmake)
 # Make a CMake list NRN_SANITIZERS_LIST
 string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
-# =================================================================================================
-# Juggle PYTHON_EXECUTABLE and NRN_ENABLE_PYTHON_DYNAMIC to make sure that:
-#
-# * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python version, and NRN_DEFAULT_PYTHON_INCLUDES and
-#   NRN_DEFAULT_PYTHON_LIBRARIES are its include direcory and library
-# * NRN_PYTHON_EXECUTABLES is a list of absolute paths to all Python executables to be built against
-#   (length >=1 if NRN_ENABLE_PYTHON_DYNAMIC else == 1)
-# * NRN_PYTHON_VERSIONS (3.8, 3.11, ...), NRN_PYTHON_INCLUDES and NRN_PYTHON_LIBRARIES are populated
-#   with values patching NRN_PYTHON_EXECUTABLES
-# * NRN_PYTHON_COUNT is set to the number of entries in those lists (i.e. number of Pythons), and
-#   NRN_PYTHON_ITERATION_LIMIT is set to ${NRN_PYTHON_COUNT} - 1
-# =================================================================================================
-set(NRN_MINIMUM_PYTHON_VERSION 3.8)
-include(cmake/PythonHelper.cmake)
+find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
 
-# This needs NRN_DEFAULT_PYTHON_EXECUTABLE, which comes from PythonHelper.cmake
 if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
@@ -766,7 +752,7 @@ if(NRN_ENABLE_PYTHON)
   add_custom_target(
     help_data_dat
     COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/lib/python/neuron
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
             ${PROJECT_SOURCE_DIR}/docs/python ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
     COMMENT "Generating help_data.dat"
     VERBATIM)
@@ -815,8 +801,8 @@ if(NRN_ENABLE_TESTS)
   include(CTest)
   if(NRN_ENABLE_PYTHON)
     # Need this for *all* Python versions we try and run tests with
-    nrn_find_python_module(MODULE pytest ALL REQUIRED)
-    nrn_find_python_module(MODULE pytest_cov ALL)
+    nrn_find_python_module(MODULE pytest REQUIRED)
+    nrn_find_python_module(MODULE pytest_cov)
     if(NOT PYTEST_COV_FOUND)
       message(STATUS "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
@@ -994,20 +980,10 @@ message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
   message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
-  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
-    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
-    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
-    list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    unset(suffix)
-    if(val EQUAL 0)
-      set(suffix " (default)")
-    endif()
-    message(STATUS " python${pyver}${suffix}")
-    message(STATUS "  EXE         | ${exe}")
-    message(STATUS "  INC         | ${pyinc}")
-    message(STATUS "  LIB         | ${pylib}")
-  endforeach()
+  message(STATUS " python ${Python_VERSION}")
+  message(STATUS "  EXE         | ${Python_EXECUTABLE}")
+  message(STATUS "  INC         | ${Python_INCLUDE_DIRS}")
+  message(STATUS "  LIB         | ${Python_LIBRARIES}")
 endif()
 if(READLINE_FOUND)
   message(STATUS "Readline      | ${Readline_LIBRARY}")

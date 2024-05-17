@@ -234,19 +234,13 @@ if(NRN_ENABLE_PYTHON)
     CORENEURON
     NAME pytest_coreneuron
     MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
-  # In case of multiple Python versions, run these tests with all of them
-  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
-    list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
-    list(GET NRN_PYTHON_VERSIONS ${val} pyver)
-    foreach(group pytest pytest_coreneuron)
-      nrn_add_test(
-        GROUP ${group}
-        NAME basic_tests_py${pyver}
-        PRELOAD_SANITIZER
-        COMMAND "${exe}" ${pytest} "./test/${group}"
-        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
-    endforeach()
-  endforeach()
+# In case of multiple Python versions, run these tests with all of them
+nrn_add_test(
+  GROUP ${group}
+  NAME basic_tests_py
+  PRELOAD_SANITIZER
+  COMMAND "${Python_EXECUTABLE}" ${pytest} "./test/${group}"
+  SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
   # ways NEURON can be made to execute Python code.
