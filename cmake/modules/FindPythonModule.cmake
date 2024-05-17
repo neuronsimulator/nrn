@@ -46,8 +46,8 @@ macro(nrn_find_python_module)
     OUTPUT_VARIABLE _find_module_version
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(_find_module_status)
-    # module version could not be determined, some packages don't define __version__ if VERSION
-    # was passed, we may need to fail because of this
+    # module version could not be determined, some packages don't define __version__ if VERSION was
+    # passed, we may need to fail because of this
     if(_find_module_VERSION)
       list(APPEND _find_module_insufficient_version "${Python_EXECUTABLE}-UNKNOWN")
     endif()
@@ -58,8 +58,7 @@ macro(nrn_find_python_module)
   list(APPEND _find_module_versions "${_find_module_version}")
   if(_find_module_VERSION AND _find_module_VERSION VERSION_GREATER "${_find_module_version}")
     # a minimum version was specified, and it wasn't met with this Python
-    list(APPEND _find_module_insufficient_version
-        "${Python_EXECUTABLE}-${_find_module_version}")
+    list(APPEND _find_module_insufficient_version "${Python_EXECUTABLE}-${_find_module_version}")
     # keep going for the sake of a good error
     continue()
   endif()
