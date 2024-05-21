@@ -43,7 +43,7 @@ struct SolveLinearSystemExecutor: public PythonExecutor {
     // may also return a python exception message:
     std::string exception_message;
     // executor function
-    virtual void operator()() override;
+    void operator()() override;
 };
 
 
@@ -60,7 +60,7 @@ struct SolveNonLinearSystemExecutor: public PythonExecutor {
     std::string exception_message;
 
     // executor function
-    virtual void operator()() override;
+    void operator()() override;
 };
 
 
@@ -79,7 +79,7 @@ struct DiffeqSolverExecutor: public PythonExecutor {
     std::string exception_message;
 
     // executor function
-    virtual void operator()() override;
+    void operator()() override;
 };
 
 
@@ -94,7 +94,7 @@ struct AnalyticDiffExecutor: public PythonExecutor {
     std::string exception_message;
 
     // executor function
-    virtual void operator()() override;
+    void operator()() override;
 };
 
 

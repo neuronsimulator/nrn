@@ -90,7 +90,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    * \return pointer to the clone/copy of the current node
    */
   // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
-  {{ virtual(node) }} {{ node.class_name }}* clone() const override {
+  {{ node.class_name }}* clone() const override {
     return new {{ node.class_name }}(*this);
   }
   // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -108,7 +108,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::get_node_type_name
    */
-  {{ virtual(node) }} AstNodeType get_node_type() const noexcept override {
+  AstNodeType get_node_type() const noexcept override {
     return AstNodeType::{{ node.ast_enum_name }};
   }
 
@@ -123,7 +123,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::get_node_name
    */
-  {{ virtual(node) }} std::string get_node_type_name() const noexcept override {
+  std::string get_node_type_name() const noexcept override {
     return "{{ node.class_name }}";
   }
 
@@ -139,7 +139,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
      *
      * \sa Ast::get_nmodl_name
      */
-    {{ virtual(node) }} std::string get_nmodl_name() const noexcept override {
+    std::string get_nmodl_name() const noexcept override {
       return "{{ node.nmodl_name }}";
     }
   {% endif %}
@@ -147,14 +147,14 @@ class {{ node.class_name }} : public {{ node.base_class }} {
   /**
    * \brief Get std::shared_ptr from `this` pointer of the current ast node
    */
-  {{ virtual(node) }} std::shared_ptr<Ast> get_shared_ptr() override {
+  std::shared_ptr<Ast> get_shared_ptr() override {
     return std::static_pointer_cast<{{ node.class_name }}>(shared_from_this());
   }
 
   /**
    * \brief Get std::shared_ptr from `this` pointer of the current ast node
    */
-  {{ virtual(node) }} std::shared_ptr<const Ast> get_shared_ptr() const override {
+  std::shared_ptr<const Ast> get_shared_ptr() const override {
     return std::static_pointer_cast<const {{ node.class_name }}>(shared_from_this());
   }
 
@@ -168,7 +168,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \return pointer to token if exist otherwise nullptr
    */
-  const {{ virtual(node) }}ModToken* get_token() const noexcept override {
+  const ModToken* get_token() const noexcept override {
     return token.get();
   }
 {% endif %}
@@ -218,7 +218,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::get_node_type_name Ast::get_node_name
    */
-  {{ virtual(node) }}void set_name(const std::string& name) override;
+  void set_name(const std::string& name) override;
 {% endif %}
 {% if node.has_token %}
   /**
@@ -268,7 +268,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::visit_children for example.
    */
-  {{ virtual(node) }} void visit_children(visitor::Visitor& v) override;
+  void visit_children(visitor::Visitor& v) override;
 
   /**
    * \brief visit children i.e. member variables of current node using provided visitor
@@ -280,7 +280,7 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::visit_children for example.
    */
-  {{ virtual(node) }} void visit_children(visitor::ConstVisitor& v) const override;
+  void visit_children(visitor::ConstVisitor& v) const override;
 
   /**
    * \brief accept (or visit) the current AST node using provided visitor
@@ -293,12 +293,12 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::accept for example.
    */
-  {{ virtual(node) }} void accept(visitor::Visitor& v) override;
+  void accept(visitor::Visitor& v) override;
 
   /**
    * \copydoc accept(visitor::Visitor&)
    */
-  {{ virtual(node) }} void accept(visitor::ConstVisitor& v) const override;
+  void accept(visitor::ConstVisitor& v) const override;
   /// \}
 
   {% if node.is_base_class_number_node %}

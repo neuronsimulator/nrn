@@ -120,13 +120,13 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
     void print_net_send_buf_update_to_host() const override;
 
     /// update NetSendBuffer_t count from host to device
-    virtual void print_net_send_buf_count_update_to_device() const override;
+    void print_net_send_buf_count_update_to_device() const override;
 
     /// update dt from host to device
-    virtual void print_dt_update_to_device() const override;
+    void print_dt_update_to_device() const override;
 
     // synchronise/wait on stream specific to NrnThread
-    virtual void print_device_stream_wait() const override;
+    void print_device_stream_wait() const override;
 
     /// print atomic capture pragma
     void print_device_atomic_capture_annotation() const override;
