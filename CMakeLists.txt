@@ -254,7 +254,7 @@ include(cmake/SanitizerHelper.cmake)
 # Make a CMake list NRN_SANITIZERS_LIST
 string(REPLACE "," ";" NRN_SANITIZERS_LIST "${NRN_SANITIZERS}")
 
-if(NRN_LINK_AGAINST_PYTHON)
+if(NOT NRN_ENABLE_PYTHON_DYNAMIC OR NRN_LINK_AGAINST_PYTHON)
   find_package(
     Python 3.8
     COMPONENTS Interpreter Development
