@@ -140,7 +140,7 @@ if(NRN_ENABLE_MPI)
             "-x;NRN_PROBE_VARIABLE=NRN_PROBE_VALUE")
       set(probe_command
           ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${option}
-          ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
+          ${Python_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -c
           "import os\; print(os.environ['NRN_PROBE_VARIABLE'])")
       execute_process(
         COMMAND ${probe_command}
@@ -183,8 +183,8 @@ foreach(mpiexec "" "_mpiexec")
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
     set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
   else()
-    set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}}
-               ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
+    set(python ${mpi_init_prefix${mpiexec}} ${preload_sanitizer${mpiexec}} ${Python_EXECUTABLE}
+               ${mpi_init_suffix${mpiexec}})
   endif()
   nrn_add_test(
     GROUP mpi_init
@@ -217,8 +217,7 @@ if(NRN_ENABLE_PYTHON)
   nrn_add_test(
     GROUP unit_tests
     NAME python_unit_tests
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
-            ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
+    COMMAND ${Python_EXECUTABLE} ${pytest} ${PROJECT_SOURCE_DIR}/test/unit_tests/hoc_python
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
@@ -234,13 +233,15 @@ if(NRN_ENABLE_PYTHON)
     CORENEURON
     NAME pytest_coreneuron
     MODFILE_PATTERNS test/pytest_coreneuron/*.mod)
-  # In case of multiple Python versions, run these tests with all of them
-  nrn_add_test(
-    GROUP ${group}
-    NAME basic_tests_py
-    PRELOAD_SANITIZER
-    COMMAND "${Python_EXECUTABLE}" ${pytest} "./test/${group}"
-    SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+  foreach(group pytest pytest_coreneuron)
+    # In case of multiple Python versions, run these tests with all of them
+    nrn_add_test(
+      GROUP ${group}
+      NAME basic_tests_py
+      PRELOAD_SANITIZER
+      COMMAND "${Python_EXECUTABLE}" ${pytest} "./test/${group}"
+      SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+  endforeach()
 
   # Add some tests that are specifically aimed at NEURON - Python integration, covering different
   # ways NEURON can be made to execute Python code.
@@ -251,7 +252,7 @@ if(NRN_ENABLE_PYTHON)
     GROUP datahandle
     NAME datahandle_tests
     PRELOAD_SANITIZER
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/datahandle
+    COMMAND ${Python_EXECUTABLE} ${pytest} ./test/datahandle
     SCRIPT_PATTERNS test/datahandle/*.py)
 
   # Mostly to increase coverage
@@ -261,13 +262,13 @@ if(NRN_ENABLE_PYTHON)
     NAME cover_tests
     PRELOAD_SANITIZER
     ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
+    COMMAND ${Python_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
     NAME example_nmodl
     MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY share/examples/nrniv/nmodl)
-  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
+  set(py_exe ${Python_EXECUTABLE})
   set(py_preload PRELOAD_SANITIZER)
   set(hoc_exe special)
   foreach(ext hoc py)
@@ -325,7 +326,7 @@ if(NRN_ENABLE_PYTHON)
       NAME rxd_tests
       PRELOAD_SANITIZER
       ENVIRONMENT COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance}
-      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
+      COMMAND ${Python_EXECUTABLE} ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
       if(mpi4py_FOUND)
@@ -336,8 +337,8 @@ if(NRN_ENABLE_PYTHON)
           ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-            ${preload_sanitizer_mpiexec} ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            ${pytest} ./test/rxd --mpi)
+            ${preload_sanitizer_mpiexec} ${Python_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest}
+            ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -428,7 +429,7 @@ if(NRN_ENABLE_PYTHON)
         -python)
   else()
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
-    set(modtests_launch_py ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest})
+    set(modtests_launch_py ${Python_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
@@ -437,7 +438,7 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
-        ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+        ${Python_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
     set(modtests_launch_py_mpi_subworlds
         ${MPIEXEC_NAME}
@@ -446,7 +447,7 @@ if(NRN_ENABLE_PYTHON)
         ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS}
         ${preload_sanitizer_mpiexec}
-        ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+        ${Python_EXECUTABLE}
         ${MPIEXEC_POSTFLAGS})
   endif()
 
@@ -784,7 +785,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP nrnmusic
       NAME music_tests
       PROCESSORS 2
-      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} test/music_tests/runtests.py
+      COMMAND ${Python_EXECUTABLE} test/music_tests/runtests.py
       SCRIPT_PATTERNS test/music_tests/*.music test/music_tests/*.py)
   endif()
 endif()
