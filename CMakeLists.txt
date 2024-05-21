@@ -260,9 +260,15 @@ if(NRN_LINK_AGAINST_PYTHON)
     COMPONENTS Interpreter Development
     REQUIRED)
 else()
+  if("${CMAKE_VERSION}" VERSION_LESS 3.18)
+    message(
+      FATAL_ERROR
+        "NRN_LINK_AGAINST_PYTHON=OFF requires CMake >= 3.18 for the Development.Module component in FindPython"
+    )
+  endif()
   find_package(
     Python 3.8
-    COMPONENTS Interpreter
+    COMPONENTS Interpreter Development.Module
     REQUIRED)
 endif()
 
