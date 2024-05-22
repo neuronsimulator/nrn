@@ -842,6 +842,15 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /*                             Code-specific helper routines                            */
     /****************************************************************************************/
 
+    /**
+     * Add the variable tqitem during `get_int_variables`.
+     */
+    virtual void add_variable_tqitem(std::vector<IndexVariableInfo>& variables) = 0;
+
+    /**
+     * Add the variable point_process during `get_int_variables`.
+     */
+    virtual void add_variable_point_process(std::vector<IndexVariableInfo>& variables) = 0;
 
     /**
      * Arguments for functions that are defined and used internally.

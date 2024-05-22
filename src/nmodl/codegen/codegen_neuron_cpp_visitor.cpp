@@ -386,6 +386,19 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_definitions() {
 /*                           Code-specific helper routines                              */
 /****************************************************************************************/
 
+void CodegenNeuronCppVisitor::add_variable_tqitem(std::vector<IndexVariableInfo>& variables) {
+    if (info.net_send_used) {
+        variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), false, false, true);
+        variables.back().is_constant = true;
+        info.tqitem_index = static_cast<int>(variables.size() - 1);
+    }
+}
+
+void CodegenNeuronCppVisitor::add_variable_point_process(
+    std::vector<IndexVariableInfo>& variables) {
+    variables.emplace_back(make_symbol(naming::POINT_PROCESS_VARIABLE), false, false, true);
+    variables.back().is_constant = true;
+}
 
 std::string CodegenNeuronCppVisitor::internal_method_arguments() {
     return "_ml, inst, id, _ppvar, _thread, _nt";

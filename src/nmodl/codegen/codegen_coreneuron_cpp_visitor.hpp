@@ -414,6 +414,8 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     /*                             Code-specific helper routines                            */
     /****************************************************************************************/
 
+    void add_variable_tqitem(std::vector<IndexVariableInfo>& variables) override;
+    void add_variable_point_process(std::vector<IndexVariableInfo>& variables) override;
 
     /**
      * Arguments for functions that are defined and used internally.

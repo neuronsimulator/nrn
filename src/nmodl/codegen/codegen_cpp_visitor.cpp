@@ -1006,13 +1006,8 @@ std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
     if (info.point_process) {
         variables.emplace_back(make_symbol(naming::NODE_AREA_VARIABLE));
         variables.back().is_constant = true;
-        /// note that this variable is not printed in neuron implementation
-        if (info.artificial_cell) {
-            variables.emplace_back(make_symbol(naming::POINT_PROCESS_VARIABLE), true);
-        } else {
-            variables.emplace_back(make_symbol(naming::POINT_PROCESS_VARIABLE), false, false, true);
-            variables.back().is_constant = true;
-        }
+
+        add_variable_point_process(variables);
     }
 
     for (auto& ion: info.ions) {
@@ -1100,17 +1095,7 @@ std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
         variables.emplace_back(make_symbol(naming::AREA_VARIABLE));
     }
 
-    // for non-artificial cell, when net_receive buffering is enabled
-    // then tqitem is an offset
-    if (info.net_send_used) {
-        if (info.artificial_cell) {
-            variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), true);
-        } else {
-            variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), false, false, true);
-            variables.back().is_constant = true;
-        }
-        info.tqitem_index = static_cast<int>(variables.size() - 1);
-    }
+    add_variable_tqitem(variables);
 
     /**
      * \note Variables for watch statements : there is one extra variable

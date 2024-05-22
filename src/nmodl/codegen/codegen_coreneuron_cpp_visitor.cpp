@@ -667,6 +667,30 @@ void CodegenCoreneuronCppVisitor::print_eigen_linear_solver(const std::string& f
 /*                           Code-specific helper routines                              */
 /****************************************************************************************/
 
+void CodegenCoreneuronCppVisitor::add_variable_tqitem(std::vector<IndexVariableInfo>& variables) {
+    // for non-artificial cell, when net_receive buffering is enabled
+    // then tqitem is an offset
+    if (info.net_send_used) {
+        if (info.artificial_cell) {
+            variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), true);
+        } else {
+            variables.emplace_back(make_symbol(naming::TQITEM_VARIABLE), false, false, true);
+            variables.back().is_constant = true;
+        }
+        info.tqitem_index = static_cast<int>(variables.size() - 1);
+    }
+}
+
+void CodegenCoreneuronCppVisitor::add_variable_point_process(
+    std::vector<IndexVariableInfo>& variables) {
+    /// note that this variable is not printed in neuron implementation
+    if (info.artificial_cell) {
+        variables.emplace_back(make_symbol(naming::POINT_PROCESS_VARIABLE), true);
+    } else {
+        variables.emplace_back(make_symbol(naming::POINT_PROCESS_VARIABLE), false, false, true);
+        variables.back().is_constant = true;
+    }
+}
 
 std::string CodegenCoreneuronCppVisitor::internal_method_arguments() {
     if (ion_variable_struct_required()) {
