@@ -63,7 +63,7 @@ endif()
 #   Python shim, an error is emitted with advice on how to re-create the virtual environment using
 #   the real (non-shim) binary.
 function(nrn_find_python)
-  set(oneVal NAME PREFIX)
+  set(oneVal NAME TARGET INTERPRETER)
   cmake_parse_arguments(opt "" "${oneVal}" "" ${ARGN})
   if(opt_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Unexpected arguments: ${opt_UNPARSED_ARGUMENTS}")
@@ -78,9 +78,6 @@ function(nrn_find_python)
       PATHS ENV PATH
       NO_DEFAULT_PATH)
     if(${opt_NAME}_full STREQUAL "${opt_NAME}_full-NOTFOUND")
-      set("${opt_PREFIX}_EXECUTABLE"
-          "${opt_PREFIX}_EXECUTABLE-NOTFOUND"
-          PARENT_SCOPE)
       return()
     endif()
     set(opt_NAME "${${opt_NAME}_full}")
@@ -105,7 +102,7 @@ function(nrn_find_python)
         )
       endif()
       set(dev_component "Development.Module")
-      set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
+      set(Python_LIBRARIES "")
     else()
       set(dev_component "Development")
       list(APPEND python_vars Python_LIBRARIES)
@@ -131,15 +128,16 @@ function(nrn_find_python)
       endif()
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
-    set("${opt_PREFIX}_INCLUDES"
-        "${Python_INCLUDE_DIRS}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_LIBRARIES"
-        "${Python_LIBRARIES}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION"
-        "${Python_VERSION}"
-        PARENT_SCOPE)
+    if(NOT TARGET Python::Python${Python_VERSION})
+      add_library(Python::Python${Python_VERSION} INTERFACE IMPORTED)
+      target_include_directories(Python::Python${Python_VERSION} SYSTEM
+                                 INTERFACE "${Python_INCLUDE_DIRS}")
+      target_link_libraries(Python::Python${Python_VERSION} INTERFACE "${Python_LIBRARIES}")
+      set_target_properties(Python::Python${Python_VERSION} PROPERTIES VERSION "${Python_VERSION}")
+      set(${opt_TARGET}
+          Python::Python${Python_VERSION}
+          PARENT_SCOPE)
+    endif()
   endif()
   # Finally do our special treatment for macOS + sanitizers
   if(APPLE AND NRN_SANITIZERS)
@@ -173,54 +171,55 @@ function(nrn_find_python)
                           "(code=${code} isvenv_str=${isvenv_str})")
     endif()
   endif()
-  set("${opt_PREFIX}_EXECUTABLE"
-      "${opt_NAME}"
-      PARENT_SCOPE)
+  if(NOT TARGET Python::Interpreter${Python_VERSION})
+    add_executable(Python::Interpreter${Python_VERSION} IMPORTED GLOBAL)
+    set_target_properties(Python::Interpreter${Python_VERSION} PROPERTIES IMPORTED_LOCATION
+                                                                          "${opt_NAME}")
+    set(${opt_INTERPRETER}
+        Python::Interpreter${Python_VERSION}
+        PARENT_SCOPE)
+  endif()
 endfunction()
 
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
-# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
-# NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
-# NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
+# library path. Store those in the new lists NRN_PYTHON_VERSIONS. Set NRN_PYTHON_COUNT to be the
+# length of those lists, and NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
 set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
-set(NRN_PYTHON_INCLUDES)
-set(NRN_PYTHON_LIBRARIES)
+set(NRN_PYTHON_TARGETS)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
-  nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
+  nrn_find_python(NAME "${pyexe}" TARGET pytarget INTERPRETER pyinter)
   if(NRN_ENABLE_PYTHON)
+    get_target_property(VERSION ${pytarget} VERSION)
     # If NRN_ENABLE_PYTHON=OFF then we're only using Python to run build scripts etc.
-    if(${nrnpy_VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
-      message(FATAL_ERROR "${pyexe} too old (${nrnpy_VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
+    if(${VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
+      message(FATAL_ERROR "${pyexe} too old (${VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
     endif()
     # Now nrnpy_INCLUDES and friends correspond to ${pyexe}. Assert that there is only one value per
     # Python version for now, as otherwise we'd need to handle a list of lists...
     list(LENGTH nrnpy_INCLUDES num_include_dirs)
     list(LENGTH nrnpy_LIBRARIES num_lib_dirs)
-    if(NOT num_include_dirs EQUAL 1)
-      message(FATAL_ERROR "Cannot handle multiple Python include dirs: ${nrnpy_INCLUDES}")
-    endif()
-    if(NOT num_lib_dirs EQUAL 1)
-      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${Python_LIBRARIES}")
-    endif()
-    if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
+    # if(NOT num_include_dirs EQUAL 1) message(FATAL_ERROR "Cannot handle multiple Python include
+    # dirs: ${nrnpy_INCLUDES}") endif() if(NOT num_lib_dirs EQUAL 1) message(FATAL_ERROR "Cannot
+    # handle multiple Python libraries: ${Python_LIBRARIES}") endif()
+    if(VERSION IN_LIST NRN_PYTHON_VERSIONS)
       # We cannot build against multiple copies of the same pythonX.Y version.
-      message(FATAL_ERROR "Got duplicate version ${nrnpy_VERSION} from ${pyexe}")
+      message(FATAL_ERROR "Got duplicate version ${VERSION} from ${pyexe}")
     endif()
-    list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
-    list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
-    list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+    list(APPEND NRN_PYTHON_VERSIONS "${VERSION}")
+    list(APPEND NRN_PYTHON_TARGETS "${pytarget}")
   endif()
-  list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
+  get_target_property(path ${pyinter} IMPORTED_LOCATION)
+  list(APPEND NRN_PYTHON_EXECUTABLES "${path}")
 endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
 list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
 list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
-  list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
-  list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(GET NRN_PYTHON_TARGETS 0 DEFAULT_TARGET)
+  add_library(Python::Python ALIAS ${DEFAULT_TARGET})
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()
@@ -230,7 +229,7 @@ if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   set(NRN_PYTHON_EXTRA_FOR_TESTS_EXECUTABLES)
   set(NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS)
   foreach(pyexe ${NRN_PYTHON_EXTRA_FOR_TESTS})
-    nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
+    nrn_find_python(NAME "${pyexe}" PREFIX nrnpy TARGET pytarget)
     if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
       string(JOIN ", " versions ${NRN_PYTHON_VERSIONS})
       message(FATAL_ERROR "NRN_PYTHON_EXTRA_FOR_TESTS=${NRN_PYTHON_EXTRA_FOR_TESTS} cannot contain"
