@@ -26,10 +26,20 @@ known_functions["abs"] = "fabs"
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
-# Some functions are protected inside sympy, if user has declared such a function, it will fail
-# because sympy will try to use its own internal one.
-# Rename it before and after to a single name
+# Some identifiers are protected inside sympy, if user has declared such a function, it will fail
+# because sympy will try to use its own internal one; or error out for invalid variables.
+# Rename it before and after to a unique name.
 forbidden_var = [
+    # Selected Python keywords
+    "is",
+    "as",
+    "count",
+    "del",
+    "elif",
+    "in",
+    "lambda",
+    "pass",
+    # SymPy functions
     "beta",
     "gamma",
     "uppergamma",
@@ -41,20 +51,55 @@ forbidden_var = [
 ]
 
 
-def search_and_replace_protected_functions_to_sympy(eqs, function_calls):
+def search_and_replace_protected_identifiers_to_sympy(eqs, vars, function_calls):
+    eqs = _search_and_replace_protected_functions_to_sympy(eqs, function_calls)
+    eqs, vars = _search_and_replace_protected_variables_to_sympy(eqs, vars)
+
+    return eqs, vars
+
+
+def search_and_replace_protected_identifiers_from_sympy(eqs, function_calls):
+    eqs = _search_and_replace_protected_functions_from_sympy(eqs, function_calls)
+    eqs = _search_and_replace_protected_variables_from_sympy(eqs)
+
+    return eqs
+
+
+def _search_and_replace_protected_variables_to_sympy(eqs, vars):
+    for c in forbidden_var:
+        r = re.compile(r"\b{}\b".format(c))
+        f = f"_sympy_{c}_var"
+        eqs = [re.sub(r, f, x) for x in eqs]
+        vars = [re.sub(r, f, x) for x in vars]
+
+    return eqs, vars
+
+
+def _search_and_replace_protected_variables_from_sympy(eqs):
+    for c in forbidden_var:
+        r = re.compile(r"\b_sympy_{}_var\b".format(c))
+        f = c
+        eqs = [re.sub(r, f, x) for x in eqs]
+
+    return eqs
+
+
+def _search_and_replace_protected_functions_to_sympy(eqs, function_calls):
     for c in function_calls:
         if c in forbidden_var:
             r = re.compile(r"\b{}\b\s*\(".format(c))
             f = f"_sympy_{c}_fun("
             eqs = [re.sub(r, f, x) for x in eqs]
+
     return eqs
 
 
-def search_and_replace_protected_functions_from_sympy(eqs, function_calls):
+def _search_and_replace_protected_functions_from_sympy(eqs, function_calls):
     for c in function_calls:
         if c in forbidden_var:
             r = f"_sympy_{c}_fun"
             eqs = [re.sub(r, f"{c}", x) for x in eqs]
+
     return eqs
 
 
@@ -257,8 +302,8 @@ def solve_lin_system(
         vars: list of strings containing new local variables
     """
 
-    eq_strings = search_and_replace_protected_functions_to_sympy(
-        eq_strings, function_calls
+    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
+        eq_strings, vars, function_calls
     )
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
@@ -313,7 +358,7 @@ def solve_lin_system(
         # interweave
         code = _interweave_eqs(vecFcode, vecJcode)
 
-    code = search_and_replace_protected_functions_from_sympy(code, function_calls)
+    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
 
     return code, new_local_vars
 
@@ -335,8 +380,8 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
         List of strings containing assignment statements
     """
 
-    eq_strings = search_and_replace_protected_functions_to_sympy(
-        eq_strings, function_calls
+    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
+        eq_strings, vars, function_calls
     )
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
@@ -365,7 +410,7 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
 
-    code = search_and_replace_protected_functions_from_sympy(code, function_calls)
+    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
 
     return code
 
