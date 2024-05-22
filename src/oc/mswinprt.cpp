@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include "hoc.h"
-#include "../mswin/extra/d2upath.cpp"
+#include "../mswin/extra/d2upath.h"
 
 #include "gui-redirect.h"
 

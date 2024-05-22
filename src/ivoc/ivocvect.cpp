@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 
-//#include <string.h>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -24,13 +23,8 @@
 #include <InterViews/font.h>
 #include <InterViews/background.h>
 #include <InterViews/style.h>
-//#include <OS/string.h>
 
 #include <IV-look/kit.h>
-#endif
-
-#if defined(SVR4)
-extern void exit(int status);
 #endif
 
 #include "classreg.h"
@@ -48,24 +42,12 @@ extern void exit(int status);
 #endif
 #define PI M_PI
 #endif
-#define BrainDamaged 0  // The Sun CC compiler but it doesn't hurt to leave it in
-#if BrainDamaged
-#define FWrite(arg1, arg2, arg3, arg4)              \
-    if (fwrite((arg1), arg2, arg3, arg4) != arg3) { \
-        hoc_execerror("fwrite error", 0);           \
-    }
-#define FRead(arg1, arg2, arg3, arg4)              \
-    if (fread((arg1), arg2, arg3, arg4) != arg3) { \
-        hoc_execerror("fread error", 0);           \
-    }
-#else
 #define FWrite(arg1, arg2, arg3, arg4)            \
     if (fwrite(arg1, arg2, arg3, arg4) != arg3) { \
     }
 #define FRead(arg1, arg2, arg3, arg4)            \
     if (fread(arg1, arg2, arg3, arg4) != arg3) { \
     }
-#endif
 
 /**
  * As all parameters are passed from hoc as double, we need

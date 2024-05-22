@@ -737,7 +737,7 @@ add_custom_target(
 # =============================================================================
 # ~~~
 # Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANHE
+# - Replace GLOBAL variable by RANGE
 # - Comment out TABLE
 # ~~~
 # =============================================================================
@@ -834,10 +834,12 @@ if(NRN_ENABLE_TESTS)
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
   add_custom_command(
     OUTPUT ${neurondemo_files}
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
             ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+    DEPENDS nrnivmodl_dependency
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
     VERBATIM)
 

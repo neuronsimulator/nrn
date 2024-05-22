@@ -102,6 +102,32 @@ neuron::container::data_handle<double> Memb_list::data_handle(
 }
 
 
+[[nodiscard]] int Memb_list::get_num_variables() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_num_variables<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_dims(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_dims() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_prefix_sums(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_prefix_sums() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>();
+}
+
+
 [[nodiscard]] std::ptrdiff_t Memb_list::legacy_index(double const* ptr) const {
     assert(m_storage_offset != neuron::container::invalid_row);
     // For a mechanism with (in order) range variables: a, b[2], c the mechanism data are

@@ -144,6 +144,7 @@ build_wheel_osx() {
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         clone_install_nmodl_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"

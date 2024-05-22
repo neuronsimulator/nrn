@@ -22,6 +22,8 @@
 
 #include <vector>
 #include <unordered_map>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
@@ -225,40 +227,23 @@ int nrn_is_cable(void) {
 }
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
-    char* abspath = NULL;
-    void* handle = NULL;
-
-    /* use realpath or _fullpath even if is already a full path */
-
-#if defined(HAVE_REALPATH)
-    abspath = realpath(relpath, NULL);
-#else /* not HAVE_REALPATH */
-#if defined(__MINGW32__)
-    abspath = _fullpath(NULL, relpath, 0);
-#else  /* not __MINGW32__ */
-    abspath = strdup(relpath);
-#endif /* not __MINGW32__ */
-#endif /* not HAVE_REALPATH */
-    if (abspath) {
-        handle = dlopen(abspath, flags);
+    void* handle = nullptr;
+    try {  // Try with an absolute path otherwise relpath
+        auto abspath = fs::absolute(relpath);
+        handle = dlopen(abspath.string().c_str(), flags);
 #if DARWIN
         if (!handle) {
-            nrn_possible_mismatched_arch(abspath);
+            nrn_possible_mismatched_arch(abspath.c_str());
         }
-#endif  // DARWIN
-        free(abspath);
-    } else {
-        int patherr = errno;
+#endif
+    } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            Fprintf(stderr,
-                    "realpath failed errno=%d (%s) and dlopen failed with %s\n",
-                    patherr,
-                    strerror(patherr),
-                    relpath);
+            std::cerr << "std::filesystem::absolute failed (" << e.what()
+                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
 #if DARWIN
-            nrn_possible_mismatched_arch(abspath);
-#endif  // DARWIN
+            nrn_possible_mismatched_arch(relpath);
+#endif
         }
     }
     return handle;
@@ -876,10 +861,22 @@ void register_data_fields(int mechtype,
 }
 
 
+// Count the number of floating point variables.
+//
+// An array variable with N elements counts as N floating point variables.
+static int count_prop_param_size(const std::vector<std::pair<const char*, int>>& param_info) {
+    int float_variables = 0;
+    for (const auto& [i, n]: param_info) {
+        float_variables += n;
+    }
+
+    return float_variables;
+}
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
-    nrn_prop_param_size_[mechtype] = param_info.size();
+    nrn_prop_param_size_[mechtype] = count_prop_param_size(param_info);
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
     if (dparam_info.empty()) {
         memb_func[mechtype].dparam_semantics = nullptr;

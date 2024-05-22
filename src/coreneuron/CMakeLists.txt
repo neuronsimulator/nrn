@@ -265,8 +265,8 @@ if(nmodl_FOUND)
   set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
-      ON
-      CACHE BOOL "Disable NMODL python bindings")
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
   nrn_add_external_project(nmodl OFF)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
@@ -382,8 +382,14 @@ cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
   NO_TARGET)
-set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
-                                "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
 # {build_dir}/share/modfile/
 file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
@@ -472,6 +478,7 @@ endif()
 # Hines solver. This cannot be included in coreneuron-core because of this issue:
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
+add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
@@ -649,10 +656,6 @@ endforeach()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
-
-# main program required for building special-core
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
