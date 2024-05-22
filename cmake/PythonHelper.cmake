@@ -51,8 +51,7 @@ endif()
 # * nrnpy_EXECUTABLE
 # * nrnpy_INCLUDES
 # * nrnpy_LIBRARIES
-# * nrnpy_VERSION_MAJOR
-# * nrnpy_VERSION_MINOR
+# * nrnpy_VERSION
 #
 # If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
 # handling on macOS when sanitizers are enabled:
@@ -95,7 +94,7 @@ function(nrn_find_python)
     string(SHA1 pyexe_hash "${opt_NAME}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
-    set(python_vars Python3_INCLUDE_DIRS Python3_VERSION_MAJOR Python3_VERSION_MINOR)
+    set(python_vars Python3_INCLUDE_DIRS Python3_VERSION)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
@@ -138,11 +137,8 @@ function(nrn_find_python)
     set("${opt_PREFIX}_LIBRARIES"
         "${Python3_LIBRARIES}"
         PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION_MAJOR"
-        "${Python3_VERSION_MAJOR}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION_MINOR"
-        "${Python3_VERSION_MINOR}"
+    set("${opt_PREFIX}_VERSION"
+        "${Python3_VERSION}"
         PARENT_SCOPE)
   endif()
   # Finally do our special treatment for macOS + sanitizers
@@ -195,7 +191,6 @@ foreach(pyexe ${python_executables})
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
   if(NRN_ENABLE_PYTHON)
     # If NRN_ENABLE_PYTHON=OFF then we're only using Python to run build scripts etc.
-    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
     if(${nrnpy_VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
       message(FATAL_ERROR "${pyexe} too old (${nrnpy_VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
     endif()
@@ -236,7 +231,6 @@ if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   set(NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS)
   foreach(pyexe ${NRN_PYTHON_EXTRA_FOR_TESTS})
     nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
-    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
     if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
       string(JOIN ", " versions ${NRN_PYTHON_VERSIONS})
       message(FATAL_ERROR "NRN_PYTHON_EXTRA_FOR_TESTS=${NRN_PYTHON_EXTRA_FOR_TESTS} cannot contain"
