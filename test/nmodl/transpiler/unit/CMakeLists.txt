@@ -27,6 +27,7 @@ add_library(config STATIC ${PROJECT_BINARY_DIR}/src/config/config.cpp)
 # =============================================================================
 # Test executables
 # =============================================================================
+add_executable(testutils utils/string_utils.cpp)
 add_executable(testmodtoken modtoken/modtoken.cpp)
 add_executable(testlexer lexer/tokens.cpp)
 add_executable(testparser parser/parser.cpp)
@@ -76,6 +77,7 @@ add_executable(
   codegen/transform.cpp
   codegen/codegen_compatibility_visitor.cpp)
 
+target_link_libraries(testutils PRIVATE lexer util)
 target_link_libraries(testmodtoken PRIVATE lexer util)
 target_link_libraries(testlexer PRIVATE lexer util)
 target_link_libraries(
@@ -126,6 +128,7 @@ target_link_libraries(testcodegen PRIVATE Catch2::Catch2)
 target_link_libraries(testvisitor PRIVATE Catch2::Catch2)
 
 # With main from Catch2
+target_link_libraries(testutils PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(testmodtoken PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(testlexer PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(testparser PRIVATE Catch2::Catch2WithMain)
@@ -138,6 +141,7 @@ target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain)
 
 foreach(
   test_name
+  testutils
   testcodegen
   testmodtoken
   testlexer

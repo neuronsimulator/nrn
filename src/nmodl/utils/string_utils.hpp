@@ -126,6 +126,27 @@ enum class text_alignment { left, right, center };
     return elements;
 }
 
+
+/**
+ * Check if `haystack` ends with `needle`.
+ *
+ * Every string ends with the empty string.
+ */
+static inline bool ends_with(const std::string& haystack, const std::string& needle) {
+    if (needle.size() == 0) {
+        return true;
+    }
+
+    auto n_chars = needle.size();
+    if (haystack.size() < n_chars) {
+        return false;
+    }
+
+    auto haystack_begin = haystack.begin() + haystack.size() - n_chars;
+    return std::equal(haystack_begin, haystack.end(), needle.begin(), needle.end());
+};
+
+
 ///
 /**
  * Aligns a text within a field of width \a width

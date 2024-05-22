@@ -6,11 +6,8 @@
  */
 
 #include "printer/code_printer.hpp"
+#include "utils/blame.hpp"
 #include "utils/string_utils.hpp"
-
-#if NMODL_ENABLE_BACKWARD
-#include <backward.hpp>
-#endif
 
 namespace nmodl {
 namespace printer {
@@ -115,18 +112,8 @@ void CodePrinter::pop_block(const std::string_view& suffix, std::size_t num_newl
 }
 
 void CodePrinter::blame() {
-#if NMODL_ENABLE_BACKWARD
-    if (current_line == blame_line) {
-        *result << std::flush;
-
-        std::cout << "\n\n== Blame =======================================================\n";
-
-        backward::StackTrace st;
-        st.load_here(32);
-        backward::Printer p;
-        p.print(st, std::cout);
-    }
-#endif
+    auto blame_printer = utils::make_blame(blame_line);
+    (*blame_printer)(std::cout, current_line);
 }
 
 
