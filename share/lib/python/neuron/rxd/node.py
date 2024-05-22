@@ -133,7 +133,7 @@ def eval_arith_flux(arith, node):
         s.append(specie().nodes(node.segment).value)
     print(f"c = {c}")
     print(f"s={s}")
-    ret =  eval(c, {"species": s})
+    ret = eval(c, {"species": s})
     print("returning from eval arith flux")
     return ret
 
