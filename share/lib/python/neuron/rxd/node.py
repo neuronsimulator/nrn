@@ -122,13 +122,20 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
 _numpy_element_ref = neuron.numpy_element_ref
 
 
-def eval_arith_flux(arith, region, node):
-    func, species = rxdmath._compile(arith, [region])
+def eval_arith_flux(arith, node):
+    print("in eval arith flux")
+    func, species = rxdmath._compile(arith, [reg() for reg in region._all_regions])
+    print("rxdmath._compiled")
     c = compile(list(func.values())[0][0], "f", "eval")
+    print(f"{list(func.values())[0][0]=}")
     s = []
     for specie in species:
         s.append(specie().nodes(node.segment).value)
-    return eval(c, {"species": s})
+    print(f"c = {c}")
+    print(f"s={s}")
+    ret =  eval(c, {"species": s})
+    print("returning from eval arith flux")
+    return ret
 
 
 class Node(object):
@@ -362,7 +369,7 @@ class Node(object):
                     success = True
                 except TypeError:
                     arith = rxdmath._ensure_arithmeticed(args[0])
-                    source = lambda: eval_arith_flux(arith, self.region, self)
+                    source = lambda: eval_arith_flux(arith, self)
                     _sources.append(source)
                     scale = 1 / self.volume
                     success = True
