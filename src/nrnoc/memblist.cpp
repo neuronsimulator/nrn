@@ -55,7 +55,7 @@ Memb_list& Memb_list::operator=(Memb_list&& rhs) noexcept {
     return *this;
 }
 
-Memb_list::~Memb_list() {
+Memb_list::~Memb_list() noexcept {
     if (m_owns_nodes) {
         nodes_free();
     }
