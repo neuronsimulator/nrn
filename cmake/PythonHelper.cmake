@@ -10,9 +10,9 @@
 
 # Parse commandline options so that:
 #
-# * NRN_DEFAULT_PYTHON_EXECUTABLE is the default Python, which is used for running tests and so on.
-# * NRN_PYTHON_EXECUTABLES is a list of all the Pythons that we are building against. This will only
-#   have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
+# * Python::Interpreter is the default Python, which is used for running tests and so on.
+# * NRN_PYTHON_INTERPRETERS is a list of all the Pythons that we are building against. This will
+#   only have a length > 1 if NRN_ENABLE_PYTHON_DYNAMIC is defined.
 if(NOT PYTHON_EXECUTABLE AND (NOT NRN_ENABLE_PYTHON_DYNAMIC OR NOT NRN_PYTHON_DYNAMIC))
   # Haven't been explicitly told about any Python versions, set PYTHON_EXECUTABLE by searching PATH
   message(STATUS "No python executable specified. Looking for `python3` in the PATH...")
@@ -184,7 +184,7 @@ endfunction()
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
 # library path. Store those in the new lists NRN_PYTHON_VERSIONS. Set NRN_PYTHON_COUNT to be the
 # length of those lists, and NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
-set(NRN_PYTHON_EXECUTABLES)
+set(NRN_PYTHON_INTERPRETERS)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_TARGETS)
 foreach(pyexe ${python_executables})
@@ -210,17 +210,17 @@ foreach(pyexe ${python_executables})
     list(APPEND NRN_PYTHON_VERSIONS "${VERSION}")
     list(APPEND NRN_PYTHON_TARGETS "${pytarget}")
   endif()
-  get_target_property(path ${pyinter} IMPORTED_LOCATION)
-  list(APPEND NRN_PYTHON_EXECUTABLES "${path}")
+  list(APPEND NRN_PYTHON_INTERPRETERS "${pyinter}")
 endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
-list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
+list(GET NRN_PYTHON_INTERPRETERS 0 DEFAULT_INTERPRETER)
+add_executable(Python::Interpreter ALIAS ${DEFAULT_INTERPRETER})
 list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_TARGETS 0 DEFAULT_TARGET)
   add_library(Python::Python ALIAS ${DEFAULT_TARGET})
-  list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
+  list(LENGTH NRN_PYTHON_TARGETS NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()
 if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
