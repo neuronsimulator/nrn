@@ -4,8 +4,8 @@
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
-#include <nrnpython.h>
-#include <hoccontext.h>
+#include "nrnpython.h"
+#include "hoccontext.h"
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "oc_ansi.h"
