@@ -130,6 +130,7 @@ def eval_arith_flux(arith, nregion, node):
         s[specie()._id][nregion._id] = float(specie().nodes(node.segment).value[0])
     return eval(c, {"species": s})
 
+
 class Node(object):
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
