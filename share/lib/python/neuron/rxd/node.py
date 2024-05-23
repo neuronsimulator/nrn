@@ -123,19 +123,12 @@ _numpy_element_ref = neuron.numpy_element_ref
 
 
 def eval_arith_flux(arith, nregion, node):
-    print("in eval arith flux")
     func, _species = rxdmath._compile(arith, [nregion])
-    print("rxdmath._compiled")
     c = compile(list(func.values())[0][0], "f", "eval")
-    print(f"{list(func.values())[0][0]=}")
     s = [[None] * region._region_count for _ in range(species._species_count)]
     for specie in _species:
-        s[specie()._id][nregion._id] = specie().nodes(node.segment).value
-    print(f"{s[2][1]=}\n{c=}")
-    ret = eval(c, {"species": s})
-    print("returning from eval arith flux")
-    return ret
-
+        s[specie()._id][nregion._id] = float(specie().nodes(node.segment).value[0])
+    return eval(c, {"species": s})
 
 class Node(object):
     def satisfies(self, condition):
