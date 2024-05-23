@@ -1,6 +1,6 @@
 import neuron
 from neuron import h, nrn, hoc, nrn_dll_sym
-from . import region, constants
+from . import region, constants, species
 from . import rxdsection, rxdmath
 import numpy
 import weakref
@@ -122,17 +122,16 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
 _numpy_element_ref = neuron.numpy_element_ref
 
 
-def eval_arith_flux(arith, node):
+def eval_arith_flux(arith, nregion, node):
     print("in eval arith flux")
-    func, species = rxdmath._compile(arith, [reg() for reg in region._all_regions])
+    func, _species = rxdmath._compile(arith, [nregion])
     print("rxdmath._compiled")
     c = compile(list(func.values())[0][0], "f", "eval")
     print(f"{list(func.values())[0][0]=}")
-    s = []
-    for specie in species:
-        s.append(specie().nodes(node.segment).value)
-    print(f"c = {c}")
-    print(f"s={s}")
+    s = [[None] * region._region_count for _ in range(species._species_count)]
+    for specie in _species:
+        s[specie()._id][nregion._id] = (specie().nodes(node.segment).value)
+    print(f"{s[2][1]=}\n{c=}")
     ret = eval(c, {"species": s})
     print("returning from eval arith flux")
     return ret
@@ -369,7 +368,7 @@ class Node(object):
                     success = True
                 except TypeError:
                     arith = rxdmath._ensure_arithmeticed(args[0])
-                    source = lambda: eval_arith_flux(arith, self)
+                    source = lambda: eval_arith_flux(arith, self.region, self)
                     _sources.append(source)
                     scale = 1 / self.volume
                     success = True
