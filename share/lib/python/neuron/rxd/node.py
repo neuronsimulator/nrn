@@ -130,7 +130,7 @@ def eval_arith_flux(arith, nregion, node):
     print(f"{list(func.values())[0][0]=}")
     s = [[None] * region._region_count for _ in range(species._species_count)]
     for specie in _species:
-        s[specie()._id][nregion._id] = (specie().nodes(node.segment).value)
+        s[specie()._id][nregion._id] = specie().nodes(node.segment).value
     print(f"{s[2][1]=}\n{c=}")
     ret = eval(c, {"species": s})
     print("returning from eval arith flux")
