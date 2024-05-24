@@ -24,3 +24,27 @@ def test_arith_include_flux(neuron_nosave_instance):
     assert abs(node1.concentration - node2.concentration) < diff
     h.continuerun(0.025)
     assert abs(node1.concentration - node2.concentration) < diff
+
+
+def test_invalid_include_flux(neuron_nosave_instance):
+    h, rxd, _ = neuron_nosave_instance
+    dend1 = h.Section("dend1")
+    cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
+    ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
+    node1 = ca1.nodes(dend1(0.5))[0]
+    try:
+        node1.include_flux("wow")
+    except Exception as e:
+        assert isinstance(e, rxd.RxDException)
+    try:
+        node1.include_flux([])
+    except Exception as e:
+        assert isinstance(e, rxd.RxDException)
+    try:
+        node1.include_flux(None)
+    except Exception as e:
+        assert isinstance(e, rxd.RxDException)
+    try:
+        node1.include_flux({"a": 1})
+    except Exception as e:
+        assert isinstance(e, rxd.RxDException)
