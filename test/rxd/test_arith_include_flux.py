@@ -3,8 +3,8 @@ def test_arith_include_flux(neuron_nosave_instance):
     h, rxd, _ = neuron_nosave_instance
     dend1 = h.Section("dend1")
     dend2 = h.Section("dend2")
-    dend1.nseg = 4
-    dend2.nseg = 4
+    dend1.nseg = 5
+    dend2.nseg = 5
 
     cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
     cyt2 = rxd.Region(dend2.wholetree(), nrn_region="i")
