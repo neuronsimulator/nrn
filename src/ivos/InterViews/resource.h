@@ -26,15 +26,14 @@
  * Resources are shared objects.
  */
 
-#ifndef iv_resource_h
-#define iv_resource_h
+#pragma once
 
 #include <InterViews/enter-scope.h>
 
 class Resource {
 public:
-    Resource();
-    virtual ~Resource();
+    Resource() = default;
+    virtual ~Resource() = default;
 
     virtual void ref() const;
     virtual void unref() const;
@@ -54,7 +53,7 @@ public:
     virtual void Reference() const { ref(); }
     virtual void Unreference() const { unref(); }
 private:
-    unsigned refcount_;
+    unsigned refcount_{};
 private:
     /* prohibit default assignment */
     Resource& operator =(const Resource&);
@@ -65,5 +64,3 @@ private:
  */
 
 static inline void Unref(const Resource* r) { Resource::unref(r); }
-
-#endif

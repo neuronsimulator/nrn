@@ -46,6 +46,20 @@ nrn_add_test(
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
 
+# creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
+nrn_add_test_group(
+  NAME external_ringtest_nrn
+  SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
+  ENVIRONMENT OMP_NUM_THREADS=1
+  MODFILE_PATTERNS "mod/*.mod"
+  SCRIPT_PATTERNS "*.py" "*.hoc")
+
+nrn_add_test(
+  GROUP external_ringtest_nrn
+  NAME optim_node_order
+  REQUIRES python
+  COMMAND nrniv -python test_optimize_node_order.py -tstop 50 -rparm -npt 1)
+
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
     set(gpu_arg -gpu)
@@ -126,7 +140,46 @@ foreach(processor cpu gpu)
     ENVIRONMENT OMP_NUM_THREADS=${ringtest_num_threads} NEURON_INIT_MPI=1
     COMMAND ${ringtest_python} -tstop 100 -coreneuron -nt ${ringtest_num_datasets} ${gpu_arg})
 endforeach()
+
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_registermapping_directmode
+  REQUIRES coreneuron mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -registermapping)
+nrn_add_test(
+  GROUP external_ringtest
+  NAME coreneuron_mpi_registermapping_filemode
+  REQUIRES coreneuron mpi python
+  PROCESSORS ${ringtest_mpi_ranks}
+  ENVIRONMENT NEURON_INIT_MPI=1 LIBSONATA_ZERO_BASED_GIDS=1
+  COMMAND ${ringtest_special} -tstop 100 -coreneuron -registermapping -filemode)
+
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(
   GROUP external_ringtest
   REFERENCE_OUTPUT asciispikes::external/tests/ringtest/reference_data/spk1.100ms.std.ref)
+
+if(CORENRN_ENABLE_REPORTING)
+  find_program(H5DIFF_EXECUTABLE "h5diff")
+  if(H5DIFF_EXECUTABLE)
+    set(reference_path
+        "${PROJECT_BINARY_DIR}/test/external/tests/ringtest/reference_data/soma.ref.h5")
+    cpp_cc_build_time_copy(
+      INPUT "${PROJECT_SOURCE_DIR}/external/tests/ringtest/reference_data/soma.ref.h5"
+      OUTPUT "${reference_path}")
+    foreach(testfolder coreneuron_mpi_registermapping_directmode
+                       coreneuron_mpi_registermapping_filemode)
+      add_test(NAME external_ringtest::compare_soma_report_${testfolder}
+               COMMAND "h5diff" ${PROJECT_BINARY_DIR}/test/external_ringtest/${testfolder}/soma.h5
+                       ${reference_path})
+      set_tests_properties(external_ringtest::compare_soma_report_${testfolder}
+                           PROPERTIES DEPENDS "external_ringtest::${testfolder}")
+    endforeach()
+  else()
+    message(WARNING "Can not find h5diff, skip comparing the soma report for "
+                    "external_ringtest::coreneuron_mpi_registermapping_directmode "
+                    "external_ringtest::coreneuron_mpi_registermapping_filemode")
+  endif()
+endif()

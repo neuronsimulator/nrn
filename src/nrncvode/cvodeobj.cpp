@@ -21,10 +21,9 @@ extern int hoc_return_type_code;
 #include "nrndaspk.h"
 #include "nrniv_mf.h"
 #include "nrnpy.h"
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "mymath.h"
 #include "htlist.h"
-#include <OS/list.h>
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
@@ -80,9 +79,7 @@ extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int g
 #endif
 
 extern bool nrn_use_fifo_queue_;
-#if BBTQ == 5
 extern bool nrn_use_bin_queue_;
-#endif
 
 #undef SUCCESS
 #define SUCCESS CV_SUCCESS
@@ -121,13 +118,6 @@ static double spikestat(void* v) {
 }
 static double queue_mode(void* v) {
     hoc_return_type_code = 1;  // integer
-#if BBTQ == 4
-    if (ifarg(1)) {
-        nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
-    }
-    return double(nrn_use_fifo_queue_);
-#endif
-#if BBTQ == 5
     if (ifarg(1)) {
         nrn_use_bin_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -142,7 +132,6 @@ static double queue_mode(void* v) {
 #endif
     }
     return double(nrn_use_bin_queue_ + 2 * nrn_use_selfqueue_);
-#endif
     return 0.;
 }
 

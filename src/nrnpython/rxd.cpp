@@ -8,8 +8,8 @@
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#include <nrnwrap_Python.h>
-#include <nrnpython.h>
+#include "nrnwrap_Python.h"
+#include "nrnpython.h"
 
 #include <thread>
 #include <vector>

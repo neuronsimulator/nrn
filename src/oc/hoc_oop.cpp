@@ -88,7 +88,7 @@ size_t hoc_total_array(Symbol* s) /* total number of elements in array pointer *
     return total;
 }
 
-size_t hoc_total_array_data(Symbol* s,
+size_t hoc_total_array_data(const Symbol* s,
                             Objectdata* obd) /* total number of elements in array pointer */
 {
     Arrayinfo* a;
@@ -948,6 +948,22 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
             hoc_execerror(sym->name, "section property can't have argument");
         }
         hoc_pushs(sym);
+    } else if (sym->type == RANGEOBJ) {
+        // must return NMODLObject on stack
+        assert(sym->subtype == NMODLRANDOM);  // the only possibility at the moment
+        double x{0.5};
+        if (narg) {
+            if (narg > 1) {
+                hoc_execerr_ext("%s range object can have only one arg length parameter",
+                                sym->name);
+            }
+            x = xpop();
+        }
+        Section* sec{nrn_sec_pop()};
+        auto const i = node_index(sec, x);
+        Prop* m = nrn_mechanism_check(sym->u.rng.type, sec, i);
+        Object* ob = nrn_nmodlrandom_wrap(m, sym);
+        hoc_push_object(ob);
     } else {
         hoc_execerror(sym->name, "suffix not a range variable or section property");
     }
@@ -1261,6 +1277,17 @@ void hoc_object_component() {
         }
         hoc_pop_defer();
         hoc_nopop(); /* get rid of iterator statement context */
+        break;
+    }
+    case RANGEOBJ: {
+        assert(sym->subtype == NMODLRANDOM);
+        if (sym->subtype == NMODLRANDOM) {  // NMODL NEURON block RANDOM var
+            // RANGE type. The void* is a nrnran123_State*. Wrap in a
+            // NMODLRandom and push_object
+            Object* o = nrn_pntproc_nmodlrandom_wrap(obp->u.this_pointer, sym);
+            hoc_pop_defer();
+            hoc_push_object(o);
+        }
         break;
     }
     default:

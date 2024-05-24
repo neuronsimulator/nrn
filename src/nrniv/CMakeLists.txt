@@ -149,6 +149,7 @@ set(NRN_OC_GENERATED_SOURCES
 # =============================================================================
 set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_IVOC_SRC_FILES}
+    ${NRN_NODEORDEROPTIM_SRC_FILES}
     ${NRN_NRNCVODE_SRC_FILES}
     ${NRN_NRNIV_SRC_FILES}
     ${NRN_NRNOC_SRC_FILES}
@@ -156,11 +157,8 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
-    ${NRN_SUNDIALS_SRC_FILES})
-
-if(NRN_ENABLE_MPI)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
-endif()
+    ${NRN_SUNDIALS_SRC_FILES}
+    ${NRN_PARALLEL_SRC_FILES})
 
 if(NRN_ENABLE_MPI_DYNAMIC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
@@ -170,12 +168,6 @@ endif()
 
 if(MINGW)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
-endif()
-
-# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  # Include nrnpython in nrniv - useful for single lib neuron and wheels
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
 if(NOT NRN_ENABLE_INTERVIEWS)
@@ -211,10 +203,8 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/parallel
     ${PROJECT_BINARY_DIR}/src/sundials
     ${PROJECT_BINARY_DIR}/src/sundials/shared
-    ${PROJECT_SOURCE_DIR}/external/Random123/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
-    ${PROJECT_SOURCE_DIR}/src/mesch
     ${PROJECT_SOURCE_DIR}/src/nrncvode
     ${PROJECT_SOURCE_DIR}/src/nrnmpi
     ${PROJECT_SOURCE_DIR}/src/nrnpython
@@ -327,12 +317,6 @@ if(NRN_USE_BACKWARD)
 endif()
 
 if(NRN_HAVE_NVHPC_COMPILER)
-  # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
-  # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_EQUAL 21.7)
-    set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
-                                                                                   -Mnovect)
-  endif()
   # For NVHPC we will rely on FE exceptions as opposed to errno in order to make use of faster
   # builtins. One caveat is that if we use an optimization level greater than -O1, the FE exception
   # is not raised. See https://github.com/neuronsimulator/nrn/pull/1930
@@ -422,9 +406,7 @@ cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_include_directories(nrniv_lib PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
-  target_link_libraries(nrniv_lib nanobind)
+  target_link_libraries(nrniv_lib nrnpython)
 endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
@@ -465,10 +447,6 @@ endif()
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
-endif()
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -511,7 +489,7 @@ if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
   target_link_libraries(nrniv_lib interviews)
 else()
-  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR})
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)
@@ -591,14 +569,24 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
+                                                          TARGET nrnivmodl_nrnmain_cpp)
+
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
-cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h TARGET nrnivmodl_nrnmpiuse_h)
+
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+  OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h TARGET nrnivmodl_nrnneosm_h)
+
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h TARGET nrnivmodl_nrnconf_h)
+
+add_custom_target(
+  nrnivmodl_dependency ALL
+  DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
+          ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)

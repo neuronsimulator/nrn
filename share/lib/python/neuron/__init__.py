@@ -158,6 +158,7 @@ import _neuron_section
 h = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
+_userrxd = False
 
 # Initialise neuron.config.arguments
 from neuron import config
@@ -1020,6 +1021,7 @@ class _PlotShapePlot(_WrapperPlot):
 
         def _get_pyplot_axis3d(fig):
             """requires matplotlib"""
+            from . import rxd
             from matplotlib.pyplot import cm
             import matplotlib.pyplot as plt
             from mpl_toolkits.mplot3d import Axes3D
@@ -1086,6 +1088,11 @@ class _PlotShapePlot(_WrapperPlot):
                     lines = {}
                     lines_list = []
                     vals = []
+
+                    if isinstance(variable, rxd.species.Species):
+                        if len(variable.regions) > 1:
+                            raise Exception("Please specify region for the species.")
+
                     for sec in sections:
                         all_seg_pts = _segment_3d_pts(sec)
                         for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
@@ -1210,7 +1217,7 @@ class _PlotShapePlot(_WrapperPlot):
                 elif val > hi:
                     col = color_to_hex(cmap(255))
                 else:
-                    val = color_to_hex(128)
+                    col = color_to_hex(cmap(128))
             else:
                 col = color_to_hex(
                     cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range)))
@@ -1226,6 +1233,7 @@ class _PlotShapePlot(_WrapperPlot):
         def _do_plot_on_plotly(width=2, color=None, cmap=None):
             """requires matplotlib for colormaps if not specified explicitly"""
             import ctypes
+            from . import rxd
             import plotly.graph_objects as go
 
             class FigureWidgetWithNEURON(go.FigureWidget):
@@ -1306,6 +1314,11 @@ class _PlotShapePlot(_WrapperPlot):
                 val_range = hi - lo
 
                 data = []
+
+                if isinstance(variable, rxd.species.Species):
+                    if len(variable.regions) > 1:
+                        raise Exception("Please specify region for the species.")
+
                 for sec in secs:
                     all_seg_pts = _segment_3d_pts(sec)
                     for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):

@@ -34,7 +34,7 @@ export prefix
 export bindir
 export libdir
 
-if command -v xcrun; then
+if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
@@ -46,6 +46,8 @@ LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
 UserCOREFLAGS=()
+UserNMODLBIN=""
+UserNMODLFLAGS=""
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
@@ -66,6 +68,17 @@ while [ "$1" ] ; do
         UserLDFLAGS="$2"
         # extra lin flags, paths. libraries (CoreNEURON)
         UserCOREFLAGS+=(-l "${2}")
+        shift
+        shift;;
+    -nmodl)
+        echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
+        UserNMODLBIN="$2"
+        UserNMODLFLAGS="--neuron $UserNMODLFLAGS"
+        shift
+        shift;;
+    -nmodlflags)
+        echo "[NMODL][warning] If sympy is enabled, NMODL needs to be found in PYTHONPATH"
+        UserNMODLFLAGS="$UserNMODLFLAGS $2"
         shift
         shift;;
     -*)
@@ -144,6 +157,10 @@ mdir="$PWD"
 
 # construct file to be included by makefile to specify mod to c rule when
 # executed in $MODSUBDIR (child folder of launch location folder)
+# Since $(PWD) may contain spaces in the path name, use the relative path.
+# Otherwise, it is very difficult to pass around paths with spaces in
+# makefiles. However, to help the user know where things are, when
+# compiling use the full path to *.cpp
 MODMAKE=makemod2c_inc
 > "$MODMAKE"
 for i in "${files[@]}" ; do
@@ -157,13 +174,13 @@ for i in "${files[@]}" ; do
   f=${f// /\\ }
   f=${f//:/\\:}
   echo "\
-./${base_name// /\\ }.cpp: ${f}.mod
+${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\" $UserNMODLFLAGS)
 
-./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
+	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
+	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \"${PWD}/\$<\" -o \$@
 " >> "$MODMAKE"
 done
 
@@ -246,5 +263,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special &&
 echo "Successfully created $MODSUBDIR/special"

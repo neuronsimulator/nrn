@@ -89,13 +89,16 @@ char* prepare_args(int& argc, char**& argv, std::string& args) {
     free(first);
 
     // now build char*argv
-    argv = new char*[argc];
+    argv = new char*[argc + 1];
     first = strdup(args.c_str());
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
         argv[i] = token;
         token = strtok(nullptr, sep);
     }
+
+    // make sure argv is terminated by NULL!
+    argv[argc] = nullptr;
 
     // return actual data to be freed
     return first;
@@ -136,7 +139,7 @@ void get_nrn_trajectory_requests(int bsize) {
                 tr->varrays = varrays;
                 tr->scatter = pvars;
                 for (int i = 0; i < n_trajec; ++i) {
-                    tr->gather[i] = stdindex2ptr(types[i], indices[i], nt);
+                    tr->gather[i] = legacy_index2pointer(types[i], indices[i], nt);
                 }
                 delete[] types;
                 delete[] indices;

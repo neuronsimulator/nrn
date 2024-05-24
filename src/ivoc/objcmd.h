@@ -1,5 +1,4 @@
-#ifndef objcmd_h
-#define objcmd_h
+#pragma once
 
 #include <memory>
 
@@ -62,6 +61,4 @@ class HocCommandTool: public Rubberband {
     virtual bool event(Event&);
     HocCommand* hc_;
 };
-#endif
-
 #endif

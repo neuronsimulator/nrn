@@ -162,6 +162,9 @@ check_include_files(malloc.h have_malloc_h)
 if(have_malloc_h)
   list(APPEND CORENRN_COMPILE_DEFS HAVE_MALLOC_H)
 endif()
+# Code incompletely shared with NEURON via #if CORENRN_BUILD fragments. NRN and CORENEURON builds
+# sometimes compile the same few files but, for example, with different name spaces.
+list(APPEND CORENRN_COMPILE_DEFS CORENRN_BUILD=1)
 
 # =============================================================================
 # Build option specific compiler flags
@@ -179,11 +182,6 @@ if(CORENRN_HAVE_NVHPC_COMPILER)
     # (mis)detects nvc++ as nvcc because we pass the -cuda option and we therefore avoid the
     # problem. If GPU support is disabled, we define R123_USE_INTRIN_H=0 to avoid the problem.
     list(APPEND CORENRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
-  endif()
-  # CMake versions <3.19 used to add -A when using NVHPC/PGI, which makes the compiler excessively
-  # pedantic. See https://gitlab.kitware.com/cmake/cmake/-/issues/20997.
-  if(CMAKE_VERSION VERSION_LESS 3.19)
-    list(REMOVE_ITEM CMAKE_CXX17_STANDARD_COMPILE_OPTION -A)
   endif()
 endif()
 
@@ -267,8 +265,8 @@ if(nmodl_FOUND)
   set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
-      ON
-      CACHE BOOL "Disable NMODL python bindings")
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
   nrn_add_external_project(nmodl OFF)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
@@ -288,8 +286,8 @@ else()
     FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
-
 endif()
+set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
 
 # set correct arguments for nmodl for cpu/gpu target
 set(CORENRN_NMODL_FLAGS
@@ -323,7 +321,7 @@ endif()
 # Do not set this when building wheels. The nrnivmodl workflow means that we do not know what
 # compiler will be invoked with these flags, so we have to use flags that are as generic as
 # possible.
-if(NOT DEFINED NRN_WHEEL_BUILD OR NOT NRN_WHEEL_BUILD)
+if(NOT DEFINED NRN_BINARY_DIST_BUILD OR NOT NRN_BINARY_DIST_BUILD)
   list(APPEND CORENRN_EXTRA_CXX_FLAGS "${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif()
 
@@ -339,6 +337,7 @@ add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 file(
   GLOB
   CORENEURON_CODE_FILES
+  CONFIGURE_DEPENDS
   "apps/main1.cpp"
   "apps/corenrn_parameters.cpp"
   "gpu/nrn_acc_manager.cpp"
@@ -383,8 +382,14 @@ cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
   NO_TARGET)
-set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
-                                "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
 # {build_dir}/share/modfile/
 file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
@@ -411,22 +416,6 @@ set(CORENEURON_BUILTIN_MODFILES
 # coreneuron GPU library
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
-  # ~~~
-  # artificial cells and some other cpp files (using Random123) should be compiled
-  # without OpenACC to avoid use of GPU Random123 streams
-  # OL210813: this shouldn't be needed anymore, but it may have a small performance benefit
-  # ~~~
-  set(OPENACC_EXCLUDED_FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.cpp
-      ${CMAKE_CURRENT_BINARY_DIR}/pattern.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/nrn_setup.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/setup_fornetcon.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
-
-  set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
-                                                                   "-DDISABLE_OPENACC")
   # Only compile the explicit CUDA implementation of the Hines solver in GPU builds. Because of
   # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
   # this cannot be included in the same shared library as the rest of the OpenACC code.
@@ -489,6 +478,7 @@ endif()
 # Hines solver. This cannot be included in coreneuron-core because of this issue:
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
+add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
@@ -657,19 +647,15 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp)
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp)
+configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
 foreach(header ${main_headers})
-  cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${header}
-                         OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/${header})
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
 endforeach()
 
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
-
-# main program required for building special-core
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for

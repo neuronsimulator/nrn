@@ -71,10 +71,14 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx not in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ != -1 or idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
+    newflux["index"] = [
+        idx - (stop - start) if typ == -1 and idx > start else idx
+        for idx, typ in zip(newflux["index"], newflux["type"])
+    ]
     _node_fluxes = newflux
     _has_node_fluxes = _node_fluxes["index"] != []
 
@@ -108,8 +112,8 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ == -1 and idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j
 
@@ -136,6 +140,16 @@ class Node(object):
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
         raise RxDException("selector %r not supported for this node type" % condition)
+
+    def _safe_satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
+
+        Works the same as node.satisfies but replaces RxDException with False
+        """
+        try:
+            return self.satisfies(condition)
+        except RxDException:
+            return False
 
     @property
     def _ref_concentration(self):
@@ -463,6 +477,9 @@ class Node1D(Node):
     @property
     def segment(self):
         return self._sec._sec(self.x)
+
+    def _in_seg(self, segment):
+        return segment == self.segment
 
     @property
     def surface_area(self):

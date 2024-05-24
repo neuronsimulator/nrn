@@ -1,5 +1,4 @@
-#ifndef oc2iv_h
-#define oc2iv_h
+#pragma once
 
 #include <string.h>
 #include <stdio.h>
@@ -107,6 +106,4 @@ class ParseTopLevel {
     Symlist* symsav_;
     bool restored_;
 };
-#endif
-
 #endif

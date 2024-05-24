@@ -41,7 +41,9 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 char* hoc_back2forward(char*);
 #endif
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #define IOS_OUT std::ios::out
 
 #include <IV-look/kit.h>
@@ -3338,13 +3340,6 @@ char* ivoc_get_temp_file() {
     if (!tdir) {
         tdir = "/tmp";
     }
-#if defined(WIN32) && defined(__MWERKS__)
-    char tname[L_tmpnam + 1];
-    tmpnam(tname);
-    auto const length = strlen(tdir) + 1 + strlen(tname) + 1;
-    tmpfile = new char[length];
-    std::snprintf(tmpfile, length, "%s/%s", tdir, tname);
-#else
     auto const length = strlen(tdir) + 1 + 9 + 1;
     tmpfile = new char[length];
     std::snprintf(tmpfile, length, "%s/nrnXXXXXX", tdir);
@@ -3356,7 +3351,6 @@ char* ivoc_get_temp_file() {
     close(fd);
 #else
     mktemp(tmpfile);
-#endif
 #endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
