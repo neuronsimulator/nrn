@@ -359,11 +359,12 @@ class Node(object):
                     f = float(args[0])
                     source = f
                     success = True
-                except TypeError:
-                    arith = rxdmath._ensure_arithmeticed(args[0])
-                    source = lambda: eval_arith_flux(arith, self.region, self)
-                    scale = 1 / self.volume
-                    success = True
+                except:
+                    arith = args[0]
+                    if isinstance(arith, rxdmath._Arithmeticed):
+                        source = lambda: eval_arith_flux(arith, self.region, self)
+                        scale = 1 / self.volume
+                        success = True
             if not success:
                 raise RxDException("unsupported flux form")
         _node_fluxes["index"].append(self._index)
