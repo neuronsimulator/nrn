@@ -1859,7 +1859,13 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
 }
 
 void CodegenNeuronCppVisitor::print_net_move_call(const ast::FunctionCall& node) {
-    throw std::runtime_error("Not implemented.");
+    const auto& point_process = get_variable_name("point_process", /* use_instance */ false);
+    const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
+
+    printer->fmt_text("net_move(/* tqitem */ &{}, {}, ", tqitem, point_process);
+
+    print_vector_elements(node.get_arguments(), ", ");
+    printer->add_text(')');
 }
 
 void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& node) {
@@ -1910,7 +1916,7 @@ void CodegenNeuronCppVisitor::print_net_receive() {
     ParamVector args;
     args.emplace_back("", "Point_process*", "", "_pnt");
     args.emplace_back("", "double*", "", "_args");
-    args.emplace_back("", "double", "", "_lflag");
+    args.emplace_back("", "double", "", "flag");
 
     printer->fmt_push_block("static void nrn_net_receive_{}({})",
                             info.mod_suffix,
