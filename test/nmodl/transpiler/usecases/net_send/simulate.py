@@ -8,20 +8,30 @@ from neuron.units import ms
 #
 # When the event is received the variable `y` is "toggled" to 1. This happens
 # at different times for `toggle` and `art_toggle`.
+#
+# To test `net_send` inside a NET_RECEIVE block, after toggling we send another
+# event (to ourselves) which will cause `y` to increment once more.
+
+# Recording variables affected by events happens as follows:
+# 1. Apply all events in `[t_i, t_i + 0.5 *dt]`.
+# 2. Integrate: t_i - 0.5*dt -> t_i + 0.5*dt
+# 3. Record variables.
+# 4. Apply all events in `[t_i+0.5*dt, t_{i+1}]`.
+#
+# Therefore, we make sure that the events happen in the first half of a
+# time-step.
 
 
-def simulate():
+def simulate(create_toggle):
     nseg = 1
 
     s = h.Section()
     s.nseg = nseg
 
-    toggle = h.toggle(s(0.5))
-    art_toggle = h.art_toggle()
+    toggle = create_toggle(s)
 
     t_hoc = h.Vector().record(h._ref_t)
     y_hoc = h.Vector().record(toggle._ref_y)
-    art_y_hoc = h.Vector().record(art_toggle._ref_y)
 
     h.stdinit()
     h.tstop = 5.0 * ms
@@ -29,31 +39,22 @@ def simulate():
 
     t = np.array(t_hoc.as_numpy())
     y = np.array(y_hoc.as_numpy())
-    art_y = np.array(art_y_hoc.as_numpy())
 
-    return t, y, art_y
-
-
-def check_solution(t, y, art_y):
-    y_exact = np.array(t >= 2.0, np.float64)
-    art_y_exact = np.array(t >= 1.5, np.float64)
-
-    assert np.all(np.abs(y - y_exact) == 0), f"{y} != {y_exact}, delta: {y - y_exact}"
-    assert np.all(
-        np.abs(art_y - art_y_exact) == 0
-    ), f"{art_y} != {art_y_exact}, delta: {art_y - art_y_exact}"
+    return t, y
 
 
-def plot_solution(t, y, art_y):
-    import matplotlib.pyplot as plt
+def check_solution(t, y, arrival_times):
+    eps = 1e-8
+    y_exact = np.zeros(y.shape)
+    for t_arrival in arrival_times:
+        y_exact[t > t_arrival - eps] += 1
 
-    plt.plot(t, y)
-    plt.plot(t, art_y)
-    plt.show()
+    assert np.all(y == y_exact), f"{y} != {y_exact}, delta = {y - y_exact}"
 
 
 if __name__ == "__main__":
-    t, y, art_y = simulate()
-    check_solution(t, y, art_y)
+    t, y = simulate(lambda s: h.toggle(s(0.5)))
+    check_solution(t, y, [2.001, 4.001])
 
-    # plot_solution(t, y, art_y)
+    t, y = simulate(lambda s: h.art_toggle(s(0.5)))
+    check_solution(t, y, [2.501, 4.501])

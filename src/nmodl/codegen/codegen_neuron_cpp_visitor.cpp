@@ -499,7 +499,6 @@ void CodegenNeuronCppVisitor::print_namespace_stop() {
 std::string CodegenNeuronCppVisitor::conc_write_statement(const std::string& ion_name,
                                                           const std::string& concentration,
                                                           int index) {
-    // throw std::runtime_error("Not implemented.");
     return "";
 }
 
@@ -529,7 +528,6 @@ std::string CodegenNeuronCppVisitor::float_variable_name(const SymbolType& symbo
 }
 
 
-/// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& symbol,
                                                        const std::string& name,
                                                        bool use_instance) const {
@@ -579,6 +577,16 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
     auto index_comparator = [&varname](const IndexVariableInfo& var) {
         return varname == var.symbol->get_name();
     };
+
+    if (name == naming::POINT_PROCESS_VARIABLE) {
+        if (printing_net_receive) {
+            // In net_receive blocks, the point process is passed in as an
+            // argument called:
+            return "_pnt";
+        }
+        // The "integer variable" branch will pick up the correct `_ppvar` when
+        // not printing a NET_RECEIVE block.
+    }
 
     // float variable
     auto f = std::find_if(codegen_float_variables.begin(),
@@ -1829,15 +1837,19 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
 void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node) {
     auto const& arguments = node.get_arguments();
 
-    if (printing_net_receive || printing_net_init) {
+    if (printing_net_init) {
         throw std::runtime_error("Not implemented. [jfiwoei]");
     }
 
     std::string weight_pointer = "nullptr";
-    const auto& point_process = get_variable_name("point_process", /* use_instance */ false);
+    auto point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE,
+                                           /* use_instance */ false);
+    if (!printing_net_receive) {
+        point_process += ".get<Point_process*>()";
+    }
     const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
 
-    printer->fmt_text("net_send(/* tqitem */ &{}, {}, {}.get<Point_process*>(), {} + ",
+    printer->fmt_text("net_send(/* tqitem */ &{}, {}, {}, {} + ",
                       tqitem,
                       weight_pointer,
                       point_process,
@@ -1851,7 +1863,9 @@ void CodegenNeuronCppVisitor::print_net_move_call(const ast::FunctionCall& node)
 }
 
 void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& node) {
-    throw std::runtime_error("Not implemented.");
+    const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE,
+                                                  /* use_instance */ false);
+    printer->fmt_text("net_event({}, t)", point_process);
 }
 
 /**
@@ -1887,6 +1901,7 @@ static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive
 }
 
 void CodegenNeuronCppVisitor::print_net_receive() {
+    printing_net_receive = true;
     auto node = info.net_receive_node;
     if (!node) {
         return;
@@ -1906,6 +1921,7 @@ void CodegenNeuronCppVisitor::print_net_receive() {
     printer->add_line("_nrn_mechanism_cache_instance _ml_obj{_pnt->prop};");
     printer->add_line("auto * _nt = static_cast<NrnThread*>(_pnt->_vnt);");
     printer->add_line("auto * _ml = &_ml_obj;");
+    printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
 
     printer->fmt_line("auto inst = make_instance_{}(_ml_obj);", info.mod_suffix);
 
@@ -1916,6 +1932,7 @@ void CodegenNeuronCppVisitor::print_net_receive() {
 
     printer->add_newline();
     printer->pop_block();
+    printing_net_receive = false;
 }
 
 

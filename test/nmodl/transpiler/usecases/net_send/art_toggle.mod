@@ -3,15 +3,19 @@ NEURON {
   RANGE y
 }
 
-PARAMETER {
-  y = 0.0
+ASSIGNED {
+  y
 }
 
 INITIAL {
   y = 0
-  net_send(1.5, 1)
+  net_send(2.501, 1)
 }
 
 NET_RECEIVE(w) {
-  y = 1.0
+  y = y + 1.0
+
+  if(t < 3.7) {
+    net_send(4.501 - t, 1)
+  }
 }
