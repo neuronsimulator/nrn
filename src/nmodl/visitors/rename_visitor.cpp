@@ -47,7 +47,8 @@ std::string RenameVisitor::new_name_generator(const std::string& old_name) {
 /// rename matching variable
 void RenameVisitor::visit_name(const ast::Name& node) {
     const auto& name = node.get_node_name();
-    if (std::regex_match(name, var_name_regex)) {
+    if (std::regex_match(name, var_name_regex) && node.get_parent() &&
+        !node.get_parent()->is_function_call()) {
         std::string new_name = new_name_generator(name);
         node.get_value()->set(new_name);
         std::string token_string = node.get_token() != nullptr
