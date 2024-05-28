@@ -877,7 +877,7 @@ Description:
     coefficients, it is not uncommon to improve simulation speed by a factor 
     of 5. 
      
-    In the context of a procedure taking one argument, TABLE has the syntax 
+    In the context of a PROCEDURE taking one argument, TABLE has the syntax 
      
 
     .. code-block::
@@ -887,27 +887,33 @@ Description:
 
      
     where: 
-    variables is a list of variable names each of which will have its 
+    ``variables`` is a list of variable names each of which will have its 
     own table, 
-    dependencies is a list of parameters that, when any of them changes their 
+    ``dependencies`` is a list of parameters that, when any of them changes their 
     value, cause the tables to be recalculated, 
-    lowest is the least arg value for the first table entry, 
-    highest is the greatest arg value for the last table entry, and 
-    table size is the number of elements in each table. 
+    ``lowest`` is the least arg value for the first table entry, 
+    ``highest`` is the greatest arg value for the last table entry, and 
+    ``tablesize`` is the number of elements in each table.
+    Note that, for a FUNCTION, ``variables`` should remain empty as the only
+    interpolated value is the value of the function at the argument itself,
+    i.e. if ``arg`` is an argument passed to a FUNCTION, then ``variables`` is
+    always implicitly set to ``arg``, and no further variables are allowed.
+    Also note that a FUNCTION or a PROCEDURE with a TABLE statement must take
+    exactly one input argument.
      
-    Each model that has a table also has a flag associated with it that 
-    can be changed by the user called 
-    usetable_suffix 
+    Each model (with a suffix name ``<suffix>``) that has a table also has a flag
+    associated with it that can be changed by the user called 
+    ``usetable_<suffix>`` 
     which specifies that the tables are to be used (1, default) or not used (0). 
      
-    With usetable_suffix = 0, when the procedure is called it ignores the tables 
+    With ``usetable_<suffix> = 0``, when the procedure is called it ignores the tables 
     and just computes the values using the assignment statements as any normal 
     procedure. 
      
-    With usetable_suffix = 1, when the procedure is called, the 
-    arg value is used to assign values to the "variables" by looking them up 
+    With ``usetable_<suffix> = 1``, when the procedure is called, the 
+    arg value is used to assign values to the ``variables`` by looking them up 
     in the tables; the time normally spent executing the assignment statements 
-    is saved. If the tables are out of date (a "dependency" has a different 
+    is saved. If the tables are out of date (any of the ``dependencies`` has a different 
     value from its value the last time the tables were constructed) or have never 
     been created, the tables are created. 
      
@@ -916,6 +922,11 @@ Description:
     investment is only repaid if the tables remain valid for many more than 
     200 subsequent calls to the procedure and if the calculation takes more 
     time than an interpolated table lookup. 
+
+    Also note that for any argument value outside of the interpolation range,
+    the returned value of a function with a TABLE will always be the value at
+    the boundary (value at ``lowest`` if argument value is smaller than ``lowest``,
+    value at ``highest`` if argument value is larger than ``highest``).
 
 
 INITIAL
