@@ -1,5 +1,8 @@
 #include "nrnpython.h"
 
+
+NB_EXPORT PyObject* nrnpy_hoc();
+
 static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_dealloc, (void*) hocobj_dealloc},
     {Py_tp_repr, (void*) hocobj_repr},
