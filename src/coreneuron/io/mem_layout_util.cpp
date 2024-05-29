@@ -14,8 +14,8 @@ namespace coreneuron {
 
 /// calculate size after padding for specific memory layout
 // Warning: this function is declared extern in nrniv_decl.h
-int nrn_soa_padded_size(int cnt, int layout) {
-    return soa_padded_size<NRN_SOA_PAD>(cnt, layout);
+int nrn_soa_padded_size(int cnt) {
+    return soa_padded_size<NRN_SOA_PAD>(cnt);
 }
 
 /// return the new offset considering the byte aligment settings
@@ -31,17 +31,9 @@ size_t nrn_soa_byte_align(size_t size) {
     return size;
 }
 
-int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
-    switch (layout) {
-    case Layout::AoS:
-        return icnt * sz + isz;
-    case Layout::SoA:
-        int padded_cnt = nrn_soa_padded_size(cnt, layout);
-        return icnt + isz * padded_cnt;
-    }
-
-    nrn_assert(false);
-    return 0;
+int nrn_i_layout(int icnt, int cnt, int isz) {
+    int padded_cnt = nrn_soa_padded_size(cnt);
+    return icnt + isz * padded_cnt;
 }
 
 std::array<int, 3> legacy2soaos_index(int legacy_index, const std::vector<int>& array_dims) {

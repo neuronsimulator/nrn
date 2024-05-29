@@ -290,7 +290,7 @@ static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
     cnrn_target_memcpy_to_device(&(d_ml->nodeindices), &d_nodeindices);
 
     if (szdp) {
-        int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+        int pcnt = nrn_soa_padded_size(n) * szdp;
         int* d_pdata = cnrn_target_copyin(ml->pdata, pcnt);
         cnrn_target_memcpy_to_device(&(d_ml->pdata), &d_pdata);
     }
@@ -375,12 +375,12 @@ static void update_ml_on_host(const Memb_list* ml, int type) {
     int szp = corenrn.get_prop_param_size()[type];
     int szdp = corenrn.get_prop_dparam_size()[type];
 
-    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
+    int pcnt = nrn_soa_padded_size(n) * szp;
 
     nrn_pragma_acc(update self(ml->data[:pcnt], ml->nodeindices[:n]))
     nrn_pragma_omp(target update from(ml->data[:pcnt], ml->nodeindices[:n]))
 
-    int dpcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+    int dpcnt = nrn_soa_padded_size(n) * szdp;
     nrn_pragma_acc(update self(ml->pdata[:dpcnt]) if (szdp))
     nrn_pragma_omp(target update from(ml->pdata[:dpcnt]) if (szdp))
 
@@ -446,7 +446,7 @@ static void delete_ml_from_device(Memb_list* ml, int type) {
         cnrn_target_delete(ml->_thread, ts);
     }
     if (szdp) {
-        int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+        int pcnt = nrn_soa_padded_size(n) * szdp;
         cnrn_target_delete(ml->pdata, pcnt);
     }
     cnrn_target_delete(ml->nodeindices, n);
@@ -540,7 +540,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         double* dptr;
 
         /* for padding, we have to recompute ne */
-        int ne = nrn_soa_padded_size(nt->end, 0);
+        int ne = nrn_soa_padded_size(nt->end);
 
         dptr = d__data + 0 * ne;
         cnrn_target_memcpy_to_device(&(d_nt->_actual_rhs), &(dptr));
@@ -605,7 +605,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         if (nt->shadow_rhs_cnt) {
             double* d_shadow_ptr;
 
-            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt);
 
             /* copy shadow_rhs to device and fix-up the pointer */
             d_shadow_ptr = cnrn_target_copyin(nt->_shadow_rhs, pcnt);
@@ -1018,7 +1018,7 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
         if (nt->compute_gpu && (nt->end > 0)) {
             /* -- copy data to host -- */
 
-            int ne = nrn_soa_padded_size(nt->end, 0);
+            int ne = nrn_soa_padded_size(nt->end);
 
             // clang-format off
             nrn_pragma_acc(update self(nt->_actual_rhs[:ne],
@@ -1050,7 +1050,7 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 update_ml_on_host(tml->ml, tml->index);
             }
 
-            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt);
             /* copy shadow_rhs to host */
             /* copy shadow_d to host */
             nrn_pragma_acc(
@@ -1226,7 +1226,7 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         }
 
         if (nt->shadow_rhs_cnt) {
-            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt);
             cnrn_target_delete(nt->_shadow_d, pcnt);
             cnrn_target_delete(nt->_shadow_rhs, pcnt);
         }

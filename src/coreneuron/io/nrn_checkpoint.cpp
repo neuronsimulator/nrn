@@ -466,10 +466,9 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             Memb_list* ml = tml->ml;
             double* d = nullptr;
             Datum* pd = nullptr;
-            int layout = corenrn.get_mech_data_layout()[type];
             int dsz = corenrn.get_prop_param_size()[type];
             int pdsz = corenrn.get_prop_dparam_size()[type];
-            int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+            int aln_cntml = nrn_soa_padded_size(ml->nodecount);
             fh << type << "\n";
             int icnt = 0;
             int dcnt = 0;
@@ -479,8 +478,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 if (ml->_permute) {
                     jp = ml->_permute[j];
                 }
-                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0);
+                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0);
                 (*corenrn.get_bbcore_write()[type])(
                     nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
             }
@@ -507,8 +506,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                     jp = ml->_permute[j];
                 }
 
-                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0);
+                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0);
 
                 (*corenrn.get_bbcore_write()[type])(
                     dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
@@ -650,24 +649,19 @@ bool CheckPoints::initialize() {
 
 template <typename T>
 T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) const {
+    (void)layout;
     // inverse of F -> data. Just a copy if layout=1. If SoA,
     // original file order depends on padding and permutation.
     // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
     T* d = new T[cnt * sz];
-    if (layout == Layout::AoS) {
-        for (int i = 0; i < cnt * sz; ++i) {
-            d[i] = data[i];
+    int align_cnt = nrn_soa_padded_size(cnt, layout);
+    for (int i = 0; i < cnt; ++i) {
+        int ip = i;
+        if (permute) {
+            ip = permute[i];
         }
-    } else if (layout == Layout::SoA) {
-        int align_cnt = nrn_soa_padded_size(cnt, layout);
-        for (int i = 0; i < cnt; ++i) {
-            int ip = i;
-            if (permute) {
-                ip = permute[i];
-            }
-            for (int j = 0; j < sz; ++j) {
-                d[i * sz + j] = data[ip + j * align_cnt];
-            }
+        for (int j = 0; j < sz; ++j) {
+            d[i * sz + j] = data[ip + j * align_cnt];
         }
     }
     return d;

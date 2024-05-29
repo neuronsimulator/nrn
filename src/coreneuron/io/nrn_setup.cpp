@@ -654,7 +654,7 @@ double* legacy_index2pointer(int mtype, int index, NrnThread& nt) {
         nrn_assert(ml);
 
         const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
-        int padded_node_count = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+        int padded_node_count = nrn_soa_padded_size(ml->nodecount);
 
         auto soaos_index = legacy2soaos_index(index, array_dims);
         auto cnrn_index =
@@ -671,17 +671,10 @@ double* legacy_index2pointer(int mtype, int index, NrnThread& nt) {
 }
 
 // from i to (icnt, isz)
-void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout) {
-    if (layout == Layout::AoS) {
-        icnt = i / sz;
-        isz = i % sz;
-    } else if (layout == Layout::SoA) {
-        int padded_cnt = nrn_soa_padded_size(cnt, layout);
-        icnt = i % padded_cnt;
-        isz = i / padded_cnt;
-    } else {
-        assert(0);
-    }
+void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz) {
+    int padded_cnt = nrn_soa_padded_size(cnt);
+    icnt = i % padded_cnt;
+    isz = i / padded_cnt;
 }
 
 /**

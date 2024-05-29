@@ -35,65 +35,61 @@ typedef std::tuple<data<double, 2>,
     chunk_data_type;
 
 TEST_CASE("padding_simd", "[PaddingCheck]") {
-    /** AOS test */
-    int pad = coreneuron::soa_padded_size<1>(11, 1);
-    REQUIRE(pad == 11);
-
     /** SOA tests with 11 */
-    pad = coreneuron::soa_padded_size<1>(11, 0);
+    pad = coreneuron::soa_padded_size<1>(11);
     REQUIRE(pad == 11);
 
-    pad = coreneuron::soa_padded_size<2>(11, 0);
+    pad = coreneuron::soa_padded_size<2>(11);
     REQUIRE(pad == 12);
 
-    pad = coreneuron::soa_padded_size<4>(11, 0);
+    pad = coreneuron::soa_padded_size<4>(11);
     REQUIRE(pad == 12);
 
-    pad = coreneuron::soa_padded_size<8>(11, 0);
+    pad = coreneuron::soa_padded_size<8>(11);
     REQUIRE(pad == 16);
 
-    pad = coreneuron::soa_padded_size<16>(11, 0);
+    pad = coreneuron::soa_padded_size<16>(11);
     REQUIRE(pad == 16);
 
-    pad = coreneuron::soa_padded_size<32>(11, 0);
+    pad = coreneuron::soa_padded_size<32>(11);
     REQUIRE(pad == 32);
 
     /** SOA tests with 32 */
-    pad = coreneuron::soa_padded_size<1>(32, 0);
+    pad = coreneuron::soa_padded_size<1>(32);
     REQUIRE(pad == 32);
 
-    pad = coreneuron::soa_padded_size<2>(32, 0);
+    pad = coreneuron::soa_padded_size<2>(32);
     REQUIRE(pad == 32);
 
-    pad = coreneuron::soa_padded_size<4>(32, 0);
+    pad = coreneuron::soa_padded_size<4>(32);
     REQUIRE(pad == 32);
 
-    pad = coreneuron::soa_padded_size<8>(32, 0);
+    pad = coreneuron::soa_padded_size<8>(32);
     REQUIRE(pad == 32);
 
-    pad = coreneuron::soa_padded_size<16>(32, 0);
+    pad = coreneuron::soa_padded_size<16>(32);
     REQUIRE(pad == 32);
 
-    pad = coreneuron::soa_padded_size<32>(32, 0);
+    pad = coreneuron::soa_padded_size<32>(32);
     REQUIRE(pad == 32);
 
     /** SOA tests with 33 */
-    pad = coreneuron::soa_padded_size<1>(33, 0);
+    pad = coreneuron::soa_padded_size<1>(33);
     REQUIRE(pad == 33);
 
-    pad = coreneuron::soa_padded_size<2>(33, 0);
+    pad = coreneuron::soa_padded_size<2>(33);
     REQUIRE(pad == 34);
 
-    pad = coreneuron::soa_padded_size<4>(33, 0);
+    pad = coreneuron::soa_padded_size<4>(33);
     REQUIRE(pad == 36);
 
-    pad = coreneuron::soa_padded_size<8>(33, 0);
+    pad = coreneuron::soa_padded_size<8>(33);
     REQUIRE(pad == 40);
 
-    pad = coreneuron::soa_padded_size<16>(33, 0);
+    pad = coreneuron::soa_padded_size<16>(33);
     REQUIRE(pad == 48);
 
-    pad = coreneuron::soa_padded_size<32>(33, 0);
+    pad = coreneuron::soa_padded_size<32>(33);
     REQUIRE(pad == 64);
 }
 
@@ -103,7 +99,7 @@ TEMPLATE_LIST_TEST_CASE("memory_alignment_simd_false",
                         "[memory_alignment_simd_false]",
                         chunk_default_data_type) {
     const int c = TestType::chunk;
-    int total_size_chunk = coreneuron::soa_padded_size<c>(247, 0);
+    int total_size_chunk = coreneuron::soa_padded_size<c>(247);
     int ne = 6 * total_size_chunk;
 
     typename TestType::value_type* data = (typename TestType::value_type*)
@@ -126,7 +122,7 @@ TEMPLATE_LIST_TEST_CASE("memory_alignment_simd_true",
                         "[memory_alignment_simd_true]",
                         chunk_data_type) {
     const int c = TestType::chunk;
-    int total_size_chunk = coreneuron::soa_padded_size<c>(247, 0);
+    int total_size_chunk = coreneuron::soa_padded_size<c>(247);
     int ne = 6 * total_size_chunk;
 
     typename TestType::value_type* data = (typename TestType::value_type*)
