@@ -934,7 +934,7 @@ class Region(object):
                 self._nrn_region = value
             if value == "i" and self.geometry._surface_fraction == 0:
                 warnings.warn(
-                    f"{self.name} is in the \"i\" region with a surface_fraction of 0 and will not have currents added"
+                    f'{self.name} is in the "i" region with a surface_fraction of 0 and will not have currents added'
                 )
         else:
             raise RxDException("Cannot set nrn_region now; model already instantiated")
