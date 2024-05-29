@@ -17,6 +17,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
+set(NMODL_MAX_ERRORS
+    1
+    CACHE STRING "Number of errors before Clang/GCC stop.")
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
 option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
 option(NMODL_ENABLE_USECASES
@@ -72,6 +75,7 @@ include(cmake/ExternalProjectHelper.cmake)
 
 # This should apply to all NMODL targets but should not leak out when NMODL is built as a submodule.
 add_compile_options(${NMODL_COMPILER_WARNING_SUPPRESSIONS})
+add_compile_options(${NMODL_COMPILER_MAX_ERRORS_FLAG})
 
 # =============================================================================
 # Set the project version now using git
