@@ -308,3 +308,14 @@ extern "C" NB_EXPORT double degrees(const double radians);
 extern "C" NB_EXPORT void radians(const double degrees, double* radians);
 extern "C" NB_EXPORT double log1p(const double x);
 extern "C" NB_EXPORT double vtrap(const double x, const double y);
+
+extern "C" NB_EXPORT void set_hybrid_data(int64_t* num_1d_indices_per_grid,
+                                          int64_t* num_3d_indices_per_grid,
+                                          int64_t* hybrid_indices1d,
+                                          int64_t* hybrid_indices3d,
+                                          int64_t* num_3d_indices_per_1d_seg,
+                                          int64_t* hybrid_grid_ids,
+                                          double* rates,
+                                          double* volumes1d,
+                                          double* volumes3d,
+                                          double* dxs);
