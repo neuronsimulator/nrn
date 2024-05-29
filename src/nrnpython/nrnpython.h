@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nanobind/nanobind.h>
+
 #ifdef _WIN64
 #define MS_WIN64
 #define MS_WIN32
