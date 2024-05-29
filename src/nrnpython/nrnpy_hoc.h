@@ -1,7 +1,17 @@
 #include "nrnpython.h"
 
-
 NB_EXPORT PyObject* nrnpy_hoc();
+extern "C" NB_EXPORT PyObject* nrn_hocobj_ptr(double*);
+extern "C" NB_EXPORT int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) );
+extern "C" NB_EXPORT int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
+                                            PyObject* plotshape_plot0,
+                                            PyObject* get_mech_object_0,
+                                            PyObject* store_savestate,
+                                            PyObject* restore_savestate);
+extern "C" NB_EXPORT int nrnpy_set_gui_callback(PyObject*);
+extern "C" NB_EXPORT PyObject* get_plotshape_data(PyObject* sp);
+extern "C" NB_EXPORT int nrnpy_vec_math_register(PyObject* callback);
+extern "C" NB_EXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback);
 
 static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_dealloc, (void*) hocobj_dealloc},

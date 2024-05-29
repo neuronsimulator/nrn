@@ -1,4 +1,7 @@
 #include "../../nrnconf.h"
+
+#include "inithoc.hpp"
+
 #include "nrnmpiuse.h"
 #include <stdio.h>
 #include <stdint.h>

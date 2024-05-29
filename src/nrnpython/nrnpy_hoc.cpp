@@ -72,8 +72,6 @@ extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
-extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) );  // called by ctypes.
-extern "C" int nrnpy_set_gui_callback(PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);

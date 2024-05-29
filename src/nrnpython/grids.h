@@ -4,6 +4,8 @@ Date: 10/28/16
 Description: Header File for grids.cpp. Allows access to Grid_node
 and Flux_pair structs and their respective functions
 ******************************************************************/
+#include "nb_defs.h"
+
 #include <stdio.h>
 #include <assert.h>
 #include <nrnmpi.h>
@@ -394,6 +396,8 @@ extern Grid_node* Parallel_grids[100];  // Array of Grid_node * lists
 void make_dt_ptr(PyHocObject* my_dt_ptr);
 
 
+extern "C" NB_EXPORT void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr);
+
 // Create a single Grid_node
 /* Parameters:  Python object that includes array of double pointers,
                 size of x, y, and z dimensions
@@ -404,7 +408,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 // void free_Grid(Grid_node *grid);
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ECS_insert(int grid_list_index,
+extern "C" NB_EXPORT int ECS_insert(int grid_list_index,
                           PyHocObject* my_states,
                           int my_num_states_x,
                           int my_num_states_y,
@@ -437,7 +441,7 @@ Grid_node* ICS_make_Grid(PyHocObject* my_states,
                          double* ics_alphas);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ICS_insert(int grid_list_index,
+extern "C" NB_EXPORT int ICS_insert(int grid_list_index,
                           PyHocObject* my_states,
                           long num_nodes,
                           long* neighbors,
@@ -453,7 +457,7 @@ extern "C" int ICS_insert(int grid_list_index,
                           double atolscale,
                           double* ics_alphas);
 
-extern "C" int ICS_insert_inhom(int grid_list_index,
+extern "C" NB_EXPORT int ICS_insert_inhom(int grid_list_index,
                                 PyHocObject* my_states,
                                 long num_nodes,
                                 long* neighbors,
@@ -471,8 +475,29 @@ extern "C" int ICS_insert_inhom(int grid_list_index,
 
 
 // Set the diffusion coefficients for a given grid_id
-extern "C" int set_diffusion(int, int, double*, int);
+extern "C" NB_EXPORT int set_diffusion(int, int, double*, int);
 
+extern "C" NB_EXPORT int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability);
+extern "C" NB_EXPORT int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha);
+extern "C" NB_EXPORT void ics_set_grid_concentrations(int grid_list_index,
+                                            int index_in_list,
+                                            int64_t* nodes_per_seg,
+                                            int64_t* nodes_per_seg_start_indices,
+                                            PyObject* neuron_pointers);
+extern "C" NB_EXPORT void ics_set_grid_currents(int grid_list_index,
+                                      int index_in_list,
+                                      PyObject* neuron_pointers,
+                                      double* scale_factors);
+extern "C" NB_EXPORT void set_grid_concentrations(int grid_list_index,
+                                        int index_in_list,
+                                        PyObject* grid_indices,
+                                        PyObject* neuron_pointers);
+extern "C" NB_EXPORT void set_grid_currents(int grid_list_index,
+                                  int index_in_list,
+                                  PyObject* grid_indices,
+                                  PyObject* neuron_pointers,
+                                  PyObject* scale_factors);
+extern "C" NB_EXPORT void delete_by_id(int id);
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node** head, Grid_node* find);
 
