@@ -75,6 +75,10 @@ jobs:
     # To enable it, you have to:
     #   * add 'live-debug-win' to your PR title
     #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
+      if: failure()
+      uses: mxschmitt/action-tmate@v3
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -90,11 +94,6 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
-
-    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
-      if: failure()
-      uses: mxschmitt/action-tmate@v3
-
 
     - name: Publish Release Installer
       working-directory: ${{runner.workspace}}\nrn
