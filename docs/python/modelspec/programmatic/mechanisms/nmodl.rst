@@ -887,13 +887,19 @@ Description:
 
      
     where: 
-    ``variables`` is a list of variable names each of which will have its 
-    own table, 
-    ``dependencies`` is a list of parameters that, when any of them changes their 
-    value, cause the tables to be recalculated, 
-    ``lowest`` is the least arg value for the first table entry, 
-    ``highest`` is the greatest arg value for the last table entry, and 
-    ``tablesize`` is the number of elements in each table.
+
+    * ``variables`` is a list of variable names each of which will have its 
+        own table, 
+
+    * ``dependencies`` is a list of parameters that, when any of them changes their 
+        value, cause the tables to be recalculated, 
+
+    * ``lowest`` is the least arg value for the first table entry, 
+
+    * ``highest`` is the greatest arg value for the last table entry, and 
+
+    * ``tablesize`` is the number of elements in each table.
+
     Note that, for a FUNCTION, ``variables`` should remain empty as the only
     interpolated value is the value of the function at the argument itself,
     i.e. if ``arg`` is an argument passed to a FUNCTION, then ``variables`` is
@@ -925,8 +931,15 @@ Description:
 
     Also note that for any argument value outside of the interpolation range,
     the returned value of a function with a TABLE will always be the value at
-    the boundary (value at ``lowest`` if argument value is smaller than ``lowest``,
-    value at ``highest`` if argument value is larger than ``highest``).
+    the boundary. In mathematical form, assuming the table interpolates values
+    in the range ``[a, b]``:
+
+    .. math::
+
+        f(x) = \begin{cases}
+        f(a),\, &x \lt a \\
+        f(b),\, &x \gt b
+        \end{cases}
 
 
 INITIAL
