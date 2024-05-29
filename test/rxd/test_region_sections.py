@@ -30,7 +30,7 @@ def test_section_removal(neuron_instance):
     assert not ca.nodes
 
 
-def test_zero_fractional_volume(neuron_instance):
+def test_zero_fractional_volume_3d(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
     dend1.nseg = 4
@@ -42,5 +42,21 @@ def test_zero_fractional_volume(neuron_instance):
         dend1.L = 10
         dend1.diam = 2
         rxd.set_solve_type(domain=[dend1], dimension=3)
+        h.finitialize()
+        assert len(w) == 1
+
+
+def test_zero_fractional_volume_1d(neuron_instance):
+    h, rxd, data, save_path = neuron_instance
+    dend1 = h.Section("dend1")
+    dend1.nseg = 4
+    import warnings
+    with warnings.catch_warnings(record=True) as w:
+        cyt = rxd.Region(dend1.wholetree(), "i", name="cyt",
+                         geometry=rxd.FractionalVolume(volume_fraction=0.8), dx=0.25)
+        ca = rxd.Species(cyt, name="ca", charge=2, initial=1e-12)
+        dend1.L = 10
+        dend1.diam = 2
+        rxd.set_solve_type(domain=[dend1], dimension=1)
         h.finitialize()
         assert len(w) == 1
