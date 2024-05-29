@@ -65,6 +65,23 @@ SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
             REQUIRE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
+    GIVEN("Two procedures which use a table and have the same variable") {
+        std::string nmodl_text = R"(
+            PROCEDURE p1(arg) {
+                TABLE var FROM 0 TO 1 WITH 10
+                var = arg
+            }
+            PROCEDURE p2(arg) {
+                TABLE var FROM 0 TO 1 WITH 10
+                var = 2 * arg
+            }
+        )";
+        THEN("fail") {
+            // This is asserted because `nocmodl` generated code fails to
+            // compile in these cases, not because it must not work.
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
 }
 
 SCENARIO("Destructor block", "[visitor][semantic_analysis]") {
