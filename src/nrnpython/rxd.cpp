@@ -1130,7 +1130,7 @@ void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
 }
 
 
-void set_num_threads(const int n) {
+extern "C" void set_num_threads(const int n) {
     assert(n > 0);
     assert(NUM_THREADS > 0);
     // n and NUM_THREADS include the main thread, old_num and new_num refer to
@@ -1184,7 +1184,7 @@ void TaskQueue_sync(TaskQueue* q) {
     q->waiting_cond.wait(lock, [q] { return q->length == 0; });
 }
 
-int get_num_threads(void) {
+extern "C" int get_num_threads(void) {
     return NUM_THREADS;
 }
 
