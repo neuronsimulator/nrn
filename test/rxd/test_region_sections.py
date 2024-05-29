@@ -33,7 +33,7 @@ def test_section_removal(neuron_instance):
 def test_zero_fractional_volume_3d(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
-    dend1.nseg = 4
+    dend1.nseg = 5
     import warnings
     with warnings.catch_warnings(record=True) as w:
         cyt = rxd.Region(dend1.wholetree(), "i", name="cyt",
@@ -49,7 +49,7 @@ def test_zero_fractional_volume_3d(neuron_instance):
 def test_zero_fractional_volume_1d(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
-    dend1.nseg = 4
+    dend1.nseg = 5
     import warnings
     with warnings.catch_warnings(record=True) as w:
         cyt = rxd.Region(dend1.wholetree(), "i", name="cyt",
