@@ -409,21 +409,21 @@ extern "C" NB_EXPORT void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" NB_EXPORT int ECS_insert(int grid_list_index,
-                          PyHocObject* my_states,
-                          int my_num_states_x,
-                          int my_num_states_y,
-                          int my_num_states_z,
-                          double my_dc_x,
-                          double my_dc_y,
-                          double my_dc_z,
-                          double my_dx,
-                          double my_dy,
-                          double my_dz,
-                          PyHocObject* my_alpha,
-                          PyHocObject* my_permeability,
-                          int,
-                          double,
-                          double);
+                                    PyHocObject* my_states,
+                                    int my_num_states_x,
+                                    int my_num_states_y,
+                                    int my_num_states_z,
+                                    double my_dc_x,
+                                    double my_dc_y,
+                                    double my_dc_z,
+                                    double my_dx,
+                                    double my_dy,
+                                    double my_dz,
+                                    PyHocObject* my_alpha,
+                                    PyHocObject* my_permeability,
+                                    int,
+                                    double,
+                                    double);
 
 Grid_node* ICS_make_Grid(PyHocObject* my_states,
                          long num_nodes,
@@ -442,61 +442,65 @@ Grid_node* ICS_make_Grid(PyHocObject* my_states,
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" NB_EXPORT int ICS_insert(int grid_list_index,
-                          PyHocObject* my_states,
-                          long num_nodes,
-                          long* neighbors,
-                          long* x_line_defs,
-                          long x_lines_length,
-                          long* y_line_defs,
-                          long y_lines_length,
-                          long* z_line_defs,
-                          long z_lines_length,
-                          double* dcs,
-                          double dx,
-                          bool is_diffusable,
-                          double atolscale,
-                          double* ics_alphas);
+                                    PyHocObject* my_states,
+                                    long num_nodes,
+                                    long* neighbors,
+                                    long* x_line_defs,
+                                    long x_lines_length,
+                                    long* y_line_defs,
+                                    long y_lines_length,
+                                    long* z_line_defs,
+                                    long z_lines_length,
+                                    double* dcs,
+                                    double dx,
+                                    bool is_diffusable,
+                                    double atolscale,
+                                    double* ics_alphas);
 
 extern "C" NB_EXPORT int ICS_insert_inhom(int grid_list_index,
-                                PyHocObject* my_states,
-                                long num_nodes,
-                                long* neighbors,
-                                long* x_line_defs,
-                                long x_lines_length,
-                                long* y_line_defs,
-                                long y_lines_length,
-                                long* z_line_defs,
-                                long z_lines_length,
-                                double* dcs,
-                                double dx,
-                                bool is_diffusable,
-                                double atolscale,
-                                double* ics_alphas);
+                                          PyHocObject* my_states,
+                                          long num_nodes,
+                                          long* neighbors,
+                                          long* x_line_defs,
+                                          long x_lines_length,
+                                          long* y_line_defs,
+                                          long y_lines_length,
+                                          long* z_line_defs,
+                                          long z_lines_length,
+                                          double* dcs,
+                                          double dx,
+                                          bool is_diffusable,
+                                          double atolscale,
+                                          double* ics_alphas);
 
 
 // Set the diffusion coefficients for a given grid_id
 extern "C" NB_EXPORT int set_diffusion(int, int, double*, int);
 
-extern "C" NB_EXPORT int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability);
-extern "C" NB_EXPORT int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha);
+extern "C" NB_EXPORT int set_tortuosity(int grid_list_index,
+                                        int grid_id,
+                                        PyHocObject* my_permeability);
+extern "C" NB_EXPORT int set_volume_fraction(int grid_list_index,
+                                             int grid_id,
+                                             PyHocObject* my_alpha);
 extern "C" NB_EXPORT void ics_set_grid_concentrations(int grid_list_index,
-                                            int index_in_list,
-                                            int64_t* nodes_per_seg,
-                                            int64_t* nodes_per_seg_start_indices,
-                                            PyObject* neuron_pointers);
+                                                      int index_in_list,
+                                                      int64_t* nodes_per_seg,
+                                                      int64_t* nodes_per_seg_start_indices,
+                                                      PyObject* neuron_pointers);
 extern "C" NB_EXPORT void ics_set_grid_currents(int grid_list_index,
-                                      int index_in_list,
-                                      PyObject* neuron_pointers,
-                                      double* scale_factors);
+                                                int index_in_list,
+                                                PyObject* neuron_pointers,
+                                                double* scale_factors);
 extern "C" NB_EXPORT void set_grid_concentrations(int grid_list_index,
-                                        int index_in_list,
-                                        PyObject* grid_indices,
-                                        PyObject* neuron_pointers);
+                                                  int index_in_list,
+                                                  PyObject* grid_indices,
+                                                  PyObject* neuron_pointers);
 extern "C" NB_EXPORT void set_grid_currents(int grid_list_index,
-                                  int index_in_list,
-                                  PyObject* grid_indices,
-                                  PyObject* neuron_pointers,
-                                  PyObject* scale_factors);
+                                            int index_in_list,
+                                            PyObject* grid_indices,
+                                            PyObject* neuron_pointers,
+                                            PyObject* scale_factors);
 extern "C" NB_EXPORT void delete_by_id(int id);
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node** head, Grid_node* find);
