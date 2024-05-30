@@ -395,9 +395,6 @@ extern Grid_node* Parallel_grids[100];  // Array of Grid_node * lists
 // Set the global ∆t
 void make_dt_ptr(PyHocObject* my_dt_ptr);
 
-
-extern "C" NB_EXPORT void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr);
-
 // Create a single Grid_node
 /* Parameters:  Python object that includes array of double pointers,
                 size of x, y, and z dimensions

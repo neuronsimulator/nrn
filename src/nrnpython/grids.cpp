@@ -25,7 +25,7 @@ extern double* _rxd_induced_currents_ecs;
 extern double* _rxd_induced_currents_scale;
 
 // Set dt, t pointers
-extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
+extern "C" NB_EXPORT void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     dt_ptr = static_cast<double*>(my_dt_ptr->u.px_);
     t_ptr = static_cast<double*>(my_t_ptr->u.px_);
 }
