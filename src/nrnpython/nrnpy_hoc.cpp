@@ -2580,10 +2580,10 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
 }
 
 extern "C" NB_EXPORT int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
-                                            PyObject* plotshape_plot0,
-                                            PyObject* get_mech_object_0,
-                                            PyObject* store_savestate,
-                                            PyObject* restore_savestate) {
+                                                      PyObject* plotshape_plot0,
+                                                      PyObject* get_mech_object_0,
+                                                      PyObject* store_savestate,
+                                                      PyObject* restore_savestate) {
     rvp_plot = rvp_plot0;
     plotshape_plot = plotshape_plot0;
     get_mech_object_ = get_mech_object_0;
