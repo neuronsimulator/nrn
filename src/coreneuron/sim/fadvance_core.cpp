@@ -359,7 +359,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
         {
             Instrumentor::phase p("flush-reports");
             // Check if is time to flush reports every sim step
-            nrn_flush_reports(nrn_threads[0]._t);
+            nrn_flush_reports(nth->_t);
         }
 #endif
     }
