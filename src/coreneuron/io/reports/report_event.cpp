@@ -101,7 +101,7 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
 /** on deliver, call ReportingLib and setup next event */
 void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 /* libsonata is not thread safe */
-#pragma omp critical
+#pragma omp critical(libsonata_report)
     {
         // Sum currents and calculate lfp only on reporting steps
         if (step > 0 && (static_cast<int>(step) % reporting_period) == 0) {
