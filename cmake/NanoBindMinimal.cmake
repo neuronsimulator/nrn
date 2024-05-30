@@ -8,7 +8,7 @@ function(make_nanobind_target TARGET_NAME PYINC)
   add_library(${TARGET_NAME} STATIC ${NB_DIR}/src/nb_combined.cpp)
   target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${NB_DIR}/include)
   target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${NB_DIR}/ext/robin_map/include ${PYINC})
-  if (MSVC)
+  if(MSVC)
     # Do not complain about vsnprintf
     target_compile_definitions(${TARGET_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS)
   else()
