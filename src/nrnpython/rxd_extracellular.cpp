@@ -9,8 +9,6 @@
 #include <ocmatrix.h>
 #include <cfloat>
 
-#include <nanobind/nb_defs.h>
-
 #define loc(x, y, z) ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 
 static void ecs_refresh_reactions(int);
@@ -165,14 +163,14 @@ Reaction* ecs_create_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" NB_EXPORT void ics_register_reaction(int list_idx,
-                                                int num_species,
-                                                int num_params,
-                                                int* species_id,
-                                                uint64_t* mc3d_start_indices,
-                                                int mc3d_region_size,
-                                                double* mc3d_mults,
-                                                ECSReactionRate f) {
+extern "C" void ics_register_reaction(int list_idx,
+                                      int num_species,
+                                      int num_params,
+                                      int* species_id,
+                                      uint64_t* mc3d_start_indices,
+                                      int mc3d_region_size,
+                                      double* mc3d_mults,
+                                      ECSReactionRate f) {
     ecs_create_reaction(list_idx,
                         num_species,
                         num_params,
@@ -191,11 +189,11 @@ extern "C" NB_EXPORT void ics_register_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" NB_EXPORT void ecs_register_reaction(int list_idx,
-                                                int num_species,
-                                                int num_params,
-                                                int* species_id,
-                                                ECSReactionRate f) {
+extern "C" void ecs_register_reaction(int list_idx,
+                                      int num_species,
+                                      int num_params,
+                                      int* species_id,
+                                      ECSReactionRate f) {
     ecs_create_reaction(list_idx, num_species, num_params, species_id, f, NULL, NULL, 0, NULL);
     ecs_refresh_reactions(NUM_THREADS);
 }

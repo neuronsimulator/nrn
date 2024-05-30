@@ -81,11 +81,11 @@ typedef struct TaskQueue {
     struct TaskList* last;
 } TaskQueue;
 
-extern "C" NB_EXPORT void set_num_threads(const int);
+extern "C" void set_num_threads(const int);
 void _fadvance(void);
 void _fadvance_fixed_step_3D(void);
 
-extern "C" NB_EXPORT int get_num_threads(void);
+extern "C" int get_num_threads(void);
 void ecs_set_adi_tort(ECS_Grid_node*);
 void ecs_set_adi_vol(ECS_Grid_node*);
 void ecs_set_adi_homogeneous(ECS_Grid_node*);
@@ -173,7 +173,7 @@ void _ode_reinit(double*);
 
 int ode_count(const int);
 
-extern "C" NB_EXPORT void scatter_concentrations(void);
+extern "C" void scatter_concentrations(void);
 
 int find(const int, const int, const int, const int, const int);
 

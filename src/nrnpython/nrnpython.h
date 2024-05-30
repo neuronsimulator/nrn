@@ -1,7 +1,5 @@
 #pragma once
 
-#include <nanobind/nb_defs.h>
-
 #ifdef _WIN64
 #define MS_WIN64
 #define MS_WIN32
@@ -98,4 +96,4 @@ int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
 int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);
 
-extern "C" NB_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs*);
+extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs*);
