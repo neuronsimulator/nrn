@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "nb_defs.h"
+#include <nanobind/nb_defs.h>
 
 extern "C" NB_EXPORT double llgramarea(double* p0, double* p1, double* p2) {
     /* setup the vectors */

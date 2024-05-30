@@ -9,7 +9,7 @@
 #include <ocmatrix.h>
 #include <cfloat>
 
-#include "nb_defs.h"
+#include <nanobind/nb_defs.h>
 
 #define loc(x, y, z) ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 

@@ -4,7 +4,7 @@ Date: 10/28/16
 Description: Header File for grids.cpp. Allows access to Grid_node
 and Flux_pair structs and their respective functions
 ******************************************************************/
-#include "nb_defs.h"
+#include <nanobind/nb_defs.h>
 
 #include <stdio.h>
 #include <assert.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nb_defs.h"
+#include <nanobind/nb_defs.h>
 
 #ifdef _WIN64
 #define MS_WIN64
