@@ -29,8 +29,7 @@ function(nrn_initialize_submodule path)
   endif()
   message(STATUS "Sub-module : missing ${path} : running git submodule update --init")
   execute_process(
-    # Shallow clone by default. Developers should clone recursivelly
-    COMMAND ${GIT_EXECUTABLE} submodule update --recursive --init --depth=1 -- ${path}
+    COMMAND ${GIT_EXECUTABLE} submodule update --recursive --init -- ${path}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     RESULT_VARIABLE ret)
   if(NOT ret EQUAL 0)
