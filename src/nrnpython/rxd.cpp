@@ -175,9 +175,9 @@ extern "C" NB_EXPORT void free_conc_ptrs() {
 
 
 extern "C" NB_EXPORT void rxd_setup_curr_ptrs(int num_currents,
-                                    int* curr_index,
-                                    double* curr_scale,
-                                    PyHocObject** curr_ptrs) {
+                                              int* curr_index,
+                                              double* curr_scale,
+                                              PyHocObject** curr_ptrs) {
     free_curr_ptrs();
     /* info for NEURON currents - to update states */
     _curr_count = num_currents;
@@ -192,7 +192,9 @@ extern "C" NB_EXPORT void rxd_setup_curr_ptrs(int num_currents,
         _curr_ptrs[i] = curr_ptrs[i]->u.px_;
 }
 
-extern "C" NB_EXPORT void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
+extern "C" NB_EXPORT void rxd_setup_conc_ptrs(int conc_count,
+                                              int* conc_index,
+                                              PyHocObject** conc_ptrs) {
     /* info for NEURON concentration - to transfer to legacy */
     int i;
     free_conc_ptrs();
@@ -205,11 +207,11 @@ extern "C" NB_EXPORT void rxd_setup_conc_ptrs(int conc_count, int* conc_index, P
 }
 
 extern "C" NB_EXPORT void rxd_include_node_flux3D(int grid_count,
-                                        int* grid_counts,
-                                        int* grids,
-                                        long* index,
-                                        double* scales,
-                                        PyObject** sources) {
+                                                  int* grid_counts,
+                                                  int* grids,
+                                                  long* index,
+                                                  double* scales,
+                                                  PyObject** sources) {
     Grid_node* g;
     int i = 0, j, k, n, grid_id;
     int offset = 0;
@@ -288,7 +290,10 @@ extern "C" NB_EXPORT void rxd_include_node_flux3D(int grid_count,
     }
 }
 
-extern "C" NB_EXPORT void rxd_include_node_flux1D(int n, long* index, double* scales, PyObject** sources) {
+extern "C" NB_EXPORT void rxd_include_node_flux1D(int n,
+                                                  long* index,
+                                                  double* scales,
+                                                  PyObject** sources) {
     if (_node_flux_count != 0) {
         free(_node_flux_idx);
         free(_node_flux_scale);
@@ -349,11 +354,11 @@ static void apply_node_flux1D(double dt, double* states) {
 }
 
 extern "C" NB_EXPORT void rxd_set_euler_matrix(int nrow,
-                                     int nnonzero,
-                                     long* nonzero_i,
-                                     long* nonzero_j,
-                                     double* nonzero_values,
-                                     double* c_diagonal) {
+                                               int nnonzero,
+                                               long* nonzero_i,
+                                               long* nonzero_j,
+                                               double* nonzero_values,
+                                               double* c_diagonal) {
     long i, j, idx;
     double val;
     unsigned int k, ps;
@@ -624,13 +629,13 @@ static void free_currents() {
 }
 
 extern "C" NB_EXPORT void setup_currents(int num_currents,
-                               int num_fluxes,
-                               int* num_species,
-                               int* node_idxs,
-                               double* scales,
-                               PyHocObject** ptrs,
-                               int* mapped,
-                               int* mapped_ecs) {
+                                         int num_fluxes,
+                                         int* num_species,
+                                         int* node_idxs,
+                                         double* scales,
+                                         PyHocObject** ptrs,
+                                         int* mapped,
+                                         int* mapped_ecs) {
     int i, j, k, id, side, count;
     int* induced_currents_ecs_idx;
     int* induced_currents_grid_id;
@@ -847,18 +852,18 @@ extern "C" NB_EXPORT int rxd_nonvint_block(int method, int size, double* p1, dou
 
 
 extern "C" NB_EXPORT void register_rate(int nspecies,
-                              int nparam,
-                              int nregions,
-                              int nseg,
-                              int* sidx,
-                              int necs,
-                              int necsparam,
-                              int* ecs_ids,
-                              int* ecsidx,
-                              int nmult,
-                              double* mult,
-                              PyHocObject** vptrs,
-                              ReactionRate f) {
+                                        int nparam,
+                                        int nregions,
+                                        int nseg,
+                                        int* sidx,
+                                        int necs,
+                                        int necsparam,
+                                        int* ecs_ids,
+                                        int* ecsidx,
+                                        int nmult,
+                                        double* mult,
+                                        PyHocObject** vptrs,
+                                        ReactionRate f) {
     int i, j, k, idx, ecs_id, ecs_index, ecs_offset;
     unsigned char counted;
     Grid_node* g;
@@ -1044,7 +1049,10 @@ extern "C" NB_EXPORT void remove_species_atolscale(int id) {
     }
 }
 
-extern "C" NB_EXPORT void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
+extern "C" NB_EXPORT void setup_solver(double* my_states,
+                                       int my_num_states,
+                                       long* zvi,
+                                       int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;
