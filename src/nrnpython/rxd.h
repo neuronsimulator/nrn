@@ -286,23 +286,6 @@ void TaskQueue_sync(TaskQueue*);
 void ecs_atolscale(double*);
 void apply_node_flux3D(Grid_node*, double, double*);
 
-extern "C" NB_EXPORT int find_triangles(double thresh,
-                                        double value0,
-                                        double value1,
-                                        double value2,
-                                        double value3,
-                                        double value4,
-                                        double value5,
-                                        double value6,
-                                        double value7,
-                                        double x0,
-                                        double x1,
-                                        double y0,
-                                        double y1,
-                                        double z0,
-                                        double z1,
-                                        double* out);
-
 extern "C" NB_EXPORT double factorial(const double x);
 extern "C" NB_EXPORT double degrees(const double radians);
 extern "C" NB_EXPORT void radians(const double degrees, double* radians);

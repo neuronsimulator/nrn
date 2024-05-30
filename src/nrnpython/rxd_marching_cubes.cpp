@@ -8,6 +8,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "nb_defs.h"
+
 const int edgeTable[] = {
     0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a,
     0xd03, 0xe09, 0xf00, 0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895,
@@ -333,7 +335,7 @@ void vi(double* p1, double* p2, double v1, double v2, double* out) {
     out[2] = p1[2] + mu * (p2[2] - p1[2]);
 }
 
-extern "C" int find_triangles(double thresh,
+extern "C" NB_EXPORT int find_triangles(double thresh,
                               double value0,
                               double value1,
                               double value2,
