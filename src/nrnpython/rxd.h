@@ -7,7 +7,7 @@
 #define SPECIES_ABSENT -1
 #define PREFETCH       4
 
-using fptr = void (*)(void);
+typedef void (*fptr)(void);
 
 // @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
 // the one in ocptrvector.h
@@ -174,6 +174,7 @@ void _ode_reinit(double*);
 int ode_count(const int);
 
 extern "C" void scatter_concentrations(void);
+
 
 int find(const int, const int, const int, const int, const int);
 
