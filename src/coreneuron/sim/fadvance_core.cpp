@@ -357,8 +357,8 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 #ifdef ENABLE_SONATA_REPORTS
 #pragma omp single nowait
         {
-        // Avoid race condition with report events
-        #pragma omp critical(libsonata_report)
+// Avoid race condition with report events
+#pragma omp critical(libsonata_report)
             {
                 Instrumentor::phase p("flush-reports");
                 // Check if is time to flush reports every sim step
