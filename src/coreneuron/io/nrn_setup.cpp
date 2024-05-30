@@ -671,7 +671,7 @@ double* legacy_index2pointer(int mtype, int index, NrnThread& nt) {
 }
 
 // from i to (icnt, isz)
-void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz) {
+void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz) {
     int padded_cnt = nrn_soa_padded_size(cnt);
     icnt = i % padded_cnt;
     isz = i / padded_cnt;

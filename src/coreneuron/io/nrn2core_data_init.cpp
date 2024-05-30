@@ -215,11 +215,8 @@ static void nrn2core_tqueue() {
                     // stored in the mechanism instance movable slot by net_send.
                     // And don't overwrite if not movable. Only one SelfEvent
                     // for a given target instance is movable.
-                    int movable_index = nrn_i_layout(target_instance,
-                                                     ml->nodecount,
-                                                     type2movable[target_type],
-                                                     corenrn.get_prop_dparam_size()[target_type],
-                                                     corenrn.get_mech_data_layout()[target_type]);
+                    int movable_index =
+                        nrn_i_layout(target_instance, ml->nodecount, type2movable[target_type]);
                     void** movable_arg = nt._vdata + ml->pdata[movable_index];
                     TQItem* old_movable_arg = (TQItem*) (*movable_arg);
 #if CORENRN_DEBUG_QUEUE
@@ -330,7 +327,6 @@ void watch_activate_clear() {
                 // zero all the WATCH slots.
                 Memb_list* ml = tml->ml;
                 int type = tml->index;
-                int dparam_size = corenrn.get_prop_dparam_size()[type];
                 // which slots are WATCH
                 int first, last;
                 watch_datum_indices(type, first, last);
@@ -339,10 +335,9 @@ void watch_activate_clear() {
                 // uses it. There is probably a better way to do this.
                 int* pdata = ml->pdata;
                 int nodecount = ml->nodecount;
-                int layout = corenrn.get_mech_data_layout()[type];
                 for (int iml = 0; iml < nodecount; ++iml) {
                     for (int i = first; i <= last; ++i) {
-                        int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size, layout);
+                        int* pd = pdata + nrn_i_layout(iml, nodecount, i);
                         *pd = 0;
                     }
                 }
@@ -381,9 +376,7 @@ void nrn2core_transfer_watch_condition(int tid,
     int iml = pntindex;
     int nodecount = ml->nodecount;
     int i = watch_index;
-    int dparam_size = corenrn.get_prop_dparam_size()[pnttype];
-    int layout = corenrn.get_mech_data_layout()[pnttype];
-    int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size, layout);
+    int* pd = pdata + nrn_i_layout(iml, nodecount, i);
 
     // activate the WatchCondition
     *pd = 2 + triggered;
@@ -419,23 +412,11 @@ void nrn2core_patstim_share_info() {
     NrnThread* nt = nrn_threads + 0;
     Memb_list* ml = nt->_ml_list[type];
     if (ml) {
-        int layout = corenrn.get_mech_data_layout()[type];
-        int sz = corenrn.get_prop_param_size()[type];
-        int psz = corenrn.get_prop_dparam_size()[type];
         int _cntml = ml->nodecount;
         assert(ml->nodecount == 1);
         int _iml = 0;  // Assume singleton here and in (*nrn2core_patternstim_)(info) below.
         double* _p = ml->data;
         Datum* _ppvar = ml->pdata;
-        if (layout == Layout::AoS) {
-            _p += _iml * sz;
-            _ppvar += _iml * psz;
-        } else if (layout == Layout::SoA) {
-            ;
-        } else {
-            assert(0);
-        }
-
         void** info = pattern_stim_info_ref(_iml, _cntml, _p, _ppvar, nullptr, nt, ml, 0.0);
         (*nrn2core_patternstim_)(info);
     }

@@ -107,20 +107,17 @@ namespace neuron {
 #endif
 
 #if !CORENRN_BUILD
-static int nrn_soa_padded_size(int cnt, int layout) {
-    assert(layout == 1);
+static int nrn_soa_padded_size(int cnt) {
     return cnt;
 }
-static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+static int nrn_i_layout(int icnt, int cnt, int isz) {
     assert(isz == 0);
-    assert(sz == 1);
-    assert(layout == 1);
     return icnt;
 }
 #endif  // !CORENRN_BUILD
 
 template <typename T>
-void permute(T* data, int cnt, int sz, int layout, int* p) {
+void permute(T* data, int cnt, int sz, int* p) {
     // data(p[icnt], isz) <- data(icnt, isz)
     // this does not change data, merely permutes it.
     // assert len(p) == cnt
@@ -143,7 +140,6 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
 
     for (int icnt = 0; icnt < cnt; ++icnt) {
         for (int isz = 0; isz < sz; ++isz) {
-            // note that when layout==0, nrn_i_layout takes into account SoA padding.
             int i = nrn_i_layout(icnt, cnt, isz);
             int ip = nrn_i_layout(p[icnt], cnt, isz);
             data[ip] = data_orig[i];
@@ -252,7 +248,6 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
         return;
     }
     int* pdata = ml->pdata;
-    int layout = corenrn.get_mech_data_layout()[type];
     int cnt = ml->nodecount;
     // ml padding does not matter (but target padding does matter)
 
@@ -263,7 +258,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int area0 = nt._actual_area - nt._data;  // includes padding if relevant
             int* p_target = nt._permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i);
                 // *pd is the original integer into nt._data . Needs to be replaced
                 // by the permuted value
 
@@ -279,7 +274,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int diam0 = nt._actual_diam - nt._data;  // includes padding if relevant
             int* p_target = nt._permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i);
                 // *pd is the original integer into nt._data . Needs to be replaced
                 // by the permuted value
 
@@ -295,7 +290,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             // assume pointer into nt._data. Most likely voltage.
             // If not voltage, most likely same mechanism for all indices.
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i);
                 int etype = type_of_ntdata(nt, *pd, iml == 0);
                 if (etype == voltage) {
                     int v0 = nt._actual_v - nt._data;
@@ -330,7 +325,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int ecnt = eml->nodecount;
             int* e_permute = eml->_permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i);
                 int ix = *pd - edata0;
                 // from ix determine i_ecnt and i_esz (need to permute i_ecnt)
                 int padded_ecnt = nrn_soa_padded_size(ecnt);
@@ -365,20 +360,19 @@ void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute
 #endif  // not CORENRN_BUILD
 
 void permute_ptr(int* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
+    permute(vec, n, 1, p);
 }
 
 void permute_data(double* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
+    permute(vec, n, 1, p);
 }
 
 #if CORENRN_BUILD
 void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
-    permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
-    permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
+    permute(ml->data, ml->nodecount, sz, ml->_permute);
+    permute(ml->pdata, ml->nodecount, psz, ml->_permute);
 
     update_pdata_values(ml, type, nt);
 }

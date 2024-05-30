@@ -51,7 +51,7 @@ double* get_var_location_from_var_name(int mech_id,
         abort();
     }
     int variable_rank = mechNamesMapping.at(mech_id).at(variable_name);
-    int ix = get_data_index(node_index, variable_rank, mech_id, ml);
+    int ix = get_data_index(node_index, variable_rank, ml);
     return &(ml->data[ix]);
 }
 

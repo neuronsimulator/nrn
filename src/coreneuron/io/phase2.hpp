@@ -71,13 +71,7 @@ class Phase2 {
 
   private:
     void check_mechanism();
-    void transform_int_data(int elem0,
-                            int nodecount,
-                            int* pdata,
-                            int i,
-                            int dparam_size,
-                            int layout,
-                            int n_node_);
+    void transform_int_data(int elem0, int nodecount, int* pdata, int i, int n_node_);
     void set_net_send_buffer(Memb_list** ml_list, const std::vector<int>& pnt_offset);
     void restore_events(FileHandler& F);
     void fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>& memb_func);

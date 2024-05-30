@@ -9,9 +9,9 @@
 #include <vector>
 #include <map>
 
+#include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
-#include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/nrn_assert.h"
@@ -57,7 +57,6 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
     int size = corenrn.get_prop_param_size()[type];
     int psize = corenrn.get_prop_dparam_size()[type];
     bool receives_events = corenrn.get_pnt_receive()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
     int cnt = ml->nodecount;
     for (int iorig = 0; iorig < ml->nodecount; ++iorig) {  // original index
         int i = ml_permute(iorig, ml);                     // present index
@@ -70,13 +69,13 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
             }
             if (receives_events) {
                 fprintf(f, "%d nri %d\n", cix, pntindex);
-                int k = nrn_i_layout(i, cnt, 1, psize, layout);
+                int k = nrn_i_layout(i, cnt, 1);
                 Point_process* pp = (Point_process*) nt._vdata[ml->pdata[k]];
                 pnt2index[pp] = pntindex;
                 ++pntindex;
             }
             for (int j = 0; j < size; ++j) {
-                int k = nrn_i_layout(i, cnt, j, size, layout);
+                int k = nrn_i_layout(i, cnt, j);
                 fprintf(f, " %d %d %.*g\n", cix, j, precision, ml->data[k]);
             }
         }

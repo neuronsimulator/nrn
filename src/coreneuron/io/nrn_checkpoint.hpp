@@ -9,6 +9,7 @@
 #pragma once
 
 #include "coreneuron/io/phase2.hpp"
+#include "coreneuron/network/tqueue.hpp"
 
 namespace coreneuron {
 struct NrnThread;
@@ -48,9 +49,9 @@ class CheckPoints {
     void write_phase2(NrnThread& nt) const;
 
     template <typename T>
-    void data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute) const;
+    void data_write(FileHandler& F, T* data, int cnt, int sz, int* permute) const;
     template <typename T>
-    T* soa2aos(T* data, int cnt, int sz, int layout, int* permute) const;
+    T* soa2aos(T* data, int cnt, int sz, int* permute) const;
     void write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const;
     void write_tqueue(NrnThread& nt, FileHandler& fh) const;
     void restore_tqitem(int type, std::shared_ptr<Phase2::EventTypeBase> event, NrnThread& nt);
@@ -58,7 +59,7 @@ class CheckPoints {
 
 
 int* inverse_permute(int* p, int n);
-void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout);
+void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz);
 
 extern int patstimtype;
 

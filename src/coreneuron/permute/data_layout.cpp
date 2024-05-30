@@ -6,19 +6,14 @@
 # =============================================================================
 */
 
-#include "coreneuron/coreneuron.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"
-#include "coreneuron/permute/node_permute.h"
-#include "coreneuron/mechanism/membfunc.hpp"
 
 namespace coreneuron {
 /*
  * Return the index to mechanism variable based Original input files are organized in AoS
  */
-int get_data_index(int node_index, int variable_index, int mtype, Memb_list* ml) {
-    int layout = corenrn.get_mech_data_layout()[mtype];
-    nrn_assert(layout == SOA_LAYOUT);
+int get_data_index(int node_index, int variable_index, Memb_list* ml) {
     return variable_index * ml->_nodecount_padded + node_index;
 }
 }  // namespace coreneuron

@@ -79,21 +79,12 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
     NrnThread* nt = nrn_threads + pnt->_tid;
 
     Memb_list* ml = nt->_ml_list[type];
-    int layout = corenrn.get_mech_data_layout()[type];
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
     int _cntml = ml->nodecount;
     int _iml = pnt->_i_instance;
     double* _p = ml->data;
     Datum* _ppvar = ml->pdata;
-    if (layout == Layout::AoS) {
-        _p += _iml * sz;
-        _ppvar += _iml * psz;
-    } else if (layout == Layout::SoA) {
-        ;
-    } else {
-        assert(0);
-    }
     pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, nullptr, nt, ml, 0.0);
 }
 
@@ -148,7 +139,6 @@ static NrnThreadMembList* alloc_nrn_thread_memb(NrnThread* nt, int type) {
     // NrnThread arrays but there should not be many of these instances.
     int psize = corenrn.get_prop_param_size()[type];
     int dsize = corenrn.get_prop_dparam_size()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
     tml->ml = (Memb_list*) ecalloc(1, sizeof(Memb_list));
     tml->ml->nodecount = 1;
     tml->ml->_nodecount_padded = tml->ml->nodecount;

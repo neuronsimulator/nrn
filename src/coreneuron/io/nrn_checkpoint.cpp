@@ -6,8 +6,6 @@
 # =============================================================================.
 */
 #include <filesystem>
-#include <iostream>
-#include <sstream>
 #include <cassert>
 #include <memory>
 
@@ -100,21 +98,18 @@ static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pin
     Memb_list* eml = nt._ml_list[etype];
     int ecnt = eml->nodecount;
     int esz = corenrn.get_prop_param_size()[etype];
-    int elayout = corenrn.get_mech_data_layout()[etype];
     // current index into eml->data is a  function
     // of elayout, eml._permute, ei_instance, ei, and
     // eml padding.
     int p = ix - (eml->data - nt._data);
     assert(p >= 0 && p < eml->_nodecount_padded * esz);
     int ei_instance, ei;
-    nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz, elayout);
-    if (elayout == Layout::SoA) {
-        if (eml->_permute) {
-            if (!ml_pinv[etype]) {
-                ml_pinv[etype] = inverse_permute(eml->_permute, eml->nodecount);
-            }
-            ei_instance = ml_pinv[etype][ei_instance];
+    nrn_inverse_i_layout(p, ei_instance, ecnt, ei);
+    if (eml->_permute) {
+        if (!ml_pinv[etype]) {
+            ml_pinv[etype] = inverse_permute(eml->_permute, eml->nodecount);
         }
+        ei_instance = ml_pinv[etype][ei_instance];
     }
     return ei_instance * esz + ei;
 }
@@ -201,8 +196,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
     }
 
-    data_write(fh, nt._actual_a, nt.end, 1, 0, nt._permute);
-    data_write(fh, nt._actual_b, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_a, nt.end, 1, nt._permute);
+    data_write(fh, nt._actual_b, nt.end, 1, nt._permute);
 
 #if CHKPNTDEBUG
     for (int i = 0; i < nt.end; ++i) {
@@ -210,11 +205,11 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
     }
 #endif
 
-    data_write(fh, nt._actual_area, nt.end, 1, 0, nt._permute);
-    data_write(fh, nt._actual_v, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_area, nt.end, 1, nt._permute);
+    data_write(fh, nt._actual_v, nt.end, 1, nt._permute);
 
     if (nt._actual_diam) {
-        data_write(fh, nt._actual_diam, nt.end, 1, 0, nt._permute);
+        data_write(fh, nt._actual_diam, nt.end, 1, nt._permute);
     }
 
     auto& memb_func = corenrn.get_memb_funcs();
@@ -233,7 +228,6 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         auto& nrn_is_artificial_ = corenrn.get_is_artificial();
 
         int sz = nrn_prop_param_size_[type];
-        int layout = corenrn.get_mech_data_layout()[type];
         int* semantics = memb_func[type].dparam_semantics;
 
         if (!nrn_is_artificial_[type]) {
@@ -252,12 +246,12 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             delete[] nd_ix;
         }
 
-        data_write(fh, ml->data, cnt, sz, layout, ml->_permute);
+        data_write(fh, ml->data, cnt, sz, ml->_permute);
 
         sz = nrn_prop_dparam_size_[type];
         if (sz) {
             // need to update some values according to Datum semantics.
-            int* d = soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
+            int* d = soa2aos(ml->pdata, cnt, sz, ml->_permute);
             std::vector<int> pointer2type;  // voltage or mechanism type (starts empty)
             if (!nrn_is_artificial_[type]) {
                 for (int i_instance = 0; i_instance < cnt; ++i_instance) {
@@ -546,17 +540,12 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
         assert(mtype >= 0);
         int icnt, isz;
-        nrn_inverse_i_layout(ix,
-                             icnt,
-                             ml->nodecount,
-                             isz,
-                             corenrn.get_prop_param_size()[mtype],
-                             corenrn.get_mech_data_layout()[mtype]);
+        nrn_inverse_i_layout(ix, icnt, ml->nodecount, isz);
+
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
-        ix = nrn_i_layout(
-            icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype], AOS_LAYOUT);
+        ix = nrn_i_layout(icnt, ml->nodecount, isz);
 
         fh << vtype << "\n";
         fh << mtype << "\n";
@@ -648,13 +637,12 @@ bool CheckPoints::initialize() {
 }
 
 template <typename T>
-T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) const {
-    (void)layout;
-    // inverse of F -> data. Just a copy if layout=1. If SoA,
+T* CheckPoints::soa2aos(T* data, int cnt, int sz, int* permute) const {
+    // inverse of F -> data. If SoA,
     // original file order depends on padding and permutation.
     // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
     T* d = new T[cnt * sz];
-    int align_cnt = nrn_soa_padded_size(cnt, layout);
+    int align_cnt = nrn_soa_padded_size(cnt);
     for (int i = 0; i < cnt; ++i) {
         int ip = i;
         if (permute) {
@@ -668,9 +656,8 @@ T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) cons
 }
 
 template <typename T>
-void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute)
-    const {
-    T* d = soa2aos(data, cnt, sz, layout, permute);
+void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int* permute) const {
+    T* d = soa2aos(data, cnt, sz, permute);
     F.write_array<T>(d, cnt * sz);
     delete[] d;
 }
