@@ -1,4 +1,4 @@
-/*
+/*, 0details
 # =============================================================================
 # Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
@@ -36,7 +36,7 @@ typedef std::tuple<data<double, 2>,
 
 TEST_CASE("padding_simd", "[PaddingCheck]") {
     /** SOA tests with 11 */
-    pad = coreneuron::soa_padded_size<1>(11);
+    int pad = coreneuron::soa_padded_size<1>(11);
     REQUIRE(pad == 11);
 
     pad = coreneuron::soa_padded_size<2>(11);
