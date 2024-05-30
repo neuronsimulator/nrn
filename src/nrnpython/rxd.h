@@ -9,66 +9,6 @@
 
 using fptr = void (*)(void);
 
-extern "C" NB_EXPORT void rxd_set_no_diffusion();
-extern "C" NB_EXPORT void free_curr_ptrs();
-extern "C" NB_EXPORT void free_conc_ptrs();
-extern "C" NB_EXPORT void rxd_setup_curr_ptrs(int num_currents,
-                                              int* curr_index,
-                                              double* curr_scale,
-                                              PyHocObject** curr_ptrs);
-extern "C" NB_EXPORT void rxd_setup_conc_ptrs(int conc_count,
-                                              int* conc_index,
-                                              PyHocObject** conc_ptrs);
-extern "C" NB_EXPORT void rxd_include_node_flux3D(int grid_count,
-                                                  int* grid_counts,
-                                                  int* grids,
-                                                  long* index,
-                                                  double* scales,
-                                                  PyObject** sources);
-extern "C" NB_EXPORT void rxd_include_node_flux1D(int n,
-                                                  long* index,
-                                                  double* scales,
-                                                  PyObject** sources);
-extern "C" NB_EXPORT void rxd_set_euler_matrix(int nrow,
-                                               int nnonzero,
-                                               long* nonzero_i,
-                                               long* nonzero_j,
-                                               double* nonzero_values,
-                                               double* c_diagonal);
-extern "C" NB_EXPORT void set_setup(const fptr setup_fn);
-extern "C" NB_EXPORT void set_initialize(const fptr initialize_fn);
-extern "C" NB_EXPORT void set_setup_matrices(fptr setup_matrices);
-extern "C" NB_EXPORT void set_setup_units(fptr setup_units);
-extern "C" NB_EXPORT void setup_currents(int num_currents,
-                                         int num_fluxes,
-                                         int* num_species,
-                                         int* node_idxs,
-                                         double* scales,
-                                         PyHocObject** ptrs,
-                                         int* mapped,
-                                         int* mapped_ecs);
-extern "C" NB_EXPORT int rxd_nonvint_block(int method, int size, double* p1, double* p2, int);
-extern "C" NB_EXPORT void register_rate(int nspecies,
-                                        int nparam,
-                                        int nregions,
-                                        int nseg,
-                                        int* sidx,
-                                        int necs,
-                                        int necsparam,
-                                        int* ecs_ids,
-                                        int* ecsidx,
-                                        int nmult,
-                                        double* mult,
-                                        PyHocObject** vptrs,
-                                        ReactionRate f);
-extern "C" NB_EXPORT void clear_rates();
-extern "C" NB_EXPORT void species_atolscale(int id, double scale, int len, int* idx);
-extern "C" NB_EXPORT void remove_species_atolscale(int id);
-extern "C" NB_EXPORT void setup_solver(double* my_states,
-                                       int my_num_states,
-                                       long* zvi,
-                                       int num_zvi);
-
 // @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
 // the one in ocptrvector.h
 
@@ -233,24 +173,7 @@ void _ode_reinit(double*);
 
 int ode_count(const int);
 
-extern "C" NB_EXPORT void ics_register_reaction(int list_idx,
-                                                int num_species,
-                                                int num_params,
-                                                int* species_id,
-                                                uint64_t* mc3d_start_indices,
-                                                int mc3d_region_size,
-                                                double* mc3d_mults,
-                                                ECSReactionRate f);
-extern "C" NB_EXPORT void ecs_register_reaction(int list_idx,
-                                                int num_species,
-                                                int num_params,
-                                                int* species_id,
-                                                ECSReactionRate f);
 extern "C" NB_EXPORT void scatter_concentrations(void);
-
-extern "C" NB_EXPORT double llgramarea(double* p0, double* p1, double* p2);
-extern "C" NB_EXPORT double llpipedfromoriginvolume(double* p0, double* p1, double* p2);
-
 
 int find(const int, const int, const int, const int, const int);
 
@@ -285,20 +208,3 @@ void TaskQueue_exe_tasks(std::size_t, TaskQueue*);
 void TaskQueue_sync(TaskQueue*);
 void ecs_atolscale(double*);
 void apply_node_flux3D(Grid_node*, double, double*);
-
-extern "C" NB_EXPORT double factorial(const double x);
-extern "C" NB_EXPORT double degrees(const double radians);
-extern "C" NB_EXPORT void radians(const double degrees, double* radians);
-extern "C" NB_EXPORT double log1p(const double x);
-extern "C" NB_EXPORT double vtrap(const double x, const double y);
-
-extern "C" NB_EXPORT void set_hybrid_data(int64_t* num_1d_indices_per_grid,
-                                          int64_t* num_3d_indices_per_grid,
-                                          int64_t* hybrid_indices1d,
-                                          int64_t* hybrid_indices3d,
-                                          int64_t* num_3d_indices_per_1d_seg,
-                                          int64_t* hybrid_grid_ids,
-                                          double* rates,
-                                          double* volumes1d,
-                                          double* volumes3d,
-                                          double* dxs);

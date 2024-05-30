@@ -462,7 +462,7 @@ extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int l
     return 0;
 }
 
-extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability) {
+extern "C" NB_EXPORT int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -513,7 +513,7 @@ void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability) {
     }
 }
 
-extern "C" int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha) {
+extern "C" NB_EXPORT int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -585,7 +585,7 @@ void ECS_Grid_node::set_diffusion(double* dc, int) {
 }
 
 
-extern "C" void ics_set_grid_concentrations(int grid_list_index,
+extern "C" NB_EXPORT void ics_set_grid_concentrations(int grid_list_index,
                                             int index_in_list,
                                             int64_t* nodes_per_seg,
                                             int64_t* nodes_per_seg_start_indices,
@@ -610,7 +610,7 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index,
     }
 }
 
-extern "C" void ics_set_grid_currents(int grid_list_index,
+extern "C" NB_EXPORT void ics_set_grid_currents(int grid_list_index,
                                       int index_in_list,
                                       PyObject* neuron_pointers,
                                       double* scale_factors) {
@@ -634,7 +634,7 @@ extern "C" void ics_set_grid_currents(int grid_list_index,
 
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" void set_grid_concentrations(int grid_list_index,
+extern "C" NB_EXPORT void set_grid_concentrations(int grid_list_index,
                                         int index_in_list,
                                         PyObject* grid_indices,
                                         PyObject* neuron_pointers) {
@@ -675,7 +675,7 @@ extern "C" void set_grid_concentrations(int grid_list_index,
 }
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" void set_grid_currents(int grid_list_index,
+extern "C" NB_EXPORT void set_grid_currents(int grid_list_index,
                                   int index_in_list,
                                   PyObject* grid_indices,
                                   PyObject* neuron_pointers,
@@ -780,7 +780,7 @@ int remove(Grid_node** head, Grid_node* find) {
     return 1;
 }
 
-extern "C" void delete_by_id(int id) {
+extern "C" NB_EXPORT void delete_by_id(int id) {
     Grid_node* grid;
     int k;
     for (k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, k++) {

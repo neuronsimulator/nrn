@@ -138,7 +138,7 @@ static inline void* allocopy(void* src, size_t size) {
     return dst;
 }
 
-extern "C" void rxd_set_no_diffusion() {
+extern "C" NB_EXPORT void rxd_set_no_diffusion() {
     int i;
     diffusion = FALSE;
     if (_rxd_a != NULL) {
@@ -154,7 +154,7 @@ extern "C" void rxd_set_no_diffusion() {
     }
 }
 
-extern "C" void free_curr_ptrs() {
+extern "C" NB_EXPORT void free_curr_ptrs() {
     _curr_count = 0;
     if (_curr_indices != NULL)
         free(_curr_indices);
@@ -165,7 +165,7 @@ extern "C" void free_curr_ptrs() {
     _curr_ptrs.clear();
 }
 
-extern "C" void free_conc_ptrs() {
+extern "C" NB_EXPORT void free_conc_ptrs() {
     _conc_count = 0;
     if (_conc_indices != NULL)
         free(_conc_indices);
@@ -174,7 +174,7 @@ extern "C" void free_conc_ptrs() {
 }
 
 
-extern "C" void rxd_setup_curr_ptrs(int num_currents,
+extern "C" NB_EXPORT void rxd_setup_curr_ptrs(int num_currents,
                                     int* curr_index,
                                     double* curr_scale,
                                     PyHocObject** curr_ptrs) {
@@ -192,7 +192,7 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
         _curr_ptrs[i] = curr_ptrs[i]->u.px_;
 }
 
-extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
+extern "C" NB_EXPORT void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
     /* info for NEURON concentration - to transfer to legacy */
     int i;
     free_conc_ptrs();
@@ -204,7 +204,7 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject
         _conc_ptrs[i] = conc_ptrs[i]->u.px_;
 }
 
-extern "C" void rxd_include_node_flux3D(int grid_count,
+extern "C" NB_EXPORT void rxd_include_node_flux3D(int grid_count,
                                         int* grid_counts,
                                         int* grids,
                                         long* index,
@@ -288,7 +288,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
     }
 }
 
-extern "C" void rxd_include_node_flux1D(int n, long* index, double* scales, PyObject** sources) {
+extern "C" NB_EXPORT void rxd_include_node_flux1D(int n, long* index, double* scales, PyObject** sources) {
     if (_node_flux_count != 0) {
         free(_node_flux_idx);
         free(_node_flux_scale);
@@ -348,7 +348,7 @@ static void apply_node_flux1D(double dt, double* states) {
     apply_node_flux(_node_flux_count, _node_flux_idx, _node_flux_scale, _node_flux_src, dt, states);
 }
 
-extern "C" void rxd_set_euler_matrix(int nrow,
+extern "C" NB_EXPORT void rxd_set_euler_matrix(int nrow,
                                      int nnonzero,
                                      long* nonzero_i,
                                      long* nonzero_j,
@@ -470,20 +470,20 @@ static void mul(int nnonzero,
     }
 }
 
-extern "C" void set_setup(const fptr setup_fn) {
+extern "C" NB_EXPORT void set_setup(const fptr setup_fn) {
     _setup = setup_fn;
 }
 
-extern "C" void set_initialize(const fptr initialize_fn) {
+extern "C" NB_EXPORT void set_initialize(const fptr initialize_fn) {
     _initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
 
-extern "C" void set_setup_matrices(fptr setup_matrices) {
+extern "C" NB_EXPORT void set_setup_matrices(fptr setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
-extern "C" void set_setup_units(fptr setup_units) {
+extern "C" NB_EXPORT void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
 }
 
@@ -623,7 +623,7 @@ static void free_currents() {
     _membrane_flux = FALSE;
 }
 
-extern "C" void setup_currents(int num_currents,
+extern "C" NB_EXPORT void setup_currents(int num_currents,
                                int num_fluxes,
                                int* num_species,
                                int* node_idxs,
@@ -766,7 +766,7 @@ static void _currents(double* rhs) {
     }
 }
 
-extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
+extern "C" NB_EXPORT int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
     if (initialized) {
         if (structure_change_cnt != prev_structure_change_cnt) {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
@@ -846,7 +846,7 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
  *****************************************************************************/
 
 
-extern "C" void register_rate(int nspecies,
+extern "C" NB_EXPORT void register_rate(int nspecies,
                               int nparam,
                               int nregions,
                               int nseg,
@@ -965,7 +965,7 @@ extern "C" void register_rate(int nspecies,
     }
 }
 
-extern "C" void clear_rates() {
+extern "C" NB_EXPORT void clear_rates() {
     ICSReactions *react, *prev;
     int i, j;
     for (react = _reactions; react != NULL;) {
@@ -1003,7 +1003,7 @@ extern "C" void clear_rates() {
 }
 
 
-extern "C" void species_atolscale(int id, double scale, int len, int* idx) {
+extern "C" NB_EXPORT void species_atolscale(int id, double scale, int len, int* idx) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     if (species_indices != NULL) {
@@ -1028,7 +1028,7 @@ extern "C" void species_atolscale(int id, double scale, int len, int* idx) {
     list->next = NULL;
 }
 
-extern "C" void remove_species_atolscale(int id) {
+extern "C" NB_EXPORT void remove_species_atolscale(int id) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     for (list = species_indices, prev = NULL; list != NULL; prev = list, list = list->next) {
@@ -1044,7 +1044,7 @@ extern "C" void remove_species_atolscale(int id) {
     }
 }
 
-extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
+extern "C" NB_EXPORT void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;

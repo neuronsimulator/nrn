@@ -477,31 +477,6 @@ extern "C" NB_EXPORT int ICS_insert_inhom(int grid_list_index,
 // Set the diffusion coefficients for a given grid_id
 extern "C" NB_EXPORT int set_diffusion(int, int, double*, int);
 
-extern "C" NB_EXPORT int set_tortuosity(int grid_list_index,
-                                        int grid_id,
-                                        PyHocObject* my_permeability);
-extern "C" NB_EXPORT int set_volume_fraction(int grid_list_index,
-                                             int grid_id,
-                                             PyHocObject* my_alpha);
-extern "C" NB_EXPORT void ics_set_grid_concentrations(int grid_list_index,
-                                                      int index_in_list,
-                                                      int64_t* nodes_per_seg,
-                                                      int64_t* nodes_per_seg_start_indices,
-                                                      PyObject* neuron_pointers);
-extern "C" NB_EXPORT void ics_set_grid_currents(int grid_list_index,
-                                                int index_in_list,
-                                                PyObject* neuron_pointers,
-                                                double* scale_factors);
-extern "C" NB_EXPORT void set_grid_concentrations(int grid_list_index,
-                                                  int index_in_list,
-                                                  PyObject* grid_indices,
-                                                  PyObject* neuron_pointers);
-extern "C" NB_EXPORT void set_grid_currents(int grid_list_index,
-                                            int index_in_list,
-                                            PyObject* grid_indices,
-                                            PyObject* neuron_pointers,
-                                            PyObject* scale_factors);
-extern "C" NB_EXPORT void delete_by_id(int id);
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node** head, Grid_node* find);
 

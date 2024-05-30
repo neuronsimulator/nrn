@@ -19,7 +19,7 @@ const int ICS_PREFETCH = 3;
 /*
  * Sets the data to be used by the grids for 1D/3D hybrid models
  */
-extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid,
+extern "C" NB_EXPORT void set_hybrid_data(int64_t* num_1d_indices_per_grid,
                                 int64_t* num_3d_indices_per_grid,
                                 int64_t* hybrid_indices1d,
                                 int64_t* hybrid_indices3d,

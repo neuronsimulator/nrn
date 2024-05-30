@@ -1,6 +1,6 @@
 #include "../../nrnconf.h"
 
-#include "inithoc.hpp"
+#include "nb_defs.h"
 
 #include "nrnmpiuse.h"
 #include <stdio.h>
@@ -224,7 +224,7 @@ void nrnpython_finalize() {
 
 static char* env[] = {0};
 
-extern "C" PyObject* PyInit_hoc() {
+extern "C" NB_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
@@ -371,5 +371,5 @@ extern "C" PyObject* PyInit_hoc() {
 }
 
 #if !defined(MINGW)
-extern "C" void modl_reg() {}
+extern "C" NB_EXPORT void modl_reg() {}
 #endif  // !defined(MINGW)
