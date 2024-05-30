@@ -1075,7 +1075,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print top file header printed in generated code
      */
-    virtual void print_backend_info() = 0;
+    void print_backend_info();
 
 
     /**

@@ -627,12 +627,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print top file header printed in generated code
-     */
-    void print_backend_info() override;
-
-
-    /**
      * Print standard C/C++ includes
      */
     void print_standard_includes() override;
