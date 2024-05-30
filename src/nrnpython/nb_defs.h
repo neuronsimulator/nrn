@@ -11,3 +11,4 @@
 #define NB_IMPORT   NB_EXPORT
 #define NB_INLINE   inline __attribute__((always_inline))
 #define NB_NOINLINE __attribute__((noinline))
+#endif
