@@ -355,7 +355,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
             update(nth);
         }
 #ifdef ENABLE_SONATA_REPORTS
-#pragma omp master
+#pragma omp single
         {
 // Avoid race condition with report events
 #pragma omp critical(libsonata_report)
