@@ -1,5 +1,6 @@
 import math
 import numpy
+import numbers
 from .rxdException import RxDException
 from . import initializer
 
@@ -145,7 +146,7 @@ def _ensure_arithmeticed(other):
 
     if isinstance(other, species._SpeciesMathable):
         other = _Arithmeticed(other)
-    elif isinstance(other, float) or isinstance(other, int):
+    elif isinstance(other, numbers.Real):
         other = _Arithmeticed(other, valid_reaction_term=False)
     elif isinstance(other, _Reaction):
         raise RxDException("Cannot do arithmetic on a reaction")

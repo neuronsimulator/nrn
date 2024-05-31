@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def test_invalid_arith_objects(neuron_nosave_instance):
     """Test Invalid Arithmeticed objects"""
 
@@ -23,6 +26,11 @@ def test_invalid_arith_objects(neuron_nosave_instance):
     except Exception as e:
         assert isinstance(e, rxd.RxDException)
 
+    try:
+        rxd.rxdmath._ensure_arithmeticed(1 + 1j)
+    except Exception as e:
+        assert isinstance(e, rxd.RxDException)
+
 
 def test_valid_arith_objects(neuron_nosave_instance):
     """Test Valid Arithmeticed objects"""
@@ -30,7 +38,7 @@ def test_valid_arith_objects(neuron_nosave_instance):
     h, rxd, _ = neuron_nosave_instance
 
     assert isinstance(rxd.rxdmath._ensure_arithmeticed(1), rxd.rxdmath._Arithmeticed)
-    assert isinstance(rxd.rxdmath._ensure_arithmeticed(1.5), rxd.rxdmath._Arithmeticed)
+    assert isinstance(rxd.rxdmath._ensure_arithmeticed(np.float32(1.5)), rxd.rxdmath._Arithmeticed)
     assert isinstance(
         rxd.rxdmath._ensure_arithmeticed(3 / 2), rxd.rxdmath._Arithmeticed
     )
