@@ -30,7 +30,7 @@ def test_section_removal(neuron_instance):
     assert not ca.nodes
 
 
-def test_zero_fractional_volume_3d(neuron_instance):
+def test_FractionalVolume_zero_surface_fraction_3d(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
     dend1.nseg = 5
@@ -52,7 +52,7 @@ def test_zero_fractional_volume_3d(neuron_instance):
         assert len(w) == 1
 
 
-def test_zero_fractional_volume_1d(neuron_instance):
+def test_FractionalVolume_zero_surface_fraction_1d(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section("dend1")
     dend1.nseg = 5
