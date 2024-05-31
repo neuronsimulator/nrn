@@ -102,6 +102,8 @@ if [ $# -gt 1 ]; then
     exit 1
 fi
 
+shopt -s nullglob
+
 files=()
 directories=()
 if [ $# -gt 0 ] ; then
@@ -130,7 +132,6 @@ else
   directories=( . )
 fi
 
-shopt -s nullglob
 if [ ${#files} -eq 0 ]; then
     echo "WARNING: No mod files found, compiling default ones only!"
 fi
