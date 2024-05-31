@@ -41,6 +41,11 @@ foreach(target ${catch2_targets})
 endforeach()
 
 # =============================================================================
+# API test executables
+# =============================================================================
+add_subdirectory(api)
+
+# =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
 add_dependencies(testneuron copy_share_lib_to_build)

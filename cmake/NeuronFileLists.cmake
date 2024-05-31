@@ -14,6 +14,7 @@ set(HEADER_FILES_TO_INSTALL
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
+    nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
     nrnoc/md1redef.h
@@ -221,6 +222,7 @@ set(NRNIV_FILE_LIST
     netpar.cpp
     nmodlrandom.cpp
     nonlinz.cpp
+    neuronapi.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
     nrncore_write/data/cell_group.cpp
