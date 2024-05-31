@@ -10,6 +10,7 @@ import numpy
 from . import geometry as geo
 import weakref
 from . import initializer
+from .geometry import FractionalVolume
 import warnings
 import math
 import ctypes
@@ -932,7 +933,7 @@ class Region(object):
                 raise RxDException('nrn_region must be one of: None, "i", "o"')
             else:
                 self._nrn_region = value
-            if value == "i" and self.geometry._surface_fraction == 0:
+            if value == "i" and isinstance(self.geometry, FractionalVolume) and self.geometry._surface_fraction == 0:
                 warnings.warn(
                     f'{self.name} is in the "i" region with a surface_fraction of 0 and will not have currents added'
                 )
