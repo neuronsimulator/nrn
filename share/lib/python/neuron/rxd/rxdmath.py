@@ -142,6 +142,7 @@ def _compile(arith, region):
 
 def _ensure_arithmeticed(other):
     from . import species
+
     if isinstance(other, species._SpeciesMathable):
         other = _Arithmeticed(other)
     elif isinstance(other, float) or isinstance(other, int):
@@ -149,7 +150,9 @@ def _ensure_arithmeticed(other):
     elif isinstance(other, _Reaction):
         raise RxDException("Cannot do arithmetic on a reaction")
     elif not isinstance(other, _Arithmeticed):
-        raise RxDException(f"{other} of type {type(other)} is not a valid arithmetic object")
+        raise RxDException(
+            f"{other} of type {type(other)} is not a valid arithmetic object"
+        )
     return other
 
 
