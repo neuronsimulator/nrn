@@ -31,7 +31,10 @@ ROOT_DIR="$("${PERL_EXE}" -e "use Cwd 'abs_path'; print abs_path('$PARENT_DIR')"
 
 # default arguments : number of parallel builds and default mod file path
 PARALLEL_BUILDS=4
-params_MODS_PATH="."
+# temporary directory where mod files will be copied
+temp_mod_dir="@CMAKE_HOST_SYSTEM_PROCESSOR@/corenrn/mod2c"
+mkdir -p "$temp_mod_dir"
+params_MODS_PATH="$temp_mod_dir"
 params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
 params_NRN_PRCELLSTATE="@CORENRN_NRN_PRCELLSTATE@"
 
@@ -99,47 +102,64 @@ if [ $# -gt 1 ]; then
     exit 1
 fi
 
-# if defined mods dir be in $1
-if [ $# -eq 1 ]; then
-    params_MODS_PATH="$1"
+files=()
+directories=()
+if [ $# -gt 0 ] ; then
+  for i in "$@" ; do
+    if [ -d "$i" ] ; then
+      files+=( "$i"/*.mod )
+      directories+=( "$i" )
+    elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
+      files+=( "$i" )
+      directories+=( "$(dirname "$i")" )
+    else
+      echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
+
+      echo ""
+      echo -n "  Mod file, folder args:"
+      for j in "$@" ; do
+        echo -n " \"$j\""
+      done
+      echo ""
+
+      exit 1
+    fi
+  done
+else
+  files=( *.mod )
+  directories=( . )
 fi
 
 shopt -s nullglob
-# warn if no mod files provided
-if [ -d "$params_MODS_PATH" ]; then
-    files=( "$params_MODS_PATH"/*.mod )
-    if [ ${#files} -eq 0 ]; then
-        echo "WARNING: No mod files found in '$(readlink -f "${params_MODS_PATH}")', compiling default ones only!"
-    fi
-else
-    echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"
-    exit 1
+if [ ${#files} -eq 0 ]; then
+    echo "WARNING: No mod files found, compiling default ones only!"
 fi
 
-# temporary directory where mod files will be copied
-temp_mod_dir="@CMAKE_HOST_SYSTEM_PROCESSOR@/corenrn/mod2c"
-mkdir -p "$temp_mod_dir"
-
 # copy mod files with include files. note that ${ROOT_DIR}/share
-# has inbuilt mod files and user provided mod files are in $params_MODS_PATH.
+# has inbuilt mod files and user provided mod files are in $files.
 set +e
-for mod_dir in "${ROOT_DIR}/share/modfile" "$params_MODS_PATH" ;
+for mod_dir in "${ROOT_DIR}/share/modfile" "${directories[@]}" ;
 do
-    # copy mod files and include files
-    files=( "$mod_dir/"*.mod "$mod_dir/"*.inc "$mod_dir/"*.h* )
-    for f in "${files[@]}";
+    # copy include files
+    inc_files=( "$mod_dir/"*.inc "$mod_dir/"*.h* )
+    for f in "${inc_files[@]}";
     do
-        # copy mod files only if it's changed (to avoid rebuild)
+        # copy mod inc_files only if it's changed (to avoid rebuild)
         target_file_path="$temp_mod_dir/$(basename "$f")"
         if ! diff -q "$f" "$target_file_path" &>/dev/null;  then
             cp "$f" "$target_file_path"
         fi
     done
 done
-set -e
+for f in "${files[@]}" ;
+do
+    target_file_path="$temp_mod_dir/$(basename "$f")"
+    if ! diff -q "$f" "$target_file_path" &>/dev/null; then
+        cp "$f" "$target_file_path"
+    fi
+done
 
-# use new mod files directory for compilation
-params_MODS_PATH="$temp_mod_dir"
+set -e
 
 # build params to make command
 make_params=("ROOT=${ROOT_DIR}")
