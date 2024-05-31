@@ -1,7 +1,6 @@
-#ifndef nrnpy_utils_h
-#define nrnpy_utils_h
+#pragma once
 
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cassert>
 
 inline bool is_python_string(PyObject* python_string) {
@@ -186,4 +185,11 @@ extern void nrnpy_sec_referr();
         }                       \
     }
 
-#endif /* end of include guard: nrnpy_utils_h */
+extern void nrnpy_prop_referr();
+#define CHECK_PROP_INVALID(propid) \
+    {                              \
+        if (!propid) {             \
+            nrnpy_prop_referr();   \
+            return NULL;           \
+        }                          \
+    }

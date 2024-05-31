@@ -3,25 +3,21 @@
 
 #include "hoc.h"
 #include "parse.hpp"
-#include <math.h>
+#include <cmath>
 #include "equation.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include "nrn_ansi.h"
 #include "ocfunc.h"
 
+#include "oc_mcran4.hpp"
 
 extern void hoc_nrnmpi_init();
 
 #if PVM
 extern int numprocs(), myproc(), psync();
 #endif
-#if 0
-extern int	hoc_co();
-#endif
-#if DOS || defined(WIN32)
-extern double erf(), erfc(); /* supplied by unix */
-#endif
+
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
@@ -78,19 +74,11 @@ static struct { /* Constants */
               {"GAMMA", 0.57721566490153286060}, /* Euler */
               {"DEG", 57.29577951308232087680},  /* deg/radian */
               {"PHI", 1.61803398874989484820},   /* golden ratio */
-              {nullptr, 0}};
-
-/* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
-/* also see FARADAY and gasconstant in ../nrnoc/eion.c */
-static struct { /* Modern, Legacy units constants */
-    const char* name;
-    double cval[2];
-} uconsts[] = {{"FARADAY", {_faraday_codata2018, 96485.309}}, /*coulombs/mole*/
-               {"R", {_gasconstant_codata2018, 8.31441}}, /*molar gas constant, joules/mole/deg-K*/
-               {"Avogadro_constant",
-                {_avogadro_number_codata2018, 6.02214129e23}}, /* note that the legacy value in
+              {"FARADAY", _faraday_codata2018},  /*coulombs/mole*/
+              {"R", _gasconstant_codata2018},    /*molar gas constant, joules/mole/deg-K*/
+              {"Avogadro_constant", _avogadro_number_codata2018}, /* note that the legacy value in
                                                                  nrnunits.lib.in is 6.022169+23 */
-               {0, {0., 0.}}};
+              {nullptr, 0}};
 
 static struct { /* Built-ins */
     const char* name;
@@ -205,9 +193,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"myproc", myproc},
                  {"psync", psync},
 #endif
-#if DOS
-                 {"settext", hoc_settext},
-#endif
 #if defined(WIN32)
                  {"WinExec", hoc_win_exec},
 #endif
@@ -239,32 +224,30 @@ double hoc_default_dll_loaded_;
 char* neuron_home;
 const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
-int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
-int _nrnunit_use_legacy_; /* allow dynamic switching between legacy and modern units */
 
 void hoc_init(void) /* install constants and built-ins table */
 {
     int i;
     Symbol* s;
 
-#if defined(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
-    _nrnunit_use_legacy_ = 1; /* legacy as default */
-#else
-    _nrnunit_use_legacy_ = 0; /* new units as default */
-#endif
-    { /* but check the environment variable if it exists */
+    {
         const char* envvar = getenv("NRNUNIT_USE_LEGACY");
         if (envvar) {
+            hoc_warning(
+                "NRNUNIT_USE_LEGACY is deprecated as only modern units are supported with NEURON "
+                "version >= 9",
+                "If you want to still use legacy unit you can use a NEURON version < 9");
             if (strcmp(envvar, "1") == 0) {
-                _nrnunit_use_legacy_ = 1;
-            } else if (strcmp(envvar, "0") == 0) {
-                _nrnunit_use_legacy_ = 0;
+                hoc_execerror(
+                    "'NRNUNIT_USE_LEGACY=1' is set but legacy units support is removed with NEURON "
+                    "version >= 9",
+                    nullptr);
             }
         }
     }
 
-    use_mcell_ran4_ = 0;
+    set_use_mcran4(false);
     nrn_xopen_broadcast_ = 255;
     extern void hoc_init_space(void);
     hoc_init_space();
@@ -275,12 +258,6 @@ void hoc_init(void) /* install constants and built-ins table */
         s->type = VAR;
         s->u.pval = &consts[i].cval;
         s->subtype = USERDOUBLE;
-    }
-    for (i = 0; uconsts[i].name; i++) {
-        s = install(uconsts[i].name, UNDEF, uconsts[i].cval[0], &symlist);
-        s->type = VAR;
-        s->u.pval = &uconsts[i].cval[0];
-        s->subtype = DYNAMICUNITS;
     }
     for (i = 0; builtins[i].name; i++) {
         s = install(builtins[i].name, BLTIN, 0.0, &symlist);

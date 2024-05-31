@@ -9,6 +9,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <unordered_map>
 
 typedef struct NrnThread NrnThread;
 struct Extnode;
@@ -83,11 +84,30 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;  // for nrncore writing.
+    std::unique_ptr<int[]> dparam_semantics;  // for nrncore writing.
+    const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};
 };
 
+/* Direct call Python wrappers to density mechanism functions */
+struct NPyDirectMechFunc {
+    const char* name;
+    double (*func)(Prop*);
+};
+/* Above struct in translated mod files are elements of a {nullptr, nullptr}
+   terminated list. The translator could easily create an unordered map instead,
+   and that would be nicer.
+   However there is some question (as with std::string) that an unordered_map
+   is ABI compatible across codes compiled by different toolchains.
+   So we will build our per mechanism map in NEURON world from the null
+   terminated list in NMODL world.
+*/
+using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
+extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
+extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+extern void hoc_register_parm_default(int type, const std::vector<double>*);
 
 #define IMEMFAST     -2
 #define VINDEX       -1
@@ -135,9 +155,16 @@ inline std::size_t vext_pseudoindex() {
 }  // namespace neuron::extracellular
 #endif
 
-#define nrnocCONST 1
-#define DEP        2
-#define STATE      3 /*See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define nrnocCONST 1  // PARAMETER
+#define DEP        2  // ASSIGNED
+#define STATE      3 /* STATE: See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define NRNPOINTER                                                            \
+    4 /* added on to list of mechanism variables.These are                    \
+pointers which connect variables  from other mechanisms via the _ppval array. \
+*/
+
+#define _AMBIGUOUS  5  // for Ions
+#define NMODLRANDOM 6  // RANDOM variable in NEURON block
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
@@ -152,21 +179,17 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
-extern Memb_func* memb_func;
+extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
+extern int nrn_dparam_semantics_to_int(const char*);
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
 then mechanisms that write concentrations, then all others. */
 extern short* memb_order_;
-#define NRNPOINTER                                                            \
-    4 /* added on to list of mechanism variables.These are                    \
-pointers which connect variables  from other mechanisms via the _ppval array. \
-*/
-
-#define _AMBIGUOUS 5
 
 namespace neuron::mechanism {
 template <typename T>
@@ -187,6 +210,9 @@ namespace detail {
 void register_data_fields(int mech_type,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_size);
+void register_data_fields(int mech_type,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_size);
 }  // namespace detail
 /**
  * @brief Type- and array-aware version of hoc_register_prop_size.
@@ -294,3 +320,7 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
 [[nodiscard]] NrnThread* _nrn_mechanism_get_thread(Node*);
 [[nodiscard]] int _nrn_mechanism_get_type(Prop*);
 [[nodiscard]] int _nrn_mechanism_get_v_node_index(Node*);
+
+// Rarely (e.g. NEURON {RANDOM123 ranvar}) instances of a mod file
+// need to deallocate owning objects at end of their life.
+extern std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;

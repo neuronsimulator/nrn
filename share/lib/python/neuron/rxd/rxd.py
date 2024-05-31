@@ -254,8 +254,6 @@ _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
-last_nrn_legacy_units = h.nrnunit_use_legacy()
-
 
 _all_reactions = []
 
@@ -570,10 +568,8 @@ _diam_change_count = nrn_dll_sym("diam_change_cnt", _ctypes_c_int)
 
 
 def _setup_units(force=False):
-    global last_nrn_legacy_units
     if initializer.is_initialized():
-        if force or last_nrn_legacy_units != h.nrnunit_use_legacy():
-            last_nrn_legacy_units = h.nrnunit_use_legacy()
+        if force:
             clear_rates()
             _setup_memb_currents()
             _compile_reactions()
@@ -909,6 +905,7 @@ def _setup_matrices():
             num_3d_indices_per_1d_seg = numpy.asarray(
                 num_3d_indices_per_1d_seg, dtype=numpy.int64
             )
+            hybrid_grid_ids.append(-1)
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
@@ -916,18 +913,19 @@ def _setup_matrices():
             volumes1d = numpy.asarray(volumes1d, dtype=float)
             volumes3d = numpy.asarray(volumes3d, dtype=float)
             dxs = numpy.asarray(grids_dx, dtype=float)
-            set_hybrid_data(
-                num_1d_indices_per_grid,
-                num_3d_indices_per_grid,
-                hybrid_indices1d,
-                hybrid_indices3d,
-                num_3d_indices_per_1d_seg,
-                hybrid_grid_ids,
-                rates,
-                volumes1d,
-                volumes3d,
-                dxs,
-            )
+            if hybrid_grid_ids.size > 1:
+                set_hybrid_data(
+                    num_1d_indices_per_grid,
+                    num_3d_indices_per_grid,
+                    hybrid_indices1d,
+                    hybrid_indices3d,
+                    num_3d_indices_per_1d_seg,
+                    hybrid_grid_ids,
+                    rates,
+                    volumes1d,
+                    volumes3d,
+                    dxs,
+                )
 
         # TODO: Replace this this to handle 1d/3d hybrid models
         """

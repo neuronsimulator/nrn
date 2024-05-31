@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is
@@ -28,12 +28,16 @@
 
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
 
-#include <getopt.h>
+#include <CLI/CLI.hpp>
 
 #include <stdlib.h>
 #include "modl.h"
 
 #include <cstring>
+#include <string>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
@@ -55,7 +59,6 @@ int nmodl_text = 1;
 List* filetxtlist;
 
 extern int yyparse();
-extern int mkdir_p(const char*);
 
 extern int vectorize;
 extern int numlist;
@@ -67,58 +70,22 @@ static const char* pgm_name = "nmodl";
 extern const char* RCS_version;
 extern const char* RCS_date;
 
-static struct option long_options[] = {{"version", no_argument, 0, 'v'},
-                                       {"help", no_argument, 0, 'h'},
-                                       {"outdir", required_argument, 0, 'o'},
-                                       {0, 0, 0, 0}};
-
-static void show_options(char** argv) {
-    fprintf(stderr, "Source to source compiler from NMODL to C++\n");
-    fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr,
-            "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
-    fprintf(stderr, "\t-h | --help                         print this message\n");
-    fprintf(stderr, "\t-v | --version                      print version number\n");
-}
-
-static void openfiles(char* given_filename, char* output_dir);
+static void openfiles(const char* given_filename, const char* output_dir);
 
 int main(int argc, char** argv) {
-    int option = -1;
-    int option_index = 0;
-    char* output_dir = NULL;
+    std::string output_dir{};
+    std::string inputfile{};
 
-    if (argc < 2) {
-        show_options(argv);
-        exit(1);
-    }
+    CLI::App app{"Source to source compiler from NMODL to C++"};
+    app.add_option("-o,--outdir", output_dir, "directory where output files will be written");
+    app.set_version_flag("-v,--version", nmodl_version_, "print version number");
+    app.set_help_flag("-h,--help", "print this message");
+    app.add_option("Inputfile", inputfile)->required();
+    app.allow_extras();
 
-    while ((option = getopt_long(argc, argv, ":vho:", long_options, &option_index)) != -1) {
-        switch (option) {
-        case 'v':
-            printf("%s\n", nmodl_version_);
-            exit(0);
+    CLI11_PARSE(app, argc, argv);
 
-        case 'o':
-            output_dir = strdup(optarg);
-            break;
-
-        case 'h':
-            show_options(argv);
-            exit(0);
-
-        case ':':
-            fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
-            exit(-1);
-
-        case '?':
-        default:
-            fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
-            exit(-1);
-        }
-    }
-    if ((argc - optind) > 1) {
+    if (!app.remaining().empty()) {
         fprintf(stderr,
                 "%s: Warning several input files specified on command line but only one will be "
                 "processed\n",
@@ -130,9 +97,9 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    std::strncpy(finname, argv[optind], sizeof(finname));
-
-    openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
+    std::strcpy(finname, inputfile.c_str());
+    openfiles(inputfile.c_str(),
+              output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
     IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
@@ -184,17 +151,14 @@ int main(int argc, char** argv) {
 #endif
     if (nmodl_text) {
         Item* q;
-        char* pf{nullptr};
-#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, nullptr);
-#endif
         fprintf(
             fcout,
             "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
-        if (pf) {
-            free(pf);
-        }
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", fs::absolute(finname).c_str());
+#else
+        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", finname);
+#endif
         fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
             char* s = STR(q);
@@ -247,7 +211,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-static void openfiles(char* given_filename, char* output_dir) {
+static void openfiles(const char* given_filename, const char* output_dir) {
     char s[NRN_BUFSIZE];
 
     char output_filename[NRN_BUFSIZE];
@@ -276,7 +240,9 @@ static void openfiles(char* given_filename, char* output_dir) {
         }
     }
     if (output_dir) {
-        if (mkdir_p(output_dir) != 0) {
+        try {
+            fs::create_directories(output_dir);
+        } catch (...) {
             fprintf(stderr, "Can't create output directory %s\n", output_dir);
             exit(1);
         }

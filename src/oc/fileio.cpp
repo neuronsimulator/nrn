@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"

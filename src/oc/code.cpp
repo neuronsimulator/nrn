@@ -1027,19 +1027,6 @@ void forcode(void) {
         pc = relative(savepc + 1); /* next statement */
 }
 
-static void warn_assign_dynam_unit(const char* name) {
-    static int first = 1;
-    if (first) {
-        char mes[100];
-        first = 0;
-        Sprintf(mes,
-                "Assignment to %s physical constant %s",
-                _nrnunit_use_legacy_ ? "legacy" : "modern",
-                name);
-        hoc_warning(mes, NULL);
-    }
-}
-
 void hoc_shortfor(void) {
     Inst* savepc = pc;
     double begin, end, *pval = 0;
@@ -1059,9 +1046,6 @@ void hoc_shortfor(void) {
                 execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
-            } else if (sym->subtype == DYNAMICUNITS) {
-                pval = sym->u.pval + _nrnunit_use_legacy_;
-                warn_assign_dynam_unit(sym->name);
             } else {
                 pval = OPVAL(sym);
             }
@@ -1222,9 +1206,6 @@ static void for_segment2(Symbol* sym, int mode) {
                 execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
-            } else if (sym->subtype == DYNAMICUNITS) {
-                pval = sym->u.pval + _nrnunit_use_legacy_;
-                warn_assign_dynam_unit(sym->name);
             } else {
                 pval = OPVAL(sym);
             }
@@ -1875,9 +1856,6 @@ void eval(void) /* evaluate variable on stack */
             case USERINT:
                 d = (double) (*(sym->u.pvalint));
                 break;
-            case DYNAMICUNITS:
-                d = sym->u.pval[_nrnunit_use_legacy_];
-                break;
             case USERPROPERTY:
                 d = cable_prop_eval(sym);
                 break;
@@ -1958,9 +1936,6 @@ void hoc_evalpointer() {
             case USERINT:
             case USERFLOAT:
                 execerror("can use pointer only to doubles", sym->name);
-                break;
-            case DYNAMICUNITS:
-                d = sym->u.pval + _nrnunit_use_legacy_;
                 break;
             case USERPROPERTY:
                 d = cable_prop_eval_pointer(sym);
@@ -2237,13 +2212,6 @@ void hoc_assign() {
                     d2 = hoc_opasgn(op, (double) (*(sym->u.pvalfloat)), d2);
                 }
                 *(sym->u.pvalfloat) = (float) (d2);
-                break;
-            case DYNAMICUNITS:
-                if (op) {
-                    d2 = hoc_opasgn(op, sym->u.pval[_nrnunit_use_legacy_], d2);
-                }
-                sym->u.pval[_nrnunit_use_legacy_] = (float) (d2);
-                warn_assign_dynam_unit(sym->name);
                 break;
             default:
                 if (op) {
@@ -2585,24 +2553,12 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32)
-static int ntimes;
-#endif
-
 void execute(Inst* p) /* run the machine */
 {
     Inst* pcsav;
 
     BBSPOLL
     for (pc = p; pc->in != STOP && !hoc_returning;) {
-#if defined(DOS)
-        if (++ntimes > 10) {
-            ntimes = 0;
-#if 0
-            kbhit(); /* DOS can't capture interrupt when number crunching*/
-#endif
-        }
-#endif
         if (hoc_intset)
             execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/

@@ -9,7 +9,7 @@
 #include "parse.hpp"
 #include "membdef.h"
 #include "nrniv_mf.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include <array>
 #include <string>
@@ -147,6 +147,19 @@ void ion_charge(void) {
     hoc_retpushx(global_charge(s->subtype));
 }
 
+static std::vector<double> naparmdflt{DEF_ena, DEF_nai, DEF_nao};
+static std::vector<double> kparmdflt{DEF_ek, DEF_ki, DEF_ko};
+static std::vector<double> caparmdflt{DEF_eca, DEF_cai, DEF_cao};
+static std::vector<double> ionparmdflt{DEF_eion, DEF_ioni, DEF_iono};
+
+void reg_parm_default(int mechtype, const std::string& name) {
+    if (name == "na") {
+        hoc_register_parm_default(mechtype, &naparmdflt);
+    } else {
+        hoc_register_parm_default(mechtype, &ionparmdflt);
+    }
+}
+
 void ion_reg(const char* name, double valence) {
     int i, mechtype;
     Symbol* s;
@@ -176,6 +189,7 @@ void ion_reg(const char* name, double valence) {
         hoc_symbol_units(hoc_lookup(buf[6].c_str()), "S/cm2");
         s = hoc_lookup(buf[0].c_str());
         mechtype = nrn_get_mechtype(mechanism[1]);
+        reg_parm_default(mechtype, name_s);
         using neuron::mechanism::field;
         neuron::mechanism::register_data_fields(mechtype,
                                                 field<double>{buf[1]},  // erev
@@ -262,12 +276,7 @@ at least one model using this ion\n",
         }
 }
 
-#define FARADAY _faraday_[_nrnunit_use_legacy_]
-static double _faraday_[2] = {_faraday_codata2018, 96485.309};
-#define gasconstant _gasconstant_[_nrnunit_use_legacy_]
-static double _gasconstant_[2] = {_gasconstant_codata2018, 8.3134};
-
-#define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
+#define ktf (1000. * _gasconstant_codata2018 * (celsius + 273.15) / _faraday_codata2018)
 double nrn_nernst(double ci, double co, double z) {
     /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/
     if (z == 0) {
@@ -343,7 +352,7 @@ double nrn_ghk(double v, double ci, double co, double z) {
     temp = z * v / ktf;
     eco = co * efun(temp);
     eci = ci * efun(-temp);
-    return (.001) * z * FARADAY * (eci - eco);
+    return (.001) * z * _faraday_codata2018 * (eci - eco);
 }
 
 void ghk(void) {
@@ -483,7 +492,7 @@ void ion_style(void) {
     hoc_retpushx((double) oldstyle);
 }
 
-int nrn_vartype(Symbol* sym) {
+int nrn_vartype(const Symbol* sym) {
     int i;
     i = sym->subtype;
     if (i == _AMBIGUOUS) {
@@ -600,21 +609,21 @@ static void ion_alloc(Prop* p) {
     p->param(cur_index) = 0.;
     p->param(dcurdv_index) = 0.;
     if (p->_type == na_ion) {
-        p->param(erev_index) = DEF_ena;
-        p->param(conci_index) = DEF_nai;
-        p->param(conco_index) = DEF_nao;
+        p->param(erev_index) = naparmdflt[0];
+        p->param(conci_index) = naparmdflt[1];
+        p->param(conco_index) = naparmdflt[2];
     } else if (p->_type == k_ion) {
-        p->param(erev_index) = DEF_ek;
-        p->param(conci_index) = DEF_ki;
-        p->param(conco_index) = DEF_ko;
+        p->param(erev_index) = kparmdflt[0];
+        p->param(conci_index) = kparmdflt[1];
+        p->param(conco_index) = kparmdflt[2];
     } else if (p->_type == ca_ion) {
-        p->param(erev_index) = DEF_eca;
-        p->param(conci_index) = DEF_cai;
-        p->param(conco_index) = DEF_cao;
+        p->param(erev_index) = caparmdflt[0];
+        p->param(conci_index) = caparmdflt[1];
+        p->param(conco_index) = caparmdflt[2];
     } else {
-        p->param(erev_index) = DEF_eion;
-        p->param(conci_index) = DEF_ioni;
-        p->param(conco_index) = DEF_iono;
+        p->param(erev_index) = ionparmdflt[0];
+        p->param(conci_index) = ionparmdflt[1];
+        p->param(conco_index) = ionparmdflt[2];
     }
     p->dparam = nrn_prop_datum_alloc(p->_type, ndparam, p);
     p->dparam[iontype_index_dparam] = 0;

@@ -16,17 +16,6 @@ extern int hoc_return_type_code;
 extern double hoc_scan(FILE*);
 extern Object** hoc_temp_objptr(Object*);
 
-#if 0
-	extern void install_matrix_method(const char* name, double (*)(...));
-	extern void* matrix_arg(int);
-	extern double* matrix_pelm(void*, int i, int j);
-	extern int matrix_nrow(void*);
-	extern int matrix_ncol(void*);
-	extern int matrix_type(void*);	// FULL 1, SPARSE 2, BAND 3
-	extern MAT* matrix_full(void*); // hoc_execerror if void* not right type
-	extern SPMAT* matrix_sparse(void*);
-#endif
-
 static void check_domain(int i, int j) {
     if (i > j || i < 0) {
         auto const tmp = "index=" + std::to_string(i) + "  max_index=" + std::to_string(j) + "\n";
@@ -369,10 +358,6 @@ static Object** m_muls(void* v) {
     if (ifarg(2)) {
         out = matrix_arg(2);
     }
-    // 	I believe meschach does this for us
-    //	if (out != m) {
-    //		out->resize(...
-    //	}
     m->muls(*getarg(1), out);
     return temp_objvar(out);
 }

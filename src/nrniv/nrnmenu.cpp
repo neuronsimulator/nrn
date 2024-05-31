@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <OS/string.h>
 
 #if HAVE_IV
 #include "secbrows.h"
@@ -79,10 +78,6 @@ void nrnsecmenu() {
 #endif
     hoc_retpushx(1.);
 }
-
-#ifdef ultrix
-char* strstr(const char*, const char*);
-#endif
 
 static bool has_globals(const char* name) {
     Symbol* sp;
@@ -480,12 +475,12 @@ static void point_menu(Object* ob, int make_label) {
     if (psym->s_varn) {
         for (k = 0; k < psym->s_varn; k++) {
             vsym = psym->u.ppsym[k];
-            if (nrn_vartype(vsym) == nrnocCONST) {
+            int vartype = nrn_vartype(vsym);
+            if (vartype == NMODLRANDOM) {  // skip
+                continue;
+            }
+            if (vartype == nrnocCONST) {
                 deflt = true;
-
-#if defined(MikeNeubig)
-                deflt = false;
-#endif  // end of hack
             } else {
                 deflt = false;
             }
@@ -617,6 +612,11 @@ static double ms_count(void* v) {
     hoc_return_type_code = 1;
     return ((MechanismStandard*) v)->count();
 }
+static double ms_is_array(void* v) {
+    auto* ms = static_cast<MechanismStandard*>(v);
+    hoc_return_type_code = 2;
+    return ms->is_array((int) chkarg(1, 0, ms->count() - 1));
+}
 static double ms_name(void* v) {
     const char* n;
     int rval = 0;
@@ -665,6 +665,7 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"set", ms_set},
                                    {"get", ms_get},
                                    {"count", ms_count},
+                                   {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
                                    {0, 0}};
@@ -703,7 +704,7 @@ MechanismStandard::MechanismStandard(const char* name, int vartype) {
         }
     } else {
         for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
-            int type = np_->var_type(sym);
+            int type = nrn_vartype(sym);
             if (type < vartype) {
                 ++offset_;
             } else if (vartype == 0 || type == vartype) {
@@ -726,10 +727,14 @@ MechanismStandard::~MechanismStandard() {
 int MechanismStandard::count() {
     return name_cnt_;
 }
-const char* MechanismStandard::name() {
+bool MechanismStandard::is_array(int i) const {
+    const Symbol* s = np_->var(i + offset_);
+    return s->arayinfo;
+}
+const char* MechanismStandard::name() const {
     return np_->name();
 }
-const char* MechanismStandard::name(int i, int& size) {
+const char* MechanismStandard::name(int i, int& size) const {
     Symbol* s;
     if (vartype_ == -1) {
         s = glosym_[i];
@@ -753,7 +758,7 @@ void MechanismStandard::panel(const char* label) {
         hoc_ivlabel(np_->name());
     }
     for (sym = np_->first_var(), i = 0; np_->more_var(); sym = np_->next_var(), ++i) {
-        if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
+        if (vartype_ == 0 || nrn_vartype(sym) == vartype_) {
             Object* pyactval = NULL;
             int size = hoc_total_array_data(sym, 0);
             if (pyact_) {
@@ -763,11 +768,11 @@ void MechanismStandard::panel(const char* label) {
                 hoc_pushx(0.0);
                 pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
             } else {
-                Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
+                Sprintf(buf, "hoc_ac_ = %d  %s", i, action_.c_str());
             }
             hoc_ivvaluerun_ex(sym->name,
                               NULL,
-                              np_->prop_pval(sym),
+                              np_->pval(sym, 0),
                               NULL,
                               pyact_ ? NULL : buf,
                               pyactval,
@@ -788,13 +793,13 @@ void MechanismStandard::panel(const char* label) {
                     hoc_pushx(double(j));
                     pyactval = neuron::python::methods.callable_with_args(pyact_, 3);
                 } else {
-                    Sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+                    Sprintf(buf, "hoc_ac_ = %d %s", i, action_.c_str());
                 }
                 char buf2[200];
                 Sprintf(buf2, "%s[%d]", sym->name, j);
                 hoc_ivvaluerun_ex(buf2,
                                   NULL,
-                                  np_->prop_pval(sym, j),
+                                  np_->pval(sym, j),
                                   NULL,
                                   pyact_ ? NULL : buf,
                                   pyact_,
@@ -821,20 +826,20 @@ void MechanismStandard::action(const char* action, Object* pyact) {
 }
 void MechanismStandard::set(const char* name, double val, int index) {
     mschk("set");
-    Symbol* s = np_->find(name);
+    const Symbol* s = np_->findsym(name);
     if (s) {
-        *np_->prop_pval(s, index) = val;
+        *np_->pval(s, index) = val;
     } else {
         hoc_execerror(name, "not in this property");
     }
 }
 double MechanismStandard::get(const char* name, int index) {
     mschk("get");
-    Symbol* s = np_->find(name);
+    const Symbol* s = np_->findsym(name);
     if (!s) {
         hoc_execerror(name, "not in this property");
     }
-    auto const pval = np_->prop_pval(s, index);
+    auto const pval = np_->pval(s, index);
     if (!pval) {
         return -1e300;
     }
@@ -848,15 +853,15 @@ void MechanismStandard::in(Section* sec, double x) {
         i = node_index(sec, x);
     }
     Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-    NrnProperty::assign(p, np_->prop(), vartype_);
+    np_->copy(false, p, sec->pnode[i], vartype_);
 }
 void MechanismStandard::in(Point_process* pp) {
     mschk("in");
-    NrnProperty::assign(pp->prop, np_->prop(), vartype_);
+    np_->copy(false, pp->prop, pp->node, vartype_);
 }
 void MechanismStandard::in(MechanismStandard* ms) {
     mschk("in");
-    NrnProperty::assign(ms->np_->prop(), np_->prop(), vartype_);
+    ms->np_->copy_out(*np_, vartype_);
 }
 
 void MechanismStandard::out(Section* sec, double x) {
@@ -864,21 +869,21 @@ void MechanismStandard::out(Section* sec, double x) {
     if (x < 0) {
         for (int i = 0; i < sec->nnode; ++i) {
             Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-            NrnProperty::assign(np_->prop(), p, vartype_);
+            np_->copy(true, p, sec->pnode[i], vartype_);
         }
     } else {
         int i = node_index(sec, x);
         Prop* p = nrn_mechanism(np_->type(), sec->pnode[i]);
-        NrnProperty::assign(np_->prop(), p, vartype_);
+        np_->copy(true, p, sec->pnode[i], vartype_);
     }
 }
 void MechanismStandard::out(Point_process* pp) {
     mschk("out");
-    NrnProperty::assign(np_->prop(), pp->prop, vartype_);
+    np_->copy(true, pp->prop, pp->node, vartype_);
 }
 void MechanismStandard::out(MechanismStandard* ms) {
     mschk("out");
-    NrnProperty::assign(np_->prop(), ms->np_->prop(), vartype_);
+    np_->copy_out(*ms->np_, vartype_);
 }
 
 void MechanismStandard::save(const char* obref, std::ostream* po) {
@@ -888,11 +893,10 @@ void MechanismStandard::save(const char* obref, std::ostream* po) {
     Sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
     o << buf << std::endl;
     for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
-        if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
+        if (vartype_ == 0 || nrn_vartype(sym) == vartype_) {
             int i, cnt = hoc_total_array_data(sym, 0);
             for (i = 0; i < cnt; ++i) {
-                Sprintf(
-                    buf, "%s.set(\"%s\", %g, %d)", obref, sym->name, *np_->prop_pval(sym, i), i);
+                Sprintf(buf, "%s.set(\"%s\", %g, %d)", obref, sym->name, *np_->pval(sym, i), i);
                 o << buf << std::endl;
             }
         }
@@ -1139,7 +1143,7 @@ void MechanismType_reg() {
     int* type_;
     int count_;
     int select_;
-    CopyString action_;
+    std::string action_;
     Object* pyact_;
     Section* sec_iter_;
     int inode_iter_;
@@ -1316,11 +1320,8 @@ void MechanismType::menu() {
                 hoc_ivbutton(s->name, NULL, pyactval);
                 hoc_obj_unref(pyactval);
             } else {
-                Sprintf(buf,
-                        "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
-                        s->name,
-                        i,
-                        mti_->action_.string());
+                Sprintf(
+                    buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n", s->name, i, mti_->action_.c_str());
                 oc.run(buf);
             }
         }

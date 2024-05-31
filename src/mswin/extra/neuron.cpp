@@ -5,12 +5,12 @@
 // finally executes nrniv.exe.  Nrniv.exe can be run by itself if
 // it does not need a console or system("command")
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "d2upath.cpp"
+#include "d2upath.h"
 
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 char* nrnhome;
 char* nh;

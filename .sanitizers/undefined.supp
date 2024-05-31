@@ -1,6 +1,9 @@
 function:constructor(Object*)
 function:ctng.cpp
 implicit-integer-sign-change:double vector[2] Eigen::internal::pabs<double vector[2]>(double vector[2] const&)
+implicit-integer-sign-change:double vector[2] Eigen::internal::pnegate<double vector[2]>(double vector[2] const&)
+implicit-integer-sign-change:Eigen::internal::Packet1cd Eigen::internal::pconj<Eigen::internal::Packet1cd>(Eigen::internal::Packet1cd const&)
+implicit-integer-sign-change:Eigen::internal::Packet1cd Eigen::internal::pmul<Eigen::internal::Packet1cd>(Eigen::internal::Packet1cd const&, Eigen::internal::Packet1cd const&)
 implicit-integer-sign-change:fgets_unlimited_nltrans(HocStr*, _IO_FILE*, int)
 implicit-integer-sign-change:invlfiresha.c
 implicit-integer-sign-change:ivRegexp::Search(char const*, int, int, int)
@@ -27,6 +30,7 @@ shift-base:nrnRan4int
 unsigned-integer-overflow:_philox4x32bumpkey(r123array2x32)
 unsigned-integer-overflow:coreneuron::nrnran123_deletestream(coreneuron::nrnran123_State*, bool)
 unsigned-integer-overflow:coreneuron::nrnran123_newstream3(unsigned int, unsigned int, unsigned int, bool)
+unsigned-integer-overflow:Py_INCREF(_object*)
 vptr:NetCon::disconnect(ivObservable*)
 vptr:ObjObservable::object()
 vptr:PreSyn::disconnect(ivObservable*)

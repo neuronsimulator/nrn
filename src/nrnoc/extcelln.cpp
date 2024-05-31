@@ -86,13 +86,22 @@ static void update_parmsize() {
 #endif
     );
     // clang-format on
-    hoc_register_prop_size(EXTRACELL, nparm, 0);
+    int prop_size = nparm + 3 * (nrn_nlayer_extracellular - 1);
+    hoc_register_prop_size(EXTRACELL, prop_size, 0);
 }
+
+static std::vector<double> param_default{
+    1e9, /* xraxial */
+    1e9, /* xg */
+    0.0, /* xc */
+    0.0, /* e_extracellular */
+};
 
 extern "C" void extracell_reg_(void) {
     register_mech(mechanism, extcell_alloc, nullptr, nullptr, nullptr, extcell_init, -1, 1);
     int const i = nrn_get_mechtype(mechanism[1]);
     assert(i == EXTRACELL);
+    hoc_register_parm_default(EXTRACELL, &param_default);
     hoc_register_cvode(i, _ode_count, nullptr, nullptr, nullptr);
     hoc_register_limits(i, limits);
     hoc_register_units(i, units);
@@ -174,11 +183,11 @@ static void extcell_alloc(Prop* p) {
     assert(p->param_size() == (nparm - 3) + 3 * nrn_nlayer_extracellular);
     assert(p->param_num_vars() == nparm);
     for (auto i = 0; i < nrn_nlayer_extracellular; ++i) {
-        p->param(xraxial_index, i) = 1e9;
-        p->param(xg_index, i) = 1e9;
-        p->param(xc_index, i) = 0.0;
+        p->param(xraxial_index, i) = param_default[0];
+        p->param(xg_index, i) = param_default[1];
+        p->param(xc_index, i) = param_default[2];
     }
-    p->param(e_extracellular_index) = 0.0;
+    p->param(e_extracellular_index) = param_default[3];
 }
 
 /*ARGSUSED*/

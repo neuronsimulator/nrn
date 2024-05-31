@@ -74,6 +74,8 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
+option(NRN_ENABLE_MATH_OPT "Enable extra math optimisations (to enable SIMD)"
+       ${NRN_ENABLE_MATH_OPT_DEFAULT})
 set(NRN_ENABLE_MODEL_TESTS
     "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
@@ -89,18 +91,16 @@ option(NRN_AVOID_ABSOLUTE_PATHS
        "Avoid embedding absolute paths in generated code (ccache optimisation)"
        ${NRN_AVOID_ABSOLUTE_PATHS_DEFAULT})
 mark_as_advanced(NRN_AVOID_ABSOLUTE_PATHS)
-option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
-       ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files"
        ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
        ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_WHEEL_BUILD ${NRN_WHEEL_BUILD_DEFAULT})
+option(NRN_BINARY_DIST_BUILD ${NRN_BINARY_DIST_BUILD_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels."
        ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
-mark_as_advanced(NRN_WHEEL_BUILD)
+mark_as_advanced(NRN_BINARY_DIST_BUILD)
 
 # =============================================================================
 # Build options (string)
@@ -216,7 +216,7 @@ include(cmake/modules/FindPythonModule.cmake)
 include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
-set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
@@ -245,6 +245,7 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
+cpp_cc_git_submodule(eigen)
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -443,6 +444,10 @@ if(NRN_ENABLE_THREADS)
   list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
+# Some files are shared by NEURON and CoreNEURON and use #if CORENRN_BUILD to distinguish between
+# which build is occurring.
+list(APPEND NRN_COMPILE_DEFS CORENRN_BUILD=0)
+
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
@@ -483,6 +488,9 @@ if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
   set(NRN_INCLUDE_MPI_HEADERS ON)
 endif()
 
+# initialize CLI11 submodule
+cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -499,9 +507,6 @@ if(NRN_ENABLE_CORENEURON)
   set(CORENRN_ENABLE_UNIT_TESTS
       ${NRN_ENABLE_TESTS}
       CACHE BOOL "" FORCE)
-  set(CORENRN_ENABLE_LEGACY_UNITS
-      ${NRN_DYNAMIC_UNITS_USE_LEGACY}
-      CACHE BOOL "" FORCE)
   if(NRN_ENABLE_PROFILING)
     if(NRN_PROFILER STREQUAL "caliper")
       set(CORENRN_ENABLE_CALIPER_PROFILING ON)
@@ -510,9 +515,6 @@ if(NRN_ENABLE_CORENEURON)
     endif()
   endif()
   set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron)
-
-  # initialize CLI11 submodule
-  cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
@@ -523,6 +525,7 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
+  get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
   # NEURON tests that link against CoreNEURON need to depend on it.
   set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 
@@ -587,7 +590,11 @@ endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
                                "NRNHOME=${PROJECT_BINARY_DIR}")
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
-prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+if(APPLE)
+  prepend_to_var(DYLD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+else()
+  prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+endif()
 if(NRN_ENABLE_CORENEURON)
   list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
 endif()
@@ -730,7 +737,7 @@ add_custom_target(
 # =============================================================================
 # ~~~
 # Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANHE
+# - Replace GLOBAL variable by RANGE
 # - Comment out TABLE
 # ~~~
 # =============================================================================
@@ -806,7 +813,7 @@ if(NRN_ENABLE_TESTS)
   if(NOT TARGET Catch2::Catch2)
     nrn_add_external_project(catch2)
     set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/extras)
     include(Catch)
   endif()
   include(CTest)
@@ -827,12 +834,15 @@ if(NRN_ENABLE_TESTS)
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
   add_custom_command(
     OUTPUT ${neurondemo_files}
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
-      "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
+    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
+            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+    DEPENDS nrnivmodl_dependency
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
     VERBATIM)
+
   add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
@@ -933,7 +943,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
-string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS})
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
@@ -960,11 +970,6 @@ message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
 message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
-if(NRN_DYNAMIC_UNITS_USE_LEGACY)
-  message(STATUS "Default units | legacy units")
-else()
-  message(STATUS "Default units | modern units (2019 nist constants)")
-endif()
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
 if(NRN_ENABLE_MPI)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
@@ -1035,9 +1040,6 @@ message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
 if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
-  if(NOT coreneuron_FOUND)
-    message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
-  endif()
 endif()
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")

@@ -92,6 +92,7 @@ void alloc_mech(int memb_func_size_) {
     corenrn.get_watch_check().resize(memb_func_size_);
     corenrn.get_is_artificial().resize(memb_func_size_, false);
     corenrn.get_artcell_qindex().resize(memb_func_size_);
+    corenrn.get_array_dims().resize(memb_func_size_);
     corenrn.get_prop_param_size().resize(memb_func_size_);
     corenrn.get_prop_dparam_size().resize(memb_func_size_);
     corenrn.get_mech_data_layout().resize(memb_func_size_, 1);
@@ -234,6 +235,8 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
         memb_func[type].dparam_semantics[ix] = -9;
     } else if (strcmp(name, "fornetcon") == 0) {
         memb_func[type].dparam_semantics[ix] = -10;
+    } else if (strcmp(name, "random") == 0) {
+        memb_func[type].dparam_semantics[ix] = -11;
     } else {
         int i = name[0] == '#' ? 1 : 0;
         int etype = nrn_get_mechtype(name + i);

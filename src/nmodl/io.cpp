@@ -1,4 +1,6 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 /* file.mod input routines */
 #include <stdlib.h>
@@ -385,7 +387,6 @@ static FILE* include_open(char* fname, int err) {
 }
 
 void include_file(Item* q) {
-    char* pf = NULL;
     char fname[NRN_BUFSIZE];
     Item* qinc;
     FileStackItem* fsi;
@@ -415,13 +416,11 @@ void include_file(Item* q) {
     qinc = filetxtlist->prev;
     Sprintf(buf, ":::%s", STR(qinc));
     replacstr(qinc, buf);
-#if HAVE_REALPATH
-    pf = realpath(fname, NULL);
-#endif
-    if (pf) {
-        Sprintf(buf, ":::realpath %s\n", pf);
-        free(pf);
+    try {
+        Sprintf(buf, ":::realpath %s\n", fs::absolute(fname).c_str());
         lappendstr(filetxtlist, buf);
+    } catch (const std::filesystem::filesystem_error&) {
+        // If we are not able to get an absolute path from fname, simply avoid to write it.
     }
 }
 
@@ -444,50 +443,4 @@ static int file_stack_empty() {
         return 1;
     }
     return (filestack->next == filestack);
-}
-
-/* adapted from : gist@jonathonreinhart/mkdir_p.c */
-int mkdir_p(const char* path) {
-    const size_t len = strlen(path);
-    char mypath[PATH_MAX];
-    char* p;
-
-    errno = 0;
-
-    /* copy string so its mutable */
-    if (len > sizeof(mypath) - 1) {
-        fprintf(stderr, "Output directory path too long\n");
-        return -1;
-    }
-
-    strcpy(mypath, path);
-
-    /* iterate the string */
-    for (p = mypath + 1; *p; p++) {
-        if (*p == '/') {
-            /* temporarily truncate */
-            *p = '\0';
-
-#if defined(_WIN32)
-            if (_mkdir(mypath) != 0) {
-#else
-            if (mkdir(mypath, S_IRWXU) != 0) {
-#endif
-                if (errno != EEXIST)
-                    return -1;
-            }
-            *p = '/';
-        }
-    }
-
-#if defined(_WIN32)
-    if (_mkdir(mypath) != 0) {
-#else
-    if (mkdir(mypath, S_IRWXU) != 0) {
-#endif
-        if (errno != EEXIST)
-            return -1;
-    }
-
-    return 0;
 }

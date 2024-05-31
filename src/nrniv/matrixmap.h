@@ -1,8 +1,4 @@
-#ifndef matrixmap_h
-#define matrixmap_h
-
-// this defines things needed by ocmatrix
-#include <OS/list.h>
+#pragma once
 
 #include "ocmatrix.h"
 #include "nrnoc2iv.h"
@@ -124,5 +120,3 @@ class MatrixMap {
     double** pm_;
     double** ptree_;
 };
-
-#endif

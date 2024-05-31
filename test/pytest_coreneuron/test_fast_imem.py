@@ -2,6 +2,7 @@
 # For a demanding test, use a tree with many IClamp and ExpSyn point processes
 # sprinkled on zero and non-zero area nodes.
 from neuron.tests.utils.strtobool import strtobool
+from neuron.tests.utils.coreneuron_available import coreneuron_available
 import os
 
 from neuron import config, gui, h
@@ -207,28 +208,6 @@ def test_fastimem():
         total_syn_g(syns)
         with cvode_enabled(True):
             run(1.0, ics, 1e-12)
-
-
-def coreneuron_available():
-    if not config.arguments["NRN_ENABLE_CORENEURON"]:
-        return False
-    # But can it be loaded?
-    cvode = h.CVode()
-    pc = h.ParallelContext()
-    h.finitialize()
-    result = 0
-    import sys
-    from io import StringIO
-
-    original_stderr = sys.stderr
-    sys.stderr = StringIO()
-    try:
-        pc.nrncore_run("--tstop 1 --verbose 0")
-        result = 1
-    except Exception as e:
-        pass
-    sys.stderr = original_stderr
-    return result
 
 
 def test_fastimem_corenrn():

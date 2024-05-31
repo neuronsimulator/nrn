@@ -1,10 +1,12 @@
 name: Windows Installer
 
-concurrency: 
-  group: ${{ github.workflow }}#${{ github.ref }}
-  cancel-in-progress: true  
+concurrency:
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 on:
+  merge_group:
   workflow_call:
     inputs:
       tag:
@@ -13,7 +15,7 @@ on:
         required: true
         type: string
   push:
-    branches: 
+    branches:
       - master
       - release/**
   pull_request:
@@ -34,7 +36,7 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
 
@@ -45,21 +47,21 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Set up Python3
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Download Dependencies
       run: |
         .\nrn\ci\win_download_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-       
+
     - name: Install Dependencies
       run: .\nrn\ci\win_install_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
-      
+
     - name: Build and Create Installer
       run: |
         rm.exe C:\WINDOWS\system32\bash.EXE
@@ -78,7 +80,7 @@ jobs:
       uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe

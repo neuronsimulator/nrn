@@ -53,20 +53,17 @@ Matrix
         By default, a new Matrix is of type MFULL (= 1) and allocates storage for 
         all nrow*ncol elements. Scaffolding is in place for matrices of storage 
         type MSPARSE (=2) and MBAND (=3) but not many methods have been interfaced 
-        to the meschach library at this time. If a method is called on a matrix type 
+        to the eigen library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
         m*x=b (``x = m.solv(b)`` ) will solve the linear system 
         regardless of the type of m and 
         v1 = m*v2 (``v1 = m.mulv(v2)`` ) will perform the vector multiplication. 
          
-        Matrix is implemented using the 
-        `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
-        (discovered at http://www.netlib.org/c/index.html\ ) which contains a large collection 
-        of routines for sparse, banded, and full matrices. Many of the useful 
-        routines  have not 
-        been interfaced with the hoc interpreter but can be easily added on request 
-        or you can add it yourself 
+        Matrix is implemented using the `eigen3 library <https://eigen.tuxfamily.org>`_ 
+        which contains a large collection of routines for sparse, banded, and full matrices. 
+        Many of the useful routines  have not been interfaced with the hoc 
+        interpreter but can be easily added on request or you can add it yourself 
         by analogy with the code in ``nrn/src/ivoc/(matrix.c ocmatrix.[ch])`` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
@@ -500,10 +497,6 @@ Matrix
 
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
-
 ----
 
 
@@ -660,9 +653,6 @@ Matrix
             print()
             m.solv(b,1).printf("%8.3f", 475, 535) 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -790,9 +780,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -813,9 +800,6 @@ Matrix
          
         Otherwise fill the matrix row with a constant. 
 
-    .. warning::
-        Implemented only for full matrices and sparse. 
-
 
 ----
 
@@ -835,9 +819,6 @@ Matrix
         The vector must have size msrcdest.mrow 
          
         Otherwise fill the matrix column with a constant. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -883,9 +864,6 @@ Matrix
             m.printf()
 
 
-    .. warning::
-        Implemented only for full and sparse matrices. 
-
 
 ----
 
@@ -900,9 +878,6 @@ Matrix
 
     Description:
         Fills the matrix with 0. 
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----
@@ -927,10 +902,6 @@ Matrix
             m = h.Matrix(4, 6) 
             m.ident() 
             m.printf() 
-
-
-    .. warning::
-        Implemented only for full matrices. 
 
 
 ----

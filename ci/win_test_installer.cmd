@@ -17,15 +17,15 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
-C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python39\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python310\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python311\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 :: install numpy dependency
 python -m pip install numpy
 :: run also using whatever is system python
 python --version
-python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: test python and nrniv
 python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
@@ -51,8 +51,8 @@ call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
 
-:: text rxd
-python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
+:: text rxd, disable until #2585 is fixed
+:: python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
 :: 2nd step -> check association.hoc output after we've launched 1step in previous CI step

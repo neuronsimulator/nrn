@@ -1,11 +1,9 @@
-#ifndef kschan_h
-#define kschan_h
+#pragma once
 
 #include <math.h>
-#include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "ivocvect.h"
-#include "nrnunits_modern.h"
+#include "nrnunits.h"
 
 #include "spmatrix.h"
 
@@ -95,10 +93,7 @@ class KSChanSigmoid: public KSChanFunction {
 };
 
 
-// e/(kT) e/k=11.604589 from hoc's FARADAY and R values (legacy units)
-#define _e_over_k _e_over_k_[_nrnunit_use_legacy_]
-static double _e_over_k_[2] = {_e_over_k_codata2018, 11.604589}; /* K/mV */
-#define ebykt (_e_over_k / (273.15 + celsius))
+#define ebykt (_e_over_k_codata2018 / (273.15 + celsius))
 
 // from MODELING NEURONAL BIOPHYSICS Lyle J Graham
 // A Chapter in the Handbook of Brain Theory and Neural Networks, Volume 2
@@ -329,10 +324,10 @@ class KSState {
     KSState();
     virtual ~KSState();
     const char* string() {
-        return name_.string();
+        return name_.c_str();
     }
     double f_;  // normalized conductance
-    CopyString name_;
+    std::string name_;
     int index_;  // into state_ array
     KSChan* ks_;
     Object* obj_;
@@ -423,8 +418,8 @@ class KSChan {
     void delete_schan_node_data();
     void alloc_schan_node_data();
     void update_prop();  // can add and remove Nsingle and SingleNodeData
-    void update_size();
-    void must_allow_size_update(bool single, bool ion, int ligand, int nstate) const;
+    void err_if_has_instances() const;
+    void register_data_fields();
 
     KSState* state_insert(int i, const char* name, double frac);
     void state_remove(int i);
@@ -443,10 +438,11 @@ class KSChan {
     int mechtype_;
 
   public:
-    CopyString name_;  // name of channel
-    CopyString ion_;   // name of ion , "" means non-specific
+    std::string name_;  // name of channel
+    std::string ion_;   // name of ion , "" means non-specific
     double gmax_deflt_;
     double erev_deflt_;
+    void parm_default_fill();
     int cond_model_;
     KSIv* iv_relation_;
     int ngate_;       // number of gating complexes
@@ -486,6 +482,6 @@ class KSChan {
     double vmin_, vmax_, dvinv_, dtsav_;
     int hh_tab_size_;
     bool usetable_;
-};
 
-#endif
+    std::vector<double> parm_default{};
+};

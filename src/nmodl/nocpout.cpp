@@ -1,4 +1,5 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 
 /*
@@ -70,6 +71,8 @@ directly by hoc.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <filesystem>
+namespace fs = std::filesystem;
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
@@ -102,6 +105,7 @@ extern int check_tables_threads(List*);
 List* syminorder;
 List* plotlist;
 List* defs_list;
+Item* defs_list_parm_default;  // where we insert initializer defaults
 int electrode_current = 0;
 int thread_data_index = 0;
 List* thread_cleanup_list;
@@ -125,6 +129,9 @@ static List* rangeparm;
 static List* rangedep;
 static List* rangestate;
 static List* nrnpointers;
+static List* nmodlrandoms;
+static List* nrn_mech_inst_destruct_list;
+static int num_random_vars = 0;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
@@ -153,10 +160,8 @@ static List* ba_list_;
 List* state_discon_list_;
 int cvode_not_allowed;
 static int cvode_emit, cvode_ieq_index;
-static int cond_index;
 static int tqitem_index;
 static int watch_index;
-static int cvode_index;
 static List* ion_synonym;
 int debugging_;
 int net_receive_;
@@ -181,6 +186,7 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
    pvarcount indexes pointers to variables such as ena
 */
 static int varcount, parraycount;
+static int prop_size;
 static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
 static std::vector<std::string> data_field_strings;
 
@@ -195,10 +201,11 @@ void nrninit() {
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();
+    nmodlrandoms = newlist();
 }
 
 void parout() {
-    int i, j, ioncount, pointercount, gind, emit_check_table_thread;
+    int i, ioncount, pointercount, gind, emit_check_table_thread;
     Item *q, *q1;
     Symbol *s, *sion;
     double d1, d2;
@@ -229,6 +236,9 @@ void parout() {
     } else {
         Sprintf(suffix, "_%s", mechname);
     }
+
+    func_needs_setdata();  // Do FUNCTION/PROCEDURE need prior call to setdata.
+
     if (artificial_cell && vectorize && (thread_data_index || toplocal_)) {
         fprintf(stderr,
                 "Notice: ARTIFICIAL_CELL models that would require thread specific data are not "
@@ -314,7 +324,7 @@ void parout() {
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 
     nrndeclare();
-    varcount = parraycount = 0;
+    varcount = parraycount = prop_size = 0;
     declare_p();
     // iondef defined _nrn_mechanism_cache_range
     ioncount = iondef(&pointercount); /* first is _nd_area if point process */
@@ -340,17 +350,14 @@ void parout() {
 
     if (vectorize) {
         Lappendstr(defs_list, "static _nrn_mechanism_std_vector<Datum> _extcall_thread;\n");
-        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
     }
-#if 0
-	Lappendstr(defs_list, "/* static variables special to NEURON */\n");
-	SYMLISTITER {
-		if (SYM(q)->nrntype & NRNSTATIC) {
-			Sprintf(buf, "static double %s;\n", SYM(q)->name);
-			Lappendstr(defs_list, buf);
-		}
-	}
-#endif
+    if (!point_process) {
+        Lappendstr(defs_list, "static Prop* _extcall_prop;\n");
+        Lappendstr(defs_list,
+                   "/* _prop_id kind of shadows _extcall_prop to allow validity checking. */\n");
+        Lappendstr(defs_list, "static _nrn_non_owning_id_without_container _prop_id{};\n");
+    }
+
     Lappendstr(defs_list, "/* external NEURON variables */\n");
     SYMLISTITER {
         s = SYM(q);
@@ -389,7 +396,6 @@ extern void _nrn_cacheloop_reg(int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
 extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
-extern Memb_func* memb_func;\n\
 ");
 
     if (nmodl_text) {
@@ -425,9 +431,11 @@ extern Memb_func* memb_func;\n\
     /* function to set up _p and _ppvar */
     Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
     Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-    if (vectorize) {
+    if (!point_process) {
         Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-    } else {
+        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
+    }
+    if (!vectorize) {
         Lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
@@ -466,6 +474,7 @@ extern Memb_func* memb_func;\n\
         Sprintf(buf, "{\"setdata_%s\", _hoc_setdata},\n", mechname);
         Lappendstr(defs_list, buf);
     }
+
     SYMLISTITER {
         s = SYM(q);
         if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
@@ -474,6 +483,30 @@ extern Memb_func* memb_func;\n\
         }
     }
     Lappendstr(defs_list, "{0, 0}\n};\n");
+
+    /* Direct Python call wrappers to density mechanism functions. */
+    if (!point_process) {
+        Lappendstr(defs_list,
+                   "\n/* Direct Python call wrappers to density mechanism functions.*/\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "static double _npy_%s(Prop*);\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list,
+                   "\n"
+                   "static NPyDirectMechFunc npy_direct_func_proc[] = {\n");
+        SYMLISTITER {
+            s = SYM(q);
+            if ((s->subtype & (FUNCT | PROCED)) && s->name[0] != '_') {
+                Sprintf(buf, "{\"%s\", _npy_%s},\n", s->name, s->name);
+                Lappendstr(defs_list, buf);
+            }
+        }
+        Lappendstr(defs_list, "{0, 0}\n};\n");
+    }
 
     /* FUNCTION's are now global so callable from other models */
     /* change name to namesuffix. This propagates everywhere except
@@ -735,7 +768,11 @@ extern Memb_func* memb_func;\n\
             "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
-    ppvar_cnt = ioncount + diamdec + pointercount + areadec;
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
+    ppvar_cnt = ioncount + diamdec + pointercount + num_random_vars + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(
@@ -877,6 +914,9 @@ static const char *_mechanism[] = {\n\
         q = q->next->next->next;
     }
 
+    defs_list_parm_default = lappendstr(defs_list, "\n");
+    Item* before_nrn_alloc = lappendstr(defs_list, "\n");
+
     Lappendstr(defs_list,
                "\n"
                "extern Prop* need_memb(Symbol*);\n"
@@ -907,15 +947,29 @@ static const char *_mechanism[] = {\n\
             parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
+
+    // _parm_default allows implementation of a more robust NrnProperty
+    //  that does not require a call to prop_alloc.
+    /* arrays have only a single default value of 0.0 */
+    i = 0;
+    insertstr(defs_list_parm_default, "\n /* Used by NrnProperty */\n");
+    insertstr(defs_list_parm_default, "static _nrn_mechanism_std_vector<double> _parm_default{\n");
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
-            continue;
+            d1 = 0.0;
+        } else {
+            decode_ustr(s, &d1, &d2, buf);
+            Sprintf(buf, "	%s = _parm_default[%d]; /* %g */\n", s->name, i, d1);
+            Lappendstr(defs_list, buf);
         }
-        decode_ustr(s, &d1, &d2, buf);
-        Sprintf(buf, "	%s = %g;\n", s->name, d1);
-        Lappendstr(defs_list, buf);
+        /* fill in the std::vector<double> _parm_default initializer */
+        Sprintf(buf, "    %g, /* %s */\n", d1, s->name);
+        insertstr(defs_list_parm_default, buf);
+        ++i;
     }
+    insertstr(defs_list_parm_default, "};");
+
     if (point_process) {
         Lappendstr(defs_list, " }\n");
     }
@@ -1021,6 +1075,30 @@ static const char *_mechanism[] = {\n\
                 sion->name);
             Lappendstr(defs_list, buf);
         }
+    }
+
+
+    // I've put all the nrn_mech_inst_destruct here with nmodlrandoms allocation.
+    // Refactor if ever things other than nmodlrandoms need it.
+    nrn_mech_inst_destruct_list = newlist();
+    ITERATE(q, nmodlrandoms) {
+        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream();\n", SYM(q)->name);
+        Lappendstr(defs_list, buf);
+        Sprintf(buf, "nrnran123_deletestream(%s);\n", SYM(q)->name);
+        Lappendstr(nrn_mech_inst_destruct_list, buf);
+    }
+    if (nrn_mech_inst_destruct_list != nrn_mech_inst_destruct_list->next) {
+        auto& list = nrn_mech_inst_destruct_list;
+        // registration just means adding to nrn_mech_inst_destruct
+        Lappendstr(defs_list, "nrn_mech_inst_destruct[_mechtype] = _mech_inst_destruct;\n");
+        // boilerplate for _mech_inst_destruct
+        Linsertstr(list,
+                   "\nstatic void _mech_inst_destruct(Prop* _prop) {\n"
+                   " Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        Lappendstr(list, "}\n");
+        movelist(list->next, list->prev, procfunc);
+        // need a forward declaration before nrn_alloc.
+        insertstr(before_nrn_alloc, "\nstatic void _mech_inst_destruct(Prop* _prop);\n");
     }
 
     if (constructorfunc->next != constructorfunc) {
@@ -1168,6 +1246,11 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             }
         }
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        Lappendstr(defs_list, "hoc_register_parm_default(_mechtype, &_parm_default);\n");
+        if (!point_process) {
+            Lappendstr(defs_list,
+                       "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");
+        }
         lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
         if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
             lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 1, _thread_mem_init);\n");
@@ -1202,7 +1285,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         }
         register_data_fields.append(");\n");
         lappendstr(defs_list, register_data_fields.c_str());
-        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
+        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", prop_size, ppvar_cnt);
         Lappendstr(defs_list, buf);
         if (watch_seen_) {
             Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
@@ -1316,18 +1399,18 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
         }
     } /* end of not "nothing" */
     Lappendstr(defs_list,
-               "\
-	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
+               "\n"
+               "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
-        char* pf{};
-#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::absolute(finname).c_str());
+#else
+        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
 #endif
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname);
-        if (pf) {
-            free(pf);
-        }
         Lappendstr(defs_list, buf1);
     }
     if (suffix[0]) {
@@ -1566,7 +1649,6 @@ void ldifusreg() {
 
 int decode_limits(Symbol* sym, double* pg1, double* pg2) {
     int i;
-    double d1;
     if (sym->subtype & PARM) {
         char* cp;
         int n;
@@ -1590,7 +1672,6 @@ int decode_limits(Symbol* sym, double* pg1, double* pg2) {
 
 int decode_tolerance(Symbol* sym, double* pg1) {
     int i;
-    double d1;
     if (sym->subtype & STAT) {
         char* cp;
         int n;
@@ -1721,6 +1802,9 @@ static void var_count(Symbol* s) {
     if (s->subtype & ARRAY) {
         field.append(", ");
         field.append(std::to_string(s->araydim));
+        prop_size += s->araydim;
+    } else {
+        prop_size += 1;
     }
     // **ATTENTION** in AoS NEURON then parraycount was incremented by s->araydim if the variable
     // was an array. In SoA NEURON this is not done; the array dimension is communicated separately.
@@ -1813,6 +1897,17 @@ void nrn_list(Item* q1, Item* q2) {
             SYM(q)->nrntype |= NRNNOTP | NRNBBCOREPOINTER;
         }
         use_bbcorepointer = 1;
+        break;
+    case RANDOM:
+        for (q = q1->next; q != q2->next; q = q->next) {
+            Symbol* s = SYM(q);
+            if (s->type != NAME || s->subtype || s->nrntype) {
+                diag(s->name, " cannot be redeclared as RANDOM");
+            }
+            s->nrntype |= NRNNOTP | EXTDEF_RANDOM;
+            s->type = RANDOMVAR;
+        }
+        plist = &nmodlrandoms;
         break;
     }
     if (plist) {
@@ -2098,6 +2193,8 @@ void declare_p() {
                "using _nrn_mechanism_cache_instance = "
                "neuron::cache::MechanismInstance<number_of_floating_point_variables, "
                "number_of_datum_variables>;\n"
+               "using _nrn_non_owning_id_without_container = "
+               "neuron::container::non_owning_identifier_without_container;\n"
                "template <typename T>\n"
                "using _nrn_mechanism_field = neuron::mechanism::field<T>;\n"
                "template <typename... Args>\n"
@@ -2369,8 +2466,38 @@ int iondef(int* p_pointercount) {
         (*p_pointercount)++;
     }
 
+    // print all RANDOM variables
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
+    if (num_random_vars) {
+        Sprintf(buf, "\n //RANDOM variables \n");
+        lappendstr(defs_list, buf);
+
+        int index = 0;
+        ITERATE(q, nmodlrandoms) {
+            Symbol* s = SYM(q);
+            Sprintf(buf,
+                    "#define %s	(nrnran123_State*)_ppvar[%d].get<void*>()\n",
+                    s->name,
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            Sprintf(buf,
+                    "#define _p_%s _ppvar[%d].literal_value<void*>()\n",
+                    s->name,
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            ppvar_semantics(ioncount + *p_pointercount + index, "random", s->name, "void*");
+            index++;
+        }
+        lappendstr(defs_list, "\n");
+    }
+
     if (diamdec) { /* must be last */
-        Sprintf(buf, "#define diam	*_ppvar[%d].get<double*>()\n", ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define diam	*_ppvar[%d].get<double*>()\n",
+                ioncount + *p_pointercount + num_random_vars);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
@@ -2378,13 +2505,13 @@ int iondef(int* p_pointercount) {
             procedures must be redone */
         Sprintf(buf,
                 "#define area	*_ppvar[%d].get<double*>()\n",
-                ioncount + *p_pointercount + diamdec);
+                ioncount + *p_pointercount + num_random_vars + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
     Sprintf(buf,
             "static constexpr auto number_of_datum_variables = %d;\n",
-            ioncount + *p_pointercount + diamdec + areadec);
+            ioncount + *p_pointercount + num_random_vars + diamdec + areadec);
     linsertstr(defs_list, buf)->itemtype = VERBATIM;
     return ioncount;
 }
@@ -2860,10 +2987,8 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
        since it may compute some aspect of the current */
     Item *q, *q1;
     int type;
-    Symbol* sion;
     b[0] = '\0';
     ITERATE(q, useion) {
-        sion = SYM(q);
         q = q->next;
         ITERATE(q1, LST(q)) {
             type = SYM(q1)->nrntype;
@@ -2886,7 +3011,7 @@ void cvode_rw_cur(char (&b)[NRN_BUFSIZE]) {
 void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
     Item *q, *q1;
     Symbol* s;
-    int i, b;
+    int i;
     char snew[256];
     if (net_receive_) {
         diag("Only one NET_RECEIVE block allowed", (char*) 0);
@@ -3087,7 +3212,6 @@ void chk_global_state() {
 }
 
 void conductance_hint(int blocktype, Item* q1, Item* q2) {
-    Item* q;
     if (blocktype != BREAKPOINT) {
         diag("CONDUCTANCE can only appear in BREAKPOINT block", (char*) 0);
     }
@@ -3137,4 +3261,149 @@ Symbol* breakpoint_current(Symbol* s) {
         }
     }
     return s;
+}
+
+// Determine if setdata is required to call FUNCTION or PROCEDURE
+// setdata is required if RANGE var used. For safety, also VERBATIM.
+// Deal with nested calls, via maintaining a list for each func.
+// Note that the nest can be recursive and called function may not
+// yet be defined til entire text is processed.
+
+#include <unordered_set>
+#include <unordered_map>
+
+struct Info {
+    std::unordered_set<Symbol*> func_calls;
+    bool need_setdata{false};
+    bool is_being_looked_at{false};  // avoid recursion loops
+    Item* q{nullptr};                // To be modified if need_setdata.
+};
+
+static std::unordered_map<Symbol*, Info> funcs;
+static Symbol* in_func_;
+
+void check_range_in_func(Symbol* s) {
+    if (in_func_) {
+        // If s is a RANGE variable or nullptr (VERBATIM)
+        // then mark the current function as needing setdata
+        // If s is FUNCTION or PROCEDURE, then add to list
+        Info& i = funcs[in_func_];
+        if (!s) {  // VERBATIM
+            i.need_setdata = true;
+        } else if (s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            i.need_setdata = true;
+        } else if (s->usage & FUNCT) {
+            i.func_calls.insert(s);
+        }
+    }
+}
+
+void set_inside_func(Symbol* s) {
+    in_func_ = s;
+    if (s) {
+        assert(funcs.count(s) == 0);
+        funcs[s] = {};
+    }
+}
+
+// Make sure need_setdata is properly marked for all funcs.
+// I.e on entry, only ones marked are those that use RANGE or VERBATIM.
+// Need to recursively look through func_calls but watch out for loops.
+// If there are no RANGE then VERBATIM is ok and set all need_setdata to false.
+
+static bool check_func(Symbol* s);  // recursive
+
+void func_needs_setdata() {
+    if (suffix[0] == '\0') {
+        return;
+    }
+    for (auto& f: funcs) {
+        f.second.is_being_looked_at = false;
+    }
+
+    // if there are no RANGE then set all need_setdata to false.
+    bool norange{true};
+    Item* q;
+    int i;
+    SYMLISTITER {
+        Symbol* s = SYM(q);
+        if (s->type == NAME && s->nrntype & (NRNRANGE | NRNPOINTER)) {
+            norange = false;
+            break;
+        }
+    }
+    if (norange) {
+        for (auto& f: funcs) {
+            f.second.need_setdata = false;
+        }
+    }
+
+    for (auto& f: funcs) {
+        check_func(f.first);
+    }
+    for (auto& f: funcs) {  // update the hocfunc item if need_setdata
+        auto& q = f.second.q;
+        if (q && f.second.need_setdata) {
+            // error if not valid id
+            Symbol* s = f.first;
+            Sprintf(buf,
+                    "\n"
+                    "  if(!_prop_id) {\n"
+                    "    hoc_execerror(\""
+                    "No data for %s_%s. Requires prior call to setdata_%s"
+                    " and that the specified mechanism instance still be in existence.\","
+                    " NULL);\n",
+                    s->name,
+                    mechname,
+                    mechname);
+            insertstr(q, buf);
+            if (vectorize) {
+                insertstr(q,
+                          " }\n"
+                          "  Prop* _local_prop = _extcall_prop;\n");
+            } else {
+                // ensure current instance matches _extcall_prop
+                insertstr(q,
+                          " } else {\n"
+                          "    _setdata(_extcall_prop);\n"
+                          "  }\n");
+            }
+
+        } else if (q) {
+            if (vectorize) {
+                // if id not valid then _local_prop must be nullptr
+                // because of later _ppvar = _local_prop ? ...
+                insertstr(q, "\n  Prop* _local_prop = _prop_id ? _extcall_prop : nullptr;\n");
+            }
+        }
+    }
+}
+
+static bool check_func(Symbol* s) {  // recursive
+    if (funcs.count(s) == 0) {
+        return false;
+    }
+    Info& i = funcs[s];
+    if (i.need_setdata) {
+        return true;
+    }
+    if (i.is_being_looked_at) {
+        return false;
+    }
+    i.is_being_looked_at = true;
+    for (auto& s1: i.func_calls) {
+        if (check_func(s1)) {
+            i.need_setdata = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+// If the function needs setdata, then q can be changed to
+// perform the check on _extcall_prop
+// Not called for POINT_PROCESS functions.
+void hocfunc_setdata_item(Symbol* s, Item* q) {
+    auto& i = funcs[s];
+    i.q = q;
 }

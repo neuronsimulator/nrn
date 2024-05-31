@@ -27,8 +27,7 @@
  * SymChooser -- select a Symbol
  */
 
-#ifndef symchooser_h
-#define symchooser_h
+#pragma once
 
 #include <InterViews/dialog.h>
 #include <InterViews/resource.h>
@@ -55,7 +54,7 @@ class SymChooser: public Dialog {
     SymChooser(SymDirectory*, WidgetKit*, Style*, SymChooserAction* = NULL, int nbrowser = 3);
     virtual ~SymChooser();
 
-    virtual const String* selected() const;
+    virtual const std::string& selected() const;
     virtual double* selected_var();
     virtual int selected_vector_count();
     virtual void reread();
@@ -66,5 +65,3 @@ class SymChooser: public Dialog {
 };
 
 #include <InterViews/_leave.h>
-
-#endif

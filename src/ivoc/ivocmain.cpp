@@ -33,7 +33,6 @@ void iv_display_scale(float);
 #include "idraw.h"
 #include <InterViews/style.h>
 #endif
-#include <OS/string.h>
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
@@ -232,6 +231,7 @@ extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
 extern std::string nrnmpi_load();
+void nrnmpi_load_or_exit();
 #endif
 
 // some things are defined in libraries earlier than they are used so...
@@ -654,8 +654,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     nrn_optarg_on("-mpi", &our_argc, our_argv);
 
 #if (defined(NRNMECH_DLL_STYLE) || defined(WIN32))
-    String str;
 #if HAVE_IV
+    String str;
     if (session) {
         if (session->style()->find_attribute("nrnmechdll", str)) {
             nrn_mech_dll = str.string();
@@ -806,3 +806,28 @@ int run_til_stdin() {
 }
 void hoc_notify_value() {}
 #endif
+
+
+/// A top-level initialization of MPI given argc and argv.
+/// Sets stubs, load dyn lib, and initializes
+std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
+#if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+    extern int nrn_noauto_dlopen_nrnmech;
+    nrn_noauto_dlopen_nrnmech = 1;
+#endif
+
+#if NRNMPI
+#if NRNMPI_DYNAMICLOAD
+    nrnmpi_stubs();
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            nrnmpi_load_or_exit();
+            break;
+        }
+    }
+#endif                                           // NRNMPI_DYNAMICLOAD
+    auto argv_ptr = const_cast<char***>(&argv);  // safe if individual strings not modified
+    nrnmpi_init(1, &argc, argv_ptr);             // may change argc and argv
+#endif                                           // NRNMPI
+    return {argc, argv};
+}

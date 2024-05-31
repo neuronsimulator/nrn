@@ -11,7 +11,9 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <algorithm>
 #include <cerrno>
 #include <filesystem>
@@ -120,9 +122,10 @@ void nrnbbcore_register_mapping() {
     mapinfo.add_sec_mapping(gid, smap);
 }
 
-// This function is related to stdindex2ptr in CoreNeuron to determine which values should
-// be transferred from CoreNeuron. Types correspond to the value to be transferred based on
-// mech_type enum or non-artificial cell mechanisms.
+// This function is related to legacy_index2pointer in CoreNeuron to determine
+// which values should be transferred from CoreNeuron. Types correspond to the
+// value to be transferred based on mech_type enum or non-artificial cell
+// mechanisms.
 // Limited to pointers to voltage, nt.node_sav_rhs_storage() (fast_imem value) or
 // data of non-artificial cell mechanisms.
 // Input double* and NrnThread. Output type and index.
@@ -266,18 +269,6 @@ void check_coreneuron_compatibility(void* handle) {
         std::stringstream s_path;
         s_path << bbcore_write_version << " vs " << cn_bbcore_read_version;
         hoc_execerror("Incompatible NEURON and CoreNEURON versions :", s_path.str().c_str());
-    }
-
-    // Make sure legacy vs modern units are consistent.
-    // Would be nice to check in coreneuron set_globals but that would abort
-    // if inconsistent.
-    void* cn_nrnunit_use_legacy_sym = dlsym(handle, "corenrn_units_use_legacy");
-    if (!cn_nrnunit_use_legacy_sym) {
-        hoc_execerror("Could not get symbol corenrn_units_use_legacy from CoreNEURON", NULL);
-    }
-    bool cn_nrnunit_use_legacy = (*(bool (*)()) cn_nrnunit_use_legacy_sym)();
-    if (cn_nrnunit_use_legacy != (_nrnunit_use_legacy_ == 1)) {
-        hoc_execerror("nrnunit_use_legacy() inconsistent with CORENRN_ENABLE_LEGACY_UNITS", NULL);
     }
 }
 
