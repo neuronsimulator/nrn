@@ -355,7 +355,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
             update(nth);
         }
 #ifdef ENABLE_SONATA_REPORTS
-#pragma omp single
+#pragma omp single nowait
         {
             Instrumentor::phase p("flush-reports");
             // Check if is time to flush reports every sim step
