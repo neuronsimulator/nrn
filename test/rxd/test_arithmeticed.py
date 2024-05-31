@@ -38,7 +38,9 @@ def test_valid_arith_objects(neuron_nosave_instance):
     h, rxd, _ = neuron_nosave_instance
 
     assert isinstance(rxd.rxdmath._ensure_arithmeticed(1), rxd.rxdmath._Arithmeticed)
-    assert isinstance(rxd.rxdmath._ensure_arithmeticed(np.float32(1.5)), rxd.rxdmath._Arithmeticed)
+    assert isinstance(
+        rxd.rxdmath._ensure_arithmeticed(np.float32(1.5)), rxd.rxdmath._Arithmeticed
+    )
     assert isinstance(
         rxd.rxdmath._ensure_arithmeticed(3 / 2), rxd.rxdmath._Arithmeticed
     )
