@@ -349,20 +349,6 @@ set(SCOPMATH_FILES_LIST
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
-# nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
-set(NRNPYTHON_FILES_LIST
-    nrnpython.cpp
-    nrnpy_hoc.cpp
-    nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
-
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
@@ -416,8 +402,6 @@ nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPA
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
-                     ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
