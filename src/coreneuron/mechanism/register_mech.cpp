@@ -173,6 +173,10 @@ void nrn_writes_conc(int type, int /* unused */) {
     }
 }
 
+void _nrn_layout_reg(int type, int layout) {
+    // Unused, requires changes to mod compilers
+}
+
 void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
     corenrn.get_net_buf_receive().emplace_back(f, type);
 }
