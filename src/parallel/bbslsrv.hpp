@@ -21,13 +21,13 @@ class MessageValue: public Resource {
     int upkdouble(double*);
     int upkvec(int, double*);
     int upkstr(char*);
-    int upkpickle(char*, size_t*);
+    int upkpickle(std::vector<char>&);
 
     int pkint(int);
     int pkdouble(double);
     int pkvec(int, double*);
     int pkstr(const char*);
-    int pkpickle(const char*, size_t);
+    int pkpickle(const std::vector<char>&);
 
   private:
     std::vector<MessageItem> args_{};
