@@ -36,7 +36,6 @@ def test_valid_arith_objects(neuron_nosave_instance):
     """Test Valid Arithmeticed objects"""
 
     h, rxd, _ = neuron_nosave_instance
-
     assert isinstance(rxd.rxdmath._ensure_arithmeticed(1), rxd.rxdmath._Arithmeticed)
     assert isinstance(
         rxd.rxdmath._ensure_arithmeticed(np.float32(1.5)), rxd.rxdmath._Arithmeticed
