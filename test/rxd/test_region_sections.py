@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_region_sections(neuron_instance):
     """A test that regions and species do not keep sections alive"""
 
