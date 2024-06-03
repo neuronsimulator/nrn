@@ -460,8 +460,6 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             Memb_list* ml = tml->ml;
             double* d = nullptr;
             Datum* pd = nullptr;
-            int dsz = corenrn.get_prop_param_size()[type];
-            int pdsz = corenrn.get_prop_dparam_size()[type];
             int aln_cntml = nrn_soa_padded_size(ml->nodecount);
             fh << type << "\n";
             int icnt = 0;
@@ -545,7 +543,11 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
-        ix = nrn_i_layout(icnt, ml->nodecount, isz);
+        //XXX
+        // ix = nrn_i_layout(icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype], AOS_LAYOUT);
+        // int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+        //      return icnt * sz + isz;
+        ix = icnt * corenrn.get_prop_param_size()[mtype] + isz;
 
         fh << vtype << "\n";
         fh << mtype << "\n";
