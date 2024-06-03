@@ -63,6 +63,11 @@ bool CodegenCppVisitor::has_parameter_of_name(const T& node, const std::string& 
 }
 
 
+std::string CodegenCppVisitor::table_function_prefix() const {
+    return "lazy_update_";
+}
+
+
 /**
  * \details Certain statements like unit, comment, solve can/need to be skipped
  * during code generation. Note that solve block is wrapped in expression
@@ -1307,7 +1312,8 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
     auto float_type = default_float_data_type();
 
     printer->add_newline(2);
-    printer->fmt_push_block("void check_{}({})",
+    printer->fmt_push_block("void {}{}({})",
+                            table_function_prefix(),
                             method_name(name),
                             get_parameter_str(internal_params));
     {
@@ -1385,6 +1391,18 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
         printer->pop_block();
     }
     printer->pop_block();
+}
+
+std::string CodegenCppVisitor::get_object_specifiers(
+    const std::unordered_set<CppObjectSpecifier>& specifiers) {
+    std::string result;
+    for (const auto& specifier: specifiers) {
+        if (!result.empty()) {
+            result += " ";
+        }
+        result += object_specifier_map[specifier];
+    }
+    return result;
 }
 
 const ast::TableStatement* CodegenCppVisitor::get_table_statement(const ast::Block& node) {

@@ -114,6 +114,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     std::string backend_name() const override;
 
+    /**
+     * Name of the threaded table checking function
+     */
+    std::string table_thread_function_name() const;
+
 
     /****************************************************************************************/
     /*                     Common helper routines accross codegen functions                 */
@@ -208,11 +213,15 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print nmodl function or procedure (common code)
-     * \param node the AST node representing the function or procedure in NMODL
-     * \param name the name of the function or procedure
+     * Print all `check_*` function declarations
      */
-    void print_function_or_procedure(const ast::Block& node, const std::string& name) override;
+    void print_check_table_function_prototypes();
+
+
+    void print_function_or_procedure(const ast::Block& node,
+                                     const std::string& name,
+                                     const std::unordered_set<CppObjectSpecifier>& specifiers = {
+                                         CppObjectSpecifier::Inline}) override;
 
 
     /**
