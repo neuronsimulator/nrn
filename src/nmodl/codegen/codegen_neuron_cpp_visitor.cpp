@@ -1065,13 +1065,14 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->add_line("/** register channel with the simulator */");
     printer->fmt_push_block("extern \"C\" void _{}_reg()", info.mod_file);
     printer->add_line("_initlists();");
-
     printer->add_newline();
 
     for (const auto& ion: info.ions) {
         printer->fmt_line("ion_reg(\"{}\", {});", ion.name, "-10000.");
     }
-    printer->add_newline();
+    if (!info.ions.empty()) {
+        printer->add_newline();
+    }
 
     if (info.diam_used) {
         printer->add_line("_morphology_sym = hoc_lookup(\"morphology\");");
@@ -1081,8 +1082,9 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     for (const auto& ion: info.ions) {
         printer->fmt_line("_{0}_sym = hoc_lookup(\"{0}_ion\");", ion.name);
     }
-
-    printer->add_newline();
+    if (!info.ions.empty()) {
+        printer->add_newline();
+    }
 
     const auto compute_functions_parameters =
         breakpoint_exist()

@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX leonhard
+  SUFFIX leonhard
 }
 
 STATE { x }
@@ -9,7 +9,7 @@ INITIAL {
 }
 
 BREAKPOINT {
-    SOLVE dX METHOD cnexp
+  SOLVE dX METHOD cnexp
 }
 
 DERIVATIVE dX { x' = -x }
