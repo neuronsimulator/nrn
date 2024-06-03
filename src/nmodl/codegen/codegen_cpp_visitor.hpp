@@ -378,6 +378,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         return fmt::format("{}_NodeData", info.mod_suffix);
     }
 
+    std::string thread_variables_struct() const {
+        return fmt::format("{}_ThreadVariables", info.mod_suffix);
+    }
+
 
     /**
      * Name of structure that wraps global variables

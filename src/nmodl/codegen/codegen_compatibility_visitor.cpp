@@ -54,6 +54,14 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
 std::string CodegenCompatibilityVisitor::return_error_global_var(
     ast::Ast& node,
     const std::shared_ptr<ast::Ast>& ast_node) const {
+    if (simulator == "neuron") {
+        // When generating code for NEURON, NMODL support all GLOBALS, same as
+        // nocmodl.
+        return "";
+    }
+
+    // When generating code for CoreNEURON only read-only GLOBALs are
+    // supported.
     auto global_var = std::dynamic_pointer_cast<ast::GlobalVar>(ast_node);
     std::stringstream error_message_global_var;
     if (node.get_symbol_table()->lookup(global_var->get_node_name())->get_write_count() > 0) {

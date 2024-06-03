@@ -57,12 +57,19 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
                                                               codegen::naming::SPARSE_METHOD,
                                                               codegen::naming::AFTER_CVODE_METHOD};
 
+    const std::string simulator = "coreneuron";
+
   public:
     /// \name Ctor & dtor
     /// \{
 
     /// Default CodegenCompatibilityVisitor constructor
-    CodegenCompatibilityVisitor() = default;
+    ///
+    /// The argument `simulator` must be `"neuron"` for NEURON, everything else
+    /// refers to CoreNEURON. The compatibility will be checked as if
+    /// generating code for the specified simulator.
+    CodegenCompatibilityVisitor(const std::string& simulator = "coreneuron")
+        : simulator(simulator) {}
 
     /// \}
 

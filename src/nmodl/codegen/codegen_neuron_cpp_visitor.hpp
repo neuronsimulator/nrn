@@ -57,6 +57,20 @@ enum InterpreterWrapper { HOC, Python };
  * \{
  */
 
+struct ThreadVariableInfo {
+    const std::shared_ptr<symtab::Symbol> symbol;
+
+    /** There `index` global variables ahead of this one. If one counts array
+     *  global variables as one variable.
+     */
+    size_t index;
+
+    /** The global variables ahead of this one require `offset` doubles to
+     *  store.
+     */
+    size_t offset;
+};
+
 /**
  * \class CodegenNeuronCppVisitor
  * \brief %Visitor for printing C++ code compatible with legacy api of NEURON
@@ -76,6 +90,12 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /****************************************************************************************/
     /*                                    Member variables                                  */
     /****************************************************************************************/
+
+    /**
+     * GLOBAL variables in THREADSAFE MOD files that are not read-only are
+     * converted to thread variables. This is the list of all such variables.
+     */
+    std::vector<ThreadVariableInfo> codegen_thread_variables;
 
 
     /****************************************************************************************/
@@ -384,11 +404,22 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Determine the C++ string to print for thread variables.
+     *
+     * \param var_info Identifies the thread variable, typically an instance of
+     *                 `codegen_thread_variables`.
+     * \param use_instance Should the variable be accessed via instance or data array
+     */
+    std::string thread_variable_name(const ThreadVariableInfo& var_info,
+                                     bool use_instance = true) const;
+
+
+    /**
      * Determine variable name in the structure of mechanism properties
      *
      * \param name         Variable name that is being printed
      * \param use_instance Should the variable be accessed via instance or data array
-     * \return             The C++ string representing the access to the variable in the neuron
+     * \return             The C++ string representing the variable.
      * thread structure
      */
     std::string get_variable_name(const std::string& name, bool use_instance = true) const override;
@@ -435,6 +466,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      */
     void print_mechanism_register() override;
+
+    /**
+     * Print thread variable (de-)initialization functions.
+     */
+    void print_thread_memory_callbacks();
 
 
     /**
@@ -674,6 +710,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *                           be included in the struct declaration.
      */
     void print_node_data_structure(bool print_initializers);
+
+    /**
+     * Print the data structure used to access thread variables.
+     */
+    void print_thread_variables_structure(bool print_initializers);
 };
 
 

@@ -374,13 +374,15 @@ int main(int argc, const char* argv[]) {
             // run perfvisitor to update read/write counts
             PerfVisitor().visit_program(*ast);
 
+            auto compatibility_visitor = CodegenCompatibilityVisitor(neuron_code ? "neuron"
+                                                                                 : "coreneuron");
             // If we want to just check compatibility we return the result
             if (only_check_compatibility) {
-                return CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast);
+                return compatibility_visitor.find_unhandled_ast_nodes(*ast);
             }
 
             // If there is an incompatible construct and code generation is not forced exit NMODL
-            if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast) && !force_codegen) {
+            if (compatibility_visitor.find_unhandled_ast_nodes(*ast) && !force_codegen) {
                 return 1;
             }
         }
