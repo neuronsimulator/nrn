@@ -43,7 +43,27 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    Memb_list(int type);
+    explicit Memb_list(int type);
+
+    /**
+     * @brief Uninitialize, freeing any allocated mem for nodes.
+     */
+    ~Memb_list() noexcept;
+
+    // Move is ok. Copy is restricted
+    Memb_list(Memb_list&&) noexcept;
+    Memb_list& operator=(Memb_list&&) noexcept;
+
+    /**
+     * @brief Allocate memory for node_count nodes.
+     * @param also_pdata Allocate also pdata Datum's
+     */
+    void nodes_alloc(int node_count, bool also_pdata);
+
+    /**
+     * @brief Free memory allocated for nodes (with nodes_alloc)
+     */
+    void nodes_free();
 
     Node** nodelist{};
     /* nodeindices contains all nodes this extension is responsible for,
@@ -229,4 +249,14 @@ struct Memb_list {
      * permanent...in which case this value should probably not live here.
      */
     std::size_t m_storage_offset{neuron::container::invalid_row};
+
+    /**
+     * @brief Whether this memlist owns its nodes memory or whether we are a view
+     * Has implications on memory management
+     */
+    bool m_owns_nodes{false};
+
+    // No copying since one may own memory and double free would occur
+    Memb_list(const Memb_list&) = delete;
+    Memb_list& operator=(const Memb_list&) = default;  // private, used by move ctrs
 };

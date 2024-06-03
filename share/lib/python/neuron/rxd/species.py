@@ -960,10 +960,13 @@ class _IntracellularSpecies(_SpeciesMathable):
                         )
                     ]
                     # These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
-                    geom_area = [
-                        sum(self._region.geometry.surface_areas1d(sec))
-                        for sec in self._region._secs3d
-                    ]
+                    try:
+                        geom_area = [
+                            sum(self._region.geometry.surface_areas1d(sec))
+                            for sec in self._region._secs3d
+                        ]
+                    except TypeError:
+                        return
                     node_area = [node.surface_area for node in self._nodes]
                     node_vol = [node.volume for node in self._nodes]
                     scale = geom_area / sum(node_area)
