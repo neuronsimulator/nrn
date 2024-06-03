@@ -543,9 +543,9 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
-        //XXX
-        // ix = nrn_i_layout(icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype], AOS_LAYOUT);
-        // int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+        // XXX
+        // ix = nrn_i_layout(icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype],
+        // AOS_LAYOUT); int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
         //      return icnt * sz + isz;
         ix = icnt * corenrn.get_prop_param_size()[mtype] + isz;
 
