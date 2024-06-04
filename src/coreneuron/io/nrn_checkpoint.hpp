@@ -58,7 +58,7 @@ class CheckPoints {
 
 
 int* inverse_permute(int* p, int n);
-void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout);
+void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz);
 
 extern int patstimtype;
 
