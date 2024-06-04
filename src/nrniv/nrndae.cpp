@@ -220,10 +220,9 @@ void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
     for (int i = nnode_; i < size_; ++i) {
         // printf("bmap_[%d] = %d\n", i, bmap_[i]);
         pv[bmap_[i]] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                                  y_.data() + i};
-        pvdot[bmap_[i]] =
-            neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->_sp13_rhs + bmap_[i]};
+                                                              y_.data() + i};
+        pvdot[bmap_[i]] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                 _nt->_sp13_rhs + bmap_[i]};
     }
 }
 
