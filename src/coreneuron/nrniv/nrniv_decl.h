@@ -61,7 +61,7 @@ extern void nrn_fake_fire(int gid, double spiketime, int fake_out);
 extern void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi);
 extern double set_mindelay(double maxdelay);
 
-extern int nrn_soa_padded_size(int cnt, int layout);
+extern int nrn_soa_padded_size(int cnt);
 
 extern int interleave_permute_type;
 extern int cellorder_nwarp;

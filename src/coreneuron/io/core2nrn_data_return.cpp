@@ -154,7 +154,7 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
     int layout = corenrn.get_mech_data_layout()[type];
     int dsz = corenrn.get_prop_param_size()[type];
     int pdsz = corenrn.get_prop_dparam_size()[type];
-    int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+    int aln_cntml = nrn_soa_padded_size(ml->nodecount);
 
     int icnt = 0;
     int dcnt = 0;
@@ -240,7 +240,7 @@ static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
     Memb_list* ml = tml->ml;
     int layout = corenrn.get_mech_data_layout()[type];
     int pdsz = corenrn.get_prop_dparam_size()[type];
-    int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+    int aln_cntml = nrn_soa_padded_size(ml->nodecount);
     int n = ml->nodecount;
 
     // will send back vector of 34 bit uints (aka double)

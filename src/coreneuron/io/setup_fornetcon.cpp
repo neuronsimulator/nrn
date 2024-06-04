@@ -68,7 +68,7 @@ static int* fornetcon_slot(const int mtype,
     if (layout == Layout::AoS) {
         fn = ml->pdata + (instance * sz + fnslot);
     } else if (layout == Layout::SoA) {
-        int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
+        int padded_cnt = nrn_soa_padded_size(ml->nodecount);
         fn = ml->pdata + (fnslot * padded_cnt + instance);
     }
     return fn;
