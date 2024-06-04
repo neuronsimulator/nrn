@@ -383,13 +383,28 @@ void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute
 }
 
 #endif  // not CORENRN_BUILD
+        //
+template<class T>
+void permute_1d(T *const data, int n, int* p) {
+  if(p == nullptr || data == nullptr || n <= 0) {
+    return;
+  }
+
+  auto tmp = std::vector<T>(data, data+n);
+  for(int i = 0; i < n; ++i) {
+    data[p[i]] = tmp[i];
+  }
+}
+
 
 void permute_ptr(int* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
+    // permute(vec, n, 1, 1, p);
+    permute_1d(vec, n, p);
 }
 
 void permute_data(double* vec, int n, int* p) {
-    permute(vec, n, 1, 1, p);
+    // permute(vec, n, 1, 1, p);
+    permute_1d(vec, n, p);
 }
 
 #if CORENRN_BUILD
