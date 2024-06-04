@@ -3367,11 +3367,6 @@ for (i=i1; i < i3; ++i) {
         nt->_v_node[i]->eqn_index_ = -1;
     }
     for (i = i1; i < backbone_end; ++i) {
-#if 0
-printf("backbone i=%d %d %s %d", i, node[i]->v_node_index, secname(node[i]->sec), node[i]->sec_node_index_);
-printf("  ->  %s %d\n", parent[i]?secname(parent[i]->sec):"root",
-parent[i]?parent[i]->sec_node_index_:-1);
-#endif
         node[i - i1]->eqn_index_ = i;
     }
     // the rest are in order

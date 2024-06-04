@@ -400,7 +400,7 @@ void Cvode::daspk_init_eqn() {
             Extnode* nde;
             nd = _nt->_v_node[in];
             nde = nd->extnode;
-            i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
+            i = nd->eqn_index_;  // the sparse matrix index starts at 1
             z.pv_[i] = nd->v_handle();
             z.pvdot_[i] = nd->rhs_handle();
             if (nde) {
