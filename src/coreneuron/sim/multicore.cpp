@@ -83,8 +83,7 @@ NrnThreadMembList* create_tml(NrnThread& nt,
         printf("%s (type %d) is not available\n", nrn_get_mechname(tml->index), tml->index);
         exit(1);
     }
-    tml->ml->_nodecount_padded = nrn_soa_padded_size(tml->ml->nodecount,
-                                                     corenrn.get_mech_data_layout()[tml->index]);
+    tml->ml->_nodecount_padded = nrn_soa_padded_size(tml->ml->nodecount);
     if (memb_func.is_point && corenrn.get_is_artificial()[tml->index] == 0) {
         // Avoid race for multiple PointProcess instances in same compartment.
         if (tml->ml->nodecount > shadow_rhs_cnt) {

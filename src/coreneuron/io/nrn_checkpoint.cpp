@@ -469,7 +469,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             int layout = corenrn.get_mech_data_layout()[type];
             int dsz = corenrn.get_prop_param_size()[type];
             int pdsz = corenrn.get_prop_dparam_size()[type];
-            int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+            int aln_cntml = nrn_soa_padded_size(ml->nodecount);
             fh << type << "\n";
             int icnt = 0;
             int dcnt = 0;
@@ -658,7 +658,7 @@ T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) cons
             d[i] = data[i];
         }
     } else if (layout == Layout::SoA) {
-        int align_cnt = nrn_soa_padded_size(cnt, layout);
+        int align_cnt = nrn_soa_padded_size(cnt);
         for (int i = 0; i < cnt; ++i) {
             int ip = i;
             if (permute) {

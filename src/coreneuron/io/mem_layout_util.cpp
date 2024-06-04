@@ -14,11 +14,8 @@ namespace coreneuron {
 
 /// calculate size after padding for specific memory layout
 // Warning: this function is declared extern in nrniv_decl.h
-int nrn_soa_padded_size(int cnt, int layout) {
-    if(layout != Layout::SoA) {
-        throw std::runtime_error("find me. weqcv");
-    }
-    return soa_padded_size<NRN_SOA_PAD>(cnt, layout);
+int nrn_soa_padded_size(int cnt) {
+    return soa_padded_size<NRN_SOA_PAD>(cnt, Layout::SoA);
 }
 
 /// return the new offset considering the byte aligment settings
@@ -35,7 +32,7 @@ size_t nrn_soa_byte_align(size_t size) {
 }
 
 int nrn_i_layout(int icnt, int cnt, int isz, int sz) {
-    int padded_cnt = nrn_soa_padded_size(cnt, Layout::SoA);
+    int padded_cnt = nrn_soa_padded_size(cnt);
     return icnt + isz * padded_cnt;
 }
 

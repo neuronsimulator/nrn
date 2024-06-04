@@ -107,8 +107,7 @@ namespace neuron {
 #endif
 
 #if !CORENRN_BUILD
-static int nrn_soa_padded_size(int cnt, int layout) {
-    assert(layout == 1);
+static int nrn_soa_padded_size(int cnt) {
     return cnt;
 }
 static int nrn_i_layout(int icnt, int cnt, int isz, int sz) {
@@ -142,9 +141,7 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
     }
 
 #if CORENRN_BUILD
-    if (layout == Layout::SoA) {  // for SoA, n might be larger due to cnt padding
-        n = nrn_soa_padded_size(cnt, layout) * sz;
-    }
+    n = nrn_soa_padded_size(cnt) * sz;
 #endif
 
     T* data_orig = new T[n];
@@ -331,7 +328,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                         i_esz = ix % esz;
                     } else {  // SoA
                         assert(elayout == Layout::SoA);
-                        padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
+                        padded_ecnt = nrn_soa_padded_size(ecnt);
                         i_ecnt = ix % padded_ecnt;
                         i_esz = ix / padded_ecnt;
                     }
@@ -361,7 +358,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     i_esz = ix % esz;
                 } else {  // SoA
                     assert(elayout == Layout::SoA);
-                    padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
+                    padded_ecnt = nrn_soa_padded_size(ecnt);
                     i_ecnt = ix % padded_ecnt;
                     i_esz = ix / padded_ecnt;
                 }
