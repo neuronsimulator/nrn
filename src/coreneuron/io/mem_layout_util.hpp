@@ -27,7 +27,7 @@ size_t nrn_soa_byte_align(size_t i);
 /// This function return the index in a flat array of a matrix coordinate (icnt, isz).
 /// The matrix size is (cnt, sz)
 /// Depending of the layout some padding can be calculated
-int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout);
+int nrn_i_layout(int icnt, int cnt, int isz, int sz);
 
 /// \brief Split a legacy index into the three SoAoS indices.
 ///

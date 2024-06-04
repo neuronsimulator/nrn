@@ -111,10 +111,9 @@ static int nrn_soa_padded_size(int cnt, int layout) {
     assert(layout == 1);
     return cnt;
 }
-static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+static int nrn_i_layout(int icnt, int cnt, int isz, int sz) {
     assert(isz == 0);
     assert(sz == 1);
-    assert(layout == 1);
     return icnt;
 }
 #endif  // !CORENRN_BUILD
@@ -156,8 +155,8 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
     for (int icnt = 0; icnt < cnt; ++icnt) {
         for (int isz = 0; isz < sz; ++isz) {
             // note that when layout==0, nrn_i_layout takes into account SoA padding.
-            int i = nrn_i_layout(icnt, cnt, isz, sz, layout);
-            int ip = nrn_i_layout(p[icnt], cnt, isz, sz, layout);
+            int i = nrn_i_layout(icnt, cnt, isz, sz);
+            int ip = nrn_i_layout(p[icnt], cnt, isz, sz);
             data[ip] = data_orig[i];
         }
     }
@@ -275,7 +274,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int area0 = nt._actual_area - nt._data;  // includes padding if relevant
             int* p_target = nt._permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz);
                 // *pd is the original integer into nt._data . Needs to be replaced
                 // by the permuted value
 
@@ -291,7 +290,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int diam0 = nt._actual_diam - nt._data;  // includes padding if relevant
             int* p_target = nt._permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz);
                 // *pd is the original integer into nt._data . Needs to be replaced
                 // by the permuted value
 
@@ -307,7 +306,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             // assume pointer into nt._data. Most likely voltage.
             // If not voltage, most likely same mechanism for all indices.
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz);
                 int etype = type_of_ntdata(nt, *pd, iml == 0);
                 if (etype == voltage) {
                     int v0 = nt._actual_v - nt._data;
@@ -337,7 +336,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                         i_esz = ix / padded_ecnt;
                     }
                     int i_ecnt_new = e_permute ? e_permute[i_ecnt] : i_ecnt;
-                    int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
+                    int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz);
                     *pd = ix_new + edata0;
                 } else {
                     nrn_assert(0);
@@ -352,7 +351,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int esz = corenrn.get_prop_param_size()[etype];
             int* e_permute = eml->_permute;
             for (int iml = 0; iml < cnt; ++iml) {
-                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz);
                 int ix = *pd - edata0;
                 // from ix determine i_ecnt and i_esz (need to permute i_ecnt)
                 int i_ecnt, i_esz, padded_ecnt;
@@ -367,7 +366,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     i_esz = ix / padded_ecnt;
                 }
                 int i_ecnt_new = e_permute[i_ecnt];
-                int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
+                int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz);
                 *pd = ix_new + edata0;
             }
         }
