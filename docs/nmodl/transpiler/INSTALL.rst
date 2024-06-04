@@ -34,8 +34,8 @@ support is necessary. Make sure you have following packages available:
 -  Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0),
    sympy (>=1.3), textwrap
 
-On OS X
-~~~~~~~
+On MacOS
+~~~~~~~~
 
 Typically the versions of bison and flex provided by the system are
 outdated and not compatible with our requirements. To get recent version
@@ -52,7 +52,7 @@ using:
 
    pip3 install --user -r requirements.txt
 
-Make sure to have latest flex/bison in $PATH :
+Make sure to have latest flex/bison in your ``PATH``:
 
 .. code:: sh
 
@@ -107,7 +107,7 @@ Once all dependencies are in place, build project as:
    ``cmake --parallel <number_of_parallel_jobs>``. i.e. in a machine
    with 8 threads do ``cmake --parallel 4``.
 
-And set PYTHONPATH as:
+And set ``PYTHONPATH`` as:
 
 .. code:: sh
 
@@ -116,7 +116,7 @@ And set PYTHONPATH as:
 Flex / Bison Paths
 ^^^^^^^^^^^^^^^^^^
 
-If flex / bison are not in your default $PATH, you can provide the path
+If flex / bison are not in your default ``PATH``, you can provide the path
 to cmake as:
 
 .. code:: sh

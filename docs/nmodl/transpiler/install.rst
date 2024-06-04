@@ -1,4 +1,1 @@
-
-.. include:: ../INSTALL.rst
-   :parser: myst_parser.sphinx_
-
+../INSTALL.rst

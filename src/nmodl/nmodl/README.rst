@@ -181,18 +181,18 @@ which will open AST view in web browser:
    https://user-images.githubusercontent.com/666852/57329449-12c9a400-7114-11e9-8da5-0042590044ec.gif
    :alt: ast_viz
 
-   ast_viz
+   Vizualisation of the AST in the NMODL Framework
 
 The central *Program* node represents the whole MOD file and each of
 it’s children represent the block in the input NMODL file. Note that
-this requires X-forwarding if you are using Docker image.
+this requires X-forwarding if you are using the Docker image.
 
 Once the AST is created, one can use exisiting visitors to perform
 various analysis/optimisations. One can also easily write his own custom
 visitor using Python Visitor API. See `Python API
 tutorial <docs/notebooks/nmodl-python-tutorial.ipynb>`__ for details.
 
-NMODL Frameowrk also allows to transform AST representation back to
+The NMODL Framework also allows us to transform the AST representation back to
 NMODL form as:
 
 .. code:: python
@@ -225,13 +225,13 @@ visitors <https://bluebrain.github.io/nmodl/html/doxygen/group__visitor__classes
 Here is an example of theoretical performance characterisation of
 channels and synapses from rat neocortical column microcircuit
 `published in
-2015 <https://www.cell.com/abstract/S0092-8674%2815%2901191-5>`__:
+2015 <https://www.cell.com/cell/fulltext/S0092-8674%2815%2901191-5>`__:
 
 .. figure::
    https://user-images.githubusercontent.com/666852/57336711-2cc0b200-7127-11e9-8053-8f662e2ec191.png
    :alt: nmodl-perf-stats
 
-   nmodl-perf-stats
+   Performance results of the NMODL Framework
 
 To understand how you can write your own introspection and analysis
 tool, see `this
@@ -356,7 +356,7 @@ will be published soon in following repositories:
 -  `NMODL Database <https://github.com/BlueBrain/nmodldb>`__
 
 Funding & Acknowledgment
-========================
+------------------------
 
 The development of this software was supported by funding to the Blue
 Brain Project, a research center of the École polytechnique fédérale de
