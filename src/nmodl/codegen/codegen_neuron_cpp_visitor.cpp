@@ -1042,7 +1042,7 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
                           hoc_function_name(func_name));
     }
 
-    printer->add_line("{0, 0}");
+    printer->add_line("{nullptr, nullptr}");
     printer->decrease_indent();
     printer->add_line("};");
     if (!info.point_process) {
@@ -1055,6 +1055,7 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
             const auto func_name = function->get_node_name();
             printer->fmt_line("{{\"{}\", {}}},", func_name, py_function_name(func_name));
         }
+        printer->add_line("{nullptr, nullptr}");
         printer->pop_block(";");
     }
 }
