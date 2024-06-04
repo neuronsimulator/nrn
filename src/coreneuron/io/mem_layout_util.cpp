@@ -15,7 +15,7 @@ namespace coreneuron {
 /// calculate size after padding for specific memory layout
 // Warning: this function is declared extern in nrniv_decl.h
 int nrn_soa_padded_size(int cnt) {
-    return soa_padded_size<NRN_SOA_PAD>(cnt, Layout::SoA);
+    return soa_padded_size<NRN_SOA_PAD>(cnt);
 }
 
 /// return the new offset considering the byte aligment settings
