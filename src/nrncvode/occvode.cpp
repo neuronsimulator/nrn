@@ -25,9 +25,6 @@ extern int nrn_errno_check(int);
 
 extern Symlist* hoc_built_in_symlist;
 
-#include "spmatrix.h"
-extern double* sp13mat;
-
 #if 1 || NRNMPI
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();

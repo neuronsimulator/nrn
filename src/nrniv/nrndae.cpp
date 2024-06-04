@@ -49,7 +49,7 @@ void nrndae_alloc() {
         neqn += _nt->_ecell_memb_list->nodecount * nlayer;
     }
     for (NrnDAE* item: nrndae_list) {
-        item->alloc(neqn + 1);
+        item->alloc(neqn);
         neqn += item->extra_eqn_count();
     }
 }
@@ -219,11 +219,11 @@ void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {
         // printf("bmap_[%d] = %d\n", i, bmap_[i]);
-        pv[bmap_[i] - 1] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+        pv[bmap_[i]] = neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                   y_.data() + i};
-        pvdot[bmap_[i] - 1] =
+        pvdot[bmap_[i]] =
             neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                   _nt->_sp13_rhs + bmap_[i] - 1};
+                                                   _nt->_sp13_rhs + bmap_[i]};
     }
 }
 
@@ -233,7 +233,7 @@ void NrnDAE::update() {
     // note that the following is correct also for states that refer
     // to the internal potential of a segment. i.e rhs is v + vext[0]
     for (int i = 0; i < size_; ++i) {
-        y_[i] += _nt->_sp13_rhs[bmap_[i] - 1];
+        y_[i] += _nt->_sp13_rhs[bmap_[i]];
     }
     // for (int i=0; i < size_; ++i) printf(" i=%d bmap_[i]=%d y_[i]=%g\n", i, bmap_[i],
     // y_->elem(i));
@@ -289,7 +289,7 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
 
     for (int i = 0; i < size_; ++i) {
         // printf("%d %d %g %g\n", i, bmap_[i]-1, y[bmap_[i]-1], yprime[bmap_[i]-1]);
-        yptmp_[i] = yprime[bmap_[i] - 1];
+        yptmp_[i] = yprime[bmap_[i]];
     }
     Vect* cyp;
     if (assumed_identity_) {
@@ -303,7 +303,7 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
         cyp = &cyp_;
     }
     for (int i = 0; i < size_; ++i) {
-        delta[bmap_[i] - 1] -= (*cyp)[i];
+        delta[bmap_[i]] -= (*cyp)[i];
     }
 }
 
@@ -313,7 +313,7 @@ void NrnDAE::rhs() {
     v2y();
     f_(y_, yptmp_, size_);
     for (int i = 0; i < size_; ++i) {
-        _nt->_sp13_rhs[bmap_[i] - 1] += yptmp_[i];
+        _nt->_sp13_rhs[bmap_[i]] += yptmp_[i];
     }
 }
 
